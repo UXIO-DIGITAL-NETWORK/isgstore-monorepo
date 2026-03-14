@@ -1,0 +1,11 @@
+{
+  "plugins": ["react"],
+  "rules": {
+    "react/forbid-elements": [
+      "error",
+      {
+        "forbid": [{ "element": "div", "message": "Gunakan <Box> sebagai gantinya." }]
+      }
+    ]
+  }
+}
