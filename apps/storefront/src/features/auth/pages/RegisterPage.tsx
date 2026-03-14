@@ -1,5 +1,8 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "@tanstack/react-router";
-import { Zap, Mail, Lock, ArrowRight, User } from "lucide-react";
+import { Mail, Lock, User as UserIcon, ArrowRight } from "lucide-react";
+
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
@@ -7,188 +10,172 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
+import { registerSchema, type RegisterFormValues } from "../schemas/auth.schema";
+import { useRegister } from "../hooks/useRegister";
+import type { AuthApiError } from "../types/auth.type";
+
 export default function RegisterPage() {
+  const { mutate: registerUser, isPending, error } = useRegister();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const onSubmit = (data: RegisterFormValues) => {
+    registerUser(data);
+  };
+
+  // Catch API Error Message (Example: Email already used)
+  const apiErrorMessage = (error as unknown as AuthApiError)?.response?.data?.message;
+
   return (
-    <Box className="min-h-screen flex antialiased font-sans bg-white text-slate-900">
-      <Box className="flex min-h-screen w-full">
-        {/* ================= LEFT SIDE: 60% GRADIENT CONTAINER ================= */}
-        <Box className="hidden lg:flex w-[60%] flex-col relative px-16 py-12 justify-center text-white overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-blue-950">
-          {/* Logo Section */}
-          <Box className="absolute top-12 left-16 flex items-center space-x-3">
-            <Zap className="w-8 h-8 text-blue-400 drop-shadow-md" />
-            <Link to="/">
-              <Text className="text-xl text-white font-bold tracking-tight drop-shadow-md">React Enterprise</Text>
-            </Link>
-          </Box>
+    <Box className="w-full max-w-[420px]">
+      {/* Header */}
+      <Box className="mb-10">
+        <Heading
+          level={2}
+          className="text-[32px] font-extrabold text-slate-900 mb-4 tracking-tight"
+        >
+          Buat Akun Baru
+        </Heading>
+        <Text className="text-slate-500 text-[15px] font-medium">
+          Daftar untuk mulai menggunakan sistem React Enterprise Boilerplate.
+        </Text>
+      </Box>
 
-          {/* Content Section */}
-          <Box className="relative z-10 w-full max-w-2xl mt-8">
-            {/* Badge */}
-            <Box className="inline-flex items-center space-x-2 bg-white/5 backdrop-blur-md rounded-full px-4 py-1.5 mb-8 border border-white/10 shadow-sm">
-              <Box className="w-2.5 h-2.5 rounded-full bg-blue-500"></Box>
-              <Text className="text-xs font-semibold tracking-wide text-slate-300">
-                Boilerplate React Skala Enterprise
-              </Text>
+      {/* Global Error Alert */}
+      {apiErrorMessage && (
+        <Box className="bg-red-50 p-4 rounded-xl mb-6 shadow-sm border border-red-100">
+          <Text className="font-medium text-red-600 text-sm">{apiErrorMessage}</Text>
+        </Box>
+      )}
+
+      {/* Form */}
+      <Box
+        as="form"
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-6"
+      >
+        {/* Name Input */}
+        <Box className="space-y-2">
+          <Label
+            htmlFor="name"
+            className="block text-sm font-bold text-slate-800"
+          >
+            Nama Lengkap
+          </Label>
+          <Box className="relative">
+            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <UserIcon className="w-5 h-5 text-slate-400" />
             </Box>
-
-            {/* Headline */}
-            <Heading
-              level={1}
-              className="text-[64px] leading-[1.05] text-white font-extrabold tracking-tight mb-8"
-            >
-              Bangun Aplikasi Lebih Cepat
-              <Box as="br" />
-              <Text
-                as="span"
-                className="text-blue-400 text-[64px] font-extrabold"
-              >
-                Skalabilitas Tanpa Batas.
-              </Text>
-            </Heading>
-
-            {/* Slogan Subheadline */}
-            <Text className="text-[17px] font-medium text-slate-300 leading-relaxed max-w-md mb-8">
-              Fondasi yang kuat, type-safe, dan performa tinggi untuk proyek React Anda berikutnya.
-            </Text>
+            <Input
+              id="name"
+              type="text"
+              {...register("name")}
+              placeholder="Contoh: John Doe"
+              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+            />
           </Box>
-
-          {/* Footer Section */}
-          <Box className="absolute bottom-12 left-16">
-            <Text className="text-slate-500 text-xs font-medium font-mono tracking-wide">
-              © 2026 React Enterprise Boilerplate.
-            </Text>
-          </Box>
+          {errors.name && <Text className="text-red-500 text-xs font-medium">{errors.name.message}</Text>}
         </Box>
 
-        {/* ================= RIGHT SIDE: 40% FORM CONTAINER ================= */}
-        <Box className="w-full lg:w-[40%] flex items-center justify-center p-8 lg:p-12 bg-white shadow-[-20px_0_40px_rgba(0,0,0,0.05)] z-20">
-          <Box className="w-full max-w-[420px]">
-            {/* Header */}
-            <Box className="mb-10">
-              <Heading
-                level={2}
-                className="text-[32px] font-extrabold text-slate-900 mb-4 tracking-tight"
-              >
-                Buat Akun Baru
-              </Heading>
-              <Text className="text-slate-500 text-[15px] font-medium">
-                Daftar untuk mulai menggunakan sistem React Enterprise Boilerplate.
-              </Text>
+        {/* Email Input */}
+        <Box className="space-y-2">
+          <Label
+            htmlFor="email"
+            className="block text-sm font-bold text-slate-800"
+          >
+            Email
+          </Label>
+          <Box className="relative">
+            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <Mail className="w-5 h-5 text-slate-400" />
             </Box>
-
-            {/* DUMMY FORM - Menggunakan Shadcn UI (Tanpa !important) */}
-            <Box
-              as="form"
-              className="space-y-6"
-            >
-              {/* Name Input */}
-              <Box className="space-y-2">
-                <Label
-                  htmlFor="name"
-                  className="block text-sm font-bold text-slate-800"
-                >
-                  Nama Lengkap
-                </Label>
-                <Box className="relative">
-                  <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <User className="w-5 h-5 text-slate-400" />
-                  </Box>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Contoh: John Doe"
-                    className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all duration-200 shadow-sm placeholder:text-slate-400 text-slate-900 font-medium"
-                  />
-                </Box>
-              </Box>
-
-              {/* Email Input */}
-              <Box className="space-y-2">
-                <Label
-                  htmlFor="email"
-                  className="block text-sm font-bold text-slate-800"
-                >
-                  Email
-                </Label>
-                <Box className="relative">
-                  <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Mail className="w-5 h-5 text-slate-400" />
-                  </Box>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Contoh: you@company.com"
-                    className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all duration-200 shadow-sm placeholder:text-slate-400 text-slate-900 font-medium"
-                  />
-                </Box>
-              </Box>
-
-              {/* Password Input */}
-              <Box className="space-y-2">
-                <Label
-                  htmlFor="password"
-                  className="block text-sm font-bold text-slate-800"
-                >
-                  Password
-                </Label>
-                <Box className="relative">
-                  <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Lock className="w-5 h-5 text-slate-400" />
-                  </Box>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all duration-200 shadow-sm placeholder:text-slate-400 text-slate-900 font-medium"
-                  />
-                </Box>
-              </Box>
-
-              {/* Password Confirmation Input */}
-              <Box className="space-y-2">
-                <Label
-                  htmlFor="password"
-                  className="block text-sm font-bold text-slate-800"
-                >
-                  Konfirmasi Password
-                </Label>
-                <Box className="relative">
-                  <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Lock className="w-5 h-5 text-slate-400" />
-                  </Box>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all duration-200 shadow-sm placeholder:text-slate-400 text-slate-900 font-medium"
-                  />
-                </Box>
-              </Box>
-
-              {/* Submit Button (Elevated) */}
-              <Box className="pt-4">
-                <Button
-                  type="button"
-                  className="w-full h-auto flex items-center justify-center py-3 px-4 bg-linear-to-r from-blue-600 to-blue-500 hover:to-blue-600 text-white text-[15px] font-bold rounded-xl hover:opacity-90 transition-all duration-300 shadow-[0_8px_20px_rgba(37,99,235,0.25)] group border-0"
-                >
-                  Mulai Perjalanan Anda
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Box>
-            </Box>
-
-            <Text className="block text-center text-sm text-slate-500 mt-8 font-medium">
-              Sudah memiliki akun?{" "}
-              <Link
-                to="/login"
-                className="text-blue-600 font-bold hover:underline transition-colors"
-              >
-                Masuk
-              </Link>
-            </Text>
+            <Input
+              id="email"
+              type="email"
+              {...register("email")}
+              placeholder="Contoh: you@company.com"
+              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+            />
           </Box>
+          {errors.email && <Text className="text-red-500 text-xs font-medium">{errors.email.message}</Text>}
+        </Box>
+
+        {/* Password Input */}
+        <Box className="space-y-2">
+          <Label
+            htmlFor="password"
+            className="block text-sm font-bold text-slate-800"
+          >
+            Password
+          </Label>
+          <Box className="relative">
+            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <Lock className="w-5 h-5 text-slate-400" />
+            </Box>
+            <Input
+              id="password"
+              type="password"
+              {...register("password")}
+              placeholder="••••••••"
+              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+            />
+          </Box>
+          {errors.password && <Text className="text-red-500 text-xs font-medium">{errors.password.message}</Text>}
+        </Box>
+
+        {/* Password Confirmation Input */}
+        <Box className="space-y-2">
+          <Label
+            htmlFor="password_confirmation"
+            className="block text-sm font-bold text-slate-800"
+          >
+            Konfirmasi Password
+          </Label>
+          <Box className="relative">
+            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <Lock className="w-5 h-5 text-slate-400" />
+            </Box>
+            <Input
+              id="password_confirmation"
+              type="password"
+              {...register("password_confirmation")}
+              placeholder="••••••••"
+              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+            />
+          </Box>
+          {errors.password_confirmation && (
+            <Text className="text-red-500 text-xs font-medium">{errors.password_confirmation.message}</Text>
+          )}
+        </Box>
+
+        {/* Submit Button */}
+        <Box className="pt-4">
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="w-full h-auto flex items-center justify-center py-3 px-4 bg-linear-to-r from-blue-600 to-blue-500 hover:to-blue-600 text-white text-[15px] font-bold rounded-xl shadow-[0_8px_20px_rgba(37,99,235,0.25)] border-0 disabled:opacity-70"
+          >
+            {isPending ? "Memproses..." : "Mulai Perjalanan Anda"}
+            {!isPending && <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />}
+          </Button>
         </Box>
       </Box>
+
+      <Text className="block text-center text-sm text-slate-500 mt-8 font-medium">
+        Sudah memiliki akun?{" "}
+        <Link
+          to="/login"
+          className="text-blue-600 font-bold hover:underline transition-colors"
+        >
+          Masuk
+        </Link>
+      </Text>
     </Box>
   );
 }
