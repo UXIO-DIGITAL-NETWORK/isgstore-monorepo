@@ -1,3 +1,4 @@
+import React from "react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
@@ -7,7 +8,13 @@ import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 
+import { useAuthStore } from "@/store/useAuthStore";
+import { useLogout } from "@/features/auth/hooks/useLogout";
+
 export default function HomePage() {
+  const token = useAuthStore((state) => state.token);
+  const { mutate: logout, isPending } = useLogout();
+
   return (
     <Box className="relative min-h-screen bg-background overflow-hidden selection:bg-primary/30 flex flex-col items-center justify-center p-6 lg:p-12">
       {/* Top-left Blue gradient blob */}
@@ -25,20 +32,44 @@ export default function HomePage() {
         </Box>
         <Box className="flex items-center gap-4">
           <ThemeToggle />
-          <Button
-            variant="ghost"
-            className="font-semibold px-4"
-            asChild
-          >
-            <Link to="/login">Log in</Link>
-          </Button>
-          <Button
-            variant="outline"
-            className="font-semibold px-6"
-            asChild
-          >
-            <Link to="/register">Register</Link>
-          </Button>
+
+          {/* LOGIKA KONDISIONAL TOMBOL AUTENTIKASI */}
+          {token ? (
+            <React.Fragment>
+              <Button
+                variant="ghost"
+                className="font-semibold px-4"
+                asChild
+              >
+                <Link to="/">Dashboard</Link>
+              </Button>
+              <Button
+                variant="destructive"
+                className="font-semibold px-6"
+                onClick={() => logout()}
+                disabled={isPending}
+              >
+                {isPending ? "Keluar..." : "Logout"}
+              </Button>
+            </React.Fragment>
+          ) : (
+            <React.Fragment>
+              <Button
+                variant="ghost"
+                className="font-semibold px-4"
+                asChild
+              >
+                <Link to="/login">Log in</Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="font-semibold px-6"
+                asChild
+              >
+                <Link to="/register">Register</Link>
+              </Button>
+            </React.Fragment>
+          )}
         </Box>
       </Box>
 
@@ -46,7 +77,6 @@ export default function HomePage() {
       <Box className="relative w-full max-w-6xl mx-auto">
         <Box className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           <HeroSection />
-
           <FeatureCards />
         </Box>
 
