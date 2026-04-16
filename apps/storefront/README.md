@@ -1,73 +1,88 @@
-# React + TypeScript + Vite
+# UDN Multi-Game Top-Up Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sebuah platform web moden untuk pembelian mata wang dalam permainan (_top-up_) yang pantas, selamat, dan _type-safe_. Dibina dengan fokus utama pada pengalaman pengguna (_UX_) yang lancar melalui alur _Guest Checkout_ dan reka bentuk _E-sports Modern_ (Zelpoint-inspired) yang premium.
 
-Currently, two official plugins are available:
+## 🛠 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Frontend
 
-## React Compiler
+- **Framework:** React 19 + TypeScript
+- **Routing:** [TanStack Router](https://tanstack.com/router) (File-based, Type-safe with `beforeLoad` Guards)
+- **Data Fetching:** [TanStack Query v5](https://tanstack.com/query) (Server State Management)
+- **State Management:** - **Server State:** TanStack Query
+  - **Client State:** [Zustand](https://docs.pmnd.rs/zustand)
+- **Form Handling:** React-Hook-Form + Zod (Schema Validation)
+- **UI & Styling:** - [Hero UI](https://heroui.com/) & [Shadcn UI](https://ui.shadcn.com/)
+  - Tailwind CSS v4 + [CVA](https://cva.style/) (Class Variance Authority)
+- **Utilities:** `tailwind-merge` & `clsx` (via `cn()` helper)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📌 Ciri-Ciri Utama
 
-## Expanding the ESLint configuration
+- **Guest Checkout:** Pengguna boleh membeli terus tanpa perlu mendaftar/login.
+- **Real-time Nickname Validation:** Pengesahan ID pemain secara langsung melalui API menggunakan TanStack Query.
+- **Single Page Checkout:** Alur transaksi interaktif dalam satu halaman tanpa _reload_.
+- **Member Dashboard:** Sejarah transaksi dan simpanan profil ID permainan untuk pengguna berdaftar.
+- **Live Invoice Tracking:** Pemantauan status pembayaran secara masa nyata menggunakan _polling_ TanStack Query.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📂 Struktur Projek (Architecture)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Projek ini mengikuti seni bina **Feature-Based** dengan isolasi ketat:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+├── components/               # 🧩 GLOBAL UI
+│   ├── common/               # Komponen polimorfik (Box, Heading, Text) via CVA
+│   ├── layouts/              # Wrapper layout global (RootLayout)
+│   └── ui/                   # Base components (Hero UI / Shadcn)
+├── features/                 # 📦 DOMAIN BISNIS (Isolated)
+│   ├── auth/                 # Login/Register logic, Auth Hooks, local types
+│   ├── checkout/             # Checkout logic, Game ID validation
+│   └── home/                 # Landing components & banners
+├── middlewares/              # 🛡️ ROUTE GUARDS (requireAuth, requireGuest)
+├── store/                    # 📦 GLOBAL CLIENT STATE (useAuthStore, dsb)
+├── types/                    # 🌐 GLOBAL TYPES
+│   └── models/               # Entitas Database (User, Game, Transaction)
+├── routes/                   # 📍 ROUTING (TanStack Router Tree)
+└── lib/                      # 🛠️ UTILS (cn, axios, dsb)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📜 Peraturan Pembangunan (For AI Agents & Developers)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. **The Golden Rule:** Fitur di dalam `src/features/` **DILARANG** mengimpor kode secara langsung dari fitur lain. Gunakan `src/types/models` untuk entitas yang bersifat global.
+2. **Auth Guards:** Logika proteksi rute wajib ditempatkan di `src/middlewares/` dan dipanggil secara eksklusif pada properti `beforeLoad` di file rute. Jangan menggunakan komponen _wrapper_ manual.
+3. **Polymorphic UI:** Komponen dasar seperti `<Box>`, `<Heading>`, dan `<Text>` wajib menggunakan utilitas `cn()` (`tailwind-merge`) untuk mencegah bentrokan _class_ Tailwind.
+4. **Server State:** Gunakan `useQuery` untuk mengambil data dan `useMutation` untuk penghantaran data. Jangan gunakan `useEffect` untuk fetching data.
+5. **Styling:** Patuhi palet warna _Dark Mode_ Zelpoint (Background: `#0a0a0a`, Accent: `#0ea5e9`).
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🎨 Design System (Zelpoint Inspired)
+
+- **Primary (Accent):** `#0ea5e9` (Sky Blue / Cyan)
+- **Background:** `#0a0a0a` (True Black)
+- **Surface:** `#171717` (Dark Charcoal)
+- **Cards:** Menggunakan _gradient overlay_ bawah (`from-black/80`) untuk memastikan keterbacaan teks di atas gambar banner.
+
+## 🚀 Bermula (Getting Started)
+
+### Prasyarat
+
+- Node.js (Versi 18 ke atas)
+- NPM atau PNPM
+
+### Pemasangan
+
+1. Klon repositori ini:
+   ```bash
+   git clone https://github.com/muhammadsufyan/udn-topup-platform-fe.git
+   ```
+2. Masuk ke direktori projek:
+   ```bash
+   cd udn-topup-platform-fe
+   ```
+3. Pasang dependensi:
+   ```bash
+   npm install
+   ```
+4. Jalankan _development server_:
+   ```bash
+   npm run dev
+   ```
