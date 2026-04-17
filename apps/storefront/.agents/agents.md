@@ -45,5 +45,8 @@ This project has domain-specific skills and context files available. You MUST ac
 - `skills/accessibility` — ACTIVATE WHENEVER building interactive UI components. Trigger to ensure proper ARIA roles, keyboard navigation (tab-indexing), and screen reader compatibility.
 - `skills/seo` — ACTIVATE WHENEVER creating new page routes. Trigger to ensure semantic HTML tags (h1-h6 hierarchy) and appropriate meta data structures for web crawlers.
 - `skills/vite` — ACTIVATE WHENEVER touching build tools. Trigger when configuring `vite.config.ts`, handling environment variables (`.env`), or resolving module path aliases.
+- `skills/tanstack-query-best-practices` — ACTIVATE WHENEVER handling data fetching, caching, or state management. Trigger when using TanStack Query for API calls, mutations, or query invalidation.
+- `skills/tanstack-router-best-practices` — ACTIVATE WHENEVER handling routing or navigation. Trigger when using TanStack Router for route guards, nested routes, or route-based data loading.
+- `skills/heroui-react` — ACTIVATE WHENEVER using Hero UI components. Trigger when generating, integrating, or modifying Hero UI components. Trigger when customizing component variants, overriding default styles, or making sure the UI components work perfectly with Tailwind v4.
 
 **CRITICAL RULE:** All agents MUST read the files in the `context/` directory (`product_requirements.md`, `design_system.md`, `system_architecture.md`) before executing any task.
