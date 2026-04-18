@@ -5,8 +5,8 @@ import { Image } from "@/components/common/Image";
 import { IMAGES } from "@/constants/images";
 import { HeroSection, FeatureCards } from "../components";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
-import { Button } from "@/components/ui/button";
-import { Link } from "@tanstack/react-router";
+import { Button } from "@heroui/react";
+import { useNavigate } from "@tanstack/react-router";
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
@@ -14,6 +14,7 @@ import { useLogout } from "@/features/auth/hooks/useLogout";
 export default function HomePage() {
   const token = useAuthStore((state) => state.token);
   const { mutate: logout, isPending } = useLogout();
+  const navigate = useNavigate();
 
   return (
     <Box className="relative min-h-screen bg-background overflow-hidden selection:bg-primary/30 flex flex-col items-center justify-center p-6 lg:p-12">
@@ -39,15 +40,15 @@ export default function HomePage() {
               <Button
                 variant="ghost"
                 className="font-semibold px-4"
-                asChild
+                onPress={() => navigate({ to: "/" })}
               >
-                <Link to="/">Dashboard</Link>
+                Dashboard
               </Button>
               <Button
-                variant="destructive"
+                variant="danger"
                 className="font-semibold px-6"
-                onClick={() => logout()}
-                disabled={isPending}
+                onPress={() => logout()}
+                isDisabled={isPending}
               >
                 {isPending ? "Keluar..." : "Logout"}
               </Button>
@@ -57,16 +58,16 @@ export default function HomePage() {
               <Button
                 variant="ghost"
                 className="font-semibold px-4"
-                asChild
+                onPress={() => navigate({ to: "/login" })}
               >
-                <Link to="/login">Log in</Link>
+                Log in
               </Button>
               <Button
                 variant="outline"
                 className="font-semibold px-6"
-                asChild
+                onPress={() => navigate({ to: "/register" })}
               >
-                <Link to="/register">Register</Link>
+                Register
               </Button>
             </React.Fragment>
           )}

@@ -6,9 +6,7 @@ import { Mail, Lock, User as UserIcon, ArrowRight } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Input, Button } from "@heroui/react";
 
 import { registerSchema, type RegisterFormValues } from "../schemas/auth.schema";
 import { useRegister } from "../hooks/useRegister";
@@ -60,16 +58,15 @@ export default function RegisterPage() {
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-6"
       >
-        {/* Name Input */}
         <Box className="space-y-2">
-          <Label
+          <label
             htmlFor="name"
             className="block text-sm font-bold text-slate-800"
           >
             Nama Lengkap
-          </Label>
+          </label>
           <Box className="relative">
-            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <Box className="absolute z-10 inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <UserIcon className="w-5 h-5 text-slate-400" />
             </Box>
             <Input
@@ -77,22 +74,21 @@ export default function RegisterPage() {
               type="text"
               {...register("name")}
               placeholder="Contoh: John Doe"
-              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+              className="bg-white border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 pl-8 text-sm w-full py-2.5 h-auto pr-4"
             />
           </Box>
           {errors.name && <Text className="text-red-500 text-xs font-medium">{errors.name.message}</Text>}
         </Box>
 
-        {/* Email Input */}
         <Box className="space-y-2">
-          <Label
+          <label
             htmlFor="email"
             className="block text-sm font-bold text-slate-800"
           >
             Email
-          </Label>
+          </label>
           <Box className="relative">
-            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <Box className="absolute z-10 inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <Mail className="w-5 h-5 text-slate-400" />
             </Box>
             <Input
@@ -100,22 +96,21 @@ export default function RegisterPage() {
               type="email"
               {...register("email")}
               placeholder="Contoh: you@company.com"
-              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+              className="bg-white border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 pl-8 text-sm w-full py-2.5 h-auto pr-4"
             />
           </Box>
           {errors.email && <Text className="text-red-500 text-xs font-medium">{errors.email.message}</Text>}
         </Box>
 
-        {/* Password Input */}
         <Box className="space-y-2">
-          <Label
+          <label
             htmlFor="password"
             className="block text-sm font-bold text-slate-800"
           >
             Password
-          </Label>
-          <Box className="relative">
-            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+          </label>
+          <Box className="relative items-center flex">
+            <Box className="absolute z-10 inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <Lock className="w-5 h-5 text-slate-400" />
             </Box>
             <Input
@@ -123,22 +118,21 @@ export default function RegisterPage() {
               type="password"
               {...register("password")}
               placeholder="••••••••"
-              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+              className="bg-white border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 pl-8 text-sm w-full py-2.5 h-auto pr-4"
             />
           </Box>
           {errors.password && <Text className="text-red-500 text-xs font-medium">{errors.password.message}</Text>}
         </Box>
 
-        {/* Password Confirmation Input */}
         <Box className="space-y-2">
-          <Label
+          <label
             htmlFor="password_confirmation"
             className="block text-sm font-bold text-slate-800"
           >
             Konfirmasi Password
-          </Label>
-          <Box className="relative">
-            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+          </label>
+          <Box className="relative items-center flex">
+            <Box className="absolute z-10 inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <Lock className="w-5 h-5 text-slate-400" />
             </Box>
             <Input
@@ -146,7 +140,7 @@ export default function RegisterPage() {
               type="password"
               {...register("password_confirmation")}
               placeholder="••••••••"
-              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+              className="bg-white border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 pl-8 text-sm w-full py-2.5 h-auto pr-4"
             />
           </Box>
           {errors.password_confirmation && (
@@ -158,7 +152,7 @@ export default function RegisterPage() {
         <Box className="pt-4">
           <Button
             type="submit"
-            disabled={isPending}
+            isDisabled={isPending}
             className="w-full h-auto flex items-center justify-center py-3 px-4 bg-linear-to-r from-blue-600 to-blue-500 hover:to-blue-600 text-white text-[15px] font-bold rounded-xl shadow-[0_8px_20px_rgba(37,99,235,0.25)] border-0 disabled:opacity-70"
           >
             {isPending ? "Memproses..." : "Mulai Perjalanan Anda"}
