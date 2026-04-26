@@ -13,7 +13,7 @@ export const useLogin = () => {
     mutationFn: authService.login,
     onSuccess: (response: AuthApiResponse, variables: LoginFormValues) => {
       setToken(response.data.token, variables.remember);
-      navigate({ to: "/" });
+      navigate({ to: "/dashboard" });
     },
   });
 };

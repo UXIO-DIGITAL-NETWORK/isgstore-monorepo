@@ -7,7 +7,10 @@ export function RootLayout() {
     <Box className="min-h-screen bg-slate-50 font-sans">
       <Outlet />
 
-      <TanStackRouterDevtools initialIsOpen={false} />
+      <TanStackRouterDevtools
+        position="bottom-right"
+        initialIsOpen={false}
+      />
     </Box>
   );
 }

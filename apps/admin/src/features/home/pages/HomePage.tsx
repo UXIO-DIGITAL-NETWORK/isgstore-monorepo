@@ -41,7 +41,7 @@ export default function HomePage() {
                 className="font-semibold px-4"
                 asChild
               >
-                <Link to="/">Dashboard</Link>
+                <Link to="/dashboard">Dashboard</Link>
               </Button>
               <Button
                 variant="destructive"

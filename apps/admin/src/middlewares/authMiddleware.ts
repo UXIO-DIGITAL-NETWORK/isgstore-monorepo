@@ -13,6 +13,6 @@ export const requireAuth = () => {
 export const requireGuest = () => {
   const { token } = useAuthStore.getState();
   if (token) {
-    throw redirect({ to: "/" });
+    throw redirect({ to: "/dashboard" });
   }
 };

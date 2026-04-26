@@ -12,7 +12,7 @@ export const useRegister = () => {
     mutationFn: authService.register,
     onSuccess: (response: AuthApiResponse) => {
       setToken(response.data.token);
-      navigate({ to: "/" });
+      navigate({ to: "/dashboard" });
     },
   });
 };
