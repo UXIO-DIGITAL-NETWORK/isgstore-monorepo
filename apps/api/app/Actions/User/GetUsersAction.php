@@ -6,9 +6,14 @@ use App\Models\User;
 use App\DTOs\User\UserFilterDTO;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Log\CreateActivityLogDTO;
+use Illuminate\Support\Facades\Auth;
 
 class GetUsersAction
 {
+    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+
     public function execute(UserFilterDTO $dto): LengthAwarePaginator
     {
         $query = User::query();
@@ -61,6 +66,15 @@ class GetUsersAction
         }
 
         // Return hasil yang sudah di-paginate dan diurutkan dari yang terbaru
-        return $query->latest()->paginate($dto->perPage);
+        $result = $query->latest()->paginate($dto->perPage);
+
+        $this->activityLogAction->execute(new CreateActivityLogDTO(
+            userId: Auth::id(),
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent(),
+            message: "Fetched users list with filters"
+        ));
+
+        return $result;
     }
 }

@@ -4,13 +4,18 @@ namespace App\Actions\User;
 
 use App\Models\User;
 use App\DTOs\User\UserDTO;
+use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Log\CreateActivityLogDTO;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class CreateUserAction
 {
+    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+
     public function execute(UserDTO $dto): User
     {
-        return User::create([
+        $user = User::create([
             'role_id' => $dto->roleId,
             'name' => $dto->name,
             'email' => $dto->email,
@@ -21,5 +26,14 @@ class CreateUserAction
             'locale' => $dto->locale,
             'timezone' => $dto->timezone,
         ]);
+
+        $this->activityLogAction->execute(new CreateActivityLogDTO(
+            userId: Auth::id(), // ID of the admin who created the user
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent(),
+            message: "Created new user: {$user->email}"
+        ));
+
+        return $user;
     }
 }

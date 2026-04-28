@@ -4,10 +4,15 @@ namespace App\Actions\User;
 
 use App\Models\User;
 use App\DTOs\User\UserDTO;
+use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Log\CreateActivityLogDTO;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class UpdateUserAction
 {
+    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+
     public function execute(User $user, UserDTO $dto): User
     {
         $data = [
@@ -26,6 +31,13 @@ class UpdateUserAction
         }
 
         $user->update($data);
+
+        $this->activityLogAction->execute(new CreateActivityLogDTO(
+            userId: Auth::id() ?? $user->id,
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent(),
+            message: "Updated user details: {$user->email}"
+        ));
 
         return $user->fresh();
     }

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Actions\Auth;
 
 use App\DTOs\Auth\LoginDTO;
+use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Log\CreateActivityLogDTO;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class LoginAction
 {
+    public function __construct(private CreateActivityLogAction $activityLogAction) {}
     /**
      * Execute the login action.
      *
@@ -37,6 +40,14 @@ class LoginAction
 
         // Issue Refresh Token (valid for 30 days)
         $refreshToken = $user->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+
+        // Log activity
+        $this->activityLogAction->execute(new CreateActivityLogDTO(
+            userId: $user->id,
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent(),
+            message: "User logged in successfully"
+        ));
 
         return [
             'access_token'  => $accessToken,

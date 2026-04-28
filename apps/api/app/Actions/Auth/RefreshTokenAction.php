@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Actions\Auth;
 
 use App\DTOs\Auth\RefreshTokenDTO;
+use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Log\CreateActivityLogDTO;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class RefreshTokenAction
 {
+    public function __construct(private CreateActivityLogAction $activityLogAction) {}
     /**
      * Execute the refresh token action.
      *
@@ -38,6 +41,14 @@ class RefreshTokenAction
 
         // Issue New Refresh Token (valid for 30 days)
         $newRefreshToken = $user->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+
+        // Log activity
+        $this->activityLogAction->execute(new CreateActivityLogDTO(
+            userId: $user->id,
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent(),
+            message: "User refreshed access token"
+        ));
 
         return [
             'access_token'  => $newAccessToken,

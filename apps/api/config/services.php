@@ -22,6 +22,12 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'monetapay' => [
+        'merchant_id' => env('MONETAPAY_MERCHANT_ID'),
+        'api_key' => env('MONETAPAY_API_KEY'),
+        'is_production' => env('MONETAPAY_IS_PRODUCTION', false),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

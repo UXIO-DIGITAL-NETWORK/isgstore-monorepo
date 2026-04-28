@@ -3,11 +3,14 @@
 namespace App\Actions\User;
 
 use App\Models\User;
+use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Log\CreateActivityLogDTO;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class DeleteUserAction
 {
+    public function __construct(private CreateActivityLogAction $activityLogAction) {}
     /**
      * Mengeksekusi proses penghapusan user dengan proteksi keamanan.
      *
@@ -28,6 +31,18 @@ class DeleteUserAction
             abort(403, 'Akun Administrator tidak boleh dihapus dari sistem untuk alasan keamanan.');
         }
 
-        return $user->delete();
+        $email = $user->email;
+        $deleted = $user->delete();
+
+        if ($deleted) {
+            $this->activityLogAction->execute(new CreateActivityLogDTO(
+                userId: Auth::id(),
+                ipAddress: request()->ip(),
+                userAgent: request()->userAgent(),
+                message: "Deleted user account: {$email}"
+            ));
+        }
+
+        return $deleted;
     }
 }
