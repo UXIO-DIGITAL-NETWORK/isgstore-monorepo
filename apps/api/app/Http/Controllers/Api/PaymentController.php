@@ -22,13 +22,16 @@ class PaymentController extends Controller
     {
         $perPage = $request->query('per_page', 15);
         $payments = $action->execute((int) $perPage);
+
+        // Opsional: Jika ingin disamakan dengan format response lain
+        // return $this->successResponse(PaymentResource::collection($payments)->response()->getData(true), 'Data payments berhasil diambil');
         return PaymentResource::collection($payments);
     }
 
     public function store(StorePaymentRequest $request, CreatePaymentAction $action)
     {
         $payment = $action->execute($request->toDTO());
-        return $this->success(
+        return $this->successResponse(
             new PaymentResource($payment->load(['order', 'paymentMethod'])),
             'Payment created successfully',
             201
@@ -37,7 +40,7 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
-        return $this->success(
+        return $this->successResponse(
             new PaymentResource($payment->load(['order', 'paymentMethod'])),
             'Payment retrieved successfully'
         );
@@ -46,7 +49,7 @@ class PaymentController extends Controller
     public function update(UpdatePaymentRequest $request, Payment $payment, UpdatePaymentAction $action)
     {
         $payment = $action->execute($payment, $request->toDTO());
-        return $this->success(
+        return $this->successResponse(
             new PaymentResource($payment->load(['order', 'paymentMethod'])),
             'Payment updated successfully'
         );
@@ -55,6 +58,6 @@ class PaymentController extends Controller
     public function destroy(Payment $payment, DeletePaymentAction $action)
     {
         $action->execute($payment);
-        return $this->success(null, 'Payment deleted successfully');
+        return $this->successResponse(null, 'Payment deleted successfully');
     }
 }

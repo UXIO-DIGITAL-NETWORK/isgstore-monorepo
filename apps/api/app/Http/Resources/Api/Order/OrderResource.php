@@ -3,7 +3,6 @@
 namespace App\Http\Resources\Api\Order;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\Api\User\UserResource;
 use App\Http\Resources\Api\Product\ProductResource;
