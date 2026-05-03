@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('phone')->unique();
-            $table->decimal('balance', 15, 2)->default(0);
+            $table->integer('balance', 15, 2)->default(0);
             $table->integer('point')->default(0);
             $table->string('locale')->default('id');
             $table->string('timezone')->default('Asia/Jakarta');

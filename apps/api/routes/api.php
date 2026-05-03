@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\PointHistoryController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\AnnouncementController;
+use App\Http\Controllers\Api\WebhookDigiflazzController;
 // System Routes
 Route::get('/ping', function () {
     return response()->json(['status' => 'success', 'message' => 'pong']);
@@ -36,6 +37,8 @@ Route::get('/health', function () {
 Route::prefix('v1/payments')->group(function () {
     Route::post('/monetapay/callback', MonetapayCallbackController::class);
 });
+
+Route::post('/v1/webhook/digiflazz', [WebhookDigiflazzController::class, 'handle']);
 
 // Authentication Routes
 Route::prefix('v1/auth')->group(function () {
@@ -57,6 +60,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
             'data' => $request->user()
         ]);
     });
+
+    Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
 
     // CRUD Users
     Route::prefix('users')->group(function () {
