@@ -118,7 +118,7 @@ class HandleDigiflazzWebhookAction
                     ],
                     [
                         'name' => '📊 Status',
-      x                  'value' => "~~$oldStatus~~ ➔ **$newStatus**",
+                       'value' => "~~$oldStatus~~ ➔ **$newStatus**",
                         'inline' => false
                     ],
                     [
