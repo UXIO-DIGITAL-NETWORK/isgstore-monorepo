@@ -9,10 +9,11 @@ class SupplierSeeder extends Seeder
 {
     public function run(): void
     {
+        $now = now();
         $suppliers = [
-            ['name' => 'Digiflazz',       'status' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'VIP Reseller',     'status' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Internal System',  'status' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 1, 'name' => 'Digiflazz',       'status' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'name' => 'VIP Reseller',    'status' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 3, 'name' => 'Internal System', 'status' => true, 'created_at' => $now, 'updated_at' => $now],
         ];
 
         DB::table('suppliers')->insert($suppliers);

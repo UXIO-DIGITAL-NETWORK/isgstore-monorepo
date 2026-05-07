@@ -13,23 +13,16 @@ class SupplierProductSeeder extends Seeder
         $now = now();
         $items = [];
 
-        // Map every product to supplier based on its category's supplier
+        // Ambil semua produk yang baru saja di-seed
         $products = Product::all();
-        foreach ($products as $product) {
-            // Categories 1-12 → Digiflazz (supplier 1)
-            // Categories 13-15 → Digiflazz (supplier 1)
-            // Categories 16-19 → VIP Reseller (supplier 2)
-            // Categories 20-25 → Internal System (supplier 3)
-            $supplierId = match (true) {
-                $product->category_id <= 15 => 1,
-                $product->category_id <= 19 => 2,
-                default => 3,
-            };
 
+        foreach ($products as $product) {
             $items[] = [
                 'product_id'             => $product->id,
-                'supplier_id'            => $supplierId,
-                'buyer_sku_code'         => strtolower($product->code),
+                // Karena data JSON murni dari Digiflazz, kita assign ke supplier 1
+                'supplier_id'            => 1,
+                // buyer_sku_code diisi otomatis menggunakan property code produk
+                'buyer_sku_code'         => $product->code,
                 'price'                  => $product->price_modal,
                 'buyer_product_status'   => true,
                 'seller_product_status'  => true,
@@ -39,6 +32,9 @@ class SupplierProductSeeder extends Seeder
             ];
         }
 
-        DB::table('supplier_products')->insert($items);
+        // Insert menggunakan chunk agar tidak membebani memory
+        foreach (array_chunk($items, 100) as $chunk) {
+            DB::table('supplier_products')->insert($chunk);
+        }
     }
 }

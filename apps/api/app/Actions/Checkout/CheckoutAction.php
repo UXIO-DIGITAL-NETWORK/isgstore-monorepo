@@ -25,32 +25,44 @@ class CheckoutAction
     public function execute(CheckoutDTO $dto): array
     {
         return DB::transaction(function () use ($dto) {
-            $user = User::with('role')->findOrFail($dto->userId);
+            // 1. Pengecekan User Opsional (Guest = null)
+            $user = $dto->userId ? User::with('role')->find($dto->userId) : null;
             $product = Product::with(['supplierProducts' => fn($q) => $q->where('is_active', true)])
                 ->findOrFail($dto->productId);
             $paymentMethod = PaymentMethod::findOrFail($dto->paymentMethodId);
 
-            // 1. Tentukan Harga Jual berdasarkan Role User
-            $sellingPrice = match (strtolower($user->role->name)) {
+            // Validasi Keamanan Guest
+            if (!$user && $paymentMethod->code === 'balance') {
+                throw new Exception("Saldo internal hanya untuk member. Silakan login atau pilih metode pembayaran E-Wallet/QRIS.");
+            }
+
+            // Validasi Kontak Guest (Pastikan DTO memiliki properti guestContact)
+            if (!$user && empty($dto->guestContact)) {
+                throw new Exception("Nomor WhatsApp/Kontak wajib diisi untuk pelanggan tamu.");
+            }
+
+            // 2. Tentukan Harga Jual (Guest mendapat harga standar member)
+            $roleName = $user ? strtolower($user->role->name) : 'guest';
+            $sellingPrice = match ($roleName) {
                 'vip' => $product->price_vip,
                 'reseller' => $product->price_reseller,
                 'agent' => $product->price_agent,
                 default => $product->price_member,
             };
 
-            // Hitung Margin (Harga Jual - Harga Modal/Harga Provider saat ini)
+            // Hitung Margin
             $activeSupplier = $product->supplierProducts->first();
             if (!$activeSupplier) {
                 throw new Exception("Produk sedang tidak tersedia (Tidak ada supplier aktif).");
             }
             $margin = $sellingPrice - $activeSupplier->price;
 
-            // FAIL-SAFE: Jangan proses jika margin minus (harga modal tiba-tiba lebih mahal dari harga jual)
+            // FAIL-SAFE: Jangan proses jika margin minus
             if ($margin < 0) {
                 throw new Exception("Transaksi dibatalkan otomatis: Harga modal supplier sedang naik.");
             }
 
-            // 2. Buat Invoice & Reference ID
+            // 3. Buat Invoice & Reference ID
             $invoiceNumber = 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(6));
             $referenceId = 'PAY-' . $invoiceNumber . '-01';
 
@@ -58,10 +70,11 @@ class CheckoutAction
             $adminFee = $paymentMethod->fee_flat + (intval($sellingPrice * ($paymentMethod->fee_percent / 100)));
             $grossAmount = $sellingPrice + $adminFee;
 
-            // 3. Simpan Order
+            // 4. Simpan Order (Mendukung Nullable User ID dan mengisi Guest Contact)
             $order = Order::create([
                 'invoice_number' => $invoiceNumber,
-                'user_id' => $user->id,
+                'user_id' => $user?->id,
+                'guest_contact' => $user ? null : $dto->guestContact,
                 'product_id' => $product->id,
                 'supplier_id' => $activeSupplier->supplier_id,
                 'target_uid' => $dto->targetUid,
@@ -71,7 +84,7 @@ class CheckoutAction
                 'status' => 'Pending',
             ]);
 
-            // 4. Simpan Payment
+            // 5. Simpan Payment
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'payment_method_id' => $paymentMethod->id,
@@ -81,36 +94,35 @@ class CheckoutAction
                 'status' => '1', // 1: Pending
             ]);
 
-            // 5. EKSEKUSI PEMBAYARAN (Khusus Internal Balance / Saldo Akun)
-            // PERBAIKAN: Menggunakan kolom 'code' bernilai 'balance'
-            if ($paymentMethod->code === 'balance') {
+            // 6. EKSEKUSI PEMBAYARAN (Khusus Internal Balance)
+            if ($paymentMethod->code === 'balance' && $user) {
                 if ($user->balance < $grossAmount) {
                     throw new Exception("Saldo tidak mencukupi. Sisa saldo: Rp " . number_format($user->balance));
                 }
 
-                // Potong Saldo
                 $user->decrement('balance', $grossAmount);
 
-                // Update Status Payment
                 $payment->update([
                     'status' => '3', // 3: Success
                     'paid_at' => now(),
                 ]);
 
-                // TEMBAK KE DIGIFLAZZ (Hanya jika payment success)
+                // Tembak ke Digiflazz
                 $order = $this->digiflazzAction->execute($order);
             }
 
-            // Catat Log
+            // Simpan ke sesi agar guest dapat di-redirect ke halaman sukses
+            session()->put('last_order_invoice', $order->invoice_number);
+
+            // Catat Log (Menggunakan user_id opsional)
             $this->logAction->execute(new CreateActivityLogDTO(
-                userId: $user->id,
+                userId: $user?->id,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                message: "Membuat transaksi {$invoiceNumber} untuk produk {$product->name}"
+                message: "Membuat transaksi {$invoiceNumber} untuk produk {$product->name}" . (!$user ? " (Guest)" : "")
             ));
 
             return [
-                // PERBAIKAN: Gunakan fresh() agar API merespons dengan status terbaru dari Digiflazz
                 'order' => $order->fresh(),
                 'payment' => $payment
             ];

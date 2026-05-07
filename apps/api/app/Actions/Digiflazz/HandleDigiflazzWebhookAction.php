@@ -89,7 +89,7 @@ class HandleDigiflazzWebhookAction
     private function sendToDiscord(Order $order, string $oldStatus, string $newStatus): void
     {
         try {
-            $webhookUrl = env('DISCORD_WEBHOOK_LOG_URL');
+            $webhookUrl = config('services.discord.webhook_log_url');
 
             // Jangan eksekusi jika URL tidak ada di .env
             if (!$webhookUrl) return;

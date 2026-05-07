@@ -11,8 +11,9 @@ class WebhookDigiflazzController extends Controller
 {
     public function handle(Request $request, HandleDigiflazzWebhookAction $action)
     {
-        // 1. Ambil Secret dari .env
-        $secret = env('DIGIFLAZZ_WEBHOOK_SECRET');
+        // 1. Ambil Secret dari config (BUKAN env)
+        $secret = config('services.digiflazz.webhook_secret');
+
 
         // 2. Ambil raw body dari request (standar keamanan webhook)
         $postData = $request->getContent();

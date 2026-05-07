@@ -14,26 +14,28 @@ class CheckoutController extends Controller
 
     public function store(Request $request, CheckoutAction $action)
     {
+        // Validasi dinamis: guest_contact wajib jika user tidak login
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'payment_method_id' => 'required|exists:payment_methods,id',
             'target_uid' => 'required|string',
             'target_server' => 'nullable|string',
+            'guest_contact' => auth()->check() ? 'nullable|string' : 'required|string|max:20',
         ]);
 
         try {
             $dto = new CheckoutDTO(
-                userId: auth()->id(),
+                userId: auth()->id(), // Akan mereturn null jika tidak login
                 productId: $request->product_id,
                 paymentMethodId: $request->payment_method_id,
                 targetUid: $request->target_uid,
-                targetServer: $request->target_server
+                targetServer: $request->target_server,
+                guestContact: $request->guest_contact
             );
 
             $result = $action->execute($dto);
 
             return $this->successResponse($result, 'Checkout berhasil diproses', 201);
-
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }

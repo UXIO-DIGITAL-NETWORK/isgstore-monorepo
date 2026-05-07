@@ -11,15 +11,14 @@ class ProductSeeder extends Seeder
     {
         $now = now();
         $products = [];
-        $idx = 0;
 
         // Helper: tiered pricing – modal is base, member +20%, vip +15%, reseller +10%, agent +5%
         $p = function ($catId, $subCatId, $name, $code, $modal) use (&$products, $now) {
             $products[] = [
                 'category_id'    => $catId,
-                'sub_category_id'=> $subCatId,
+                'sub_category_id' => $subCatId,
                 'name'           => $name,
-                'code'           => $code,
+                'code'           => $code, // Ini adalah buyer_sku_code
                 'price_modal'    => $modal,
                 'price_member'   => (int)($modal * 1.20),
                 'price_vip'      => (int)($modal * 1.15),
@@ -31,80 +30,96 @@ class ProductSeeder extends Seeder
             ];
         };
 
-        // MLBB Diamond (cat 1, sub 1)
-        $p(1,1,'5 Diamond MLBB','MLBB-5D',1500);
-        $p(1,1,'12 Diamond MLBB','MLBB-12D',3600);
-        $p(1,1,'19 Diamond MLBB','MLBB-19D',5700);
-        $p(1,1,'28 Diamond MLBB','MLBB-28D',8400);
-        $p(1,1,'44 Diamond MLBB','MLBB-44D',12500);
-        $p(1,1,'59 Diamond MLBB','MLBB-59D',16800);
-        $p(1,1,'86 Diamond MLBB','MLBB-86D',24000);
-        $p(1,1,'170 Diamond MLBB','MLBB-170D',46000);
-        $p(1,1,'240 Diamond MLBB','MLBB-240D',64000);
-        $p(1,1,'296 Diamond MLBB','MLBB-296D',79000);
-        $p(1,1,'408 Diamond MLBB','MLBB-408D',108000);
-        $p(1,1,'568 Diamond MLBB','MLBB-568D',148000);
-        $p(1,1,'875 Diamond MLBB','MLBB-875D',228000);
-        $p(1,1,'2010 Diamond MLBB','MLBB-2010D',520000);
-        // MLBB Weekly Diamond Pass (cat 1, sub 2)
-        $p(1,2,'Weekly Diamond Pass','MLBB-WDP',28000);
-        // MLBB Starlight (cat 1, sub 3)
-        $p(1,3,'Starlight Member','MLBB-SL',145000);
-        $p(1,3,'Starlight Plus','MLBB-SLP',350000);
+        // GAMES
+        $p(1, 1, 'MOBILELEGEND - 5 Diamond', 'ml5', 1375);
+        $p(1, 1, 'MOBILELEGEND - 10 Diamond', 'ml10', 2855);
+        $p(1, 1, 'MOBILELEGEND - 12 Diamond', 'ml12', 3303);
+        $p(1, 2, 'MOBILE LEGENDS Weekly Diamond Pass', 'mlweek', 27997);
+        $p(3, 8, 'Free Fire 12 Diamond', 'ff12', 1811);
+        $p(3, 8, 'Free Fire 50 Diamond', 'ff50', 6330);
+        $p(3, 8, 'Free Fire 70 Diamond', 'ff70', 8955);
+        $p(3, 8, 'Free Fire 140 Diamond', 'ff140', 18212);
+        $p(3, 8, 'Free Fire 355 Diamond', 'ff355', 44800);
+        $p(9, 14, 'Valorant 475 VP', 'val475', 52140);
 
-        // Genshin Impact (cat 2, sub 5=Genesis Crystal, sub 6=Welkin)
-        $p(2,5,'60 Genesis Crystal','GI-60GC',16000);
-        $p(2,5,'300+30 Genesis Crystal','GI-330GC',79000);
-        $p(2,5,'980+110 Genesis Crystal','GI-1090GC',249000);
-        $p(2,5,'1980+260 Genesis Crystal','GI-2240GC',479000);
-        $p(2,5,'3280+600 Genesis Crystal','GI-3880GC',799000);
-        $p(2,5,'6480+1600 Genesis Crystal','GI-8080GC',1599000);
-        $p(2,6,'Blessing of the Welkin Moon','GI-WELKIN',75000);
-        $p(2,7,'Gnostic Hymn','GI-BP',165000);
+        // PULSA
+        $p(11, 30, 'Axis 5.000', 'ax5', 5899);
+        $p(11, 30, 'Axis 10.000', 'ax10', 10865);
+        $p(11, 30, 'by.U 10.000', 'byu10', 10355);
+        $p(11, 32, 'Indosat 5.000', 'i5', 6685);
+        $p(11, 32, 'Indosat 10.000', 'i10', 10850);
+        $p(11, 32, 'Indosat 20.000', 'i20', 20565);
+        $p(11, 32, 'Indosat 25.000', 'i25', 25155);
+        $p(11, 32, 'Indosat 30.000', 'i30', 30575);
+        $p(11, 32, 'Indosat 50.000', 'i50', 49616);
+        $p(11, 33, 'Telkomsel 5.000', 's5', 5222);
+        $p(11, 33, 'Telkomsel 10.000', 's10', 10190);
+        $p(11, 33, 'Telkomsel 15.000', 's15', 15010);
+        $p(11, 33, 'Telkomsel 20.000', 's20', 19860);
+        $p(11, 33, 'Telkomsel 25.000', 's25', 24640);
+        $p(11, 33, 'Telkomsel 30.000', 's30', 29825);
+        $p(11, 33, 'Telkomsel 50.000', 's50', 49310);
+        $p(11, 33, 'Telkomsel 100.000', 's100', 98850);
+        $p(11, 34, 'Smartfren 10.000', 'sm10', 10005);
+        $p(11, 35, 'Three 5.000', 't5', 5319);
+        $p(11, 35, 'Three 10.000', 't10', 11330);
+        $p(11, 35, 'Three 20.000', 't20', 20500);
+        $p(11, 36, 'Xl 5.000', 'x5', 5865);
+        $p(11, 36, 'Xl 10.000', 'x10', 10825);
 
-        // Free Fire (cat 3, sub 8=Diamond)
-        $p(3,8,'5 Diamond FF','FF-5D',1200);
-        $p(3,8,'12 Diamond FF','FF-12D',2400);
-        $p(3,8,'50 Diamond FF','FF-50D',7500);
-        $p(3,8,'70 Diamond FF','FF-70D',10000);
-        $p(3,8,'140 Diamond FF','FF-140D',20000);
-        $p(3,8,'355 Diamond FF','FF-355D',50000);
-        $p(3,8,'720 Diamond FF','FF-720D',100000);
-        $p(3,8,'2180 Diamond FF','FF-2180D',300000);
+        // DATA
+        $p(12, 40, 'Axis Data SS 2 GB 3 Hari', 'axdss2', 9630);
+        $p(12, 40, 'Axis Data Jawa 2.5 GB 5 Hari', 'axdj1', 12960);
+        $p(12, 41, 'Indosat Yellow 1 GB 1 Hari', 'yellow1', 5855);
+        $p(12, 41, 'Indosat Freedom Internet 3 GB 3 Hari', 'if3g3d', 11905);
+        $p(12, 41, 'Indosat Freedom Internet 2.5 GB 5 Hari', 'if2', 13100);
+        $p(12, 41, 'Indosat Freedom Internet 3 GB 28 Hari', 'if3g30d', 21210);
+        $p(12, 41, 'Indosat Freedom Internet 5.5 GB 28 Hari', 'if5g30d', 34625);
+        $p(12, 42, 'Telkomsel Data Flash 1 GB 30 Hari', 'flash1', 11570);
+        $p(12, 42, 'Telkomsel Data Flash 3 GB 30 Hari', 'flash3', 21025);
+        $p(12, 42, 'Telkomsel Data Flash 2 GB 30 Hari', 'flash2', 26000);
+        $p(12, 43, 'XL Xtra Combo Flex S 28 Hari', 'flexs', 31980);
+        $p(12, 44, 'Tri Data Happy 1.5 GB 1 Hari', 'happy1', 6505);
+        $p(12, 44, 'Tri Data Happy 3 GB 3 Hari', 'happy3', 11680);
+        $p(12, 45, 'Smartfren Data Unlimited Harian 1 GB 7 Hari', 'smdu1', 22210);
+        $p(12, 45, 'Smartfren Data Unlimited Harian 2 GB 28 Hari', 'smdu2', 91375);
 
-        // PUBG Mobile (cat 4, sub 11=UC)
-        $p(4,11,'60 UC','PUBGM-60UC',15000);
-        $p(4,11,'325 UC','PUBGM-325UC',75000);
-        $p(4,11,'660 UC','PUBGM-660UC',149000);
-        $p(4,11,'1800 UC','PUBGM-1800UC',379000);
-        $p(4,11,'3850 UC','PUBGM-3850UC',779000);
-        $p(4,11,'8100 UC','PUBGM-8100UC',1559000);
+        // E-MONEY
+        $p(13, 50, 'Cek Nama Pengguna DANA', 'danacek', 10);
+        $p(13, 50, 'DANA 20.000', 'dana20', 20135);
+        $p(13, 50, 'DANA 50.000', 'dana50', 50150);
+        $p(13, 51, 'Cek Nama Pengguna Gopay', 'gopaycek', 10);
+        $p(13, 51, 'Go Pay 50.000', 'go50', 50325);
+        $p(13, 51, 'Go Pay 100.000', 'go100', 101000);
+        $p(13, 52, 'Cek Nama Pengguna OVO', 'ovocek', 7);
+        $p(13, 52, 'OVO 50.000', 'ovo50', 50680);
+        $p(13, 52, 'OVO 100.000', 'ovo100', 100605);
+        $p(13, 53, 'SHOPEE PAY 50.000', 'shopee50', 50125);
+        $p(13, 53, 'SHOPEE PAY 100.000', 'shopee100', 100325);
 
-        // Valorant (cat 9, sub 14=VP)
-        $p(9,14,'125 VP','VAL-125VP',15000);
-        $p(9,14,'420 VP','VAL-420VP',50000);
-        $p(9,14,'700 VP','VAL-700VP',80000);
-        $p(9,14,'1375 VP','VAL-1375VP',150000);
-        $p(9,14,'2400 VP','VAL-2400VP',250000);
-        $p(9,14,'4000 VP','VAL-4000VP',400000);
-        $p(9,14,'8150 VP','VAL-8150VP',800000);
+        // PPOB
+        $p(14, 60, 'PLN 20.000', 'pln20', 21800);
+        $p(14, 60, 'PLN 50.000', 'pln50', 51805);
+        $p(14, 60, 'PLN 100.000', 'pln100', 101985);
+        $p(14, 60, 'PLN 1.000.000', 'pln1000', 1001800);
+        $p(14, 61, 'K-Vision & GOL Paket CLING (CL01) 30 Hari', 'kvision30d', 19160);
+        $p(14, 61, 'K-Vision & GOL Paket CLING (CL06) 180 Hari', 'kvision180d', 81674);
+        $p(14, 61, 'Pertagas 20.000', 'pertagas20', 21935);
+        $p(14, 62, 'Telkomsel Telepon Pas 10.000', 'pas10', 6510);
+        $p(14, 62, 'Telkomsel Telepon Pas 20.000', 'pas20', 15655);
+        $p(14, 62, 'Telkomsel Telepon Pas 50.000', 'pas50', 19625);
+        $p(14, 63, 'Aktivasi Perdana Axis 3 GB 60 Hari', 'axp3g60d', 13905);
+        $p(14, 63, 'Aktivasi Perdana Tri Happy S+ 30 Hari', 'tacthappys', 20500);
+        $p(14, 63, 'Indosat Tambah Masa Aktif Kartu 90 Hari', 'iactive90', 32360);
+        $p(14, 63, 'Tri Tambah Masa Aktif Kartu 4 Bulan', 'tactive4m', 3480);
+        $p(14, 64, 'Aktivasi Voucher Axis 1 GB 1 Hari', 'vax1', 6320);
+        $p(14, 64, 'Aktivasi Voucher Axis 3 GB 3 Hari', 'vax2', 10310);
+        $p(14, 64, 'Aktivasi Voucher XL XTRA HotRod 3GB', 'hotrod3g10d', 18199);
+        $p(14, 64, 'Aktivasi Voucher XL Xtra Combo Flex', 'vflexs', 31908);
+        $p(14, 64, 'Voucher Telkomsel 2.5 GB 5 Hari', 'vs2g5d', 12960);
 
-        // Steam Wallet (cat 10, sub 16-21)
-        $p(10,16,'Steam Wallet IDR 12.000','STEAM-12K',12000);
-        $p(10,17,'Steam Wallet IDR 45.000','STEAM-45K',45000);
-        $p(10,18,'Steam Wallet IDR 60.000','STEAM-60K',60000);
-        $p(10,19,'Steam Wallet IDR 90.000','STEAM-90K',90000);
-        $p(10,20,'Steam Wallet IDR 120.000','STEAM-120K',120000);
-        $p(10,21,'Steam Wallet IDR 250.000','STEAM-250K',250000);
-
-        // Google Play (cat 16, sub 22-27)
-        $p(16,22,'Google Play IDR 20.000','GPLAY-20K',20000);
-        $p(16,23,'Google Play IDR 50.000','GPLAY-50K',50000);
-        $p(16,24,'Google Play IDR 100.000','GPLAY-100K',100000);
-        $p(16,25,'Google Play IDR 150.000','GPLAY-150K',150000);
-        $p(16,26,'Google Play IDR 300.000','GPLAY-300K',300000);
-        $p(16,27,'Google Play IDR 500.000','GPLAY-500K',500000);
-
-        DB::table('products')->insert($products);
+        foreach (array_chunk($products, 100) as $chunk) {
+            DB::table('products')->insert($chunk);
+        }
     }
 }

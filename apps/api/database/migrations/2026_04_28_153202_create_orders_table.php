@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('invoice_number')->unique()->comment('Format: INV-20260428-XXXX. Ref ID Digiflazz');
-            $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->restrictOnDelete();
+            // Tambahkan kolom kontak untuk mengirimkan bukti/invoice via WA
+            $table->string('guest_contact', 20)->nullable();
             $table->foreignId('product_id')->constrained('products')->restrictOnDelete();
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->restrictOnDelete();
             $table->string('target_uid')->nullable()->comment('Dikirim sebagai customer_no ke Digiflazz');
