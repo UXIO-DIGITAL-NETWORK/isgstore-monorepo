@@ -39,6 +39,7 @@ Route::prefix('v1/payments')->group(function () {
 });
 
 Route::post('/v1/webhook/digiflazz', [WebhookDigiflazzController::class, 'handle']);
+Route::post('/v1/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
 
 // Authentication Routes
 Route::prefix('v1/auth')->group(function () {
@@ -60,8 +61,6 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
             'data' => $request->user()
         ]);
     });
-
-    Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
 
     // CRUD Users
     Route::prefix('users')->group(function () {
