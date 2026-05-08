@@ -29,7 +29,7 @@ class StoreCategoryRequest extends FormRequest
             'code' => ['required', 'string', 'max:255', 'unique:categories,code'],
             'validasi_nickname' => ['nullable', 'string', 'max:255'],
             'region' => ['nullable', 'string', 'max:255'],
-            'logo' => ['nullable', 'string', 'max:255'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'boolean'],
         ];
@@ -43,7 +43,7 @@ class StoreCategoryRequest extends FormRequest
             code: $this->validated('code'),
             validasiNickname: $this->validated('validasi_nickname'),
             region: $this->validated('region'),
-            logo: $this->validated('logo'),
+            logo: $this->file('logo'),
             description: $this->validated('description'),
             status: $this->validated('status')
         );

@@ -26,7 +26,7 @@ class UpdateAnnouncementRequest extends FormRequest
         return [
             'category_id' => ['nullable', 'exists:categories,id'],
             'content'     => ['required', 'string'],
-            'image_path'  => ['nullable', 'string', 'max:255'],
+            'image_path'  => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'is_active'   => ['nullable', 'boolean'],
         ];
     }
@@ -36,7 +36,7 @@ class UpdateAnnouncementRequest extends FormRequest
         return new UpdateAnnouncementDTO(
             categoryId: $this->validated('category_id') ? (int) $this->validated('category_id') : null,
             content: $this->validated('content'),
-            imagePath: $this->validated('image_path'),
+            imagePath: $this->file('image_path'),
             isActive: (bool) $this->validated('is_active', true),
         );
     }

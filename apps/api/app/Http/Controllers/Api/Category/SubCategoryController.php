@@ -20,7 +20,7 @@ class SubCategoryController extends Controller
     public function index(GetSubCategoriesAction $action)
     {
         $subCategories = $action->execute(15);
-        
+
         return $this->successResponse([
             'data' => SubCategoryResource::collection($subCategories),
             'meta' => [

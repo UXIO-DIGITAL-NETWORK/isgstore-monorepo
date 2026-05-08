@@ -10,7 +10,7 @@ readonly class UpdateCategoryDTO
         public string $code,
         public ?string $validasiNickname,
         public ?string $region,
-        public ?string $logo,
+        public \Illuminate\Http\UploadedFile|string|null $logo,
         public ?string $description,
         public bool $status
     ) {}

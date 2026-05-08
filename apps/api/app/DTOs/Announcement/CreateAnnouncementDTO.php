@@ -7,7 +7,7 @@ readonly class CreateAnnouncementDTO
     public function __construct(
         public ?int $categoryId,
         public string $content,
-        public ?string $imagePath,
+        public \Illuminate\Http\UploadedFile|string|null $imagePath,
         public bool $isActive,
     ) {}
 }

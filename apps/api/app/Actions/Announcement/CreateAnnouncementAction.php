@@ -14,10 +14,16 @@ class CreateAnnouncementAction
 
     public function execute(CreateAnnouncementDTO $dto): Announcement
     {
+        $imagePath = $dto->imagePath;
+
+        if ($dto->imagePath instanceof \Illuminate\Http\UploadedFile) {
+            $imagePath = $dto->imagePath->store('announcements/images', 'public');
+        }
+
         $announcement = Announcement::create([
             'category_id' => $dto->categoryId,
             'content'     => $dto->content,
-            'image_path'  => $dto->imagePath,
+            'image_path'  => $imagePath,
             'is_active'   => $dto->isActive,
         ]);
 

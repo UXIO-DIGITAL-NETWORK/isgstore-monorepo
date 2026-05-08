@@ -14,10 +14,16 @@ class CreateBannerAction
 
     public function execute(CreateBannerDTO $dto): Banner
     {
+        $imagePath = $dto->imagePath;
+
+        if ($dto->imagePath instanceof \Illuminate\Http\UploadedFile) {
+            $imagePath = $dto->imagePath->store('banners/images', 'public');
+        }
+
         $banner = Banner::create([
             'category_id' => $dto->categoryId,
             'name'        => $dto->name,
-            'image_path'  => $dto->imagePath,
+            'image_path'  => $imagePath,
             'link'        => $dto->link,
         ]);
 

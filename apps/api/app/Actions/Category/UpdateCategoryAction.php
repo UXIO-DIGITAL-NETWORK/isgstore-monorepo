@@ -14,13 +14,22 @@ class UpdateCategoryAction
 
     public function execute(Category $category, UpdateCategoryDTO $dto): Category
     {
+        $logoPath = $category->logo;
+
+        if ($dto->logo instanceof \Illuminate\Http\UploadedFile) {
+            if ($logoPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($logoPath);
+            }
+            $logoPath = $dto->logo->store('categories/logos', 'public');
+        }
+
         $category->update([
             'type_id' => $dto->typeId,
             'name' => $dto->name,
             'code' => $dto->code,
             'validasi_nickname' => $dto->validasiNickname,
             'region' => $dto->region,
-            'logo' => $dto->logo,
+            'logo' => $logoPath,
             'description' => $dto->description,
             'status' => $dto->status,
         ]);

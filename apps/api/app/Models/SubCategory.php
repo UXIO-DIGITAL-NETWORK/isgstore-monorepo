@@ -2,11 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SubCategory extends Model
 {
-    protected $guarded = ['id'];
+    use HasFactory;
+
+    // PASTIKAN 'logo' ADA DI SINI!
+    protected $fillable = [
+        'category_id',
+        'name',
+        'logo', // <--- Tambahkan ini
+        'status',
+    ];
 
     public function category()
     {

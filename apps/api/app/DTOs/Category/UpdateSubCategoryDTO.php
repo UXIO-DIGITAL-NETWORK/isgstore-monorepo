@@ -7,7 +7,7 @@ readonly class UpdateSubCategoryDTO
     public function __construct(
         public int $categoryId,
         public string $name,
-        public ?string $logo,
+        public \Illuminate\Http\UploadedFile|string|null $logo,
         public bool $status
     ) {}
 }
