@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\ServerCategory;
 use App\Traits\ApiResponse;
 use App\Actions\Category\GetServerCategoriesAction;
-use App\Actions\Category\CreateServerCategoryAction;
-use App\Actions\Category\UpdateServerCategoryAction;
-use App\Actions\Category\DeleteServerCategoryAction;
-use App\Http\Requests\Category\StoreServerCategoryRequest;
-use App\Http\Requests\Category\UpdateServerCategoryRequest;
-use App\Http\Resources\Api\Category\ServerCategoryResource;
+use App\Actions\Category\ServerCategory\CreateServerCategoryAction;
+use App\Actions\Category\ServerCategory\UpdateServerCategoryAction;
+use App\Actions\Category\ServerCategory\DeleteServerCategoryAction;
+use App\Http\Requests\Category\ServerCategory\StoreServerCategoryRequest;
+use App\Http\Requests\Category\ServerCategory\UpdateServerCategoryRequest;
+use App\Http\Resources\Api\Category\ServerCategory\ServerCategoryResource;
 
 class ServerCategoryController extends Controller
 {

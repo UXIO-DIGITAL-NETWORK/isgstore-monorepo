@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Api\Category;
 use App\Http\Controllers\Controller;
 use App\Models\ServerCategoryOption;
 use App\Traits\ApiResponse;
-use App\Actions\Category\GetServerCategoryOptionsAction;
-use App\Actions\Category\CreateServerCategoryOptionAction;
-use App\Actions\Category\UpdateServerCategoryOptionAction;
-use App\Actions\Category\DeleteServerCategoryOptionAction;
-use App\Http\Requests\Category\StoreServerCategoryOptionRequest;
-use App\Http\Requests\Category\UpdateServerCategoryOptionRequest;
-use App\Http\Resources\Api\Category\ServerCategoryOptionResource;
+use App\Actions\Category\ServerCategoryOption\GetServerCategoryOptionsAction;
+use App\Actions\Category\ServerCategoryOption\CreateServerCategoryOptionAction;
+use App\Actions\Category\ServerCategoryOption\UpdateServerCategoryOptionAction;
+use App\Actions\Category\ServerCategoryOption\DeleteServerCategoryOptionAction;
+use App\Http\Requests\Category\ServerCategoryOption\StoreServerCategoryOptionRequest;
+use App\Http\Requests\Category\ServerCategoryOption\UpdateServerCategoryOptionRequest;
+use App\Http\Resources\Api\Category\ServerCategoryOption\ServerCategoryOptionResource;
 
 class ServerCategoryOptionController extends Controller
 {
