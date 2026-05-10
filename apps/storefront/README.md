@@ -1,88 +1,164 @@
 # UDN Multi-Game Top-Up Platform
 
-Sebuah platform web moden untuk pembelian mata wang dalam permainan (_top-up_) yang pantas, selamat, dan _type-safe_. Dibina dengan fokus utama pada pengalaman pengguna (_UX_) yang lancar melalui alur _Guest Checkout_ dan reka bentuk _E-sports Modern_ (Zelpoint-inspired) yang premium.
+A modern, fast, and type-safe web platform for purchasing in-game currency (top-up) across multiple games. Built around a **Guest Checkout** flow and a premium **E-sports Neon Violet** aesthetic, the platform lets any user complete a transaction without registration — while still offering a full Member Dashboard for returning players.
 
-## 🛠 Tech Stack
+## Preview
 
-### Frontend
+![Homepage Design Preview](.agents/context/images/01%20-%20Design%20homepage%20(top%20up%20game).png)
 
-- **Framework:** React 19 + TypeScript
-- **Routing:** [TanStack Router](https://tanstack.com/router) (File-based, Type-safe with `beforeLoad` Guards)
-- **Data Fetching:** [TanStack Query v5](https://tanstack.com/query) (Server State Management)
-- **State Management:** - **Server State:** TanStack Query
-  - **Client State:** [Zustand](https://docs.pmnd.rs/zustand)
-- **Form Handling:** React-Hook-Form + Zod (Schema Validation)
-- **UI & Styling:** - [Hero UI](https://heroui.com/) & [Shadcn UI](https://ui.shadcn.com/)
-  - Tailwind CSS v4 + [CVA](https://cva.style/) (Class Variance Authority)
-- **Utilities:** `tailwind-merge` & `clsx` (via `cn()` helper)
+---
 
-## 📌 Ciri-Ciri Utama
+## Tech Stack
 
-- **Guest Checkout:** Pengguna boleh membeli terus tanpa perlu mendaftar/login.
-- **Real-time Nickname Validation:** Pengesahan ID pemain secara langsung melalui API menggunakan TanStack Query.
-- **Single Page Checkout:** Alur transaksi interaktif dalam satu halaman tanpa _reload_.
-- **Member Dashboard:** Sejarah transaksi dan simpanan profil ID permainan untuk pengguna berdaftar.
-- **Live Invoice Tracking:** Pemantauan status pembayaran secara masa nyata menggunakan _polling_ TanStack Query.
+| Layer | Technology |
+|---|---|
+| Framework | React 19 + TypeScript (strict) |
+| Routing | TanStack Router v1 — file-based, type-safe, `beforeLoad` guards |
+| Server State | TanStack Query v5 — fetching, caching, live polling |
+| Client State | Zustand v5 — auth token, UI state |
+| Forms | React Hook Form + Zod + `@hookform/resolvers` |
+| UI Components | Hero UI v3 + Shadcn UI |
+| Styling | Tailwind CSS v4 + CVA + `tailwind-merge` / `clsx` |
+| HTTP | Axios — Bearer token injection, auto-logout on 401 |
+| Build | Vite 7 + `@tanstack/router-plugin` (auto code-splitting) |
 
-## 📂 Struktur Projek (Architecture)
+---
 
-Projek ini mengikuti seni bina **Feature-Based** dengan isolasi ketat:
+## Key Features
 
-```text
+- **Guest Checkout** — purchase without registration by entering a Game ID.
+- **Real-time Nickname Validation** — debounced TanStack Query call validates the player ID against the game server live.
+- **Single-Page Checkout (SPA)** — full transaction flow without page reloads; state managed by Zustand.
+- **Live Invoice Tracking** — periodic polling via TanStack Query monitors payment status in real time.
+- **Member Dashboard** — registered users get transaction history and a saved game-ID contact book.
+- **Route Guards** — `requireAuth` / `requireGuest` middleware enforced at `beforeLoad` on every protected route.
+- **Auto-Logout** — Axios response interceptor clears auth and redirects on any 401 outside of `/login`.
+
+---
+
+## Project Architecture
+
+Feature-based isolation with a thin routing registry layer.
+
+```
 src/
-├── components/               # 🧩 GLOBAL UI
-│   ├── common/               # Komponen polimorfik (Box, Heading, Text) via CVA
-│   ├── layouts/              # Wrapper layout global (RootLayout)
-│   └── ui/                   # Base components (Hero UI / Shadcn)
-├── features/                 # 📦 DOMAIN BISNIS (Isolated)
-│   ├── auth/                 # Login/Register logic, Auth Hooks, local types
-│   ├── checkout/             # Checkout logic, Game ID validation
-│   └── home/                 # Landing components & banners
-├── middlewares/              # 🛡️ ROUTE GUARDS (requireAuth, requireGuest)
-├── store/                    # 📦 GLOBAL CLIENT STATE (useAuthStore, dsb)
-├── types/                    # 🌐 GLOBAL TYPES
-│   └── models/               # Entitas Database (User, Game, Transaction)
-├── routes/                   # 📍 ROUTING (TanStack Router Tree)
-└── lib/                      # 🛠️ UTILS (cn, axios, dsb)
+├── components/
+│   ├── common/          # Polymorphic base elements (Box, Text, Heading, Container, Image, Link)
+│   ├── layouts/         # Global layout wrappers (RootLayout)
+│   └── ui/              # Shadcn-generated base components — no logic
+├── features/            # Business domains — features CANNOT import from each other
+│   ├── auth/            # Login, Register — hooks, service, schemas, types, pages
+│   ├── checkout/        # Checkout SPA — game-ID validation, payment flow
+│   └── home/            # Landing page — hero, feature cards
+├── middlewares/         # requireAuth(), requireGuest() — called only via beforeLoad
+├── store/               # Zustand stores (useAuthStore — token persisted in cookie)
+├── types/               # Global shared types: ApiResponse<T>, ApiError
+├── routes/              # Registry only — no JSX, just imports + beforeLoad calls
+│   ├── __root.tsx       # Root layout
+│   ├── index.tsx        # / → HomePage
+│   └── _auth/           # /_auth group → requireGuest → AuthLayout
+│       ├── route.tsx
+│       ├── login/
+│       └── register/
+├── lib/
+│   ├── axios.ts         # Configured Axios instance with interceptors
+│   └── utils.ts         # cn() helper (clsx + tailwind-merge)
+├── config/env.ts        # VITE_API_BASE_URL
+├── providers/           # ThemeProvider (next-themes)
+└── routeTree.gen.ts     # Auto-generated by TanStack Router — DO NOT EDIT
 ```
 
-## 📜 Peraturan Pembangunan (For AI Agents & Developers)
+### Architecture Rules
 
-1. **The Golden Rule:** Fitur di dalam `src/features/` **DILARANG** mengimpor kode secara langsung dari fitur lain. Gunakan `src/types/models` untuk entitas yang bersifat global.
-2. **Auth Guards:** Logika proteksi rute wajib ditempatkan di `src/middlewares/` dan dipanggil secara eksklusif pada properti `beforeLoad` di file rute. Jangan menggunakan komponen _wrapper_ manual.
-3. **Polymorphic UI:** Komponen dasar seperti `<Box>`, `<Heading>`, dan `<Text>` wajib menggunakan utilitas `cn()` (`tailwind-merge`) untuk mencegah bentrokan _class_ Tailwind.
-4. **Server State:** Gunakan `useQuery` untuk mengambil data dan `useMutation` untuk penghantaran data. Jangan gunakan `useEffect` untuk fetching data.
-5. **Styling:** Patuhi palet warna _Dark Mode_ Zelpoint (Background: `#0a0a0a`, Accent: `#0ea5e9`).
+1. **Feature isolation** — code inside `src/features/X` must never directly import from `src/features/Y`. Share only through `src/types/`.
+2. **Route files are registries** — no JSX. Only: `createFileRoute`, a `component` import from `src/features/`, and an optional `beforeLoad` calling a middleware from `src/middlewares/`.
+3. **State split** — server/API data belongs exclusively to TanStack Query; global UI state belongs to Zustand; per-component state belongs to `useState`. Never fetch with `useEffect`.
+4. **Form pattern** — Zod schemas live in `schemas/`, TypeScript interfaces in `types/`. All forms connect via `@hookform/resolvers/zod`. No inline validation.
+5. **No raw HTML elements** — ESLint forbids `<div>`. Use `<Box>`, `<Text>`, `<Heading>`, etc. from `src/components/common/`. Use `cn()` for all conditional Tailwind merging.
 
-## 🎨 Design System (Zelpoint Inspired)
+---
 
-- **Primary (Accent):** `#0ea5e9` (Sky Blue / Cyan)
-- **Background:** `#0a0a0a` (True Black)
-- **Surface:** `#171717` (Dark Charcoal)
-- **Cards:** Menggunakan _gradient overlay_ bawah (`from-black/80`) untuk memastikan keterbacaan teks di atas gambar banner.
+## Design System
 
-## 🚀 Bermula (Getting Started)
+Theme: **E-sports Premium — Neon Violet Dark Mode**
 
-### Prasyarat
+### Color Palette
 
-- Node.js (Versi 18 ke atas)
-- NPM atau PNPM
+| Role | Token | Hex |
+|---|---|---|
+| Page Background | `bg-neutral-950` | `#0A0A0C` |
+| Surface (Deep) | `bg-[#0B051D]` | `#0B051D` |
+| Primary Accent | `bg-violet-600` | `#9234EA` |
+| Secondary Accent | `bg-blue-500` | `#3B82F6` |
+| Active Card Border | — | `#C084FC` |
+| Price Gradient | white → lavender | `#FFFFFF` → `#E9D5FF` |
+| CTA Gradient | azure → violet | `#3B82F6` → `#9234EA` |
+| Success / Discount | — | `#0EA42E` |
+| Body Text | `text-gray-500` | `#6A7282` |
+| Muted Text | — | `#909AAE` |
 
-### Pemasangan
+### Typography
 
-1. Klon repositori ini:
-   ```bash
-   git clone https://github.com/muhammadsufyan/udn-topup-platform-fe.git
-   ```
-2. Masuk ke direktori projek:
-   ```bash
-   cd udn-topup-platform-fe
-   ```
-3. Pasang dependensi:
-   ```bash
-   npm install
-   ```
-4. Jalankan _development server_:
-   ```bash
-   npm run dev
-   ```
+| Role | Font | Usage |
+|---|---|---|
+| Headings / Labels | Outfit Bold | Section titles, button text, brand labels |
+| Body / Descriptions | Inter | Body copy, form labels, subtitles |
+| Prices / Numbers | IBM Plex Sans Condensed | All prices, countdown timers, stock counters |
+| Product Names | DM Sans | Card product names |
+
+### Key Visual Patterns
+
+- **Glassmorphism cards** — `bg-[rgba(59,130,246,0.05)]` + `border border-[rgba(59,130,246,0.2)]`
+- **Gradient prices** — `bg-clip-text text-transparent bg-gradient-to-r from-white to-[#E9D5FF]`
+- **Violet glow** — `box-shadow: 0 0 14.87px rgba(147,51,234,0.3)` on timer / featured cards
+- **Active card** — `border-[3px] border-[#C084FC]` + `bg-gradient-to-r from-[#3B82F6] to-[#9234EA]` button
+
+---
+
+## Getting Started
+
+**Prerequisites:** Node.js 18+
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Production build (TypeScript check + Vite)
+npm run build
+
+# Preview production build locally
+npm run preview
+
+# Lint
+npm run lint
+```
+
+**Environment variables** — create `.env.local`:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+```
+
+---
+
+## User Roles
+
+| Role | Access |
+|---|---|
+| Guest | Homepage, Checkout, Invoice tracking |
+| Member | All guest pages + Member Dashboard (transaction history, saved game IDs) |
+| Super Admin | Full backend dashboard — game/product CRUD, transaction monitoring, payment integrations |
+
+---
+
+## Database Schema (Brief)
+
+| Table | Key Fields |
+|---|---|
+| `users` | `id`, `name`, `email`, `phone_number`, `password`, `role` (member / superadmin) |
+| `games` | `id`, `name`, `publisher`, `thumbnail_url`, `has_server_id`, `is_active` |
+| `products` | `id`, `game_id`, `name`, `price` (decimal 15,2), soft-deletes |
+| `transactions` | `id`, `invoice_number`, `user_id` (nullable), `game_id`, `product_id`, `target_user_id`, `target_server_id`, `target_nickname`, `whatsapp_number`, `total_amount`, `payment_method`, `status` (pending / processing / success / failed) |
