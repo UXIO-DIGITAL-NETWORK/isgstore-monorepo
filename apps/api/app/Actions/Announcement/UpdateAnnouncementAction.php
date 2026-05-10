@@ -14,10 +14,19 @@ class UpdateAnnouncementAction
 
     public function execute(Announcement $announcement, UpdateAnnouncementDTO $dto): Announcement
     {
+        $imagePath = $announcement->image_path;
+
+        if ($dto->imagePath instanceof \Illuminate\Http\UploadedFile) {
+            if ($imagePath && \Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagePath);
+            }
+            $imagePath = $dto->imagePath->store('announcements/images', 'public');
+        }
+
         $announcement->update([
             'category_id' => $dto->categoryId,
             'content'     => $dto->content,
-            'image_path'  => $dto->imagePath,
+            'image_path'  => $imagePath,
             'is_active'   => $dto->isActive,
         ]);
 

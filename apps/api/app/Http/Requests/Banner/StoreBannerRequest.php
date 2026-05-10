@@ -26,7 +26,7 @@ class StoreBannerRequest extends FormRequest
         return [
             'category_id' => ['nullable', 'exists:categories,id'],
             'name'        => ['required', 'string', 'max:255'],
-            'image_path'  => ['required', 'string', 'max:255'],
+            'image_path'  => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'link'        => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -36,7 +36,7 @@ class StoreBannerRequest extends FormRequest
         return new CreateBannerDTO(
             categoryId: $this->validated('category_id') ? (int) $this->validated('category_id') : null,
             name: $this->validated('name'),
-            imagePath: $this->validated('image_path'),
+            imagePath: $this->file('image_path'),
             link: $this->validated('link'),
         );
     }

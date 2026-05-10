@@ -7,6 +7,8 @@ use App\DTOs\Category\CreateSubCategoryDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage; // Tambahkan facade Storage
+use Illuminate\Http\UploadedFile;
 
 class CreateSubCategoryAction
 {
@@ -14,10 +16,18 @@ class CreateSubCategoryAction
 
     public function execute(CreateSubCategoryDTO $dto): SubCategory
     {
+        $logoPath = null;
+
+        // Cek jika logo adalah instansiasi file yang di-upload
+        if ($dto->logo instanceof UploadedFile) {
+            // Simpan ke disk public, folder 'subcategories/logos'
+            $logoPath = $dto->logo->store('subcategories/logos', 'public');
+        }
+
         $subCategory = SubCategory::create([
             'category_id' => $dto->categoryId,
             'name' => $dto->name,
-            'logo' => $dto->logo,
+            'logo' => $logoPath, // Simpan path ke database
             'status' => $dto->status,
         ]);
 

@@ -14,13 +14,19 @@ class CreateCategoryAction
 
     public function execute(CreateCategoryDTO $dto): Category
     {
+        $logoPath = null;
+
+        if ($dto->logo instanceof \Illuminate\Http\UploadedFile) {
+            $logoPath = $dto->logo->store('categories/logos', 'public');
+        }
+
         $category = Category::create([
             'type_id' => $dto->typeId,
             'name' => $dto->name,
             'code' => $dto->code,
             'validasi_nickname' => $dto->validasiNickname,
             'region' => $dto->region,
-            'logo' => $dto->logo,
+            'logo' => $logoPath,
             'description' => $dto->description,
             'status' => $dto->status,
         ]);
