@@ -68,4 +68,4 @@ This project utilizes specific domains within the `skills/` directory. Trigger t
 - `skills/seo` — **@frontend** MUST ACTIVATE for implementing semantic HTML and meta tag structures.
 - `skills/vite` — **@qa** MUST ACTIVATE for build configurations, env variables, and performance auditing.
 
-**CRITICAL RULE:** All agents MUST read the files in the `context/` directory (`product_requirements.md`, `design_system.md`, `system_architecture.md`, `CLAUDE.md` or `GEMINI.md`) before executing any task.
+**CRITICAL RULE:** All agents MUST read the files in the `context/` directory (`product_requirements.md`, `design_system.md`, `system_architecture.md`) and `CLAUDE.md` or `GEMINI.md` (based on your assistant) before executing any task.
