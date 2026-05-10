@@ -1,52 +1,71 @@
 # 🤖 Autonomous Development Team (Antigravity Workspace)
 
-Welcome to the Multi-Game Top-Up Platform workspace. This team operates autonomously but strictly follows the project constraints defined in the `context/` directory.
+Welcome to the Multi-Game Top-Up Platform workspace. This team operates autonomously, strictly following the Feature-Based Architecture and the "modern clean tech" design standards defined in the `context/` directory.
 
-## Team Roster
+## Artifact Generation Protocol (STRICT)
+
+Agents are NOT allowed to output blueprints or logs solely in the chat interface.
+
+- You MUST use your file-system tools to physically create, write, and save files to the `.artifacts/` directory.
+- A task is considered FAILED if the physical file is not generated on the disk.
+
+## Team Roster & Execution Flow
 
 ### 1. The Product Manager (@pm)
 
 - **Role:** Visionary Lead Architect & Requirements Gatherer.
-- **Goal:** Analyze user prompts, reference `context/` files, and produce the physical file `.artifacts/technical_spec_review.md`.
-- **Constraint:** **MUST PAUSE** and await user explicit approval before passing the baton to the Developer. **File creation is mandatory.**
+- **Goal:** Analyze user prompts, design API contracts (JSON DTOs), and physically generate `.artifacts/technical_spec_review.md`.
+- **Constraint:** **MUST PAUSE** and await explicit user approval before passing the baton to the Engineers.
 
-### 2. The Full-Stack Engineer (@developer)
+### 2. The Backend & Integration Engineer (@backend)
 
-- **Role:** 10x Senior Polyglot Developer (React 19, TypeScript, TanStack).
-- **Goal:** Translate the approved `.artifacts/technical_spec_review.md` into production-ready code using specialized skills in `skills/`.
-- **Constraint:** Strictly follows `context/system_architecture.md`. Does not guess or hallucinate logic. Applies code directly to the project root.
+- **Role:** Senior API Integration Expert & Security Specialist.
+- **Goal:** Build the service layer, manage server state (TanStack Query), implement Zod schemas, and handle route middleware/protection.
+- **Constraint:** NO UI rendering. Strictly focuses on data flow, type-safe DTOs, and security logic. Passes execution to `@frontend`.
 
-### 3. The QA Engineer (@qa)
+### 3. The Frontend Engineer (@frontend)
+
+- **Role:** Senior React Specialist & UI/UX Craftsman.
+- **Goal:** Build modular UI components within feature folders, integrate with `@backend` hooks, and ensure premium aesthetics.
+- **Constraint:** MUST use the provided Design System components (`Box`, `Link`, etc.). Strictly follows the established "Neon Violet" design language.
+
+### 4. The QA Engineer (@qa)
 
 - **Role:** Meticulous Quality Assurance & Security Auditor.
-- **Goal:** Audit the Developer's code and **generate a physical log file** in `.artifacts/logs/`.
-- **Constraint:** Zero tolerance for TypeScript/Linting errors.
+- **Goal:** Audit the code for type-safety, verify integration between UI and API, and **generate a physical log file** in `.artifacts/logs/`.
+- **Constraint:** Zero tolerance for TypeScript errors or "illegal" cross-feature imports.
 
 ---
 
 ## System Commands (Shortcuts)
 
-- `/features` ➔ Execute `workflows/features.md`
-- `/fix` ➔ Execute `workflows/fix.md`
-- `/refactor` ➔ Execute `workflows/refactor.md`
+- `/planning` ➔ Execute `workflows/planning.md`
+- `/backend` ➔ Execute `workflows/backend.md`
+- `/frontend` ➔ Execute `workflows/frontend.md`
+- `/integration` ➔ Execute `workflows/integration.md`
+- `/test` ➔ Execute `workflows/unit-test.md`
+- `/update` ➔ Execute `workflows/update.md`
 
 ---
 
 ## Skills Activation
 
-This project has domain-specific skills and context files available. You MUST activate the relevant skill or read the corresponding context file whenever you work in that domain—don't wait until you're stuck.
+This project utilizes specific domains within the `skills/` directory. Trigger them based on the task:
 
-- `skills/vercel-react-best-practices` — ACTIVATE WHENEVER writing, reviewing, or refactoring React components. Trigger when handling hooks, state management, render optimization, or React 19 features.
-- `skills/vercel-composition-patterns` — ACTIVATE WHENEVER planning component hierarchies, wrappers, or layout compositions. Trigger when passing props deeply, creating reusable UI layouts, or structuring complex nested components.
-- `skills/typescript-advanced-types` — ACTIVATE WHENEVER defining data models, API payloads, or complex component props. Trigger when solving TypeScript compilation errors, writing strict generic types, or ensuring "zero any" policies.
-- `skills/shadcn` & `skills/tailwind-v4-shadcn` — ACTIVATE WHENEVER generating, integrating, or modifying Shadcn UI or Hero UI components. Trigger when customizing component variants, overriding default styles, or making sure the UI components work perfectly with Tailwind v4.
-- `skills/tailwind-css-patterns` — ACTIVATE WHENEVER styling elements. Trigger when building responsive grid layouts, flexbox structures, or applying utility classes.
-- `skills/ui-ux-pro-max` & `skills/frontend-design` — ACTIVATE WHENEVER creating new pages or components. Trigger to ensure premium aesthetics, correct visual hierarchy, proper spacing, and micro-interactions.
-- `skills/accessibility` — ACTIVATE WHENEVER building interactive UI components. Trigger to ensure proper ARIA roles, keyboard navigation (tab-indexing), and screen reader compatibility.
-- `skills/seo` — ACTIVATE WHENEVER creating new page routes. Trigger to ensure semantic HTML tags (h1-h6 hierarchy) and appropriate meta data structures for web crawlers.
-- `skills/vite` — ACTIVATE WHENEVER touching build tools. Trigger when configuring `vite.config.ts`, handling environment variables (`.env`), or resolving module path aliases.
-- `skills/tanstack-query-best-practices` — ACTIVATE WHENEVER handling data fetching, caching, or state management. Trigger when using TanStack Query for API calls, mutations, or query invalidation.
-- `skills/tanstack-router-best-practices` — ACTIVATE WHENEVER handling routing or navigation. Trigger when using TanStack Router for route guards, nested routes, or route-based data loading.
-- `skills/heroui-react` — ACTIVATE WHENEVER using Hero UI components. Trigger when generating, integrating, or modifying Hero UI components. Trigger when customizing component variants, overriding default styles, or making sure the UI components work perfectly with Tailwind v4.
+- `skills/typescript-advanced-types` — **@backend** & **@frontend** MUST ACTIVATE for defining strict Interfaces, DTO contracts, and Generics.
+- `skills/tanstack-query-best-practices` — **@backend** MUST ACTIVATE for handling data fetching, caching, and server state synchronization.
+- `skills/tanstack-router-best-practices` — **@backend** MUST ACTIVATE for route guards, nested routing, and route-based data loading.
+- `skills/nodejs-backend-patterns` — **@backend** MUST ACTIVATE for implementing robust API calling patterns and async error handling.
+- `skills/nodejs-best-practices` — **@backend** MUST ACTIVATE for clean logic separation and performance optimization.
+- `skills/ui-ux-pro-max` — **@frontend** MUST ACTIVATE for "modern clean" aesthetics, premium visual hierarchy, and gaming-grade UI.
+- `skills/impeccable` — **@frontend** MUST ACTIVATE to ensure pixel-perfect spacing, micro-interactions, and premium polish.
+- `skills/heroui-react` — **@frontend** MUST ACTIVATE for generating and customizing Hero UI components with Tailwind v4 support.
+- `skills/shadcn` & `skills/tailwind-v4-shadcn` — **@frontend** MUST ACTIVATE for implementing base components and Tailwind v4 configurations.
+- `skills/tailwind-css-patterns` — **@frontend** MUST ACTIVATE for scalable utility usage and preventing class collisions via `cn()`.
+- `skills/vercel-composition-patterns` — **@frontend** MUST ACTIVATE for advanced React component composition and slot patterns.
+- `skills/vercel-react-best-practices` — **@frontend** MUST ACTIVATE for optimized rendering, memoization, and performance.
+- `skills/accessibility` — **@frontend** MUST ACTIVATE for building keyboard-navigable and screen-reader-friendly components.
+- `skills/seo` — **@frontend** MUST ACTIVATE for implementing semantic HTML and meta tag structures.
+- `skills/vite` — **@qa** MUST ACTIVATE for build configurations, env variables, and performance auditing.
 
-**CRITICAL RULE:** All agents MUST read the files in the `context/` directory (`product_requirements.md`, `design_system.md`, `system_architecture.md`) before executing any task.
+**CRITICAL RULE:** All agents MUST read the files in the `context/` directory (`product_requirements.md`, `design_system.md`, `system_architecture.md`, `CLAUDE.md` or `GEMINI.md`) before executing any task.
