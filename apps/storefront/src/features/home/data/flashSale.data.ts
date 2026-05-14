@@ -1,5 +1,5 @@
 import { IMAGES } from "@/constants/images";
-import type { FlashSaleItem } from "../types/flash-sale.type";
+import type { FlashSaleItem } from "../types/flashSale.type";
 
 export const FLASH_SALE_DURATION_SECONDS = 23 * 3600 + 30 * 60 + 2;
 

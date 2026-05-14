@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box } from "@/components/common/Box";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { BANNERS, AUTO_DELAY, SIDE_VISIBLE, GAP_PX } from "@/features/home/constants/hero-banner";
+import { BANNERS, AUTO_DELAY, SIDE_VISIBLE, GAP_PX } from "@/features/home/constants/heroBanner";
+import BannerNavArrow from "./fragments/BannerNavArrow";
+import CarouselDots from "./fragments/CarouselDots";
 
 type IntervalRef = ReturnType<typeof setInterval>;
 
@@ -16,7 +17,6 @@ export default function HeroBanner(): React.JSX.Element {
 
   useEffect(() => {
     const trackElement = trackRef.current;
-
     if (!trackElement) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
@@ -32,13 +32,11 @@ export default function HeroBanner(): React.JSX.Element {
 
   const restartTimer = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-
     intervalRef.current = setInterval(() => setCurrent((prev) => (prev + 1) % BANNERS.length), AUTO_DELAY);
   };
 
   useEffect(() => {
     restartTimer();
-
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
@@ -49,20 +47,17 @@ export default function HeroBanner(): React.JSX.Element {
     restartTimer();
   };
 
-  const prev = () => goTo((current - 1 + BANNERS.length) % BANNERS.length);
-  const next = () => goTo((current + 1) % BANNERS.length);
-
   return (
     <Box className="w-full bg-[#0B0A11] pt-4 pb-5 md:pt-8 md:pb-9">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
-        {/* ── Carousel viewport ── */}
+        {/* Carousel viewport */}
         <Box
           ref={trackRef}
           className="relative w-full overflow-hidden rounded-xl md:rounded-2xl"
           style={{ WebkitMaskImage: "-webkit-radial-gradient(white, black)", transform: "translateZ(0)" }}
         >
           {hasPeek && slideWidth > 0 ? (
-            /* ── Peek mode: translate-based sliding track ── */
+            /* Peek mode: translate-based sliding track */
             <Box
               className="flex"
               style={{
@@ -84,13 +79,10 @@ export default function HeroBanner(): React.JSX.Element {
                   WebkitMaskImage: "-webkit-radial-gradient(white, black)",
                   transformOrigin: "center center",
                 };
+
                 if (isActive) {
                   return (
-                    <Box
-                      key={idx}
-                      className="shrink-0 rounded-xl md:rounded-2xl overflow-hidden"
-                      style={slideStyle}
-                    >
+                    <Box key={idx} className="shrink-0 rounded-xl md:rounded-2xl overflow-hidden" style={slideStyle}>
                       <img
                         src={banner.src}
                         alt={banner.alt}
@@ -100,6 +92,7 @@ export default function HeroBanner(): React.JSX.Element {
                     </Box>
                   );
                 }
+
                 return (
                   <Box
                     key={idx}
@@ -110,22 +103,14 @@ export default function HeroBanner(): React.JSX.Element {
                     className="shrink-0 rounded-xl md:rounded-2xl overflow-hidden outline-none cursor-pointer"
                     style={slideStyle}
                   >
-                    <img
-                      src={banner.src}
-                      alt={banner.alt}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+                    <img src={banner.src} alt={banner.alt} className="w-full h-full object-cover" loading="lazy" />
                   </Box>
                 );
               })}
             </Box>
           ) : (
-            /* ── Simple mode: opacity crossfade ── */
-            <Box
-              style={{ aspectRatio: "1300 / 400" }}
-              className="relative w-full"
-            >
+            /* Simple mode: opacity crossfade */
+            <Box style={{ aspectRatio: "1300 / 400" }} className="relative w-full">
               {BANNERS.map((banner, idx) => (
                 <Box
                   key={idx}
@@ -144,46 +129,19 @@ export default function HeroBanner(): React.JSX.Element {
             </Box>
           )}
 
-          {/* ── Left arrow ── */}
-          <Box
-            as="button"
-            type="button"
-            onClick={prev}
-            aria-label="Banner sebelumnya"
-            className="absolute top-1/2 -translate-y-1/2 z-20 w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer outline-none active:scale-95"
-            style={{ left: hasPeek ? `${SIDE_VISIBLE + GAP_PX}px` : "12px" }}
-          >
-            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-white" />
-          </Box>
-
-          {/* ── Right arrow ── */}
-          <Box
-            as="button"
-            type="button"
-            onClick={next}
-            aria-label="Banner berikutnya"
-            className="absolute top-1/2 -translate-y-1/2 z-20 w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer outline-none active:scale-95"
-            style={{ right: hasPeek ? `${SIDE_VISIBLE + GAP_PX}px` : "12px" }}
-          >
-            <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-white" />
-          </Box>
+          <BannerNavArrow
+            direction="prev"
+            hasPeek={hasPeek}
+            onClick={() => goTo((current - 1 + BANNERS.length) % BANNERS.length)}
+          />
+          <BannerNavArrow
+            direction="next"
+            hasPeek={hasPeek}
+            onClick={() => goTo((current + 1) % BANNERS.length)}
+          />
         </Box>
 
-        {/* ── Dot indicators ── */}
-        <Box className="flex items-center justify-center gap-1.5 mt-3">
-          {BANNERS.map((_, idx) => (
-            <Box
-              key={idx}
-              as="button"
-              type="button"
-              onClick={() => goTo(idx)}
-              aria-label={`Slide ${idx + 1}`}
-              className={`h-[5px] rounded-full cursor-pointer outline-none transition-all duration-300 ${
-                idx === current ? "bg-violet-500 w-6" : "bg-white/25 hover:bg-white/45 w-[5px]"
-              }`}
-            />
-          ))}
-        </Box>
+        <CarouselDots count={BANNERS.length} current={current} onDotClick={goTo} />
       </Box>
     </Box>
   );

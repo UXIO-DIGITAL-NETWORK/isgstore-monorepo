@@ -1,5 +1,5 @@
 import { IMAGES } from "@/constants/images";
-import type { HeroBannerItem } from "../types/hero-banner.type";
+import type { HeroBannerItem } from "../types/heroBanner.type";
 
 export const BANNERS: HeroBannerItem[] = [
   {

@@ -1,4 +1,2 @@
-export { default as HeroBanner } from "./HeroBanner";
-export { default as HeroSection } from "./HeroSection";
-export { default as FeatureCards } from "./FeatureCards";
-export { default as FlashSale } from "./FlashSale";
+export { default as HeroBanner } from "./hero/HeroBanner";
+export { default as FlashSale } from "./flashSale/FlashSale";
