@@ -1,52 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { Box } from "@/components/common/Box";
-import { AUTO_DELAY, SIDE_VISIBLE, GAP_PX } from "@/features/home/constants/heroBanner";
+import { GAP_PX, SIDE_VISIBLE } from "@/features/home/constants/heroBanner";
+import { useHeroCarousel } from "@/features/home/hooks/useHeroCarousel";
 import BannerNavArrow from "./fragments/BannerNavArrow";
 import CarouselDots from "./fragments/CarouselDots";
 import { BANNERS } from "@/features/home/data/heroBanner.data";
 
-type IntervalRef = ReturnType<typeof setInterval>;
-
 export default function HeroBanner(): React.JSX.Element {
-  const [current, setCurrent] = useState<number>(0);
-  const [containerWidth, setContainerWidth] = useState<number>(0);
-  const intervalRef = useRef<IntervalRef | null>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-
-  const hasPeek = BANNERS.length >= 3;
-  const slideWidth = containerWidth > 0 ? containerWidth - 2 * SIDE_VISIBLE : 0;
-
-  useEffect(() => {
-    const trackElement = trackRef.current;
-    if (!trackElement) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? 0;
-      setContainerWidth(width);
-    });
-
-    resizeObserver.observe(trackElement);
-    setContainerWidth(trackElement.getBoundingClientRect().width);
-
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  const restartTimer = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => setCurrent((prev) => (prev + 1) % BANNERS.length), AUTO_DELAY);
-  };
-
-  useEffect(() => {
-    restartTimer();
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  const goTo = (idx: number) => {
-    setCurrent(idx);
-    restartTimer();
-  };
+  const { current, trackRef, hasPeek, slideWidth, goTo } = useHeroCarousel(BANNERS.length);
 
   return (
     <Box className="w-full bg-[#0B0A11] pt-4 pb-5 md:pt-8 md:pb-9">
