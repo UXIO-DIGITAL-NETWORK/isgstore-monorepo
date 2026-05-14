@@ -30,18 +30,15 @@ function useCountdown(durationSeconds: number) {
   };
 }
 
-function TimerBox({ value, isAccent }: { value: string; isAccent?: boolean }) {
+function TimerBox({ value }: { value: string }) {
   return (
     <Box
-      className={`w-11 h-11 rounded-lg flex items-center justify-center border ${
-        isAccent
-          ? "bg-violet-600/20 border-violet-500/60 text-violet-400"
-          : "bg-[#1E1A30] border-violet-500/25 text-white"
-      }`}
+      className="w-12 h-12 rounded-lg flex items-center justify-center"
+      style={{ background: "rgba(88, 28, 135, 0.5)" }}
     >
       <Text
         as="span"
-        className="text-lg font-black leading-none tabular-nums"
+        className="text-xl font-bold leading-none tabular-nums"
       >
         {value}
       </Text>
@@ -101,10 +98,10 @@ function FlashSaleCard({ item, isActive }: { item: FlashSaleItem; isActive: bool
         >
           {formatPrice(item.originalPrice)}
         </Text>
-        <Box className="rounded-full px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/20 shrink-0 inline-flex justify-center items-center">
+        <Box className="rounded-full px-2 py-0.5 bg-green-600 border border-green-700 shrink-0 inline-flex justify-center items-center">
           <Text
             as="span"
-            className="text-[10px] font-semibold text-emerald-400 whitespace-nowrap tabular-nums"
+            className="text-[10px] font-semibold text-white whitespace-nowrap tabular-nums"
           >
             - {formatPrice(item.discount)}
           </Text>
@@ -157,47 +154,76 @@ export default function FlashSale(): React.JSX.Element {
   return (
     <Box className="w-full bg-[#0B0A11] pt-6 pb-8 md:pt-8 md:pb-12">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
-        {/* ── Outer purple card ── */}
+        {/* Outer container */}
         <Box
-          className="rounded-2xl border border-violet-500/35 overflow-hidden"
-          style={{ boxShadow: "0 0 48px rgba(139,92,246,0.08)" }}
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: "rgba(147, 51, 234, 0.05)",
+            border: "1px solid rgba(147, 51, 234, 0.5)",
+          }}
         >
-          {/* ── Card title — brighter purple header ── */}
-          <Box className="flex items-center justify-between px-5 py-4 bg-[#1A1535]">
+          {/* Header */}
+          <Box
+            className="flex items-center justify-between px-5 py-4"
+            style={{ background: "rgba(146, 52, 234, 0.1)" }}
+          >
             <Box>
               <Box className="flex items-center gap-2.5 mb-1.5">
                 <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400 shrink-0" />
-                <Text as="span" className="text-2xl font-black text-white tracking-wide uppercase">
+                <Text
+                  as="span"
+                  className="text-2xl font-bold tracking-wide uppercase"
+                >
                   Flash Sale
                 </Text>
               </Box>
-              <Text as="p" className="text-sm text-white/40">
+              <Text
+                as="p"
+                className="text-sm"
+                style={{ color: "#767676" }}
+              >
                 Pesan sekarang! Persediaan terbatas
               </Text>
             </Box>
 
-            {/* ── Countdown timer ── */}
-            <Box className="flex items-center gap-1.5 shrink-0">
+            {/* Countdown timer */}
+            <Box
+              className="flex items-center gap-2 px-4 py-3 shrink-0 rounded-xl"
+              style={{
+                background: "rgba(0, 0, 0, 0.2)",
+                border: "1px solid rgba(147, 51, 234, 0.2)",
+              }}
+            >
               <TimerBox value={hours} />
-              <Text as="span" className="text-white/45 font-bold text-xl leading-none pb-0.5">
+              <Text
+                as="span"
+                className="text-xl font-bold leading-none"
+              >
                 :
               </Text>
               <TimerBox value={minutes} />
-              <Text as="span" className="text-white/45 font-bold text-xl leading-none pb-0.5">
+              <Text
+                as="span"
+                className="text-xl font-bold leading-none"
+              >
                 :
               </Text>
-              <TimerBox value={seconds} isAccent />
+              <TimerBox value={seconds} />
             </Box>
           </Box>
 
-          {/* ── Divider ── */}
-          <Box className="h-px bg-violet-500/20" />
+          {/* Divider */}
+          <Box style={{ height: "1px", background: "rgba(146, 52, 234, 0.5)" }} />
 
-          {/* ── Card body — product cards ── */}
-          <Box className="p-5 bg-[#0E0C1A]">
+          {/* Card body */}
+          <Box className="p-5">
             <Box className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
               {FLASH_SALE_ITEMS.map((item, idx) => (
-                <FlashSaleCard key={item.id} item={item} isActive={idx === 0} />
+                <FlashSaleCard
+                  key={item.id}
+                  item={item}
+                  isActive={idx === 0}
+                />
               ))}
             </Box>
           </Box>
