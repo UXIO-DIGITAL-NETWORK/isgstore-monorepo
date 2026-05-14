@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box } from "@/components/common/Box";
-import { BANNERS, AUTO_DELAY, SIDE_VISIBLE, GAP_PX } from "@/features/home/constants/heroBanner";
+import { AUTO_DELAY, SIDE_VISIBLE, GAP_PX } from "@/features/home/constants/heroBanner";
 import BannerNavArrow from "./fragments/BannerNavArrow";
 import CarouselDots from "./fragments/CarouselDots";
+import { BANNERS } from "@/features/home/data/heroBanner.data";
 
 type IntervalRef = ReturnType<typeof setInterval>;
 
@@ -82,7 +83,11 @@ export default function HeroBanner(): React.JSX.Element {
 
                 if (isActive) {
                   return (
-                    <Box key={idx} className="shrink-0 rounded-xl md:rounded-2xl overflow-hidden" style={slideStyle}>
+                    <Box
+                      key={idx}
+                      className="shrink-0 rounded-xl md:rounded-2xl overflow-hidden"
+                      style={slideStyle}
+                    >
                       <img
                         src={banner.src}
                         alt={banner.alt}
@@ -103,14 +108,22 @@ export default function HeroBanner(): React.JSX.Element {
                     className="shrink-0 rounded-xl md:rounded-2xl overflow-hidden outline-none cursor-pointer"
                     style={slideStyle}
                   >
-                    <img src={banner.src} alt={banner.alt} className="w-full h-full object-cover" loading="lazy" />
+                    <img
+                      src={banner.src}
+                      alt={banner.alt}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   </Box>
                 );
               })}
             </Box>
           ) : (
             /* Simple mode: opacity crossfade */
-            <Box style={{ aspectRatio: "1300 / 400" }} className="relative w-full">
+            <Box
+              style={{ aspectRatio: "1300 / 400" }}
+              className="relative w-full"
+            >
               {BANNERS.map((banner, idx) => (
                 <Box
                   key={idx}
@@ -141,7 +154,11 @@ export default function HeroBanner(): React.JSX.Element {
           />
         </Box>
 
-        <CarouselDots count={BANNERS.length} current={current} onDotClick={goTo} />
+        <CarouselDots
+          count={BANNERS.length}
+          current={current}
+          onDotClick={goTo}
+        />
       </Box>
     </Box>
   );
