@@ -1,0 +1,48 @@
+name: Deploy API to Staging
+
+on:
+  push:
+    branches:
+      - staging # Workflow otomatis berjalan saat ada push/merge ke branch staging
+
+jobs:
+  deploy:
+    name: Deploy to Staging VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Deployment Commands via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          # Mengambil data .env dari GitHub Secrets
+          ENV_FILE_CONTENT: ${{ secrets.STAGING_ENV_FILE }}
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_PORT }}
+          envs: ENV_FILE_CONTENT
+          script: |
+            # 1. Masuk ke direktori staging yang tepat
+            cd /home/uxioserver1/web-topup/api/staging
+
+            # 2. Tarik kode terbaru dari branch staging
+            git pull origin staging
+
+            # 3. Tulis ulang file .env dari GitHub Secrets
+            echo "$ENV_FILE_CONTENT" > .env
+
+            # 4. Install dependensi (mengabaikan interaksi manual)
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+
+            # 5. Jalankan migrasi database
+            php artisan migrate --force
+
+            # 6. Bersihkan dan buat ulang cache konfigurasi
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+
+            # 7. Pastikan permission tetap aman setelah file baru turun
+            sudo chown -R uxioserver1:www-data /home/uxioserver1/web-topup/api/staging
+            sudo chmod -R 775 /home/uxioserver1/web-topup/api/staging/storage
+            sudo chmod -R 775 /home/uxioserver1/web-topup/api/staging/bootstrap/cache
