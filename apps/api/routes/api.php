@@ -24,32 +24,37 @@ use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\WebhookDigiflazzController;
-// System Routes
-Route::get('/ping', function () {
-    return response()->json(['status' => 'success', 'message' => 'pong']);
-});
 
-Route::get('/health', fn () => response()->json([
-    'status' => 'success',
-    'message' => 'ok',
-    'ping_ms' => (int) round((microtime(true) - LARAVEL_START) * 1000),
-]));
+// All Public Routes under v1
+Route::prefix('v1')->group(function () {
 
-// Payment Webhooks (No Auth Required)
-Route::prefix('v1/payments')->group(function () {
-    Route::post('/monetapay/callback', MonetapayCallbackController::class);
-});
+    // System Routes
+    Route::get('/ping', function () {
+        return response()->json(['status' => 'success', 'message' => 'pong']);
+    });
 
-Route::post('/v1/webhook/digiflazz', [WebhookDigiflazzController::class, 'handle']);
-Route::post('/v1/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
+    Route::get('/health', fn () => response()->json([
+        'status' => 'success',
+        'message' => 'ok',
+        'ping_ms' => (int) round((microtime(true) - LARAVEL_START) * 1000),
+    ]));
 
-// Authentication Routes
-Route::prefix('v1/auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/refresh', [AuthController::class, 'refreshToken']);
+    // Payment Webhooks (No Auth Required)
+    Route::prefix('payments')->group(function () {
+        Route::post('/monetapay/callback', MonetapayCallbackController::class);
+    });
 
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/webhook/digiflazz', [WebhookDigiflazzController::class, 'handle']);
+    Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
+
+    // Authentication Routes
+    Route::prefix('auth')->group(function () {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/refresh', [AuthController::class, 'refreshToken']);
+
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('/logout', [AuthController::class, 'logout']);
+        });
     });
 });
 
