@@ -29,9 +29,11 @@ Route::get('/ping', function () {
     return response()->json(['status' => 'success', 'message' => 'pong']);
 });
 
-Route::get('/health', function () {
-    return response()->json(['status' => 'success', 'message' => 'ok']);
-});
+Route::get('/health', fn () => response()->json([
+    'status' => 'success',
+    'message' => 'ok',
+    'ping_ms' => (int) round((microtime(true) - LARAVEL_START) * 1000),
+]));
 
 // Payment Webhooks (No Auth Required)
 Route::prefix('v1/payments')->group(function () {
