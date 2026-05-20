@@ -1,13 +1,21 @@
-# Design System Brief: Multi-Game Top-Up Platform
+# Design System Brief: UDN Top Up Website
 
 **Target Audience:** UI/UX Designer, Frontend Developer
 **Design Theme:** E-sports Premium, Neon Violet Dark Mode, Glassmorphism, Desktop-First Responsive
-**Styling Framework:** Tailwind CSS + ShadcnUI
+**Styling Framework:** Tailwind CSS **v4** + **HeroUI**
 **Visual Reference:** Figma — Design Topup Game (Internal File)
 
 ## 1. Overview
 
-This document defines the visual standards and User Interface (UI) components for the Game Top-Up project. The design adopts a **premium e-sports aesthetic** with a signature **violet–azure neon gradient** over a near-black background. The primary goal is to create a modern, immersive, and trustworthy _gaming-grade_ impression for top-up transactions. The visual hierarchy is built through a combination of **gradient text for numbers/prices**, **glassmorphism cards**, and **glow shadows** as accents.
+This document defines the visual standards and User Interface (UI) components for the UDN Top Up Website. The design adopts a **premium e-sports aesthetic** with a signature **violet–azure neon gradient** over a near-black background. The primary goal is to create a modern, immersive, and trustworthy _gaming-grade_ impression for top-up transactions. The visual hierarchy is built through a combination of **gradient text for numbers/prices**, **glassmorphism cards**, and **glow shadows** as accents.
+
+**HeroUI Integration Strategy:** HeroUI is used as the base component library for accessible primitives (Modals, Dropdowns, Popovers, Inputs, Buttons, Tabs, etc.). Visual styling is then overridden via:
+
+- Tailwind v4 arbitrary values (e.g. `bg-[#0A0A0C]`, `border-[#C084FC]`).
+- HeroUI's `classNames` prop (every HeroUI component accepts slot-based class overrides).
+- Custom CSS variables exposed via `@theme` directive in `globals.css`.
+
+This means **DO NOT** use HeroUI's default themed colors when they conflict with our token system — always override with arbitrary Tailwind values or our custom theme tokens.
 
 ## 2. Design Principles
 
@@ -233,14 +241,15 @@ One of the **visual signatures** of this design is the use of violet–azure gra
 
 ## 8. Core UI Components
 
-Component mapping based on the Figma design visual breakdown.
+Component mapping based on the Figma design visual breakdown. All components below are built on top of **HeroUI primitives** where applicable, with visual styling overridden via Tailwind v4 arbitrary values and HeroUI's `classNames` slot API.
 
 ### A. Header / Navbar
 
+- **Base Component:** `<Navbar>` from HeroUI, but with custom layout.
 - **Layout:** Horizontal flex, height `120px`, horizontal padding `168px`.
-- **Search Bar:** Width `716px`, height `38px`, `bg-white/5`, `border border-white/5`, `rounded-full`. Placeholder: "Search games to top up...".
-- **Language Switcher Button:** `82 × 38px`, `bg-white/5`, flag icon + "ID" text + chevron up.
-- **Login Button:** `90 × 38px`, `rounded-full`, text "Masuk" Outfit Medium 14px.
+- **Search Bar:** Width `716px`, height `38px`, `bg-white/5`, `border border-white/5`, `rounded-full`. Placeholder: "Search games to top up...". Use HeroUI `<Input>` with `classNames` override.
+- **Language Switcher Button:** `82 × 38px`, `bg-white/5`, flag icon + locale code + chevron up. Use HeroUI `<Dropdown>` for the locale picker. **Triggers `react-i18next` language change AND URL navigation to the same logical route under the new locale prefix** (see PRD Workflow 3).
+- **Login Button:** `90 × 38px`, `rounded-full`, text "Masuk" / "Login" (translated) Outfit Medium 14px.
 - **Sub-Navigation:** Below header, 75–130px gap between items, color: muted for inactive, white for active.
 
 ### B. Game Card (Flash Sale) — Hero Component
@@ -249,18 +258,18 @@ Vertical layout with a 3-part structure:
 
 1. **Image Section (top):** Padding `pt-4 px-4`, `64×64px` thumbnail `rounded-xl` with drop shadow, horizontally centered, followed by product name (DM Sans Bold 14px) + category (Inter 10px).
 2. **Price & Stock Section (middle):** Padding `px-4 py-3`. Contains:
-
-- Main price with **gradient text** (`bg-clip-text`)
-- Strikethrough price + green discount badge `#0EA42E` rounded-[10px]
-- "AVAILABLE" label + "93 / 100" counter
-- Stock bar: track `bg-[#0B051D]` rounded-full, fill `bg-[#9333EA]` rounded-full
-
+   - Main price with **gradient text** (`bg-clip-text`)
+   - Strikethrough price + green discount badge `#0EA42E` rounded-[10px]
+   - "AVAILABLE" label + "93 / 100" counter
+   - Stock bar: track `bg-[#0B051D]` rounded-full, fill `bg-[#9333EA]` rounded-full
 3. **Action Button (bottom):** Width `187–189px`, padding `py-2.5`, `rounded-[50px]`.
 
 **State Variations:**
 
 - **Active/Featured:** Border `border-[3px] border-[#C084FC]` + button `bg-gradient-to-r from-[#3B82F6] to-[#9234EA]`.
 - **Default:** Border `border border-[rgba(59,130,246,0.2)]` + button `bg-white/5 border border-white/5`.
+
+> Implement these states as an explicit `variant` prop using **CVA** (`class-variance-authority`), NOT via `:hover` pseudo-classes — the active state is _persistent_ (the first card is always highlighted).
 
 ### C. Popular Card
 
@@ -284,6 +293,8 @@ Signature pattern for the "FLASH SALE" section:
 
 ### F. Buttons
 
+Built on HeroUI `<Button>` with `classNames` override.
+
 | Variant             | Background                                          | Text                         | Use Case                 |
 | ------------------- | --------------------------------------------------- | ---------------------------- | ------------------------ |
 | **Primary CTA**     | `gradient azure → violet`                           | Outfit Bold 14px `#E9D5FF`   | "Top Up Now" highlighted |
@@ -293,6 +304,8 @@ Signature pattern for the "FLASH SALE" section:
 | **Tab Button**      | `bg-violet-600` (active) / transparent (inactive)   | Outfit 14px                  | Game category tab        |
 
 ### G. Form Inputs (Login & Register)
+
+Built on HeroUI `<Input>` primitive.
 
 - **Input Field:** `h-10`, `rounded-md`, semi-transparent background, thin border. Horizontal padding `px-2 py-2.5`.
 - **Label:** Inter Medium 14px, color `#C9D5E3`, `6px` gap to input.
@@ -305,89 +318,18 @@ Signature pattern for the "FLASH SALE" section:
 - Flash Sale Grid: `grid grid-cols-5 gap-5` (1230px / 5 cards).
 - Popular Grid: `grid grid-cols-6 gap-5` (1235px / 6 cards).
 
-## 9. Tailwind Configuration
+## 9. Tailwind v4 Configuration
 
-Here are the two versions of the Tailwind configuration based on the version you are using.
-
-### Version 1: Tailwind CSS v3 (`tailwind.config.ts`)
-
-```ts
-// tailwind.config.ts
-import type { Config } from "tailwindcss";
-
-export default {
-  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          DEFAULT: "#9234EA",
-          secondary: "#3B82F6",
-        },
-        violet: {
-          deep: "#0B051D", // track background
-          56: "#9333EA",
-          75: "#C084FC",
-          85: "#D8B4FE",
-          lavender: "#E9D5FF",
-        },
-        azure: {
-          60: "#3B82F6",
-        },
-        surface: {
-          base: "#0A0A0C", // page background
-          glass: "rgba(59, 130, 246, 0.05)",
-          "glass-white": "rgba(255, 255, 255, 0.05)",
-        },
-        text: {
-          primary: "#FFFFFF",
-          body: "#6A7282",
-          "body-light": "#C9D5E3",
-          muted: "#909AAE",
-          subtitle: "#A1A1AA",
-        },
-        success: "#0EA42E",
-      },
-      fontFamily: {
-        outfit: ["Outfit", "sans-serif"],
-        inter: ["Inter", "sans-serif"],
-        plex: ['"IBM Plex Sans Condensed"', "sans-serif"],
-        dmsans: ['"DM Sans"', "sans-serif"],
-      },
-      backgroundImage: {
-        "gradient-cta": "linear-gradient(to right, #3B82F6, #9234EA)",
-        "gradient-price": "linear-gradient(to right, #FFFFFF, #E9D5FF)",
-        "gradient-section": "rgba(146, 52, 234, 0.1)",
-      },
-      boxShadow: {
-        "product-thumb": "0 10px 15px rgba(0,0,0,0.4), 0 4px 6px rgba(0,0,0,0.4)",
-        "cta-primary": "0 25px 50px -12px rgba(0,0,0,0.25)",
-        "glow-violet": "0 0 14.87px rgba(147, 51, 234, 0.3)",
-        "timer-inset": "inset 0 4.85px 4.85px rgba(0,0,0,0.25)",
-      },
-      borderRadius: {
-        card: "16px",
-        section: "20px",
-      },
-      letterSpacing: {
-        hero: "-1.8px",
-        heading: "-0.5px",
-      },
-    },
-  },
-  plugins: [],
-} satisfies Config;
-```
-
-### Version 2: Tailwind CSS v4 (`globals.css` or `app.css`)
-
-In Tailwind v4, configuration moves away from the `.ts` file into the main CSS file using CSS variables and the `@theme` directive.
+This project uses **Tailwind CSS v4 exclusively**. There is **no `tailwind.config.ts` file**. All design tokens are defined via the `@theme` directive in the main CSS entry (`src/styles/globals.css`).
 
 ```css
 @import "tailwindcss";
 
+/* HeroUI plugin import (if using HeroUI's Tailwind plugin path) */
+@plugin "@heroui/theme";
+
 @theme {
-  /* Colors */
+  /* === Colors === */
   --color-primary: #9234ea;
   --color-primary-secondary: #3b82f6;
 
@@ -411,32 +353,59 @@ In Tailwind v4, configuration moves away from the `.ts` file into the main CSS f
 
   --color-success: #0ea42e;
 
-  /* Typography */
+  /* === Typography === */
   --font-outfit: "Outfit", sans-serif;
   --font-inter: "Inter", sans-serif;
   --font-plex: "IBM Plex Sans Condensed", sans-serif;
   --font-dmsans: "DM Sans", sans-serif;
 
-  /* Background Images / Gradients */
+  /* === Background Images / Gradients === */
   --background-image-gradient-cta: linear-gradient(to right, #3b82f6, #9234ea);
   --background-image-gradient-price: linear-gradient(to right, #ffffff, #e9d5ff);
   --background-image-gradient-section: rgba(146, 52, 234, 0.1);
 
-  /* Box Shadows */
+  /* === Box Shadows === */
   --shadow-product-thumb: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-cta-primary: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   --shadow-glow-violet: 0 0 14.87px rgba(147, 51, 234, 0.3);
   --shadow-timer-inset: inset 0 4.85px 4.85px rgba(0, 0, 0, 0.25);
 
-  /* Border Radius */
+  /* === Border Radius === */
   --radius-card: 16px;
   --radius-section: 20px;
 
-  /* Letter Spacing */
+  /* === Letter Spacing === */
   --tracking-hero: -1.8px;
   --tracking-heading: -0.5px;
 }
 ```
+
+### 9.1 HeroUI Provider Setup
+
+Wrap the app in `<HeroUIProvider>` at the root level (`__root.tsx` or `main.tsx`):
+
+```tsx
+import { HeroUIProvider } from "@heroui/react";
+
+<HeroUIProvider>{/* App content */}</HeroUIProvider>;
+```
+
+### 9.2 HeroUI Style Override Pattern
+
+Always use the `classNames` slot API to override HeroUI defaults. Example:
+
+```tsx
+<Button
+  classNames={{
+    base: "rounded-[50px] bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary",
+    label: "font-outfit font-bold text-[14px] text-[#E9D5FF]",
+  }}
+>
+  Top Up Now
+</Button>
+```
+
+Do **NOT** rely on HeroUI's `color="primary"` / `variant="solid"` etc. when they conflict with our token system — always pass `classNames` with our exact arbitrary values.
 
 ## 10. Implementation Notes
 
@@ -446,13 +415,15 @@ Several critical things that **must be paid attention to** during implementation
 2. **Gradient Price Must Use `bg-clip-text`:** Every main price must use the following pattern, no compromises:
 
 ```tsx
-<p className="bg-linear-to-r from-white to-[#E9D5FF] bg-clip-text text-transparent font-plex font-bold text-[25px] leading-[28px]">
+<p className="bg-linear-to-r from-white to-[#E9D5FF] bg-clip-text text-transparent font-plex font-bold text-[25px] leading-7">
   Rp 72.500
 </p>
 ```
 
-3. **Active vs Default Card:** Implement this as an explicit variant. Don't rely solely on `:hover` — this design utilizes a _persistent active state_ (the first Flash Sale card is always highlighted).
+3. **Active vs Default Card:** Implement this as an explicit variant via **CVA**. Don't rely solely on `:hover` — this design utilizes a _persistent active state_ (the first Flash Sale card is always highlighted).
 4. **Page Background is not Pure Black:** Use `#0A0A0C` (slightly warm), not `#000000`. This is a detail often missed but significantly affects the visual vibe.
 5. **Glow Shadow is a Signature:** The countdown timer has `box-shadow: 0 0 14.87px rgba(147,51,234,0.3)`. Ensure this glow is applied — without it, the timer feels "flat" and loses its premium identity.
 6. **Two-Layer Stock Bar:** The stock bar has **2 layers** — a dark track `#0B051D` and a violet fill `#9333EA`. Make sure the fill width is calculated from the `current/total` ratio (e.g., 93/100 = 93%).
 7. **Responsive Consideration:** This design is built desktop-first with a 1440px width. Mobile breakpoints must be considered separately — especially for the Flash Sale grid (5 columns → 2 columns on mobile) and the countdown timer (compact mode).
+8. **HeroUI Override Discipline:** Whenever you reach for a HeroUI component, immediately think "what does the design require?" and override via `classNames`. Default HeroUI theme colors will NOT match this design system out of the box.
+9. **i18n-Ready Strings:** All hardcoded UI text (labels, button text, placeholders, error messages) MUST be wrapped in `t('namespace.key')` from `react-i18next`. Never inline raw strings in components — even during initial implementation. This prevents the painful refactor later.
