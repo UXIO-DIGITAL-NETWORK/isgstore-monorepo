@@ -1,7 +1,7 @@
 import React from "react";
 import { Box } from "@/components/common/Box";
 import { Navbar } from "@/components/shared/Navbar";
-import { HeroBanner, FlashSale } from "../components";
+import { HeroBanner, FlashSale, PopularGames } from "../components";
 
 export default function HomePage(): React.JSX.Element {
   return (
@@ -9,6 +9,7 @@ export default function HomePage(): React.JSX.Element {
       <Navbar />
       <HeroBanner />
       <FlashSale />
+      <PopularGames />
     </Box>
   );
 }

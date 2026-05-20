@@ -29,3 +29,6 @@ dist-ssr
 
 # Artifacts
 .artifacts
+
+# Handoff
+handoff.md
