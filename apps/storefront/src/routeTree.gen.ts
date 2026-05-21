@@ -9,13 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteRouteImport } from './routes/_auth/route'
+import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthRegisterIndexRouteImport } from './routes/_auth/register/index'
-import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
+import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
+import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
+import { Route as LocaleAuthRegisterIndexRouteImport } from './routes/$locale/_auth/register/index'
+import { Route as LocaleAuthLoginIndexRouteImport } from './routes/$locale/_auth/login/index'
 
-const AuthRouteRoute = AuthRouteRouteImport.update({
-  id: '/_auth',
+const LocaleRouteRoute = LocaleRouteRouteImport.update({
+  id: '/$locale',
+  path: '/$locale',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -23,54 +26,80 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
+const LocaleIndexRoute = LocaleIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocaleAuthRegisterIndexRoute = LocaleAuthRegisterIndexRouteImport.update({
   id: '/register/',
   path: '/register/',
-  getParentRoute: () => AuthRouteRoute,
+  getParentRoute: () => LocaleAuthRouteRoute,
 } as any)
-const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
+const LocaleAuthLoginIndexRoute = LocaleAuthLoginIndexRouteImport.update({
   id: '/login/',
   path: '/login/',
-  getParentRoute: () => AuthRouteRoute,
+  getParentRoute: () => LocaleAuthRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login/': typeof AuthLoginIndexRoute
-  '/register/': typeof AuthRegisterIndexRoute
+  '/$locale': typeof LocaleAuthRouteRouteWithChildren
+  '/$locale/': typeof LocaleIndexRoute
+  '/$locale/login/': typeof LocaleAuthLoginIndexRoute
+  '/$locale/register/': typeof LocaleAuthRegisterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof AuthLoginIndexRoute
-  '/register': typeof AuthRegisterIndexRoute
+  '/$locale': typeof LocaleIndexRoute
+  '/$locale/login': typeof LocaleAuthLoginIndexRoute
+  '/$locale/register': typeof LocaleAuthRegisterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_auth': typeof AuthRouteRouteWithChildren
-  '/_auth/login/': typeof AuthLoginIndexRoute
-  '/_auth/register/': typeof AuthRegisterIndexRoute
+  '/$locale': typeof LocaleRouteRouteWithChildren
+  '/$locale/_auth': typeof LocaleAuthRouteRouteWithChildren
+  '/$locale/': typeof LocaleIndexRoute
+  '/$locale/_auth/login/': typeof LocaleAuthLoginIndexRoute
+  '/$locale/_auth/register/': typeof LocaleAuthRegisterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login/' | '/register/'
+  fullPaths:
+    | '/'
+    | '/$locale'
+    | '/$locale/'
+    | '/$locale/login/'
+    | '/$locale/register/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register'
-  id: '__root__' | '/' | '/_auth' | '/_auth/login/' | '/_auth/register/'
+  to: '/' | '/$locale' | '/$locale/login' | '/$locale/register'
+  id:
+    | '__root__'
+    | '/'
+    | '/$locale'
+    | '/$locale/_auth'
+    | '/$locale/'
+    | '/$locale/_auth/login/'
+    | '/$locale/_auth/register/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  LocaleRouteRoute: typeof LocaleRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthRouteRouteImport
+    '/$locale': {
+      id: '/$locale'
+      path: '/$locale'
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -80,40 +109,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth/register/': {
-      id: '/_auth/register/'
-      path: '/register'
-      fullPath: '/register/'
-      preLoaderRoute: typeof AuthRegisterIndexRouteImport
-      parentRoute: typeof AuthRouteRoute
+    '/$locale/': {
+      id: '/$locale/'
+      path: '/'
+      fullPath: '/$locale/'
+      preLoaderRoute: typeof LocaleIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
-    '/_auth/login/': {
-      id: '/_auth/login/'
+    '/$locale/_auth': {
+      id: '/$locale/_auth'
+      path: ''
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleAuthRouteRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/_auth/register/': {
+      id: '/$locale/_auth/register/'
+      path: '/register'
+      fullPath: '/$locale/register/'
+      preLoaderRoute: typeof LocaleAuthRegisterIndexRouteImport
+      parentRoute: typeof LocaleAuthRouteRoute
+    }
+    '/$locale/_auth/login/': {
+      id: '/$locale/_auth/login/'
       path: '/login'
-      fullPath: '/login/'
-      preLoaderRoute: typeof AuthLoginIndexRouteImport
-      parentRoute: typeof AuthRouteRoute
+      fullPath: '/$locale/login/'
+      preLoaderRoute: typeof LocaleAuthLoginIndexRouteImport
+      parentRoute: typeof LocaleAuthRouteRoute
     }
   }
 }
 
-interface AuthRouteRouteChildren {
-  AuthLoginIndexRoute: typeof AuthLoginIndexRoute
-  AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
+interface LocaleAuthRouteRouteChildren {
+  LocaleAuthLoginIndexRoute: typeof LocaleAuthLoginIndexRoute
+  LocaleAuthRegisterIndexRoute: typeof LocaleAuthRegisterIndexRoute
 }
 
-const AuthRouteRouteChildren: AuthRouteRouteChildren = {
-  AuthLoginIndexRoute: AuthLoginIndexRoute,
-  AuthRegisterIndexRoute: AuthRegisterIndexRoute,
+const LocaleAuthRouteRouteChildren: LocaleAuthRouteRouteChildren = {
+  LocaleAuthLoginIndexRoute: LocaleAuthLoginIndexRoute,
+  LocaleAuthRegisterIndexRoute: LocaleAuthRegisterIndexRoute,
 }
 
-const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
-  AuthRouteRouteChildren,
+const LocaleAuthRouteRouteWithChildren = LocaleAuthRouteRoute._addFileChildren(
+  LocaleAuthRouteRouteChildren,
+)
+
+interface LocaleRouteRouteChildren {
+  LocaleAuthRouteRoute: typeof LocaleAuthRouteRouteWithChildren
+  LocaleIndexRoute: typeof LocaleIndexRoute
+}
+
+const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
+  LocaleAuthRouteRoute: LocaleAuthRouteRouteWithChildren,
+  LocaleIndexRoute: LocaleIndexRoute,
+}
+
+const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(
+  LocaleRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthRouteRoute: AuthRouteRouteWithChildren,
+  LocaleRouteRoute: LocaleRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

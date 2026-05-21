@@ -1,8 +1,5 @@
 import React from "react";
-
-// ============================================
-// POLYMORPHIC BOX COMPONENT (div, section, etc)
-// ============================================
+import { cn } from "@/lib/utils";
 
 type BoxOwnProps<T extends React.ElementType> = {
   as?: T;
@@ -10,39 +7,32 @@ type BoxOwnProps<T extends React.ElementType> = {
   className?: string;
 };
 
-type PolymorphicBoxProps<T extends React.ElementType> = BoxOwnProps<T> &
+type BoxProps<T extends React.ElementType> = BoxOwnProps<T> &
   Omit<React.ComponentPropsWithoutRef<T>, keyof BoxOwnProps<T>>;
 
-type PolymorphicRef<T extends React.ElementType> = React.ComponentPropsWithRef<T>["ref"];
-
 type BoxComponent = <T extends React.ElementType = "div">(
-  props: PolymorphicBoxProps<T> & {
-    ref?: PolymorphicRef<T>;
-  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props: BoxProps<T> & { ref?: React.Ref<any> },
 ) => React.ReactElement | null;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const BoxInner = (props: any, ref: any) => {
-  const { as, children, className, ...restProps } = props;
+type InternalBoxProps = {
+  as?: React.ElementType;
+  children?: React.ReactNode;
+  className?: string;
+  [key: string]: unknown;
+};
 
-  const Component = as || "div";
-
+const BoxInner = ({ as, children, className, ...rest }: InternalBoxProps, ref: React.Ref<HTMLElement>) => {
+  const Component = as ?? "div";
   return (
-    <Component
-      ref={ref}
-      className={className}
-      {...restProps}
-    >
+    <Component ref={ref} className={cn(className)} {...rest}>
       {children}
     </Component>
   );
 };
 
-const Box = React.forwardRef(BoxInner) as unknown as BoxComponent & {
-  displayName: string;
-};
-
+const Box = React.forwardRef(BoxInner) as unknown as BoxComponent & { displayName: string };
 Box.displayName = "Box";
 
 export { Box };
-export type { PolymorphicBoxProps, BoxOwnProps };
+export type { BoxProps, BoxOwnProps };

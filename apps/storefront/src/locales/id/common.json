@@ -1,0 +1,20 @@
+{
+  "nav": {
+    "topup": "TOPUP",
+    "checkOrder": "CEK PESANAN",
+    "priceList": "DAFTAR HARGA",
+    "leaderboard": "LEADERBOARD",
+    "news": "BERITA",
+    "calculator": "KALKULATOR"
+  },
+  "action": {
+    "login": "Masuk",
+    "register": "Daftar",
+    "logout": "Keluar",
+    "search": "Cari game untuk top up..."
+  },
+  "language": {
+    "id": "Bahasa Indonesia",
+    "en": "English"
+  }
+}

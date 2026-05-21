@@ -1,4 +1,4 @@
-import { api } from "@/lib/axios";
+import { api } from "@/config/axios";
 import type { ApiResponse } from "@/types/api.type";
 import type { AuthApiResponse } from "../types/auth.type";
 import type { LoginFormValues, RegisterFormValues } from "../schemas/auth.schema";

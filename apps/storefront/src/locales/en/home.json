@@ -1,0 +1,17 @@
+{
+  "flashSale": {
+    "title": "Flash Sale",
+    "endsIn": "Ends in",
+    "available": "Available",
+    "topUpNow": "Top Up Now"
+  },
+  "popular": {
+    "title": "Popular Games",
+    "subtitle": "Choose your favorite game and get the best deals",
+    "topUp": "Top Up"
+  },
+  "hero": {
+    "register": "Register Now",
+    "topUp": "Top Up Now"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "notFound": "Halaman tidak ditemukan",
+  "serverError": "Terjadi kesalahan pada server",
+  "unauthorized": "Anda tidak memiliki akses ke halaman ini",
+  "invalidCredentials": "Email atau password salah"
+}

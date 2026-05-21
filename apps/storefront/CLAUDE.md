@@ -24,13 +24,12 @@ This `CLAUDE.md` is a **condensed working reference**. For any decision involvin
 | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `homepage-design.json`                                                                                                              | Raw Figma export (source data for `.agents/context/design_system.md` section 11) — consult when a value in the design doc seems ambiguous |
 | `./agents/context/images/01 - Design homepage (top up game).png`                                                                    | Visual reference of the homepage                                                                                                          |
-| `.agents/context/product_requirements.md`, `.agents/context/design_system.md`, `.agents/context/system_architecture.md` (no suffix) | **Deprecated.** Kept for history only. Always prefer the `_v2` / `_v3` versions                                                           |
 
 ### Document Precedence Rules
 
 When two documents conflict:
 
-1. **Newest version wins** (`_v3` > `_v2` > unversioned).
+1. **Unversioned docs on disk are canonical** (`product_requirements.md`, `design_system.md`, `system_architecture.md`).
 2. **PRD wins on business logic** (what the feature does, who can access it, DB fields).
 3. **Design System wins on visual specs** (colors, fonts, spacing, component anatomy).
 4. **System Architecture wins on code organization** (folder structure, routing, state, providers).
@@ -84,7 +83,7 @@ src/
 │   └── ui/                   # HeroUI re-exports / wrappers with project defaults
 │
 ├── config/                   # ⚙️ GLOBAL SETTINGS (boot-time setup)
-│   ├── axios.ts              # Axios instance + interceptors (target — see migration note below)
+│   ├── axios.ts              # Axios instance + interceptors
 │   ├── i18n.ts               # react-i18next initialization
 │   └── env.ts                # Environment constants
 │
@@ -212,8 +211,6 @@ features/<name>/
 Export the feature's public API through `features/<name>/index.ts`.
 
 ## HTTP Client (Axios)
-
-> 📌 **Migration note:** The axios instance currently lives at `src/lib/axios.ts`. Per the architecture in `system_architecture_v2.md`, it should be moved to **`src/config/axios.ts`** — the rationale being that `lib/` is for pure utilities (input → output, no side effects), while `config/` is for stateful boot-time setup (axios instance, i18n, env constants). New code should import from `@/config/axios`; existing imports from `@/lib/axios` should be migrated incrementally.
 
 The `api` instance automatically attaches the Bearer token from `useAuthStore` on every request. On a `401` response (outside of `/login`), it clears auth and redirects to the locale-prefixed `/login`.
 
@@ -424,4 +421,4 @@ Before considering a feature complete, verify:
 
 ---
 
-> 🔁 **Final reminder:** This file summarizes _how_ to work in this repo. For _what_ to build and _how it should look_, always cross-check `.agents/context/product_requirements.md`, `.agents/context/design_system_v3.md`, and `.agents/context/system_architecture_v2.md`. When in doubt, **ask before assuming**.
+> 🔁 **Final reminder:** This file summarizes _how_ to work in this repo. For _what_ to build and _how it should look_, always cross-check `.agents/context/product_requirements.md`, `.agents/context/design_system.md`, and `.agents/context/system_architecture.md`. When in doubt, **ask before assuming**.

@@ -1,28 +1,34 @@
 import { create } from "zustand";
 import Cookies from "js-cookie";
+import type { User } from "@/types/models/user.model";
 
 interface AuthState {
   token: string | null;
-  setToken: (token: string, remember?: boolean) => void;
+  user: User | null;
+  setAuth: (token: string, user: User, remember?: boolean) => void;
   clearAuth: () => void;
+  getRole: () => User["role"] | null;
 }
 
-const MAX_EXPIRES_DAY: number = 30;
+const MAX_EXPIRES_DAY = 30;
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: Cookies.get("access_token") || null,
+  user: null,
 
-  setToken: (token, remember = false) => {
+  setAuth: (token, user, remember = false) => {
     Cookies.set("access_token", token, {
       expires: remember ? MAX_EXPIRES_DAY : undefined,
       secure: import.meta.env.PROD,
       sameSite: "strict",
     });
-    set({ token });
+    set({ token, user });
   },
 
   clearAuth: () => {
     Cookies.remove("access_token");
-    set({ token: null });
+    set({ token: null, user: null });
   },
+
+  getRole: () => get().user?.role ?? null,
 }));

@@ -1,0 +1,20 @@
+{
+  "nav": {
+    "topup": "TOP UP",
+    "checkOrder": "TRACK ORDER",
+    "priceList": "PRICE LIST",
+    "leaderboard": "LEADERBOARD",
+    "news": "NEWS",
+    "calculator": "CALCULATOR"
+  },
+  "action": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "search": "Search game to top up..."
+  },
+  "language": {
+    "id": "Bahasa Indonesia",
+    "en": "English"
+  }
+}

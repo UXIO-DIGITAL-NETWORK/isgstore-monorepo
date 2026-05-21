@@ -1,0 +1,12 @@
+{
+  "title": "Top Up",
+  "gameId": "Game ID",
+  "gameIdPlaceholder": "Enter your Game ID",
+  "whatsapp": "WhatsApp Number",
+  "whatsappPlaceholder": "08xxxxxxxxxx",
+  "selectProduct": "Select Amount",
+  "paymentMethod": "Payment Method",
+  "totalPrice": "Total Price",
+  "submit": "Pay Now",
+  "loading": "Processing..."
+}

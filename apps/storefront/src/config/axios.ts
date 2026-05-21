@@ -10,7 +10,6 @@ export const api = axios.create({
   },
 });
 
-// Request Interceptor: Add Bearer Token if available
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().token;
@@ -22,7 +21,6 @@ api.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error),
 );
 
-// Response Interceptor: Auto-Logout if 401 status
 api.interceptors.response.use(
   (response) => response.data,
   (error: AxiosError) => {
@@ -31,7 +29,8 @@ api.interceptors.response.use(
 
     if (isUnauthorized && isNotLoginRequest) {
       useAuthStore.getState().clearAuth();
-      window.location.replace("/login");
+      const locale = window.location.pathname.split("/")[1] || "id";
+      window.location.replace(`/${locale}/login`);
     }
 
     return Promise.reject(error);

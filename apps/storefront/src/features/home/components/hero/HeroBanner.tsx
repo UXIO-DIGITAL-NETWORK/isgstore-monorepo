@@ -1,5 +1,6 @@
 import React from "react";
 import { Box } from "@/components/common/Box";
+import { Image } from "@/components/common/Image";
 import { GAP_PX, SIDE_VISIBLE } from "@/features/home/constants/heroBanner";
 import { useHeroCarousel } from "@/features/home/hooks/useHeroCarousel";
 import BannerNavArrow from "./fragments/BannerNavArrow";
@@ -10,7 +11,7 @@ export default function HeroBanner(): React.JSX.Element {
   const { current, trackRef, hasPeek, slideWidth, goTo } = useHeroCarousel(BANNERS.length);
 
   return (
-    <Box className="w-full bg-[#0B0A11] pt-4 pb-5 md:pt-8 md:pb-9">
+    <Box className="w-full bg-[#0A0A0C] pt-4 pb-5 md:pt-8 md:pb-9">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
         {/* Carousel viewport */}
         <Box
@@ -49,7 +50,7 @@ export default function HeroBanner(): React.JSX.Element {
                       className="shrink-0 rounded-xl md:rounded-2xl overflow-hidden"
                       style={slideStyle}
                     >
-                      <img
+                      <Image
                         src={banner.src}
                         alt={banner.alt}
                         className="w-full h-full object-cover"

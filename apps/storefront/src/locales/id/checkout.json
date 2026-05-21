@@ -1,0 +1,12 @@
+{
+  "title": "Top Up",
+  "gameId": "Game ID",
+  "gameIdPlaceholder": "Masukkan Game ID kamu",
+  "whatsapp": "Nomor WhatsApp",
+  "whatsappPlaceholder": "08xxxxxxxxxx",
+  "selectProduct": "Pilih Nominal",
+  "paymentMethod": "Metode Pembayaran",
+  "totalPrice": "Total Harga",
+  "submit": "Bayar Sekarang",
+  "loading": "Memproses..."
+}

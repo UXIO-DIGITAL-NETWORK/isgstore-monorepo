@@ -1,0 +1,17 @@
+{
+  "flashSale": {
+    "title": "Flash Sale",
+    "endsIn": "Berakhir dalam",
+    "available": "Tersedia",
+    "topUpNow": "Top Up Sekarang"
+  },
+  "popular": {
+    "title": "Game Populer",
+    "subtitle": "Pilih game favoritmu dan dapatkan penawaran terbaik",
+    "topUp": "Top Up"
+  },
+  "hero": {
+    "register": "Daftar Sekarang",
+    "topUp": "Top Up Sekarang"
+  }
+}
