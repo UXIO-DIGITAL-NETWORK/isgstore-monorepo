@@ -8,6 +8,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Payment is processed exclusively through **Monetapay** (the frontend never calls Monetapay directly — the backend proxies all communication). The app is **multi-locale** with Indonesian (`id`, default) and English (`en`), reflected as a URL prefix (e.g. `/id/checkout/mobile-legends`).
 
+## Reference Documents (Source of Truth)
+
+This `CLAUDE.md` is a **condensed working reference**. For any decision involving business logic, data shape, visual fidelity, or architectural pattern, the following three documents are the **authoritative source of truth** and override anything implicit in code:
+
+| Document                | Path                                      | Purpose                                                                                                 | When to Consult                                                                                    |
+| ----------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **PRD**                 | `.agents/context/product_requirements.md` | Product Requirements — user personas, workflows, feature specs, database schema                         | Adding/changing a feature, validating user flow, confirming DB field names, scoping a module       |
+| **Design System**       | `.agents/context/design_system.md`        | UI/UX — color tokens, typography roles, spacing, component specs, section-by-section homepage breakdown | Building any UI component, picking a color/font/radius, replicating a Figma section pixel-fidelity |
+| **System Architecture** | `.agents/context/system_architecture.md`  | Frontend architecture — directory layout, routing, state, i18n, provider stack, DoD checklist           | Adding a feature folder, wiring a route guard, choosing where a file belongs, reviewing PRs        |
+
+**Auxiliary references:**
+
+| File                                                                                                                                | Purpose                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `homepage-design.json`                                                                                                              | Raw Figma export (source data for `.agents/context/design_system.md` section 11) — consult when a value in the design doc seems ambiguous |
+| `./agents/context/images/01 - Design homepage (top up game).png`                                                                    | Visual reference of the homepage                                                                                                          |
+| `.agents/context/product_requirements.md`, `.agents/context/design_system.md`, `.agents/context/system_architecture.md` (no suffix) | **Deprecated.** Kept for history only. Always prefer the `_v2` / `_v3` versions                                                           |
+
+### Document Precedence Rules
+
+When two documents conflict:
+
+1. **Newest version wins** (`_v3` > `_v2` > unversioned).
+2. **PRD wins on business logic** (what the feature does, who can access it, DB fields).
+3. **Design System wins on visual specs** (colors, fonts, spacing, component anatomy).
+4. **System Architecture wins on code organization** (folder structure, routing, state, providers).
+5. If `CLAUDE.md` conflicts with any of the three above, **the source document wins** — and `CLAUDE.md` should be updated to match.
+
+### Mandatory Workflow
+
+Before writing code, before answering an architectural question, before making any assumption about business logic or visual style:
+
+1. **Identify which document covers the topic** (use the table above).
+2. **Read the relevant section.** Do not work from memory of "what these docs probably say".
+3. **If ambiguous, ASK** — do not guess. Per the project rules, assumption is forbidden.
+
 ## Tech Stack
 
 | Layer         | Tool                                                           |
@@ -385,3 +421,7 @@ Before considering a feature complete, verify:
 ## Path Alias
 
 `@` maps to `src/` (configured in `vite.config.ts` and `tsconfig.app.json`).
+
+---
+
+> 🔁 **Final reminder:** This file summarizes _how_ to work in this repo. For _what_ to build and _how it should look_, always cross-check `.agents/context/product_requirements.md`, `.agents/context/design_system_v3.md`, and `.agents/context/system_architecture_v2.md`. When in doubt, **ask before assuming**.
