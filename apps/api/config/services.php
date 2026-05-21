@@ -23,8 +23,11 @@ return [
     ],
 
     'monetapay' => [
-        'merchant_id' => env('MONETAPAY_MERCHANT_ID'),
-        'api_key' => env('MONETAPAY_API_KEY'),
+        'mch_id' => env('MONETAPAY_MCH_ID'),
+        'partner_key' => env('MONETAPAY_PARTNER_KEY'),
+        'token' => env('MONETAPAY_TOKEN'),
+        'aes_key' => env('MONETAPAY_AES_KEY'),
+        'aes_iv' => env('MONETAPAY_AES_IV'),
         'is_production' => env('MONETAPAY_IS_PRODUCTION', false),
     ],
 

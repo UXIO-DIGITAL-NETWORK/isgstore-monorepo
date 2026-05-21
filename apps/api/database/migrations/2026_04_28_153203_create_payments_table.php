@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders')->restrictOnDelete()->comment('1 Order = 1 Tagihan Pembayaran');
-            $table->foreignId('payment_method_id')->constrained('payment_methods')->restrictOnDelete();
+            $table->foreignId('transaction_id')->constrained('transactions')->restrictOnDelete()->comment('1 Transaction = 1 Tagihan Pembayaran');
+            $table->foreignId('payment_channel_id')->constrained('payment_channels')->restrictOnDelete();
             $table->string('reference_id')->unique()->comment('Dikirim ke Monetapay sbg mch_order_no');
             $table->string('pg_transaction_id')->nullable()->comment('order_no balikan dari Monetapay');
             $table->bigInteger('gross_amount')->comment('Total harga order + admin fee PG');

@@ -5,52 +5,58 @@ namespace App\Actions\Payment;
 use App\DTOs\Payment\MonetapayCallbackDTO;
 use App\Services\Payment\MonetapayService;
 use App\Actions\Log\CreateActivityLogAction;
-use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Payment;
+use App\Jobs\ProcessDigiflazzTopup;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class HandleMonetapayCallbackAction
 {
     public function __construct(
         private MonetapayService $monetapayService,
-        private CreateActivityLogAction $activityLogAction,
-        private ProcessDigiflazzTransactionAction $digiflazzAction
+        private CreateActivityLogAction $activityLogAction
     ) {}
 
     public function execute(MonetapayCallbackDTO $dto): void
     {
-        // 1. Verify Signature
-        $expectedSignature = $this->monetapayService->generateSignature($dto->referenceId, $dto->amount);
-
-        if (!hash_equals($expectedSignature, $dto->signature)) {
-            $this->logActivity($dto->referenceId, 'Signature Verification Failed', $dto->rawPayload);
-            throw new Exception("Invalid Monetapay signature for reference {$dto->referenceId}");
-        }
-
         DB::transaction(function () use ($dto) {
-            // 2. Ambil data Payment beserta Order untuk Digiflazz
-            $payment = Payment::with('order')->where('reference_id', $dto->referenceId)->lockForUpdate()->firstOrFail();
+            // 1. Ambil data Payment beserta Transaction untuk Digiflazz
+            $payment = Payment::with('transaction')->where('reference_id', $dto->outNo)->lockForUpdate()->firstOrFail();
+            $transaction = $payment->transaction;
             $status = strtoupper($dto->status);
 
-            // Update status payment (3 = Success, 2 = Failed/Canceled)
+            // Step B (Idempotency): If already PAID, PROCESSING, or COMPLETED, return early
+            if (in_array($transaction->status, ['PAID', 'PROCESSING', 'COMPLETED'])) {
+                return; // Return immediately to return HTTP 200
+            }
+
+            // Step C (Anti-fraud): Verify exact amount
+            if ($payment->gross_amount != $dto->amount) {
+                $this->logActivity($dto->outNo, 'Fraud detected: Amount mismatch', $dto->rawPayload);
+                throw new Exception("Amount mismatch for reference {$dto->outNo}. Expected {$payment->gross_amount}, got {$dto->amount}");
+            }
+
+            // Step D: Update status
             $paymentStatus = $status === 'SUCCESS' ? '3' : '2';
             $payment->update([
                 'status' => $paymentStatus,
                 'paid_at' => $status === 'SUCCESS' ? now() : null,
             ]);
 
-            // 3. Handle Business Logic & Eksekusi Digiflazz
-            if ($status === 'SUCCESS' && $payment->order->status === 'Pending') {
-                $payment->order->update(['status' => 'Processing']);
+            if ($status === 'SUCCESS') {
+                // Step D: Use DB::transaction(): Update status to PAID.
+                $transaction->update(['status' => 'PAID']);
 
-                // Melepaskan tembakan API ke Digiflazz karena uang sudah diterima
-                $this->digiflazzAction->execute($payment->order);
+                // Step E: Trigger Digiflazz top-up automatically via Laravel Queue
+                ProcessDigiflazzTopup::dispatch($transaction);
+            } else {
+                $transaction->update(['status' => 'FAILED_PROVIDER']);
             }
 
             // 4. Log successful callback processing
-            $this->logActivity($dto->referenceId, "Monetapay callback processed: {$status}", $dto->rawPayload);
+            $this->logActivity($dto->outNo, "Monetapay callback processed: {$status}", $dto->rawPayload);
         });
     }
 

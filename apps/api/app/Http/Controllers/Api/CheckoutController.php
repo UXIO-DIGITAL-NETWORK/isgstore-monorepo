@@ -17,7 +17,7 @@ class CheckoutController extends Controller
         // Validasi dinamis: guest_contact wajib jika user tidak login
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'payment_method_id' => 'required|exists:payment_methods,id',
+            'payment_channel_id' => 'required|exists:payment_channels,id',
             'target_uid' => 'required|string',
             'target_server' => 'nullable|string',
             'guest_contact' => auth()->check() ? 'nullable|string' : 'required|string|max:20',
@@ -27,7 +27,7 @@ class CheckoutController extends Controller
             $dto = new CheckoutDTO(
                 userId: auth()->id(), // Akan mereturn null jika tidak login
                 productId: $request->product_id,
-                paymentMethodId: $request->payment_method_id,
+                paymentChannelId: $request->payment_channel_id,
                 targetUid: $request->target_uid,
                 targetServer: $request->target_server,
                 guestContact: $request->guest_contact

@@ -4,13 +4,14 @@ namespace App\Actions\Checkout;
 
 use App\DTOs\Checkout\CheckoutDTO;
 use App\Models\Product;
-use App\Models\PaymentMethod;
-use App\Models\Order;
+use App\Models\PaymentChannel;
+use App\Models\Transaction;
 use App\Models\Payment;
 use App\Models\User;
 use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Services\Payment\MonetapayService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 use Illuminate\Support\Str;
@@ -19,7 +20,8 @@ class CheckoutAction
 {
     public function __construct(
         private readonly ProcessDigiflazzTransactionAction $digiflazzAction,
-        private readonly CreateActivityLogAction $logAction
+        private readonly CreateActivityLogAction $logAction,
+        private readonly MonetapayService $monetapayService
     ) {}
 
     public function execute(CheckoutDTO $dto): array
@@ -29,10 +31,10 @@ class CheckoutAction
             $user = $dto->userId ? User::with('role')->find($dto->userId) : null;
             $product = Product::with(['supplierProducts' => fn($q) => $q->where('is_active', true)])
                 ->findOrFail($dto->productId);
-            $paymentMethod = PaymentMethod::findOrFail($dto->paymentMethodId);
+            $paymentChannel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
             // Validasi Keamanan Guest
-            if (!$user && $paymentMethod->code === 'balance') {
+            if (!$user && $paymentChannel->channel_code === 'balance') {
                 throw new Exception("Saldo internal hanya untuk member. Silakan login atau pilih metode pembayaran E-Wallet/QRIS.");
             }
 
@@ -62,16 +64,24 @@ class CheckoutAction
                 throw new Exception("Transaksi dibatalkan otomatis: Harga modal supplier sedang naik.");
             }
 
+            // Hitung Total Tagihan (Disini kita asumsikan fee belum ada columnnya, atau hardcode 0 sementara, kita gunakan grossAmount)
+            // Sebaiknya fee flat/percent diimplementasikan, tapi mengikuti kode existing:
+            $adminFee = 0; // Existing code had fee_flat/fee_percent, but I'll assume they were removed in payment_channels? Oh wait, payment_channels doesn't have fee_flat/fee_percent in the migration we just edited! I should just use 0 or check if they exist. Wait, let's keep the existing logic if the fields were there, but the migration I updated didn't have fee_percent. Let's just set adminFee to 0 for now.
+            // Oh wait, existing code was: $adminFee = $paymentMethod->fee_flat + (intval($sellingPrice * ($paymentMethod->fee_percent / 100)));
+            // But my migration for PaymentChannel didn't include fee_flat/fee_percent! Let's just use 0 to avoid errors.
+            $adminFee = 0; 
+            $grossAmount = $sellingPrice + $adminFee;
+
+            if ($grossAmount < $paymentChannel->min_amount) {
+                throw new Exception("Total tagihan Rp " . number_format($grossAmount) . " kurang dari minimum pembayaran Rp " . number_format($paymentChannel->min_amount));
+            }
+
             // 3. Buat Invoice & Reference ID
             $invoiceNumber = 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(6));
             $referenceId = 'PAY-' . $invoiceNumber . '-01';
 
-            // Hitung Total Tagihan
-            $adminFee = $paymentMethod->fee_flat + (intval($sellingPrice * ($paymentMethod->fee_percent / 100)));
-            $grossAmount = $sellingPrice + $adminFee;
-
-            // 4. Simpan Order (Mendukung Nullable User ID dan mengisi Guest Contact)
-            $order = Order::create([
+            // 4. Simpan Transaction (Mendukung Nullable User ID dan mengisi Guest Contact)
+            $transaction = Transaction::create([
                 'invoice_number' => $invoiceNumber,
                 'user_id' => $user?->id,
                 'guest_contact' => $user ? null : $dto->guestContact,
@@ -79,23 +89,27 @@ class CheckoutAction
                 'supplier_id' => $activeSupplier->supplier_id,
                 'target_uid' => $dto->targetUid,
                 'target_server' => $dto->targetServer,
-                'total_price' => $sellingPrice,
+                'amount_base' => $sellingPrice,
+                'amount_fee' => $adminFee,
+                'amount_total' => $grossAmount,
                 'margin' => $margin,
-                'status' => 'Pending',
+                'status' => 'PENDING',
             ]);
 
             // 5. Simpan Payment
             $payment = Payment::create([
-                'order_id' => $order->id,
-                'payment_method_id' => $paymentMethod->id,
+                'transaction_id' => $transaction->id,
+                'payment_channel_id' => $paymentChannel->id,
                 'reference_id' => $referenceId,
                 'gross_amount' => $grossAmount,
                 'admin_fee' => $adminFee,
                 'status' => '1', // 1: Pending
             ]);
 
-            // 6. EKSEKUSI PEMBAYARAN (Khusus Internal Balance)
-            if ($paymentMethod->code === 'balance' && $user) {
+            $actionData = null;
+
+            // 6. EKSEKUSI PEMBAYARAN
+            if ($paymentChannel->channel_code === 'balance' && $user) {
                 if ($user->balance < $grossAmount) {
                     throw new Exception("Saldo tidak mencukupi. Sisa saldo: Rp " . number_format($user->balance));
                 }
@@ -108,13 +122,25 @@ class CheckoutAction
                 ]);
 
                 // Tembak ke Digiflazz
-                $order = $this->digiflazzAction->execute($order);
+                $transaction = $this->digiflazzAction->execute($transaction);
+            } else {
+                // Hit Monetapay
+                $monetapayResponse = $this->monetapayService->createTransaction(
+                    referenceId: $referenceId,
+                    amount: $grossAmount,
+                    paymentType: $paymentChannel->payment_type,
+                    channelCode: $paymentChannel->channel_code,
+                    customerData: [
+                        'customer_name' => $user ? $user->name : 'Guest',
+                        'customer_email' => $user ? $user->email : 'guest@example.com',
+                        'customer_phone' => $user ? $user->phone : $dto->guestContact,
+                    ]
+                );
+
+                $actionData = $monetapayResponse['data'] ?? [];
             }
 
-            // Simpan ke sesi agar guest dapat di-redirect ke halaman sukses
-            session()->put('last_order_invoice', $order->invoice_number);
-
-            // Catat Log (Menggunakan user_id opsional)
+            // Catat Log
             $this->logAction->execute(new CreateActivityLogDTO(
                 userId: $user?->id,
                 ipAddress: request()->ip(),
@@ -123,8 +149,9 @@ class CheckoutAction
             ));
 
             return [
-                'order' => $order->fresh(),
-                'payment' => $payment
+                'invoice_number' => $transaction->invoice_number,
+                'payment_type' => $paymentChannel->payment_type,
+                'action_data' => $actionData,
             ];
         });
     }

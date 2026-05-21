@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('point_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('order_id')->nullable()->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('transaction_id')->nullable()->constrained('transactions')->cascadeOnDelete();
             $table->integer('points_before');
             $table->integer('points_added');
             $table->integer('points_after');

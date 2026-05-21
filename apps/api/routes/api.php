@@ -40,11 +40,8 @@ Route::prefix('v1')->group(function () {
     ]));
 
     // Payment Webhooks (No Auth Required)
-    Route::prefix('payments')->group(function () {
-        Route::post('/monetapay/callback', MonetapayCallbackController::class);
-    });
-
-    Route::post('/webhook/digiflazz', [WebhookDigiflazzController::class, 'handle']);
+    Route::post('/payment/callback', MonetapayCallbackController::class);
+    Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
     Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
 
     // Authentication Routes

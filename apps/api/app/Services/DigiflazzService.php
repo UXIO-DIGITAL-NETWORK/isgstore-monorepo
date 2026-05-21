@@ -21,9 +21,9 @@ class DigiflazzService
     /**
      * Membuat signature MD5 sesuai dokumentasi Digiflazz
      */
-    private function generateSignature(string $command): string
+    private function generateSignature(string $refId): string
     {
-        return md5($this->username . $this->key . $command);
+        return md5($this->username . $this->key . $refId);
     }
 
     public function getPriceList(): array

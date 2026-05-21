@@ -8,7 +8,7 @@ readonly class CheckoutDTO
         // Ubah menjadi nullable karena guest tidak memiliki ID
         public ?int $userId,
         public int $productId,
-        public int $paymentMethodId,
+        public int $paymentChannelId,
         public string $targetUid,
         public ?string $targetServer = null,
         // Tambahkan parameter untuk menyimpan kontak guest
