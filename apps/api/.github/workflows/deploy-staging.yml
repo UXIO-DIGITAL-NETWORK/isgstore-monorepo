@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - staging # Workflow otomatis berjalan saat ada push/merge ke branch staging
+  workflow_dispatch:
 
 jobs:
   deploy:
