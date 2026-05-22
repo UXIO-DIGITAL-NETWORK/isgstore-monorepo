@@ -21,25 +21,39 @@ class MonetapayService
         $this->partnerKey = config('services.monetapay.partner_key');
         $this->token = config('services.monetapay.token');
         
-        // Ensure AES key is 32 bytes for aes-256-cbc. If it's 16 bytes, pad it.
-        $key = config('services.monetapay.aes_key');
-        $this->aesKey = str_pad($key, 32, "\0");
-        $this->aesIv = config('services.monetapay.aes_iv');
+        // Sesuai Java: Kunci AES dipaksa menjadi 16 byte menggunakan padding string "0" (AES-128-CBC)
+        $this->aesKey = $this->formatAesKeyIv(config('services.monetapay.aes_key'));
+        $this->aesIv = $this->formatAesKeyIv(config('services.monetapay.aes_iv'));
         
         $this->baseUrl = config('services.monetapay.is_production')
-            ? 'https://api.monetapay.net' // Production URL
-            : 'https://sandbox-api.monetapay.net'; // Sandbox URL based on docs
+            ? 'https://api.monetapay.net'
+            : 'https://sandbox-api.monetapay.net';
     }
 
     /**
-     * Encrypt payload using strictly AES-256-CBC with OPENSSL_RAW_DATA.
+     * Translasi dari Java: createKey & createIV
      */
-    public function encryptPayload(array $data): string
+    private function formatAesKeyIv(?string $password): string
     {
-        $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $password = (string) $password;
+        $sb = $password;
+        while (strlen($sb) < 16) {
+            $sb .= "0"; // Gunakan karakter string "0", bukan \0
+        }
+        if (strlen($sb) > 16) {
+            $sb = substr($sb, 0, 16);
+        }
+        return $sb;
+    }
+
+    /**
+     * Encrypt string menggunakan AES-128-CBC dan PKCS5/7 Padding
+     */
+    public function encryptPayload(string $content): string
+    {
         $encrypted = openssl_encrypt(
-            $jsonData, 
-            'aes-256-cbc', 
+            $content, 
+            'aes-128-cbc', 
             $this->aesKey, 
             OPENSSL_RAW_DATA, 
             $this->aesIv
@@ -48,81 +62,57 @@ class MonetapayService
     }
 
     /**
-     * Decrypt payload using AES-256-CBC.
-     */
-    public function decryptPayload(string $encryptedData): array
-    {
-        $decoded = base64_decode($encryptedData);
-        $decrypted = openssl_decrypt(
-            $decoded, 
-            'aes-256-cbc', 
-            $this->aesKey, 
-            OPENSSL_RAW_DATA, 
-            $this->aesIv
-        );
-        
-        if ($decrypted === false) {
-            throw new Exception("AES Decryption failed");
-        }
-
-        return json_decode($decrypted, true);
-    }
-
-    /**
-     * Create a new transaction on Monetapay dynamically based on channel.
+     * Create a new transaction on Monetapay
      */
     public function createTransaction(string $referenceId, int $amount, string $paymentType, string $channelCode, array $customerData = []): array
     {
         $isQris = $paymentType === 'qris';
         $endpoint = $this->baseUrl . ($isQris ? '/v1.0.0/qris' : '/v1.0.0/virtual_account');
 
-        // 1. Timestamp Formatting (10-Digit Standard UNIX)
-        // FIX: Hapus substr(). Gunakan time() murni agar tidak terdeteksi sebagai tahun 2533
-        $timestamp = (string) time();
-
-        // 2. Group ALL Business Parameters
+        // 1. Parameter Bisnis Murni (tanpa timestamp & sign)
         $requestParams = [
-            'app_id' => $this->mchId, 
+            'app_id' => $this->mchId,
             'mch_order_no' => (string) $referenceId,
             'amount' => (string) $amount,
-            'timestamp' => $timestamp
         ];
         
         if ($isQris) {
             $requestParams['is_single_use'] = "1";
-            $requestParams['qr_string_type'] = 2; 
+            $requestParams['qr_string_type'] = "2"; 
         } else {
             $requestParams['account_name'] = (string) ($customerData['customer_name'] ?? 'Customer');
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode))); 
             $requestParams['account_phone'] = (string) ($customerData['customer_phone'] ?? '080000000000');
         }
-        
-        // 3. Strict AES-256-CBC Encryption Layer
-        $enData = $this->encryptPayload($requestParams);
 
-        // ==========================================
-        // REVERTED LINES (4 & 5)
-        // ==========================================
-        // 4. Signature (sign) Calculation (Direct Concat)
-        
-        // FIX: Kembali ke format gabungan string langsung tanpa ksort
-        $signString = $this->mchId . $referenceId . $amount . $timestamp . $this->token;
-        
-        // Generate hash MD5 dan pastikan huruf kecil (lowercase)
-        $sign = strtolower(md5($signString));
-        
-        // Masukkan sign ke array queryData yang akan dikirim ke HTTP Client
-        $queryData = $requestParams;
-        $queryData['sign'] = $sign;
+        // 2. Format menjadi TreeMap (Sorting Abjad)
+        ksort($requestParams);
 
-        // Tulis log untuk debugging
-        Log::info('Monetapay Signature Trace', [
-            '1_raw_concat_string' => $signString,
-            '2_final_md5' => $sign
-        ]);
-        // ==========================================
+        // 3. Gabungkan String (key=value__) seperti perulangan buffer.append di Java
+        $buffer = '';
+        foreach ($requestParams as $key => $value) {
+            $buffer .= $key . '=' . $value . '__';
+        }
+        
+        // Hapus "__" di dua karakter terakhir
+        $strMap = substr($buffer, 0, -2); 
 
-        // 5. Request Body Separation
+        // 4. Perhitungan Signature (Double MD5 + Pemisah Custom)
+        $timestamp = (string) time(); // 10-digit epoch
+        
+        // originalString = Token + "*|*" + strMap + "@!@" + timestamp
+        $originalString = $this->token . "*|*" . $strMap . "@!@" . $timestamp;
+        
+        // sign = MD5(MD5(originalString))
+        $sign = md5(md5($originalString));
+
+        // 5. Pembentukan String Akhir yang akan Dienkripsi AES
+        $strToEncrypt = $strMap . "__sign=" . $sign . "__timestamp=" . $timestamp;
+
+        // 6. Eksekusi Enkripsi
+        $enData = $this->encryptPayload($strToEncrypt);
+
+        // 7. Request Body Sesuai Contoh Dokumen
         $requestBody = [
             'data' => [
                 'partner_key' => $this->partnerKey,
@@ -130,15 +120,22 @@ class MonetapayService
             ]
         ];
 
-       try {
-            $response = Http::withQueryParameters($queryData)->post($endpoint, $requestBody);
+        // Debug Log untuk mengawal kesamaan dengan Java
+        Log::info('Monetapay Validated Trace', [
+            'strMap' => $strMap,
+            'originalString' => $originalString,
+            'strToEncrypt' => $strToEncrypt,
+        ]);
+
+        try {
+            // Hapus Query Parameters sepenuhnya, cukup kirim JSON Body
+            $response = Http::post($endpoint, $requestBody);
             
             if ($response->failed()) {
                 $errorData = $response->json();
                 $errorMessage = $errorData['message'] ?? $errorData['msg'] ?? $response->body();
                 
                 Log::error('Monetapay Create Transaction Failed', [
-                    'query' => $queryData,
                     'body' => $requestBody,
                     'response' => $errorData,
                 ]);
@@ -155,7 +152,6 @@ class MonetapayService
             $actionData = [];
             $resData = $responseData['data'] ?? [];
             
-            // Normalize return data format genericly for CheckoutAction
             if ($isQris) {
                 $actionData['qr_string'] = $resData['qr_string'] ?? null;
             } else {
