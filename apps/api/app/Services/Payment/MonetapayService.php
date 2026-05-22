@@ -76,12 +76,13 @@ class MonetapayService
         $isQris = $paymentType === 'qris';
         $endpoint = $this->baseUrl . ($isQris ? '/v1.0.0/qris' : '/v1.0.0/virtual_account');
 
-        // 1. 11-Bit Timestamp Formatting
-        $timestamp = (string) substr(now()->getTimestampMs(), 0, 11);
+        // 1. Timestamp Formatting (10-Digit Standard UNIX)
+        // FIX: Hapus substr(). Gunakan time() murni agar tidak terdeteksi sebagai tahun 2533
+        $timestamp = (string) time();
 
-        // 2. Group ALL Business Parameters (app_id harus masuk ke en_data)
+        // 2. Group ALL Business Parameters
         $requestParams = [
-            'app_id' => $this->mchId, // FIX: Masukkan app_id ke payload inti
+            'app_id' => $this->mchId, 
             'mch_order_no' => (string) $referenceId,
             'amount' => (string) $amount,
             'timestamp' => $timestamp
@@ -89,10 +90,9 @@ class MonetapayService
         
         if ($isQris) {
             $requestParams['is_single_use'] = "1";
-            $requestParams['qr_string_type'] = 2; // FIX: Wajib integer sesuai spesifikasi YAML
+            $requestParams['qr_string_type'] = 2; 
         } else {
             $requestParams['account_name'] = (string) ($customerData['customer_name'] ?? 'Customer');
-            // FIX: Wajib kapital (bca_va -> BCA)
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode))); 
             $requestParams['account_phone'] = (string) ($customerData['customer_phone'] ?? '080000000000');
         }
@@ -101,37 +101,28 @@ class MonetapayService
         $enData = $this->encryptPayload($requestParams);
 
         // ==========================================
-        // CHANGED LINES (89 - 110)
+        // REVERTED LINES (4 & 5)
         // ==========================================
-        // 4. Signature (sign) Calculation with KSORT
+        // 4. Signature (sign) Calculation (Direct Concat)
         
-        // Salin requestParams menjadi queryData untuk diurutkan
-        $queryData = $requestParams;
+        // FIX: Kembali ke format gabungan string langsung tanpa ksort
+        $signString = $this->mchId . $referenceId . $amount . $timestamp . $this->token;
         
-        // Sortir array berdasarkan abjad nama key (A-Z)
-        ksort($queryData);
-        
-        // Buat raw query string (urldecode mencegah karakter di-encode menjadi %20 dll)
-        $rawQueryString = urldecode(http_build_query($queryData));
-        
-        // FIX: Ubah penggabungan token menggunakan 'key=' sesuai standar gateway
-        $signStringWithToken = $rawQueryString . '&key=' . $this->token;
-        
-        // FIX: Generate hash MD5 dan pastikan huruf KAPITAL
-        $sign = strtoupper(md5($signStringWithToken));
+        // Generate hash MD5 dan pastikan huruf kecil (lowercase)
+        $sign = strtolower(md5($signString));
         
         // Masukkan sign ke array queryData yang akan dikirim ke HTTP Client
+        $queryData = $requestParams;
         $queryData['sign'] = $sign;
 
-        // Tulis log untuk debugging di server staging jika masih gagal
+        // Tulis log untuk debugging
         Log::info('Monetapay Signature Trace', [
-            '1_raw_query_string' => $rawQueryString,
-            '2_string_to_hash' => $signStringWithToken,
-            '3_final_md5' => $sign
+            '1_raw_concat_string' => $signString,
+            '2_final_md5' => $sign
         ]);
         // ==========================================
 
-        // FIX: Bungkus payload di dalam root key 'data'
+        // 5. Request Body Separation
         $requestBody = [
             'data' => [
                 'partner_key' => $this->partnerKey,
@@ -142,10 +133,8 @@ class MonetapayService
        try {
             $response = Http::withQueryParameters($queryData)->post($endpoint, $requestBody);
             
-            // FIX: Tangkap dan lempar pesan error ASLI dari server Monetapay
             if ($response->failed()) {
                 $errorData = $response->json();
-                // Cari key 'message' atau 'msg', jika tidak ada tampilkan raw body
                 $errorMessage = $errorData['message'] ?? $errorData['msg'] ?? $response->body();
                 
                 Log::error('Monetapay Create Transaction Failed', [
@@ -180,5 +169,4 @@ class MonetapayService
             throw $e;
         } 
     }
-    
 }
