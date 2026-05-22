@@ -145,9 +145,16 @@ class MonetapayService
 
             $responseData = $response->json();
             
-            if (($responseData['code'] ?? '') !== 200 && ($responseData['message'] ?? '') !== 'SUCCESS') {
-                throw new Exception("Monetapay API Error: " . ($responseData['message'] ?? 'Unknown Error'));
+            // ==========================================
+            // FIX: Validasi Respons Fleksibel (Case-Insensitive)
+            // ==========================================
+            $apiCode = $responseData['code'] ?? null;
+            $apiMessage = strtolower($responseData['message'] ?? $responseData['msg'] ?? '');
+            
+            if ($apiCode != 200 && $apiCode != 0 && $apiMessage !== 'success') {
+                throw new Exception("Monetapay API Error [Code: {$apiCode}]: " . ($responseData['message'] ?? 'Unknown Error'));
             }
+            // ==========================================
 
             $actionData = [];
             $resData = $responseData['data'] ?? [];
