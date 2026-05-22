@@ -114,19 +114,20 @@ class MonetapayService
         // Buat raw query string (urldecode mencegah karakter di-encode menjadi %20 dll)
         $rawQueryString = urldecode(http_build_query($queryData));
         
-        // Tambahkan token di akhir string
-        $signStringWithToken = $rawQueryString . '&token=' . $this->token;
+        // FIX: Ubah penggabungan token menggunakan 'key=' sesuai standar gateway
+        $signStringWithToken = $rawQueryString . '&key=' . $this->token;
         
-        // Generate hash MD5 dan pastikan huruf kecil
-        $sign = strtolower(md5($signStringWithToken));
+        // FIX: Generate hash MD5 dan pastikan huruf KAPITAL
+        $sign = strtoupper(md5($signStringWithToken));
         
         // Masukkan sign ke array queryData yang akan dikirim ke HTTP Client
         $queryData['sign'] = $sign;
 
         // Tulis log untuk debugging di server staging jika masih gagal
         Log::info('Monetapay Signature Trace', [
-            'raw_string' => $signStringWithToken,
-            'md5_hashed' => $sign
+            '1_raw_query_string' => $rawQueryString,
+            '2_string_to_hash' => $signStringWithToken,
+            '3_final_md5' => $sign
         ]);
         // ==========================================
 
