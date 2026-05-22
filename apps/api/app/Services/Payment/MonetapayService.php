@@ -71,9 +71,6 @@ class MonetapayService
     /**
      * Create a new transaction on Monetapay dynamically based on channel.
      */
-    /**
-     * Create a new transaction on Monetapay dynamically based on channel.
-     */
     public function createTransaction(string $referenceId, int $amount, string $paymentType, string $channelCode, array $customerData = []): array
     {
         $isQris = $paymentType === 'qris';
@@ -103,15 +100,35 @@ class MonetapayService
         // 3. Strict AES-256-CBC Encryption Layer
         $enData = $this->encryptPayload($requestParams);
 
-        // 4. Signature (sign) Calculation
-        // MD5 Sign: app_id + mch_order_no + amount + timestamp + token
-        $signString = $this->mchId . $referenceId . $amount . $timestamp . $this->token;
-        $sign = md5($signString);
+        // ==========================================
+        // CHANGED LINES (89 - 110)
+        // ==========================================
+        // 4. Signature (sign) Calculation with KSORT
+        
+        // Salin requestParams menjadi queryData untuk diurutkan
+        $queryData = $requestParams;
+        
+        // Sortir array berdasarkan abjad nama key (A-Z)
+        ksort($queryData);
+        
+        // Buat raw query string (urldecode mencegah karakter di-encode menjadi %20 dll)
+        $rawQueryString = urldecode(http_build_query($queryData));
+        
+        // Tambahkan token di akhir string
+        $signStringWithToken = $rawQueryString . '&token=' . $this->token;
+        
+        // Generate hash MD5 dan pastikan huruf kecil
+        $sign = strtolower(md5($signStringWithToken));
+        
+        // Masukkan sign ke array queryData yang akan dikirim ke HTTP Client
+        $queryData['sign'] = $sign;
 
-        // 5. Query Parameters vs Request Body Separation
-        $queryData = array_merge([
-            'sign' => $sign,
-        ], $requestParams);
+        // Tulis log untuk debugging di server staging jika masih gagal
+        Log::info('Monetapay Signature Trace', [
+            'raw_string' => $signStringWithToken,
+            'md5_hashed' => $sign
+        ]);
+        // ==========================================
 
         // FIX: Bungkus payload di dalam root key 'data'
         $requestBody = [
