@@ -2,50 +2,46 @@
 
 namespace App\Jobs;
 
+use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
+use App\Models\Transaction;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Transaction;
-use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class ProcessDigiflazzTopup implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct(public Transaction $transaction)
-    {
-        //
-    }
+    public int $tries   = 3;
+    public int $backoff = 30; // seconds between retries
 
-    /**
-     * Execute the job.
-     */
+    public function __construct(public Transaction $transaction) {}
+
     public function handle(ProcessDigiflazzTransactionAction $digiflazzAction): void
     {
+        // Mark in-flight so the Digiflazz webhook idempotency guard skips concurrent duplicates
+        $this->transaction->update(['status' => 'PROCESSING']);
+
         try {
-            // Update status to PROCESSING before hitting Digiflazz
-            $this->transaction->update(['status' => 'PROCESSING']);
-
-            // Trigger the Digiflazz top-up automatically via API
+            // Action handles the API call and writes the final status
+            // (COMPLETED, FAILED_PROVIDER, or PROCESSING if Digiflazz returns Pending)
             $digiflazzAction->execute($this->transaction);
-
-            // Once executed, Digiflazz webhook will eventually handle it, but if execute() is synchronous we might set to COMPLETED.
-            // Digiflazz typically has its own webhook callback. We'll set it to COMPLETED if no exception,
-            // or rely on WebhookDigiflazzController for async Digiflazz responses.
-            $this->transaction->update(['status' => 'COMPLETED']);
         } catch (Exception $e) {
+            // Infrastructure failure (network, no active supplier) — mark failed and log
             $this->transaction->update(['status' => 'FAILED_PROVIDER']);
-            Log::error('Digiflazz Execution Failed in Job', [
-                'transaction_id' => $this->transaction->id,
-                'error' => $e->getMessage(),
+
+            Log::error('ProcessDigiflazzTopup: Execution failed', [
+                'transaction_id'  => $this->transaction->id,
+                'invoice_number'  => $this->transaction->invoice_number,
+                'error'           => $e->getMessage(),
             ]);
+
+            // Re-throw so Laravel Queue records the failure and honours $tries/$backoff
+            throw $e;
         }
     }
 }

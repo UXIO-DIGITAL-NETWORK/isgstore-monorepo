@@ -23,7 +23,7 @@ use App\Http\Controllers\Api\PointHistoryController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\AnnouncementController;
-use App\Http\Controllers\Api\WebhookDigiflazzController;
+use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
 
 // All Public Routes under v1
 Route::prefix('v1')->group(function () {

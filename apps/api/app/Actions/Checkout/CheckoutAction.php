@@ -64,12 +64,8 @@ class CheckoutAction
                 throw new Exception("Transaksi dibatalkan otomatis: Harga modal supplier sedang naik.");
             }
 
-            // Hitung Total Tagihan (Disini kita asumsikan fee belum ada columnnya, atau hardcode 0 sementara, kita gunakan grossAmount)
-            // Sebaiknya fee flat/percent diimplementasikan, tapi mengikuti kode existing:
-            $adminFee = 0; // Existing code had fee_flat/fee_percent, but I'll assume they were removed in payment_channels? Oh wait, payment_channels doesn't have fee_flat/fee_percent in the migration we just edited! I should just use 0 or check if they exist. Wait, let's keep the existing logic if the fields were there, but the migration I updated didn't have fee_percent. Let's just set adminFee to 0 for now.
-            // Oh wait, existing code was: $adminFee = $paymentMethod->fee_flat + (intval($sellingPrice * ($paymentMethod->fee_percent / 100)));
-            // But my migration for PaymentChannel didn't include fee_flat/fee_percent! Let's just use 0 to avoid errors.
-            $adminFee = 0; 
+            // fee_flat / fee_percent columns are not on payment_channels; extend here when the schema adds them
+            $adminFee    = 0;
             $grossAmount = $sellingPrice + $adminFee;
 
             if ($grossAmount < $paymentChannel->min_amount) {

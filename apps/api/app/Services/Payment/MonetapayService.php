@@ -11,54 +11,107 @@ class MonetapayService
     private string $mchId;
     private string $partnerKey;
     private string $token;
-    private string $aesKey;
-    private string $aesIv;
     private string $baseUrl;
 
     public function __construct()
     {
-        $this->mchId = config('services.monetapay.mch_id');
+        $this->mchId      = config('services.monetapay.mch_id');
         $this->partnerKey = config('services.monetapay.partner_key');
-        $this->token = config('services.monetapay.token');
-        
-        // Sesuai Java: Kunci AES dipaksa menjadi 16 byte menggunakan padding string "0" (AES-128-CBC)
-        $this->aesKey = $this->formatAesKeyIv(config('services.monetapay.aes_key'));
-        $this->aesIv = $this->formatAesKeyIv(config('services.monetapay.aes_iv'));
-        
-        $this->baseUrl = config('services.monetapay.is_production')
+        $this->token      = config('services.monetapay.token');
+        $this->baseUrl    = config('services.monetapay.is_production')
             ? 'https://api.monetapay.net'
             : 'https://sandbox-api.monetapay.net';
     }
 
     /**
-     * Translasi dari Java: createKey & createIV
+     * Official SDK: pads to exactly 16 bytes using null bytes (\0), not "0" character.
+     * substr enforces the 16-byte ceiling if the config value is already longer.
      */
-    private function formatAesKeyIv(?string $password): string
+    private function deriveAesParam(?string $value): string
     {
-        $password = (string) $password;
-        $sb = $password;
-        while (strlen($sb) < 16) {
-            $sb .= "0"; // Gunakan karakter string "0", bukan \0
-        }
-        if (strlen($sb) > 16) {
-            $sb = substr($sb, 0, 16);
-        }
-        return $sb;
+        return substr(str_pad((string) $value, 16, "\0"), 0, 16);
     }
 
     /**
-     * Encrypt string menggunakan AES-128-CBC dan PKCS5/7 Padding
+     * AES-128-CBC encrypt → base64.
+     * Key and IV are derived fresh each call to stay aligned with the SDK's static helpers.
      */
     public function encryptPayload(string $content): string
     {
-        $encrypted = openssl_encrypt(
-            $content, 
-            'aes-128-cbc', 
-            $this->aesKey, 
-            OPENSSL_RAW_DATA, 
-            $this->aesIv
-        );
+        $key = $this->deriveAesParam(config('services.monetapay.aes_key'));
+        $iv  = $this->deriveAesParam(config('services.monetapay.aes_iv'));
+
+        $encrypted = openssl_encrypt($content, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $iv);
+
         return base64_encode($encrypted);
+    }
+
+    /**
+     * AES-128-CBC decrypt → associative array.
+     * Used by MonetapayCallbackController to decode the inbound webhook payload.
+     *
+     * @throws Exception on openssl failure
+     */
+    public function decryptPayload(string $encodedContent): array
+    {
+        $key  = $this->deriveAesParam(config('services.monetapay.aes_key'));
+        $iv   = $this->deriveAesParam(config('services.monetapay.aes_iv'));
+
+        $decrypted = openssl_decrypt(
+            base64_decode($encodedContent),
+            'AES-128-CBC',
+            $key,
+            OPENSSL_RAW_DATA,
+            $iv
+        );
+
+        if ($decrypted === false) {
+            throw new Exception('AES Decryption failed: invalid key, IV, or ciphertext.');
+        }
+
+        $data = json_decode($decrypted, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('AES Decryption failed: decrypted payload is not valid JSON.');
+        }
+
+        return $data;
+    }
+
+    /**
+     * Verify the Double MD5 signature on an inbound Monetapay callback payload.
+     * Mirrors the signature algorithm used in createTransaction — same token, same strMap format.
+     *
+     * @param array $payload The associative array produced by decryptPayload()
+     */
+    public function verifyCallbackSignature(array $payload): bool
+    {
+        $receivedSign = $payload['sign']      ?? null;
+        $timestamp    = $payload['timestamp'] ?? null;
+
+        if (!$receivedSign || !$timestamp) {
+            return false;
+        }
+
+        // Rebuild strMap from all fields except sign and timestamp (same as createTransaction step 2-3)
+        $params = array_filter(
+            $payload,
+            fn(string $k) => !in_array($k, ['sign', 'timestamp'], true),
+            ARRAY_FILTER_USE_KEY
+        );
+        ksort($params);
+
+        $buffer = '';
+        foreach ($params as $key => $value) {
+            $buffer .= $key . '=' . $value . '__';
+        }
+        $strMap = substr($buffer, 0, -2);
+
+        $originalString = $this->token . "*|*" . $strMap . "@!@" . $timestamp;
+        $expectedSign   = md5(md5($originalString));
+
+        // hash_equals prevents timing-based side-channel attacks
+        return hash_equals($expectedSign, strtolower((string) $receivedSign));
     }
 
     /**
