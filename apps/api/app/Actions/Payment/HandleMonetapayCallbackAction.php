@@ -2,71 +2,95 @@
 
 namespace App\Actions\Payment;
 
-use App\DTOs\Payment\MonetapayCallbackDTO;
-use App\Services\Payment\MonetapayService;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
-use App\Models\Payment;
+use App\DTOs\Payment\MonetapayCallbackDTO;
 use App\Jobs\ProcessDigiflazzTopup;
+use App\Models\Payment;
+use App\Models\Transaction;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class HandleMonetapayCallbackAction
 {
     public function __construct(
-        private MonetapayService $monetapayService,
-        private CreateActivityLogAction $activityLogAction
+        private readonly CreateActivityLogAction $activityLogAction
     ) {}
 
     public function execute(MonetapayCallbackDTO $dto): void
     {
-        DB::transaction(function () use ($dto) {
-            // 1. Ambil data Payment beserta Transaction untuk Digiflazz
-            $payment = Payment::with('transaction')->where('reference_id', $dto->outNo)->lockForUpdate()->firstOrFail();
+        // Capture here so we can dispatch after the transaction commits.
+        // Dispatching inside DB::transaction risks the worker picking up the job
+        // before the Payment/Transaction rows are committed and visible.
+        $paidTransaction = null;
+
+        DB::transaction(function () use ($dto, &$paidTransaction) {
+
+            // Lock the Payment row to prevent concurrent webhook replays
+            /** @var Payment $payment */
+            $payment     = Payment::with('transaction')
+                ->where('reference_id', $dto->outNo)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            /** @var Transaction $transaction */
             $transaction = $payment->transaction;
-            $status = strtoupper($dto->status);
 
-            // Step B (Idempotency): If already PAID, PROCESSING, or COMPLETED, return early
-            if (in_array($transaction->status, ['PAID', 'PROCESSING', 'COMPLETED'])) {
-                return; // Return immediately to return HTTP 200
+            // ── Idempotency guard ────────────────────────────────────────────
+            // Monetapay may retry webhooks; return 200 without re-processing
+            if (in_array($transaction->status, ['PAID', 'PROCESSING', 'COMPLETED'], true)) {
+                Log::info("Monetapay callback ignored — already {$transaction->status}", [
+                    'reference_id' => $dto->outNo,
+                ]);
+                return;
             }
 
-            // Step C (Anti-fraud): Verify exact amount
-            if ($payment->gross_amount != $dto->amount) {
-                $this->logActivity($dto->outNo, 'Fraud detected: Amount mismatch', $dto->rawPayload);
-                throw new Exception("Amount mismatch for reference {$dto->outNo}. Expected {$payment->gross_amount}, got {$dto->amount}");
+            // ── Anti-fraud: exact amount verification ────────────────────────
+            if ((int) $payment->gross_amount !== (int) $dto->amount) {
+                $this->log(
+                    $dto->outNo,
+                    "FRAUD: amount mismatch. Expected {$payment->gross_amount}, received {$dto->amount}."
+                );
+                throw new Exception("Amount mismatch for reference {$dto->outNo}.");
             }
 
-            // Step D: Update status
-            $paymentStatus = $status === 'SUCCESS' ? '3' : '2';
+            // ── Determine outcome ────────────────────────────────────────────
+            // Monetapay success signal: numeric "1" or string "SUCCESS" (case-insensitive)
+            $isSuccess = $dto->status === '1' || strtolower($dto->status) === 'success';
+
+            // ── Persist payment result ───────────────────────────────────────
             $payment->update([
-                'status' => $paymentStatus,
-                'paid_at' => $status === 'SUCCESS' ? now() : null,
+                'status'  => $isSuccess ? '3' : '2',   // 3: Success, 2: Failed/Expired
+                'paid_at' => $isSuccess ? now() : null,
             ]);
 
-            if ($status === 'SUCCESS') {
-                // Step D: Use DB::transaction(): Update status to PAID.
-                $transaction->update(['status' => 'PAID']);
+            $transaction->update([
+                'status' => $isSuccess ? 'PAID' : 'FAILED_PROVIDER',
+            ]);
 
-                // Step E: Trigger Digiflazz top-up automatically via Laravel Queue
-                ProcessDigiflazzTopup::dispatch($transaction);
-            } else {
-                $transaction->update(['status' => 'FAILED_PROVIDER']);
+            $this->log($dto->outNo, "Callback processed — Monetapay status: {$dto->status}");
+
+            if ($isSuccess) {
+                $paidTransaction = $transaction->fresh(); // ensure latest state is dispatched
             }
-
-            // 4. Log successful callback processing
-            $this->logActivity($dto->outNo, "Monetapay callback processed: {$status}", $dto->rawPayload);
         });
+
+        // ── Dispatch Digiflazz job after commit ──────────────────────────────
+        // At this point DB::transaction() has returned, meaning the commit is done.
+        // The queue worker will always see the PAID rows when it picks up the job.
+        if ($paidTransaction) {
+            ProcessDigiflazzTopup::dispatch($paidTransaction);
+        }
     }
 
-    private function logActivity(string $referenceId, string $message, array $payload): void
+    private function log(string $referenceId, string $message): void
     {
         $this->activityLogAction->execute(new CreateActivityLogDTO(
-            userId: null,
+            userId:    null,
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "{$message} | Ref: {$referenceId}"
+            message:   "{$message} | Ref: {$referenceId}",
         ));
     }
 }

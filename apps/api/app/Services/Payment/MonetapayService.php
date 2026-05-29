@@ -48,14 +48,16 @@ class MonetapayService
 
     /**
      * AES-128-CBC decrypt → associative array.
-     * Used by MonetapayCallbackController to decode the inbound webhook payload.
      *
-     * @throws Exception on openssl failure
+     * Monetapay's decrypted payload is a flat key=value string delimited by "__", NOT JSON:
+     *   e.g. "amount=50000__mch_order_no=PAY-xxx__status=1__sign=abc__timestamp=1234567890"
+     *
+     * @throws Exception on openssl failure or empty result
      */
     public function decryptPayload(string $encodedContent): array
     {
-        $key  = $this->deriveAesParam(config('services.monetapay.aes_key'));
-        $iv   = $this->deriveAesParam(config('services.monetapay.aes_iv'));
+        $key = $this->deriveAesParam(config('services.monetapay.aes_key'));
+        $iv  = $this->deriveAesParam(config('services.monetapay.aes_iv'));
 
         $decrypted = openssl_decrypt(
             base64_decode($encodedContent),
@@ -65,24 +67,54 @@ class MonetapayService
             $iv
         );
 
-        if ($decrypted === false) {
+        if ($decrypted === false || $decrypted === '') {
             throw new Exception('AES Decryption failed: invalid key, IV, or ciphertext.');
         }
 
-        $data = json_decode($decrypted, true);
+        $parsed = $this->parseKeyValueString($decrypted);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('AES Decryption failed: decrypted payload is not valid JSON.');
+        if (empty($parsed)) {
+            throw new Exception('AES Decryption failed: decrypted payload produced an empty result.');
         }
 
-        return $data;
+        return $parsed;
+    }
+
+    /**
+     * Parse Monetapay's "__"-delimited "key=value" flat string into an associative array.
+     * Splits on the first "=" only so values that contain "=" are preserved safely.
+     */
+    private function parseKeyValueString(string $raw): array
+    {
+        $result = [];
+
+        foreach (explode('__', $raw) as $segment) {
+            $delimPos = strpos($segment, '=');
+
+            // Skip malformed or empty segments
+            if ($delimPos === false || $delimPos === 0) {
+                continue;
+            }
+
+            $key          = substr($segment, 0, $delimPos);
+            $value        = substr($segment, $delimPos + 1);
+            $result[$key] = $value;
+        }
+
+        return $result;
     }
 
     /**
      * Verify the Double MD5 signature on an inbound Monetapay callback payload.
-     * Mirrors the signature algorithm used in createTransaction — same token, same strMap format.
      *
-     * @param array $payload The associative array produced by decryptPayload()
+     * Algorithm (mirrors createTransaction outbound signing):
+     *   1. Extract and remove "sign" + "timestamp" from the parsed payload.
+     *   2. ksort remaining params → rebuild strMap as "key=value__key=value".
+     *   3. originalString = TOKEN + "*|*" + strMap + "@!@" + timestamp
+     *   4. expectedSign   = md5(md5(originalString))
+     *   5. Compare with hash_equals() to prevent timing attacks.
+     *
+     * @param array $payload Associative array produced by decryptPayload()
      */
     public function verifyCallbackSignature(array $payload): bool
     {
@@ -93,24 +125,25 @@ class MonetapayService
             return false;
         }
 
-        // Rebuild strMap from all fields except sign and timestamp (same as createTransaction step 2-3)
-        $params = array_filter(
-            $payload,
-            fn(string $k) => !in_array($k, ['sign', 'timestamp'], true),
-            ARRAY_FILTER_USE_KEY
-        );
+        // Work on a copy so the caller's array is never mutated
+        $params = $payload;
+        unset($params['sign'], $params['timestamp']);
         ksort($params);
 
         $buffer = '';
         foreach ($params as $key => $value) {
             $buffer .= $key . '=' . $value . '__';
         }
-        $strMap = substr($buffer, 0, -2);
+        // Strip trailing "__"
+        $strMap = rtrim($buffer, '_');
+        // Normalise: if buffer was empty (no remaining params), strMap is ""
+        if ($buffer !== '' && str_ends_with($buffer, '__')) {
+            $strMap = substr($buffer, 0, -2);
+        }
 
         $originalString = $this->token . "*|*" . $strMap . "@!@" . $timestamp;
         $expectedSign   = md5(md5($originalString));
 
-        // hash_equals prevents timing-based side-channel attacks
         return hash_equals($expectedSign, strtolower((string) $receivedSign));
     }
 
