@@ -1,50 +1,21 @@
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
 import { Search, ChevronDown, Gamepad2 } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
-
-const LOCALES = [
-  { code: "id", flag: "🇮🇩", label: "Bahasa Indonesia" },
-  { code: "en", flag: "🇺🇸", label: "English" },
-] as const;
+import { LOCALES } from "@/constants/locales";
+import { getNavLinks } from "@/constants/navLinks";
+import { useLocaleDropdown } from "@/hooks/useLocaleDropdown";
 
 export function Navbar(): React.JSX.Element {
   const { t } = useTranslation("common");
-  const navigate = useNavigate();
-  const { locale = "id" } = (useParams({ strict: false }) as { locale?: string });
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+  const { langOpen, langRef, currentLocale, toggleLangOpen, switchLocale } =
+    useLocaleDropdown();
 
-  const [langOpen, setLangOpen] = useState(false);
-  const langRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!langOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) {
-        setLangOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [langOpen]);
-
-  const switchLocale = (newLocale: string) => {
-    setLangOpen(false);
-    navigate({ to: "/$locale", params: { locale: newLocale } });
-  };
-
-  const navLinks = [
-    { labelKey: "nav.topup", href: `/${locale}` },
-    { labelKey: "nav.checkOrder", href: `/${locale}/cek-pesanan` },
-    { labelKey: "nav.priceList", href: `/${locale}/daftar-harga` },
-    { labelKey: "nav.leaderboard", href: `/${locale}/leaderboard` },
-    { labelKey: "nav.news", href: `/${locale}/berita` },
-    { labelKey: "nav.calculator", href: `/${locale}/kalkulator` },
-  ];
-
-  const currentLocale = LOCALES.find((l) => l.code === locale) ?? LOCALES[0];
+  const navLinks = getNavLinks(locale);
 
   return (
     <Box className="w-full bg-[#0A0A0C] sticky top-0 z-50">
@@ -83,7 +54,7 @@ export function Navbar(): React.JSX.Element {
               <Box
                 as="button"
                 type="button"
-                onClick={() => setLangOpen((v) => !v)}
+                onClick={toggleLangOpen}
                 className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-white/6 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer outline-none select-none"
               >
                 <Text as="span" className="text-sm leading-none">{currentLocale.flag}</Text>
@@ -95,7 +66,7 @@ export function Navbar(): React.JSX.Element {
 
               {langOpen && (
                 <Box className="absolute right-0 top-full mt-1.5 bg-[#18182A] border border-white/10 rounded-xl overflow-hidden min-w-44 z-50 py-1">
-                  {LOCALES.map((lang) => (  
+                  {LOCALES.map((lang) => (
                     <Box
                       key={lang.code}
                       as="button"
