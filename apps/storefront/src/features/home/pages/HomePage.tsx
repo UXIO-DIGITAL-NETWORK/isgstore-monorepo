@@ -1,6 +1,6 @@
 import React from "react";
 import { Box } from "@/components/common/Box";
-import { HeroBanner, FlashSale, PopularGames } from "../components";
+import { HeroBanner, FlashSale, PopularGames, TopUpGame } from "../components";
 import { Navbar } from "@/components/shared/Navbar";
 
 export default function HomePage(): React.JSX.Element {
@@ -10,6 +10,7 @@ export default function HomePage(): React.JSX.Element {
       <HeroBanner />
       <FlashSale />
       <PopularGames />
+      <TopUpGame />
     </Box>
   );
 }
