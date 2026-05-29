@@ -48,11 +48,6 @@ class MonetapayService
 
     /**
      * AES-128-CBC decrypt → associative array.
-     *
-     * Monetapay's decrypted payload is a flat key=value string delimited by "__", NOT JSON:
-     *   e.g. "amount=50000__mch_order_no=PAY-xxx__status=1__sign=abc__timestamp=1234567890"
-     *
-     * @throws Exception on openssl failure or empty result
      */
     public function decryptPayload(string $encodedContent): array
     {
@@ -82,7 +77,6 @@ class MonetapayService
 
     /**
      * Parse Monetapay's "__"-delimited "key=value" flat string into an associative array.
-     * Splits on the first "=" only so values that contain "=" are preserved safely.
      */
     private function parseKeyValueString(string $raw): array
     {
@@ -91,7 +85,6 @@ class MonetapayService
         foreach (explode('__', $raw) as $segment) {
             $delimPos = strpos($segment, '=');
 
-            // Skip malformed or empty segments
             if ($delimPos === false || $delimPos === 0) {
                 continue;
             }
@@ -106,15 +99,6 @@ class MonetapayService
 
     /**
      * Verify the Double MD5 signature on an inbound Monetapay callback payload.
-     *
-     * Algorithm (mirrors createTransaction outbound signing):
-     *   1. Extract and remove "sign" + "timestamp" from the parsed payload.
-     *   2. ksort remaining params → rebuild strMap as "key=value__key=value".
-     *   3. originalString = TOKEN + "*|*" + strMap + "@!@" + timestamp
-     *   4. expectedSign   = md5(md5(originalString))
-     *   5. Compare with hash_equals() to prevent timing attacks.
-     *
-     * @param array $payload Associative array produced by decryptPayload()
      */
     public function verifyCallbackSignature(array $payload): bool
     {
@@ -125,7 +109,6 @@ class MonetapayService
             return false;
         }
 
-        // Work on a copy so the caller's array is never mutated
         $params = $payload;
         unset($params['sign'], $params['timestamp']);
         ksort($params);
@@ -134,9 +117,7 @@ class MonetapayService
         foreach ($params as $key => $value) {
             $buffer .= $key . '=' . $value . '__';
         }
-        // Strip trailing "__"
         $strMap = rtrim($buffer, '_');
-        // Normalise: if buffer was empty (no remaining params), strMap is ""
         if ($buffer !== '' && str_ends_with($buffer, '__')) {
             $strMap = substr($buffer, 0, -2);
         }
@@ -160,14 +141,22 @@ class MonetapayService
             'app_id' => $this->mchId,
             'mch_order_no' => (string) $referenceId,
             'amount' => (string) $amount,
+            'currency' => 'IDR',
+
+            // ==========================================
+            // FIX: Tambahkan parameter expiration time.
+            // Ubah string 'time_expire' menjadi 'expiration_date' atau key lain
+            // jika dokumentasi resmi Monetapay menyebutkan key yang berbeda.
+            // ==========================================
+            'time_expire' => now()->addHours(24)->format('Y-m-d H:i:s'),
         ];
-        
+
         if ($isQris) {
             $requestParams['is_single_use'] = "1";
-            $requestParams['qr_string_type'] = "2"; 
+            $requestParams['qr_string_type'] = "2";
         } else {
             $requestParams['account_name'] = (string) ($customerData['customer_name'] ?? 'Customer');
-            $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode))); 
+            $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode)));
             $requestParams['account_phone'] = (string) ($customerData['customer_phone'] ?? '080000000000');
         }
 
@@ -179,16 +168,16 @@ class MonetapayService
         foreach ($requestParams as $key => $value) {
             $buffer .= $key . '=' . $value . '__';
         }
-        
+
         // Hapus "__" di dua karakter terakhir
-        $strMap = substr($buffer, 0, -2); 
+        $strMap = substr($buffer, 0, -2);
 
         // 4. Perhitungan Signature (Double MD5 + Pemisah Custom)
         $timestamp = (string) time(); // 10-digit epoch
-        
+
         // originalString = Token + "*|*" + strMap + "@!@" + timestamp
         $originalString = $this->token . "*|*" . $strMap . "@!@" . $timestamp;
-        
+
         // sign = MD5(MD5(originalString))
         $sign = md5(md5($originalString));
 
@@ -216,31 +205,27 @@ class MonetapayService
         try {
             // Hapus Query Parameters sepenuhnya, cukup kirim JSON Body
             $response = Http::post($endpoint, $requestBody);
-            
+
             if ($response->failed()) {
                 $errorData = $response->json();
                 $errorMessage = $errorData['message'] ?? $errorData['msg'] ?? $response->body();
-                
+
                 Log::error('Monetapay Create Transaction Failed', [
                     'body' => $requestBody,
                     'response' => $errorData,
                 ]);
-                
+
                 throw new Exception("Monetapay API Error [HTTP {$response->status()}]: {$errorMessage}");
             }
 
             $responseData = $response->json();
-            
-            // ==========================================
-            // FIX: Validasi Respons Fleksibel (Case-Insensitive)
-            // ==========================================
+
             $apiCode = $responseData['code'] ?? null;
             $apiMessage = strtolower($responseData['message'] ?? $responseData['msg'] ?? '');
-            
+
             if ($apiCode != 200 && $apiCode != 0 && $apiMessage !== 'success') {
                 throw new Exception("Monetapay API Error [Code: {$apiCode}]: " . ($responseData['message'] ?? 'Unknown Error'));
             }
-            // ==========================================
 
             $actionData = [];
             $resData = $responseData['data'] ?? [];
@@ -259,6 +244,6 @@ class MonetapayService
         } catch (Exception $e) {
             Log::error('Monetapay Exception', ['message' => $e->getMessage()]);
             throw $e;
-        } 
+        }
     }
 }
