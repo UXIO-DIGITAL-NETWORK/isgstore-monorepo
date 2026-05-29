@@ -133,31 +133,40 @@ class MonetapayService
      */
     public function createTransaction(string $referenceId, int $amount, string $paymentType, string $channelCode, array $customerData = []): array
     {
-        $isQris = $paymentType === 'qris';
-        $endpoint = $this->baseUrl . ($isQris ? '/v1.0.0/qris' : '/v1.0.0/virtual_account');
+        // 1. Routing Endpoint Dinamis
+        $endpointSuffix = match ($paymentType) {
+            'qris'              => '/v1.0.0/qris',
+            'virtual_account'   => '/v1.0.0/virtual_account',
+            'ewallet'           => '/v1.0.0/ewallet', // Pastikan suffix ini sesuai dokumen Monetapay
+            'convenience_store' => '/v1.0.0/retail',  // Pastikan suffix ini sesuai dokumen Monetapay
+            default             => '/v1.0.0/virtual_account',
+        };
 
-        // 1. Parameter Bisnis Murni (tanpa timestamp & sign)
+        $endpoint = $this->baseUrl . $endpointSuffix;
+        $isQris   = $paymentType === 'qris';
+
+        // 2. Parameter Bisnis Murni (tanpa timestamp & sign)
         $requestParams = [
-            'app_id' => $this->mchId,
+            'app_id'       => $this->mchId,
             'mch_order_no' => (string) $referenceId,
-            'amount' => (string) $amount,
-            'currency' => 'IDR',
-            'time_expire' => now()->addHours(24)->format('Y-m-d H:i:s'),
+            'amount'       => (string) $amount,
+            'currency'     => 'IDR',
+            'time_expire'  => now()->addHours(24)->format('Y-m-d H:i:s'),
         ];
 
         if ($isQris) {
-            $requestParams['is_single_use'] = "1";
+            $requestParams['is_single_use']  = "1";
             $requestParams['qr_string_type'] = "2";
         } else {
-            $requestParams['account_name'] = (string) ($customerData['customer_name'] ?? 'Customer');
+            $requestParams['account_name']      = (string) ($customerData['customer_name'] ?? 'Guest');
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode)));
-            $requestParams['account_phone'] = (string) ($customerData['customer_phone'] ?? '080000000000');
+            $requestParams['account_phone']     = (string) ($customerData['customer_phone'] ?? '08123456789');
         }
 
-        // 2. Format menjadi TreeMap (Sorting Abjad)
+        // 3. Format menjadi TreeMap (Sorting Abjad)
         ksort($requestParams);
 
-        // 3. Gabungkan String (key=value__)
+        // 4. Gabungkan String (key=value__)
         $buffer = '';
         foreach ($requestParams as $key => $value) {
             $buffer .= $key . '=' . $value . '__';
@@ -166,7 +175,7 @@ class MonetapayService
         // Hapus "__" di dua karakter terakhir
         $strMap = substr($buffer, 0, -2);
 
-        // 4. Perhitungan Signature (Double MD5 + Pemisah Custom)
+        // 5. Perhitungan Signature (Double MD5 + Pemisah Custom)
         $timestamp = (string) time(); // 10-digit epoch
 
         // originalString = Token + "*|*" + strMap + "@!@" + timestamp
@@ -175,25 +184,25 @@ class MonetapayService
         // sign = MD5(MD5(originalString))
         $sign = md5(md5($originalString));
 
-        // 5. Pembentukan String Akhir yang akan Dienkripsi AES
+        // 6. Pembentukan String Akhir yang akan Dienkripsi AES
         $strToEncrypt = $strMap . "__sign=" . $sign . "__timestamp=" . $timestamp;
 
-        // 6. Eksekusi Enkripsi
+        // 7. Eksekusi Enkripsi
         $enData = $this->encryptPayload($strToEncrypt);
 
-        // 7. Request Body Sesuai Contoh Dokumen
+        // 8. Request Body Sesuai Contoh Dokumen
         $requestBody = [
             'data' => [
                 'partner_key' => $this->partnerKey,
-                'en_data' => $enData,
+                'en_data'     => $enData,
             ]
         ];
 
         // Debug Log Trace awal
         Log::info('Monetapay Validated Trace', [
-            'strMap' => $strMap,
+            'strMap'         => $strMap,
             'originalString' => $originalString,
-            'strToEncrypt' => $strToEncrypt,
+            'strToEncrypt'   => $strToEncrypt,
         ]);
 
         try {
@@ -205,7 +214,7 @@ class MonetapayService
                 $errorMessage = $errorData['message'] ?? $errorData['msg'] ?? $response->body();
 
                 Log::error('Monetapay Create Transaction Failed', [
-                    'body' => $requestBody,
+                    'body'     => $requestBody,
                     'response' => $errorData,
                 ]);
 
@@ -214,20 +223,29 @@ class MonetapayService
 
             $responseData = $response->json();
 
-            // ==========================================
-            // FIX: Log respons penuh dari Monetapay API
-            // ==========================================
+            // Log respons penuh dari Monetapay API
             Log::info('Monetapay API Creation Response', $responseData);
 
-            $apiCode = $responseData['code'] ?? null;
-            $apiMessage = strtolower($responseData['message'] ?? $responseData['msg'] ?? '');
+            $apiCode        = $responseData['code'] ?? null;
+            $apiMessage     = strtolower($responseData['message'] ?? $responseData['msg'] ?? '');
+            $innerErrorCode = $responseData['data']['error_code'] ?? null;
 
-            if ($apiCode != 200 && $apiCode != 0 && $apiMessage !== 'success') {
-                throw new Exception("Monetapay API Error [Code: {$apiCode}]: " . ($responseData['message'] ?? 'Unknown Error'));
+            // Kondisi Sukses: HTTP Code 0/200, ATAU inner error_code 7010 (Processing)
+            $isSuccess = ($apiCode == 200 || $apiCode == 0 || $apiMessage === 'success' || $innerErrorCode == 7010);
+
+            if (!$isSuccess) {
+                // Pemetaan Retry berdasarkan Dokumen MPT
+                $retryableCodes = [7002, 7003, 7004, 7005, 7008, 7009, 7011, 7015];
+                $canRetry = in_array($innerErrorCode, $retryableCodes) || in_array($apiCode, $retryableCodes);
+
+                $advice = $canRetry ? '[RETRY ALLOWED]' : '[FATAL]';
+                $reason = $responseData['data']['error_msg'] ?? $responseData['message'] ?? 'Unknown Error';
+
+                throw new Exception("Monetapay API Error {$advice} [Code: {$apiCode}|{$innerErrorCode}]: {$reason}");
             }
 
             $actionData = [];
-            $resData = $responseData['data'] ?? [];
+            $resData    = $responseData['data'] ?? [];
 
             // Monetapay's own transaction ID — persisted to payments.pg_transaction_id
             $actionData['order_no'] = $resData['order_no'] ?? null;
