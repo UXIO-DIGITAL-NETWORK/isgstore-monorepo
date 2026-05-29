@@ -142,12 +142,6 @@ class MonetapayService
             'mch_order_no' => (string) $referenceId,
             'amount' => (string) $amount,
             'currency' => 'IDR',
-
-            // ==========================================
-            // FIX: Tambahkan parameter expiration time.
-            // Ubah string 'time_expire' menjadi 'expiration_date' atau key lain
-            // jika dokumentasi resmi Monetapay menyebutkan key yang berbeda.
-            // ==========================================
             'time_expire' => now()->addHours(24)->format('Y-m-d H:i:s'),
         ];
 
@@ -163,7 +157,7 @@ class MonetapayService
         // 2. Format menjadi TreeMap (Sorting Abjad)
         ksort($requestParams);
 
-        // 3. Gabungkan String (key=value__) seperti perulangan buffer.append di Java
+        // 3. Gabungkan String (key=value__)
         $buffer = '';
         foreach ($requestParams as $key => $value) {
             $buffer .= $key . '=' . $value . '__';
@@ -195,7 +189,7 @@ class MonetapayService
             ]
         ];
 
-        // Debug Log untuk mengawal kesamaan dengan Java
+        // Debug Log Trace awal
         Log::info('Monetapay Validated Trace', [
             'strMap' => $strMap,
             'originalString' => $originalString,
@@ -219,6 +213,11 @@ class MonetapayService
             }
 
             $responseData = $response->json();
+
+            // ==========================================
+            // FIX: Log respons penuh dari Monetapay API
+            // ==========================================
+            Log::info('Monetapay API Creation Response', $responseData);
 
             $apiCode = $responseData['code'] ?? null;
             $apiMessage = strtolower($responseData['message'] ?? $responseData['msg'] ?? '');
