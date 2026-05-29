@@ -15,18 +15,16 @@ export default function PopularGames(): React.JSX.Element {
         {/* Section header */}
         <Box className="flex flex-col gap-2.5 mb-6">
           <Box className="flex items-center gap-2">
-            {/* Accent bar — #3B82F6 blue from popular.svg, not the project's violet primary */}
-            <Box className="w-1 h-5 rounded-full bg-blue-500 shrink-0" />
+            <Box className="w-1 h-5 rounded-full bg-[#3B82F6] shrink-0" />
             <Heading
               as="h2"
-              level={2}
-              className="text-h4 font-bold font-display text-foreground"
-              // text-h4 (30px) is the closest token to the design's 28px title
+              level={4}
+              className="font-outfit font-bold text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
             >
               Game Populer Hari Ini
             </Heading>
           </Box>
-          <Text as="p" className="text-base text-muted-foreground">
+          <Text as="p" className="font-inter font-normal text-[14px] leading-5 text-[#697282]">
             Pilih kategori favoritmu dan lakukan top up dengan proses cepat, aman, dan tanpa ribet.
           </Text>
         </Box>
@@ -47,10 +45,10 @@ export default function PopularGames(): React.JSX.Element {
             ))}
           </Box>
 
-          {/* Right-edge decorative fade — #0A0A0B → transparent, matching popular.svg's paint12 */}
+          {/* Right-edge decorative fade */}
           <Box
-            className="absolute inset-y-0 right-0 w-24 pointer-events-none"
-            style={{ background: "linear-gradient(to right, transparent, #0A0A0B)" }}
+            aria-hidden
+            className="absolute inset-y-0 right-0 w-26.25 pointer-events-none bg-linear-to-r from-transparent to-[#0A0A0C]"
           />
         </Box>
 
