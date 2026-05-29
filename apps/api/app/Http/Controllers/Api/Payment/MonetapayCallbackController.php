@@ -54,6 +54,11 @@ class MonetapayCallbackController extends Controller
                 rawPayload: $decrypted
             );
 
+            // ==========================================
+            // FIX: Tambahkan log untuk melihat isi murni dari Monetapay
+            // ==========================================
+            Log::info('Monetapay Decrypted Payload', $decrypted);
+
             $this->action->execute($dto);
 
             return response()->json(['code' => '200', 'msg' => 'SUCCESS'], 200);
