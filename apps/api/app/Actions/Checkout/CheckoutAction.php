@@ -2,18 +2,18 @@
 
 namespace App\Actions\Checkout;
 
-use App\DTOs\Checkout\CheckoutDTO;
-use App\Models\Product;
-use App\Models\PaymentChannel;
-use App\Models\Transaction;
-use App\Models\Payment;
-use App\Models\User;
 use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Checkout\CheckoutDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Payment;
+use App\Models\PaymentChannel;
+use App\Models\Product;
+use App\Models\Transaction;
+use App\Models\User;
 use App\Services\Payment\MonetapayService;
-use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class CheckoutAction
@@ -27,127 +27,148 @@ class CheckoutAction
     public function execute(CheckoutDTO $dto): array
     {
         return DB::transaction(function () use ($dto) {
-            // 1. Pengecekan User Opsional (Guest = null)
-            $user = $dto->userId ? User::with('role')->find($dto->userId) : null;
-            $product = Product::with(['supplierProducts' => fn($q) => $q->where('is_active', true)])
+
+            // ── 1. Resolve entities ──────────────────────────────────────────
+            $user    = $dto->userId ? User::with('role')->find($dto->userId) : null;
+            $product = Product::with(['supplierProducts' => fn ($q) => $q->where('is_active', true)])
                 ->findOrFail($dto->productId);
-            $paymentChannel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
+            $channel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
-            // Validasi Keamanan Guest
-            if (!$user && $paymentChannel->channel_code === 'balance') {
-                throw new Exception("Saldo internal hanya untuk member. Silakan login atau pilih metode pembayaran E-Wallet/QRIS.");
+            // ── 2. Guest guards ──────────────────────────────────────────────
+            if (!$user && $channel->channel_code === 'balance') {
+                throw new Exception('Saldo internal hanya untuk member. Silakan login atau pilih metode pembayaran lain.');
             }
-
-            // Validasi Kontak Guest (Pastikan DTO memiliki properti guestContact)
             if (!$user && empty($dto->guestContact)) {
-                throw new Exception("Nomor WhatsApp/Kontak wajib diisi untuk pelanggan tamu.");
+                throw new Exception('Nomor WhatsApp/Kontak wajib diisi untuk pelanggan tamu.');
             }
 
-            // 2. Tentukan Harga Jual (Guest mendapat harga standar member)
-            $roleName = $user ? strtolower($user->role->name) : 'guest';
+            // ── 3. Role-based price ──────────────────────────────────────────
+            $roleName     = $user ? strtolower($user->role->name) : 'guest';
             $sellingPrice = match ($roleName) {
-                'vip' => $product->price_vip,
+                'vip'      => $product->price_vip,
                 'reseller' => $product->price_reseller,
-                'agent' => $product->price_agent,
-                default => $product->price_member,
+                'agent'    => $product->price_agent,
+                default    => $product->price_member,
             };
 
-            // Hitung Margin
+            // ── 4. Supplier & margin guard ───────────────────────────────────
             $activeSupplier = $product->supplierProducts->first();
             if (!$activeSupplier) {
-                throw new Exception("Produk sedang tidak tersedia (Tidak ada supplier aktif).");
+                throw new Exception('Produk sedang tidak tersedia (tidak ada supplier aktif).');
             }
             $margin = $sellingPrice - $activeSupplier->price;
-
-            // FAIL-SAFE: Jangan proses jika margin minus
             if ($margin < 0) {
-                throw new Exception("Transaksi dibatalkan otomatis: Harga modal supplier sedang naik.");
+                throw new Exception('Transaksi dibatalkan otomatis: harga modal supplier sedang naik.');
             }
 
-            // fee_flat / fee_percent columns are not on payment_channels; extend here when the schema adds them
-            $adminFee    = 0;
+            // ── 5. Fee & total ───────────────────────────────────────────────
+            $adminFee    = $channel->fee_flat + (int) round($sellingPrice * ($channel->fee_percent / 100));
             $grossAmount = $sellingPrice + $adminFee;
 
-            if ($grossAmount < $paymentChannel->min_amount) {
-                throw new Exception("Total tagihan Rp " . number_format($grossAmount) . " kurang dari minimum pembayaran Rp " . number_format($paymentChannel->min_amount));
+            if ($grossAmount < $channel->min_amount) {
+                throw new Exception(
+                    'Total tagihan Rp ' . number_format($grossAmount) .
+                    ' kurang dari minimum pembayaran Rp ' . number_format($channel->min_amount)
+                );
             }
 
-            // 3. Buat Invoice & Reference ID
+            // ── 6. Create Transaction & Payment records ──────────────────────
             $invoiceNumber = 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(6));
-            $referenceId = 'PAY-' . $invoiceNumber . '-01';
+            $referenceId   = 'PAY-' . $invoiceNumber . '-01';
 
-            // 4. Simpan Transaction (Mendukung Nullable User ID dan mengisi Guest Contact)
             $transaction = Transaction::create([
-                'invoice_number' => $invoiceNumber,
-                'user_id' => $user?->id,
-                'guest_contact' => $user ? null : $dto->guestContact,
-                'product_id' => $product->id,
-                'supplier_id' => $activeSupplier->supplier_id,
-                'target_uid' => $dto->targetUid,
-                'target_server' => $dto->targetServer,
-                'amount_base' => $sellingPrice,
-                'amount_fee' => $adminFee,
-                'amount_total' => $grossAmount,
-                'margin' => $margin,
-                'status' => 'PENDING',
+                'invoice_number'     => $invoiceNumber,
+                'user_id'            => $user?->id,
+                'payment_channel_id' => $channel->id,
+                'guest_contact'      => $user ? null : $dto->guestContact,
+                'product_id'         => $product->id,
+                'supplier_id'        => $activeSupplier->supplier_id,
+                'target_uid'         => $dto->targetUid,
+                'target_server'      => $dto->targetServer,
+                'amount_base'        => $sellingPrice,
+                'amount_fee'         => $adminFee,
+                'amount_total'       => $grossAmount,
+                'margin'             => $margin,
+                'status'             => 'PENDING',
             ]);
 
-            // 5. Simpan Payment
             $payment = Payment::create([
-                'transaction_id' => $transaction->id,
-                'payment_channel_id' => $paymentChannel->id,
-                'reference_id' => $referenceId,
-                'gross_amount' => $grossAmount,
-                'admin_fee' => $adminFee,
-                'status' => '1', // 1: Pending
+                'transaction_id'    => $transaction->id,
+                'payment_channel_id'=> $channel->id,
+                'reference_id'      => $referenceId,
+                'gross_amount'      => $grossAmount,
+                'admin_fee'         => $adminFee,
+                'status'            => '1', // Pending
             ]);
 
-            $actionData = null;
+            // ── 7. Execute payment ───────────────────────────────────────────
+            $paymentInstructions = null;
+            $transactionStatus   = 'PENDING';
 
-            // 6. EKSEKUSI PEMBAYARAN
-            if ($paymentChannel->channel_code === 'balance' && $user) {
+            if ($channel->channel_code === 'balance') {
+                // ── Balance path ─────────────────────────────────────────────
                 if ($user->balance < $grossAmount) {
-                    throw new Exception("Saldo tidak mencukupi. Sisa saldo: Rp " . number_format($user->balance));
+                    throw new Exception('Saldo tidak mencukupi. Sisa saldo: Rp ' . number_format($user->balance));
                 }
 
                 $user->decrement('balance', $grossAmount);
+                $payment->update(['status' => '3', 'paid_at' => now()]);
 
-                $payment->update([
-                    'status' => '3', // 3: Success
-                    'paid_at' => now(),
-                ]);
-
-                // Tembak ke Digiflazz
                 $transaction = $this->digiflazzAction->execute($transaction);
+                $transactionStatus = $transaction->status; // COMPLETED / PROCESSING / FAILED_PROVIDER
+
             } else {
-                // Hit Monetapay
+                // ── Monetapay path ───────────────────────────────────────────
                 $monetapayResponse = $this->monetapayService->createTransaction(
-                    referenceId: $referenceId,
-                    amount: $grossAmount,
-                    paymentType: $paymentChannel->payment_type,
-                    channelCode: $paymentChannel->channel_code,
+                    referenceId:  $referenceId,
+                    amount:       $grossAmount,
+                    paymentType:  $channel->payment_type,
+                    channelCode:  $channel->channel_code,
                     customerData: [
-                        'customer_name' => $user ? $user->name : 'Guest',
-                        'customer_email' => $user ? $user->email : 'guest@example.com',
-                        'customer_phone' => $user ? $user->phone : $dto->guestContact,
+                        'customer_name'  => $user?->name  ?? 'Guest',
+                        'customer_email' => $user?->email ?? 'guest@example.com',
+                        'customer_phone' => $user?->phone ?? $dto->guestContact,
                     ]
                 );
 
-                $actionData = $monetapayResponse['data'] ?? [];
+                $pgData = $monetapayResponse['data'] ?? [];
+
+                // Persist Monetapay's own transaction reference
+                $payment->update(['pg_transaction_id' => $pgData['order_no'] ?? null]);
+
+                // Build structured payment instructions for the client
+                $paymentInstructions = array_filter([
+                    'order_no'        => $pgData['order_no']        ?? null,
+                    'qr_string'       => $pgData['qr_string']        ?? null,
+                    'virtual_account' => $pgData['virtual_account']  ?? null,
+                    'bank_code'       => $pgData['bank_code']        ?? null,
+                ]);
             }
 
-            // Catat Log
+            // ── 8. Activity log ──────────────────────────────────────────────
             $this->logAction->execute(new CreateActivityLogDTO(
-                userId: $user?->id,
+                userId:    $user?->id,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                message: "Membuat transaksi {$invoiceNumber} untuk produk {$product->name}" . (!$user ? " (Guest)" : "")
+                message:   "Checkout {$invoiceNumber} — {$product->name}" . (!$user ? ' (Guest)' : ''),
             ));
 
+            // ── 9. Response ──────────────────────────────────────────────────
             return [
-                'invoice_number' => $transaction->invoice_number,
-                'payment_type' => $paymentChannel->payment_type,
-                'action_data' => $actionData,
+                'invoice_number' => $invoiceNumber,
+                'reference_id'   => $referenceId,
+                'product'        => [
+                    'name'  => $product->name,
+                    'price' => $sellingPrice,
+                ],
+                'payment'        => [
+                    'channel'      => $channel->name,
+                    'type'         => $channel->payment_type,
+                    'amount'       => $grossAmount,
+                    'admin_fee'    => $adminFee,
+                    'status'       => $transactionStatus,
+                    'instructions' => $paymentInstructions ?: null,
+                ],
             ];
         });
     }

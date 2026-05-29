@@ -211,12 +211,15 @@ class MonetapayService
 
             $actionData = [];
             $resData = $responseData['data'] ?? [];
-            
+
+            // Monetapay's own transaction ID — persisted to payments.pg_transaction_id
+            $actionData['order_no'] = $resData['order_no'] ?? null;
+
             if ($isQris) {
                 $actionData['qr_string'] = $resData['qr_string'] ?? null;
             } else {
                 $actionData['virtual_account'] = $resData['virtual_account'] ?? null;
-                $actionData['bank_code'] = $resData['account_bank_code'] ?? null;
+                $actionData['bank_code']       = $resData['account_bank_code'] ?? null;
             }
 
             return ['data' => $actionData];
