@@ -21,7 +21,7 @@
   /* ── Gradient backgrounds ───────────────────────────────────────── */
   --background-image-gradient-cta: linear-gradient(to right, #3b82f6, #9234ea);
   --background-image-gradient-price: linear-gradient(to right, #ffffff, #e9d5ff);
-  --background-image-gradient-footer: linear-gradient(to bottom, #671eab, #270a4f);
+  --background-image-gradient-footer: linear-gradient(to right, rgba(103, 30, 171, 0.20), rgba(39, 10, 79, 0.20));
 
   /* ── Shadows ────────────────────────────────────────────────────── */
   --shadow-glow-violet: 0 0 14.87px rgba(147, 51, 234, 0.3);
