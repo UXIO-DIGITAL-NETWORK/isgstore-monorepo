@@ -19,7 +19,7 @@ export default function PopularGames(): React.JSX.Element {
             <Heading
               as="h2"
               level={4}
-              className="font-outfit font-bold text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
+              className="font-outfit font-bold text-[22px] md:text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
             >
               Game Populer Hari Ini
             </Heading>

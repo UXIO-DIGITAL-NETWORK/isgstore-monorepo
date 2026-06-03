@@ -27,7 +27,7 @@ export default function TopUpGame(): React.JSX.Element {
             <Heading
               as="h2"
               level={4}
-              className="font-outfit font-bold text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
+              className="font-outfit font-bold text-[22px] md:text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
             >
               Top Up Game
             </Heading>
@@ -47,7 +47,7 @@ export default function TopUpGame(): React.JSX.Element {
         </Box>
 
         {/* 2 × 6 game card grid */}
-        <Box className="grid grid-cols-6 gap-4 mb-10">
+        <Box className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 mb-10">
           {visibleGames.map((game) => (
             <TopUpGameCard key={game.id} game={game} />
           ))}

@@ -42,7 +42,7 @@ export default function FlashSale(): React.JSX.Element {
         >
           {/* Header */}
           <Box
-            className="flex items-center justify-between px-5 py-4"
+            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4"
             style={{ background: "rgba(146, 52, 234, 0.1)" }}
           >
             <Box>

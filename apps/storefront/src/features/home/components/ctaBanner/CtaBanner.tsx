@@ -8,7 +8,7 @@ import ctaMascot from "@/assets/images/CTA/CTA_2.png";
 
 export default function CtaBanner(): React.JSX.Element {
   return (
-    <Box as="section" className="relative w-full h-135.25 overflow-hidden">
+    <Box as="section" className="relative w-full h-auto md:h-135.25 overflow-hidden">
 
       {/* Layer 1 — Full-bleed background */}
       <Image
@@ -20,55 +20,59 @@ export default function CtaBanner(): React.JSX.Element {
         className="absolute inset-0 w-full h-full"
       />
 
-      {/* Layer 2 — Mascot: anchored to section right edge, bottom-aligned */}
-      <Image
-        src={ctaMascot}
-        alt="Maskot UDN"
-        priority="eager"
-        objectFit="contain"
-        className="absolute right-0 bottom-0 w-150 h-full"
-      />
-
-      {/* Max-width content container — same bounds as other sections */}
+      {/* Max-width content container */}
       <Box className="relative h-full max-w-6xl mx-auto px-4 md:px-8">
 
-        {/* Layer 3 — Text + CTA: left side, vertically centered */}
-        <Box className="h-full flex items-center">
-          <Box className="flex flex-col gap-6 max-w-150">
-            <Heading
-              as="h2"
-              level={1}
-              className="font-outfit font-bold text-[52px] leading-[1.1] tracking-[-1.5px] text-white"
-            >
-              Buat Akun &amp; Nikmati Lebih Banyak Keuntungan
-            </Heading>
+        {/* Mobile: flex-col (mascot → text); Desktop: flex-row centered, mascot absolute */}
+        <Box className="flex flex-col items-center text-center py-10 md:py-0 md:block md:h-full">
 
-            <Text
-              as="p"
-              className="font-inter font-normal text-[16px] leading-[1.6] text-white/60"
-            >
-              Dapatkan harga lebih hemat, riwayat transaksi, dan proses top up yang lebih cepat dalam satu akun.
-            </Text>
+          {/* Mascot — flow element on mobile, absolute on desktop */}
+          <Image
+            src={ctaMascot}
+            alt="Maskot UDN"
+            priority="eager"
+            objectFit="contain"
+            className="w-52 sm:w-64 md:absolute md:right-0 md:bottom-0 md:w-150 md:h-full mb-6 md:mb-0"
+          />
 
-            <Box className="flex items-center gap-4">
-              <Box
-                as="button"
-                type="button"
-                className="h-16.5 px-10 rounded-full bg-white font-inter font-bold text-[18px] text-[#0A0A0C] cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap"
+          {/* Text + CTA — centered on mobile, left-aligned vertically centered on desktop */}
+          <Box className="md:h-full md:flex md:items-center">
+            <Box className="flex flex-col gap-5 md:gap-6 max-w-150 items-center md:items-start text-center md:text-left">
+              <Heading
+                as="h2"
+                level={1}
+                className="font-outfit font-bold text-[30px] sm:text-[40px] md:text-[52px] leading-[1.1] tracking-[-0.5px] md:tracking-[-1.5px] text-white"
               >
-                Daftar Sekarang
-              </Box>
-              <Box
-                as="button"
-                type="button"
-                className="h-16.5 px-8 rounded-full bg-white/10 border border-white/30 font-inter font-bold text-[18px] text-white backdrop-blur-sm cursor-pointer hover:bg-white/15 transition-colors whitespace-nowrap"
+                Buat Akun &amp; Nikmati Lebih Banyak Keuntungan
+              </Heading>
+
+              <Text
+                as="p"
+                className="font-inter font-normal text-[15px] md:text-[16px] leading-[1.6] text-white/60"
               >
-                Masuk
+                Dapatkan harga lebih hemat, riwayat transaksi, dan proses top up yang lebih cepat dalam satu akun.
+              </Text>
+
+              <Box className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                <Box
+                  as="button"
+                  type="button"
+                  className="h-13 md:h-16.5 px-8 md:px-10 rounded-full bg-white font-inter font-bold text-[16px] md:text-[18px] text-[#0A0A0C] cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap flex items-center justify-center"
+                >
+                  Daftar Sekarang
+                </Box>
+                <Box
+                  as="button"
+                  type="button"
+                  className="h-13 md:h-16.5 px-8 rounded-full bg-white/10 border border-white/30 font-inter font-bold text-[16px] md:text-[18px] text-white backdrop-blur-sm cursor-pointer hover:bg-white/15 transition-colors whitespace-nowrap flex items-center justify-center"
+                >
+                  Masuk
+                </Box>
               </Box>
             </Box>
           </Box>
-        </Box>
 
+        </Box>
       </Box>
     </Box>
   );

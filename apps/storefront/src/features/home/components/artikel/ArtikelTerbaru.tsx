@@ -13,16 +13,16 @@ export default function ArtikelTerbaru(): React.JSX.Element {
 
         {/* Section heading */}
         <Box className="flex flex-col items-center gap-3 mb-12">
-          <Box className="flex items-center gap-4">
-            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0" />
+          <Box className="flex flex-wrap items-center justify-center gap-4">
+            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
             <Heading
               as="h2"
               level={3}
-              className="font-outfit font-bold text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
+              className="font-outfit font-bold text-[22px] md:text-[28px] leading-7 tracking-[-0.5px] text-white uppercase text-center"
             >
               Artikel Terbaru Seputar Game
             </Heading>
-            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0" />
+            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
           </Box>
           <Text as="p" className="font-inter font-normal text-[15px] leading-5 text-[#697282]">
             Temukan informasi, tips, dan update terbaru seputar top up game, promo menarik
@@ -30,7 +30,7 @@ export default function ArtikelTerbaru(): React.JSX.Element {
         </Box>
 
         {/* 3-card flex row */}
-        <Box className="flex flex-row gap-6">
+        <Box className="flex flex-col md:flex-row gap-6">
           {ARTIKEL_TERBARU.map((article, index) => (
             <ArticleCard
               key={article.id}

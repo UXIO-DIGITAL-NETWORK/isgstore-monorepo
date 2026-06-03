@@ -12,7 +12,7 @@ type Props = {
 
 function CardInner({ article }: { article: Article }) {
   return (
-    <Box className="relative h-115 w-full rounded-2xl overflow-hidden">
+    <Box className="relative h-72 sm:h-96 md:h-115 w-full rounded-2xl overflow-hidden">
       {/* Full-bleed image */}
       <Image
         src={article.image}

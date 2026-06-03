@@ -37,7 +37,7 @@ export default function TopUpGameCard({ game }: Props): React.JSX.Element {
           src={game.logoImage}
           alt={`${game.title} logo`}
           objectFit="contain"
-          className="w-28 h-10"
+          className="w-20 h-8 md:w-28 md:h-10"
         />
       </Box>
 

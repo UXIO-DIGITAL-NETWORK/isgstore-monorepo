@@ -12,16 +12,16 @@ export default function Keunggulan(): React.JSX.Element {
 
         {/* Section heading — centered, flanking bars on both sides */}
         <Box className="flex flex-col items-center gap-3 mb-16">
-          <Box className="flex items-center gap-4">
-            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0" />
+          <Box className="flex flex-wrap items-center justify-center gap-4">
+            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
             <Heading
               as="h2"
               level={3}
-              className="font-outfit font-bold text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
+              className="font-outfit font-bold text-[22px] md:text-[28px] leading-7 tracking-[-0.5px] text-white uppercase text-center"
             >
               Keunggulan Layanan Kami
             </Heading>
-            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0" />
+            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
           </Box>
           <Text as="p" className="font-inter font-normal text-[15px] leading-5 text-[#697282]">
             Solusi top up cepat, aman, dan praktis dalam satu platform.
@@ -29,7 +29,7 @@ export default function Keunggulan(): React.JSX.Element {
         </Box>
 
         {/* 3-column feature grid */}
-        <Box className="grid grid-cols-3 gap-10">
+        <Box className="grid grid-cols-1 md:grid-cols-3 gap-10">
 
           {/* Column 1 — Pembayaran Aman */}
           <FeatureCard
