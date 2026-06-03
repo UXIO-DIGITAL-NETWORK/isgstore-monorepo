@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Gamepad2,
-  MessageCircle,
   ChevronRight,
   Clock,
   Mail,
@@ -12,6 +11,7 @@ import {
   Facebook,
   Linkedin,
 } from "lucide-react";
+import whatsappLogo from "@/assets/icons/whatsapp_logo.svg";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
@@ -58,12 +58,14 @@ export function Footer(): React.JSX.Element {
   return (
     <Box as="footer" className="w-full bg-gradient-footer">
 
-      {/* ── Top content ── */}
+      {/* ── Top content — 3 col × 2 row grid ── */}
       <Box className="max-w-6xl mx-auto px-4 md:px-8 pt-14 pb-12">
-        <Box className="flex flex-row gap-10 lg:gap-14 flex-wrap lg:flex-nowrap">
+        <Box className="grid grid-cols-1 gap-y-10 lg:grid-cols-[1.4fr_1fr_1.3fr] lg:grid-rows-[auto_auto] lg:gap-x-14 lg:gap-y-10">
 
-          {/* Column 1 — Brand */}
-          <Box className="flex flex-col gap-5 lg:w-96.75 shrink-0">
+          {/* ── ROW 1 ── */}
+
+          {/* R1C1 — Brand */}
+          <Box className="flex flex-col gap-5">
             {/* Logo mark */}
             <Box className="flex items-center gap-2.5">
               <Box className="w-10 h-10 rounded-full bg-linear-to-br from-[#3B82F6] to-[#9234EA] flex items-center justify-center shrink-0">
@@ -83,41 +85,17 @@ export function Footer(): React.JSX.Element {
             {/* Description */}
             <Text
               as="p"
-              className="text-[13.5px] leading-[1.75] text-white/50 font-inter max-w-[340px]"
+              className="text-[13.5px] leading-[1.75] text-white/50 font-inter max-w-85"
             >
               Platform top up game yang menyediakan layanan cepat, aman, dan praktis untuk
               berbagai kebutuhan digital Anda. Didukung sistem otomatis dan metode pembayaran
               lengkap, kami hadir untuk memberikan pengalaman transaksi yang lebih mudah dan
               terpercaya. Layanan top up game cepat, aman.
             </Text>
-
-            {/* Payment methods */}
-            <Box className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-5">
-              <Text
-                as="p"
-                className="text-[13px] font-semibold text-white font-outfit mb-4 leading-none"
-              >
-                Metode Pembayaran
-              </Text>
-              <Box className="flex flex-row gap-2 overflow-x-auto no-scrollbar">
-                {PAYMENT_LOGOS.map((logo) => (
-                  <Box
-                    key={logo.alt}
-                    className="h-[33px] w-[64px] bg-white rounded-md flex items-center justify-center overflow-hidden px-1.5 shrink-0"
-                  >
-                    <img
-                      src={logo.src}
-                      alt={logo.alt}
-                      className="w-full h-full object-contain"
-                    />
-                  </Box>
-                ))}
-              </Box>
-            </Box>
           </Box>
 
-          {/* Column 2 — Support */}
-          <Box className="flex flex-col gap-5 lg:w-[256px] shrink-0">
+          {/* R1C2 — Support */}
+          <Box className="flex flex-col gap-5">
             <Text as="p" className="text-[17px] font-bold text-white font-outfit leading-none">
               Butuh Bantuan?
             </Text>
@@ -127,15 +105,17 @@ export function Footer(): React.JSX.Element {
               as="button"
               type="button"
               className={cn(
-                "flex items-center justify-between gap-3 w-full rounded-full",
-                "bg-white/[0.06] border border-white/15 backdrop-blur-sm",
-                "px-4 py-3 cursor-pointer hover:bg-white/10 transition-colors",
+                "flex items-center justify-between gap-2.5 w-full rounded-full",
+                "bg-white/6 border border-white/15 backdrop-blur-sm",
+                "pl-4 pr-4 py-2 cursor-pointer hover:bg-white/10 transition-colors",
               )}
             >
-              <Box className="flex items-center gap-3">
-                <Box className="w-8 h-8 rounded-full bg-[#25D366] flex items-center justify-center shrink-0">
-                  <MessageCircle className="w-4 h-4 text-white fill-white" />
-                </Box>
+              <Box className="flex items-center gap-2.5">
+                <img
+                  src={whatsappLogo}
+                  alt="WhatsApp"
+                  className="w-6 h-6 shrink-0"
+                />
                 <Text
                   as="span"
                   className="text-[14px] font-semibold text-white font-outfit leading-none"
@@ -149,91 +129,120 @@ export function Footer(): React.JSX.Element {
             {/* Operational info */}
             <Box className="flex flex-col gap-3">
               <Box className="flex items-center gap-2.5">
-                <Clock className="w-4 h-4 text-white/35 shrink-0" />
-                <Text as="span" className="text-[13px] text-white/50 font-inter leading-none">
+                <Clock className="w-4 h-4 text-white shrink-0" />
+                <Text as="span" className="text-[13px] text-white/65 font-inter leading-none">
                   Jam Operasional: 24 Jam
                 </Text>
               </Box>
               <Box className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-white/35 shrink-0" />
-                <Text as="span" className="text-[13px] text-white/50 font-inter leading-none">
+                <Mail className="w-4 h-4 text-white shrink-0" />
+                <Text as="span" className="text-[13px] text-white/65 font-inter leading-none">
                   E-mail: support@topupgaming.com
                 </Text>
               </Box>
             </Box>
-
-            {/* Trust badge */}
-            <Box className="flex items-center gap-3.5 bg-white/[0.05] border border-white/8 rounded-2xl p-4">
-              <Box className="w-12 h-12 rounded-xl bg-white/[0.08] flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-6 h-6 text-[#0EA42E]" />
-              </Box>
-              <Box className="flex flex-col gap-1">
-                <Text as="span" className="text-[11px] text-white/40 font-inter leading-none">
-                  Jaminan Transaksi
-                </Text>
-                <Text
-                  as="span"
-                  className="text-[15px] font-bold text-white font-outfit leading-snug"
-                >
-                  100% Legal &amp; Aman
-                </Text>
-              </Box>
-            </Box>
           </Box>
 
-          {/* Column 3 — Menu Link */}
-          <Box className="flex flex-col gap-5 lg:w-[120px] shrink-0">
-            <Text as="p" className="text-[17px] font-bold text-white font-outfit leading-none">
-              Menu Link
-            </Text>
-            <Box className="flex flex-col gap-3.5">
-              {MENU_LINKS.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="text-[13.5px] text-white/50 hover:text-white/80 font-inter transition-colors whitespace-nowrap"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </Box>
-          </Box>
-
-          {/* Column 4 — Legalitas */}
-          <Box className="flex flex-col gap-5 lg:w-[180px] shrink-0">
-            <Text as="p" className="text-[17px] font-bold text-white font-outfit leading-none">
-              Legalitas
-            </Text>
-            <Box className="flex flex-col gap-3.5">
-              {LEGAL_LINKS.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="text-[13.5px] text-white/50 hover:text-white/80 font-inter transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </Box>
-
-            {/* Social media */}
-            <Box className="flex flex-col gap-3 mt-1">
-              <Text as="p" className="text-[14px] font-semibold text-white font-outfit">
-                Follow Kami:
+          {/* R1C3 — Menu Link + Legalitas side by side */}
+          <Box className="flex flex-row gap-10">
+            {/* Menu Link */}
+            <Box className="flex flex-col gap-5">
+              <Text as="p" className="text-[17px] font-bold text-white font-outfit leading-none">
+                Menu Link
               </Text>
-              <Box className="flex items-center gap-2 flex-wrap">
-                {SOCIAL_ICONS.map(({ Icon, label }) => (
-                  <Box
-                    key={label}
-                    as="button"
-                    type="button"
-                    aria-label={label}
-                    className="w-10 h-10 rounded-xl bg-white/[0.08] border border-white/10 flex items-center justify-center hover:bg-white/15 transition-colors cursor-pointer"
+              <Box className="flex flex-col gap-3.5">
+                {MENU_LINKS.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="text-[13.5px] text-white/50 hover:text-white/80 font-inter transition-colors whitespace-nowrap"
                   >
-                    <Icon className="w-4.5 h-4.5 text-white" />
-                  </Box>
+                    {link.label}
+                  </Link>
                 ))}
               </Box>
+            </Box>
+
+            {/* Legalitas */}
+            <Box className="flex flex-col gap-5">
+              <Text as="p" className="text-[17px] font-bold text-white font-outfit leading-none">
+                Legalitas
+              </Text>
+              <Box className="flex flex-col gap-3.5">
+                {LEGAL_LINKS.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="text-[13.5px] text-white/50 hover:text-white/80 font-inter transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </Box>
+            </Box>
+          </Box>
+
+          {/* ── ROW 2 ── */}
+
+          {/* R2C1 — Payment methods */}
+          <Box className="rounded-2xl border border-white/10 bg-white/4 backdrop-blur-sm p-5">
+            <Text
+              as="p"
+              className="text-[13px] font-semibold text-white font-outfit mb-4 leading-none"
+            >
+              Metode Pembayaran
+            </Text>
+            <Box className="flex flex-row gap-2 overflow-x-auto no-scrollbar">
+              {PAYMENT_LOGOS.map((logo) => (
+                <Box
+                  key={logo.alt}
+                  className="h-8.25 w-16 bg-white rounded-md flex items-center justify-center overflow-hidden px-1.5 shrink-0"
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className="w-full h-full object-contain"
+                  />
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
+          {/* R2C2 — Transaction guarantee */}
+          <Box className="flex items-center gap-3.5">
+            <Box className="w-14 h-14 rounded-xl bg-[#0EA42E]/18 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-7 h-7 text-[#0EA42E]" />
+            </Box>
+            <Box className="flex flex-col gap-1">
+              <Text as="span" className="text-[11px] text-white/45 font-inter leading-none">
+                Jaminan Transaksi
+              </Text>
+              <Text
+                as="span"
+                className="text-[15px] font-bold text-white font-outfit leading-snug"
+              >
+                100% Legal &amp; Aman
+              </Text>
+            </Box>
+          </Box>
+
+          {/* R2C3 — Social media */}
+          <Box className="flex flex-col gap-3">
+            <Text as="p" className="text-[14px] font-semibold text-white font-outfit">
+              Follow Kami:
+            </Text>
+            <Box className="flex items-center gap-2 flex-wrap">
+              {SOCIAL_ICONS.map(({ Icon, label }) => (
+                <Box
+                  key={label}
+                  as="button"
+                  type="button"
+                  aria-label={label}
+                  className="w-10 h-10 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/15 transition-colors cursor-pointer"
+                >
+                  <Icon className="w-4.5 h-4.5 text-white" />
+                </Box>
+              ))}
             </Box>
           </Box>
 
