@@ -8,18 +8,19 @@ import CarouselDots from "./fragments/CarouselDots";
 import { BANNERS } from "@/features/home/data/heroBanner.data";
 
 export default function HeroBanner(): React.JSX.Element {
-  const { current, trackRef, hasPeek, slideWidth, goTo } = useHeroCarousel(BANNERS.length);
+  const { current, containerWidth, trackRef, hasPeek, slideWidth, goTo } = useHeroCarousel(BANNERS.length);
+  const isMobile = containerWidth > 0 && containerWidth < 768;
 
   return (
     <Box className="w-full bg-[#0A0A0C] pt-4 pb-5 md:pt-8 md:pb-9">
-      <Box className="max-w-6xl mx-auto px-4 md:px-8">
+      <Box className="max-w-6xl mx-auto md:px-8">
         {/* Carousel viewport */}
         <Box
           ref={trackRef}
-          className="relative w-full overflow-hidden rounded-xl md:rounded-2xl"
+          className="relative w-full overflow-hidden md:rounded-2xl"
           style={{ WebkitMaskImage: "-webkit-radial-gradient(white, black)", transform: "translateZ(0)" }}
         >
-          {hasPeek && slideWidth > 0 ? (
+          {hasPeek && !isMobile && slideWidth > 0 ? (
             /* Peek mode: translate-based sliding track */
             <Box
               className="flex"
@@ -35,7 +36,7 @@ export default function HeroBanner(): React.JSX.Element {
                 const isActive = idx === current;
                 const slideStyle = {
                   width: `${slideWidth}px`,
-                  aspectRatio: "1110 / 400" as const,
+                  asspectRatio: "1110 / 400" as const,
                   opacity: isActive ? 1 : 0.45,
                   transform: isActive ? "scale(1)" : "scale(0.96)",
                   transition: "opacity 400ms ease, transform 400ms ease",
@@ -83,8 +84,7 @@ export default function HeroBanner(): React.JSX.Element {
           ) : (
             /* Simple mode: opacity crossfade */
             <Box
-              style={{ aspectRatio: "1300 / 400" }}
-              className="relative w-full"
+              className="relative w-full aspect-video md:aspect-13/4"
             >
               {BANNERS.map((banner, idx) => (
                 <Box
