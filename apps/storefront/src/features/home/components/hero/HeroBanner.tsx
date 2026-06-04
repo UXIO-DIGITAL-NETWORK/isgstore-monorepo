@@ -12,7 +12,7 @@ export default function HeroBanner(): React.JSX.Element {
   const isMobile = containerWidth > 0 && containerWidth < 768;
 
   return (
-    <Box className="w-full bg-[#0A0A0C] pt-4 pb-5 md:pt-8 md:pb-9">
+    <Box className="w-full pt-4 pb-5 md:pt-8 md:pb-9">
       <Box className="max-w-6xl mx-auto md:px-8">
         {/* Carousel viewport */}
         <Box

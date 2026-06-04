@@ -9,7 +9,7 @@ export default function PopularGames(): React.JSX.Element {
   const lastIndex = POPULAR_GAMES.length - 1;
 
   return (
-    <Box as="section" className="w-full bg-background pt-6 pb-8 md:pt-8 md:pb-12">
+    <Box as="section" className="w-full pt-6 pb-8 md:pt-8 md:pb-12">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
 
         {/* Section header */}

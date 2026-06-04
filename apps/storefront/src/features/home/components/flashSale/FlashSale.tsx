@@ -31,7 +31,7 @@ export default function FlashSale(): React.JSX.Element {
   const { hours, minutes, seconds } = useCountdown(FLASH_SALE_DURATION_SECONDS);
 
   return (
-    <Box className="w-full bg-[#0B0A11] pt-6 pb-8 md:pt-8 md:pb-12">
+    <Box className="w-fulls pt-6 pb-8 md:pt-8 md:pb-12">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
         <Box
           className="rounded-2xl overflow-hidden"
