@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { GAMES } from "@/data/games.data";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import type { Game } from "@/types/game.type";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 interface UseGameSearchReturn {
   open: boolean;
@@ -17,27 +20,31 @@ interface UseGameSearchReturn {
 /**
  * Manages all state and logic for the Navbar search bar dropdown.
  *
- * Responsibilities:
- * - Tracks open/closed state of the search dropdown
- * - Filters the global GAMES list against the current query (title + region)
- * - Attaches click-outside and Escape-key listeners to auto-close the dropdown
+ * - `query` updates instantly (controls the input, no typing lag).
+ * - Filtering runs on `debouncedQuery` (300 ms after the user stops typing)
+ *   so expensive work is deferred without any perceived input delay.
+ * - Attaches click-outside and Escape-key listeners to auto-close the dropdown.
  */
 export function useGameSearch(): UseGameSearchReturn {
   const [open, setOpen] = useState(false);
   const [query, setQueryState] = useState("");
 
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+
   const containerRef = useRef<HTMLDivElement>(null!);
   const inputRef = useRef<HTMLInputElement>(null!);
 
-  const isSearching = query.trim().length > 0;
+  // isSearching / results are driven by the debounced value so the popular
+  // panel stays visible while the user is mid-keystroke.
+  const isSearching = debouncedQuery.trim().length > 0;
 
   const results = useMemo<Game[]>(() => {
     if (!isSearching) return [];
-    const needle = query.trim().toLowerCase();
+    const needle = debouncedQuery.trim().toLowerCase();
     return GAMES.filter((g) =>
       `${g.title} ${g.region}`.toLowerCase().includes(needle)
     );
-  }, [query, isSearching]);
+  }, [debouncedQuery, isSearching]);
 
   // Close on click-outside and Escape key
   useEffect(() => {
@@ -64,10 +71,13 @@ export function useGameSearch(): UseGameSearchReturn {
 
   const openDropdown = useCallback(() => setOpen(true), []);
 
-  const setQuery = useCallback((value: string) => {
-    setQueryState(value);
-    if (!open) setOpen(true);
-  }, [open]);
+  const setQuery = useCallback(
+    (value: string) => {
+      setQueryState(value);
+      if (!open) setOpen(true);
+    },
+    [open]
+  );
 
   const close = useCallback(() => {
     setOpen(false);
