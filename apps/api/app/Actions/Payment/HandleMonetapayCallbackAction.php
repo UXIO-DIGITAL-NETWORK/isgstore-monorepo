@@ -56,8 +56,13 @@ class HandleMonetapayCallbackAction
             }
 
             // ── Determine outcome ────────────────────────────────────────────
-            // Monetapay success signal: numeric "1" or string "SUCCESS" (case-insensitive)
-            $isSuccess = $dto->status === '1' || strtolower($dto->status) === 'success';
+            // Known Monetapay success signals:
+            //   '1' → Paid (standard VA / redirect flow)
+            //   '3' → Settled (instant methods: QRIS, E-Wallet)
+            //   'success' → legacy/string variant (case-normalised before comparison)
+            // Using in_array() with a strict allowlist is safer than chained equality
+            // checks — any unrecognised code is treated as failure by default.
+            $isSuccess = \in_array(\strtolower($dto->status), ['1', '3', 'success'], true);
 
             // ── Persist payment result ───────────────────────────────────────
             $payment->update([
