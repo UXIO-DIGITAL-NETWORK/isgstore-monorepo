@@ -16,5 +16,9 @@
   "language": {
     "id": "Bahasa Indonesia",
     "en": "English"
+  },
+  "search": {
+    "popular": "Pencarian Populer",
+    "noResults": "Game tidak ditemukan"
   }
 }

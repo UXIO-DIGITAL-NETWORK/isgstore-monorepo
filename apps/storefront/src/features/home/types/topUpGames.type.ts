@@ -1,22 +1,7 @@
-export type GameCategory =
-  | "semua"
-  | "moba"
-  | "battle-royale"
-  | "fps"
-  | "pc-games"
-  | "voucher";
-
-export type TopUpGame = {
-  id: string;
-  title: string;
-  region: string;
-  bgImage: string;
-  logoImage: string;
-  category: Exclude<GameCategory, "semua">;
-  borderColor: "azure" | "violet";
-};
+// Re-export global types so existing feature imports continue to resolve unchanged.
+export type { Game as TopUpGame, GameCategory } from "@/types/game.type";
 
 export type CategoryTab = {
-  key: GameCategory;
+  key: import("@/types/game.type").GameCategory;
   label: string;
 };

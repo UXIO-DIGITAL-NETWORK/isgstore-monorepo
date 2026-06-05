@@ -1,13 +1,14 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "@tanstack/react-router";
-import { Search, ChevronDown, Gamepad2 } from "lucide-react";
+import { ChevronDown, Gamepad2 } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
 import { LOCALES } from "@/constants/locales";
 import { getNavLinks } from "@/constants/navLinks";
 import { useLocaleDropdown } from "@/hooks/useLocaleDropdown";
+import { SearchBar } from "@/components/shared/SearchBar";
 
 export function Navbar(): React.JSX.Element {
   const { t } = useTranslation("common");
@@ -36,16 +37,8 @@ export function Navbar(): React.JSX.Element {
             </Text>
           </Link>
 
-          {/* Search bar */}
-          <Box className="relative flex-1 max-w-2xl hidden md:flex items-center">
-            <Box
-              as="input"
-              type="text"
-              placeholder={t("action.search")}
-              className="w-full h-10 bg-white/5 border border-white/8 rounded-full pl-5 pr-11 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/8 focus:border-white/20 transition-all font-inter"
-            />
-            <Search className="absolute right-4 text-white/35 w-4.5 h-4.5 pointer-events-none" />
-          </Box>
+          {/* Search bar — desktop */}
+          <SearchBar className="hidden md:flex flex-1 max-w-2xl" />
 
           {/* Right actions */}
           <Box className="flex items-center gap-2 shrink-0">
@@ -91,6 +84,11 @@ export function Navbar(): React.JSX.Element {
             </Link>
           </Box>
         </Box>
+      </Box>
+
+      {/* ── Mobile search row ── */}
+      <Box className="md:hidden px-4 pb-3">
+        <SearchBar className="flex w-full" />
       </Box>
 
       {/* ── Bottom tier – nav links ── */}
