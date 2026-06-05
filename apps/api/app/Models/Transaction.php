@@ -37,4 +37,9 @@ class Transaction extends Model
     {
         return $this->hasOne(Rating::class);
     }
+
+    public function paymentChannel()
+    {
+        return $this->belongsTo(\App\Models\PaymentChannel::class);
+    }
 }
