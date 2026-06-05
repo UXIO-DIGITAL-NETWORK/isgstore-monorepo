@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -7,6 +8,7 @@ import { ARTIKEL_TERBARU } from "@/features/home/data/artikel.data";
 import ArticleCard from "./fragments/ArticleCard";
 
 export default function ArtikelTerbaru(): React.JSX.Element {
+  const { t } = useTranslation("home");
   return (
     <Box as="section" className="w-full py-16 md:py-20">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
@@ -20,12 +22,12 @@ export default function ArtikelTerbaru(): React.JSX.Element {
               level={3}
               className="font-outfit font-bold text-[22px] md:text-[28px] leading-7 tracking-[-0.5px] text-white uppercase text-center"
             >
-              Artikel Terbaru Seputar Game
+              {t("artikel.title")}
             </Heading>
             <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
           </Box>
           <Text as="p" className="font-inter font-normal text-[15px] leading-5 text-[#697282]">
-            Temukan informasi, tips, dan update terbaru seputar top up game, promo menarik
+            {t("artikel.subtitle")}
           </Text>
         </Box>
 
@@ -50,7 +52,7 @@ export default function ArtikelTerbaru(): React.JSX.Element {
               as="span"
               className="font-inter font-bold text-[12px] leading-none tracking-[1.2px] text-[#9333EA] uppercase"
             >
-              Lihat Semua Artikel
+              {t("artikel.viewAll")}
             </Text>
             <ChevronDown className="w-4 h-4 text-[#9333EA]" />
           </Box>

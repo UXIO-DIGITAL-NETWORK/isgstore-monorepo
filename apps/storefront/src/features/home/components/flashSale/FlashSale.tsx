@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Zap } from "lucide-react";
@@ -28,6 +29,7 @@ function useCountdown(durationSeconds: number) {
 }
 
 export default function FlashSale(): React.JSX.Element {
+  const { t } = useTranslation("home");
   const { hours, minutes, seconds } = useCountdown(FLASH_SALE_DURATION_SECONDS);
 
   return (
@@ -49,11 +51,11 @@ export default function FlashSale(): React.JSX.Element {
               <Box className="flex items-center gap-2.5 mb-1.5">
                 <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400 shrink-0" />
                 <Text as="span" className="text-2xl font-bold tracking-wide uppercase">
-                  Flash Sale
+                  {t("flashSale.title")}
                 </Text>
               </Box>
               <Text as="p" className="text-sm" style={{ color: "#767676" }}>
-                Pesan sekarang! Persediaan terbatas
+                {t("flashSale.subtitle")}
               </Text>
             </Box>
 

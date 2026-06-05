@@ -123,13 +123,12 @@ export default function LoginPage() {
               {t("login.rememberMe")}
             </Box>
           </Box>
-          <Box
-            as="button"
-            type="button"
-            className="text-sm text-[#3B82F6] hover:text-[#60A5FA] transition-colors cursor-pointer border-0 bg-transparent font-inter"
+          <Link
+            href={`/${locale ?? "id"}/forgot-password`}
+            className="text-sm text-[#3B82F6] hover:text-[#60A5FA] transition-colors font-inter"
           >
             {t("login.forgotPassword")}
-          </Box>
+          </Link>
         </Box>
 
         {/* Submit */}

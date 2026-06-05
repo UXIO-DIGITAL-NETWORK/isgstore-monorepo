@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
@@ -6,6 +7,7 @@ import { POPULAR_GAMES } from "@/features/home/data/popularGames.data";
 import PopularGameCard from "./fragments/PopularGameCard";
 
 export default function PopularGames(): React.JSX.Element {
+  const { t } = useTranslation("home");
   const lastIndex = POPULAR_GAMES.length - 1;
 
   return (
@@ -21,11 +23,11 @@ export default function PopularGames(): React.JSX.Element {
               level={4}
               className="font-outfit font-bold text-[22px] md:text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
             >
-              Game Populer Hari Ini
+              {t("popular.title")}
             </Heading>
           </Box>
           <Text as="p" className="font-inter font-normal text-[14px] leading-5 text-[#697282]">
-            Pilih kategori favoritmu dan lakukan top up dengan proses cepat, aman, dan tanpa ribet.
+            {t("popular.subtitle")}
           </Text>
         </Box>
 
@@ -33,7 +35,7 @@ export default function PopularGames(): React.JSX.Element {
         <Box className="relative">
           <Box
             className="flex gap-5 overflow-x-auto no-scrollbar"
-            aria-label="Game populer"
+            aria-label={t("popular.ariaList")}
           >
             {POPULAR_GAMES.map((game, index) => (
               <PopularGameCard

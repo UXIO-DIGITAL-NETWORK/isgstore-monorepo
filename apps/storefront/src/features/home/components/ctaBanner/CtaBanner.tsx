@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
@@ -7,6 +8,7 @@ import ctaBg from "@/assets/images/CTA/CTA_1.png";
 import ctaMascot from "@/assets/images/CTA/CTA_2.png";
 
 export default function CtaBanner(): React.JSX.Element {
+  const { t } = useTranslation("home");
   return (
     <Box as="section" className="relative w-full h-auto md:h-135.25 overflow-hidden">
 
@@ -29,7 +31,7 @@ export default function CtaBanner(): React.JSX.Element {
           {/* Mascot — flow element on mobile, absolute on desktop */}
           <Image
             src={ctaMascot}
-            alt="Maskot UDN"
+            alt={t("cta.mascotAlt")}
             priority="eager"
             objectFit="contain"
             className="w-52 sm:w-64 md:absolute md:right-0 md:bottom-0 md:w-150 md:h-full mb-6 md:mb-0"
@@ -43,14 +45,14 @@ export default function CtaBanner(): React.JSX.Element {
                 level={1}
                 className="font-outfit font-bold text-[30px] sm:text-[40px] md:text-[52px] leading-[1.1] tracking-[-0.5px] md:tracking-[-1.5px] text-white"
               >
-                Buat Akun &amp; Nikmati Lebih Banyak Keuntungan
+                {t("cta.title")}
               </Heading>
 
               <Text
                 as="p"
                 className="font-inter font-normal text-[15px] md:text-[16px] leading-[1.6] text-white/60"
               >
-                Dapatkan harga lebih hemat, riwayat transaksi, dan proses top up yang lebih cepat dalam satu akun.
+                {t("cta.subtitle")}
               </Text>
 
               <Box className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
@@ -59,14 +61,14 @@ export default function CtaBanner(): React.JSX.Element {
                   type="button"
                   className="h-13 md:h-16.5 px-8 md:px-10 rounded-full bg-white font-inter font-bold text-[16px] md:text-[18px] text-[#0A0A0C] cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap flex items-center justify-center"
                 >
-                  Daftar Sekarang
+                  {t("cta.register")}
                 </Box>
                 <Box
                   as="button"
                   type="button"
                   className="h-13 md:h-16.5 px-8 rounded-full bg-white/10 border border-white/30 font-inter font-bold text-[16px] md:text-[18px] text-white backdrop-blur-sm cursor-pointer hover:bg-white/15 transition-colors whitespace-nowrap flex items-center justify-center"
                 >
-                  Masuk
+                  {t("cta.login")}
                 </Box>
               </Box>
             </Box>

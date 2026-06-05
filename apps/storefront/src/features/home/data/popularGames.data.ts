@@ -14,7 +14,7 @@ export const POPULAR_GAMES: PopularGame[] = [
     subtitle: "Moonton",
     region: "Indonesia",
     image: popularGameImage1,
-    badge: { emoji: "🔥", label: "TRENDING" },
+    badge: { emoji: "🔥", label: "TRENDING", labelKey: "popular.badges.trending" },
   },
   {
     id: "ml-global",
@@ -22,7 +22,7 @@ export const POPULAR_GAMES: PopularGame[] = [
     subtitle: "Moonton",
     region: "Global",
     image: popularGameImage2,
-    badge: { emoji: "⭐", label: "BEST SELLER" },
+    badge: { emoji: "⭐", label: "BEST SELLER", labelKey: "popular.badges.bestSeller" },
   },
   {
     id: "ff-id",
@@ -30,7 +30,7 @@ export const POPULAR_GAMES: PopularGame[] = [
     subtitle: "Moonton",
     region: "Indonesia",
     image: popularGameImage3,
-    badge: { emoji: "🔥", label: "TRENDING" },
+    badge: { emoji: "🔥", label: "TRENDING", labelKey: "popular.badges.trending" },
   },
   {
     id: "roblox-id",
@@ -38,7 +38,7 @@ export const POPULAR_GAMES: PopularGame[] = [
     subtitle: "Sandboxed",
     region: "Indonesia",
     image: popularGameImage4,
-    badge: { emoji: "⭐", label: "BEST SELLER" },
+    badge: { emoji: "⭐", label: "BEST SELLER", labelKey: "popular.badges.bestSeller" },
   },
   {
     id: "pubg-id",
@@ -46,7 +46,7 @@ export const POPULAR_GAMES: PopularGame[] = [
     subtitle: "Battle Royale",
     region: "Indonesia",
     image: popularGameImage5,
-    badge: { emoji: "🔥", label: "TRENDING" },
+    badge: { emoji: "🔥", label: "TRENDING", labelKey: "popular.badges.trending" },
   },
   {
     id: "genshin-id",
@@ -54,6 +54,6 @@ export const POPULAR_GAMES: PopularGame[] = [
     subtitle: "miHoYo",
     region: "Indonesia",
     image: popularGameImage6,
-    badge: { emoji: "🔥", label: "TRENDING" },
+    badge: { emoji: "🔥", label: "TRENDING", labelKey: "popular.badges.trending" },
   },
 ];

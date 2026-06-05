@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SIDE_VISIBLE, GAP_PX } from "@/features/home/constants/heroBanner";
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default function BannerNavArrow({ direction, hasPeek, onClick }: Props): React.JSX.Element {
+  const { t } = useTranslation("home");
   const isPrev = direction === "prev";
   const offset = hasPeek ? `${SIDE_VISIBLE + GAP_PX}px` : "12px";
 
@@ -18,7 +20,7 @@ export default function BannerNavArrow({ direction, hasPeek, onClick }: Props): 
       as="button"
       type="button"
       onClick={onClick}
-      aria-label={isPrev ? "Banner sebelumnya" : "Banner berikutnya"}
+      aria-label={isPrev ? t("hero.prevSlide") : t("hero.nextSlide")}
       className="absolute top-1/2 -translate-y-1/2 z-20 w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer outline-none active:scale-95"
       style={{ [isPrev ? "left" : "right"]: offset }}
     >

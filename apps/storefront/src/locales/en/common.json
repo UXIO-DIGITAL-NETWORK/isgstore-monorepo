@@ -20,5 +20,32 @@
   "search": {
     "popular": "Popular Searches",
     "noResults": "No games found"
+  },
+  "footer": {
+    "description": "A game top-up platform providing fast, secure, and practical services for all your digital needs. Supported by an automated system and complete payment methods, we are here to provide an easier and more trusted transaction experience.",
+    "needHelp": "Need Help?",
+    "chatWhatsApp": "Chat WhatsApp",
+    "operationalHours": "Operational Hours: 24 Hours",
+    "email": "E-mail: support@topupgaming.com",
+    "menuLink": "Menu Link",
+    "legalitas": "Legal",
+    "paymentMethods": "Payment Methods",
+    "transactionGuarantee": "Transaction Guarantee",
+    "transactionGuaranteeValue": "100% Legal & Secure",
+    "followUs": "Follow Us:",
+    "copyright": "© 2026 Topup Game. All Rights Reserved. All trademarks,",
+    "copyrightOwners": "logos and brand names are the property of their respective owners.",
+    "menu": {
+      "dashboard": "Dashboard",
+      "priceList": "Price List",
+      "leaderboard": "Leaderboard",
+      "news": "News",
+      "calculator": "Calculator"
+    },
+    "legal": {
+      "refundPolicy": "Refund Policy",
+      "privacyPolicy": "Privacy Policy",
+      "termsConditions": "Terms & Conditions"
+    }
   }
 }

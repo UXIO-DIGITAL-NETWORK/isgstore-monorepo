@@ -3,15 +3,73 @@
     "title": "Flash Sale",
     "endsIn": "Ends in",
     "available": "Available",
-    "topUpNow": "Top Up Now"
+    "topUpNow": "Top Up Now",
+    "subtitle": "Order now! Limited stock"
   },
   "popular": {
-    "title": "Popular Games",
-    "subtitle": "Choose your favorite game and get the best deals",
-    "topUp": "Top Up"
+    "title": "Today's Popular Games",
+    "subtitle": "Choose your favorite category and top up with a fast, secure, and hassle-free process.",
+    "topUp": "Top Up",
+    "ariaList": "Popular games",
+    "badges": {
+      "trending": "TRENDING",
+      "bestSeller": "BEST SELLER"
+    },
+    "regions": {
+      "indonesia": "Indonesia",
+      "global": "Global"
+    }
+  },
+  "topUpGame": {
+    "title": "Top Up Game",
+    "subtitle": "Choose your favorite game and top up quickly, safely, and conveniently.",
+    "showMore": "Show More",
+    "categories": {
+      "semua": "All",
+      "moba": "MOBA",
+      "battle-royale": "Battle Royale",
+      "fps": "FPS",
+      "pc-games": "PC Games",
+      "voucher": "Voucher"
+    }
+  },
+  "keunggulan": {
+    "title": "Our Service Advantages",
+    "subtitle": "Fast, secure, and practical top-up solutions in one platform.",
+    "secure": {
+      "title": "Secure Payment",
+      "desc": "We use high-standard encryption to ensure every transaction is always protected.",
+      "pci": "Protected by PCI DSS security standard",
+      "fraud": "Active fraud prevention system"
+    },
+    "instant": {
+      "title": "Instant Delivery",
+      "desc": "No waiting needed. Our automated system processes and delivers your top-up in seconds.",
+      "auto": "Automated System Active"
+    },
+    "support": {
+      "title": "24/7 Support",
+      "desc": "Our support team is ready to help you anytime via live chat or WhatsApp.",
+      "contact": "Contact Admin"
+    }
+  },
+  "artikel": {
+    "title": "Latest Gaming Articles",
+    "subtitle": "Find the latest information, tips, and updates on game top-ups and exciting promotions",
+    "viewAll": "View All Articles"
+  },
+  "cta": {
+    "title": "Create an Account & Enjoy More Benefits",
+    "subtitle": "Get better prices, transaction history, and a faster top-up process all in one account.",
+    "register": "Register Now",
+    "login": "Login",
+    "mascotAlt": "UDN Mascot"
   },
   "hero": {
     "register": "Register Now",
-    "topUp": "Top Up Now"
+    "topUp": "Top Up Now",
+    "prevSlide": "Previous banner",
+    "nextSlide": "Next banner",
+    "slide": "Slide {{number}}"
   }
 }

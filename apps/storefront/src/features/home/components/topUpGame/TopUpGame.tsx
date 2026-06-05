@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -9,6 +10,7 @@ import CategoryTabs from "./fragments/CategoryTabs";
 import TopUpGameCard from "./fragments/TopUpGameCard";
 
 export default function TopUpGame(): React.JSX.Element {
+  const { t } = useTranslation("home");
   const [activeTab, setActiveTab] = useState<GameCategory>("semua");
 
   const visibleGames =
@@ -29,11 +31,11 @@ export default function TopUpGame(): React.JSX.Element {
               level={4}
               className="font-outfit font-bold text-[22px] md:text-[28px] leading-7 tracking-[-0.5px] text-white uppercase"
             >
-              Top Up Game
+              {t("topUpGame.title")}
             </Heading>
           </Box>
           <Text as="p" className="font-inter font-normal text-[14px] leading-5 text-[#697282]">
-            Pilih game favoritmu dan lakukan top up dengan cepat, aman, dan praktis.
+            {t("topUpGame.subtitle")}
           </Text>
         </Box>
 
@@ -60,7 +62,7 @@ export default function TopUpGame(): React.JSX.Element {
             type="button"
             className="flex items-center gap-2 px-8 py-3 rounded-full border border-[#9333EA] text-[#9333EA] text-[13px] font-semibold font-outfit uppercase tracking-widest hover:bg-[#9333EA]/10 active:bg-[#9333EA]/20 transition-colors cursor-pointer"
           >
-            Tampilkan Lebih Banyak
+            {t("topUpGame.showMore")}
             <ChevronDown className="w-4 h-4 shrink-0" />
           </Box>
         </Box>

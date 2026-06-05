@@ -20,5 +20,32 @@
   "search": {
     "popular": "Pencarian Populer",
     "noResults": "Game tidak ditemukan"
+  },
+  "footer": {
+    "description": "Platform top up game yang menyediakan layanan cepat, aman, dan praktis untuk berbagai kebutuhan digital Anda. Didukung sistem otomatis dan metode pembayaran lengkap, kami hadir untuk memberikan pengalaman transaksi yang lebih mudah dan terpercaya.",
+    "needHelp": "Butuh Bantuan?",
+    "chatWhatsApp": "Chat WhatsApp",
+    "operationalHours": "Jam Operasional: 24 Jam",
+    "email": "E-mail: support@topupgaming.com",
+    "menuLink": "Menu Link",
+    "legalitas": "Legalitas",
+    "paymentMethods": "Metode Pembayaran",
+    "transactionGuarantee": "Jaminan Transaksi",
+    "transactionGuaranteeValue": "100% Legal & Aman",
+    "followUs": "Follow Kami:",
+    "copyright": "© 2026 Topup Game. All Rights Reserved. All trademarks,",
+    "copyrightOwners": "logos and brand names are the property of their respective owners.",
+    "menu": {
+      "dashboard": "Dashboard",
+      "priceList": "Daftar Harga",
+      "leaderboard": "Leaderboard",
+      "news": "Berita",
+      "calculator": "Kalkulator"
+    },
+    "legal": {
+      "refundPolicy": "Kebijakan Pengembalian",
+      "privacyPolicy": "Kebijakan Privasi",
+      "termsConditions": "Syarat & Ketentuan"
+    }
   }
 }

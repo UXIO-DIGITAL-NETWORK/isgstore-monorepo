@@ -20,5 +20,10 @@ export const registerSchema = z
     path: ["password_confirmation"],
   });
 
+export const forgotPasswordSchema = z.object({
+  email: z.email("Format email tidak valid"),
+});
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;

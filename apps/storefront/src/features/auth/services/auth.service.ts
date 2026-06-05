@@ -1,7 +1,7 @@
 import { api } from "@/config/axios";
 import type { ApiResponse } from "@/types/api.type";
 import type { AuthApiResponse } from "../types/auth.type";
-import type { LoginFormValues, RegisterFormValues } from "../schemas/auth.schema";
+import type { LoginFormValues, RegisterFormValues, ForgotPasswordFormValues } from "../schemas/auth.schema";
 
 export const authService = {
   login: async (data: LoginFormValues): Promise<AuthApiResponse> => {
@@ -14,5 +14,9 @@ export const authService = {
 
   logout: async (): Promise<ApiResponse<null>> => {
     return await api.post("/logout");
+  },
+
+  forgotPassword: async (data: ForgotPasswordFormValues): Promise<ApiResponse<null>> => {
+    return await api.post("/forgot-password", data);
   },
 };

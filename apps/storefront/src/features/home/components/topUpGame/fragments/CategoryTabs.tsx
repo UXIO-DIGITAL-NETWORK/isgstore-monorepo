@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { cva } from "class-variance-authority";
 import { Box } from "@/components/common/Box";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export default function CategoryTabs({ tabs, activeTab, onTabChange }: Props): React.JSX.Element {
+  const { t } = useTranslation("home");
   return (
     <Box className="flex items-center gap-3 overflow-x-auto no-scrollbar">
       {tabs.map((tab) => (
@@ -34,7 +36,7 @@ export default function CategoryTabs({ tabs, activeTab, onTabChange }: Props): R
           onClick={() => onTabChange(tab.key)}
           className={cn(tabVariants({ active: activeTab === tab.key }))}
         >
-          {tab.label}
+          {t(`topUpGame.categories.${tab.key}`)}
         </Box>
       ))}
     </Box>

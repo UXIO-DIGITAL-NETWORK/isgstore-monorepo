@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Gamepad2,
   ChevronRight,
@@ -31,20 +32,6 @@ const PAYMENT_LOGOS: { src: string; alt: string }[] = [
   { src: paymentLogo5, alt: "ShopeePay" },
 ];
 
-const MENU_LINKS: { label: string; href: string }[] = [
-  { label: "Dashboard", href: "#" },
-  { label: "Daftar Harga", href: "#" },
-  { label: "Leaderboard", href: "#" },
-  { label: "Berita", href: "#" },
-  { label: "Kalkulator", href: "#" },
-];
-
-const LEGAL_LINKS: { label: string; href: string }[] = [
-  { label: "Kebijakan Pengembalian", href: "#" },
-  { label: "Kebijakan Privasi", href: "#" },
-  { label: "Syarat & Ketentuan", href: "#" },
-];
-
 type SocialIconEntry = { Icon: React.ElementType; label: string };
 const SOCIAL_ICONS: SocialIconEntry[] = [
   { Icon: Instagram, label: "Instagram" },
@@ -55,6 +42,22 @@ const SOCIAL_ICONS: SocialIconEntry[] = [
 ];
 
 export function Footer(): React.JSX.Element {
+  const { t } = useTranslation("common");
+
+  const MENU_LINKS: { labelKey: string; href: string }[] = [
+    { labelKey: "footer.menu.dashboard", href: "#" },
+    { labelKey: "footer.menu.priceList", href: "#" },
+    { labelKey: "footer.menu.leaderboard", href: "#" },
+    { labelKey: "footer.menu.news", href: "#" },
+    { labelKey: "footer.menu.calculator", href: "#" },
+  ];
+
+  const LEGAL_LINKS: { labelKey: string; href: string }[] = [
+    { labelKey: "footer.legal.refundPolicy", href: "#" },
+    { labelKey: "footer.legal.privacyPolicy", href: "#" },
+    { labelKey: "footer.legal.termsConditions", href: "#" },
+  ];
+
   return (
     <Box as="footer" className="w-full bg-gradient-footer">
 
@@ -87,17 +90,14 @@ export function Footer(): React.JSX.Element {
               as="p"
               className="text-[13.5px] leading-[1.75] text-white/50 font-inter max-w-85"
             >
-              Platform top up game yang menyediakan layanan cepat, aman, dan praktis untuk
-              berbagai kebutuhan digital Anda. Didukung sistem otomatis dan metode pembayaran
-              lengkap, kami hadir untuk memberikan pengalaman transaksi yang lebih mudah dan
-              terpercaya. Layanan top up game cepat, aman.
+              {t("footer.description")}
             </Text>
           </Box>
 
           {/* R1C2 — Support */}
           <Box className="flex flex-col gap-5">
             <Text as="p" className="text-[17px] font-bold text-white font-outfit leading-none">
-              Butuh Bantuan?
+              {t("footer.needHelp")}
             </Text>
 
             {/* WhatsApp CTA */}
@@ -120,7 +120,7 @@ export function Footer(): React.JSX.Element {
                   as="span"
                   className="text-[14px] font-semibold text-white font-outfit leading-none"
                 >
-                  Chat WhatsApp
+                  {t("footer.chatWhatsApp")}
                 </Text>
               </Box>
               <ChevronRight className="w-4 h-4 text-white/45 shrink-0" />
@@ -131,13 +131,13 @@ export function Footer(): React.JSX.Element {
               <Box className="flex items-center gap-2.5">
                 <Clock className="w-4 h-4 text-white shrink-0" />
                 <Text as="span" className="text-[13px] text-white/65 font-inter leading-none">
-                  Jam Operasional: 24 Jam
+                  {t("footer.operationalHours")}
                 </Text>
               </Box>
               <Box className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-white shrink-0" />
                 <Text as="span" className="text-[13px] text-white/65 font-inter leading-none">
-                  E-mail: support@topupgaming.com
+                  {t("footer.email")}
                 </Text>
               </Box>
             </Box>
@@ -148,16 +148,16 @@ export function Footer(): React.JSX.Element {
             {/* Menu Link */}
             <Box className="flex flex-col gap-5">
               <Text as="p" className="text-[17px] font-bold text-white font-outfit leading-none">
-                Menu Link
+                {t("footer.menuLink")}
               </Text>
               <Box className="flex flex-col gap-3.5">
                 {MENU_LINKS.map((link) => (
                   <Link
-                    key={link.label}
+                    key={link.labelKey}
                     href={link.href}
                     className="text-[13.5px] text-white/50 hover:text-white/80 font-inter transition-colors whitespace-nowrap"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 ))}
               </Box>
@@ -166,16 +166,16 @@ export function Footer(): React.JSX.Element {
             {/* Legalitas */}
             <Box className="flex flex-col gap-5">
               <Text as="p" className="text-[17px] font-bold text-white font-outfit leading-none">
-                Legalitas
+                {t("footer.legalitas")}
               </Text>
               <Box className="flex flex-col gap-3.5">
                 {LEGAL_LINKS.map((link) => (
                   <Link
-                    key={link.label}
+                    key={link.labelKey}
                     href={link.href}
                     className="text-[13.5px] text-white/50 hover:text-white/80 font-inter transition-colors"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 ))}
               </Box>
@@ -190,7 +190,7 @@ export function Footer(): React.JSX.Element {
               as="p"
               className="text-[13px] font-semibold text-white font-outfit mb-4 leading-none"
             >
-              Metode Pembayaran
+              {t("footer.paymentMethods")}
             </Text>
             <Box className="flex flex-row gap-2 overflow-x-auto no-scrollbar">
               {PAYMENT_LOGOS.map((logo) => (
@@ -215,13 +215,13 @@ export function Footer(): React.JSX.Element {
             </Box>
             <Box className="flex flex-col gap-1">
               <Text as="span" className="text-[11px] text-white/45 font-inter leading-none">
-                Jaminan Transaksi
+                {t("footer.transactionGuarantee")}
               </Text>
               <Text
                 as="span"
                 className="text-[15px] font-bold text-white font-outfit leading-snug"
               >
-                100% Legal &amp; Aman
+                {t("footer.transactionGuaranteeValue")}
               </Text>
             </Box>
           </Box>
@@ -229,7 +229,7 @@ export function Footer(): React.JSX.Element {
           {/* R2C3 — Social media */}
           <Box className="flex flex-col gap-3">
             <Text as="p" className="text-[14px] font-semibold text-white font-outfit">
-              Follow Kami:
+              {t("footer.followUs")}
             </Text>
             <Box className="flex items-center gap-2 flex-wrap">
               {SOCIAL_ICONS.map(({ Icon, label }) => (
@@ -258,10 +258,10 @@ export function Footer(): React.JSX.Element {
       <Box className="max-w-6xl mx-auto px-4 md:px-8 py-5">
         <Box className="flex items-center justify-between gap-4 flex-wrap">
           <Text as="span" className="text-[12px] text-white/30 font-inter">
-            © 2026 Topup Game. All Rights Reserved. All trademarks,
+            {t("footer.copyright")}
           </Text>
           <Text as="span" className="text-[12px] text-white/30 font-inter">
-            logos and brand names are the property of their respective owners.
+            {t("footer.copyrightOwners")}
           </Text>
         </Box>
       </Box>

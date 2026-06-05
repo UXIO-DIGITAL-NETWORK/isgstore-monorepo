@@ -7,5 +7,6 @@ export type PopularGame = {
   badge: {
     emoji: string;
     label: string;
+    labelKey: string;
   };
 };
