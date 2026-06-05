@@ -5,8 +5,8 @@ namespace App\DTOs\Payment;
 readonly class CreatePaymentDTO
 {
     public function __construct(
-        public int $orderId,
-        public int $paymentMethodId,
+        public int $transactionId,
+        public int $paymentChannelId,
         public ?string $pgTransactionId,
         public int $grossAmount,
         public int $adminFee,

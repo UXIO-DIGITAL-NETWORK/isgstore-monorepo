@@ -17,7 +17,6 @@ use App\Http\Controllers\Api\Supplier\SupplierCategoryController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Product\SupplierProductController;
 use App\Http\Controllers\Api\Payment\MonetapayCallbackController;
-use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PointHistoryController;
 use App\Http\Controllers\Api\RatingController;
@@ -155,13 +154,6 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::put('/{supplierProduct}', [SupplierProductController::class, 'update']);
         Route::delete('/{supplierProduct}', [SupplierProductController::class, 'destroy']);
     });
-
-    // Order Management
-    Route::get('/orders', [OrderController::class, 'index']);
-    Route::post('/orders', [OrderController::class, 'store']);
-    Route::get('/orders/{order}', [OrderController::class, 'show']);
-    Route::put('/orders/{order}', [OrderController::class, 'update']);
-    Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
 
     // Payment Management
     Route::get('/payments', [PaymentController::class, 'index']);

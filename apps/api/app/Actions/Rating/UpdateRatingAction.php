@@ -15,7 +15,7 @@ class UpdateRatingAction
     public function execute(Rating $ratingRecord, UpdateRatingDTO $dto): Rating
     {
         $ratingRecord->update([
-            'order_id' => $dto->orderId,
+            'transaction_id' => $dto->transactionId,
             'user_id' => $dto->userId,
             'rating' => $dto->rating,
         ]);

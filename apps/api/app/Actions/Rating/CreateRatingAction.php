@@ -15,7 +15,7 @@ class CreateRatingAction
     public function execute(CreateRatingDTO $dto): Rating
     {
         $rating = Rating::create([
-            'order_id' => $dto->orderId,
+            'transaction_id' => $dto->transactionId,
             'user_id' => $dto->userId,
             'rating' => $dto->rating,
         ]);
@@ -24,7 +24,7 @@ class CreateRatingAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Created Rating: {$dto->rating} for Order ID: {$dto->orderId}"
+            message: "Created Rating: {$dto->rating} for Transaction ID: {$dto->transactionId}"
         ));
 
         return $rating;

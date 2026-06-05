@@ -24,7 +24,7 @@ class StoreRatingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'order_id' => ['required', 'exists:orders,id'],
+            'transaction_id' => ['required', 'exists:transactions,id'],
             'user_id' => ['required', 'exists:users,id'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
         ];
@@ -33,7 +33,7 @@ class StoreRatingRequest extends FormRequest
     public function toDTO(): CreateRatingDTO
     {
         return new CreateRatingDTO(
-            orderId: (int) $this->validated('order_id'),
+            transactionId: (int) $this->validated('transaction_id'),
             userId: (int) $this->validated('user_id'),
             rating: (int) $this->validated('rating')
         );
