@@ -956,6 +956,82 @@
       ]
     },
     {
+      "name": "Transactions",
+      "description": "Transaction records. Status machine: PENDING → PAID → PROCESSING → COMPLETED / FAILED_PROVIDER. `invoice_number` is the Digiflazz ref_id. `user_id` is nullable for guest checkouts.",
+      "item": [
+        {
+          "name": "List Transactions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json", "type": "text" }],
+            "url": {
+              "raw": "{{base_url}}/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["transactions"]
+            }
+          }
+        },
+        {
+          "name": "Create Transaction",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json", "type": "text" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"user_id\": 1,\n  \"payment_channel_id\": 1,\n  \"supplier_id\": 1,\n  \"guest_contact\": null,\n  \"target_uid\": \"12345678\",\n  \"target_server\": \"9012\",\n  \"amount_base\": 16000,\n  \"amount_fee\": 0,\n  \"amount_total\": 16000,\n  \"total_price\": 16000,\n  \"margin\": 1000,\n  \"status\": \"PENDING\",\n  \"is_manual\": true,\n  \"sn\": null,\n  \"supplier_trx_id\": null,\n  \"supplier_status\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["transactions"]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json", "type": "text" }],
+            "url": {
+              "raw": "{{base_url}}/transactions/{{id}}",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "{{id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Transaction",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json", "type": "text" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"payment_channel_id\": 1,\n  \"supplier_id\": 1,\n  \"guest_contact\": null,\n  \"target_uid\": \"12345678\",\n  \"target_server\": \"9012\",\n  \"amount_base\": 16000,\n  \"amount_fee\": 0,\n  \"amount_total\": 16000,\n  \"total_price\": 16000,\n  \"margin\": 1000,\n  \"status\": \"COMPLETED\",\n  \"is_manual\": false,\n  \"sn\": \"SN-ABC123\",\n  \"supplier_trx_id\": \"DGF-TXN-001\",\n  \"supplier_status\": \"Sukses\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions/{{id}}",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "{{id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Transaction",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json", "type": "text" }],
+            "url": {
+              "raw": "{{base_url}}/transactions/{{id}}",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "{{id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Payments",
       "description": "Payment records linked to Transactions. Status: '1'=Pending, '2'=Expired/Failed, '3'=Success, '4'=Refunded.",
       "item": [
