@@ -8,13 +8,25 @@ import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DiamondPackage } from "@/features/checkout/types/checkout.type";
 
+import iconDiamond from "@/assets/images/checkout/icon_diamond.png";
+import iconPoint1 from "@/assets/images/checkout/icon_point_1.png";
+import iconPoint2 from "@/assets/images/checkout/icon_point_2.png";
+import iconPoint3 from "@/assets/images/checkout/icon_point_3.png";
+import fastIcon from "@/assets/icons/fast.svg";
+
+const BONUS_ICONS: Record<1 | 2 | 3, string> = {
+  1: iconPoint1,
+  2: iconPoint2,
+  3: iconPoint3,
+};
+
 const cardVariants = cva(
-  "relative flex flex-col items-center gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all outline-none",
+  "relative flex flex-col text-left rounded-xl overflow-hidden border cursor-pointer select-none transition-all outline-none bg-[#0D1117]",
   {
     variants: {
       selected: {
-        true: "border-[2px] border-[#C084FC] bg-[rgba(192,132,252,0.08)]",
-        false: "border border-[rgba(59,130,246,0.2)] bg-[rgba(59,130,246,0.04)] hover:border-[rgba(192,132,252,0.4)] hover:bg-[rgba(147,51,234,0.06)]",
+        true: "border-[#C084FC]",
+        false: "border-white/[0.08] hover:border-[#C084FC]/40",
       },
     },
     defaultVariants: { selected: false },
@@ -30,6 +42,8 @@ interface Props {
 export default function PackageCard({ pkg, isSelected, onSelect }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("checkout");
   const locale = i18n.language;
+  const bonusVariant = pkg.bonusVariant ?? 1;
+  const bonusIcon = BONUS_ICONS[bonusVariant as 1 | 2 | 3];
 
   return (
     <Box
@@ -43,75 +57,66 @@ export default function PackageCard({ pkg, isSelected, onSelect }: Props): React
           : undefined
       }
     >
-      {/* Badges */}
-      {pkg.isPopular && (
-        <Box className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
-          <Box className="px-2 py-0.5 rounded-full bg-[#9333EA] border border-[#C084FC]/30">
-            <Text as="span" className="font-outfit font-bold text-[9px] uppercase tracking-[0.4px] text-white whitespace-nowrap">
-              {t("packages.popular")}
+      {/* ── Top content ────────────────────────────────────────────────── */}
+      <Box className="flex flex-col gap-2 px-3 pt-3 pb-2">
+        {/* Package name */}
+        <Text
+          as="span"
+          className={cn(
+            "font-dmsans text-[11px] leading-tight",
+            isSelected ? "text-white" : "text-white/85",
+          )}
+        >
+          {pkg.name}
+        </Text>
+
+        {/* Price row: diamond icon + price */}
+        <Box className="flex items-center gap-2">
+          <Box
+            as="img"
+            src={iconDiamond}
+            alt="diamond"
+            className="w-6 h-6 object-contain shrink-0"
+          />
+          <PriceText className="text-[16px] leading-none">
+            {formatCurrency(pkg.price, locale)}
+          </PriceText>
+        </Box>
+      </Box>
+
+      {/* ── Bottom band ─────────────────────────────────────────────────── */}
+      <Box className="flex items-center justify-between gap-2 px-3 py-2 mt-auto bg-[rgba(147,51,234,0.12)]">
+        {/* Bonus chip */}
+        {pkg.bonus !== undefined && (
+          <Box className="flex items-center gap-1 rounded-full bg-black/20 px-2 py-0.5">
+            <Box
+              as="img"
+              src={bonusIcon}
+              alt="bonus"
+              className="w-3.5 h-3.5 object-contain shrink-0"
+            />
+            <Text as="span" className="font-plex text-[11px] text-white/90 leading-none">
+              +{pkg.bonus}
             </Text>
           </Box>
-        </Box>
-      )}
-      {pkg.isBonus && !pkg.isPopular && (
-        <Box className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
-          <Box className="px-2 py-0.5 rounded-full bg-[#0EA42E]">
-            <Text as="span" className="font-outfit font-bold text-[9px] uppercase tracking-[0.4px] text-white whitespace-nowrap">
-              {t("packages.bonus")}
-            </Text>
-          </Box>
-        </Box>
-      )}
-
-      {/* Diamond icon */}
-      <DiamondIcon selected={isSelected} />
-
-      {/* Package name */}
-      <Text
-        as="span"
-        className={cn(
-          "font-dmsans font-bold text-[12px] leading-tight text-center",
-          isSelected ? "text-white" : "text-white/80",
         )}
-      >
-        {pkg.name}
-      </Text>
 
-      {/* Price */}
-      <PriceText className="text-[13px] leading-tight">
-        {formatCurrency(pkg.price, locale)}
-      </PriceText>
-    </Box>
-  );
-}
-
-function DiamondIcon({ selected }: { selected: boolean }): React.JSX.Element {
-  return (
-    <Box className="w-8 h-8 flex items-center justify-center">
-      <svg
-        width="28"
-        height="28"
-        viewBox="0 0 28 28"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <linearGradient id={`diamond-grad-${selected ? "s" : "d"}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={selected ? "#C084FC" : "#3B82F6"} />
-            <stop offset="100%" stopColor={selected ? "#9234EA" : "#6B21A8"} />
-          </linearGradient>
-        </defs>
-        <polygon
-          points="14,2 26,10 14,26 2,10"
-          fill={`url(#diamond-grad-${selected ? "s" : "d"})`}
-          opacity={selected ? 1 : 0.85}
-        />
-        <polygon
-          points="14,2 26,10 14,13"
-          fill="white"
-          opacity="0.15"
-        />
-      </svg>
+        {/* Instant delivery label */}
+        <Box className="flex items-center gap-1 ml-auto">
+          <Box
+            as="img"
+            src={fastIcon}
+            alt="instant"
+            className="w-4 h-4 object-contain shrink-0"
+          />
+          <Text
+            as="span"
+            className="font-inter text-[8px] leading-tight text-white/45 text-right whitespace-pre-line"
+          >
+            {t("packages.instantDelivery")}
+          </Text>
+        </Box>
+      </Box>
     </Box>
   );
 }

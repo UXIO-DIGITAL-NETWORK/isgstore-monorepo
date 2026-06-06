@@ -1,4 +1,4 @@
-export type PackageCategory = "all" | "weekly" | "monthly" | "special";
+export type PackageCategory = "all" | "weekly" | "firstTopUp" | "diamonds" | "special";
 
 export interface DiamondPackage {
   id: string;
@@ -8,6 +8,8 @@ export interface DiamondPackage {
   category: PackageCategory;
   isPopular?: boolean;
   isBonus?: boolean;
+  bonus?: number;
+  bonusVariant?: 1 | 2 | 3;
 }
 
 export interface PaymentOption {

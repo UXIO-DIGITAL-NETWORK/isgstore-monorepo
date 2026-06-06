@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Box } from "@/components/common/Box";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
@@ -35,6 +35,15 @@ export default function CheckoutPage(): React.JSX.Element {
     handleSelectPayment,
     handleSubmit,
   } = useCheckoutSelection();
+
+  const selectedPaymentName = useMemo(() => {
+    if (!selectedPaymentId) return undefined;
+    for (const group of PAYMENT_GROUPS_MOCK) {
+      const found = group.options.find((o) => o.id === selectedPaymentId);
+      if (found) return found.name;
+    }
+    return undefined;
+  }, [selectedPaymentId]);
 
   return (
     <Box className="min-h-dvh bg-[#0A0A0C]">
@@ -85,8 +94,9 @@ export default function CheckoutPage(): React.JSX.Element {
             <OrderSummary
               selectedPackage={selectedPackage}
               totalPrice={totalPrice}
-              gameLogo={GAME_INFO_MOCK.logo}
+              gameThumbnail={GAME_INFO_MOCK.thumbnail}
               gameName={GAME_INFO_MOCK.name}
+              selectedPaymentName={selectedPaymentName}
               onSubmit={handleSubmit}
             />
           </Box>

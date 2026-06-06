@@ -10,15 +10,15 @@ const tabVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-[#9333EA] text-white font-semibold",
-        false: "bg-white/[0.06] border border-white/10 text-white/60 hover:bg-white/10 hover:text-white/90",
+        true: "bg-[#9234EA] text-white font-semibold",
+        false: "border border-white/[0.12] bg-white/[0.02] text-white/55 hover:text-white/90 hover:border-white/25",
       },
     },
     defaultVariants: { active: false },
   },
 );
 
-const CATEGORIES: PackageCategory[] = ["all", "weekly", "monthly", "special"];
+const CATEGORIES: PackageCategory[] = ["all", "weekly", "firstTopUp", "diamonds", "special"];
 
 interface Props {
   activeCategory: PackageCategory;

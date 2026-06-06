@@ -36,13 +36,21 @@
     "title": "Select Diamond Package",
     "categories": {
       "all": "All",
-      "weekly": "Weekly",
-      "monthly": "Monthly",
-      "special": "Special"
+      "weekly": "Weekly Diamonds Pass",
+      "firstTopUp": "First TopUp",
+      "diamonds": "Diamonds",
+      "special": "Special Items"
+    },
+    "groupTitles": {
+      "weekly": "Weekly Diamonds Pass",
+      "firstTopUp": "First Top Up",
+      "diamonds": "Diamonds",
+      "special": "Special Items"
     },
     "unit": "Diamonds",
     "popular": "Best Seller",
-    "bonus": "Bonus"
+    "bonus": "Bonus",
+    "instantDelivery": "Instant\nDelivery"
   },
 
   "payment": {
@@ -78,7 +86,9 @@
     "selectedPackage": "Selected package",
     "noPackageSelected": "No package selected",
     "total": "Total Payment",
-    "buyNow": "Buy Now",
-    "processing": "Processing..."
+    "totalLabel": "Total Payable",
+    "buyNow": "Top Up Now",
+    "processing": "Processing...",
+    "instantProcess": "Instant processing time"
   }
 }

@@ -10,37 +10,36 @@ import type { DiamondPackage } from "@/features/checkout/types/checkout.type";
 interface Props {
   selectedPackage: DiamondPackage | null;
   totalPrice: number;
-  gameLogo: string;
+  gameThumbnail: string;
   gameName: string;
+  selectedPaymentName?: string;
   onSubmit: () => void;
 }
 
 export default function OrderSummary({
   selectedPackage,
   totalPrice,
-  gameLogo,
+  gameThumbnail,
   gameName,
+  selectedPaymentName,
   onSubmit,
 }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("checkout");
   const locale = i18n.language;
 
   return (
-    <Box className="rounded-[16px] border border-[rgba(147,51,234,0.35)] bg-[rgba(147,51,234,0.04)] overflow-hidden">
-      {/* Selected package display */}
-      <Box className="px-4 py-3 flex items-center gap-3 border-b border-[rgba(147,51,234,0.2)]">
-        {/* Game logo thumb */}
-        <Box className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10">
-          <img src={gameLogo} alt={gameName} className="w-full h-full object-cover" />
+    <Box className="rounded-2xl border border-dotted border-[rgba(147,51,234,0.5)] bg-[#0D1117] overflow-hidden">
+      {/* Package info row */}
+      <Box className="px-4 py-4 flex items-center gap-3">
+        {/* Portrait game thumbnail */}
+        <Box className="w-[60px] h-[75px] rounded-xl overflow-hidden shrink-0 border border-violet-75/30 shadow-glow-violet">
+          <img src={gameThumbnail} alt={gameName} className="w-full h-full object-cover" />
         </Box>
 
-        {/* Package info */}
-        <Box className="flex-1 min-w-0">
-          <Text as="span" className="font-inter text-[11px] text-white/40 leading-none block mb-1">
-            {t("summary.selectedPackage")}
-          </Text>
+        {/* Package details */}
+        <Box className="flex-1 min-w-0 flex flex-col gap-1">
           {selectedPackage ? (
-            <Text as="span" className="font-dmsans font-bold text-[14px] text-white leading-tight block truncate">
+            <Text as="span" className="font-dmsans font-bold text-[14px] text-white leading-tight block">
               {selectedPackage.name}
             </Text>
           ) : (
@@ -48,29 +47,32 @@ export default function OrderSummary({
               {t("summary.noPackageSelected")}
             </Text>
           )}
+          {selectedPaymentName && (
+            <Text as="span" className="font-inter text-[13px] text-white/60 leading-none block">
+              1x - {selectedPaymentName}
+            </Text>
+          )}
+          <Text as="span" className="font-inter text-[11px] text-white/35 italic leading-none block">
+            **{t("summary.instantProcess")}
+          </Text>
         </Box>
 
-        {/* Price */}
-        {selectedPackage && (
-          <Box className="shrink-0">
-            <PriceText className="text-[14px]">
-              {formatCurrency(selectedPackage.price, locale)}
-            </PriceText>
-          </Box>
-        )}
-      </Box>
-
-      {/* Total + CTA */}
-      <Box className="px-4 py-3 flex flex-col gap-3">
-        <Box className="flex items-center justify-between">
-          <Text as="span" className="font-outfit font-medium text-[13px] text-white/70 leading-none">
-            {t("summary.total")}
+        {/* Total Bayar + price */}
+        <Box className="shrink-0 flex flex-col items-end gap-1">
+          <Text as="span" className="font-inter text-[11px] text-white/45 leading-none whitespace-nowrap">
+            {t("summary.totalLabel")}
           </Text>
-          <PriceText className="text-[18px] leading-none">
+          <PriceText className="text-[20px] leading-tight">
             {formatCurrency(totalPrice, locale)}
           </PriceText>
         </Box>
+      </Box>
 
+      {/* Divider */}
+      <Box className="h-px bg-white/8 mx-0" />
+
+      {/* CTA button */}
+      <Box className="px-4 py-4">
         <Button
           type="button"
           onClick={onSubmit}
