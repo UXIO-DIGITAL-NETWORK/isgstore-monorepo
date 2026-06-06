@@ -47,7 +47,7 @@ export default function CheckoutPage(): React.JSX.Element {
       </Box>
 
       {/* Two-column layout */}
-      <Box className="max-w-6xl mx-auto px-4 md:px-8 mt-5 pb-14">
+      <Box className="max-w-6xl mx-auto px-4 md:px-8 mt-14 pb-14">
         <Box className="grid grid-cols-1 lg:grid-cols-[5fr_8fr] gap-5 items-start">
 
           {/* ── Left column ── */}

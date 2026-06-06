@@ -19,16 +19,17 @@
   },
 
   "accountDetail": {
-    "title": "Panduan Detail Akun",
+    "title": "Masukan Detail Akun",
     "userId": "User ID",
     "userIdPlaceholder": "Masukkan User ID",
-    "serverId": "ID Server",
+    "serverId": "Server ID",
     "serverIdPlaceholder": "Masukkan ID Server",
     "helper": "Pastikan User ID dan ID Server sudah benar sebelum melanjutkan",
     "nickname": "Nickname",
     "nicknamePending": "Masukkan ID untuk melihat nickname",
     "nicknameLoading": "Memvalidasi...",
-    "nicknameError": "ID tidak ditemukan"
+    "nicknameError": "ID tidak ditemukan",
+    "viewGuide": "Lihat Panduan Pengisian"
   },
 
   "packages": {
@@ -67,7 +68,10 @@
   "reviews": {
     "title": "Ulasan Pelanggan",
     "basedOn": "Berdasarkan {{count}} ulasan",
-    "seeAll": "Lihat Semua",
+    "seeAll": "Lihat Semua Ulasan",
+    "hide": "Sembunyikan Ulasan",
+    "satisfactionText": "{{rate}}% pembeli merasa puas dengan produk ini.",
+    "fromCount": "Dari {{count}} Ulasan.",
     "ratingLabel": "Rating",
     "anonymous": "Pengguna Anonim"
   },

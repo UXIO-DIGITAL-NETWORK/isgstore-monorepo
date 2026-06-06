@@ -31,6 +31,7 @@ export interface Review {
   comment: string;
   date: string;
   maskedUserId?: string;
+  product?: string;
 }
 
 export interface ReviewSummary {

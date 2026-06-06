@@ -19,7 +19,7 @@
   },
 
   "accountDetail": {
-    "title": "Account Detail Guide",
+    "title": "Insert Account Detail",
     "userId": "User ID",
     "userIdPlaceholder": "Enter your User ID",
     "serverId": "Server ID",
@@ -28,7 +28,8 @@
     "nickname": "Nickname",
     "nicknamePending": "Enter ID to see nickname",
     "nicknameLoading": "Validating...",
-    "nicknameError": "ID not found"
+    "nicknameError": "ID not found",
+    "viewGuide": "View Account Guide"
   },
 
   "packages": {
@@ -67,7 +68,10 @@
   "reviews": {
     "title": "Customer Reviews",
     "basedOn": "Based on {{count}} reviews",
-    "seeAll": "See All",
+    "seeAll": "See All Reviews",
+    "hide": "Hide Reviews",
+    "satisfactionText": "{{rate}}% buyers are satisfied with this product.",
+    "fromCount": "From {{count}} Reviews.",
     "ratingLabel": "Rating",
     "anonymous": "Anonymous User"
   },

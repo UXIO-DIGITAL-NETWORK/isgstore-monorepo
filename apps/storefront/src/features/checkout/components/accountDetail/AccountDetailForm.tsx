@@ -21,13 +21,13 @@ export default function AccountDetailForm({
   const { t } = useTranslation("checkout");
 
   return (
-    <SectionCard stepNumber={1} title={t("accountDetail.title")}>
+    <SectionCard stepNumber={1} title={t("accountDetail.title")} gradientBorder>
       <Box className="flex flex-col gap-4">
         {/* User ID */}
         <Box className="flex flex-col gap-1.5">
           <Text as="span" className="font-inter font-medium text-[13px] text-[#C9D5E3] leading-none">
             {t("accountDetail.userId")}
-            <Text as="span" className="text-[#C084FC] ml-0.5">*</Text>
+            <Text as="span" className="text-red-400 ml-0.5">*</Text>
           </Text>
           <Input
             type="text"
@@ -41,7 +41,7 @@ export default function AccountDetailForm({
         <Box className="flex flex-col gap-1.5">
           <Text as="span" className="font-inter font-medium text-[13px] text-[#C9D5E3] leading-none">
             {t("accountDetail.serverId")}
-            <Text as="span" className="text-[#C084FC] ml-0.5">*</Text>
+            <Text as="span" className="text-red-400 ml-0.5">*</Text>
           </Text>
           <Input
             type="text"
@@ -51,23 +51,16 @@ export default function AccountDetailForm({
           />
         </Box>
 
-        {/* Nickname preview row */}
-        <Box className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[rgba(147,51,234,0.07)] border border-[rgba(147,51,234,0.2)]">
-          <Text as="span" className="font-inter text-[12px] text-white/40 leading-none">
-            {t("accountDetail.nickname")}:
-          </Text>
-          <Text as="span" className="font-inter font-medium text-[12px] text-white/50 italic leading-none">
-            {userId.trim()
-              ? t("accountDetail.nicknameLoading")
-              : t("accountDetail.nicknamePending")}
-          </Text>
-        </Box>
-
-        {/* Helper note */}
-        <Box className="flex items-start gap-2">
-          <Text as="span" className="text-[#C084FC] text-[12px] leading-none shrink-0 mt-0.5">ℹ</Text>
-          <Text as="span" className="font-inter text-[11px] text-white/40 leading-relaxed">
-            {t("accountDetail.helper")}
+        {/* Guide link */}
+        <Box className="flex items-center gap-2 cursor-pointer group">
+          <Box className="w-5 h-5 rounded-full bg-[#3B82F6] flex items-center justify-center shrink-0">
+            <Text as="span" className="font-outfit font-bold text-[10px] text-white leading-none">?</Text>
+          </Box>
+          <Text
+            as="span"
+            className="font-inter text-[12px] text-white/60 leading-none group-hover:text-white/90 transition-colors"
+          >
+            {t("accountDetail.viewGuide")}
           </Text>
         </Box>
       </Box>
