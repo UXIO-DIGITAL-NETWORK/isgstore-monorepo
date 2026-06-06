@@ -17,7 +17,7 @@ export default function GameInfoBar({ game }: Props): React.JSX.Element {
     <Box className="w-full bg-gradient-product-header border-t border-white/6">
       <Box className="relative max-w-6xl mx-auto px-4 md:px-8 py-5 md:pl-56">
         {/* Portrait game card — overlaps upward into the banner image, now bigger */}
-        <Box className="absolute left-4 md:left-8 top-36 md:-top-20 w-27 md:w-39 aspect-3/4 rounded-2xl overflow-hidden border border-violet-75/40 shadow-glow-violet z-10">
+        <Box className="hidden md:block absolute left-4 md:left-8 top-36 md:-top-20 w-27 md:w-39 aspect-3/4 rounded-2xl overflow-hidden border border-violet-75/40 shadow-glow-violet z-10">
           <img
             src={game.thumbnail}
             alt={game.name}

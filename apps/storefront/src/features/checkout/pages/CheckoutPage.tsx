@@ -60,19 +60,25 @@ export default function CheckoutPage(): React.JSX.Element {
       <Box className="max-w-6xl mx-auto px-4 md:px-8 mt-14 pb-14">
         <Box className="grid grid-cols-1 lg:grid-cols-[5fr_8fr] gap-5 items-start">
 
-          {/* ── Left column ── */}
-          <Box className="flex flex-col gap-5">
+          {/* ── Left column ──
+               On desktop: normal flex-col so AccountDetailForm + Reviews stack tightly.
+               On mobile: `contents` makes this box transparent — children become direct
+               grid items so CSS `order` can place Reviews after the right column. ── */}
+          <Box className="contents lg:flex lg:flex-col lg:gap-5">
             <AccountDetailForm
               userId={userId}
               serverId={serverId}
               onUserIdChange={setUserId}
               onServerIdChange={setServerId}
             />
-            <CustomerReviews />
+            {/* Reviews: order-last on mobile (after right col), natural position on desktop */}
+            <Box className="order-last lg:order-none">
+              <CustomerReviews />
+            </Box>
           </Box>
 
-          {/* ── Right column ── */}
-          <Box className="flex flex-col gap-5">
+          {/* ── Right column (mobile: order-2 so it sits between AccountDetail and Reviews) ── */}
+          <Box className="flex flex-col gap-5 order-2 lg:order-none">
             <DiamondPackages
               packages={filteredPackages}
               selectedPackageId={selectedPackageId}
