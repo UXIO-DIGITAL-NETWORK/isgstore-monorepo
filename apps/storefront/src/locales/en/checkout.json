@@ -56,10 +56,12 @@
   "payment": {
     "title": "Payment Method",
     "selectOption": "Select payment method",
+    "memberOnly": "Member Only",
+    "credits": "Credits",
     "groups": {
       "ewallet": "E-Wallet",
       "qris": "QRIS",
-      "va": "Virtual Account Transfer"
+      "va": "Virtual Account"
     }
   },
 

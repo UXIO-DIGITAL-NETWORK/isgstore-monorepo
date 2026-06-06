@@ -56,10 +56,12 @@
   "payment": {
     "title": "Metode Pembayaran",
     "selectOption": "Pilih metode pembayaran",
+    "memberOnly": "Khusus Member",
+    "credits": "Credits",
     "groups": {
       "ewallet": "E-Wallet",
       "qris": "QRIS",
-      "va": "Transfer Virtual Account"
+      "va": "Virtual Account"
     }
   },
 

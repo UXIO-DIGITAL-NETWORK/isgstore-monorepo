@@ -4,32 +4,49 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
 import SectionCard from "@/features/checkout/components/SectionCard";
-import PaymentOptionRow from "./fragments/PaymentOptionRow";
-import type { PaymentGroup } from "@/features/checkout/types/checkout.type";
+import MemberCreditsCard from "./fragments/MemberCreditsCard";
+import PaymentLogoChip from "./fragments/PaymentLogoChip";
+import type { PaymentGroup, MemberCredits, PaymentGroupType } from "@/features/checkout/types/checkout.type";
 
 interface Props {
   groups: PaymentGroup[];
+  memberCredits: MemberCredits;
   selectedPaymentId: string | null;
   onSelectPayment: (id: string) => void;
 }
 
 export default function PaymentMethods({
   groups,
+  memberCredits,
   selectedPaymentId,
   onSelectPayment,
 }: Props): React.JSX.Element {
   const { t } = useTranslation("checkout");
-  const [expandedGroup, setExpandedGroup] = useState<string | null>("ewallet");
 
-  const toggleGroup = (type: string) => {
-    setExpandedGroup((prev) => (prev === type ? null : type));
+  // All groups open by default; each toggles independently
+  const [expandedGroups, setExpandedGroups] = useState<Record<PaymentGroupType, boolean>>({
+    ewallet: true,
+    va: true,
+    qris: true,
+  });
+
+  const toggleGroup = (type: PaymentGroupType) => {
+    setExpandedGroups((prev) => ({ ...prev, [type]: !prev[type] }));
   };
 
   return (
-    <SectionCard stepNumber={3} title={t("payment.title")}>
+    <SectionCard stepNumber={3} title={t("payment.title")} gradientBorder>
       <Box className="flex flex-col gap-2">
+        {/* Member Credits block */}
+        <MemberCreditsCard
+          credits={memberCredits}
+          isSelected={selectedPaymentId === memberCredits.id}
+          onSelect={onSelectPayment}
+        />
+
+        {/* Payment method groups */}
         {groups.map((group) => {
-          const isExpanded = expandedGroup === group.type;
+          const isExpanded = expandedGroups[group.type];
           const hasSelected = group.options.some((o) => o.id === selectedPaymentId);
 
           return (
@@ -75,11 +92,11 @@ export default function PaymentMethods({
                 </Box>
               </Box>
 
-              {/* Options list */}
+              {/* Logo chips row */}
               {isExpanded && (
-                <Box className="flex flex-col gap-1.5 p-2 border-t border-white/6 bg-[rgba(0,0,0,0.15)]">
+                <Box className="flex flex-wrap gap-2 p-3 border-t border-white/6 bg-[rgba(0,0,0,0.15)]">
                   {group.options.map((option) => (
-                    <PaymentOptionRow
+                    <PaymentLogoChip
                       key={option.id}
                       option={option}
                       isSelected={selectedPaymentId === option.id}

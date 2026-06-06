@@ -14,7 +14,7 @@ import {
 } from "@/features/checkout/components";
 import { useCheckoutSelection } from "@/features/checkout/hooks/useCheckoutSelection";
 import { GAME_INFO_MOCK } from "@/features/checkout/data/gameInfo.mock";
-import { PAYMENT_GROUPS_MOCK } from "@/features/checkout/data/paymentMethods.mock";
+import { PAYMENT_GROUPS_MOCK, MEMBER_CREDITS_MOCK } from "@/features/checkout/data/paymentMethods.mock";
 
 export default function CheckoutPage(): React.JSX.Element {
   const {
@@ -38,6 +38,7 @@ export default function CheckoutPage(): React.JSX.Element {
 
   const selectedPaymentName = useMemo(() => {
     if (!selectedPaymentId) return undefined;
+    if (selectedPaymentId === MEMBER_CREDITS_MOCK.id) return "Credits";
     for (const group of PAYMENT_GROUPS_MOCK) {
       const found = group.options.find((o) => o.id === selectedPaymentId);
       if (found) return found.name;
@@ -82,6 +83,7 @@ export default function CheckoutPage(): React.JSX.Element {
 
             <PaymentMethods
               groups={PAYMENT_GROUPS_MOCK}
+              memberCredits={MEMBER_CREDITS_MOCK}
               selectedPaymentId={selectedPaymentId}
               onSelectPayment={handleSelectPayment}
             />

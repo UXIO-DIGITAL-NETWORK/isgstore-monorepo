@@ -18,6 +18,12 @@ export interface PaymentOption {
   logo: string;
 }
 
+export interface MemberCredits {
+  id: string;
+  balance: number;
+  logo: string;
+}
+
 export type PaymentGroupType = "ewallet" | "qris" | "va";
 
 export interface PaymentGroup {

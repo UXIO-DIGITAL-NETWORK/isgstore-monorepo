@@ -1,36 +1,45 @@
-import logo1 from "@/assets/images/payment_method/payment_logo_1.png";
-import logo2 from "@/assets/images/payment_method/payment_logo_2.png";
-import logo3 from "@/assets/images/payment_method/payment_logo_3.png";
-import logo4 from "@/assets/images/payment_method/payment_logo_4.png";
-import logo5 from "@/assets/images/payment_method/payment_logo_5.png";
-import type { PaymentGroup } from "@/features/checkout/types/checkout.type";
+import iconCredit from "@/assets/images/checkout/icon_credit.png";
+import logoGopay from "@/assets/images/checkout/logo_gopay.png";
+import logoDana from "@/assets/images/checkout/logo_dana.png";
+import logoOvo from "@/assets/images/checkout/logo_ovo.png";
+import logoBca from "@/assets/images/checkout/logo_bca.png";
+import logoMandiri from "@/assets/images/checkout/logo_mandiri.png";
+import logoBri from "@/assets/images/checkout/logo_bri.png";
+import logoBni from "@/assets/images/checkout/logo_bni.png";
+import logoQris from "@/assets/images/checkout/logo_qris.png";
+import type { PaymentGroup, MemberCredits } from "@/features/checkout/types/checkout.type";
+
+export const MEMBER_CREDITS_MOCK: MemberCredits = {
+  id: "credits",
+  balance: 0,
+  logo: iconCredit,
+};
 
 export const PAYMENT_GROUPS_MOCK: PaymentGroup[] = [
   {
     type: "ewallet",
     label: "E-Wallet",
     options: [
-      { id: "gopay",   name: "GoPay",   logo: logo1 },
-      { id: "ovo",     name: "OVO",     logo: logo2 },
-      { id: "dana",    name: "DANA",    logo: logo3 },
-      { id: "linkaja", name: "LinkAja", logo: logo4 },
+      { id: "gopay", name: "GoPay", logo: logoGopay },
+      { id: "dana",  name: "DANA",  logo: logoDana  },
+      { id: "ovo",   name: "OVO",   logo: logoOvo   },
+    ],
+  },
+  {
+    type: "va",
+    label: "Virtual Account",
+    options: [
+      { id: "va-bca",     name: "BCA Virtual Account",     logo: logoBca     },
+      { id: "va-mandiri", name: "Mandiri Virtual Account",  logo: logoMandiri },
+      { id: "va-bri",     name: "BRI Virtual Account",      logo: logoBri     },
+      { id: "va-bni",     name: "BNI Virtual Account",      logo: logoBni     },
     ],
   },
   {
     type: "qris",
     label: "QRIS",
     options: [
-      { id: "qris", name: "QRIS", logo: logo5 },
-    ],
-  },
-  {
-    type: "va",
-    label: "Transfer Virtual Account",
-    options: [
-      { id: "va-bca",     name: "BCA Virtual Account",     logo: logo1 },
-      { id: "va-mandiri", name: "Mandiri Virtual Account",  logo: logo2 },
-      { id: "va-bni",     name: "BNI Virtual Account",      logo: logo3 },
-      { id: "va-bri",     name: "BRI Virtual Account",      logo: logo4 },
+      { id: "qris", name: "QRIS", logo: logoQris },
     ],
   },
 ];
