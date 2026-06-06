@@ -57,12 +57,10 @@
 
   "contact": {
     "title": "Detail Kontak",
-    "whatsapp": "Nomor WhatsApp",
-    "whatsappPlaceholder": "Contoh: 081234567890",
-    "email": "Email (Opsional)",
-    "emailPlaceholder": "Contoh: email@domain.com",
-    "optional": "Opsional",
-    "helper": "Notifikasi transaksi akan dikirim ke nomor WhatsApp ini"
+    "whatsapp": "No. WhatsApp",
+    "whatsappPlaceholder": "Nomor Handphone",
+    "helperNote": "Nomor ini akan dihubungi jika terjadi masalah",
+    "receiptNote": "Bukti transaksi akan kami kirim ke whatsapp yang kamu isi di atas."
   },
 
   "reviews": {

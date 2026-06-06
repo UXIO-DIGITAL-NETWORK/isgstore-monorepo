@@ -57,12 +57,10 @@
 
   "contact": {
     "title": "Contact Details",
-    "whatsapp": "WhatsApp Number",
-    "whatsappPlaceholder": "e.g. 081234567890",
-    "email": "Email (Optional)",
-    "emailPlaceholder": "e.g. email@domain.com",
-    "optional": "Optional",
-    "helper": "Transaction notifications will be sent to this WhatsApp number"
+    "whatsapp": "WhatsApp No.",
+    "whatsappPlaceholder": "Phone Number",
+    "helperNote": "This number will be contacted if an issue occurs",
+    "receiptNote": "We will send the transaction receipt to the WhatsApp number you entered above."
   },
 
   "reviews": {
