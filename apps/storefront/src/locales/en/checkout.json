@@ -8,5 +8,75 @@
   "paymentMethod": "Payment Method",
   "totalPrice": "Total Price",
   "submit": "Pay Now",
-  "loading": "Processing..."
+  "loading": "Processing...",
+
+  "gameInfo": {
+    "badges": {
+      "fastProcess": "Fast Process",
+      "safe": "100% Safe",
+      "official": "Official"
+    }
+  },
+
+  "accountDetail": {
+    "title": "Account Detail Guide",
+    "userId": "User ID",
+    "userIdPlaceholder": "Enter your User ID",
+    "serverId": "Server ID",
+    "serverIdPlaceholder": "Enter your Server ID",
+    "helper": "Make sure your User ID and Server ID are correct before continuing",
+    "nickname": "Nickname",
+    "nicknamePending": "Enter ID to see nickname",
+    "nicknameLoading": "Validating...",
+    "nicknameError": "ID not found"
+  },
+
+  "packages": {
+    "title": "Select Diamond Package",
+    "categories": {
+      "all": "All",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "special": "Special"
+    },
+    "unit": "Diamonds",
+    "popular": "Best Seller",
+    "bonus": "Bonus"
+  },
+
+  "payment": {
+    "title": "Payment Method",
+    "selectOption": "Select payment method",
+    "groups": {
+      "ewallet": "E-Wallet",
+      "qris": "QRIS",
+      "va": "Virtual Account Transfer"
+    }
+  },
+
+  "contact": {
+    "title": "Contact Details",
+    "whatsapp": "WhatsApp Number",
+    "whatsappPlaceholder": "e.g. 081234567890",
+    "email": "Email (Optional)",
+    "emailPlaceholder": "e.g. email@domain.com",
+    "optional": "Optional",
+    "helper": "Transaction notifications will be sent to this WhatsApp number"
+  },
+
+  "reviews": {
+    "title": "Customer Reviews",
+    "basedOn": "Based on {{count}} reviews",
+    "seeAll": "See All",
+    "ratingLabel": "Rating",
+    "anonymous": "Anonymous User"
+  },
+
+  "summary": {
+    "selectedPackage": "Selected package",
+    "noPackageSelected": "No package selected",
+    "total": "Total Payment",
+    "buyNow": "Buy Now",
+    "processing": "Processing..."
+  }
 }

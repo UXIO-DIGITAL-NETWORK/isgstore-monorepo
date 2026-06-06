@@ -8,5 +8,75 @@
   "paymentMethod": "Metode Pembayaran",
   "totalPrice": "Total Harga",
   "submit": "Bayar Sekarang",
-  "loading": "Memproses..."
+  "loading": "Memproses...",
+
+  "gameInfo": {
+    "badges": {
+      "fastProcess": "Proses Cepat",
+      "safe": "Aman 100%",
+      "official": "Resmi"
+    }
+  },
+
+  "accountDetail": {
+    "title": "Panduan Detail Akun",
+    "userId": "User ID",
+    "userIdPlaceholder": "Masukkan User ID",
+    "serverId": "ID Server",
+    "serverIdPlaceholder": "Masukkan ID Server",
+    "helper": "Pastikan User ID dan ID Server sudah benar sebelum melanjutkan",
+    "nickname": "Nickname",
+    "nicknamePending": "Masukkan ID untuk melihat nickname",
+    "nicknameLoading": "Memvalidasi...",
+    "nicknameError": "ID tidak ditemukan"
+  },
+
+  "packages": {
+    "title": "Pilih Paket Diamond",
+    "categories": {
+      "all": "Semua",
+      "weekly": "Mingguan",
+      "monthly": "Bulanan",
+      "special": "Spesial"
+    },
+    "unit": "Diamond",
+    "popular": "Terlaris",
+    "bonus": "Bonus"
+  },
+
+  "payment": {
+    "title": "Metode Pembayaran",
+    "selectOption": "Pilih metode pembayaran",
+    "groups": {
+      "ewallet": "E-Wallet",
+      "qris": "QRIS",
+      "va": "Transfer Virtual Account"
+    }
+  },
+
+  "contact": {
+    "title": "Detail Kontak",
+    "whatsapp": "Nomor WhatsApp",
+    "whatsappPlaceholder": "Contoh: 081234567890",
+    "email": "Email (Opsional)",
+    "emailPlaceholder": "Contoh: email@domain.com",
+    "optional": "Opsional",
+    "helper": "Notifikasi transaksi akan dikirim ke nomor WhatsApp ini"
+  },
+
+  "reviews": {
+    "title": "Ulasan Pelanggan",
+    "basedOn": "Berdasarkan {{count}} ulasan",
+    "seeAll": "Lihat Semua",
+    "ratingLabel": "Rating",
+    "anonymous": "Pengguna Anonim"
+  },
+
+  "summary": {
+    "selectedPackage": "Paket yang dipilih",
+    "noPackageSelected": "Belum ada paket yang dipilih",
+    "total": "Total Pembayaran",
+    "buyNow": "Beli Sekarang",
+    "processing": "Memproses..."
+  }
 }

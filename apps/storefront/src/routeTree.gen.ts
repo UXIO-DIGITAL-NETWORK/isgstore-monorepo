@@ -13,6 +13,7 @@ import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
+import { Route as LocaleCheckoutGameSlugRouteImport } from './routes/$locale/checkout/$gameSlug'
 import { Route as LocaleAuthRegisterIndexRouteImport } from './routes/$locale/_auth/register/index'
 import { Route as LocaleAuthLoginIndexRouteImport } from './routes/$locale/_auth/login/index'
 import { Route as LocaleAuthForgotPasswordIndexRouteImport } from './routes/$locale/_auth/forgot-password/index'
@@ -36,6 +37,11 @@ const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
+const LocaleCheckoutGameSlugRoute = LocaleCheckoutGameSlugRouteImport.update({
+  id: '/checkout/$gameSlug',
+  path: '/checkout/$gameSlug',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
 const LocaleAuthRegisterIndexRoute = LocaleAuthRegisterIndexRouteImport.update({
   id: '/register/',
   path: '/register/',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleAuthRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/register/': typeof LocaleAuthRegisterIndexRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleIndexRoute
+  '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/forgot-password': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/login': typeof LocaleAuthLoginIndexRoute
   '/$locale/register': typeof LocaleAuthRegisterIndexRoute
@@ -74,6 +82,7 @@ export interface FileRoutesById {
   '/$locale': typeof LocaleRouteRouteWithChildren
   '/$locale/_auth': typeof LocaleAuthRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/_auth/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/_auth/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/_auth/register/': typeof LocaleAuthRegisterIndexRoute
@@ -84,6 +93,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$locale'
     | '/$locale/'
+    | '/$locale/checkout/$gameSlug'
     | '/$locale/forgot-password/'
     | '/$locale/login/'
     | '/$locale/register/'
@@ -91,6 +101,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$locale'
+    | '/$locale/checkout/$gameSlug'
     | '/$locale/forgot-password'
     | '/$locale/login'
     | '/$locale/register'
@@ -100,6 +111,7 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/$locale/_auth'
     | '/$locale/'
+    | '/$locale/checkout/$gameSlug'
     | '/$locale/_auth/forgot-password/'
     | '/$locale/_auth/login/'
     | '/$locale/_auth/register/'
@@ -138,6 +150,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleAuthRouteRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/checkout/$gameSlug': {
+      id: '/$locale/checkout/$gameSlug'
+      path: '/checkout/$gameSlug'
+      fullPath: '/$locale/checkout/$gameSlug'
+      preLoaderRoute: typeof LocaleCheckoutGameSlugRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/_auth/register/': {
@@ -183,11 +202,13 @@ const LocaleAuthRouteRouteWithChildren = LocaleAuthRouteRoute._addFileChildren(
 interface LocaleRouteRouteChildren {
   LocaleAuthRouteRoute: typeof LocaleAuthRouteRouteWithChildren
   LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleCheckoutGameSlugRoute: typeof LocaleCheckoutGameSlugRoute
 }
 
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleAuthRouteRoute: LocaleAuthRouteRouteWithChildren,
   LocaleIndexRoute: LocaleIndexRoute,
+  LocaleCheckoutGameSlugRoute: LocaleCheckoutGameSlugRoute,
 }
 
 const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(

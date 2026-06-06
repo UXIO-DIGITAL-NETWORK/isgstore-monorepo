@@ -19,4 +19,11 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    watch: {
+      // Prevent Vite from triggering HMR when TanStack Router rewrites routeTree.gen.ts,
+      // which would cause an infinite regeneration loop.
+      ignored: ["**/routeTree.gen.ts"],
+    },
+  },
 });
