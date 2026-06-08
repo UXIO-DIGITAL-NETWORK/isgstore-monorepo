@@ -92,5 +92,22 @@
     "buyNow": "Top Up Now",
     "processing": "Processing...",
     "instantProcess": "Instant processing time"
+  },
+
+  "confirmModal": {
+    "title": "PURCHASE CONFIRMATION",
+    "subtitle": "Make sure your account data and selected product are valid and correct.",
+    "dataPlayer": "Player Data",
+    "userId": "User ID",
+    "serverId": "Server ID",
+    "username": "Username",
+    "orderSummary": "Order Summary",
+    "item": "Item",
+    "product": "Product",
+    "price": "Price",
+    "method": "Method",
+    "totalPay": "Total Payable",
+    "confirm": "Order Now",
+    "cancel": "Cancel"
   }
 }

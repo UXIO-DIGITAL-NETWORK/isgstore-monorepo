@@ -92,5 +92,22 @@
     "buyNow": "Top Up Sekarang",
     "processing": "Memproses...",
     "instantProcess": "Waktu proses instan"
+  },
+
+  "confirmModal": {
+    "title": "KONFIRMASI PEMBELIAN",
+    "subtitle": "Pastikan data akun dan produk yang anda pilih valid dan sesuai.",
+    "dataPlayer": "Data Player",
+    "userId": "User ID",
+    "serverId": "Server ID",
+    "username": "Username",
+    "orderSummary": "Ringkasan Pesanan",
+    "item": "Item",
+    "product": "Produk",
+    "price": "Harga",
+    "method": "Metode",
+    "totalPay": "Total Bayar",
+    "confirm": "Pesan Sekarang",
+    "cancel": "Batalkan"
   }
 }

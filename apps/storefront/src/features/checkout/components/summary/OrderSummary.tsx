@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -6,6 +6,7 @@ import { PriceText } from "@/components/common/PriceText";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/format";
 import type { DiamondPackage } from "@/features/checkout/types/checkout.type";
+import OrderConfirmModal from "./OrderConfirmModal";
 
 interface Props {
   selectedPackage: DiamondPackage | null;
@@ -13,6 +14,8 @@ interface Props {
   gameThumbnail: string;
   gameName: string;
   selectedPaymentName?: string;
+  userId: string;
+  serverId: string;
   onSubmit: () => void;
 }
 
@@ -22,10 +25,13 @@ export default function OrderSummary({
   gameThumbnail,
   gameName,
   selectedPaymentName,
+  userId,
+  serverId,
   onSubmit,
 }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("checkout");
   const locale = i18n.language;
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
     <Box className="rounded-2xl border border-dotted border-[rgba(147,51,234,0.5)] bg-[#0D1117] overflow-hidden">
@@ -75,13 +81,35 @@ export default function OrderSummary({
       <Box className="px-4 py-4">
         <Button
           type="button"
-          onClick={onSubmit}
+          onClick={() => setConfirmOpen(true)}
           disabled={!selectedPackage}
           className="w-full py-3 text-[15px]"
         >
           {t("summary.buyNow")}
         </Button>
       </Box>
+
+      {/* Confirmation modal */}
+      <OrderConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          onSubmit();
+          setConfirmOpen(false);
+        }}
+        userId={userId}
+        serverId={serverId}
+        username="Ramonezz"
+        itemLabel={
+          selectedPackage
+            ? `${selectedPackage.amount} ${t("packages.unit")}`
+            : ""
+        }
+        productName={gameName}
+        price={selectedPackage?.price ?? 0}
+        paymentName={selectedPaymentName}
+        total={totalPrice}
+      />
     </Box>
   );
 }

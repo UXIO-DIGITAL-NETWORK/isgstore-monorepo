@@ -105,6 +105,8 @@ export default function CheckoutPage(): React.JSX.Element {
               gameThumbnail={GAME_INFO_MOCK.thumbnail}
               gameName={GAME_INFO_MOCK.name}
               selectedPaymentName={selectedPaymentName}
+              userId={userId}
+              serverId={serverId}
               onSubmit={handleSubmit}
             />
           </Box>
