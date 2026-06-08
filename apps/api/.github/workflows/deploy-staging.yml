@@ -47,3 +47,15 @@ jobs:
             sudo chown -R uxioserver1:www-data /home/uxioserver1/web-topup/api/staging
             sudo chmod -R 775 /home/uxioserver1/web-topup/api/staging/storage
             sudo chmod -R 775 /home/uxioserver1/web-topup/api/staging/bootstrap/cache
+
+            # 8. Deploy supervisor config untuk queue worker
+            sudo cp /home/uxioserver1/web-topup/api/staging/supervisor/laravel-queue-staging.conf \
+                    /etc/supervisor/conf.d/laravel-queue-staging.conf
+
+            # 9. Reload supervisor agar membaca config terbaru
+            sudo supervisorctl reread
+            sudo supervisorctl update
+
+            # 10. Restart queue worker agar muat kode yang baru di-deploy
+            # (queue:work meng-cache kode — harus restart setiap deploy)
+            sudo supervisorctl restart laravel-queue-staging:*

@@ -24,10 +24,10 @@ class DigiflazzService
         return md5($this->username . $this->key . $refId);
     }
 
-    public function getPriceList(): array
+    public function getPriceList(string $cmd = 'prepaid'): array
     {
         $payload = [
-            'cmd'      => 'prepaid',
+            'cmd'      => $cmd,
             'username' => $this->username,
             'sign'     => $this->generateSignature('pricelist'),
         ];
@@ -64,6 +64,120 @@ class DigiflazzService
             ]);
             throw $e;
         }
+    }
+
+    public function getBalance(): array
+    {
+        $payload = [
+            'cmd'      => 'deposit',
+            'username' => $this->username,
+            'sign'     => md5($this->username . $this->key . 'depo'),
+        ];
+
+        Log::info('Digiflazz getBalance Request', $payload);
+
+        try {
+            $response = Http::post("{$this->baseUrl}/cek-saldo", $payload);
+
+            if (!$response->successful()) {
+                Log::error('Digiflazz getBalance Failed', [
+                    'http_status' => $response->status(),
+                    'body'        => $response->body(),
+                ]);
+                throw new Exception('Digiflazz Balance Error: ' . $response->body());
+            }
+
+            $data = $response->json('data') ?? [];
+            Log::info('Digiflazz getBalance Response', $data);
+            return $data;
+
+        } catch (Exception $e) {
+            Log::error('Digiflazz getBalance Exception', ['message' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
+    public function checkBill(string $buyerSkuCode, string $customerNo, string $refId): array
+    {
+        $payload = [
+            'username'       => $this->username,
+            'buyer_sku_code' => $buyerSkuCode,
+            'customer_no'    => $customerNo,
+            'ref_id'         => $refId,
+            'sign'           => $this->generateSignature($refId),
+        ];
+
+        Log::info('Digiflazz checkBill Request', $payload);
+
+        try {
+            $response = Http::post("{$this->baseUrl}/cek-tagihan", $payload);
+
+            if (!$response->successful()) {
+                Log::error('Digiflazz checkBill Failed', [
+                    'http_status' => $response->status(),
+                    'body'        => $response->body(),
+                ]);
+                throw new Exception('Digiflazz Bill Inquiry Error: ' . $response->body());
+            }
+
+            $data = $response->json('data') ?? [];
+            Log::info('Digiflazz checkBill Response', $data);
+            return $data;
+
+        } catch (Exception $e) {
+            Log::error('Digiflazz checkBill Exception', [
+                'buyer_sku_code' => $buyerSkuCode,
+                'customer_no'    => $customerNo,
+                'ref_id'         => $refId,
+                'message'        => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    public function payBill(string $buyerSkuCode, string $customerNo, string $refId): array
+    {
+        $payload = [
+            'username'       => $this->username,
+            'buyer_sku_code' => $buyerSkuCode,
+            'customer_no'    => $customerNo,
+            'ref_id'         => $refId,
+            'sign'           => $this->generateSignature($refId),
+        ];
+
+        Log::info('Digiflazz payBill Request', $payload);
+
+        try {
+            $response = Http::post("{$this->baseUrl}/pay-pasca", $payload);
+
+            if (!$response->successful()) {
+                Log::error('Digiflazz payBill Failed', [
+                    'http_status' => $response->status(),
+                    'body'        => $response->body(),
+                ]);
+                throw new Exception('Digiflazz Bill Payment Error: ' . $response->body());
+            }
+
+            $responseData = $response->json();
+            Log::info('Digiflazz payBill Response', $responseData ?? []);
+            return $responseData['data'] ?? [];
+
+        } catch (Exception $e) {
+            Log::error('Digiflazz payBill Exception', [
+                'buyer_sku_code' => $buyerSkuCode,
+                'customer_no'    => $customerNo,
+                'ref_id'         => $refId,
+                'message'        => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    // Re-sends the same payload to Digiflazz's /transaction endpoint.
+    // Digiflazz treats a duplicate ref_id as a status query rather than a new order.
+    public function checkTransactionStatus(string $buyerSkuCode, string $customerNo, string $refId): array
+    {
+        return $this->createTransaction($buyerSkuCode, $customerNo, $refId);
     }
 
     public function createTransaction(string $buyerSkuCode, string $customerNo, string $refId): array

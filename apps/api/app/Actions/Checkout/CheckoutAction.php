@@ -77,6 +77,7 @@ class CheckoutAction
             $referenceId   = 'PAY-' . $invoiceNumber . '-01';
 
             $transaction = Transaction::create([
+                'transaction_type'   => 'prepaid',
                 'invoice_number'     => $invoiceNumber,
                 'user_id'            => $user?->id,
                 'payment_channel_id' => $channel->id,

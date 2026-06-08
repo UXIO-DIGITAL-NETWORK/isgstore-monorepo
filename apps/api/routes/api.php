@@ -23,6 +23,10 @@ use App\Http\Controllers\Api\PointHistoryController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\AnnouncementController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzBalanceController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzPostpaidController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
 use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
 
 // All Public Routes under v1
@@ -43,6 +47,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/payment/callback', MonetapayCallbackController::class);
     Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
     Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
+
+    // Postpaid — public (guests can inquire/pay bills)
+    Route::post('/digiflazz/check-bill', [DigiflazzPostpaidController::class, 'checkBill']);
+    Route::post('/digiflazz/pay-bill',   [DigiflazzPostpaidController::class, 'payBill']);
 
     // Authentication Routes
     Route::prefix('auth')->group(function () {
@@ -155,6 +163,11 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::put('/{supplierProduct}', [SupplierProductController::class, 'update']);
         Route::delete('/{supplierProduct}', [SupplierProductController::class, 'destroy']);
     });
+
+    // Digiflazz Admin Tools
+    Route::get('/digiflazz/balance',      [DigiflazzBalanceController::class, 'index']);
+    Route::post('/digiflazz/check-status', [DigiflazzTransactionStatusController::class, 'check']);
+    Route::post('/digiflazz/sync-products', [DigiflazzSyncController::class, 'sync']);
 
     // Transaction Management (Admin CRUD)
     Route::apiResource('transactions', TransactionController::class);

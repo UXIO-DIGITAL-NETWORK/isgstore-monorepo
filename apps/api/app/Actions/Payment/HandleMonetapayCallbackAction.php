@@ -5,6 +5,7 @@ namespace App\Actions\Payment;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Payment\MonetapayCallbackDTO;
+use App\Jobs\ProcessDigiflazzBillPayment;
 use App\Jobs\ProcessDigiflazzTopup;
 use App\Models\Payment;
 use App\Models\Transaction;
@@ -85,7 +86,11 @@ class HandleMonetapayCallbackAction
         // At this point DB::transaction() has returned, meaning the commit is done.
         // The queue worker will always see the PAID rows when it picks up the job.
         if ($paidTransaction) {
-            ProcessDigiflazzTopup::dispatch($paidTransaction);
+            if ($paidTransaction->transaction_type === 'postpaid') {
+                ProcessDigiflazzBillPayment::dispatch($paidTransaction);
+            } else {
+                ProcessDigiflazzTopup::dispatch($paidTransaction);
+            }
         }
     }
 
