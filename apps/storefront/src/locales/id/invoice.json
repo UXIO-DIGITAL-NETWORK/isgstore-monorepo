@@ -1,0 +1,47 @@
+{
+  "heading": "MENUNGGU PEMBAYARAN",
+  "subtitle": "Silahkan melakukan pembayaran dengan metode yang Anda pilih.",
+
+  "timer": {
+    "hours": "Jam",
+    "minutes": "Menit",
+    "seconds": "Detik"
+  },
+
+  "orderDetail": {
+    "title": "Detail Pesanan",
+    "userId": "User ID",
+    "serverId": "Server ID",
+    "username": "Username",
+    "price": "Harga",
+    "adminFee": "Biaya Admin",
+    "totalPayment": "Total Pembayaran"
+  },
+
+  "instructions": {
+    "title": "Instruksi Pembayaran",
+    "steps": [
+      "Buka aplikasi pembayaran yang mendukung QRIS (DANA, OVO, GoPay, ShopeePay, Mobile Banking, atau aplikasi e-wallet lainnya).",
+      "Scan kode QR yang tersedia pada halaman pembayaran.",
+      "Pastikan nominal pembayaran sudah sesuai dengan total tagihan.",
+      "Lanjutkan pembayaran dan selesaikan transaksi pada aplikasi pembayaran Anda.",
+      "Setelah pembayaran berhasil, sistem akan otomatis memverifikasi pengalaman transaksi dengan mudah dan terpercaya.",
+      "Jangan menutup halaman sebelum transaksi berhasil diproses."
+    ]
+  },
+
+  "paymentMethod": {
+    "title": "Metode Pembayaran",
+    "qrisLabel": "QRIS All Payment",
+    "invoiceNumber": "Nomer Invoice",
+    "paymentStatus": "Status Pembayaran",
+    "transactionStatus": "Status Transaksi",
+    "message": "Pesan",
+    "scanMessage": "Gunakan aplikasi e-wallet, mobile banking atau kamera untuk scan Q Code di bawah ini:",
+    "unpaid": "UNPAID",
+    "pending": "PENDING",
+    "downloadQr": "Download QR Code",
+    "verifyNote": "Setelah melakukan pembayaran, harap menunggu sistem memverifikasi pembayaran secara otomatis",
+    "copySuccess": "Tersalin!"
+  }
+}

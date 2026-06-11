@@ -13,6 +13,7 @@ import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
+import { Route as LocaleInvoiceInvoiceNumberRouteImport } from './routes/$locale/invoice/$invoiceNumber'
 import { Route as LocaleCheckoutGameSlugRouteImport } from './routes/$locale/checkout/$gameSlug'
 import { Route as LocaleAuthRegisterIndexRouteImport } from './routes/$locale/_auth/register/index'
 import { Route as LocaleAuthLoginIndexRouteImport } from './routes/$locale/_auth/login/index'
@@ -37,6 +38,12 @@ const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
+const LocaleInvoiceInvoiceNumberRoute =
+  LocaleInvoiceInvoiceNumberRouteImport.update({
+    id: '/invoice/$invoiceNumber',
+    path: '/invoice/$invoiceNumber',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 const LocaleCheckoutGameSlugRoute = LocaleCheckoutGameSlugRouteImport.update({
   id: '/checkout/$gameSlug',
   path: '/checkout/$gameSlug',
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/$locale': typeof LocaleAuthRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
+  '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberRoute
   '/$locale/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/register/': typeof LocaleAuthRegisterIndexRoute
@@ -72,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
+  '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberRoute
   '/$locale/forgot-password': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/login': typeof LocaleAuthLoginIndexRoute
   '/$locale/register': typeof LocaleAuthRegisterIndexRoute
@@ -83,6 +92,7 @@ export interface FileRoutesById {
   '/$locale/_auth': typeof LocaleAuthRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
+  '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberRoute
   '/$locale/_auth/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/_auth/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/_auth/register/': typeof LocaleAuthRegisterIndexRoute
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/$locale/'
     | '/$locale/checkout/$gameSlug'
+    | '/$locale/invoice/$invoiceNumber'
     | '/$locale/forgot-password/'
     | '/$locale/login/'
     | '/$locale/register/'
@@ -102,6 +113,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$locale'
     | '/$locale/checkout/$gameSlug'
+    | '/$locale/invoice/$invoiceNumber'
     | '/$locale/forgot-password'
     | '/$locale/login'
     | '/$locale/register'
@@ -112,6 +124,7 @@ export interface FileRouteTypes {
     | '/$locale/_auth'
     | '/$locale/'
     | '/$locale/checkout/$gameSlug'
+    | '/$locale/invoice/$invoiceNumber'
     | '/$locale/_auth/forgot-password/'
     | '/$locale/_auth/login/'
     | '/$locale/_auth/register/'
@@ -150,6 +163,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleAuthRouteRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/invoice/$invoiceNumber': {
+      id: '/$locale/invoice/$invoiceNumber'
+      path: '/invoice/$invoiceNumber'
+      fullPath: '/$locale/invoice/$invoiceNumber'
+      preLoaderRoute: typeof LocaleInvoiceInvoiceNumberRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/checkout/$gameSlug': {
@@ -203,12 +223,14 @@ interface LocaleRouteRouteChildren {
   LocaleAuthRouteRoute: typeof LocaleAuthRouteRouteWithChildren
   LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleCheckoutGameSlugRoute: typeof LocaleCheckoutGameSlugRoute
+  LocaleInvoiceInvoiceNumberRoute: typeof LocaleInvoiceInvoiceNumberRoute
 }
 
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleAuthRouteRoute: LocaleAuthRouteRouteWithChildren,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleCheckoutGameSlugRoute: LocaleCheckoutGameSlugRoute,
+  LocaleInvoiceInvoiceNumberRoute: LocaleInvoiceInvoiceNumberRoute,
 }
 
 const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(

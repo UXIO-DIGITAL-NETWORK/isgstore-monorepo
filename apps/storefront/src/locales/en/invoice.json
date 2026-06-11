@@ -1,0 +1,47 @@
+{
+  "heading": "WAITING FOR PAYMENT",
+  "subtitle": "Please complete the payment using your selected method.",
+
+  "timer": {
+    "hours": "Hours",
+    "minutes": "Minutes",
+    "seconds": "Seconds"
+  },
+
+  "orderDetail": {
+    "title": "Order Detail",
+    "userId": "User ID",
+    "serverId": "Server ID",
+    "username": "Username",
+    "price": "Price",
+    "adminFee": "Admin Fee",
+    "totalPayment": "Total Payment"
+  },
+
+  "instructions": {
+    "title": "Payment Instructions",
+    "steps": [
+      "Open a payment application that supports QRIS (DANA, OVO, GoPay, ShopeePay, Mobile Banking, or any other e-wallet app).",
+      "Scan the QR code displayed on the payment page.",
+      "Make sure the payment amount matches the total bill.",
+      "Continue and complete the transaction in your payment application.",
+      "Once payment is successful, the system will automatically verify your transaction within a few seconds.",
+      "Do not close this page until the transaction has been processed successfully."
+    ]
+  },
+
+  "paymentMethod": {
+    "title": "Payment Method",
+    "qrisLabel": "QRIS All Payment",
+    "invoiceNumber": "Invoice Number",
+    "paymentStatus": "Payment Status",
+    "transactionStatus": "Transaction Status",
+    "message": "Message",
+    "scanMessage": "Use an e-wallet app, mobile banking, or camera to scan the QR code below:",
+    "unpaid": "UNPAID",
+    "pending": "PENDING",
+    "downloadQr": "Download QR Code",
+    "verifyNote": "After making payment, please wait for the system to verify your payment automatically",
+    "copySuccess": "Copied!"
+  }
+}

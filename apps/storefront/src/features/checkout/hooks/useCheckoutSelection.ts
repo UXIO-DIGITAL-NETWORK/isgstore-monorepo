@@ -30,11 +30,6 @@ export function useCheckoutSelection() {
     setSelectedPaymentId((prev) => (prev === id ? null : id));
   };
 
-  const handleSubmit = () => {
-    // TODO: wire up RHF+Zod validation + useCreateTransactionMutation
-    console.log("Checkout submitted:", { selectedPackageId, selectedPaymentId, userId, serverId, whatsapp });
-  };
-
   return {
     // state
     selectedPackageId,
@@ -54,6 +49,5 @@ export function useCheckoutSelection() {
     setWhatsapp,
     handleSelectPackage,
     handleSelectPayment,
-    handleSubmit,
   };
 }

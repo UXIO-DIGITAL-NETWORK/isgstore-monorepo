@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
@@ -15,8 +16,26 @@ import {
 import { useCheckoutSelection } from "@/features/checkout/hooks/useCheckoutSelection";
 import { GAME_INFO_MOCK } from "@/features/checkout/data/gameInfo.mock";
 import { PAYMENT_GROUPS_MOCK, MEMBER_CREDITS_MOCK } from "@/features/checkout/data/paymentMethods.mock";
+import { useCheckoutStore } from "@/store/useCheckoutStore";
+
+/** Generates a mock invoice number in the format TOPUP-DDMMYYYY-XXXXXXXX */
+function generateInvoiceNumber(): string {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = String(now.getFullYear());
+  const hex = Math.floor(Math.random() * 0xffffffff)
+    .toString(16)
+    .toUpperCase()
+    .padStart(8, "0");
+  return `TOPUP-${dd}${mm}${yyyy}-${hex}`;
+}
 
 export default function CheckoutPage(): React.JSX.Element {
+  const navigate = useNavigate();
+  const { locale } = useParams({ strict: false }) as { locale: string };
+  const setPendingOrder = useCheckoutStore((s) => s.setPendingOrder);
+
   const {
     selectedPackageId,
     selectedPaymentId,
@@ -33,7 +52,6 @@ export default function CheckoutPage(): React.JSX.Element {
     setWhatsapp,
     handleSelectPackage,
     handleSelectPayment,
-    handleSubmit,
   } = useCheckoutSelection();
 
   const selectedPaymentName = useMemo(() => {
@@ -45,6 +63,35 @@ export default function CheckoutPage(): React.JSX.Element {
     }
     return undefined;
   }, [selectedPaymentId]);
+
+  const handleConfirmCheckout = () => {
+    if (!selectedPackage) return;
+
+    const invoiceNumber = generateInvoiceNumber();
+    // TODO: replace adminFee with backend-provided value
+    const adminFee = Math.round(totalPrice * 0.04);
+
+    setPendingOrder({
+      invoiceNumber,
+      gameName: GAME_INFO_MOCK.name,
+      gameRegion: GAME_INFO_MOCK.region,
+      gameThumbnail: GAME_INFO_MOCK.thumbnail,
+      packageLabel: selectedPackage.name,
+      userId,
+      serverId,
+      username: "Ramonezz", // TODO: replace with validated nickname from game server
+      paymentName: selectedPaymentName ?? "QRIS",
+      price: totalPrice,
+      adminFee,
+      total: totalPrice + adminFee,
+      createdAt: Date.now(),
+    });
+
+    navigate({
+      to: "/$locale/invoice/$invoiceNumber",
+      params: { locale: locale ?? "id", invoiceNumber },
+    });
+  };
 
   return (
     <Box className="min-h-dvh bg-[#0A0A0C]">
@@ -107,7 +154,7 @@ export default function CheckoutPage(): React.JSX.Element {
               selectedPaymentName={selectedPaymentName}
               userId={userId}
               serverId={serverId}
-              onSubmit={handleSubmit}
+              onSubmit={handleConfirmCheckout}
             />
           </Box>
         </Box>
