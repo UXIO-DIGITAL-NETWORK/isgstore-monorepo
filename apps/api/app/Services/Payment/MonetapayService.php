@@ -263,4 +263,269 @@ class MonetapayService
             throw $e;
         }
     }
+
+    /* =====================================================================
+     | Generic signed/plain transports
+     |
+     | These power every inquiry/cancel/refund endpoint. They reuse the SAME
+     | Double-MD5 + AES-128-CBC algorithm proven by createTransaction(), but
+     | are kept as separate helpers so the stabilized createTransaction body
+     | is never touched.
+     * ===================================================================== */
+
+    /**
+     * Build the signed + AES-encrypted envelope and POST it to Monetapay.
+     * Returns the full decoded JSON response (code/message/data/...).
+     *
+     * @param array<string,scalar> $businessParams Pure business params (no timestamp/sign).
+     */
+    private function postSigned(string $endpointSuffix, array $businessParams): array
+    {
+        // Monetapay omits blank fields from the signed TreeMap; mirror that so
+        // our local sign matches what the gateway recomputes on its side.
+        $businessParams = array_filter(
+            $businessParams,
+            static fn ($value) => $value !== null && $value !== ''
+        );
+
+        ksort($businessParams);
+
+        $buffer = '';
+        foreach ($businessParams as $key => $value) {
+            $buffer .= $key . '=' . (string) $value . '__';
+        }
+        $strMap = $buffer === '' ? '' : substr($buffer, 0, -2);
+
+        $timestamp      = (string) time();
+        $originalString = $this->token . "*|*" . $strMap . "@!@" . $timestamp;
+        $sign           = md5(md5($originalString));
+
+        $strToEncrypt = $strMap === ''
+            ? "sign=" . $sign . "__timestamp=" . $timestamp
+            : $strMap . "__sign=" . $sign . "__timestamp=" . $timestamp;
+
+        $enData = $this->encryptPayload($strToEncrypt);
+
+        $response = Http::post($this->baseUrl . $endpointSuffix, [
+            'data' => [
+                'partner_key' => $this->partnerKey,
+                'en_data'     => $enData,
+            ],
+        ]);
+
+        return $this->parseResponse($endpointSuffix, $response);
+    }
+
+    /**
+     * POST a plain (non-encrypted) JSON body. A handful of Monetapay endpoints
+     * (payin query, cdm query, merchant permission) accept raw params.
+     *
+     * @param array<string,mixed> $body
+     */
+    private function postPlain(string $endpointSuffix, array $body): array
+    {
+        $body = array_filter($body, static fn ($value) => $value !== null && $value !== '');
+
+        $response = Http::post($this->baseUrl . $endpointSuffix, $body);
+
+        return $this->parseResponse($endpointSuffix, $response);
+    }
+
+    /**
+     * Shared HTTP failure handling + JSON decoding for the helpers above.
+     */
+    private function parseResponse(string $endpointSuffix, \Illuminate\Http\Client\Response $response): array
+    {
+        if ($response->failed()) {
+            $error   = $response->json();
+            $message = $error['message'] ?? $error['msg'] ?? $response->body();
+
+            Log::error('Monetapay request failed', [
+                'endpoint' => $endpointSuffix,
+                'status'   => $response->status(),
+                'response' => $error,
+            ]);
+
+            throw new Exception("Monetapay API Error [HTTP {$response->status()}]: {$message}");
+        }
+
+        Log::info('Monetapay request OK', [
+            'endpoint' => $endpointSuffix,
+            'response' => $response->json(),
+        ]);
+
+        return $response->json() ?? [];
+    }
+
+    /* =====================================================================
+     | 5. Balance
+     * ===================================================================== */
+
+    /** 5.1 Balance Inquiry — POST /v1.0.0/balance */
+    public function inquiryBalance(?string $subMchId = null): array
+    {
+        return $this->postSigned('/v1.0.0/balance', [
+            'sub_mch_id' => $subMchId,
+        ]);
+    }
+
+    /* =====================================================================
+     | 6.x Pay-in inquiries (signed)
+     * ===================================================================== */
+
+    /** 6.1.2 VA Inquiry — POST /v1.0.0/virtual_account/query */
+    public function inquiryVirtualAccount(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/virtual_account/query', $params);
+    }
+
+    /** 6.2.2 E-Wallet Inquiry — POST /v1.0.0/ewallet/charge/query */
+    public function inquiryEwallet(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/ewallet/charge/query', $params);
+    }
+
+    /** 6.3.3 QRIS Inquiry — POST /v1.0.0/qris/query */
+    public function inquiryQris(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/qris/query', $params);
+    }
+
+    /** 6.4.2 Payment Link Inquiry — POST /v1.0.0/payment-link/query */
+    public function inquiryPaymentLink(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/payment-link/query', $params);
+    }
+
+    /** 6.8.2 Cross-Border QR Inquiry — POST /v1.0.0/cross-border-qr/query */
+    public function inquiryCrossBorderQr(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/cross-border-qr/query', $params);
+    }
+
+    /** 6.6.5 Repay Order Query — POST /v1.0.0/repay/query */
+    public function inquiryRepay(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/repay/query', $params);
+    }
+
+    /** 6.6.4 Refund Query — POST /v1.0.0/refund/query */
+    public function inquiryRefund(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/refund/query', $params);
+    }
+
+    /* =====================================================================
+     | 6.5 Subscriptions (signed)
+     * ===================================================================== */
+
+    /** 6.5.5 Subscription Order Query — POST /v1.0.0/subscription/query */
+    public function inquirySubscription(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/subscription/query', $params);
+    }
+
+    /** 6.5.7 Query Subscription Deduction Cycle — POST /v1.0.0/subscription/cycle/fetch-by-order-no */
+    public function fetchSubscriptionCycle(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/subscription/cycle/fetch-by-order-no', $params);
+    }
+
+    /* =====================================================================
+     | 6.7 Sub-merchant (signed)
+     * ===================================================================== */
+
+    /** 6.7.4 Sub-merchant Register Status Inquiry — POST /v1.0.0/subMch/registration/query */
+    public function inquirySubMerchant(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/subMch/registration/query', $params);
+    }
+
+    /* =====================================================================
+     | 6.9 / 6.11 (plain body)
+     * ===================================================================== */
+
+    /** 6.9.2 CDM Order Inquiry — POST /v1.0.0/cdm/query (plain body) */
+    public function inquiryCdm(array $params): array
+    {
+        return $this->postPlain('/v1.0.0/cdm/query', $params);
+    }
+
+    /** 6.11.2 Payin Inquiry — POST /v1.0.0/payin/query (plain JSON body) */
+    public function inquiryPayin(array $params): array
+    {
+        return $this->postPlain('/v1.0.0/payin/query', $params);
+    }
+
+    /* =====================================================================
+     | 6.6 Common — Cancel & Refund (signed, state-changing)
+     * ===================================================================== */
+
+    /** 6.6.1 Cancel — POST /v1.0.0/cancel */
+    public function cancelTransaction(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/cancel', $params);
+    }
+
+    /** 6.6.2 Refund — POST /v1.0.0/refund */
+    public function refundTransaction(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/refund', $params);
+    }
+
+    /* =====================================================================
+     | 7. Pay-out (signed)
+     * ===================================================================== */
+
+    /** 7.4.1 Payout Order Inquiry — POST /v1.0.0/disbursement/query */
+    public function inquiryDisbursement(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/disbursement/query', $params);
+    }
+
+    /* =====================================================================
+     | 8. Account Validation (signed)
+     * ===================================================================== */
+
+    /** 8.1 / 8.2 Account Validation — POST /v1.0.0/inquiry-account */
+    public function accountValidation(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/inquiry-account', $params);
+    }
+
+    /* =====================================================================
+     | 9. Transaction Records (signed)
+     * ===================================================================== */
+
+    /** 9.1 Daily Bill Inquiry — POST /bills/by-daily */
+    public function dailyBillInquiry(array $params): array
+    {
+        return $this->postSigned('/bills/by-daily', $params);
+    }
+
+    /** 9.2 Bill Flow Inquiry — POST /v1.0.0/bills */
+    public function billFlowInquiry(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/bills', $params);
+    }
+
+    /* =====================================================================
+     | 15. Transfer (signed)
+     * ===================================================================== */
+
+    /** 15.2 Transfer Query — POST /v1.0.0/mch/transfer/query */
+    public function transferQuery(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/mch/transfer/query', $params);
+    }
+
+    /* =====================================================================
+     | 16. Merchant Permission (plain body)
+     * ===================================================================== */
+
+    /** 16.1 Merchant Permission Inquiry — POST /v1.0.0/mch/permission/query (plain body) */
+    public function merchantPermissionQuery(array $params): array
+    {
+        return $this->postPlain('/v1.0.0/mch/permission/query', $params);
+    }
 }

@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Product\SupplierProductController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\Payment\MonetapayCallbackController;
+use App\Http\Controllers\Api\Payment\MonetapayController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PointHistoryController;
 use App\Http\Controllers\Api\RatingController;
@@ -45,6 +46,11 @@ Route::prefix('v1')->group(function () {
 
     // Payment Webhooks (No Auth Required)
     Route::post('/payment/callback', MonetapayCallbackController::class);
+    // Method-specific Monetapay callbacks — same decrypt+verify+dispatch flow.
+    // Point Monetapay's VA/E-Wallet/QRIS callback URLs at whichever you prefer.
+    Route::post('/monetapay/va/callback',      MonetapayCallbackController::class);
+    Route::post('/monetapay/ewallet/callback', MonetapayCallbackController::class);
+    Route::post('/monetapay/qris/callback',    MonetapayCallbackController::class);
     Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
     Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
 
@@ -168,6 +174,34 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/digiflazz/balance',      [DigiflazzBalanceController::class, 'index']);
     Route::post('/digiflazz/check-status', [DigiflazzTransactionStatusController::class, 'check']);
     Route::post('/digiflazz/sync-products', [DigiflazzSyncController::class, 'sync']);
+
+    // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.
+    // Outbound signed calls to Monetapay; mirror the spec's query endpoints.
+    Route::prefix('monetapay')->group(function () {
+        Route::post('/balance',              [MonetapayController::class, 'balance']);              // 5.1
+        Route::post('/virtual-account/query', [MonetapayController::class, 'virtualAccount']);      // 6.1.2
+        Route::post('/ewallet/query',         [MonetapayController::class, 'ewallet']);             // 6.2.2
+        Route::post('/qris/query',            [MonetapayController::class, 'qris']);                // 6.3.3
+        Route::post('/payment-link/query',    [MonetapayController::class, 'paymentLink']);         // 6.4.2
+        Route::post('/subscription/query',    [MonetapayController::class, 'subscription']);        // 6.5.5
+        Route::post('/subscription/cycle',    [MonetapayController::class, 'subscriptionCycle']);   // 6.5.7
+        Route::post('/refund/query',          [MonetapayController::class, 'refundQuery']);         // 6.6.4
+        Route::post('/repay/query',           [MonetapayController::class, 'repay']);               // 6.6.5
+        Route::post('/sub-merchant/query',    [MonetapayController::class, 'subMerchant']);         // 6.7.4
+        Route::post('/cross-border/query',    [MonetapayController::class, 'crossBorder']);         // 6.8.2
+        Route::post('/cdm/query',             [MonetapayController::class, 'cdm']);                 // 6.9.2
+        Route::post('/payin/query',           [MonetapayController::class, 'payin']);               // 6.11.2
+        Route::post('/disbursement/query',    [MonetapayController::class, 'disbursement']);        // 7.4.1
+        Route::post('/inquiry-account',       [MonetapayController::class, 'accountValidation']);   // 8.1/8.2
+        Route::post('/bills/daily',           [MonetapayController::class, 'dailyBill']);           // 9.1
+        Route::post('/bills/flow',            [MonetapayController::class, 'billFlow']);            // 9.2
+        Route::post('/transfer/query',        [MonetapayController::class, 'transferQuery']);       // 15.2
+        Route::post('/permission/query',      [MonetapayController::class, 'merchantPermission']);  // 16.1
+
+        // State-changing
+        Route::post('/cancel', [MonetapayController::class, 'cancel']);  // 6.6.1
+        Route::post('/refund', [MonetapayController::class, 'refund']);  // 6.6.2
+    });
 
     // Transaction Management (Admin CRUD)
     Route::apiResource('transactions', TransactionController::class);
