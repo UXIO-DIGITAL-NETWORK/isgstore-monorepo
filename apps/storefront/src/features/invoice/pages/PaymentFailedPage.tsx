@@ -12,7 +12,9 @@ import PaymentFailedHero from "@/features/invoice/components/PaymentFailedHero";
 import OrderDetailCard from "@/features/invoice/components/OrderDetailCard";
 import PaymentFailedCard from "@/features/invoice/components/PaymentFailedCard";
 import NeedHelpBanner from "@/features/invoice/components/NeedHelpBanner";
+import TransactionReviewModal from "@/features/invoice/components/TransactionReviewModal";
 import { buildMockOrder } from "@/features/invoice/data/buildMockOrder";
+import { useDelayedModal } from "@/features/invoice/hooks/useDelayedModal";
 
 export default function PaymentFailedPage(): React.JSX.Element {
   const { invoiceNumber, locale } = useParams({ strict: false }) as {
@@ -22,6 +24,7 @@ export default function PaymentFailedPage(): React.JSX.Element {
   const pendingOrder = useCheckoutStore((s) => s.pendingOrder);
   const navigate = useNavigate();
   const { t } = useTranslation("invoice");
+  const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(15000);
 
   const order = pendingOrder ?? buildMockOrder(invoiceNumber ?? "TOPUP-22052026-8F3A2B6C");
 
@@ -94,6 +97,9 @@ export default function PaymentFailedPage(): React.JSX.Element {
       </Box>
 
       <Footer />
+
+      {/* Transaction review modal — auto-opens 15s after mount */}
+      <TransactionReviewModal isOpen={reviewOpen} onClose={closeReview} />
     </Box>
   );
 }

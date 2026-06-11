@@ -45,6 +45,22 @@
     "copySuccess": "Copied!"
   },
 
+  "review": {
+    "title": "RATE YOUR TRANSACTION",
+    "subtitle": "How was your experience after the transaction?",
+    "quickReviewLabel": "Quick Review (optional)",
+    "chips": {
+      "fastProcess": "Fast Process",
+      "cheapPrice": "Affordable Price",
+      "friendlyService": "Friendly Service",
+      "easyPayment": "Easy Payment",
+      "recommended": "Recommended"
+    },
+    "placeholder": "Write your top-up experience here...",
+    "skip": "Skip",
+    "submit": "Submit Review"
+  },
+
   "failed": {
     "heading": "PAYMENT FAILED",
     "subtitle": "The transaction could not be processed",

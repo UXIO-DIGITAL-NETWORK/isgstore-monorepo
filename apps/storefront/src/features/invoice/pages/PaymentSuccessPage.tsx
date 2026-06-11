@@ -11,12 +11,15 @@ import PaymentSuccessHero from "@/features/invoice/components/PaymentSuccessHero
 import OrderDetailCard from "@/features/invoice/components/OrderDetailCard";
 import PaymentSuccessCard from "@/features/invoice/components/PaymentSuccessCard";
 import TopUpAgainBanner from "@/features/invoice/components/TopUpAgainBanner";
+import TransactionReviewModal from "@/features/invoice/components/TransactionReviewModal";
 import { buildMockOrder } from "@/features/invoice/data/buildMockOrder";
+import { useDelayedModal } from "@/features/invoice/hooks/useDelayedModal";
 
 export default function PaymentSuccessPage(): React.JSX.Element {
   const { invoiceNumber } = useParams({ strict: false }) as { invoiceNumber: string };
   const pendingOrder = useCheckoutStore((s) => s.pendingOrder);
   const { t } = useTranslation("invoice");
+  const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(15000);
 
   const order = pendingOrder ?? buildMockOrder(invoiceNumber ?? "TOPUP-22052026-8F3A2B6C");
 
@@ -71,6 +74,9 @@ export default function PaymentSuccessPage(): React.JSX.Element {
       </Box>
 
       <Footer />
+
+      {/* Transaction review modal — auto-opens 15s after mount */}
+      <TransactionReviewModal isOpen={reviewOpen} onClose={closeReview} />
     </Box>
   );
 }

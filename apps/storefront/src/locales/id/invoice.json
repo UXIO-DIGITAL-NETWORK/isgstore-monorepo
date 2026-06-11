@@ -45,6 +45,22 @@
     "copySuccess": "Tersalin!"
   },
 
+  "review": {
+    "title": "BERIKAN ULASAN TRANSAKSI",
+    "subtitle": "Bagaimana pengalaman Anda setelah bertransaksi?",
+    "quickReviewLabel": "Pilih Ulasan Cepat (opsional)",
+    "chips": {
+      "fastProcess": "Proses Cepat",
+      "cheapPrice": "Harga Murah",
+      "friendlyService": "Pelayanan Ramah",
+      "easyPayment": "Pembayaran Mudah",
+      "recommended": "Recommended"
+    },
+    "placeholder": "Tulis pengalaman top up Anda di sini...",
+    "skip": "Lewati",
+    "submit": "Kirim Ulasan"
+  },
+
   "failed": {
     "heading": "PEMBAYARAN GAGAL",
     "subtitle": "Transaksi tidak dapat diproses",
