@@ -13,11 +13,13 @@ import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
-import { Route as LocaleInvoiceInvoiceNumberRouteImport } from './routes/$locale/invoice/$invoiceNumber'
 import { Route as LocaleCheckoutGameSlugRouteImport } from './routes/$locale/checkout/$gameSlug'
+import { Route as LocaleInvoiceInvoiceNumberIndexRouteImport } from './routes/$locale/invoice/$invoiceNumber/index'
 import { Route as LocaleAuthRegisterIndexRouteImport } from './routes/$locale/_auth/register/index'
 import { Route as LocaleAuthLoginIndexRouteImport } from './routes/$locale/_auth/login/index'
 import { Route as LocaleAuthForgotPasswordIndexRouteImport } from './routes/$locale/_auth/forgot-password/index'
+import { Route as LocaleInvoiceInvoiceNumberSuccessRouteImport } from './routes/$locale/invoice/$invoiceNumber/success'
+import { Route as LocaleInvoiceInvoiceNumberFailedRouteImport } from './routes/$locale/invoice/$invoiceNumber/failed'
 
 const LocaleRouteRoute = LocaleRouteRouteImport.update({
   id: '/$locale',
@@ -38,17 +40,17 @@ const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
-const LocaleInvoiceInvoiceNumberRoute =
-  LocaleInvoiceInvoiceNumberRouteImport.update({
-    id: '/invoice/$invoiceNumber',
-    path: '/invoice/$invoiceNumber',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any)
 const LocaleCheckoutGameSlugRoute = LocaleCheckoutGameSlugRouteImport.update({
   id: '/checkout/$gameSlug',
   path: '/checkout/$gameSlug',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
+const LocaleInvoiceInvoiceNumberIndexRoute =
+  LocaleInvoiceInvoiceNumberIndexRouteImport.update({
+    id: '/invoice/$invoiceNumber/',
+    path: '/invoice/$invoiceNumber/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 const LocaleAuthRegisterIndexRoute = LocaleAuthRegisterIndexRouteImport.update({
   id: '/register/',
   path: '/register/',
@@ -65,25 +67,41 @@ const LocaleAuthForgotPasswordIndexRoute =
     path: '/forgot-password/',
     getParentRoute: () => LocaleAuthRouteRoute,
   } as any)
+const LocaleInvoiceInvoiceNumberSuccessRoute =
+  LocaleInvoiceInvoiceNumberSuccessRouteImport.update({
+    id: '/invoice/$invoiceNumber/success',
+    path: '/invoice/$invoiceNumber/success',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
+const LocaleInvoiceInvoiceNumberFailedRoute =
+  LocaleInvoiceInvoiceNumberFailedRouteImport.update({
+    id: '/invoice/$invoiceNumber/failed',
+    path: '/invoice/$invoiceNumber/failed',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleAuthRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
-  '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberRoute
+  '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
+  '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/register/': typeof LocaleAuthRegisterIndexRoute
+  '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
-  '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberRoute
+  '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
+  '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/login': typeof LocaleAuthLoginIndexRoute
   '/$locale/register': typeof LocaleAuthRegisterIndexRoute
+  '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -92,10 +110,12 @@ export interface FileRoutesById {
   '/$locale/_auth': typeof LocaleAuthRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
-  '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberRoute
+  '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
+  '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/_auth/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/_auth/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/_auth/register/': typeof LocaleAuthRegisterIndexRoute
+  '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -104,19 +124,23 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/$locale/'
     | '/$locale/checkout/$gameSlug'
-    | '/$locale/invoice/$invoiceNumber'
+    | '/$locale/invoice/$invoiceNumber/failed'
+    | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password/'
     | '/$locale/login/'
     | '/$locale/register/'
+    | '/$locale/invoice/$invoiceNumber/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$locale'
     | '/$locale/checkout/$gameSlug'
-    | '/$locale/invoice/$invoiceNumber'
+    | '/$locale/invoice/$invoiceNumber/failed'
+    | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password'
     | '/$locale/login'
     | '/$locale/register'
+    | '/$locale/invoice/$invoiceNumber'
   id:
     | '__root__'
     | '/'
@@ -124,10 +148,12 @@ export interface FileRouteTypes {
     | '/$locale/_auth'
     | '/$locale/'
     | '/$locale/checkout/$gameSlug'
-    | '/$locale/invoice/$invoiceNumber'
+    | '/$locale/invoice/$invoiceNumber/failed'
+    | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/_auth/forgot-password/'
     | '/$locale/_auth/login/'
     | '/$locale/_auth/register/'
+    | '/$locale/invoice/$invoiceNumber/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -165,18 +191,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleAuthRouteRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
-    '/$locale/invoice/$invoiceNumber': {
-      id: '/$locale/invoice/$invoiceNumber'
-      path: '/invoice/$invoiceNumber'
-      fullPath: '/$locale/invoice/$invoiceNumber'
-      preLoaderRoute: typeof LocaleInvoiceInvoiceNumberRouteImport
-      parentRoute: typeof LocaleRouteRoute
-    }
     '/$locale/checkout/$gameSlug': {
       id: '/$locale/checkout/$gameSlug'
       path: '/checkout/$gameSlug'
       fullPath: '/$locale/checkout/$gameSlug'
       preLoaderRoute: typeof LocaleCheckoutGameSlugRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/invoice/$invoiceNumber/': {
+      id: '/$locale/invoice/$invoiceNumber/'
+      path: '/invoice/$invoiceNumber'
+      fullPath: '/$locale/invoice/$invoiceNumber/'
+      preLoaderRoute: typeof LocaleInvoiceInvoiceNumberIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/_auth/register/': {
@@ -199,6 +225,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/forgot-password/'
       preLoaderRoute: typeof LocaleAuthForgotPasswordIndexRouteImport
       parentRoute: typeof LocaleAuthRouteRoute
+    }
+    '/$locale/invoice/$invoiceNumber/success': {
+      id: '/$locale/invoice/$invoiceNumber/success'
+      path: '/invoice/$invoiceNumber/success'
+      fullPath: '/$locale/invoice/$invoiceNumber/success'
+      preLoaderRoute: typeof LocaleInvoiceInvoiceNumberSuccessRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/invoice/$invoiceNumber/failed': {
+      id: '/$locale/invoice/$invoiceNumber/failed'
+      path: '/invoice/$invoiceNumber/failed'
+      fullPath: '/$locale/invoice/$invoiceNumber/failed'
+      preLoaderRoute: typeof LocaleInvoiceInvoiceNumberFailedRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
   }
 }
@@ -223,14 +263,19 @@ interface LocaleRouteRouteChildren {
   LocaleAuthRouteRoute: typeof LocaleAuthRouteRouteWithChildren
   LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleCheckoutGameSlugRoute: typeof LocaleCheckoutGameSlugRoute
-  LocaleInvoiceInvoiceNumberRoute: typeof LocaleInvoiceInvoiceNumberRoute
+  LocaleInvoiceInvoiceNumberFailedRoute: typeof LocaleInvoiceInvoiceNumberFailedRoute
+  LocaleInvoiceInvoiceNumberSuccessRoute: typeof LocaleInvoiceInvoiceNumberSuccessRoute
+  LocaleInvoiceInvoiceNumberIndexRoute: typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleAuthRouteRoute: LocaleAuthRouteRouteWithChildren,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleCheckoutGameSlugRoute: LocaleCheckoutGameSlugRoute,
-  LocaleInvoiceInvoiceNumberRoute: LocaleInvoiceInvoiceNumberRoute,
+  LocaleInvoiceInvoiceNumberFailedRoute: LocaleInvoiceInvoiceNumberFailedRoute,
+  LocaleInvoiceInvoiceNumberSuccessRoute:
+    LocaleInvoiceInvoiceNumberSuccessRoute,
+  LocaleInvoiceInvoiceNumberIndexRoute: LocaleInvoiceInvoiceNumberIndexRoute,
 }
 
 const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(

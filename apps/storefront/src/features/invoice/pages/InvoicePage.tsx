@@ -3,33 +3,13 @@ import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
-import { useCheckoutStore, type PendingOrder } from "@/store/useCheckoutStore";
+import { useCheckoutStore } from "@/store/useCheckoutStore";
 import PaymentWaitingHero from "@/features/invoice/components/PaymentWaitingHero";
 import CountdownCard from "@/features/invoice/components/CountdownCard";
 import OrderDetailCard from "@/features/invoice/components/OrderDetailCard";
 import PaymentInstructionsCard from "@/features/invoice/components/PaymentInstructionsCard";
 import PaymentMethodCard from "@/features/invoice/components/PaymentMethodCard";
-import mlThumbnail from "@/assets/images/games/games_1.png";
-
-// Static fallback that matches the design image exactly
-// (used on direct visit / page refresh when store is empty)
-function buildMockOrder(invoiceNumber: string): PendingOrder {
-  return {
-    invoiceNumber,
-    gameName: "Mobile Legend",
-    gameRegion: "Indonesia",
-    gameThumbnail: mlThumbnail,
-    packageLabel: "5 Diamond",
-    userId: "337850017",
-    serverId: "9423",
-    username: "Ramonezz",
-    paymentName: "QRIS",
-    price: 1015,
-    adminFee: 43,
-    total: 1058,
-    createdAt: Date.now(),
-  };
-}
+import { buildMockOrder } from "@/features/invoice/data/buildMockOrder";
 
 export default function InvoicePage(): React.JSX.Element {
   const { invoiceNumber } = useParams({ strict: false }) as { invoiceNumber: string };

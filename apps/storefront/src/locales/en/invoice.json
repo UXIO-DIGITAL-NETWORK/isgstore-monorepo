@@ -43,5 +43,36 @@
     "downloadQr": "Download QR Code",
     "verifyNote": "After making payment, please wait for the system to verify your payment automatically",
     "copySuccess": "Copied!"
+  },
+
+  "failed": {
+    "heading": "PAYMENT FAILED",
+    "subtitle": "The transaction could not be processed",
+    "failed": "FAILED",
+    "time": "Time",
+    "refundNote": "Your funds were not charged or will be automatically refunded within 1×24 hours to your payment method.",
+    "retryPayment": "Try Payment Again",
+    "choosePaymentMethod": "Choose Payment Method",
+    "banner": {
+      "title": "NEED HELP?",
+      "subtitle": "Our support team is ready to help you 24/7.",
+      "chatWhatsApp": "Chat WhatsApp"
+    }
+  },
+
+  "success": {
+    "heading": "PAYMENT SUCCESSFUL",
+    "subtitle": "Your transaction was completed successfully",
+    "paid": "PAID",
+    "success": "SUCCESS",
+    "itemDeliveredNote": "Item has been successfully delivered to the target account. If the item has not been received within a few minutes, please contact",
+    "customerSupport": "Customer Support",
+    "downloadInvoice": "Download Invoice",
+    "banner": {
+      "title": "WANT TO TOP UP MORE GAMES?",
+      "subtitle": "Fast, safe & trusted — only at Topupgame.id",
+      "topUpAgain": "Top Up Again",
+      "backToHome": "Back to Home"
+    }
   }
 }

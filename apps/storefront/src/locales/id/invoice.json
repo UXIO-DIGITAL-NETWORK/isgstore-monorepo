@@ -43,5 +43,36 @@
     "downloadQr": "Download QR Code",
     "verifyNote": "Setelah melakukan pembayaran, harap menunggu sistem memverifikasi pembayaran secara otomatis",
     "copySuccess": "Tersalin!"
+  },
+
+  "failed": {
+    "heading": "PEMBAYARAN GAGAL",
+    "subtitle": "Transaksi tidak dapat diproses",
+    "failed": "FAILED",
+    "time": "Waktu",
+    "refundNote": "Dana tidak terpotong atau akan dikembalikan secara otomatis maksimal 1×24 jam ke metode pembayaran Anda.",
+    "retryPayment": "Coba Lagi pembayaran",
+    "choosePaymentMethod": "Pilih Metode Pembayaran",
+    "banner": {
+      "title": "BUTUH BANTUAN?",
+      "subtitle": "Tim support kami siap membantu Anda 24/7.",
+      "chatWhatsApp": "Chat WhatsApp"
+    }
+  },
+
+  "success": {
+    "heading": "PEMBAYARAN BERHASIL",
+    "subtitle": "Transaksi telah berhasil dilakukan",
+    "paid": "PAID",
+    "success": "SUCCESS",
+    "itemDeliveredNote": "Item telah berhasil dikirim ke akun tujuan. Jika item belum diterima dalam beberapa menit, silakan hubungi",
+    "customerSupport": "Customer Support",
+    "downloadInvoice": "Download Invoice",
+    "banner": {
+      "title": "MAU TOPUP GAME LAINNYA?",
+      "subtitle": "Proses cepat, aman & terpercaya hanya di Topupgame.id",
+      "topUpAgain": "Top Up lagi",
+      "backToHome": "Kembali ke Beranda"
+    }
   }
 }
