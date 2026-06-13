@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -12,14 +12,18 @@ interface Props {
 
 export default function ContactDetail({ whatsapp, onWhatsappChange }: Props): React.JSX.Element {
   const { t } = useTranslation("checkout");
+  const [touched, setTouched] = useState(false);
+
+  const hasError = touched && whatsapp.trim() === "";
 
   return (
     <SectionCard stepNumber={4} title={t("contact.title")} gradientBorder>
       <Box className="flex flex-col gap-3">
         {/* WhatsApp field */}
         <Box className="flex flex-col gap-1.5">
-          <Text as="span" className="font-inter font-medium text-[13px] text-[#C9D5E3] leading-none">
+          <Text as="span" className="font-inter font-medium text-[13px] text-[#C9D5E3] leading-none flex items-center gap-0.5">
             {t("contact.whatsapp")}
+            <Text as="span" className="text-red-500 text-[13px] leading-none">*</Text>
           </Text>
           <Box className="relative">
             <Box className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
@@ -32,14 +36,23 @@ export default function ContactDetail({ whatsapp, onWhatsappChange }: Props): Re
               type="tel"
               value={whatsapp}
               onChange={(e) => onWhatsappChange(e.target.value)}
+              onBlur={() => setTouched(true)}
               placeholder={t("contact.whatsappPlaceholder")}
-              className="pl-[52px]"
+              className={`pl-[52px] ${hasError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
             />
           </Box>
+          {/* Required field error */}
+          {hasError && (
+            <Text as="span" className="font-inter text-[11px] text-red-400 leading-none px-1">
+              {t("contact.whatsappRequired", "Nomor WhatsApp wajib diisi")}
+            </Text>
+          )}
           {/* Inline helper note */}
-          <Text as="span" className="font-inter text-[11px] text-white/40 leading-none px-1">
-            **{t("contact.helperNote")}
-          </Text>
+          {!hasError && (
+            <Text as="span" className="font-inter text-[11px] text-white/40 leading-none px-1">
+              **{t("contact.helperNote")}
+            </Text>
+          )}
         </Box>
 
         {/* Receipt info box */}

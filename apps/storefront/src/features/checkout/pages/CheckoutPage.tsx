@@ -154,6 +154,7 @@ export default function CheckoutPage(): React.JSX.Element {
               selectedPaymentName={selectedPaymentName}
               userId={userId}
               serverId={serverId}
+              whatsapp={whatsapp}
               onSubmit={handleConfirmCheckout}
             />
           </Box>

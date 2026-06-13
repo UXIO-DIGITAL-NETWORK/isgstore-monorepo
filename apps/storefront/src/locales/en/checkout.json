@@ -70,6 +70,7 @@
     "whatsapp": "WhatsApp No.",
     "whatsappPlaceholder": "Phone Number",
     "helperNote": "This number will be contacted if an issue occurs",
+    "whatsappRequired": "WhatsApp number is required",
     "receiptNote": "We will send the transaction receipt to the WhatsApp number you entered above."
   },
 

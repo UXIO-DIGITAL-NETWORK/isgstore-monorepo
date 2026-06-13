@@ -70,6 +70,7 @@
     "whatsapp": "No. WhatsApp",
     "whatsappPlaceholder": "Nomor Handphone",
     "helperNote": "Nomor ini akan dihubungi jika terjadi masalah",
+    "whatsappRequired": "Nomor WhatsApp wajib diisi",
     "receiptNote": "Bukti transaksi akan kami kirim ke whatsapp yang kamu isi di atas."
   },
 

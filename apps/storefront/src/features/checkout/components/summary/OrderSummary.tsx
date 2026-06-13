@@ -16,6 +16,7 @@ interface Props {
   selectedPaymentName?: string;
   userId: string;
   serverId: string;
+  whatsapp: string;
   onSubmit: () => void;
 }
 
@@ -27,6 +28,7 @@ export default function OrderSummary({
   selectedPaymentName,
   userId,
   serverId,
+  whatsapp,
   onSubmit,
 }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("checkout");
@@ -82,7 +84,7 @@ export default function OrderSummary({
         <Button
           type="button"
           onClick={() => setConfirmOpen(true)}
-          disabled={!selectedPackage}
+          disabled={!selectedPackage || whatsapp.trim() === ""}
           className="w-full py-3 text-[15px]"
         >
           {t("summary.buyNow")}
