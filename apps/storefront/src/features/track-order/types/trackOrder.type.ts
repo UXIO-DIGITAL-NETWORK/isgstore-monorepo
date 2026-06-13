@@ -12,4 +12,10 @@ export interface TrackOrderRow {
   /** WhatsApp number — used for search filtering (not shown in table) */
   whatsapp: string;
   status: TrackOrderStatus;
+  /** Unique game identifier — maps to TRACK_ORDER_GAMES constant */
+  gameId: string;
+  /** Display name of the game — e.g. "Mobile Legends" */
+  gameName: string;
+  /** Imported logo image URL for the game */
+  gameLogo: string;
 }

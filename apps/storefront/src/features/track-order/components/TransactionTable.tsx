@@ -10,6 +10,7 @@ import type { TrackOrderRow } from "@/features/track-order/types/trackOrder.type
 const HEADER_COLS: { key: string; i18nKey: string; className?: string }[] = [
   { key: "date",    i18nKey: "table.date" },
   { key: "invoice", i18nKey: "table.invoice" },
+  { key: "game",    i18nKey: "table.game" },
   { key: "service", i18nKey: "table.service" },
   { key: "gold",    i18nKey: "table.gold" },
   { key: "status",  i18nKey: "table.status", className: "text-center" },

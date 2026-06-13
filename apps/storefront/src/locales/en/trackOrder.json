@@ -20,6 +20,7 @@
   "table": {
     "date": "Date & Time",
     "invoice": "Invoice Number",
+    "game": "Game",
     "service": "Service",
     "gold": "Gold",
     "status": "Status"

@@ -19,7 +19,7 @@ export default function PaymentSuccessPage(): React.JSX.Element {
   const { invoiceNumber } = useParams({ strict: false }) as { invoiceNumber: string };
   const pendingOrder = useCheckoutStore((s) => s.pendingOrder);
   const { t } = useTranslation("invoice");
-  const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(15000);
+  const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(5000);
 
   const order = pendingOrder ?? buildMockOrder(invoiceNumber ?? "TOPUP-22052026-8F3A2B6C");
 

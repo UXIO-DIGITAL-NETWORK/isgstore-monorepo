@@ -24,7 +24,7 @@ export default function PaymentFailedPage(): React.JSX.Element {
   const pendingOrder = useCheckoutStore((s) => s.pendingOrder);
   const navigate = useNavigate();
   const { t } = useTranslation("invoice");
-  const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(15000);
+  const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(5000);
 
   const order = pendingOrder ?? buildMockOrder(invoiceNumber ?? "TOPUP-22052026-8F3A2B6C");
 

@@ -20,6 +20,7 @@
   "table": {
     "date": "Tanggal & Waktu",
     "invoice": "Nomor Invoice",
+    "game": "Game",
     "service": "Layanan",
     "gold": "Gold",
     "status": "Status"
