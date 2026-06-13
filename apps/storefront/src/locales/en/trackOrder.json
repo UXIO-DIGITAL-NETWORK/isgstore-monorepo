@@ -1,0 +1,35 @@
+{
+  "hero": {
+    "title": "TRACK ORDER",
+    "subtitle": "Enter your invoice number to view real-time transaction status and details."
+  },
+
+  "search": {
+    "label": "Invoice Number",
+    "placeholder": "Enter Invoice Number or WhatsApp...",
+    "button": "Track Order"
+  },
+
+  "help": {
+    "title": "Having trouble with your transaction?",
+    "bodyPrefix": "Contact our",
+    "customerCare": "Customer Care",
+    "bodySuffix": "team, available 24/7 to help you."
+  },
+
+  "table": {
+    "date": "Date & Time",
+    "invoice": "Invoice Number",
+    "service": "Service",
+    "gold": "Gold",
+    "status": "Status"
+  },
+
+  "status": {
+    "process": "Processing",
+    "success": "Success",
+    "failed": "Failed"
+  },
+
+  "emptyState": "No transactions matched your search."
+}

@@ -10,6 +10,7 @@ import idInvoice from "@/locales/id/invoice.json";
 import idDashboard from "@/locales/id/dashboard.json";
 import idAdmin from "@/locales/id/admin.json";
 import idErrors from "@/locales/id/errors.json";
+import idTrackOrder from "@/locales/id/trackOrder.json";
 
 import enCommon from "@/locales/en/common.json";
 import enAuth from "@/locales/en/auth.json";
@@ -19,6 +20,7 @@ import enInvoice from "@/locales/en/invoice.json";
 import enDashboard from "@/locales/en/dashboard.json";
 import enAdmin from "@/locales/en/admin.json";
 import enErrors from "@/locales/en/errors.json";
+import enTrackOrder from "@/locales/en/trackOrder.json";
 
 i18n
   .use(LanguageDetector)
@@ -34,6 +36,7 @@ i18n
         dashboard: idDashboard,
         admin: idAdmin,
         errors: idErrors,
+        trackOrder: idTrackOrder,
       },
       en: {
         common: enCommon,
@@ -44,13 +47,14 @@ i18n
         dashboard: enDashboard,
         admin: enAdmin,
         errors: enErrors,
+        trackOrder: enTrackOrder,
       },
     },
     lng: "id",
     fallbackLng: "id",
     supportedLngs: ["id", "en"],
     defaultNS: "common",
-    ns: ["common", "auth", "home", "checkout", "invoice", "dashboard", "admin", "errors"],
+    ns: ["common", "auth", "home", "checkout", "invoice", "dashboard", "admin", "errors", "trackOrder"],
     interpolation: {
       escapeValue: false,
     },

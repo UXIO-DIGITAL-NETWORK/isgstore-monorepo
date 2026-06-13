@@ -1,0 +1,35 @@
+{
+  "hero": {
+    "title": "LACAK PESANAN",
+    "subtitle": "Masukkan nomor invoice Anda untuk melihat status dan detail transaksi secara real-time."
+  },
+
+  "search": {
+    "label": "Nomor Invoice",
+    "placeholder": "Masukan Nomer Invoice atau WhatsApp...",
+    "button": "Lacak Pesanan"
+  },
+
+  "help": {
+    "title": "Mengalami kendala saat transaksi?",
+    "bodyPrefix": "Hubungi",
+    "customerCare": "Customer Care",
+    "bodySuffix": "kami, 24 jam non-stop membantu."
+  },
+
+  "table": {
+    "date": "Tanggal & Waktu",
+    "invoice": "Nomor Invoice",
+    "service": "Layanan",
+    "gold": "Gold",
+    "status": "Status"
+  },
+
+  "status": {
+    "process": "Proses",
+    "success": "Sukses",
+    "failed": "Gagal"
+  },
+
+  "emptyState": "Tidak ada transaksi yang cocok dengan pencarian Anda."
+}

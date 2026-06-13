@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "@tanstack/react-router";
+import { useParams, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, Gamepad2 } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -17,6 +17,15 @@ export function Navbar(): React.JSX.Element {
     useLocaleDropdown();
 
   const navLinks = getNavLinks(locale);
+  const { location } = useRouterState();
+
+  /** Returns true when the given href matches or is a parent of the current path. */
+  const isNavActive = (href: string): boolean => {
+    const pathname = location.pathname;
+    // Home route: exact match only (avoid matching every route)
+    if (href === `/${locale}`) return pathname === href;
+    return pathname === href || pathname.startsWith(href + "/");
+  };
 
   return (
     <Box className="w-full bg-[#0A0A0C] sticky top-0 z-50">
@@ -94,12 +103,12 @@ export function Navbar(): React.JSX.Element {
       {/* ── Bottom tier – nav links ── */}
       <Box className="w-full border-b border-white/6">
         <Box className="max-w-6xl mx-auto px-4 md:px-8 h-10 flex items-center gap-7 overflow-x-auto no-scrollbar">
-          {navLinks.map((link, index) => (
+          {navLinks.map((link) => (
             <Link
               key={link.labelKey}
               href={link.href}
               className={`text-xs md:text-[13px] whitespace-nowrap tracking-wide font-medium transition-colors font-outfit ${
-                index === 0 ? "text-[#9234EA]" : "text-white/45 hover:text-white/80"
+                isNavActive(link.href) ? "text-[#9234EA]" : "text-white/45 hover:text-white/80"
               }`}
             >
               {t(link.labelKey)}
