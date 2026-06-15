@@ -1,0 +1,16 @@
+{
+  "hero": {
+    "title": "LEADERBOARD TOPUPGAME.ID",
+    "subtitle": "Daftar 10 pembelian terbanyak yang dilakukan oleh pelanggan kami. Data diperbarui secara otomatis dan real-time dari sistem kami."
+  },
+  "periods": {
+    "today": "Hari Ini",
+    "week": "Minggu Ini",
+    "month": "Bulan Ini"
+  },
+  "table": {
+    "no": "No",
+    "player": "Player",
+    "totalTransaction": "Total Transaksi"
+  }
+}

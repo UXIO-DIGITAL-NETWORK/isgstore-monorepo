@@ -13,6 +13,7 @@ import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
+import { Route as LocaleLeaderboardIndexRouteImport } from './routes/$locale/leaderboard/index'
 import { Route as LocaleKalkulatorZodiacIndexRouteImport } from './routes/$locale/kalkulator-zodiac/index'
 import { Route as LocaleKalkulatorWinRateIndexRouteImport } from './routes/$locale/kalkulator-win-rate/index'
 import { Route as LocaleKalkulatorMagicWheelIndexRouteImport } from './routes/$locale/kalkulator-magic-wheel/index'
@@ -46,6 +47,11 @@ const LocaleIndexRoute = LocaleIndexRouteImport.update({
 } as any)
 const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
   id: '/_auth',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocaleLeaderboardIndexRoute = LocaleLeaderboardIndexRouteImport.update({
+  id: '/leaderboard/',
+  path: '/leaderboard/',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleKalkulatorZodiacIndexRoute =
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac/': typeof LocaleKalkulatorZodiacIndexRoute
+  '/$locale/leaderboard/': typeof LocaleLeaderboardIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/$locale/kalkulator-magic-wheel': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac': typeof LocaleKalkulatorZodiacIndexRoute
+  '/$locale/leaderboard': typeof LocaleLeaderboardIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password': typeof LocaleAuthForgotPasswordIndexRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac/': typeof LocaleKalkulatorZodiacIndexRoute
+  '/$locale/leaderboard/': typeof LocaleLeaderboardIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/_auth/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
     | '/$locale/kalkulator-zodiac/'
+    | '/$locale/leaderboard/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password/'
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-magic-wheel'
     | '/$locale/kalkulator-win-rate'
     | '/$locale/kalkulator-zodiac'
+    | '/$locale/leaderboard'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
     | '/$locale/kalkulator-zodiac/'
+    | '/$locale/leaderboard/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/_auth/forgot-password/'
@@ -288,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleAuthRouteRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/leaderboard/': {
+      id: '/$locale/leaderboard/'
+      path: '/leaderboard'
+      fullPath: '/$locale/leaderboard/'
+      preLoaderRoute: typeof LocaleLeaderboardIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/kalkulator-zodiac/': {
@@ -426,6 +445,7 @@ interface LocaleRouteRouteChildren {
   LocaleKalkulatorMagicWheelIndexRoute: typeof LocaleKalkulatorMagicWheelIndexRoute
   LocaleKalkulatorWinRateIndexRoute: typeof LocaleKalkulatorWinRateIndexRoute
   LocaleKalkulatorZodiacIndexRoute: typeof LocaleKalkulatorZodiacIndexRoute
+  LocaleLeaderboardIndexRoute: typeof LocaleLeaderboardIndexRoute
   LocaleInvoiceInvoiceNumberFailedRoute: typeof LocaleInvoiceInvoiceNumberFailedRoute
   LocaleInvoiceInvoiceNumberSuccessRoute: typeof LocaleInvoiceInvoiceNumberSuccessRoute
   LocaleInvoiceInvoiceNumberIndexRoute: typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -443,6 +463,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleKalkulatorMagicWheelIndexRoute: LocaleKalkulatorMagicWheelIndexRoute,
   LocaleKalkulatorWinRateIndexRoute: LocaleKalkulatorWinRateIndexRoute,
   LocaleKalkulatorZodiacIndexRoute: LocaleKalkulatorZodiacIndexRoute,
+  LocaleLeaderboardIndexRoute: LocaleLeaderboardIndexRoute,
   LocaleInvoiceInvoiceNumberFailedRoute: LocaleInvoiceInvoiceNumberFailedRoute,
   LocaleInvoiceInvoiceNumberSuccessRoute:
     LocaleInvoiceInvoiceNumberSuccessRoute,
