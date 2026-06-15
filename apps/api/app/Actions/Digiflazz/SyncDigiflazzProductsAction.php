@@ -2,11 +2,11 @@
 
 namespace App\Actions\Digiflazz;
 
-use App\Services\DigiflazzService;
-use App\Models\SupplierProduct;
-use App\Models\Supplier;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Supplier;
+use App\Models\SupplierProduct;
+use App\Services\DigiflazzService;
 
 class SyncDigiflazzProductsAction
 {
@@ -17,7 +17,7 @@ class SyncDigiflazzProductsAction
 
     public function execute(string $type = 'prepaid'): int
     {
-        if (!in_array($type, ['prepaid', 'pasca'], true)) {
+        if (! in_array($type, ['prepaid', 'pasca'], true)) {
             throw new \InvalidArgumentException("Type harus 'prepaid' atau 'pasca'.");
         }
 

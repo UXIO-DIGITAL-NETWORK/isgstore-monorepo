@@ -19,7 +19,7 @@ class RefundTransactionAction
     ) {}
 
     /**
-     * @param array<string,mixed> $params Requires app_id, refund_mch_order_no, payment_order_no, amount.
+     * @param  array<string,mixed>  $params  Requires app_id, refund_mch_order_no, payment_order_no, amount.
      * @return array<string,mixed>
      */
     public function execute(array $params): array
@@ -29,10 +29,10 @@ class RefundTransactionAction
         $reference = $params['payment_order_no'] ?? $params['refund_mch_order_no'] ?? 'unknown';
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
-            userId:    Auth::id(),
+            userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message:   "Monetapay refund requested for payment order: {$reference} (amount: {$params['amount']})",
+            message: "Monetapay refund requested for payment order: {$reference} (amount: {$params['amount']})",
         ));
 
         return $response;

@@ -19,7 +19,7 @@ class CancelTransactionAction
     ) {}
 
     /**
-     * @param array<string,mixed> $params Requires app_id + (order_no | mch_order_no).
+     * @param  array<string,mixed>  $params  Requires app_id + (order_no | mch_order_no).
      * @return array<string,mixed>
      */
     public function execute(array $params): array
@@ -29,10 +29,10 @@ class CancelTransactionAction
         $reference = $params['order_no'] ?? $params['mch_order_no'] ?? 'unknown';
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
-            userId:    Auth::id(),
+            userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message:   "Monetapay cancel requested for order: {$reference}",
+            message: "Monetapay cancel requested for order: {$reference}",
         ));
 
         return $response;

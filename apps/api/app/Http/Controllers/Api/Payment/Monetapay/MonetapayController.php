@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Payment;
+namespace App\Http\Controllers\Api\Payment\Monetapay;
 
 use App\Actions\Payment\Monetapay\CancelTransactionAction;
 use App\Actions\Payment\Monetapay\QueryMonetapayAction;
@@ -73,7 +73,7 @@ class MonetapayController extends Controller
     {
         return $this->run('refund', $this->withAppId([
             'payment_order_no' => $request->input('payment_order_no'),
-            'refund_order_no'  => $request->input('refund_order_no'),
+            'refund_order_no' => $request->input('refund_order_no'),
             'payment_trade_no' => $request->input('payment_trade_no'),
         ]));
     }
@@ -99,9 +99,9 @@ class MonetapayController extends Controller
     public function subscriptionCycle(Request $request)
     {
         return $this->run('subscription_cycle', $this->withAppId([
-            'order_no'                 => $request->input('order_no'),
-            'page'                     => $request->input('page'),
-            'page_size'                => $request->input('page_size'),
+            'order_no' => $request->input('order_no'),
+            'page' => $request->input('page'),
+            'page_size' => $request->input('page_size'),
             'after_cycle_period_index' => $request->input('after_cycle_period_index'),
         ]));
     }
@@ -111,8 +111,8 @@ class MonetapayController extends Controller
     public function subMerchant(Request $request)
     {
         return $this->run('sub_merchant', [
-            'parent_app_id'  => $request->input('parent_app_id', config('services.monetapay.mch_id')),
-            'external_id'    => $request->input('external_id'),
+            'parent_app_id' => $request->input('parent_app_id', config('services.monetapay.mch_id')),
+            'external_id' => $request->input('external_id'),
             'mch_external_id' => $request->input('mch_external_id'),
         ]);
     }
@@ -129,11 +129,11 @@ class MonetapayController extends Controller
     public function accountValidation(Request $request)
     {
         $validated = $request->validate([
-            'mch_order_no'      => ['required', 'string'],
+            'mch_order_no' => ['required', 'string'],
             'account_bank_code' => ['required', 'string'],
-            'account_number'    => ['required', 'string'],
-            'account_type'      => ['nullable', 'string'],
-            'ori_account_name'  => ['nullable', 'string'],
+            'account_number' => ['required', 'string'],
+            'account_type' => ['nullable', 'string'],
+            'ori_account_name' => ['nullable', 'string'],
         ]);
 
         return $this->run('account_validation', $this->withAppId(array_merge($validated, [
@@ -147,10 +147,10 @@ class MonetapayController extends Controller
     {
         $validated = $request->validate([
             'start_date' => ['required', 'string'],
-            'end_date'   => ['required', 'string'],
-            'currency'   => ['nullable', 'string'],
-            'page'       => ['nullable'],
-            'page_size'  => ['nullable'],
+            'end_date' => ['required', 'string'],
+            'currency' => ['nullable', 'string'],
+            'page' => ['nullable'],
+            'page_size' => ['nullable'],
         ]);
 
         return $this->run('daily_bill', $validated);
@@ -170,7 +170,7 @@ class MonetapayController extends Controller
     {
         return $this->run('transfer', [
             'transfer_order_no' => $request->input('transfer_order_no'),
-            'mch_order_no'      => $request->input('mch_order_no'),
+            'mch_order_no' => $request->input('mch_order_no'),
         ]);
     }
 
@@ -179,7 +179,7 @@ class MonetapayController extends Controller
     public function merchantPermission(Request $request)
     {
         return $this->run('merchant_permission', [
-            'mch_id'      => $request->input('mch_id', config('services.monetapay.mch_id')),
+            'mch_id' => $request->input('mch_id', config('services.monetapay.mch_id')),
             'external_id' => $request->input('external_id'),
         ]);
     }
@@ -189,8 +189,8 @@ class MonetapayController extends Controller
     public function cancel(Request $request)
     {
         $params = $this->withAppId([
-            'sub_mch_id'   => $request->input('sub_mch_id'),
-            'order_no'     => $request->input('order_no'),
+            'sub_mch_id' => $request->input('sub_mch_id'),
+            'order_no' => $request->input('order_no'),
             'mch_order_no' => $request->input('mch_order_no'),
         ]);
 
@@ -205,11 +205,11 @@ class MonetapayController extends Controller
     {
         $validated = $request->validate([
             'refund_mch_order_no' => ['required', 'string'],
-            'payment_order_no'    => ['required', 'string'],
-            'payment_trade_no'    => ['nullable', 'string'],
-            'amount'              => ['required'],
-            'reason'              => ['nullable', 'string'],
-            'additional_info'     => ['nullable', 'string'],
+            'payment_order_no' => ['required', 'string'],
+            'payment_trade_no' => ['nullable', 'string'],
+            'amount' => ['required'],
+            'reason' => ['nullable', 'string'],
+            'additional_info' => ['nullable', 'string'],
         ]);
 
         try {
@@ -227,7 +227,7 @@ class MonetapayController extends Controller
     /**
      * Run a read-only inquiry through the dispatcher and wrap the response.
      *
-     * @param array<string,mixed> $params
+     * @param  array<string,mixed>  $params
      */
     private function run(string $resource, array $params)
     {
@@ -246,8 +246,8 @@ class MonetapayController extends Controller
     private function orderParams(Request $request, bool $withAppId = true): array
     {
         $params = [
-            'sub_mch_id'   => $request->input('sub_mch_id'),
-            'order_no'     => $request->input('order_no'),
+            'sub_mch_id' => $request->input('sub_mch_id'),
+            'order_no' => $request->input('order_no'),
             'mch_order_no' => $request->input('mch_order_no'),
         ];
 
@@ -257,7 +257,7 @@ class MonetapayController extends Controller
     /**
      * Default app_id to the configured merchant id when the caller omits it.
      *
-     * @param array<string,mixed> $params
+     * @param  array<string,mixed>  $params
      * @return array<string,mixed>
      */
     private function withAppId(array $params): array

@@ -19,11 +19,12 @@ class DigiflazzPostpaidController extends Controller
     public function checkBill(CheckBillRequest $request, CheckDigiflazzBillAction $action)
     {
         try {
-            $dto    = new CheckBillDTO(
+            $dto = new CheckBillDTO(
                 buyerSkuCode: $request->string('buyer_sku_code')->toString(),
-                customerNo:   $request->string('customer_no')->toString(),
+                customerNo: $request->string('customer_no')->toString(),
             );
             $result = $action->execute($dto);
+
             return $this->successResponse($result, 'Informasi tagihan berhasil diambil');
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
@@ -33,14 +34,15 @@ class DigiflazzPostpaidController extends Controller
     public function payBill(PayBillRequest $request, PayDigiflazzBillAction $action)
     {
         try {
-            $dto    = new PayBillDTO(
-                productId:        $request->integer('product_id'),
+            $dto = new PayBillDTO(
+                productId: $request->integer('product_id'),
                 paymentChannelId: $request->integer('payment_channel_id'),
-                customerNo:       $request->string('customer_no')->toString(),
-                userId:           $request->user()?->id,
-                guestContact:     $request->string('guest_contact')->toString() ?: null,
+                customerNo: $request->string('customer_no')->toString(),
+                userId: $request->user()?->id,
+                guestContact: $request->string('guest_contact')->toString() ?: null,
             );
             $result = $action->execute($dto);
+
             return $this->successResponse($result, 'Pembayaran tagihan berhasil diproses', 201);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);

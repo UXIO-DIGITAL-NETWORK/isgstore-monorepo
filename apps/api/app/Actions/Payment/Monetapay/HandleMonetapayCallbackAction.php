@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Actions\Payment;
+namespace App\Actions\Payment\Monetapay;
 
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
-use App\DTOs\Payment\MonetapayCallbackDTO;
+use App\DTOs\Payment\Monetapay\MonetapayCallbackDTO;
 use App\Jobs\ProcessDigiflazzBillPayment;
 use App\Jobs\ProcessDigiflazzTopup;
 use App\Models\Payment;
@@ -30,7 +30,7 @@ class HandleMonetapayCallbackAction
 
             // Lock the Payment row to prevent concurrent webhook replays
             /** @var Payment $payment */
-            $payment     = Payment::with('transaction')
+            $payment = Payment::with('transaction')
                 ->where('reference_id', $dto->outNo)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -44,6 +44,7 @@ class HandleMonetapayCallbackAction
                 Log::info("Monetapay callback ignored — already {$transaction->status}", [
                     'reference_id' => $dto->outNo,
                 ]);
+
                 return;
             }
 
@@ -67,7 +68,7 @@ class HandleMonetapayCallbackAction
 
             // ── Persist payment result ───────────────────────────────────────
             $payment->update([
-                'status'  => $isSuccess ? '3' : '2',   // 3: Success, 2: Failed/Expired
+                'status' => $isSuccess ? '3' : '2',   // 3: Success, 2: Failed/Expired
                 'paid_at' => $isSuccess ? now() : null,
             ]);
 
@@ -97,10 +98,10 @@ class HandleMonetapayCallbackAction
     private function log(string $referenceId, string $message): void
     {
         $this->activityLogAction->execute(new CreateActivityLogDTO(
-            userId:    null,
+            userId: null,
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message:   "{$message} | Ref: {$referenceId}",
+            message: "{$message} | Ref: {$referenceId}",
         ));
     }
 }

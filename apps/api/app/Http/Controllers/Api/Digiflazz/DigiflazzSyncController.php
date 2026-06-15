@@ -15,8 +15,9 @@ class DigiflazzSyncController extends Controller
     public function sync(SyncProductsRequest $request, SyncDigiflazzProductsAction $action)
     {
         try {
-            $type  = $request->string('type')->toString() ?: 'prepaid';
+            $type = $request->string('type')->toString() ?: 'prepaid';
             $count = $action->execute($type);
+
             return $this->successResponse(
                 ['synced' => $count, 'type' => $type],
                 "Berhasil sinkronisasi {$count} produk Digiflazz ({$type})"

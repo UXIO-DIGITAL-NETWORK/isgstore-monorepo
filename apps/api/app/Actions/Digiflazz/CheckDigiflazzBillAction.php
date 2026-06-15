@@ -14,7 +14,7 @@ class CheckDigiflazzBillAction
     {
         // Inquiry ref_id is ephemeral — not persisted in our DB.
         // Digiflazz needs it for tracking but we don't create a Transaction yet.
-        $inquiryRefId = 'INQ-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+        $inquiryRefId = 'INQ-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
         $data = $this->digiflazzService->checkBill(
             $dto->buyerSkuCode,
@@ -23,15 +23,15 @@ class CheckDigiflazzBillAction
         );
 
         return [
-            'customer_no'   => $data['customer_no']   ?? $dto->customerNo,
+            'customer_no' => $data['customer_no'] ?? $dto->customerNo,
             'customer_name' => $data['customer_name'] ?? null,
-            'period'        => $data['period']        ?? null,
-            'nominal'       => $data['nominal']       ?? null,
-            'admin'         => $data['admin']         ?? null,
-            'total_bayar'   => $data['total_bayar']   ?? null,
-            'product_name'  => $data['product_name']  ?? null,
-            'tr_id'         => $data['tr_id']         ?? null,
-            'inquiry_ref'   => $inquiryRefId,
+            'period' => $data['period'] ?? null,
+            'nominal' => $data['nominal'] ?? null,
+            'admin' => $data['admin'] ?? null,
+            'total_bayar' => $data['total_bayar'] ?? null,
+            'product_name' => $data['product_name'] ?? null,
+            'tr_id' => $data['tr_id'] ?? null,
+            'inquiry_ref' => $inquiryRefId,
         ];
     }
 }

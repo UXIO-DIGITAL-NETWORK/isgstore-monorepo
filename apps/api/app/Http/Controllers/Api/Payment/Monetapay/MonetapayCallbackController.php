@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Api\Payment;
+namespace App\Http\Controllers\Api\Payment\Monetapay;
 
-use App\Actions\Payment\HandleMonetapayCallbackAction;
-use App\DTOs\Payment\MonetapayCallbackDTO;
+use App\Actions\Payment\Monetapay\HandleMonetapayCallbackAction;
+use App\DTOs\Payment\Monetapay\MonetapayCallbackDTO;
 use App\Http\Controllers\Controller;
 use App\Services\Payment\MonetapayService;
 use App\Traits\ApiResponse;
@@ -28,9 +28,9 @@ class MonetapayCallbackController extends Controller
         try {
             // Actual envelope: { "data": { "en_data": "...", "partner_key": "...", "mch_order_no": "..." } }
             $validated = $request->validate([
-                'data'          => ['required', 'array'],
-                'data.en_data'  => ['required', 'string'],  // AES-encrypted payload
-                'data.partner_key'  => ['nullable', 'string'],
+                'data' => ['required', 'array'],
+                'data.en_data' => ['required', 'string'],  // AES-encrypted payload
+                'data.partner_key' => ['nullable', 'string'],
                 'data.mch_order_no' => ['nullable', 'string'],
             ]);
 
@@ -38,19 +38,19 @@ class MonetapayCallbackController extends Controller
             $decrypted = $this->monetapayService->decryptPayload($validated['data']['en_data']);
 
             // Step 2: Verify Double MD5 signature — reject forged/replayed callbacks
-            if (!$this->monetapayService->verifyCallbackSignature($decrypted)) {
+            if (! $this->monetapayService->verifyCallbackSignature($decrypted)) {
                 Log::warning('Monetapay callback signature mismatch', [
                     'mch_order_no' => $validated['data']['mch_order_no'] ?? null,
-                    'decrypted'    => $decrypted,
+                    'decrypted' => $decrypted,
                 ]);
                 throw new Exception('Signature verification failed.');
             }
 
             // Step 3: Map to DTO and run business logic
             $dto = new MonetapayCallbackDTO(
-                outNo:      $decrypted['mch_order_no'],
-                amount:     (int) $decrypted['amount'],
-                status:     $decrypted['status'],
+                outNo: $decrypted['mch_order_no'],
+                amount: (int) $decrypted['amount'],
+                status: $decrypted['status'],
                 rawPayload: $decrypted
             );
 
@@ -65,7 +65,7 @@ class MonetapayCallbackController extends Controller
 
         } catch (Exception $e) {
             Log::error('Monetapay Callback Error', [
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
                 'payload' => $request->all(),
             ]);
 

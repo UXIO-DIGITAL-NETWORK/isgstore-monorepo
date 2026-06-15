@@ -137,7 +137,7 @@ class MonetapayService
         $endpointSuffix = match ($paymentType) {
             'qris'              => '/v1.0.0/qris',
             'virtual_account'   => '/v1.0.0/virtual_account',
-            'ewallet'           => '/v1.0.0/ewallet', // Pastikan suffix ini sesuai dokumen Monetapay
+            'ewallet'           => '/v1.0.0/ewallet/charge', // 6.2.1 EWallet Create (brief p.28)
             'convenience_store' => '/v1.0.0/retail',  // Pastikan suffix ini sesuai dokumen Monetapay
             default             => '/v1.0.0/virtual_account',
         };

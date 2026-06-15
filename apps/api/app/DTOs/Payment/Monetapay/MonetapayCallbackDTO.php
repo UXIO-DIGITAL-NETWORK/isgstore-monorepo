@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\Payment;
+namespace App\DTOs\Payment\Monetapay;
 
 readonly class MonetapayCallbackDTO
 {

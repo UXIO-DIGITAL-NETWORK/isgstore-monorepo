@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Actions\Payment;
+namespace App\Actions\Payment\Monetapay;
 
-use App\DTOs\Payment\MonetapayTransactionDTO;
-use App\Services\Payment\MonetapayService;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
-use Illuminate\Support\Facades\DB;
+use App\DTOs\Payment\Monetapay\MonetapayTransactionDTO;
+use App\Services\Payment\MonetapayService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CreateMonetapayTransactionAction
 {

@@ -15,6 +15,7 @@ class DigiflazzBalanceController extends Controller
     {
         try {
             $data = $action->execute();
+
             return $this->successResponse($data, 'Saldo Digiflazz berhasil diambil');
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 502);

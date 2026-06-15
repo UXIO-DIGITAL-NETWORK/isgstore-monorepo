@@ -18,11 +18,11 @@ class DigiflazzTransactionStatusController extends Controller
             $transaction = $action->execute($request->string('invoice_number')->toString());
 
             return $this->successResponse([
-                'invoice_number'  => $transaction->invoice_number,
-                'status'          => $transaction->status,
+                'invoice_number' => $transaction->invoice_number,
+                'status' => $transaction->status,
                 'supplier_status' => $transaction->supplier_status,
                 'supplier_trx_id' => $transaction->supplier_trx_id,
-                'sn'              => $transaction->sn,
+                'sn' => $transaction->sn,
             ], 'Status transaksi berhasil diperbarui');
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
