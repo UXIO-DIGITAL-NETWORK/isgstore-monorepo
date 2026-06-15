@@ -14,6 +14,7 @@ import idTrackOrder from "@/locales/id/trackOrder.json";
 import idPriceList from "@/locales/id/priceList.json";
 import idBerita from "@/locales/id/berita.json";
 import idKalkulator from "@/locales/id/kalkulator.json";
+import idZodiac from "@/locales/id/zodiac.json";
 
 import enCommon from "@/locales/en/common.json";
 import enAuth from "@/locales/en/auth.json";
@@ -27,6 +28,7 @@ import enTrackOrder from "@/locales/en/trackOrder.json";
 import enPriceList from "@/locales/en/priceList.json";
 import enBerita from "@/locales/en/berita.json";
 import enKalkulator from "@/locales/en/kalkulator.json";
+import enZodiac from "@/locales/en/zodiac.json";
 
 i18n
   .use(LanguageDetector)
@@ -46,6 +48,7 @@ i18n
         priceList: idPriceList,
         berita: idBerita,
         kalkulator: idKalkulator,
+        zodiac: idZodiac,
       },
       en: {
         common: enCommon,
@@ -60,13 +63,14 @@ i18n
         priceList: enPriceList,
         berita: enBerita,
         kalkulator: enKalkulator,
+        zodiac: enZodiac,
       },
     },
     lng: "id",
     fallbackLng: "id",
     supportedLngs: ["id", "en"],
     defaultNS: "common",
-    ns: ["common", "auth", "home", "checkout", "invoice", "dashboard", "admin", "errors", "trackOrder", "priceList", "berita", "kalkulator"],
+    ns: ["common", "auth", "home", "checkout", "invoice", "dashboard", "admin", "errors", "trackOrder", "priceList", "berita", "kalkulator", "zodiac"],
     interpolation: {
       escapeValue: false,
     },

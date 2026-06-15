@@ -5,7 +5,9 @@
     "priceList": "DAFTAR HARGA",
     "leaderboard": "LEADERBOARD",
     "news": "BERITA",
-    "calculator": "KALKULATOR"
+    "calculator": "KALKULATOR",
+    "calculatorWinRate": "KALKULATOR WIN RATE",
+    "calculatorZodiac": "KALKULATOR ZODIAC"
   },
   "action": {
     "login": "Masuk",

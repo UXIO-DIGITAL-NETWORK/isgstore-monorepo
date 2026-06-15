@@ -9,6 +9,7 @@ import { LOCALES } from "@/constants/locales";
 import { getNavLinks } from "@/constants/navLinks";
 import { useLocaleDropdown } from "@/hooks/useLocaleDropdown";
 import { SearchBar } from "@/components/shared/SearchBar";
+import { NavDropdown } from "@/components/shared/NavDropdown";
 
 export function Navbar(): React.JSX.Element {
   const { t } = useTranslation("common");
@@ -103,17 +104,24 @@ export function Navbar(): React.JSX.Element {
       {/* ── Bottom tier – nav links ── */}
       <Box className="w-full border-b border-white/6">
         <Box className="max-w-6xl mx-auto px-4 md:px-8 h-10 flex items-center gap-7 overflow-x-auto no-scrollbar">
-          {navLinks.map((link) => (
-            <Link
-              key={link.labelKey}
-              href={link.href}
-              className={`text-xs md:text-[13px] whitespace-nowrap tracking-wide font-medium transition-colors font-outfit ${
-                isNavActive(link.href) ? "text-[#9234EA]" : "text-white/45 hover:text-white/80"
-              }`}
-            >
-              {t(link.labelKey)}
-            </Link>
-          ))}
+          {navLinks.map((link) =>
+            link.children ? (
+              <NavDropdown
+                key={link.labelKey}
+                link={link as typeof link & { children: NonNullable<typeof link.children> }}
+              />
+            ) : (
+              <Link
+                key={link.labelKey}
+                href={link.href}
+                className={`text-xs md:text-[13px] whitespace-nowrap tracking-wide font-medium transition-colors font-outfit ${
+                  isNavActive(link.href) ? "text-[#9234EA]" : "text-white/45 hover:text-white/80"
+                }`}
+              >
+                {t(link.labelKey)}
+              </Link>
+            )
+          )}
         </Box>
       </Box>
     </Box>

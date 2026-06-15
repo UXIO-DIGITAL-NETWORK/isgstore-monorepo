@@ -13,6 +13,19 @@ export function getNavLinks(locale: string): NavLink[] {
     { labelKey: "nav.priceList", href: `/${locale}/daftar-harga` },
     { labelKey: "nav.leaderboard", href: `/${locale}/leaderboard` },
     { labelKey: "nav.news", href: `/${locale}/berita` },
-    { labelKey: "nav.calculator", href: `/${locale}/kalkulator-win-rate` },
+    {
+      labelKey: "nav.calculator",
+      href: `/${locale}/kalkulator-win-rate`,
+      children: [
+        {
+          labelKey: "nav.calculatorWinRate",
+          href: `/${locale}/kalkulator-win-rate`,
+        },
+        {
+          labelKey: "nav.calculatorZodiac",
+          href: `/${locale}/kalkulator-zodiac`,
+        },
+      ],
+    },
   ];
 }

@@ -5,7 +5,9 @@
     "priceList": "PRICE LIST",
     "leaderboard": "LEADERBOARD",
     "news": "NEWS",
-    "calculator": "CALCULATOR"
+    "calculator": "CALCULATOR",
+    "calculatorWinRate": "WIN RATE",
+    "calculatorZodiac": "ZODIAC"
   },
   "action": {
     "login": "Login",

@@ -1,0 +1,19 @@
+{
+  "hero": {
+    "title": "ZODIAC CALCULATOR",
+    "subtitle": "Estimate the maximum Diamonds needed to unlock the Zodiac Skin."
+  },
+  "slider": {
+    "label": "CURRENT STAR POWER",
+    "description": "The number of star power points you currently have"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "description": "The more star power you have, the fewer diamonds required"
+  },
+  "result": {
+    "title": "Estimated Diamonds Needed",
+    "unit": "Diamond"
+  },
+  "cta": "Top Up Now"
+}
