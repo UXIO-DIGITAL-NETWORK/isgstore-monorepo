@@ -13,6 +13,7 @@ import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
+import { Route as LocaleDaftarHargaIndexRouteImport } from './routes/$locale/daftar-harga/index'
 import { Route as LocaleCekPesananIndexRouteImport } from './routes/$locale/cek-pesanan/index'
 import { Route as LocaleCheckoutGameSlugRouteImport } from './routes/$locale/checkout/$gameSlug'
 import { Route as LocaleInvoiceInvoiceNumberIndexRouteImport } from './routes/$locale/invoice/$invoiceNumber/index'
@@ -39,6 +40,11 @@ const LocaleIndexRoute = LocaleIndexRouteImport.update({
 } as any)
 const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
   id: '/_auth',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocaleDaftarHargaIndexRoute = LocaleDaftarHargaIndexRouteImport.update({
+  id: '/daftar-harga/',
+  path: '/daftar-harga/',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleCekPesananIndexRoute = LocaleCekPesananIndexRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
+  '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/$locale': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/cek-pesanan': typeof LocaleCekPesananIndexRoute
+  '/$locale/daftar-harga': typeof LocaleDaftarHargaIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password': typeof LocaleAuthForgotPasswordIndexRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
+  '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/_auth/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/$locale/'
     | '/$locale/checkout/$gameSlug'
     | '/$locale/cek-pesanan/'
+    | '/$locale/daftar-harga/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password/'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/$locale/checkout/$gameSlug'
     | '/$locale/cek-pesanan'
+    | '/$locale/daftar-harga'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/$locale/'
     | '/$locale/checkout/$gameSlug'
     | '/$locale/cek-pesanan/'
+    | '/$locale/daftar-harga/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/_auth/forgot-password/'
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleAuthRouteRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/daftar-harga/': {
+      id: '/$locale/daftar-harga/'
+      path: '/daftar-harga'
+      fullPath: '/$locale/daftar-harga/'
+      preLoaderRoute: typeof LocaleDaftarHargaIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/cek-pesanan/': {
@@ -283,6 +302,7 @@ interface LocaleRouteRouteChildren {
   LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleCheckoutGameSlugRoute: typeof LocaleCheckoutGameSlugRoute
   LocaleCekPesananIndexRoute: typeof LocaleCekPesananIndexRoute
+  LocaleDaftarHargaIndexRoute: typeof LocaleDaftarHargaIndexRoute
   LocaleInvoiceInvoiceNumberFailedRoute: typeof LocaleInvoiceInvoiceNumberFailedRoute
   LocaleInvoiceInvoiceNumberSuccessRoute: typeof LocaleInvoiceInvoiceNumberSuccessRoute
   LocaleInvoiceInvoiceNumberIndexRoute: typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -293,6 +313,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleCheckoutGameSlugRoute: LocaleCheckoutGameSlugRoute,
   LocaleCekPesananIndexRoute: LocaleCekPesananIndexRoute,
+  LocaleDaftarHargaIndexRoute: LocaleDaftarHargaIndexRoute,
   LocaleInvoiceInvoiceNumberFailedRoute: LocaleInvoiceInvoiceNumberFailedRoute,
   LocaleInvoiceInvoiceNumberSuccessRoute:
     LocaleInvoiceInvoiceNumberSuccessRoute,

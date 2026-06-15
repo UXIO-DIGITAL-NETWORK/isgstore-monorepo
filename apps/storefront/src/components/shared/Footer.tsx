@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "@tanstack/react-router";
 import {
   Gamepad2,
   ChevronRight,
@@ -43,10 +44,11 @@ const SOCIAL_ICONS: SocialIconEntry[] = [
 
 export function Footer(): React.JSX.Element {
   const { t } = useTranslation("common");
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
 
   const MENU_LINKS: { labelKey: string; href: string }[] = [
     { labelKey: "footer.menu.dashboard", href: "#" },
-    { labelKey: "footer.menu.priceList", href: "#" },
+    { labelKey: "footer.menu.priceList", href: `/${locale}/daftar-harga` },
     { labelKey: "footer.menu.leaderboard", href: "#" },
     { labelKey: "footer.menu.news", href: "#" },
     { labelKey: "footer.menu.calculator", href: "#" },
