@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
 import { Route as LocaleLeaderboardIndexRouteImport } from './routes/$locale/leaderboard/index'
+import { Route as LocaleKebijakanPrivasiIndexRouteImport } from './routes/$locale/kebijakan-privasi/index'
 import { Route as LocaleKalkulatorZodiacIndexRouteImport } from './routes/$locale/kalkulator-zodiac/index'
 import { Route as LocaleKalkulatorWinRateIndexRouteImport } from './routes/$locale/kalkulator-win-rate/index'
 import { Route as LocaleKalkulatorMagicWheelIndexRouteImport } from './routes/$locale/kalkulator-magic-wheel/index'
@@ -54,6 +55,12 @@ const LocaleLeaderboardIndexRoute = LocaleLeaderboardIndexRouteImport.update({
   path: '/leaderboard/',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
+const LocaleKebijakanPrivasiIndexRoute =
+  LocaleKebijakanPrivasiIndexRouteImport.update({
+    id: '/kebijakan-privasi/',
+    path: '/kebijakan-privasi/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 const LocaleKalkulatorZodiacIndexRoute =
   LocaleKalkulatorZodiacIndexRouteImport.update({
     id: '/kalkulator-zodiac/',
@@ -150,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac/': typeof LocaleKalkulatorZodiacIndexRoute
+  '/$locale/kebijakan-privasi/': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard/': typeof LocaleLeaderboardIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
@@ -170,6 +178,7 @@ export interface FileRoutesByTo {
   '/$locale/kalkulator-magic-wheel': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac': typeof LocaleKalkulatorZodiacIndexRoute
+  '/$locale/kebijakan-privasi': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard': typeof LocaleLeaderboardIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
@@ -193,6 +202,7 @@ export interface FileRoutesById {
   '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac/': typeof LocaleKalkulatorZodiacIndexRoute
+  '/$locale/kebijakan-privasi/': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard/': typeof LocaleLeaderboardIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
     | '/$locale/kalkulator-zodiac/'
+    | '/$locale/kebijakan-privasi/'
     | '/$locale/leaderboard/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-magic-wheel'
     | '/$locale/kalkulator-win-rate'
     | '/$locale/kalkulator-zodiac'
+    | '/$locale/kebijakan-privasi'
     | '/$locale/leaderboard'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
@@ -258,6 +270,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
     | '/$locale/kalkulator-zodiac/'
+    | '/$locale/kebijakan-privasi/'
     | '/$locale/leaderboard/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/leaderboard'
       fullPath: '/$locale/leaderboard/'
       preLoaderRoute: typeof LocaleLeaderboardIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/kebijakan-privasi/': {
+      id: '/$locale/kebijakan-privasi/'
+      path: '/kebijakan-privasi'
+      fullPath: '/$locale/kebijakan-privasi/'
+      preLoaderRoute: typeof LocaleKebijakanPrivasiIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/kalkulator-zodiac/': {
@@ -445,6 +465,7 @@ interface LocaleRouteRouteChildren {
   LocaleKalkulatorMagicWheelIndexRoute: typeof LocaleKalkulatorMagicWheelIndexRoute
   LocaleKalkulatorWinRateIndexRoute: typeof LocaleKalkulatorWinRateIndexRoute
   LocaleKalkulatorZodiacIndexRoute: typeof LocaleKalkulatorZodiacIndexRoute
+  LocaleKebijakanPrivasiIndexRoute: typeof LocaleKebijakanPrivasiIndexRoute
   LocaleLeaderboardIndexRoute: typeof LocaleLeaderboardIndexRoute
   LocaleInvoiceInvoiceNumberFailedRoute: typeof LocaleInvoiceInvoiceNumberFailedRoute
   LocaleInvoiceInvoiceNumberSuccessRoute: typeof LocaleInvoiceInvoiceNumberSuccessRoute
@@ -463,6 +484,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleKalkulatorMagicWheelIndexRoute: LocaleKalkulatorMagicWheelIndexRoute,
   LocaleKalkulatorWinRateIndexRoute: LocaleKalkulatorWinRateIndexRoute,
   LocaleKalkulatorZodiacIndexRoute: LocaleKalkulatorZodiacIndexRoute,
+  LocaleKebijakanPrivasiIndexRoute: LocaleKebijakanPrivasiIndexRoute,
   LocaleLeaderboardIndexRoute: LocaleLeaderboardIndexRoute,
   LocaleInvoiceInvoiceNumberFailedRoute: LocaleInvoiceInvoiceNumberFailedRoute,
   LocaleInvoiceInvoiceNumberSuccessRoute:
