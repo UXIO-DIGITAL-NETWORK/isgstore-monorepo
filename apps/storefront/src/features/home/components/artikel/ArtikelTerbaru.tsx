@@ -1,14 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
 import { ARTIKEL_TERBARU } from "@/features/home/data/artikel.data";
 import ArticleCard from "./fragments/ArticleCard";
 
 export default function ArtikelTerbaru(): React.JSX.Element {
   const { t } = useTranslation("home");
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   return (
     <Box as="section" className="w-full py-16 md:py-20">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
@@ -44,9 +47,9 @@ export default function ArtikelTerbaru(): React.JSX.Element {
 
         {/* CTA button */}
         <Box className="flex justify-center mt-10">
-          <Box
-            as="button"
-            className="flex items-center gap-2.5 px-8 h-11.5 rounded-full bg-transparent border border-[#9333EA] cursor-pointer"
+          <Link
+            href={`/${locale}/berita`}
+            className="flex items-center gap-2.5 px-8 h-11.5 rounded-full bg-transparent border border-[#9333EA] cursor-pointer no-underline"
           >
             <Text
               as="span"
@@ -55,7 +58,7 @@ export default function ArtikelTerbaru(): React.JSX.Element {
               {t("artikel.viewAll")}
             </Text>
             <ChevronDown className="w-4 h-4 text-[#9333EA]" />
-          </Box>
+          </Link>
         </Box>
 
       </Box>

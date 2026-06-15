@@ -1,0 +1,18 @@
+{
+  "title": "GAMING ARTICLES",
+  "subtitle": "Find the latest information, tips, and updates about game top-ups and exciting promos",
+  "empty": "No articles found for this category.",
+  "categories": {
+    "semua": "All",
+    "promo": "Promo",
+    "mobile-legend": "Mobile Legend",
+    "free-fire": "Free Fire",
+    "honor-of-kings": "Honor Of Kings",
+    "valorant": "Valorant",
+    "lainnya": "Others"
+  },
+  "pagination": {
+    "prev": "Prev",
+    "next": "Next"
+  }
+}
