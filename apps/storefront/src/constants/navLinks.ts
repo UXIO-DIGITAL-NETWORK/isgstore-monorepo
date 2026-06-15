@@ -25,6 +25,10 @@ export function getNavLinks(locale: string): NavLink[] {
           labelKey: "nav.calculatorZodiac",
           href: `/${locale}/kalkulator-zodiac`,
         },
+        {
+          labelKey: "nav.calculatorMagicWheel",
+          href: `/${locale}/kalkulator-magic-wheel`,
+        },
       ],
     },
   ];

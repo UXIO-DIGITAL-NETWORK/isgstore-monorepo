@@ -7,7 +7,8 @@
     "news": "NEWS",
     "calculator": "CALCULATOR",
     "calculatorWinRate": "WIN RATE",
-    "calculatorZodiac": "ZODIAC"
+    "calculatorZodiac": "ZODIAC",
+    "calculatorMagicWheel": "MAGIC WHEEL"
   },
   "action": {
     "login": "Login",
@@ -42,7 +43,8 @@
       "priceList": "Price List",
       "leaderboard": "Leaderboard",
       "news": "News",
-      "calculator": "Calculator"
+      "calculator": "Calculator",
+      "faq": "FAQ"
     },
     "legal": {
       "refundPolicy": "Refund Policy",

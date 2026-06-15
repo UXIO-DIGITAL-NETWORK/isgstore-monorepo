@@ -52,6 +52,7 @@ export function Footer(): React.JSX.Element {
     { labelKey: "footer.menu.leaderboard", href: "#" },
     { labelKey: "footer.menu.news", href: "#" },
     { labelKey: "footer.menu.calculator", href: "#" },
+    { labelKey: "footer.menu.faq", href: `/${locale}/faq` },
   ];
 
   const LEGAL_LINKS: { labelKey: string; href: string }[] = [

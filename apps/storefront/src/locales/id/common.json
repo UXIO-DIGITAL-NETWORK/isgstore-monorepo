@@ -7,7 +7,8 @@
     "news": "BERITA",
     "calculator": "KALKULATOR",
     "calculatorWinRate": "KALKULATOR WIN RATE",
-    "calculatorZodiac": "KALKULATOR ZODIAC"
+    "calculatorZodiac": "KALKULATOR ZODIAC",
+    "calculatorMagicWheel": "KALKULATOR MAGIC WHEEL"
   },
   "action": {
     "login": "Masuk",
@@ -42,7 +43,8 @@
       "priceList": "Daftar Harga",
       "leaderboard": "Leaderboard",
       "news": "Berita",
-      "calculator": "Kalkulator"
+      "calculator": "Kalkulator",
+      "faq": "FAQ"
     },
     "legal": {
       "refundPolicy": "Kebijakan Pengembalian",

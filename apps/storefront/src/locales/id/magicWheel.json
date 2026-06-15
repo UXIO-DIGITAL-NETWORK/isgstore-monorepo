@@ -1,0 +1,19 @@
+{
+  "hero": {
+    "title": "KALKULATOR MAGIC WHEEL",
+    "subtitle": "Hitung estimasi maksimal Diamond yang dibutuhkan untuk mendapatkan Skin Legends."
+  },
+  "slider": {
+    "label": "POIN MAGIC POINT SAAT INI",
+    "description": "Jumlah poin magic poin yang anda miliki saat ini"
+  },
+  "note": {
+    "title": "Catatan:",
+    "description": "Perhitungan berdasarkan estimasi rata-rata Magic Wheel. Hasil aktual dapat berbeda tergantung jumlah spin dan event yang berlangsung."
+  },
+  "result": {
+    "title": "Estimasi Biaya Maksimal",
+    "unit": "Diamond"
+  },
+  "cta": "Top Up Sekarang"
+}

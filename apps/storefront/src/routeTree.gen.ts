@@ -15,6 +15,8 @@ import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
 import { Route as LocaleKalkulatorZodiacIndexRouteImport } from './routes/$locale/kalkulator-zodiac/index'
 import { Route as LocaleKalkulatorWinRateIndexRouteImport } from './routes/$locale/kalkulator-win-rate/index'
+import { Route as LocaleKalkulatorMagicWheelIndexRouteImport } from './routes/$locale/kalkulator-magic-wheel/index'
+import { Route as LocaleFaqIndexRouteImport } from './routes/$locale/faq/index'
 import { Route as LocaleDaftarHargaIndexRouteImport } from './routes/$locale/daftar-harga/index'
 import { Route as LocaleCekPesananIndexRouteImport } from './routes/$locale/cek-pesanan/index'
 import { Route as LocaleBeritaIndexRouteImport } from './routes/$locale/berita/index'
@@ -58,6 +60,17 @@ const LocaleKalkulatorWinRateIndexRoute =
     path: '/kalkulator-win-rate/',
     getParentRoute: () => LocaleRouteRoute,
   } as any)
+const LocaleKalkulatorMagicWheelIndexRoute =
+  LocaleKalkulatorMagicWheelIndexRouteImport.update({
+    id: '/kalkulator-magic-wheel/',
+    path: '/kalkulator-magic-wheel/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
+const LocaleFaqIndexRoute = LocaleFaqIndexRouteImport.update({
+  id: '/faq/',
+  path: '/faq/',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
 const LocaleDaftarHargaIndexRoute = LocaleDaftarHargaIndexRouteImport.update({
   id: '/daftar-harga/',
   path: '/daftar-harga/',
@@ -127,6 +140,8 @@ export interface FileRoutesByFullPath {
   '/$locale/berita/': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/faq/': typeof LocaleFaqIndexRoute
+  '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac/': typeof LocaleKalkulatorZodiacIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
@@ -144,6 +159,8 @@ export interface FileRoutesByTo {
   '/$locale/berita': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/faq': typeof LocaleFaqIndexRoute
+  '/$locale/kalkulator-magic-wheel': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac': typeof LocaleKalkulatorZodiacIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
@@ -164,6 +181,8 @@ export interface FileRoutesById {
   '/$locale/berita/': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/faq/': typeof LocaleFaqIndexRoute
+  '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/kalkulator-zodiac/': typeof LocaleKalkulatorZodiacIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
@@ -184,6 +203,8 @@ export interface FileRouteTypes {
     | '/$locale/berita/'
     | '/$locale/cek-pesanan/'
     | '/$locale/daftar-harga/'
+    | '/$locale/faq/'
+    | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
     | '/$locale/kalkulator-zodiac/'
     | '/$locale/invoice/$invoiceNumber/failed'
@@ -201,6 +222,8 @@ export interface FileRouteTypes {
     | '/$locale/berita'
     | '/$locale/cek-pesanan'
     | '/$locale/daftar-harga'
+    | '/$locale/faq'
+    | '/$locale/kalkulator-magic-wheel'
     | '/$locale/kalkulator-win-rate'
     | '/$locale/kalkulator-zodiac'
     | '/$locale/invoice/$invoiceNumber/failed'
@@ -220,6 +243,8 @@ export interface FileRouteTypes {
     | '/$locale/berita/'
     | '/$locale/cek-pesanan/'
     | '/$locale/daftar-harga/'
+    | '/$locale/faq/'
+    | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
     | '/$locale/kalkulator-zodiac/'
     | '/$locale/invoice/$invoiceNumber/failed'
@@ -277,6 +302,20 @@ declare module '@tanstack/react-router' {
       path: '/kalkulator-win-rate'
       fullPath: '/$locale/kalkulator-win-rate/'
       preLoaderRoute: typeof LocaleKalkulatorWinRateIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/kalkulator-magic-wheel/': {
+      id: '/$locale/kalkulator-magic-wheel/'
+      path: '/kalkulator-magic-wheel'
+      fullPath: '/$locale/kalkulator-magic-wheel/'
+      preLoaderRoute: typeof LocaleKalkulatorMagicWheelIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/faq/': {
+      id: '/$locale/faq/'
+      path: '/faq'
+      fullPath: '/$locale/faq/'
+      preLoaderRoute: typeof LocaleFaqIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/daftar-harga/': {
@@ -383,6 +422,8 @@ interface LocaleRouteRouteChildren {
   LocaleBeritaIndexRoute: typeof LocaleBeritaIndexRoute
   LocaleCekPesananIndexRoute: typeof LocaleCekPesananIndexRoute
   LocaleDaftarHargaIndexRoute: typeof LocaleDaftarHargaIndexRoute
+  LocaleFaqIndexRoute: typeof LocaleFaqIndexRoute
+  LocaleKalkulatorMagicWheelIndexRoute: typeof LocaleKalkulatorMagicWheelIndexRoute
   LocaleKalkulatorWinRateIndexRoute: typeof LocaleKalkulatorWinRateIndexRoute
   LocaleKalkulatorZodiacIndexRoute: typeof LocaleKalkulatorZodiacIndexRoute
   LocaleInvoiceInvoiceNumberFailedRoute: typeof LocaleInvoiceInvoiceNumberFailedRoute
@@ -398,6 +439,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleBeritaIndexRoute: LocaleBeritaIndexRoute,
   LocaleCekPesananIndexRoute: LocaleCekPesananIndexRoute,
   LocaleDaftarHargaIndexRoute: LocaleDaftarHargaIndexRoute,
+  LocaleFaqIndexRoute: LocaleFaqIndexRoute,
+  LocaleKalkulatorMagicWheelIndexRoute: LocaleKalkulatorMagicWheelIndexRoute,
   LocaleKalkulatorWinRateIndexRoute: LocaleKalkulatorWinRateIndexRoute,
   LocaleKalkulatorZodiacIndexRoute: LocaleKalkulatorZodiacIndexRoute,
   LocaleInvoiceInvoiceNumberFailedRoute: LocaleInvoiceInvoiceNumberFailedRoute,
