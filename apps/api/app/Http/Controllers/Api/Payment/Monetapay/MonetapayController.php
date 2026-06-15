@@ -41,39 +41,75 @@ class MonetapayController extends Controller
 
     public function virtualAccount(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('virtual_account', $this->orderParams($request));
     }
 
     public function ewallet(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('ewallet', $this->orderParams($request));
     }
 
     public function qris(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('qris', $this->orderParams($request));
     }
 
     public function paymentLink(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('payment_link', $this->orderParams($request));
     }
 
     public function crossBorder(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('cross_border', $this->orderParams($request));
     }
 
     public function repay(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('repay', $this->orderParams($request));
     }
 
     public function refundQuery(Request $request)
     {
+        $request->validate([
+            'payment_order_no' => ['required_without_all:refund_order_no,payment_trade_no', 'nullable', 'string'],
+            'refund_order_no'  => ['required_without_all:payment_order_no,payment_trade_no', 'nullable', 'string'],
+            'payment_trade_no' => ['required_without_all:payment_order_no,refund_order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('refund', $this->withAppId([
             'payment_order_no' => $request->input('payment_order_no'),
-            'refund_order_no' => $request->input('refund_order_no'),
+            'refund_order_no'  => $request->input('refund_order_no'),
             'payment_trade_no' => $request->input('payment_trade_no'),
         ]));
     }
@@ -93,15 +129,24 @@ class MonetapayController extends Controller
 
     public function subscription(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('subscription', $this->orderParams($request));
     }
 
     public function subscriptionCycle(Request $request)
     {
+        $request->validate([
+            'order_no' => ['required', 'string'],
+        ]);
+
         return $this->run('subscription_cycle', $this->withAppId([
-            'order_no' => $request->input('order_no'),
-            'page' => $request->input('page'),
-            'page_size' => $request->input('page_size'),
+            'order_no'                 => $request->input('order_no'),
+            'page'                     => $request->input('page'),
+            'page_size'                => $request->input('page_size'),
             'after_cycle_period_index' => $request->input('after_cycle_period_index'),
         ]));
     }
@@ -110,9 +155,14 @@ class MonetapayController extends Controller
 
     public function subMerchant(Request $request)
     {
+        $request->validate([
+            'external_id'     => ['required_without:mch_external_id', 'nullable', 'string'],
+            'mch_external_id' => ['required_without:external_id', 'nullable', 'string'],
+        ]);
+
         return $this->run('sub_merchant', [
-            'parent_app_id' => $request->input('parent_app_id', config('services.monetapay.mch_id')),
-            'external_id' => $request->input('external_id'),
+            'parent_app_id'   => $request->input('parent_app_id', config('services.monetapay.mch_id')),
+            'external_id'     => $request->input('external_id'),
             'mch_external_id' => $request->input('mch_external_id'),
         ]);
     }
@@ -121,6 +171,11 @@ class MonetapayController extends Controller
 
     public function disbursement(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('disbursement', $this->orderParams($request, withAppId: false));
     }
 
@@ -168,9 +223,14 @@ class MonetapayController extends Controller
 
     public function transferQuery(Request $request)
     {
+        $request->validate([
+            'transfer_order_no' => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no'      => ['required_without:transfer_order_no', 'nullable', 'string'],
+        ]);
+
         return $this->run('transfer', [
             'transfer_order_no' => $request->input('transfer_order_no'),
-            'mch_order_no' => $request->input('mch_order_no'),
+            'mch_order_no'      => $request->input('mch_order_no'),
         ]);
     }
 
@@ -188,16 +248,21 @@ class MonetapayController extends Controller
 
     public function cancel(Request $request)
     {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
         $params = $this->withAppId([
-            'sub_mch_id' => $request->input('sub_mch_id'),
-            'order_no' => $request->input('order_no'),
+            'sub_mch_id'   => $request->input('sub_mch_id'),
+            'order_no'     => $request->input('order_no'),
             'mch_order_no' => $request->input('mch_order_no'),
         ]);
 
         try {
             return $this->successResponse($this->cancelAction->execute($params), 'Monetapay cancel sent.');
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 502);
+            return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
@@ -218,7 +283,7 @@ class MonetapayController extends Controller
                 'Monetapay refund sent.'
             );
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 502);
+            return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
@@ -234,7 +299,7 @@ class MonetapayController extends Controller
         try {
             return $this->successResponse($this->queryAction->execute($resource, $params));
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 502);
+            return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
