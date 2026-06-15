@@ -13,6 +13,7 @@ import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
+import { Route as LocaleKalkulatorWinRateIndexRouteImport } from './routes/$locale/kalkulator-win-rate/index'
 import { Route as LocaleDaftarHargaIndexRouteImport } from './routes/$locale/daftar-harga/index'
 import { Route as LocaleCekPesananIndexRouteImport } from './routes/$locale/cek-pesanan/index'
 import { Route as LocaleBeritaIndexRouteImport } from './routes/$locale/berita/index'
@@ -44,6 +45,12 @@ const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
+const LocaleKalkulatorWinRateIndexRoute =
+  LocaleKalkulatorWinRateIndexRouteImport.update({
+    id: '/kalkulator-win-rate/',
+    path: '/kalkulator-win-rate/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 const LocaleDaftarHargaIndexRoute = LocaleDaftarHargaIndexRouteImport.update({
   id: '/daftar-harga/',
   path: '/daftar-harga/',
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/$locale/berita/': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
@@ -128,6 +136,7 @@ export interface FileRoutesByTo {
   '/$locale/berita': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/kalkulator-win-rate': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password': typeof LocaleAuthForgotPasswordIndexRoute
@@ -146,6 +155,7 @@ export interface FileRoutesById {
   '/$locale/berita/': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/_auth/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/$locale/berita/'
     | '/$locale/cek-pesanan/'
     | '/$locale/daftar-harga/'
+    | '/$locale/kalkulator-win-rate/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password/'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/$locale/berita'
     | '/$locale/cek-pesanan'
     | '/$locale/daftar-harga'
+    | '/$locale/kalkulator-win-rate'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password'
@@ -196,6 +208,7 @@ export interface FileRouteTypes {
     | '/$locale/berita/'
     | '/$locale/cek-pesanan/'
     | '/$locale/daftar-harga/'
+    | '/$locale/kalkulator-win-rate/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/_auth/forgot-password/'
@@ -237,6 +250,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleAuthRouteRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/kalkulator-win-rate/': {
+      id: '/$locale/kalkulator-win-rate/'
+      path: '/kalkulator-win-rate'
+      fullPath: '/$locale/kalkulator-win-rate/'
+      preLoaderRoute: typeof LocaleKalkulatorWinRateIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/daftar-harga/': {
@@ -343,6 +363,7 @@ interface LocaleRouteRouteChildren {
   LocaleBeritaIndexRoute: typeof LocaleBeritaIndexRoute
   LocaleCekPesananIndexRoute: typeof LocaleCekPesananIndexRoute
   LocaleDaftarHargaIndexRoute: typeof LocaleDaftarHargaIndexRoute
+  LocaleKalkulatorWinRateIndexRoute: typeof LocaleKalkulatorWinRateIndexRoute
   LocaleInvoiceInvoiceNumberFailedRoute: typeof LocaleInvoiceInvoiceNumberFailedRoute
   LocaleInvoiceInvoiceNumberSuccessRoute: typeof LocaleInvoiceInvoiceNumberSuccessRoute
   LocaleInvoiceInvoiceNumberIndexRoute: typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -356,6 +377,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleBeritaIndexRoute: LocaleBeritaIndexRoute,
   LocaleCekPesananIndexRoute: LocaleCekPesananIndexRoute,
   LocaleDaftarHargaIndexRoute: LocaleDaftarHargaIndexRoute,
+  LocaleKalkulatorWinRateIndexRoute: LocaleKalkulatorWinRateIndexRoute,
   LocaleInvoiceInvoiceNumberFailedRoute: LocaleInvoiceInvoiceNumberFailedRoute,
   LocaleInvoiceInvoiceNumberSuccessRoute:
     LocaleInvoiceInvoiceNumberSuccessRoute,

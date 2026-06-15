@@ -1,0 +1,40 @@
+{
+  "hero": {
+    "title": "WIN RATE CALCULATOR",
+    "subtitle": "Estimate the wins needed to reach your target Rank."
+  },
+
+  "form": {
+    "totalMatch": {
+      "label": "Total Matches",
+      "placeholder": "e.g. 400"
+    },
+    "currentWR": {
+      "label": "Current WR (%)",
+      "placeholder": "e.g. 55"
+    },
+    "targetWR": {
+      "label": "Target WR (%)",
+      "placeholder": "e.g. 70"
+    },
+    "submit": "Calculate"
+  },
+
+  "result": {
+    "title": "Estimated Wins",
+    "matchSuffix": "Match",
+    "description": "You must <b>win consecutively</b> without losing\nto reach your target win rate",
+    "targetWrLabel": "Target WR",
+    "footer": "Keep improving your performance and claim your dream Rank!",
+    "reached": "🎉 Congratulations! Your target Win Rate is already achieved. Keep it up!",
+    "impossible": "⚠️ Target Win Rate is mathematically impossible. Lower your target or play more matches."
+  },
+
+  "validation": {
+    "totalMatchRequired": "Total matches must be a number.",
+    "totalMatchInteger": "Total matches must be a whole number.",
+    "totalMatchMin": "Total matches must be at least 1.",
+    "wrRequired": "Win rate must be a number.",
+    "wrRange": "Win rate must be between 0 and 100."
+  }
+}

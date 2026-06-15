@@ -13,6 +13,7 @@ import idErrors from "@/locales/id/errors.json";
 import idTrackOrder from "@/locales/id/trackOrder.json";
 import idPriceList from "@/locales/id/priceList.json";
 import idBerita from "@/locales/id/berita.json";
+import idKalkulator from "@/locales/id/kalkulator.json";
 
 import enCommon from "@/locales/en/common.json";
 import enAuth from "@/locales/en/auth.json";
@@ -25,6 +26,7 @@ import enErrors from "@/locales/en/errors.json";
 import enTrackOrder from "@/locales/en/trackOrder.json";
 import enPriceList from "@/locales/en/priceList.json";
 import enBerita from "@/locales/en/berita.json";
+import enKalkulator from "@/locales/en/kalkulator.json";
 
 i18n
   .use(LanguageDetector)
@@ -43,6 +45,7 @@ i18n
         trackOrder: idTrackOrder,
         priceList: idPriceList,
         berita: idBerita,
+        kalkulator: idKalkulator,
       },
       en: {
         common: enCommon,
@@ -56,13 +59,14 @@ i18n
         trackOrder: enTrackOrder,
         priceList: enPriceList,
         berita: enBerita,
+        kalkulator: enKalkulator,
       },
     },
     lng: "id",
     fallbackLng: "id",
     supportedLngs: ["id", "en"],
     defaultNS: "common",
-    ns: ["common", "auth", "home", "checkout", "invoice", "dashboard", "admin", "errors", "trackOrder", "priceList", "berita"],
+    ns: ["common", "auth", "home", "checkout", "invoice", "dashboard", "admin", "errors", "trackOrder", "priceList", "berita", "kalkulator"],
     interpolation: {
       escapeValue: false,
     },

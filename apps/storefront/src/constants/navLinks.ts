@@ -13,6 +13,6 @@ export function getNavLinks(locale: string): NavLink[] {
     { labelKey: "nav.priceList", href: `/${locale}/daftar-harga` },
     { labelKey: "nav.leaderboard", href: `/${locale}/leaderboard` },
     { labelKey: "nav.news", href: `/${locale}/berita` },
-    { labelKey: "nav.calculator", href: `/${locale}/kalkulator` },
+    { labelKey: "nav.calculator", href: `/${locale}/kalkulator-win-rate` },
   ];
 }
