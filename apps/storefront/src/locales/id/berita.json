@@ -14,5 +14,22 @@
   "pagination": {
     "prev": "Prev",
     "next": "Next"
+  },
+  "breadcrumb": {
+    "home": "Beranda",
+    "news": "Berita"
+  },
+  "detail": {
+    "related": "ARTIKEL TERKAIT LAINNYA",
+    "share": "Bagikan:",
+    "notFound": "Artikel tidak ditemukan."
+  },
+  "shareLabels": {
+    "facebook": "Bagikan ke Facebook",
+    "twitter": "Bagikan ke X (Twitter)",
+    "linkedin": "Bagikan ke LinkedIn",
+    "whatsapp": "Bagikan ke WhatsApp",
+    "copy": "Salin tautan",
+    "copied": "Tersalin!"
   }
 }

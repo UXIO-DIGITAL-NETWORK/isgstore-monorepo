@@ -3,10 +3,12 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Image } from "@/components/common/Image";
+import { Link } from "@/components/common/Link";
 import type { Article } from "@/features/berita/types/article.type";
 
 type Props = {
   article: Article;
+  locale: string;
 };
 
 function CardInner({ article }: { article: Article }) {
@@ -46,10 +48,15 @@ function CardInner({ article }: { article: Article }) {
   );
 }
 
-export default function ArticleCard({ article }: Props): React.JSX.Element {
+export default function ArticleCard({ article, locale }: Props): React.JSX.Element {
   return (
-    <Box as="article" className="rounded-2xl border border-[#9333EA]/50 overflow-hidden">
-      <CardInner article={article} />
-    </Box>
+    <Link
+      href={`/${locale}/berita/${article.slug}`}
+      className="block rounded-2xl border border-[#9333EA]/50 overflow-hidden hover:border-[#9333EA] transition-colors no-underline"
+    >
+      <Box as="article">
+        <CardInner article={article} />
+      </Box>
+    </Link>
   );
 }

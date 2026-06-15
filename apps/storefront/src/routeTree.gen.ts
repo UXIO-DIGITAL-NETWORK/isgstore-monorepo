@@ -17,6 +17,7 @@ import { Route as LocaleDaftarHargaIndexRouteImport } from './routes/$locale/daf
 import { Route as LocaleCekPesananIndexRouteImport } from './routes/$locale/cek-pesanan/index'
 import { Route as LocaleBeritaIndexRouteImport } from './routes/$locale/berita/index'
 import { Route as LocaleCheckoutGameSlugRouteImport } from './routes/$locale/checkout/$gameSlug'
+import { Route as LocaleBeritaSlugRouteImport } from './routes/$locale/berita/$slug'
 import { Route as LocaleInvoiceInvoiceNumberIndexRouteImport } from './routes/$locale/invoice/$invoiceNumber/index'
 import { Route as LocaleAuthRegisterIndexRouteImport } from './routes/$locale/_auth/register/index'
 import { Route as LocaleAuthLoginIndexRouteImport } from './routes/$locale/_auth/login/index'
@@ -63,6 +64,11 @@ const LocaleCheckoutGameSlugRoute = LocaleCheckoutGameSlugRouteImport.update({
   path: '/checkout/$gameSlug',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
+const LocaleBeritaSlugRoute = LocaleBeritaSlugRouteImport.update({
+  id: '/berita/$slug',
+  path: '/berita/$slug',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
 const LocaleInvoiceInvoiceNumberIndexRoute =
   LocaleInvoiceInvoiceNumberIndexRouteImport.update({
     id: '/invoice/$invoiceNumber/',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleAuthRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/berita/$slug': typeof LocaleBeritaSlugRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/berita/': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleIndexRoute
+  '/$locale/berita/$slug': typeof LocaleBeritaSlugRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/berita': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan': typeof LocaleCekPesananIndexRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/$locale': typeof LocaleRouteRouteWithChildren
   '/$locale/_auth': typeof LocaleAuthRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/berita/$slug': typeof LocaleBeritaSlugRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/berita/': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$locale'
     | '/$locale/'
+    | '/$locale/berita/$slug'
     | '/$locale/checkout/$gameSlug'
     | '/$locale/berita/'
     | '/$locale/cek-pesanan/'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$locale'
+    | '/$locale/berita/$slug'
     | '/$locale/checkout/$gameSlug'
     | '/$locale/berita'
     | '/$locale/cek-pesanan'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/$locale'
     | '/$locale/_auth'
     | '/$locale/'
+    | '/$locale/berita/$slug'
     | '/$locale/checkout/$gameSlug'
     | '/$locale/berita/'
     | '/$locale/cek-pesanan/'
@@ -255,6 +267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleCheckoutGameSlugRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
+    '/$locale/berita/$slug': {
+      id: '/$locale/berita/$slug'
+      path: '/berita/$slug'
+      fullPath: '/$locale/berita/$slug'
+      preLoaderRoute: typeof LocaleBeritaSlugRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
     '/$locale/invoice/$invoiceNumber/': {
       id: '/$locale/invoice/$invoiceNumber/'
       path: '/invoice/$invoiceNumber'
@@ -319,6 +338,7 @@ const LocaleAuthRouteRouteWithChildren = LocaleAuthRouteRoute._addFileChildren(
 interface LocaleRouteRouteChildren {
   LocaleAuthRouteRoute: typeof LocaleAuthRouteRouteWithChildren
   LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleBeritaSlugRoute: typeof LocaleBeritaSlugRoute
   LocaleCheckoutGameSlugRoute: typeof LocaleCheckoutGameSlugRoute
   LocaleBeritaIndexRoute: typeof LocaleBeritaIndexRoute
   LocaleCekPesananIndexRoute: typeof LocaleCekPesananIndexRoute
@@ -331,6 +351,7 @@ interface LocaleRouteRouteChildren {
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleAuthRouteRoute: LocaleAuthRouteRouteWithChildren,
   LocaleIndexRoute: LocaleIndexRoute,
+  LocaleBeritaSlugRoute: LocaleBeritaSlugRoute,
   LocaleCheckoutGameSlugRoute: LocaleCheckoutGameSlugRoute,
   LocaleBeritaIndexRoute: LocaleBeritaIndexRoute,
   LocaleCekPesananIndexRoute: LocaleCekPesananIndexRoute,

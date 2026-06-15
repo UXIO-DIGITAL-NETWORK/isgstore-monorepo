@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Navbar } from "@/components/shared/Navbar";
@@ -13,6 +14,7 @@ import { BERITA_CATEGORIES } from "@/features/berita/data/categories";
 
 export default function BeritaPage(): React.JSX.Element {
   const { t } = useTranslation("berita");
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   const {
     pagedArticles,
     activeCategory,
@@ -41,7 +43,7 @@ export default function BeritaPage(): React.JSX.Element {
         {pagedArticles.length > 0 ? (
           <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pagedArticles.map((article) => (
-              <ArticleCard key={article.id} article={article} />
+              <ArticleCard key={article.id} article={article} locale={locale} />
             ))}
           </Box>
         ) : (
