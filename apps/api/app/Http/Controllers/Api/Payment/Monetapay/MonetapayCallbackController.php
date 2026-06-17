@@ -61,7 +61,7 @@ class MonetapayCallbackController extends Controller
 
             $this->action->execute($dto);
 
-            return response()->json(['code' => '200', 'msg' => 'SUCCESS'], 200);
+            return response()->json(['code' => 0, 'message' => 'success'], 200);
 
         } catch (Exception $e) {
             Log::error('Monetapay Callback Error', [

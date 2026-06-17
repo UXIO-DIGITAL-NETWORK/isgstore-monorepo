@@ -151,7 +151,6 @@ class MonetapayService
             'mch_order_no' => (string) $referenceId,
             'amount'       => (string) $amount,
             'currency'     => 'IDR',
-            'time_expire'  => now()->addHours(24)->format('Y-m-d H:i:s'),
         ];
 
         if ($isQris) {
@@ -161,6 +160,8 @@ class MonetapayService
             $requestParams['account_name']      = (string) ($customerData['customer_name'] ?? 'Guest');
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode)));
             $requestParams['account_phone']     = (string) ($customerData['customer_phone'] ?? '08123456789');
+            $requestParams['is_single_use']     = "1";
+            $requestParams['expire_seconds']    = "600";
         }
 
         // 3. Format menjadi TreeMap (Sorting Abjad)

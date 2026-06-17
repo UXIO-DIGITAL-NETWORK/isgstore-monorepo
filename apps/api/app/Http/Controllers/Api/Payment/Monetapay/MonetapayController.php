@@ -47,7 +47,7 @@ class MonetapayController extends Controller
             'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
         ]);
 
-        return $this->run('virtual_account', $this->orderParams($request));
+        return $this->passThrough('virtual_account', $this->orderParams($request));
     }
 
     public function ewallet(Request $request)
@@ -294,10 +294,9 @@ class MonetapayController extends Controller
     private function passThrough(string $resource, array $params)
     {
         try {
-            $response   = $this->queryAction->execute($resource, $params);
-            $httpStatus = ((int) ($response['code'] ?? 0)) === 0 ? 200 : 400;
+            $response = $this->queryAction->execute($resource, $params);
 
-            return response()->json($response, $httpStatus);
+            return response()->json($response, 200);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
