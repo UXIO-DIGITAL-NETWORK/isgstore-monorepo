@@ -144,6 +144,9 @@ class CheckoutAction
                     'qr_string'       => $pgData['qr_string']        ?? null,
                     'virtual_account' => $pgData['virtual_account']  ?? null,
                     'bank_code'       => $pgData['bank_code']        ?? null,
+                    'is_single_use'   => $channel->payment_type === 'virtual_account'
+                                            ? (bool) $channel->is_single_use
+                                            : null,
                 ]);
             }
 
