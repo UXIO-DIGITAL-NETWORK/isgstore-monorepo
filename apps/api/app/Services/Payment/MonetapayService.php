@@ -362,10 +362,11 @@ class MonetapayService
      * ===================================================================== */
 
     /** 5.1 Balance Inquiry — POST /v1.0.0/balance */
-    public function inquiryBalance(?string $subMchId = null): array
+    public function inquiryBalance(?string $subMchId = null, ?string $currency = null): array
     {
         return $this->postSigned('/v1.0.0/balance', [
             'sub_mch_id' => $subMchId,
+            'currency'   => $currency,
         ]);
     }
 

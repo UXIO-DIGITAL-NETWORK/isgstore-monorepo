@@ -34,6 +34,7 @@ class MonetapayController extends Controller
     {
         return $this->run('balance', [
             'sub_mch_id' => $request->input('sub_mch_id'),
+            'currency'   => $request->input('currency'),
         ]);
     }
 
@@ -200,21 +201,15 @@ class MonetapayController extends Controller
 
     public function dailyBill(Request $request)
     {
-        $validated = $request->validate([
-            'start_date' => ['required', 'string'],
-            'end_date' => ['required', 'string'],
-            'currency' => ['nullable', 'string'],
-            'page' => ['nullable'],
-            'page_size' => ['nullable'],
-        ]);
-
-        return $this->run('daily_bill', $validated);
+        return $this->run('daily_bill', $request->only([
+            'start_date', 'end_date', 'currency', 'page', 'page_size',
+        ]));
     }
 
     public function billFlow(Request $request)
     {
         return $this->run('bill_flow', $request->only([
-            'start_time', 'end_time', 'page', 'page_size', 'type',
+            'start_time', 'end_time', 'page', 'page_size', 'type', 'currency',
             'mch_order_no', 'order_no', 'trade_no',
         ]));
     }
@@ -297,7 +292,14 @@ class MonetapayController extends Controller
     private function run(string $resource, array $params)
     {
         try {
-            return $this->successResponse($this->queryAction->execute($resource, $params));
+            $response = $this->queryAction->execute($resource, $params);
+            $code     = $response['code'] ?? null;
+
+            if ($code !== null && (int) $code !== 0) {
+                return $this->errorResponse($response['message'] ?? 'Monetapay error', 400, $response);
+            }
+
+            return $this->successResponse($response);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }

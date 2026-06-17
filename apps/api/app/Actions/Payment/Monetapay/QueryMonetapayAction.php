@@ -51,9 +51,12 @@ class QueryMonetapayAction
             throw new InvalidArgumentException("Unknown Monetapay inquiry resource: {$resource}");
         }
 
-        // Balance takes an optional sub-merchant id rather than a params array.
+        // Balance takes an optional sub-merchant id and currency rather than a params array.
         if ($resource === 'balance') {
-            return $this->monetapayService->inquiryBalance($params['sub_mch_id'] ?? null);
+            return $this->monetapayService->inquiryBalance(
+                $params['sub_mch_id'] ?? null,
+                $params['currency']   ?? null,
+            );
         }
 
         $method = self::RESOURCES[$resource];
