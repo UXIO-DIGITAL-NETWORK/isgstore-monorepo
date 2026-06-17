@@ -201,14 +201,14 @@ class MonetapayController extends Controller
 
     public function dailyBill(Request $request)
     {
-        return $this->run('daily_bill', $request->only([
+        return $this->passThrough('daily_bill', $request->only([
             'start_date', 'end_date', 'currency', 'page', 'page_size',
         ]));
     }
 
     public function billFlow(Request $request)
     {
-        return $this->run('bill_flow', $request->only([
+        return $this->passThrough('bill_flow', $request->only([
             'start_time', 'end_time', 'page', 'page_size', 'type', 'currency',
             'mch_order_no', 'order_no', 'trade_no',
         ]));
@@ -283,6 +283,25 @@ class MonetapayController extends Controller
     }
 
     /* ---- helpers ------------------------------------------------------- */
+
+    /**
+     * Pass through the raw Monetapay response without ApiResponse wrapping.
+     * Used for endpoints (bill flow, daily bill) where the SIT test validates
+     * the exact Monetapay JSON body including top-level code/message/data/meta.
+     *
+     * @param  array<string,mixed>  $params
+     */
+    private function passThrough(string $resource, array $params)
+    {
+        try {
+            $response   = $this->queryAction->execute($resource, $params);
+            $httpStatus = ((int) ($response['code'] ?? 0)) === 0 ? 200 : 400;
+
+            return response()->json($response, $httpStatus);
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
 
     /**
      * Run a read-only inquiry through the dispatcher and wrap the response.

@@ -71,7 +71,7 @@ return [
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/daily', 'auth' => true, 'body' => [],
      'expect_code' => '-1', 'expect_http' => 400,
      'route' => 'POST /api/v1/monetapay/bills/daily', 'files' => ['MonetapayController@dailyBill'],
-     'note' => 'Our controller validates start_date/end_date locally — expect a 422 from our API before Monetapay is reached.'],
+     'note' => 'Blank fields are stripped by array_filter in postSigned(); Monetapay itself returns the required-field error.'],
 
     ['no' => '1.8', 'sheet' => 'Balance Inquiry', 'service' => 'Daily Bill Inquiry', 'scenario' => 'Invalid Date Format',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/daily', 'auth' => true,
