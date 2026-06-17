@@ -160,7 +160,7 @@ class MonetapayService
             $requestParams['account_name']      = (string) ($customerData['customer_name'] ?? 'Guest');
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode)));
             $requestParams['account_phone']     = (string) ($customerData['customer_phone'] ?? '08123456789');
-            $requestParams['is_single_use']     = "1";
+            $requestParams['is_single_use']     = (string) ($customerData['is_single_use'] ?? '1');
             $requestParams['expire_seconds']    = "600";
         }
 

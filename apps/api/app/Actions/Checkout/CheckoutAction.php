@@ -129,6 +129,7 @@ class CheckoutAction
                         'customer_name'  => $user?->name  ?? 'Guest',
                         'customer_email' => $user?->email ?? 'guest@example.com',
                         'customer_phone' => $user?->phone ?? $dto->guestContact,
+                        'is_single_use'  => $channel->is_single_use ? '1' : '0',
                     ]
                 );
 
