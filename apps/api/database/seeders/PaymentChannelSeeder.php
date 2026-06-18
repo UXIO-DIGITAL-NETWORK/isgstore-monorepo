@@ -41,7 +41,7 @@ class PaymentChannelSeeder extends Seeder
                 'channel_code'  => 'bni_va',
                 'min_amount'    => 10000,
                 'is_active'     => true,
-                'is_single_use' => false,  // static VA
+                'is_single_use' => true,   // dynamic VA
                 'created_at'    => $now,
                 'updated_at'    => $now,
             ],

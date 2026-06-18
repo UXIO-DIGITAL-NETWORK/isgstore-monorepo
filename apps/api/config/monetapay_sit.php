@@ -87,12 +87,12 @@ return [
      'expect_code' => '0', 'expect_http' => 201,
      'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutController', 'CheckoutAction', 'MonetapayService::createTransaction']],
 
-    ['no' => '2.2', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Successful Static VA Creation',
+    ['no' => '2.2', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Successful Dynamic VA Creation (BNI)',
      'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
      'body' => ['product_id' => $PROD_VA, 'payment_channel_id' => $VA2, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
      'expect_code' => '0', 'expect_http' => 201,
      'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction', 'MonetapayService::createTransaction'],
-     'note' => 'Checkout creates a dynamic VA by default; is_single_use=0 (static) is not parameterised in createTransaction.'],
+     'note' => 'BNI VA is now dynamic (is_single_use=1); is_single_use is driven by payment_channels.is_single_use for all VA channels.'],
 
     ['no' => '2.3', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Not support VA bank codes',
      'exec' => 'manual', 'expect_code' => '4012', 'expect_http' => 400,
