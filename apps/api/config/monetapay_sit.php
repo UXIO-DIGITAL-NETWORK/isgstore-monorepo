@@ -22,18 +22,18 @@
 */
 
 // Staging seeded payment_channel ids (confirmed): 1=bca_va, 3=bni_va, 5=qris, 6=gopay.
-// SIT-only ids (confirm after running seeder on staging): 10=test_va, 11=bnc_va.
+// SIT-only ids (confirm after running seeder on staging): 10=test_va, 11=bnc_va, 12=bni_va_s.
 // NOTE: mandiri_va (id 2) returns 7003 in sandbox — Monetapay sandbox does not support
 //       MANDIRI bank code. Use bnc_va (BNC) for the intended 7003 scenario (2.4).
 // VA channels enforce min Rp 10,000 → use a pricier product (id 4, Rp 33,596).
-$VA      = 1;         // bca_va  (virtual_account, dynamic)
-$VA2     = 3;         // bni_va  (virtual_account, dynamic)
-$TEST_VA = 10;        // test_va (virtual_account → account_bank_code=TEST → triggers 4012)
-$BNC_VA  = 11;        // bnc_va  (virtual_account → account_bank_code=BNC  → triggers 7003)
-$EW      = 6;         // gopay   (ewallet)
-$QR      = 5;         // qris
-$PROD_VA  = 4;        // VA-eligible product (>= Rp 10,000)
-$PROD_LOW = 1;        // QRIS/e-wallet product (>= Rp 1,000)
+$VA        = 1;       // bca_va   (virtual_account, dynamic is_single_use=1)
+$VA_STATIC = 12;      // bni_va_s (virtual_account, static  is_single_use=0) for scenario 2.2
+$TEST_VA   = 10;      // test_va  (virtual_account → account_bank_code=TEST → triggers 4012)
+$BNC_VA    = 11;      // bnc_va   (virtual_account → account_bank_code=BNC  → triggers 7003)
+$EW        = 6;       // gopay    (ewallet)
+$QR        = 5;       // qris
+$PROD_VA   = 4;       // VA-eligible product (>= Rp 10,000)
+$PROD_LOW  = 1;       // QRIS/e-wallet product (>= Rp 1,000)
 
 return [
 
@@ -57,14 +57,16 @@ return [
 
     ['no' => '1.4', 'sheet' => 'Balance Inquiry', 'service' => 'Bill Flow Inquiry', 'scenario' => 'Datetime Range Required',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/flow', 'auth' => true, 'body' => [],
-     'expect_code' => '-1', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/bills/flow', 'files' => ['MonetapayService::billFlowInquiry']],
+     'expect_code' => '-1', 'expect_http' => 200,
+     'route' => 'POST /api/v1/monetapay/bills/flow', 'files' => ['MonetapayService::billFlowInquiry'],
+     'note' => 'passThrough() always returns HTTP 200; Monetapay error code is in the response body.'],
 
     ['no' => '1.5', 'sheet' => 'Balance Inquiry', 'service' => 'Bill Flow Inquiry', 'scenario' => 'Invalid Date Format',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/flow', 'auth' => true,
      'body' => ['start_time' => '01-2026-99', 'end_time' => 'not-a-date'],
-     'expect_code' => '-1', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/bills/flow', 'files' => ['MonetapayService::billFlowInquiry']],
+     'expect_code' => '-1', 'expect_http' => 200,
+     'route' => 'POST /api/v1/monetapay/bills/flow', 'files' => ['MonetapayService::billFlowInquiry'],
+     'note' => 'passThrough() always returns HTTP 200; Monetapay error code is in the response body.'],
 
     ['no' => '1.6', 'sheet' => 'Balance Inquiry', 'service' => 'Daily Bill Inquiry', 'scenario' => 'Successful Daily Bill Inquiry',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/daily', 'auth' => true,
@@ -74,15 +76,16 @@ return [
 
     ['no' => '1.7', 'sheet' => 'Balance Inquiry', 'service' => 'Daily Bill Inquiry', 'scenario' => 'Date Range Required',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/daily', 'auth' => true, 'body' => [],
-     'expect_code' => '-1', 'expect_http' => 400,
+     'expect_code' => '-1', 'expect_http' => 200,
      'route' => 'POST /api/v1/monetapay/bills/daily', 'files' => ['MonetapayController@dailyBill'],
-     'note' => 'Blank fields are stripped by array_filter in postSigned(); Monetapay itself returns the required-field error.'],
+     'note' => 'passThrough() returns HTTP 200; Monetapay returns code=-1 for missing date range in response body.'],
 
     ['no' => '1.8', 'sheet' => 'Balance Inquiry', 'service' => 'Daily Bill Inquiry', 'scenario' => 'Invalid Date Format',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/daily', 'auth' => true,
      'body' => ['start_date' => '2026/99/99', 'end_date' => 'xx'],
-     'expect_code' => '-1', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/bills/daily', 'files' => ['MonetapayService::dailyBillInquiry']],
+     'expect_code' => '-1', 'expect_http' => 200,
+     'route' => 'POST /api/v1/monetapay/bills/daily', 'files' => ['MonetapayService::dailyBillInquiry'],
+     'note' => 'passThrough() returns HTTP 200; Monetapay returns code=-1 for invalid date format in response body.'],
 
     /* ============================ Virtual Account ============================ */
     ['no' => '2.1', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Successful Dynamic VA Creation',
@@ -92,12 +95,12 @@ return [
      'expect_code' => '0', 'expect_http' => 201,
      'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutController', 'CheckoutAction', 'MonetapayService::createTransaction']],
 
-    ['no' => '2.2', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Successful Dynamic VA Creation (BNI)',
+    ['no' => '2.2', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Successful Static VA Creation',
      'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
-     'body' => ['product_id' => $PROD_VA, 'payment_channel_id' => $VA2, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
+     'body' => ['product_id' => $PROD_VA, 'payment_channel_id' => $VA_STATIC, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
      'expect_code' => '0', 'expect_http' => 201,
      'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction', 'MonetapayService::createTransaction'],
-     'note' => 'BNI VA is now dynamic (is_single_use=1); is_single_use is driven by payment_channels.is_single_use for all VA channels.'],
+     'note' => 'bni_va_s channel sends account_bank_code=BNI with is_single_use=0 (static VA). Confirm id=12 after running seeder.'],
 
     ['no' => '2.3', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Not support VA bank codes',
      'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
@@ -274,14 +277,33 @@ return [
     /* ============================== Payment Link ============================== */
     ['no' => '5.1', 'sheet' => 'Payment Link', 'service' => 'Payment Link Create', 'scenario' => 'Successful Payment Link Creation',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/payment-link/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-PL1', 'amount' => '10000', 'currency' => 'IDR', 'expire_seconds' => '600'],
+     'body' => [
+         'mch_order_no'         => '{{run.uid}}-PL1',
+         'amount'               => '10000',
+         'currency'             => 'IDR',
+         'expire_seconds'       => '36000',
+         'terminal_type'        => 'WAP',
+         'ewallet_bank_codes'   => 'DANA',
+         'regular_bank_codes'   => 'BNI',
+         'product_name'         => 'SIT Product',
+         'product_quantity'     => '1',
+         'product_type'         => 'PRODUCT',
+         'product_category'     => 'Toys',
+         'product_description'  => 'SIT payment link test',
+         'success_redirect_url' => 'https://example.com',
+     ],
      'capture' => ['as' => 'payment_link', 'from' => ['order_no' => 'data.data.order_no', 'mch_order_no' => 'data.data.mch_order_no']],
      'expect_code' => '0', 'expect_http' => 200,
      'route' => 'POST /api/v1/monetapay/payment-link/create', 'files' => ['MonetapayController@paymentLinkCreate', 'MonetapayService::createPaymentLink']],
 
     ['no' => '5.2', 'sheet' => 'Payment Link', 'service' => 'Payment Link Create', 'scenario' => 'Invalid Amount',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/payment-link/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-PL2', 'amount' => '1', 'currency' => 'IDR'],
+     'body' => [
+         'mch_order_no'  => '{{run.uid}}-PL2',
+         'amount'        => '-1',
+         'currency'      => 'IDR',
+         'terminal_type' => 'WAP',
+     ],
      'expect_code' => '4009', 'expect_http' => 400,
      'route' => 'POST /api/v1/monetapay/payment-link/create', 'files' => ['MonetapayService::createPaymentLink']],
 
@@ -305,33 +327,85 @@ return [
     /* ================================ Subscribe ============================== */
     ['no' => '6.1', 'sheet' => 'Subscribe', 'service' => 'Customer', 'scenario' => 'Create Customer Success',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/customer/create', 'auth' => true,
-     'body' => ['mch_customer_id' => '{{run.uid}}CUST', 'name' => 'SIT Tester', 'email' => 'sit@sit.test', 'phone' => '08123456789'],
+     'body' => [
+         'mch_customer_id'        => '{{run.uid}}CUST',
+         'mobile_number'          => '+62123456789',
+         'address_category'       => 'HOME',
+         'address_country'        => 'ID',
+         'address_street_line1'   => 'Jl. Test No. 1',
+         'address_postal_code'    => '12345',
+         'address_city'           => 'Jakarta',
+         'address_is_primary'     => '1',
+         'individual_surname'     => 'Tester',
+         'individual_given_names' => 'SIT',
+     ],
      'capture' => ['as' => 'customer', 'from' => ['mch_customer_id' => 'data.data.mch_customer_id']],
      'expect_code' => '0', 'expect_http' => 200,
      'route' => 'POST /api/v1/monetapay/customer/create', 'files' => ['MonetapayController@customerCreate', 'MonetapayService::createCustomer']],
 
     ['no' => '6.2', 'sheet' => 'Subscribe', 'service' => 'Customer', 'scenario' => 'Mch Customer Id Exists',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/customer/create', 'auth' => true,
-     'body' => ['mch_customer_id' => '{{customer.mch_customer_id}}', 'name' => 'SIT Tester Dupe', 'email' => 'sit2@sit.test', 'phone' => '08123456789'],
+     'body' => [
+         'mch_customer_id'        => '{{customer.mch_customer_id}}',
+         'mobile_number'          => '+62123456789',
+         'address_category'       => 'HOME',
+         'address_country'        => 'ID',
+         'address_street_line1'   => 'Jl. Test No. 1',
+         'address_postal_code'    => '12345',
+         'address_city'           => 'Jakarta',
+         'address_is_primary'     => '1',
+         'individual_surname'     => 'Tester',
+         'individual_given_names' => 'SIT Duplicate',
+     ],
      'expect_code' => '-1', 'expect_http' => 400,
      'route' => 'POST /api/v1/monetapay/customer/create', 'files' => ['MonetapayService::createCustomer']],
 
     ['no' => '6.3', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Create Subscription Success',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-SUB1', 'mch_customer_id' => '{{customer.mch_customer_id}}', 'amount' => '10000', 'currency' => 'IDR', 'interval_unit' => 'month', 'interval_count' => '1', 'max_cycle_count' => '3'],
+     'body' => [
+         'mch_order_no'         => '{{run.uid}}-SUB1',
+         'mch_customer_id'      => '{{customer.mch_customer_id}}',
+         'amount'               => '100',
+         'interval'             => 'MONTH',
+         'interval_count'       => '1',
+         'channel_code'         => 'DANA',
+         'account_phone'        => '628123456789',
+         'should_retry'         => '1',
+         'total_retry'          => '1',
+         'retry_interval_count' => '5',
+         'retry_interval'       => 'DAY',
+         'has_recurrence'       => '0',
+     ],
      'capture' => ['as' => 'subscription', 'from' => ['order_no' => 'data.data.order_no', 'mch_order_no' => 'data.data.mch_order_no']],
      'expect_code' => '0', 'expect_http' => 200,
      'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayController@subscriptionCreate', 'MonetapayService::createSubscription']],
 
     ['no' => '6.4', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Mch Order No Exists',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{subscription.mch_order_no}}', 'mch_customer_id' => '{{customer.mch_customer_id}}', 'amount' => '10000', 'currency' => 'IDR', 'interval_unit' => 'month', 'interval_count' => '1'],
+     'body' => [
+         'mch_order_no'    => '{{subscription.mch_order_no}}',
+         'mch_customer_id' => '{{customer.mch_customer_id}}',
+         'amount'          => '100',
+         'interval'        => 'MONTH',
+         'interval_count'  => '1',
+         'channel_code'    => 'DANA',
+         'account_phone'   => '628123456789',
+     ],
      'expect_code' => '4001', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayService::createSubscription']],
+     'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayService::createSubscription'],
+     'note' => 'Monetapay returns code=4001 in HTTP 200 body; our run() wraps this as HTTP 400.'],
 
     ['no' => '6.5', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Invalid interval unit',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-SUB2', 'mch_customer_id' => '{{customer.mch_customer_id}}', 'amount' => '10000', 'currency' => 'IDR', 'interval_unit' => 'invalid_unit', 'interval_count' => '1'],
+     'body' => [
+         'mch_order_no'    => '{{run.uid}}-SUB2',
+         'mch_customer_id' => '{{customer.mch_customer_id}}',
+         'amount'          => '100',
+         'interval'        => 'year',
+         'interval_count'  => '1',
+         'channel_code'    => 'DANA',
+         'account_phone'   => '628123456789',
+     ],
      'expect_code' => '-1', 'expect_http' => 400,
      'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayService::createSubscription']],
 
@@ -351,7 +425,8 @@ return [
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/deactivate', 'auth' => true,
      'body' => ['mch_order_no' => 'NO-SUCH-SUB-0001'],
      'expect_code' => '4023', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/subscription/deactivate', 'files' => ['MonetapayService::deactivateSubscription']],
+     'route' => 'POST /api/v1/monetapay/subscription/deactivate', 'files' => ['MonetapayService::deactivateSubscription'],
+     'note' => 'Monetapay returns code=4023 in HTTP 200 body; our run() wraps this as HTTP 400.'],
     ['no' => '6.9', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Merchant Callback First Active Success',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200, 'route' => '(callback)', 'files' => ['—'], 'note' => 'Inbound subscription callback, server-signed.'],
     ['no' => '6.10', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Merchant Callback Cancel',
@@ -364,58 +439,147 @@ return [
     /* ============================ Pay-out Services =========================== */
     ['no' => '7.1', 'sheet' => 'Pay-out Services', 'service' => 'Disbursement', 'scenario' => 'Processing Disbursement',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/disbursement/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-DIS1', 'amount' => '10000', 'currency' => 'IDR', 'bank_code' => 'BNI', 'account_number' => '1234567890', 'account_name' => 'SIT Tester'],
+     'body' => [
+         'mch_order_no'      => '{{run.uid}}-DIS1',
+         'amount'            => '10000',
+         'currency'          => 'IDR',
+         'account_bank_code' => 'BCA',
+         'account_number'    => '8762763873',
+         'account_name'      => 'SIT Tester',
+         'account_phone'     => '62898273821',
+         'notes'             => 'SIT disbursement test',
+         'custom_extra'      => 'sit',
+     ],
      'capture' => ['as' => 'disbursement', 'from' => ['order_no' => 'data.data.order_no']],
      'expect_code' => '0', 'expect_http' => 200,
      'route' => 'POST /api/v1/monetapay/disbursement/create', 'files' => ['MonetapayController@disbursementCreate', 'MonetapayService::createDisbursement']],
 
     ['no' => '7.2', 'sheet' => 'Pay-out Services', 'service' => 'Disbursement', 'scenario' => 'Field required',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/disbursement/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-DIS2', 'amount' => '10000', 'currency' => 'IDR'],
+     'body' => [
+         'mch_order_no'      => '{{run.uid}}-DIS2',
+         'amount'            => '10000',
+         'currency'          => 'IDR',
+         'account_bank_code' => 'BCA',
+         'account_name'      => 'SIT Tester',
+         'account_number'    => '',   // empty → Monetapay returns 4004
+         'account_phone'     => '62898273821',
+     ],
      'expect_code' => '4004', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/disbursement/create', 'files' => ['MonetapayService::createDisbursement']],
+     'route' => 'POST /api/v1/monetapay/disbursement/create', 'files' => ['MonetapayService::createDisbursement'],
+     'note' => 'Monetapay returns code=4004 in HTTP 200 body; our run() wraps this as HTTP 400.'],
 
     ['no' => '7.3', 'sheet' => 'Pay-out Services', 'service' => 'Disbursement', 'scenario' => 'Insufficient Balance',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/disbursement/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-DIS3', 'amount' => '99999999999', 'currency' => 'IDR', 'bank_code' => 'BNI', 'account_number' => '1234567890', 'account_name' => 'SIT Tester'],
+     'body' => [
+         'mch_order_no'      => '{{run.uid}}-DIS3',
+         'amount'            => '1000000000',
+         'currency'          => 'IDR',
+         'account_bank_code' => 'BCA',
+         'account_number'    => '821783783833',
+         'account_name'      => 'SIT Tester',
+         'account_phone'     => '62898273821',
+         'notes'             => 'SIT insufficient balance',
+     ],
      'expect_code' => '0', 'expect_http' => 200,
-     'route' => 'POST /api/v1/monetapay/disbursement/create', 'files' => ['MonetapayService::createDisbursement']],
+     'route' => 'POST /api/v1/monetapay/disbursement/create', 'files' => ['MonetapayService::createDisbursement'],
+     'note' => 'Monetapay accepts the request (code=0) but the payout fails at settlement due to insufficient balance.'],
 
     ['no' => '7.4', 'sheet' => 'Pay-out Services', 'service' => 'Large Payout', 'scenario' => 'Processing Large Payout',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/large-payout/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-LP1', 'amount' => '1000000', 'currency' => 'IDR', 'bank_code' => 'BNI', 'account_number' => '1234567890', 'account_name' => 'SIT Tester'],
+     'body' => [
+         'mch_order_no'       => '{{run.uid}}-LP1',
+         'amount'             => '100000001',
+         'currency'           => 'IDR',
+         'account_bank_code'  => 'BCA',
+         'account_number'     => '721373672',
+         'account_name'       => 'SIT Tester',
+         'account_phone'      => '628551953373',
+         'notes'              => 'SIT large payout test',
+         'custom_extra'       => 'sit',
+         'beneficiary_address'=> 'Jl. Test No. 1',
+         'beneficiary_type'   => '1',
+     ],
      'expect_code' => '0', 'expect_http' => 200,
      'route' => 'POST /api/v1/monetapay/large-payout/create', 'files' => ['MonetapayController@largePayoutCreate', 'MonetapayService::createLargePayout']],
 
     ['no' => '7.5', 'sheet' => 'Pay-out Services', 'service' => 'Large Payout', 'scenario' => 'Minimum, Maximum Amount Limited',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/large-payout/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-LP2', 'amount' => '1', 'currency' => 'IDR', 'bank_code' => 'BNI', 'account_number' => '1234567890', 'account_name' => 'SIT Tester'],
+     'body' => [
+         'mch_order_no'       => '{{run.uid}}-LP2',
+         'amount'             => '10000',   // below large-payout minimum
+         'currency'           => 'IDR',
+         'account_bank_code'  => 'BCA',
+         'account_number'     => '721373672',
+         'account_name'       => 'SIT Tester',
+         'account_phone'      => '628551953373',
+         'beneficiary_address'=> 'Jl. Test No. 1',
+         'beneficiary_type'   => '1',
+     ],
      'expect_code' => '4008', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/large-payout/create', 'files' => ['MonetapayService::createLargePayout']],
+     'route' => 'POST /api/v1/monetapay/large-payout/create', 'files' => ['MonetapayService::createLargePayout'],
+     'note' => 'Monetapay returns code=4008 in HTTP 200 body; our run() wraps this as HTTP 400.'],
 
     ['no' => '7.6', 'sheet' => 'Pay-out Services', 'service' => 'Large Payout', 'scenario' => 'Field Invalid',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/large-payout/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-LP3', 'amount' => '1000000', 'currency' => 'IDR', 'bank_code' => 'INVALID_BANK', 'account_number' => '1234567890', 'account_name' => 'SIT Tester'],
+     'body' => [
+         'mch_order_no'       => '{{run.uid}}-LP3',
+         'amount'             => '100000001',
+         'currency'           => 'IDR',
+         'account_bank_code'  => 'BCA',
+         'account_number'     => '721373672',
+         'account_name'       => 'SIT Tester',
+         'account_phone'      => '628551953373',
+         'beneficiary_address'=> 'Jl. Test No. 1',
+         'beneficiary_type'   => '8',   // invalid type → code=-1
+     ],
      'expect_code' => '-1', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/large-payout/create', 'files' => ['MonetapayService::createLargePayout']],
+     'route' => 'POST /api/v1/monetapay/large-payout/create', 'files' => ['MonetapayService::createLargePayout'],
+     'note' => 'beneficiary_type=8 is invalid; Monetapay returns code=-1 in HTTP 200 body; our run() wraps as HTTP 400.'],
 
     ['no' => '7.7', 'sheet' => 'Pay-out Services', 'service' => 'Payout to EWallet', 'scenario' => 'Processing Disbursement',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/ewallet-payout/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-EP1', 'amount' => '10000', 'currency' => 'IDR', 'channel_code' => 'GOPAY', 'account_number' => '08123456789', 'account_name' => 'SIT Tester'],
+     'body' => [
+         'mch_order_no'      => '{{run.uid}}-EP1',
+         'amount'            => '10000',
+         'currency'          => 'IDR',
+         'account_bank_code' => 'DANA',   // e-wallet provider code
+         'account_phone'     => '62876543210',
+         'account_name'      => 'SIT Tester',
+         'notes'             => 'SIT ewallet payout',
+         'custom_extra'      => 'sit',
+     ],
      'expect_code' => '0', 'expect_http' => 200,
      'route' => 'POST /api/v1/monetapay/ewallet-payout/create', 'files' => ['MonetapayController@ewalletPayoutCreate', 'MonetapayService::createEwalletPayout']],
 
     ['no' => '7.8', 'sheet' => 'Pay-out Services', 'service' => 'Payout to EWallet', 'scenario' => 'Wrong Recipient Info',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/ewallet-payout/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-EP2', 'amount' => '10000', 'currency' => 'IDR', 'channel_code' => 'GOPAY', 'account_number' => '00000000000', 'account_name' => 'Wrong Name'],
+     'body' => [
+         'mch_order_no'      => '{{run.uid}}-EP2',
+         'amount'            => '10000',
+         'currency'          => 'IDR',
+         'account_bank_code' => 'DANA',
+         'account_phone'     => '',   // empty → Monetapay returns 4005
+         'account_name'      => 'SIT Tester',
+         'notes'             => 'SIT wrong recipient',
+     ],
      'expect_code' => '4005', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/ewallet-payout/create', 'files' => ['MonetapayService::createEwalletPayout']],
+     'route' => 'POST /api/v1/monetapay/ewallet-payout/create', 'files' => ['MonetapayService::createEwalletPayout'],
+     'note' => 'Monetapay returns code=4005 in HTTP 200 body; our run() wraps as HTTP 400.'],
 
     ['no' => '7.9', 'sheet' => 'Pay-out Services', 'service' => 'Payout to EWallet', 'scenario' => 'Unsupported Bank',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/ewallet-payout/create', 'auth' => true,
-     'body' => ['mch_order_no' => '{{run.uid}}-EP3', 'amount' => '10000', 'currency' => 'IDR', 'channel_code' => 'INVALID_WALLET', 'account_number' => '08123456789', 'account_name' => 'SIT Tester'],
+     'body' => [
+         'mch_order_no'      => '{{run.uid}}-EP3',
+         'amount'            => '10000',
+         'currency'          => 'IDR',
+         'account_bank_code' => 'BNC',   // unsupported e-wallet → code=-1
+         'account_phone'     => '62876543210',
+         'account_name'      => 'SIT Tester',
+     ],
      'expect_code' => '-1', 'expect_http' => 400,
-     'route' => 'POST /api/v1/monetapay/ewallet-payout/create', 'files' => ['MonetapayService::createEwalletPayout']],
+     'route' => 'POST /api/v1/monetapay/ewallet-payout/create', 'files' => ['MonetapayService::createEwalletPayout'],
+     'note' => 'Monetapay returns code=-1 in HTTP 200 body for unsupported e-wallet provider; our run() wraps as HTTP 400.'],
 
     ['no' => '7.10', 'sheet' => 'Pay-out Services', 'service' => 'Payout Order Inquiry', 'scenario' => 'Successful Payout Inquiry',
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/disbursement/query', 'auth' => true,
