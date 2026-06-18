@@ -131,17 +131,17 @@ class MonetapaySitCommand extends Command
         ];
 
         if (($s['exec'] ?? '') === 'not_implemented') {
-            return ['status' => 'NOT_IMPLEMENTED'] + $base;
+            return ['status' => 'Skip'] + $base;
         }
         if (($s['exec'] ?? '') === 'manual') {
-            return ['status' => 'MANUAL'] + $base;
+            return ['status' => 'Skip'] + $base;
         }
 
         // exec === 'http'
         [$body, $missing] = $this->resolve($s['body'] ?? [], $ctx);
         if ($missing) {
             $base['notes'] = trim(($base['notes'] ? $base['notes'] . ' | ' : '') . 'Skipped: missing dependency ' . implode(', ', $missing) . ' (a prior create step did not return an id).');
-            return ['status' => 'SKIP'] + $base;
+            return ['status' => 'Skip'] + $base;
         }
 
         $url = $api . $s['path'];
@@ -156,7 +156,7 @@ class MonetapaySitCommand extends Command
         try {
             $resp = $req->timeout(60)->retry(2, 800, throw: false)->post($url, $body);
         } catch (\Throwable $e) {
-            return ['status' => 'ERROR', 'response' => 'Transport error: ' . $e->getMessage()] + $base;
+            return ['status' => 'Failed', 'response' => 'Transport error: ' . $e->getMessage()] + $base;
         }
 
         $json = $resp->json();
@@ -181,7 +181,9 @@ class MonetapaySitCommand extends Command
         $raw = $base['response'];
 
         if ($isCheckout) {
-            $pass = $resp->successful() && in_array($expect, ['0', ''], true);
+            $pass = in_array($expect, ['0', ''], true)
+                ? $resp->successful()
+                : (!$resp->successful() && $expect !== '' && str_contains($raw, $expect));
         } elseif ($actual !== null && $actual !== '') {
             $pass = (string) $actual === $expect;
         } else {
@@ -189,7 +191,7 @@ class MonetapaySitCommand extends Command
             $pass = $expect !== '' && str_contains($raw, $expect);
         }
 
-        $base['status'] = $pass ? 'PASS' : 'FAIL';
+        $base['status'] = $pass ? 'Passed' : 'Failed';
         return $base;
     }
 
@@ -268,8 +270,9 @@ class MonetapaySitCommand extends Command
     {
         $counts = array_count_values(array_column($results, 'status'));
         $color = [
-            'PASS' => '#16a34a', 'FAIL' => '#dc2626', 'ERROR' => '#dc2626',
-            'SKIP' => '#6b7280', 'MANUAL' => '#d97706', 'NOT_IMPLEMENTED' => '#9333ea',
+            'Passed' => '#16a34a',
+            'Failed' => '#dc2626',
+            'Skip'   => '#6b7280',
         ];
 
         $rows = '';
@@ -290,7 +293,7 @@ class MonetapaySitCommand extends Command
         }
 
         $summary = '';
-        foreach (['PASS', 'FAIL', 'ERROR', 'SKIP', 'MANUAL', 'NOT_IMPLEMENTED'] as $k) {
+        foreach (['Passed', 'Failed', 'Skip'] as $k) {
             $summary .= '<span class="pill" style="background:' . ($color[$k] ?? '#374151') . '">' . $k . ': ' . ($counts[$k] ?? 0) . '</span> ';
         }
 

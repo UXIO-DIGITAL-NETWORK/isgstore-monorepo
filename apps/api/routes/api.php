@@ -182,7 +182,11 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::post('/virtual-account/query', [MonetapayController::class, 'virtualAccount']);      // 6.1.2
         Route::post('/ewallet/query',         [MonetapayController::class, 'ewallet']);             // 6.2.2
         Route::post('/qris/query',            [MonetapayController::class, 'qris']);                // 6.3.3
+        Route::post('/payment-link/create',   [MonetapayController::class, 'paymentLinkCreate']);    // 6.4.1
         Route::post('/payment-link/query',    [MonetapayController::class, 'paymentLink']);         // 6.4.2
+        Route::post('/customer/create',       [MonetapayController::class, 'customerCreate']);      // 6.5.1
+        Route::post('/subscription/create',   [MonetapayController::class, 'subscriptionCreate']); // 6.5.2
+        Route::post('/subscription/deactivate', [MonetapayController::class, 'subscriptionDeactivate']); // 6.5.6
         Route::post('/subscription/query',    [MonetapayController::class, 'subscription']);        // 6.5.5
         Route::post('/subscription/cycle',    [MonetapayController::class, 'subscriptionCycle']);   // 6.5.7
         Route::post('/refund/query',          [MonetapayController::class, 'refundQuery']);         // 6.6.4
@@ -191,6 +195,9 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::post('/cross-border/query',    [MonetapayController::class, 'crossBorder']);         // 6.8.2
         Route::post('/cdm/query',             [MonetapayController::class, 'cdm']);                 // 6.9.2
         Route::post('/payin/query',           [MonetapayController::class, 'payin']);               // 6.11.2
+        Route::post('/disbursement/create',    [MonetapayController::class, 'disbursementCreate']); // 7.1.1
+        Route::post('/large-payout/create',   [MonetapayController::class, 'largePayoutCreate']);  // 7.2.1
+        Route::post('/ewallet-payout/create', [MonetapayController::class, 'ewalletPayoutCreate']); // 7.3.1
         Route::post('/disbursement/query',    [MonetapayController::class, 'disbursement']);        // 7.4.1
         Route::post('/inquiry-account',       [MonetapayController::class, 'accountValidation']);   // 8.1/8.2
         Route::post('/bills/daily',           [MonetapayController::class, 'dailyBill']);           // 9.1

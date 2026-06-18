@@ -156,6 +156,10 @@ class MonetapayService
         if ($isQris) {
             $requestParams['is_single_use']  = "1";
             $requestParams['qr_string_type'] = "2";
+        } elseif ($paymentType === 'ewallet') {
+            $requestParams['channel_code']   = strtoupper($channelCode); // gopay → GOPAY, ovo → OVO
+            $requestParams['account_phone']  = (string) ($customerData['customer_phone'] ?? '08123456789');
+            $requestParams['expire_seconds'] = "600";
         } else {
             $requestParams['account_name']      = (string) ($customerData['customer_name'] ?? 'Guest');
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode)));
@@ -253,6 +257,9 @@ class MonetapayService
 
             if ($isQris) {
                 $actionData['qr_string'] = $resData['qr_string'] ?? null;
+            } elseif ($paymentType === 'ewallet') {
+                $actionData['redirect_url'] = $resData['redirect_url'] ?? null;
+                $actionData['deeplink_url'] = $resData['deeplink_url'] ?? null;
             } else {
                 $actionData['virtual_account'] = $resData['virtual_account'] ?? null;
                 $actionData['bank_code']       = $resData['account_bank_code'] ?? null;
@@ -280,7 +287,7 @@ class MonetapayService
      *
      * @param array<string,scalar> $businessParams Pure business params (no timestamp/sign).
      */
-    private function postSigned(string $endpointSuffix, array $businessParams): array
+    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false): array
     {
         // Monetapay omits blank fields from the signed TreeMap; mirror that so
         // our local sign matches what the gateway recomputes on its side.
@@ -314,7 +321,7 @@ class MonetapayService
             ],
         ]);
 
-        return $this->parseResponse($endpointSuffix, $response);
+        return $this->parseResponse($endpointSuffix, $response, $passthrough);
     }
 
     /**
@@ -335,7 +342,7 @@ class MonetapayService
     /**
      * Shared HTTP failure handling + JSON decoding for the helpers above.
      */
-    private function parseResponse(string $endpointSuffix, \Illuminate\Http\Client\Response $response): array
+    private function parseResponse(string $endpointSuffix, \Illuminate\Http\Client\Response $response, bool $passthrough = false): array
     {
         if ($response->failed()) {
             $error   = $response->json();
@@ -347,7 +354,11 @@ class MonetapayService
                 'response' => $error,
             ]);
 
-            throw new Exception("Monetapay API Error [HTTP {$response->status()}]: {$message}");
+            if (!$passthrough) {
+                throw new Exception("Monetapay API Error [HTTP {$response->status()}]: {$message}");
+            }
+
+            return $response->json() ?? [];
         }
 
         Log::info('Monetapay request OK', [
@@ -476,8 +487,58 @@ class MonetapayService
     }
 
     /* =====================================================================
+     | 6.4 Payment Link — Create
+     * ===================================================================== */
+
+    /** 6.4.1 Payment Link Create — POST /v1.0.0/payment-link/create */
+    public function createPaymentLink(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/payment-link/create', $params, passthrough: true);
+    }
+
+    /* =====================================================================
+     | 6.5 Subscriptions — Create & Deactivate
+     * ===================================================================== */
+
+    /** 6.5.1 Customer Create — POST /v1.0.0/customer/create */
+    public function createCustomer(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/customer/create', $params, passthrough: true);
+    }
+
+    /** 6.5.2 Subscription Create — POST /v1.0.0/subscription/create */
+    public function createSubscription(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/subscription/create', $params, passthrough: true);
+    }
+
+    /** 6.5.6 Subscription Deactivate — POST /v1.0.0/subscription/deactivate */
+    public function deactivateSubscription(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/subscription/deactivate', $params, passthrough: true);
+    }
+
+    /* =====================================================================
      | 7. Pay-out (signed)
      * ===================================================================== */
+
+    /** 7.1.1 Disbursement Create — POST /v1.0.0/disbursement */
+    public function createDisbursement(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/disbursement', $params, passthrough: true);
+    }
+
+    /** 7.2.1 Large Payout Create — POST /v1.0.0/large-payout */
+    public function createLargePayout(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/large-payout', $params, passthrough: true);
+    }
+
+    /** 7.3.1 EWallet Payout Create — POST /v1.0.0/ewallet/payout */
+    public function createEwalletPayout(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/ewallet/payout', $params, passthrough: true);
+    }
 
     /** 7.4.1 Payout Order Inquiry — POST /v1.0.0/disbursement/query */
     public function inquiryDisbursement(array $params): array
@@ -499,16 +560,16 @@ class MonetapayService
      | 9. Transaction Records (signed)
      * ===================================================================== */
 
-    /** 9.1 Daily Bill Inquiry — POST /bills/by-daily */
+    /** 9.1 Daily Bill Inquiry — POST /v1.0.0/bills/by-daily */
     public function dailyBillInquiry(array $params): array
     {
-        return $this->postSigned('/bills/by-daily', $params);
+        return $this->postSigned('/v1.0.0/bills/by-daily', $params, passthrough: true);
     }
 
     /** 9.2 Bill Flow Inquiry — POST /v1.0.0/bills */
     public function billFlowInquiry(array $params): array
     {
-        return $this->postSigned('/v1.0.0/bills', $params);
+        return $this->postSigned('/v1.0.0/bills', $params, passthrough: true);
     }
 
     /* =====================================================================

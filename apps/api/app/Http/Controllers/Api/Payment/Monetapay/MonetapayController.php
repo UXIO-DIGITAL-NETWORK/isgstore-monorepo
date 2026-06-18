@@ -168,7 +168,114 @@ class MonetapayController extends Controller
         ]);
     }
 
-    /* ---- 7. Pay-out ---------------------------------------------------- */
+    /* ---- 6.4 Payment Link Create --------------------------------------- */
+
+    public function paymentLinkCreate(Request $request)
+    {
+        return $this->run('payment_link_create', $this->withAppId([
+            'mch_order_no'   => $request->input('mch_order_no'),
+            'amount'         => $request->input('amount'),
+            'currency'       => $request->input('currency', 'IDR'),
+            'expire_seconds' => $request->input('expire_seconds'),
+            'redirect_url'   => $request->input('redirect_url'),
+            'description'    => $request->input('description'),
+        ]));
+    }
+
+    /* ---- 6.5 Subscription Create / Deactivate ------------------------- */
+
+    public function customerCreate(Request $request)
+    {
+        $validated = $request->validate([
+            'mch_customer_id' => ['required', 'string'],
+            'name'            => ['required', 'string'],
+            'email'           => ['nullable', 'email'],
+            'phone'           => ['nullable', 'string'],
+        ]);
+
+        return $this->run('customer_create', $this->withAppId($validated));
+    }
+
+    public function subscriptionCreate(Request $request)
+    {
+        $validated = $request->validate([
+            'mch_order_no'    => ['required', 'string'],
+            'mch_customer_id' => ['required', 'string'],
+            'amount'          => ['required'],
+            'currency'        => ['nullable', 'string'],
+            'interval_unit'   => ['required', 'string'],
+            'interval_count'  => ['required'],
+            'max_cycle_count' => ['nullable'],
+        ]);
+
+        return $this->run('subscription_create', $this->withAppId(array_merge($validated, [
+            'currency' => $validated['currency'] ?? 'IDR',
+        ])));
+    }
+
+    public function subscriptionDeactivate(Request $request)
+    {
+        $request->validate([
+            'order_no'     => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
+        return $this->run('subscription_deactivate', $this->withAppId($this->orderParams($request)));
+    }
+
+    /* ---- 7. Pay-out Create --------------------------------------------- */
+
+    public function disbursementCreate(Request $request)
+    {
+        $validated = $request->validate([
+            'mch_order_no'   => ['required', 'string'],
+            'amount'         => ['required'],
+            'currency'       => ['nullable', 'string'],
+            'bank_code'      => ['required', 'string'],
+            'account_number' => ['required', 'string'],
+            'account_name'   => ['required', 'string'],
+            'account_email'  => ['nullable', 'email'],
+            'description'    => ['nullable', 'string'],
+        ]);
+
+        return $this->run('disbursement_create', $this->withAppId(array_merge($validated, [
+            'currency' => $validated['currency'] ?? 'IDR',
+        ])));
+    }
+
+    public function largePayoutCreate(Request $request)
+    {
+        $validated = $request->validate([
+            'mch_order_no'   => ['required', 'string'],
+            'amount'         => ['required'],
+            'currency'       => ['nullable', 'string'],
+            'bank_code'      => ['required', 'string'],
+            'account_number' => ['required', 'string'],
+            'account_name'   => ['required', 'string'],
+        ]);
+
+        return $this->run('large_payout_create', $this->withAppId(array_merge($validated, [
+            'currency' => $validated['currency'] ?? 'IDR',
+        ])));
+    }
+
+    public function ewalletPayoutCreate(Request $request)
+    {
+        $validated = $request->validate([
+            'mch_order_no'   => ['required', 'string'],
+            'amount'         => ['required'],
+            'currency'       => ['nullable', 'string'],
+            'channel_code'   => ['required', 'string'],
+            'account_number' => ['required', 'string'],
+            'account_name'   => ['nullable', 'string'],
+        ]);
+
+        return $this->run('ewallet_payout_create', $this->withAppId(array_merge($validated, [
+            'currency' => $validated['currency'] ?? 'IDR',
+        ])));
+    }
+
+    /* ---- 7. Pay-out Inquiry -------------------------------------------- */
 
     public function disbursement(Request $request)
     {

@@ -105,6 +105,30 @@ class PaymentChannelSeeder extends Seeder
                 'created_at'    => $now,
                 'updated_at'    => $now,
             ],
+
+            // SIT-only channels: produce specific account_bank_code values to trigger
+            // Monetapay error scenarios 2.3 (4012) and 2.4 (7003).
+            // Set is_active = false before deploying to production.
+            [
+                'name'          => '[SIT] Invalid Bank Code',
+                'payment_type'  => 'virtual_account',
+                'channel_code'  => 'test_va',
+                'min_amount'    => 10000,
+                'is_active'     => true,
+                'is_single_use' => false,
+                'created_at'    => $now,
+                'updated_at'    => $now,
+            ],
+            [
+                'name'          => '[SIT] BNC Bank Error',
+                'payment_type'  => 'virtual_account',
+                'channel_code'  => 'bnc_va',
+                'min_amount'    => 10000,
+                'is_active'     => true,
+                'is_single_use' => true,
+                'created_at'    => $now,
+                'updated_at'    => $now,
+            ],
         ];
 
         DB::table('payment_channels')->upsert(
