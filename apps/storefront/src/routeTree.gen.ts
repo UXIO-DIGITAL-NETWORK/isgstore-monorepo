@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
+import { Route as LocaleMemberRouteRouteImport } from './routes/$locale/_member/route'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
 import { Route as LocaleLeaderboardIndexRouteImport } from './routes/$locale/leaderboard/index'
 import { Route as LocaleKebijakanPrivasiIndexRouteImport } from './routes/$locale/kebijakan-privasi/index'
@@ -19,12 +20,14 @@ import { Route as LocaleKalkulatorZodiacIndexRouteImport } from './routes/$local
 import { Route as LocaleKalkulatorWinRateIndexRouteImport } from './routes/$locale/kalkulator-win-rate/index'
 import { Route as LocaleKalkulatorMagicWheelIndexRouteImport } from './routes/$locale/kalkulator-magic-wheel/index'
 import { Route as LocaleFaqIndexRouteImport } from './routes/$locale/faq/index'
+import { Route as LocaleDashboardPreviewIndexRouteImport } from './routes/$locale/dashboard-preview/index'
 import { Route as LocaleDaftarHargaIndexRouteImport } from './routes/$locale/daftar-harga/index'
 import { Route as LocaleCekPesananIndexRouteImport } from './routes/$locale/cek-pesanan/index'
 import { Route as LocaleBeritaIndexRouteImport } from './routes/$locale/berita/index'
 import { Route as LocaleCheckoutGameSlugRouteImport } from './routes/$locale/checkout/$gameSlug'
 import { Route as LocaleBeritaSlugRouteImport } from './routes/$locale/berita/$slug'
 import { Route as LocaleInvoiceInvoiceNumberIndexRouteImport } from './routes/$locale/invoice/$invoiceNumber/index'
+import { Route as LocaleMemberDashboardIndexRouteImport } from './routes/$locale/_member/dashboard/index'
 import { Route as LocaleAuthRegisterIndexRouteImport } from './routes/$locale/_auth/register/index'
 import { Route as LocaleAuthLoginIndexRouteImport } from './routes/$locale/_auth/login/index'
 import { Route as LocaleAuthForgotPasswordIndexRouteImport } from './routes/$locale/_auth/forgot-password/index'
@@ -44,6 +47,10 @@ const IndexRoute = IndexRouteImport.update({
 const LocaleIndexRoute = LocaleIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocaleMemberRouteRoute = LocaleMemberRouteRouteImport.update({
+  id: '/_member',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
@@ -84,6 +91,12 @@ const LocaleFaqIndexRoute = LocaleFaqIndexRouteImport.update({
   path: '/faq/',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
+const LocaleDashboardPreviewIndexRoute =
+  LocaleDashboardPreviewIndexRouteImport.update({
+    id: '/dashboard-preview/',
+    path: '/dashboard-preview/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 const LocaleDaftarHargaIndexRoute = LocaleDaftarHargaIndexRouteImport.update({
   id: '/daftar-harga/',
   path: '/daftar-harga/',
@@ -114,6 +127,12 @@ const LocaleInvoiceInvoiceNumberIndexRoute =
     id: '/invoice/$invoiceNumber/',
     path: '/invoice/$invoiceNumber/',
     getParentRoute: () => LocaleRouteRoute,
+  } as any)
+const LocaleMemberDashboardIndexRoute =
+  LocaleMemberDashboardIndexRouteImport.update({
+    id: '/dashboard/',
+    path: '/dashboard/',
+    getParentRoute: () => LocaleMemberRouteRoute,
   } as any)
 const LocaleAuthRegisterIndexRoute = LocaleAuthRegisterIndexRouteImport.update({
   id: '/register/',
@@ -146,13 +165,14 @@ const LocaleInvoiceInvoiceNumberFailedRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$locale': typeof LocaleAuthRouteRouteWithChildren
+  '/$locale': typeof LocaleMemberRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/berita/$slug': typeof LocaleBeritaSlugRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/berita/': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/dashboard-preview/': typeof LocaleDashboardPreviewIndexRoute
   '/$locale/faq/': typeof LocaleFaqIndexRoute
   '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
@@ -164,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/$locale/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/register/': typeof LocaleAuthRegisterIndexRoute
+  '/$locale/dashboard/': typeof LocaleMemberDashboardIndexRoute
   '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRoutesByTo {
@@ -174,6 +195,7 @@ export interface FileRoutesByTo {
   '/$locale/berita': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/dashboard-preview': typeof LocaleDashboardPreviewIndexRoute
   '/$locale/faq': typeof LocaleFaqIndexRoute
   '/$locale/kalkulator-magic-wheel': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate': typeof LocaleKalkulatorWinRateIndexRoute
@@ -185,6 +207,7 @@ export interface FileRoutesByTo {
   '/$locale/forgot-password': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/login': typeof LocaleAuthLoginIndexRoute
   '/$locale/register': typeof LocaleAuthRegisterIndexRoute
+  '/$locale/dashboard': typeof LocaleMemberDashboardIndexRoute
   '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRoutesById {
@@ -192,12 +215,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteRouteWithChildren
   '/$locale/_auth': typeof LocaleAuthRouteRouteWithChildren
+  '/$locale/_member': typeof LocaleMemberRouteRouteWithChildren
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/berita/$slug': typeof LocaleBeritaSlugRoute
   '/$locale/checkout/$gameSlug': typeof LocaleCheckoutGameSlugRoute
   '/$locale/berita/': typeof LocaleBeritaIndexRoute
   '/$locale/cek-pesanan/': typeof LocaleCekPesananIndexRoute
   '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
+  '/$locale/dashboard-preview/': typeof LocaleDashboardPreviewIndexRoute
   '/$locale/faq/': typeof LocaleFaqIndexRoute
   '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
@@ -209,6 +234,7 @@ export interface FileRoutesById {
   '/$locale/_auth/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
   '/$locale/_auth/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/_auth/register/': typeof LocaleAuthRegisterIndexRoute
+  '/$locale/_member/dashboard/': typeof LocaleMemberDashboardIndexRoute
   '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRouteTypes {
@@ -222,6 +248,7 @@ export interface FileRouteTypes {
     | '/$locale/berita/'
     | '/$locale/cek-pesanan/'
     | '/$locale/daftar-harga/'
+    | '/$locale/dashboard-preview/'
     | '/$locale/faq/'
     | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
@@ -233,6 +260,7 @@ export interface FileRouteTypes {
     | '/$locale/forgot-password/'
     | '/$locale/login/'
     | '/$locale/register/'
+    | '/$locale/dashboard/'
     | '/$locale/invoice/$invoiceNumber/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -243,6 +271,7 @@ export interface FileRouteTypes {
     | '/$locale/berita'
     | '/$locale/cek-pesanan'
     | '/$locale/daftar-harga'
+    | '/$locale/dashboard-preview'
     | '/$locale/faq'
     | '/$locale/kalkulator-magic-wheel'
     | '/$locale/kalkulator-win-rate'
@@ -254,18 +283,21 @@ export interface FileRouteTypes {
     | '/$locale/forgot-password'
     | '/$locale/login'
     | '/$locale/register'
+    | '/$locale/dashboard'
     | '/$locale/invoice/$invoiceNumber'
   id:
     | '__root__'
     | '/'
     | '/$locale'
     | '/$locale/_auth'
+    | '/$locale/_member'
     | '/$locale/'
     | '/$locale/berita/$slug'
     | '/$locale/checkout/$gameSlug'
     | '/$locale/berita/'
     | '/$locale/cek-pesanan/'
     | '/$locale/daftar-harga/'
+    | '/$locale/dashboard-preview/'
     | '/$locale/faq/'
     | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
@@ -277,6 +309,7 @@ export interface FileRouteTypes {
     | '/$locale/_auth/forgot-password/'
     | '/$locale/_auth/login/'
     | '/$locale/_auth/register/'
+    | '/$locale/_member/dashboard/'
     | '/$locale/invoice/$invoiceNumber/'
   fileRoutesById: FileRoutesById
 }
@@ -306,6 +339,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/$locale/'
       preLoaderRoute: typeof LocaleIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/_member': {
+      id: '/$locale/_member'
+      path: ''
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleMemberRouteRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/_auth': {
@@ -357,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleFaqIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
+    '/$locale/dashboard-preview/': {
+      id: '/$locale/dashboard-preview/'
+      path: '/dashboard-preview'
+      fullPath: '/$locale/dashboard-preview/'
+      preLoaderRoute: typeof LocaleDashboardPreviewIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
     '/$locale/daftar-harga/': {
       id: '/$locale/daftar-harga/'
       path: '/daftar-harga'
@@ -398,6 +445,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/invoice/$invoiceNumber/'
       preLoaderRoute: typeof LocaleInvoiceInvoiceNumberIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/_member/dashboard/': {
+      id: '/$locale/_member/dashboard/'
+      path: '/dashboard'
+      fullPath: '/$locale/dashboard/'
+      preLoaderRoute: typeof LocaleMemberDashboardIndexRouteImport
+      parentRoute: typeof LocaleMemberRouteRoute
     }
     '/$locale/_auth/register/': {
       id: '/$locale/_auth/register/'
@@ -453,14 +507,27 @@ const LocaleAuthRouteRouteWithChildren = LocaleAuthRouteRoute._addFileChildren(
   LocaleAuthRouteRouteChildren,
 )
 
+interface LocaleMemberRouteRouteChildren {
+  LocaleMemberDashboardIndexRoute: typeof LocaleMemberDashboardIndexRoute
+}
+
+const LocaleMemberRouteRouteChildren: LocaleMemberRouteRouteChildren = {
+  LocaleMemberDashboardIndexRoute: LocaleMemberDashboardIndexRoute,
+}
+
+const LocaleMemberRouteRouteWithChildren =
+  LocaleMemberRouteRoute._addFileChildren(LocaleMemberRouteRouteChildren)
+
 interface LocaleRouteRouteChildren {
   LocaleAuthRouteRoute: typeof LocaleAuthRouteRouteWithChildren
+  LocaleMemberRouteRoute: typeof LocaleMemberRouteRouteWithChildren
   LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleBeritaSlugRoute: typeof LocaleBeritaSlugRoute
   LocaleCheckoutGameSlugRoute: typeof LocaleCheckoutGameSlugRoute
   LocaleBeritaIndexRoute: typeof LocaleBeritaIndexRoute
   LocaleCekPesananIndexRoute: typeof LocaleCekPesananIndexRoute
   LocaleDaftarHargaIndexRoute: typeof LocaleDaftarHargaIndexRoute
+  LocaleDashboardPreviewIndexRoute: typeof LocaleDashboardPreviewIndexRoute
   LocaleFaqIndexRoute: typeof LocaleFaqIndexRoute
   LocaleKalkulatorMagicWheelIndexRoute: typeof LocaleKalkulatorMagicWheelIndexRoute
   LocaleKalkulatorWinRateIndexRoute: typeof LocaleKalkulatorWinRateIndexRoute
@@ -474,12 +541,14 @@ interface LocaleRouteRouteChildren {
 
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleAuthRouteRoute: LocaleAuthRouteRouteWithChildren,
+  LocaleMemberRouteRoute: LocaleMemberRouteRouteWithChildren,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleBeritaSlugRoute: LocaleBeritaSlugRoute,
   LocaleCheckoutGameSlugRoute: LocaleCheckoutGameSlugRoute,
   LocaleBeritaIndexRoute: LocaleBeritaIndexRoute,
   LocaleCekPesananIndexRoute: LocaleCekPesananIndexRoute,
   LocaleDaftarHargaIndexRoute: LocaleDaftarHargaIndexRoute,
+  LocaleDashboardPreviewIndexRoute: LocaleDashboardPreviewIndexRoute,
   LocaleFaqIndexRoute: LocaleFaqIndexRoute,
   LocaleKalkulatorMagicWheelIndexRoute: LocaleKalkulatorMagicWheelIndexRoute,
   LocaleKalkulatorWinRateIndexRoute: LocaleKalkulatorWinRateIndexRoute,

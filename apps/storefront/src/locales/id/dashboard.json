@@ -2,5 +2,64 @@
   "title": "Dashboard Member",
   "history": "Riwayat Transaksi",
   "savedProfiles": "Profil Game Tersimpan",
-  "noTransactions": "Belum ada transaksi"
+  "noTransactions": "Belum ada transaksi",
+
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "transactions": "Transaksi",
+    "topUpBalance": "Isi Saldo",
+    "integrations": "Integrasi",
+    "upgradeMembership": "Upgrade Membership",
+    "activityLog": "Log Aktivitas",
+    "logout": "Keluar"
+  },
+
+  "banner": {
+    "title": "TINGKATKAN LEVEL MEMBERSHIP ANDA",
+    "subtitle": "Anda saat ini berada di Level Member. Upgrade sekarang!"
+  },
+
+  "memberCard": {
+    "title": "MEMBER ID",
+    "editProfile": "Edit Profil",
+    "memberBadge": "MEMBER"
+  },
+
+  "wallet": {
+    "title": "Dompet Anda",
+    "points": "Points",
+    "topUpBalance": "+ Isi saldo",
+    "transactionHistory": "Riwayat Transaksi"
+  },
+
+  "stats": {
+    "title": "STATISTIK TRANSAKSI HARI INI",
+    "pending": "Menunggu",
+    "inProcess": "Dalam Proses",
+    "success": "Sukses",
+    "failed": "Gagal",
+    "totalTransactions": "Total Transaksi",
+    "totalSales": "Total Penjualan"
+  },
+
+  "filter": {
+    "searchPlaceholder": "Cari transaksi...",
+    "all": "Semua",
+    "pending": "Menunggu",
+    "success": "Sukses",
+    "failed": "Gagal"
+  },
+
+  "recentTransactions": {
+    "title": "RIWAYAT TRANSAKSI TERBARU",
+    "viewAll": "Lihat Semua Transaksi",
+    "colService": "Layanan",
+    "colInvoice": "Nomer Invoice",
+    "colDate": "Tanggal",
+    "colPrice": "Harga",
+    "colStatus": "Status",
+    "statusPending": "PENDING",
+    "statusSuccess": "SUKSES",
+    "statusFailed": "GAGAL"
+  }
 }

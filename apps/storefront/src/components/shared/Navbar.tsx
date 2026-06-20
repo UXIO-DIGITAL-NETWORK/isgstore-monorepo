@@ -10,12 +10,15 @@ import { getNavLinks } from "@/constants/navLinks";
 import { useLocaleDropdown } from "@/hooks/useLocaleDropdown";
 import { SearchBar } from "@/components/shared/SearchBar";
 import { NavDropdown } from "@/components/shared/NavDropdown";
+import { UserMenu } from "@/components/shared/UserMenu";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function Navbar(): React.JSX.Element {
   const { t } = useTranslation("common");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   const { langOpen, langRef, currentLocale, toggleLangOpen, switchLocale } =
     useLocaleDropdown();
+  const { token, user } = useAuthStore();
 
   const navLinks = getNavLinks(locale);
   const { location } = useRouterState();
@@ -85,13 +88,17 @@ export function Navbar(): React.JSX.Element {
               )}
             </Box>
 
-            {/* Login button */}
-            <Link
-              href={`/${locale}/login`}
-              className="flex items-center justify-center h-9 px-5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-white text-sm font-semibold hover:opacity-90 active:opacity-80 transition-opacity shrink-0 leading-none font-outfit"
-            >
-              {t("action.login")}
-            </Link>
+            {/* Auth: show avatar menu when logged in, else Login link */}
+            {token && user ? (
+              <UserMenu />
+            ) : (
+              <Link
+                href={`/${locale}/login`}
+                className="flex items-center justify-center h-9 px-5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-white text-sm font-semibold hover:opacity-90 active:opacity-80 transition-opacity shrink-0 leading-none font-outfit"
+              >
+                {t("action.login")}
+              </Link>
+            )}
           </Box>
         </Box>
       </Box>

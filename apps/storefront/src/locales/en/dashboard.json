@@ -2,5 +2,64 @@
   "title": "Member Dashboard",
   "history": "Transaction History",
   "savedProfiles": "Saved Game Profiles",
-  "noTransactions": "No transactions yet"
+  "noTransactions": "No transactions yet",
+
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "topUpBalance": "Top Up Balance",
+    "integrations": "Integrations",
+    "upgradeMembership": "Upgrade Membership",
+    "activityLog": "Activity Log",
+    "logout": "Logout"
+  },
+
+  "banner": {
+    "title": "UPGRADE YOUR MEMBERSHIP LEVEL",
+    "subtitle": "You are currently at Member Level. Upgrade now!"
+  },
+
+  "memberCard": {
+    "title": "MEMBER ID",
+    "editProfile": "Edit Profile",
+    "memberBadge": "MEMBER"
+  },
+
+  "wallet": {
+    "title": "Your Wallet",
+    "points": "Points",
+    "topUpBalance": "+ Top Up Balance",
+    "transactionHistory": "Transaction History"
+  },
+
+  "stats": {
+    "title": "TODAY'S TRANSACTION STATISTICS",
+    "pending": "Pending",
+    "inProcess": "In Process",
+    "success": "Success",
+    "failed": "Failed",
+    "totalTransactions": "Total Transactions",
+    "totalSales": "Total Sales"
+  },
+
+  "filter": {
+    "searchPlaceholder": "Search transactions...",
+    "all": "All",
+    "pending": "Pending",
+    "success": "Success",
+    "failed": "Failed"
+  },
+
+  "recentTransactions": {
+    "title": "RECENT TRANSACTION HISTORY",
+    "viewAll": "View All Transactions",
+    "colService": "Service",
+    "colInvoice": "Invoice Number",
+    "colDate": "Date",
+    "colPrice": "Price",
+    "colStatus": "Status",
+    "statusPending": "PENDING",
+    "statusSuccess": "SUCCESS",
+    "statusFailed": "FAILED"
+  }
 }

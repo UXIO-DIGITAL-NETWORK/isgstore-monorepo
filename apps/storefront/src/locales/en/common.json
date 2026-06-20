@@ -16,6 +16,14 @@
     "logout": "Logout",
     "search": "Search game to top up..."
   },
+  "userMenu": {
+    "memberBadge": "MEMBER",
+    "dashboardMember": "Dashboard Member",
+    "topUpBalance": "Top Up Balance",
+    "transactions": "Transactions",
+    "accountSettings": "Account Settings",
+    "logout": "Logout"
+  },
   "language": {
     "id": "Bahasa Indonesia",
     "en": "English"

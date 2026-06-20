@@ -16,6 +16,14 @@
     "logout": "Keluar",
     "search": "Cari game untuk top up..."
   },
+  "userMenu": {
+    "memberBadge": "MEMBER",
+    "dashboardMember": "Dashboard Member",
+    "topUpBalance": "Isi Saldo",
+    "transactions": "Transaksi",
+    "accountSettings": "Pengaturan Akun",
+    "logout": "Keluar"
+  },
   "language": {
     "id": "Bahasa Indonesia",
     "en": "English"
