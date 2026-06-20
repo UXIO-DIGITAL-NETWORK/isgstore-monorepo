@@ -11,6 +11,7 @@ const badgeVariants = cva(
     variants: {
       status: {
         pending: "bg-[#78350F]/20 text-[#FBBF24] border border-[#FBBF24]/30",
+        process: "bg-[#4C1D95]/20 text-[#C084FC] border border-[#C084FC]/30",
         success: "bg-[#065F46]/20 text-[#34D399] border border-[#34D399]/30",
         failed: "bg-[#7F1D1D]/20 text-[#F87171] border border-[#F87171]/30",
       },
@@ -31,6 +32,7 @@ export default function TransactionStatusBadge({ status, className }: Props): Re
 
   const labelMap: Record<RecentTransactionStatus, string> = {
     pending: t("recentTransactions.statusPending"),
+    process: t("recentTransactions.statusProcess"),
     success: t("recentTransactions.statusSuccess"),
     failed: t("recentTransactions.statusFailed"),
   };

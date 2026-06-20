@@ -59,7 +59,60 @@
     "colPrice": "Price",
     "colStatus": "Status",
     "statusPending": "PENDING",
+    "statusProcess": "PROCESS",
     "statusSuccess": "SUCCESS",
     "statusFailed": "FAILED"
+  },
+
+  "transactionHistory": {
+    "title": "TRANSACTION HISTORY",
+    "subtitle": "Monitor all your purchase history and transaction status.",
+    "searchCard": {
+      "title": "Search Invoice",
+      "placeholder": "e.g. INV-12345678",
+      "button": "Search"
+    },
+    "statusLabel": "STATUS",
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "process": "Process",
+      "success": "Success",
+      "failed": "Failed"
+    },
+    "columns": {
+      "invoice": "Invoice Number",
+      "service": "Service",
+      "target": "Target",
+      "price": "Price",
+      "date": "Date",
+      "status": "Status"
+    },
+    "filterButton": "Filter",
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "priceHigh": "Price High to Low",
+      "priceLow": "Price Low to High"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next"
+    },
+    "noTransactions": "No transactions yet",
+    "filterPanel": {
+      "service": "Service",
+      "allServices": "All Services",
+      "paymentMethod": "Payment Method",
+      "allMethods": "All Methods",
+      "date": "Date",
+      "resetFilter": "Reset Filter",
+      "applyFilter": "Apply Filter",
+      "paymentMethods": {
+        "bank_transfer": "Bank Transfer",
+        "qris": "QRIS",
+        "ewallet": "E-Wallet"
+      }
+    }
   }
 }

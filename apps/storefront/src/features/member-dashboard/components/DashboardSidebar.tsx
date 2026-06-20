@@ -41,6 +41,7 @@ export default function DashboardSidebar(): React.JSX.Element {
       key: "transactions",
       labelKey: "sidebar.transactions",
       icon: <Receipt className="w-4 h-4" />,
+      href: `/${locale}/riwayat-transaksi-preview`,
     },
     {
       key: "topUpBalance",

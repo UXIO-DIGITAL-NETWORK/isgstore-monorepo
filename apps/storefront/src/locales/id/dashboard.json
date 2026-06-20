@@ -59,7 +59,60 @@
     "colPrice": "Harga",
     "colStatus": "Status",
     "statusPending": "PENDING",
+    "statusProcess": "PROSES",
     "statusSuccess": "SUKSES",
     "statusFailed": "GAGAL"
+  },
+
+  "transactionHistory": {
+    "title": "RIWAYAT TRANSAKSI",
+    "subtitle": "Pantau semua riwayat pembelian dan status transaksi Anda.",
+    "searchCard": {
+      "title": "Cari Invoice",
+      "placeholder": "Contoh: INV-12345678",
+      "button": "Cari"
+    },
+    "statusLabel": "STATUS",
+    "filters": {
+      "all": "Semua",
+      "pending": "Menunggu",
+      "process": "Proses",
+      "success": "Sukses",
+      "failed": "Gagal"
+    },
+    "columns": {
+      "invoice": "Nomer Invoice",
+      "service": "Layanan",
+      "target": "Target",
+      "price": "Harga",
+      "date": "Tanggal",
+      "status": "Status"
+    },
+    "filterButton": "Filter",
+    "sort": {
+      "newest": "Terbaru",
+      "oldest": "Terlama",
+      "priceHigh": "Harga Tertinggi",
+      "priceLow": "Harga Terendah"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next"
+    },
+    "noTransactions": "Belum ada transaksi",
+    "filterPanel": {
+      "service": "Layanan",
+      "allServices": "Semua Layanan",
+      "paymentMethod": "Metode Pembayaran",
+      "allMethods": "Semua Metode",
+      "date": "Tanggal",
+      "resetFilter": "Reset Filter",
+      "applyFilter": "Terapkan Filter",
+      "paymentMethods": {
+        "bank_transfer": "Transfer Bank",
+        "qris": "QRIS",
+        "ewallet": "E-Wallet"
+      }
+    }
   }
 }
