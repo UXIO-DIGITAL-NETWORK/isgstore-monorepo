@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useRouterState } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
@@ -14,13 +15,25 @@ interface NavDropdownProps {
 export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
   const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { location } = useRouterState();
+
+  // Capture trigger position when opening
+  useEffect(() => {
+    if (open && triggerRef.current) {
+      setTriggerRect(triggerRef.current.getBoundingClientRect());
+    }
+  }, [open]);
 
   // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const clickedTrigger = triggerRef.current?.contains(target);
+      const clickedDropdown = dropdownRef.current?.contains(target);
+      if (!clickedTrigger && !clickedDropdown) {
         setOpen(false);
       }
     }
@@ -37,9 +50,10 @@ export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
   });
 
   return (
-    <Box ref={ref} className="relative">
+    <Box className="relative">
       {/* Trigger */}
       <Box
+        ref={triggerRef}
         as="button"
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -53,32 +67,42 @@ export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
         />
       </Box>
 
-      {/* Dropdown menu */}
-      {open && (
-        <Box className="absolute left-0 top-full mt-2 bg-[#18182A] border border-white/10 rounded-xl overflow-hidden min-w-48 z-50 py-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
-          {link.children.map((child) => {
-            const childActive =
-              location.pathname === child.href ||
-              location.pathname.startsWith(child.href + "/");
-            return (
-              <Link
-                key={child.labelKey}
-                href={child.href}
-                onClick={() => setOpen(false)}
-                className={`flex items-center w-full px-4 py-2.5 text-[13px] font-outfit font-medium transition-colors hover:bg-white/6 ${
-                  childActive
-                    ? "text-[#9234EA]"
-                    : "text-white/60 hover:text-white"
-                }`}
-              >
-                <Text as="span" className="font-outfit text-[13px]">
-                  {t(child.labelKey)}
-                </Text>
-              </Link>
-            );
-          })}
-        </Box>
-      )}
+      {/* Dropdown rendered via portal to escape overflow-x-auto clipping */}
+      {open && triggerRect &&
+        createPortal(
+          <Box
+            ref={dropdownRef}
+            style={{
+              position: "fixed",
+              top: triggerRect.bottom + 8,
+              left: triggerRect.left,
+            }}
+            className="bg-[#18182A] border border-white/10 rounded-xl overflow-hidden min-w-48 z-[9999] py-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+          >
+            {link.children.map((child) => {
+              const childActive =
+                location.pathname === child.href ||
+                location.pathname.startsWith(child.href + "/");
+              return (
+                <Link
+                  key={child.labelKey}
+                  href={child.href}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center w-full px-4 py-2.5 text-[13px] font-outfit font-medium transition-colors hover:bg-white/6 ${
+                    childActive
+                      ? "text-[#9234EA]"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  <Text as="span" className="font-outfit text-[13px]">
+                    {t(child.labelKey)}
+                  </Text>
+                </Link>
+              );
+            })}
+          </Box>,
+          document.body
+        )}
     </Box>
   );
 }
