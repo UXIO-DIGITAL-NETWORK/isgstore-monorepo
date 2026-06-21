@@ -11,6 +11,7 @@
     "integrations": "Integrasi",
     "upgradeMembership": "Upgrade Membership",
     "activityLog": "Log Aktivitas",
+    "accountSettings": "Pengaturan Akun",
     "logout": "Keluar"
   },
 
@@ -179,6 +180,33 @@
       "title": "Whitelist IP Address",
       "placeholder": "Masukkan Alamat IP, contoh: xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx",
       "addButton": "Tambahkan Alamat IP"
+    }
+  },
+
+  "pengaturanAkun": {
+    "title": "PENGATURAN AKUN",
+    "subtitle": "Kelola informasi profil, keamanan, dan preferensi akun Anda.",
+    "personalInfo": {
+      "sectionTitle": "INFORMASI PRIBADI",
+      "fullName": "Nama Lengkap",
+      "username": "Username",
+      "email": "Email",
+      "whatsapp": "No. WhatsApp",
+      "whatsappNote": "Nomor akan otomatis diformat sesuai negara",
+      "saveButton": "Simpan Perubahan"
+    },
+    "password": {
+      "sectionTitle": "UBAH PASSWORD",
+      "current": "Password Saat Ini",
+      "new": "Password Baru",
+      "confirm": "Konfirmasi Password Baru",
+      "saveButton": "Simpan Perubahan",
+      "placeholder": "Password"
+    },
+    "twoFactor": {
+      "title": "Autentikasi Dua Faktor",
+      "description": "2FA Authenticator adalah kode keamanan yang akan digenerate secara berkala. Ini dapat menambah perlindungan akun Anda. Kami sangat mengimbau untuk selalu mengaktifkan 2FA ini.",
+      "button": "Autentikasi 2FA"
     }
   },
 

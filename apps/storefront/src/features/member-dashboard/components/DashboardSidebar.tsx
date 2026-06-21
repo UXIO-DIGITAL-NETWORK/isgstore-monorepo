@@ -8,6 +8,7 @@ import {
   Plug,
   TrendingUp,
   Activity,
+  Settings,
   LogOut,
 } from "lucide-react";
 import { Box } from "@/components/common/Box";
@@ -65,6 +66,12 @@ export default function DashboardSidebar(): React.JSX.Element {
       key: "activityLog",
       labelKey: "sidebar.activityLog",
       icon: <Activity className="w-4 h-4" />,
+    },
+    {
+      key: "accountSettings",
+      labelKey: "sidebar.accountSettings",
+      icon: <Settings className="w-4 h-4" />,
+      href: `/${locale}/pengaturan-akun-preview`,
     },
   ];
 

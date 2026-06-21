@@ -11,6 +11,7 @@
     "integrations": "Integrations",
     "upgradeMembership": "Upgrade Membership",
     "activityLog": "Activity Log",
+    "accountSettings": "Account Settings",
     "logout": "Logout"
   },
 
@@ -179,6 +180,33 @@
       "title": "Whitelist IP Address",
       "placeholder": "Enter IP address, e.g. xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx",
       "addButton": "Add IP Address"
+    }
+  },
+
+  "pengaturanAkun": {
+    "title": "ACCOUNT SETTINGS",
+    "subtitle": "Manage your profile information, security, and account preferences.",
+    "personalInfo": {
+      "sectionTitle": "PERSONAL INFORMATION",
+      "fullName": "Full Name",
+      "username": "Username",
+      "email": "Email",
+      "whatsapp": "WhatsApp Number",
+      "whatsappNote": "Number will be automatically formatted by country",
+      "saveButton": "Save Changes"
+    },
+    "password": {
+      "sectionTitle": "CHANGE PASSWORD",
+      "current": "Current Password",
+      "new": "New Password",
+      "confirm": "Confirm New Password",
+      "saveButton": "Save Changes",
+      "placeholder": "Password"
+    },
+    "twoFactor": {
+      "title": "Two-Factor Authentication",
+      "description": "2FA Authenticator is a security code generated periodically. It adds extra protection to your account. We strongly recommend enabling 2FA at all times.",
+      "button": "Setup 2FA"
     }
   },
 
