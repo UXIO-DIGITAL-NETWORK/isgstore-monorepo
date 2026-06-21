@@ -59,6 +59,7 @@ export default function DashboardSidebar(): React.JSX.Element {
       key: "upgradeMembership",
       labelKey: "sidebar.upgradeMembership",
       icon: <TrendingUp className="w-4 h-4" />,
+      href: `/${locale}/upgrade-membership-preview`,
     },
     {
       key: "activityLog",

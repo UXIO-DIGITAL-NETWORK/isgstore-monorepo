@@ -102,6 +102,62 @@
     }
   },
 
+  "upgradeMembership": {
+    "title": "PILIH PAKET MEMBERSHIP",
+    "subtitle": "Pilih paket membership yang sesuai dengan kebutuhan top up kami.",
+    "planSectionTitle": "PILIH PAKET",
+    "selectButton": "Pilih Paket",
+    "selectedButton": "Paket Terpilih",
+    "popularBadge": "POPULER",
+    "plans": {
+      "basic": {
+        "name": "BASIC",
+        "benefits": [
+          "Mendapatkan POINT setiap transaksi top up.",
+          "Bisa menggunakan pembayaran saldo akun.",
+          "Akses semua produk top up game."
+        ]
+      },
+      "platinum": {
+        "name": "PLATINUM",
+        "benefits": [
+          "Mendapatkan POINT setiap transaksi top up.",
+          "Bisa menggunakan pembayaran saldo akun.",
+          "Bonus saldo +2% setiap isi saldo.",
+          "Prioritas proses transaksi."
+        ]
+      },
+      "gold": {
+        "name": "GOLD",
+        "benefits": [
+          "Mendapatkan POINT setiap transaksi top up.",
+          "Bisa menggunakan pembayaran saldo akun.",
+          "Bonus saldo +5% setiap isi saldo.",
+          "Prioritas proses transaksi.",
+          "Badge akun GOLD eksklusif!"
+        ]
+      }
+    },
+    "payment": {
+      "saldoTitle": "Saldo Saya",
+      "creditsLabel": "Credits",
+      "sectionTitle": "METODE PEMBAYARAN",
+      "groups": {
+        "ewallet": "E-Wallet",
+        "va": "Virtual Account",
+        "qris": "QRIS"
+      }
+    },
+    "summary": {
+      "planLabel": "Paket {{plan}}",
+      "adminFeeLabel": "Biaya Admin",
+      "paymentSuffix": "Payment",
+      "totalLabel": "Total Bayar",
+      "submitButton": "Upgrade Sekarang"
+    },
+    "submitSuccess": "Upgrade ke Paket {{plan}} berhasil dikirim!"
+  },
+
   "integrasi": {
     "title": "INTEGRASI",
     "subtitle": "Integrasikan layanan kami dengan mudah untuk meningkatkan pengalaman pengguna Anda.",

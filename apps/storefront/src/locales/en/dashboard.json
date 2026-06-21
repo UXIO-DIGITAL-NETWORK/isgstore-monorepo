@@ -102,6 +102,62 @@
     }
   },
 
+  "upgradeMembership": {
+    "title": "CHOOSE MEMBERSHIP PLAN",
+    "subtitle": "Choose the membership plan that suits your top up needs.",
+    "planSectionTitle": "CHOOSE PLAN",
+    "selectButton": "Choose Plan",
+    "selectedButton": "Selected Plan",
+    "popularBadge": "POPULAR",
+    "plans": {
+      "basic": {
+        "name": "BASIC",
+        "benefits": [
+          "Earn POINTS on every top up transaction.",
+          "Pay using account balance.",
+          "Access all top up game products."
+        ]
+      },
+      "platinum": {
+        "name": "PLATINUM",
+        "benefits": [
+          "Earn POINTS on every top up transaction.",
+          "Pay using account balance.",
+          "Bonus balance +2% on every top up.",
+          "Priority transaction processing."
+        ]
+      },
+      "gold": {
+        "name": "GOLD",
+        "benefits": [
+          "Earn POINTS on every top up transaction.",
+          "Pay using account balance.",
+          "Bonus balance +5% on every top up.",
+          "Priority transaction processing.",
+          "Exclusive GOLD account badge!"
+        ]
+      }
+    },
+    "payment": {
+      "saldoTitle": "My Balance",
+      "creditsLabel": "Credits",
+      "sectionTitle": "PAYMENT METHOD",
+      "groups": {
+        "ewallet": "E-Wallet",
+        "va": "Virtual Account",
+        "qris": "QRIS"
+      }
+    },
+    "summary": {
+      "planLabel": "{{plan}} Plan",
+      "adminFeeLabel": "Admin Fee",
+      "paymentSuffix": "Payment",
+      "totalLabel": "Total Payment",
+      "submitButton": "Upgrade Now"
+    },
+    "submitSuccess": "Upgrade to {{plan}} Plan submitted successfully!"
+  },
+
   "integrasi": {
     "title": "INTEGRATIONS",
     "subtitle": "Easily integrate our services to enhance your user experience.",

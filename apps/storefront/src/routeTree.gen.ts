@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as LocaleMemberRouteRouteImport } from './routes/$locale/_member/route'
 import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/route'
+import { Route as LocaleUpgradeMembershipPreviewIndexRouteImport } from './routes/$locale/upgrade-membership-preview/index'
 import { Route as LocaleRiwayatTransaksiPreviewIndexRouteImport } from './routes/$locale/riwayat-transaksi-preview/index'
 import { Route as LocaleLeaderboardIndexRouteImport } from './routes/$locale/leaderboard/index'
 import { Route as LocaleKebijakanPrivasiIndexRouteImport } from './routes/$locale/kebijakan-privasi/index'
@@ -30,6 +31,7 @@ import { Route as LocaleBeritaIndexRouteImport } from './routes/$locale/berita/i
 import { Route as LocaleCheckoutGameSlugRouteImport } from './routes/$locale/checkout/$gameSlug'
 import { Route as LocaleBeritaSlugRouteImport } from './routes/$locale/berita/$slug'
 import { Route as LocaleInvoiceInvoiceNumberIndexRouteImport } from './routes/$locale/invoice/$invoiceNumber/index'
+import { Route as LocaleMemberUpgradeMembershipIndexRouteImport } from './routes/$locale/_member/upgrade-membership/index'
 import { Route as LocaleMemberRiwayatTransaksiIndexRouteImport } from './routes/$locale/_member/riwayat-transaksi/index'
 import { Route as LocaleMemberIsiSaldoIndexRouteImport } from './routes/$locale/_member/isi-saldo/index'
 import { Route as LocaleMemberIntegrasiIndexRouteImport } from './routes/$locale/_member/integrasi/index'
@@ -63,6 +65,12 @@ const LocaleAuthRouteRoute = LocaleAuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => LocaleRouteRoute,
 } as any)
+const LocaleUpgradeMembershipPreviewIndexRoute =
+  LocaleUpgradeMembershipPreviewIndexRouteImport.update({
+    id: '/upgrade-membership-preview/',
+    path: '/upgrade-membership-preview/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 const LocaleRiwayatTransaksiPreviewIndexRoute =
   LocaleRiwayatTransaksiPreviewIndexRouteImport.update({
     id: '/riwayat-transaksi-preview/',
@@ -152,6 +160,12 @@ const LocaleInvoiceInvoiceNumberIndexRoute =
     path: '/invoice/$invoiceNumber/',
     getParentRoute: () => LocaleRouteRoute,
   } as any)
+const LocaleMemberUpgradeMembershipIndexRoute =
+  LocaleMemberUpgradeMembershipIndexRouteImport.update({
+    id: '/upgrade-membership/',
+    path: '/upgrade-membership/',
+    getParentRoute: () => LocaleMemberRouteRoute,
+  } as any)
 const LocaleMemberRiwayatTransaksiIndexRoute =
   LocaleMemberRiwayatTransaksiIndexRouteImport.update({
     id: '/riwayat-transaksi/',
@@ -224,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/$locale/kebijakan-privasi/': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard/': typeof LocaleLeaderboardIndexRoute
   '/$locale/riwayat-transaksi-preview/': typeof LocaleRiwayatTransaksiPreviewIndexRoute
+  '/$locale/upgrade-membership-preview/': typeof LocaleUpgradeMembershipPreviewIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
@@ -233,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/$locale/integrasi/': typeof LocaleMemberIntegrasiIndexRoute
   '/$locale/isi-saldo/': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/riwayat-transaksi/': typeof LocaleMemberRiwayatTransaksiIndexRoute
+  '/$locale/upgrade-membership/': typeof LocaleMemberUpgradeMembershipIndexRoute
   '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRoutesByTo {
@@ -253,6 +269,7 @@ export interface FileRoutesByTo {
   '/$locale/kebijakan-privasi': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard': typeof LocaleLeaderboardIndexRoute
   '/$locale/riwayat-transaksi-preview': typeof LocaleRiwayatTransaksiPreviewIndexRoute
+  '/$locale/upgrade-membership-preview': typeof LocaleUpgradeMembershipPreviewIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/forgot-password': typeof LocaleAuthForgotPasswordIndexRoute
@@ -262,6 +279,7 @@ export interface FileRoutesByTo {
   '/$locale/integrasi': typeof LocaleMemberIntegrasiIndexRoute
   '/$locale/isi-saldo': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/riwayat-transaksi': typeof LocaleMemberRiwayatTransaksiIndexRoute
+  '/$locale/upgrade-membership': typeof LocaleMemberUpgradeMembershipIndexRoute
   '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRoutesById {
@@ -286,6 +304,7 @@ export interface FileRoutesById {
   '/$locale/kebijakan-privasi/': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard/': typeof LocaleLeaderboardIndexRoute
   '/$locale/riwayat-transaksi-preview/': typeof LocaleRiwayatTransaksiPreviewIndexRoute
+  '/$locale/upgrade-membership-preview/': typeof LocaleUpgradeMembershipPreviewIndexRoute
   '/$locale/invoice/$invoiceNumber/failed': typeof LocaleInvoiceInvoiceNumberFailedRoute
   '/$locale/invoice/$invoiceNumber/success': typeof LocaleInvoiceInvoiceNumberSuccessRoute
   '/$locale/_auth/forgot-password/': typeof LocaleAuthForgotPasswordIndexRoute
@@ -295,6 +314,7 @@ export interface FileRoutesById {
   '/$locale/_member/integrasi/': typeof LocaleMemberIntegrasiIndexRoute
   '/$locale/_member/isi-saldo/': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/_member/riwayat-transaksi/': typeof LocaleMemberRiwayatTransaksiIndexRoute
+  '/$locale/_member/upgrade-membership/': typeof LocaleMemberUpgradeMembershipIndexRoute
   '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
 }
 export interface FileRouteTypes {
@@ -318,6 +338,7 @@ export interface FileRouteTypes {
     | '/$locale/kebijakan-privasi/'
     | '/$locale/leaderboard/'
     | '/$locale/riwayat-transaksi-preview/'
+    | '/$locale/upgrade-membership-preview/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password/'
@@ -327,6 +348,7 @@ export interface FileRouteTypes {
     | '/$locale/integrasi/'
     | '/$locale/isi-saldo/'
     | '/$locale/riwayat-transaksi/'
+    | '/$locale/upgrade-membership/'
     | '/$locale/invoice/$invoiceNumber/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -347,6 +369,7 @@ export interface FileRouteTypes {
     | '/$locale/kebijakan-privasi'
     | '/$locale/leaderboard'
     | '/$locale/riwayat-transaksi-preview'
+    | '/$locale/upgrade-membership-preview'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/forgot-password'
@@ -356,6 +379,7 @@ export interface FileRouteTypes {
     | '/$locale/integrasi'
     | '/$locale/isi-saldo'
     | '/$locale/riwayat-transaksi'
+    | '/$locale/upgrade-membership'
     | '/$locale/invoice/$invoiceNumber'
   id:
     | '__root__'
@@ -379,6 +403,7 @@ export interface FileRouteTypes {
     | '/$locale/kebijakan-privasi/'
     | '/$locale/leaderboard/'
     | '/$locale/riwayat-transaksi-preview/'
+    | '/$locale/upgrade-membership-preview/'
     | '/$locale/invoice/$invoiceNumber/failed'
     | '/$locale/invoice/$invoiceNumber/success'
     | '/$locale/_auth/forgot-password/'
@@ -388,6 +413,7 @@ export interface FileRouteTypes {
     | '/$locale/_member/integrasi/'
     | '/$locale/_member/isi-saldo/'
     | '/$locale/_member/riwayat-transaksi/'
+    | '/$locale/_member/upgrade-membership/'
     | '/$locale/invoice/$invoiceNumber/'
   fileRoutesById: FileRoutesById
 }
@@ -431,6 +457,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleAuthRouteRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/upgrade-membership-preview/': {
+      id: '/$locale/upgrade-membership-preview/'
+      path: '/upgrade-membership-preview'
+      fullPath: '/$locale/upgrade-membership-preview/'
+      preLoaderRoute: typeof LocaleUpgradeMembershipPreviewIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/riwayat-transaksi-preview/': {
@@ -545,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleInvoiceInvoiceNumberIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
+    '/$locale/_member/upgrade-membership/': {
+      id: '/$locale/_member/upgrade-membership/'
+      path: '/upgrade-membership'
+      fullPath: '/$locale/upgrade-membership/'
+      preLoaderRoute: typeof LocaleMemberUpgradeMembershipIndexRouteImport
+      parentRoute: typeof LocaleMemberRouteRoute
+    }
     '/$locale/_member/riwayat-transaksi/': {
       id: '/$locale/_member/riwayat-transaksi/'
       path: '/riwayat-transaksi'
@@ -632,6 +672,7 @@ interface LocaleMemberRouteRouteChildren {
   LocaleMemberIntegrasiIndexRoute: typeof LocaleMemberIntegrasiIndexRoute
   LocaleMemberIsiSaldoIndexRoute: typeof LocaleMemberIsiSaldoIndexRoute
   LocaleMemberRiwayatTransaksiIndexRoute: typeof LocaleMemberRiwayatTransaksiIndexRoute
+  LocaleMemberUpgradeMembershipIndexRoute: typeof LocaleMemberUpgradeMembershipIndexRoute
 }
 
 const LocaleMemberRouteRouteChildren: LocaleMemberRouteRouteChildren = {
@@ -640,6 +681,8 @@ const LocaleMemberRouteRouteChildren: LocaleMemberRouteRouteChildren = {
   LocaleMemberIsiSaldoIndexRoute: LocaleMemberIsiSaldoIndexRoute,
   LocaleMemberRiwayatTransaksiIndexRoute:
     LocaleMemberRiwayatTransaksiIndexRoute,
+  LocaleMemberUpgradeMembershipIndexRoute:
+    LocaleMemberUpgradeMembershipIndexRoute,
 }
 
 const LocaleMemberRouteRouteWithChildren =
@@ -664,6 +707,7 @@ interface LocaleRouteRouteChildren {
   LocaleKebijakanPrivasiIndexRoute: typeof LocaleKebijakanPrivasiIndexRoute
   LocaleLeaderboardIndexRoute: typeof LocaleLeaderboardIndexRoute
   LocaleRiwayatTransaksiPreviewIndexRoute: typeof LocaleRiwayatTransaksiPreviewIndexRoute
+  LocaleUpgradeMembershipPreviewIndexRoute: typeof LocaleUpgradeMembershipPreviewIndexRoute
   LocaleInvoiceInvoiceNumberFailedRoute: typeof LocaleInvoiceInvoiceNumberFailedRoute
   LocaleInvoiceInvoiceNumberSuccessRoute: typeof LocaleInvoiceInvoiceNumberSuccessRoute
   LocaleInvoiceInvoiceNumberIndexRoute: typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -689,6 +733,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleLeaderboardIndexRoute: LocaleLeaderboardIndexRoute,
   LocaleRiwayatTransaksiPreviewIndexRoute:
     LocaleRiwayatTransaksiPreviewIndexRoute,
+  LocaleUpgradeMembershipPreviewIndexRoute:
+    LocaleUpgradeMembershipPreviewIndexRoute,
   LocaleInvoiceInvoiceNumberFailedRoute: LocaleInvoiceInvoiceNumberFailedRoute,
   LocaleInvoiceInvoiceNumberSuccessRoute:
     LocaleInvoiceInvoiceNumberSuccessRoute,
