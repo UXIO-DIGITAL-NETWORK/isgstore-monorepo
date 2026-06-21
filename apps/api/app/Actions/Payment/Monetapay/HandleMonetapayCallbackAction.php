@@ -40,7 +40,7 @@ class HandleMonetapayCallbackAction
 
             // ── Idempotency guard ────────────────────────────────────────────
             // Monetapay may retry webhooks; return 200 without re-processing
-            if (in_array($transaction->status, ['PAID', 'PROCESSING', 'COMPLETED'], true)) {
+            if (in_array($transaction->status, ['PAID', 'PROCESSING', 'COMPLETED', 'EXPIRED', 'FAILED_PROVIDER'], true)) {
                 Log::info("Monetapay callback ignored — already {$transaction->status}", [
                     'reference_id' => $dto->outNo,
                 ]);
@@ -73,7 +73,7 @@ class HandleMonetapayCallbackAction
             ]);
 
             $transaction->update([
-                'status' => $isSuccess ? 'PAID' : 'FAILED_PROVIDER',
+                'status' => $isSuccess ? 'PAID' : 'EXPIRED',
             ]);
 
             $this->log($dto->outNo, "Callback processed — Monetapay status: {$dto->status}");

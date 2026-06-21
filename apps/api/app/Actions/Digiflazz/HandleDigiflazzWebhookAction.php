@@ -172,9 +172,10 @@ class HandleDigiflazzWebhookAction
             }
 
             $color = match ($newStatus) {
-                'COMPLETED' => 5763719,   // green
+                'COMPLETED'       => 5763719,   // green
                 'FAILED_PROVIDER' => 15548997,  // red
-                default => 16705372,  // yellow
+                'EXPIRED'         => 16744448,  // orange
+                default           => 16705372,  // yellow
             };
 
             Http::post($webhookUrl, [

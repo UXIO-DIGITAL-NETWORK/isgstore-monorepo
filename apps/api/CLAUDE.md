@@ -69,8 +69,12 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 
 ```
 PENDING → PAID → PROCESSING → COMPLETED
-                            ↘ FAILED_PROVIDER → (auto-refund if applicable)
+        ↘                   ↘ FAILED_PROVIDER → (auto-refund if applicable)
+         EXPIRED
 ```
+
+- `EXPIRED` — payment window timed out; customer never paid (set by Monetapay callback or `payments:sync-expired`).
+- `FAILED_PROVIDER` — customer paid; Digiflazz supplier failed to fulfil the order.
 
 All actions, jobs, and webhook handlers must use these exact uppercase constants.
 

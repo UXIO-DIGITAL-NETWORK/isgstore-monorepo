@@ -26,7 +26,7 @@ class UpdateTransactionRequest extends FormRequest
             'amount_total'       => ['sometimes', 'integer', 'min:0'],
             'total_price'        => ['sometimes', 'integer', 'min:0'],
             'margin'             => ['sometimes', 'integer'],
-            'status'             => ['required', 'string', 'in:PENDING,PAID,PROCESSING,COMPLETED,FAILED_PROVIDER,REFUNDED'],
+            'status'             => ['required', 'string', 'in:PENDING,PAID,PROCESSING,COMPLETED,FAILED_PROVIDER,REFUNDED,EXPIRED'],
             'is_manual'          => ['sometimes', 'boolean'],
             'sn'                 => ['nullable', 'string', 'max:255'],
             'supplier_trx_id'    => ['nullable', 'string', 'max:255'],

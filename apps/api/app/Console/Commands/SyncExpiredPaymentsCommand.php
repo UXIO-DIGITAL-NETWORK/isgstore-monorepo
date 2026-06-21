@@ -146,7 +146,7 @@ class SyncExpiredPaymentsCommand extends Command
                 ]);
 
                 $locked->transaction->update([
-                    'status' => $isSuccess ? 'PAID' : 'FAILED_PROVIDER',
+                    'status' => $isSuccess ? 'PAID' : 'EXPIRED',
                 ]);
 
                 $dispatched = $isSuccess;
