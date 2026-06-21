@@ -30,8 +30,10 @@ class CheckoutAction
 
             // ── 1. Resolve entities ──────────────────────────────────────────
             $user    = $dto->userId ? User::with('role')->find($dto->userId) : null;
-            $product = Product::with(['supplierProducts' => fn ($q) => $q->where('is_active', true)])
-                ->findOrFail($dto->productId);
+            $product = Product::with([
+                    'supplierProducts' => fn ($q) => $q->where('is_active', true),
+                    'category',
+                ])->findOrFail($dto->productId);
             $channel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
             // ── 2. Guest guards ──────────────────────────────────────────────
@@ -126,10 +128,14 @@ class CheckoutAction
                     paymentType:  $channel->payment_type,
                     channelCode:  $channel->channel_code,
                     customerData: [
-                        'customer_name'  => $user?->name  ?? 'Guest',
-                        'customer_email' => $user?->email ?? 'guest@example.com',
-                        'customer_phone' => $user?->phone ?? $dto->guestContact,
-                        'is_single_use'  => $channel->is_single_use ? '1' : '0',
+                        'customer_name'    => $user?->name  ?? 'Guest',
+                        'customer_email'   => $user?->email ?? 'guest@example.com',
+                        'customer_phone'   => $user?->phone ?? $dto->guestContact,
+                        'is_single_use'    => $channel->is_single_use ? '1' : '0',
+                        'product_id'       => (string) $product->id,
+                        'product_name'     => $product->name,
+                        'product_price'    => (string) $sellingPrice,
+                        'product_category' => $product->category?->name ?? 'General',
                     ]
                 );
 

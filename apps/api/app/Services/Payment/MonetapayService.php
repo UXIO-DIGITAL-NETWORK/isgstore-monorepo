@@ -157,10 +157,17 @@ class MonetapayService
             $requestParams['is_single_use']  = "1";
             $requestParams['qr_string_type'] = "2";
         } elseif ($paymentType === 'ewallet') {
-            $requestParams['product_id']     = strtoupper($channelCode); // GOPAY, OVO, DANA
-            $requestParams['channel_code']   = strtoupper($channelCode);
-            $requestParams['account_phone']  = (string) ($customerData['customer_phone'] ?? '08123456789');
-            $requestParams['expire_seconds'] = "600";
+            $requestParams['terminal_type']        = 'WEB';
+            $requestParams['channel_code']         = strtoupper($channelCode);
+            $requestParams['product_id']           = $customerData['product_id'] ?? '1';
+            $requestParams['product_name']         = $customerData['product_name'] ?? 'Top Up';
+            $requestParams['product_price']        = $customerData['product_price'] ?? (string) $amount;
+            $requestParams['product_quantity']     = '1';
+            $requestParams['product_type']         = 'PRODUCT';
+            $requestParams['product_category']     = $customerData['product_category'] ?? 'General';
+            $requestParams['account_phone']        = (string) ($customerData['customer_phone'] ?? '08123456789');
+            $requestParams['success_redirect_url'] = config('services.monetapay.success_redirect_url', 'https://example.com');
+            $requestParams['expire_seconds']       = '7200';
         } else {
             $requestParams['account_name']      = (string) ($customerData['customer_name'] ?? 'Guest');
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode)));
