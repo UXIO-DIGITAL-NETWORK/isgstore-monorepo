@@ -33,6 +33,7 @@ class CheckoutAction
             $product = Product::with([
                     'supplierProducts' => fn ($q) => $q->where('is_active', true),
                     'category',
+                    'subCategory',
                 ])->findOrFail($dto->productId);
             $channel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
@@ -119,6 +120,44 @@ class CheckoutAction
 
                 $transaction = $this->digiflazzAction->execute($transaction);
                 $transactionStatus = $transaction->status; // COMPLETED / PROCESSING / FAILED_PROVIDER
+
+            } elseif ($channel->payment_type === 'payment_link') {
+                // ── Payment Link path ────────────────────────────────────────
+                $extra = $channel->extra_config ?? [];
+
+                $plResponse = $this->monetapayService->createPaymentLink([
+                    'mch_order_no'         => $referenceId,
+                    'amount'               => (string) $grossAmount,
+                    'currency'             => 'IDR',
+                    'regular_bank_codes'   => $extra['regular_bank_codes'] ?? 'BNI',
+                    'ewallet_bank_codes'   => $extra['ewallet_bank_codes'] ?? 'DANA',
+                    'qris_bank_code'       => $extra['qris_bank_code']     ?? 'QRIS',
+                    'terminal_type'        => $extra['terminal_type']      ?? 'WAP',
+                    'fixed_bank_code'      => $extra['fixed_bank_code']    ?? '0',
+                    'account_bank_code'    => $extra['account_bank_code']  ?? '',
+                    'sender_name'          => $extra['sender_name']        ?? config('app.name'),
+                    'account_name'         => $user?->name ?? 'Guest',
+                    'account_phone'        => $user?->phone ?? $dto->guestContact ?? '',
+                    'expire_seconds'       => '36000',
+                    'success_redirect_url' => config('services.monetapay.success_redirect_url'),
+                    'failed_redirect_url'  => config('services.monetapay.failed_redirect_url', ''),
+                    'product_id'           => (string) $product->id,
+                    'product_name'         => $product->name,
+                    'product_category'     => $product->category?->name    ?? 'General',
+                    'product_sub_category' => $product->subCategory?->name ?? '',
+                    'product_description'  => $product->name,
+                    'product_price'        => $sellingPrice,
+                    'product_quantity'     => 1,
+                    'product_type'         => 'PRODUCT',
+                ]);
+
+                if (($plResponse['code'] ?? -1) !== 0) {
+                    throw new Exception('Payment Link creation failed: ' . ($plResponse['message'] ?? 'Unknown error'));
+                }
+
+                $plData = $plResponse['data'] ?? [];
+                $payment->update(['pg_transaction_id' => (string) ($plData['id'] ?? null)]);
+                $paymentInstructions = ['checkout_url' => $plData['checkout_url'] ?? null];
 
             } else {
                 // ── Monetapay path ───────────────────────────────────────────

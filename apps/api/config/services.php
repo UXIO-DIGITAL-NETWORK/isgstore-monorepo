@@ -30,6 +30,7 @@ return [
         'aes_iv'               => env('MONETAPAY_AES_IV'),
         'is_production'        => env('MONETAPAY_IS_PRODUCTION', false),
         'success_redirect_url' => env('MONETAPAY_SUCCESS_REDIRECT_URL', 'https://example.com'),
+        'failed_redirect_url'  => env('MONETAPAY_FAILED_REDIRECT_URL', ''),
     ],
 
     'ses' => [

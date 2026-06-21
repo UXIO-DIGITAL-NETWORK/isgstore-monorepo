@@ -158,7 +158,8 @@ MONETAPAY_TOKEN=
 MONETAPAY_AES_KEY=
 MONETAPAY_AES_IV=
 MONETAPAY_IS_PRODUCTION=false
-MONETAPAY_SUCCESS_REDIRECT_URL=   # redirect after successful e-wallet payment
+MONETAPAY_SUCCESS_REDIRECT_URL=   # redirect after successful e-wallet / payment link payment
+MONETAPAY_FAILED_REDIRECT_URL=    # redirect after failed payment link payment (optional)
 
 DIGIFLAZZ_USERNAME=
 DIGIFLAZZ_KEY=
