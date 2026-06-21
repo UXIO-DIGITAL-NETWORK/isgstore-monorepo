@@ -140,7 +140,7 @@ return [
 
     ['no' => '2.9', 'sheet' => 'Virtual Account', 'service' => 'VA Merchant Callback', 'scenario' => 'Successful Callback',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
-     'route' => 'POST /api/v1/monetapay/va/callback', 'files' => ['MonetapayCallbackController', 'HandleMonetapayCallbackAction'],
+     'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController', 'HandleMonetapayCallbackAction'],
      'note' => 'Inbound callback is invoked by Monetapay with a server-signed en_data; cannot be forged without the production AES key/token.'],
 
     /* ================================ eWallet ================================ */
@@ -186,7 +186,7 @@ return [
 
     ['no' => '3.8', 'sheet' => 'eWallet', 'service' => 'eWallet Merchant Callback', 'scenario' => 'Successful Callback',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
-     'route' => 'POST /api/v1/monetapay/ewallet/callback', 'files' => ['MonetapayCallbackController'],
+     'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController'],
      'note' => 'Inbound, server-signed by Monetapay.'],
 
     /* ================================= QRIS ================================= */
@@ -235,7 +235,7 @@ return [
 
     ['no' => '4.9', 'sheet' => 'QRIS', 'service' => 'QRIS Callback', 'scenario' => 'Successful Callback',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
-     'route' => 'POST /api/v1/monetapay/qris/callback', 'files' => ['MonetapayCallbackController'], 'note' => 'Inbound, server-signed.'],
+     'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController'], 'note' => 'Inbound, server-signed.'],
 
     ['no' => '4.10', 'sheet' => 'QRIS', 'service' => 'QRIS Refund', 'scenario' => 'Successful QRIS Refund',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,

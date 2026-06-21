@@ -46,12 +46,6 @@ Route::prefix('v1')->group(function () {
 
     // Payment Webhooks (No Auth Required)
     Route::post('/payment/callback', MonetapayCallbackController::class);
-    // Method-specific Monetapay callbacks — same decrypt+verify+dispatch flow.
-    // Point Monetapay's VA/E-Wallet/QRIS callback URLs at whichever you prefer.
-    Route::post('/monetapay/va/callback',      MonetapayCallbackController::class);
-    Route::post('/monetapay/ewallet/callback', MonetapayCallbackController::class);
-    Route::post('/monetapay/qris/callback',         MonetapayCallbackController::class);
-    Route::post('/monetapay/payment-link/callback', MonetapayCallbackController::class);
     Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
     Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
 
