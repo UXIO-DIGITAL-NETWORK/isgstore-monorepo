@@ -297,6 +297,9 @@ class MonetapayService
      */
     private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false): array
     {
+        // Inject merchant ID so all signed calls include app_id in the encrypted TreeMap.
+        $businessParams['app_id'] = $this->mchId;
+
         // Monetapay omits blank fields from the signed TreeMap; mirror that so
         // our local sign matches what the gateway recomputes on its side.
         $businessParams = array_filter(
