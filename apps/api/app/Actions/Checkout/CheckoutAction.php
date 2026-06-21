@@ -157,7 +157,10 @@ class CheckoutAction
 
                 $plData = $plResponse['data'] ?? [];
                 $payment->update(['pg_transaction_id' => (string) ($plData['id'] ?? null)]);
-                $paymentInstructions = ['checkout_url' => $plData['checkout_url'] ?? null];
+                $paymentInstructions = array_filter([
+                    'order_no'     => $plData['order_no']     ?? null,
+                    'checkout_url' => $plData['checkout_url'] ?? null,
+                ]);
 
             } else {
                 // ── Monetapay path ───────────────────────────────────────────
