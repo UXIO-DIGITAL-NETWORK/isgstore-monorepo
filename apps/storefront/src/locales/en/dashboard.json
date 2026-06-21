@@ -64,6 +64,44 @@
     "statusFailed": "FAILED"
   },
 
+  "isiSaldo": {
+    "title": "TOP UP BALANCE",
+    "subtitle": "Top up your account balance with automatic payment methods.",
+    "nominal": {
+      "sectionTitle": "SELECT AMOUNT",
+      "label": "Top Up Amount (Rp)",
+      "hint": "Select an amount to top up your account balance",
+      "placeholder": "Rp 0"
+    },
+    "voucher": {
+      "title": "Enter Voucher Code",
+      "subtitle": "Enter your voucher code here",
+      "placeholder": "e.g. GAME-XXX-XXX",
+      "button": "Claim Voucher",
+      "note": "Voucher can only be used once and cannot be converted to cash",
+      "applied": "Voucher successfully applied!"
+    },
+    "payment": {
+      "sectionTitle": "SELECT PAYMENT",
+      "groups": {
+        "ewallet": "E-Wallet",
+        "va": "Virtual Account",
+        "qris": "QRIS"
+      }
+    },
+    "summary": {
+      "title": "Summary",
+      "discountLabel": "Voucher Discount ({{percent}}%)",
+      "totalLabel": "Total Payment",
+      "submitButton": "Top Up Balance Now"
+    },
+    "saldo": {
+      "title": "Your Balance",
+      "secureNote": "100% Secure Transaction",
+      "secureSubtitle": "All transactions are processed automatically by the system"
+    }
+  },
+
   "transactionHistory": {
     "title": "TRANSACTION HISTORY",
     "subtitle": "Monitor all your purchase history and transaction status.",

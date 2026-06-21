@@ -64,6 +64,44 @@
     "statusFailed": "GAGAL"
   },
 
+  "isiSaldo": {
+    "title": "ISI SALDO AKUN",
+    "subtitle": "Isi saldo akun Anda dengan metode pembayaran otomatis.",
+    "nominal": {
+      "sectionTitle": "PILIH NOMINAL",
+      "label": "Nominal Top Up (Rp)",
+      "hint": "Pilih nominal untuk isi saldo akun anda",
+      "placeholder": "Rp 0"
+    },
+    "voucher": {
+      "title": "Masukkan Kode Voucher",
+      "subtitle": "Masukkan kode voucher Anda disini",
+      "placeholder": "Contoh: GAME-XXX-XXX",
+      "button": "Klaim Voucher",
+      "note": "Voucher hanya bisa digunakan 1 kali dan tidak dapat diuangkan",
+      "applied": "Voucher berhasil diterapkan!"
+    },
+    "payment": {
+      "sectionTitle": "PILIH PEMBAYARAN",
+      "groups": {
+        "ewallet": "E-Wallet",
+        "va": "Virtual Account",
+        "qris": "QRIS"
+      }
+    },
+    "summary": {
+      "title": "Ringkasan",
+      "discountLabel": "Discount Voucher ({{percent}}%)",
+      "totalLabel": "Total Bayar",
+      "submitButton": "Isi Saldo Sekarang"
+    },
+    "saldo": {
+      "title": "Saldo Anda",
+      "secureNote": "100% Transaksi Aman",
+      "secureSubtitle": "Semua transaksi diproses otomatis oleh sistem"
+    }
+  },
+
   "transactionHistory": {
     "title": "RIWAYAT TRANSAKSI",
     "subtitle": "Pantau semua riwayat pembelian dan status transaksi Anda.",

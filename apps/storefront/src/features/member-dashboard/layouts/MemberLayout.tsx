@@ -24,7 +24,7 @@ export function MemberLayout({ children, className }: MemberLayoutProps): React.
       <Box className="flex-1 max-w-6xl w-full mx-auto px-4 md:px-8 py-8">
         <Box className="flex gap-6 items-start">
           {/* ── Sidebar ── */}
-          <Box className="hidden md:flex shrink-0 w-50 flex-col">
+          <Box className="hidden md:flex shrink-0 w-50 flex-col sticky top-[120px] self-start">
             {/* Gradient border card */}
             <Box className="p-px rounded-2xl bg-linear-to-br from-[#3B82F6] to-[#9234EA]">
               <Box className="bg-[#0C0E1A] rounded-[15px] p-3">

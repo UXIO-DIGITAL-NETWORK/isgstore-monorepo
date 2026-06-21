@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Wallet } from "lucide-react";
-import { useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { formatCurrency, formatNumber } from "@/lib/format";
@@ -15,6 +15,7 @@ interface Props {
 export default function WalletCard({ wallet }: Props): React.JSX.Element {
   const { t } = useTranslation("dashboard");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+  const navigate = useNavigate();
 
   return (
     <Box className="flex-1 min-w-0 p-[1px] rounded-2xl bg-linear-to-br from-[#3B82F6] to-[#9234EA]">
@@ -55,6 +56,9 @@ export default function WalletCard({ wallet }: Props): React.JSX.Element {
         <Box
           as="button"
           type="button"
+          onClick={() =>
+            navigate({ to: "/$locale/isi-saldo-preview", params: { locale: locale ?? "id" } })
+          }
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] hover:opacity-90 transition-opacity cursor-pointer"
         >
           <Text as="span" className="text-[12px] font-outfit font-bold text-white leading-none">

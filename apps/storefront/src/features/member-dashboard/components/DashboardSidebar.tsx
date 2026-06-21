@@ -47,6 +47,7 @@ export default function DashboardSidebar(): React.JSX.Element {
       key: "topUpBalance",
       labelKey: "sidebar.topUpBalance",
       icon: <Wallet className="w-4 h-4" />,
+      href: `/${locale}/isi-saldo-preview`,
     },
     {
       key: "integrations",
