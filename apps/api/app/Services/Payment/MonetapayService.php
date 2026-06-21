@@ -157,7 +157,7 @@ class MonetapayService
             $requestParams['is_single_use']  = "1";
             $requestParams['qr_string_type'] = "2";
         } elseif ($paymentType === 'ewallet') {
-            $requestParams['channel_code']   = strtoupper($channelCode); // gopay → GOPAY, ovo → OVO
+            $requestParams['product_id']     = strtoupper($channelCode); // GOPAY, OVO, DANA — required by /v1.0.0/ewallet/charge
             $requestParams['account_phone']  = (string) ($customerData['customer_phone'] ?? '08123456789');
             $requestParams['expire_seconds'] = "600";
         } else {
