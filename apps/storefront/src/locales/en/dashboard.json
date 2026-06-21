@@ -260,5 +260,101 @@
         "ewallet": "E-Wallet"
       }
     }
+  },
+
+  "activityLog": {
+    "title": "ACTIVITY LOG",
+    "subtitle": "Monitor all important activities on your Top up game account.",
+    "exportButton": "Export Log",
+    "filter": {
+      "dateLabel": "Date",
+      "statusLabel": "Status",
+      "ipLabel": "IP Address",
+      "ipPlaceholder": "Search Location or IP Address",
+      "allActions": "All Actions",
+      "reset": "Reset Filter",
+      "apply": "Apply Filter",
+      "statusOptions": {
+        "login": "Login",
+        "membership": "Membership",
+        "transaction": "Transaction",
+        "security": "Security",
+        "verification": "Verification",
+        "failed": "Failed"
+      }
+    },
+    "stats": {
+      "totalActivity": "Total Activity",
+      "loginSuccess": "Successful Logins",
+      "transactions": "Transactions",
+      "dataChanges": "Data Changes",
+      "last7days": "From the last 7 days"
+    },
+    "sectionTitle": "YOUR ACCOUNT ACTIVITY",
+    "columns": {
+      "activity": "Activity",
+      "time": "Time",
+      "ip": "IP Address",
+      "status": "Status"
+    },
+    "badge": {
+      "login": "LOGIN",
+      "membership": "MEMBERSHIP",
+      "transaction": "TRANSACTION",
+      "security": "SECURITY",
+      "verification": "VERIFICATION",
+      "failed": "FAILED"
+    },
+    "activities": {
+      "loginBerhasil": {
+        "title": "Login Successful",
+        "desc": "Logged in via Chrome on Windows"
+      },
+      "membershipUpgrade": {
+        "title": "Membership Upgrade",
+        "desc": "You upgraded to Platinum"
+      },
+      "topUpBerhasil": {
+        "title": "Top Up Successful",
+        "desc": "Top Up 50 Diamond Free Fire Legends"
+      },
+      "passwordDiubah": {
+        "title": "Password Changed",
+        "desc": "Account password changed successfully"
+      },
+      "pembayaranBerhasil": {
+        "title": "Payment Successful",
+        "desc": "Payment via OVO"
+      },
+      "loginGagal": {
+        "title": "Login Failed",
+        "desc": "Login attempt with wrong password"
+      },
+      "perangkatBaru": {
+        "title": "New Device Detected",
+        "desc": "Login from Chrome on iOS (Mac)"
+      },
+      "verifikasiBerhasil": {
+        "title": "Verification Successful",
+        "desc": "WhatsApp account verified successfully"
+      },
+      "topUpGagal": {
+        "title": "Top Up Failed",
+        "desc": "Transaction cancelled by system"
+      },
+      "profilDiperbarui": {
+        "title": "Profile Updated",
+        "desc": "Profile information updated successfully"
+      },
+      "membershipBaru": {
+        "title": "Membership Upgrade",
+        "desc": "You upgraded to Basic"
+      },
+      "emailVerifikasi": {
+        "title": "Email Verification",
+        "desc": "Account email verified successfully"
+      }
+    },
+    "noActivity": "No activity yet"
   }
 }

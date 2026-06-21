@@ -66,6 +66,7 @@ export default function DashboardSidebar(): React.JSX.Element {
       key: "activityLog",
       labelKey: "sidebar.activityLog",
       icon: <Activity className="w-4 h-4" />,
+      href: `/${locale}/log-aktivitas-preview`,
     },
     {
       key: "accountSettings",

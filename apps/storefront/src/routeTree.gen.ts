@@ -17,6 +17,7 @@ import { Route as LocaleAuthRouteRouteImport } from './routes/$locale/_auth/rout
 import { Route as LocaleUpgradeMembershipPreviewIndexRouteImport } from './routes/$locale/upgrade-membership-preview/index'
 import { Route as LocaleRiwayatTransaksiPreviewIndexRouteImport } from './routes/$locale/riwayat-transaksi-preview/index'
 import { Route as LocalePengaturanAkunPreviewIndexRouteImport } from './routes/$locale/pengaturan-akun-preview/index'
+import { Route as LocaleLogAktivitasPreviewIndexRouteImport } from './routes/$locale/log-aktivitas-preview/index'
 import { Route as LocaleLeaderboardIndexRouteImport } from './routes/$locale/leaderboard/index'
 import { Route as LocaleKebijakanPrivasiIndexRouteImport } from './routes/$locale/kebijakan-privasi/index'
 import { Route as LocaleKalkulatorZodiacIndexRouteImport } from './routes/$locale/kalkulator-zodiac/index'
@@ -83,6 +84,12 @@ const LocalePengaturanAkunPreviewIndexRoute =
   LocalePengaturanAkunPreviewIndexRouteImport.update({
     id: '/pengaturan-akun-preview/',
     path: '/pengaturan-akun-preview/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
+const LocaleLogAktivitasPreviewIndexRoute =
+  LocaleLogAktivitasPreviewIndexRouteImport.update({
+    id: '/log-aktivitas-preview/',
+    path: '/log-aktivitas-preview/',
     getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleLeaderboardIndexRoute = LocaleLeaderboardIndexRouteImport.update({
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/$locale/kalkulator-zodiac/': typeof LocaleKalkulatorZodiacIndexRoute
   '/$locale/kebijakan-privasi/': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard/': typeof LocaleLeaderboardIndexRoute
+  '/$locale/log-aktivitas-preview/': typeof LocaleLogAktivitasPreviewIndexRoute
   '/$locale/pengaturan-akun-preview/': typeof LocalePengaturanAkunPreviewIndexRoute
   '/$locale/riwayat-transaksi-preview/': typeof LocaleRiwayatTransaksiPreviewIndexRoute
   '/$locale/upgrade-membership-preview/': typeof LocaleUpgradeMembershipPreviewIndexRoute
@@ -284,6 +292,7 @@ export interface FileRoutesByTo {
   '/$locale/kalkulator-zodiac': typeof LocaleKalkulatorZodiacIndexRoute
   '/$locale/kebijakan-privasi': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard': typeof LocaleLeaderboardIndexRoute
+  '/$locale/log-aktivitas-preview': typeof LocaleLogAktivitasPreviewIndexRoute
   '/$locale/pengaturan-akun-preview': typeof LocalePengaturanAkunPreviewIndexRoute
   '/$locale/riwayat-transaksi-preview': typeof LocaleRiwayatTransaksiPreviewIndexRoute
   '/$locale/upgrade-membership-preview': typeof LocaleUpgradeMembershipPreviewIndexRoute
@@ -321,6 +330,7 @@ export interface FileRoutesById {
   '/$locale/kalkulator-zodiac/': typeof LocaleKalkulatorZodiacIndexRoute
   '/$locale/kebijakan-privasi/': typeof LocaleKebijakanPrivasiIndexRoute
   '/$locale/leaderboard/': typeof LocaleLeaderboardIndexRoute
+  '/$locale/log-aktivitas-preview/': typeof LocaleLogAktivitasPreviewIndexRoute
   '/$locale/pengaturan-akun-preview/': typeof LocalePengaturanAkunPreviewIndexRoute
   '/$locale/riwayat-transaksi-preview/': typeof LocaleRiwayatTransaksiPreviewIndexRoute
   '/$locale/upgrade-membership-preview/': typeof LocaleUpgradeMembershipPreviewIndexRoute
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-zodiac/'
     | '/$locale/kebijakan-privasi/'
     | '/$locale/leaderboard/'
+    | '/$locale/log-aktivitas-preview/'
     | '/$locale/pengaturan-akun-preview/'
     | '/$locale/riwayat-transaksi-preview/'
     | '/$locale/upgrade-membership-preview/'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-zodiac'
     | '/$locale/kebijakan-privasi'
     | '/$locale/leaderboard'
+    | '/$locale/log-aktivitas-preview'
     | '/$locale/pengaturan-akun-preview'
     | '/$locale/riwayat-transaksi-preview'
     | '/$locale/upgrade-membership-preview'
@@ -426,6 +438,7 @@ export interface FileRouteTypes {
     | '/$locale/kalkulator-zodiac/'
     | '/$locale/kebijakan-privasi/'
     | '/$locale/leaderboard/'
+    | '/$locale/log-aktivitas-preview/'
     | '/$locale/pengaturan-akun-preview/'
     | '/$locale/riwayat-transaksi-preview/'
     | '/$locale/upgrade-membership-preview/'
@@ -504,6 +517,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-akun-preview'
       fullPath: '/$locale/pengaturan-akun-preview/'
       preLoaderRoute: typeof LocalePengaturanAkunPreviewIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/log-aktivitas-preview/': {
+      id: '/$locale/log-aktivitas-preview/'
+      path: '/log-aktivitas-preview'
+      fullPath: '/$locale/log-aktivitas-preview/'
+      preLoaderRoute: typeof LocaleLogAktivitasPreviewIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/leaderboard/': {
@@ -748,6 +768,7 @@ interface LocaleRouteRouteChildren {
   LocaleKalkulatorZodiacIndexRoute: typeof LocaleKalkulatorZodiacIndexRoute
   LocaleKebijakanPrivasiIndexRoute: typeof LocaleKebijakanPrivasiIndexRoute
   LocaleLeaderboardIndexRoute: typeof LocaleLeaderboardIndexRoute
+  LocaleLogAktivitasPreviewIndexRoute: typeof LocaleLogAktivitasPreviewIndexRoute
   LocalePengaturanAkunPreviewIndexRoute: typeof LocalePengaturanAkunPreviewIndexRoute
   LocaleRiwayatTransaksiPreviewIndexRoute: typeof LocaleRiwayatTransaksiPreviewIndexRoute
   LocaleUpgradeMembershipPreviewIndexRoute: typeof LocaleUpgradeMembershipPreviewIndexRoute
@@ -774,6 +795,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleKalkulatorZodiacIndexRoute: LocaleKalkulatorZodiacIndexRoute,
   LocaleKebijakanPrivasiIndexRoute: LocaleKebijakanPrivasiIndexRoute,
   LocaleLeaderboardIndexRoute: LocaleLeaderboardIndexRoute,
+  LocaleLogAktivitasPreviewIndexRoute: LocaleLogAktivitasPreviewIndexRoute,
   LocalePengaturanAkunPreviewIndexRoute: LocalePengaturanAkunPreviewIndexRoute,
   LocaleRiwayatTransaksiPreviewIndexRoute:
     LocaleRiwayatTransaksiPreviewIndexRoute,
