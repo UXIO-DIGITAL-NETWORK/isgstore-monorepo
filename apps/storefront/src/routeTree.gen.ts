@@ -21,6 +21,7 @@ import { Route as LocaleKalkulatorZodiacIndexRouteImport } from './routes/$local
 import { Route as LocaleKalkulatorWinRateIndexRouteImport } from './routes/$locale/kalkulator-win-rate/index'
 import { Route as LocaleKalkulatorMagicWheelIndexRouteImport } from './routes/$locale/kalkulator-magic-wheel/index'
 import { Route as LocaleIsiSaldoPreviewIndexRouteImport } from './routes/$locale/isi-saldo-preview/index'
+import { Route as LocaleIntegrasiPreviewIndexRouteImport } from './routes/$locale/integrasi-preview/index'
 import { Route as LocaleFaqIndexRouteImport } from './routes/$locale/faq/index'
 import { Route as LocaleDashboardPreviewIndexRouteImport } from './routes/$locale/dashboard-preview/index'
 import { Route as LocaleDaftarHargaIndexRouteImport } from './routes/$locale/daftar-harga/index'
@@ -31,6 +32,7 @@ import { Route as LocaleBeritaSlugRouteImport } from './routes/$locale/berita/$s
 import { Route as LocaleInvoiceInvoiceNumberIndexRouteImport } from './routes/$locale/invoice/$invoiceNumber/index'
 import { Route as LocaleMemberRiwayatTransaksiIndexRouteImport } from './routes/$locale/_member/riwayat-transaksi/index'
 import { Route as LocaleMemberIsiSaldoIndexRouteImport } from './routes/$locale/_member/isi-saldo/index'
+import { Route as LocaleMemberIntegrasiIndexRouteImport } from './routes/$locale/_member/integrasi/index'
 import { Route as LocaleMemberDashboardIndexRouteImport } from './routes/$locale/_member/dashboard/index'
 import { Route as LocaleAuthRegisterIndexRouteImport } from './routes/$locale/_auth/register/index'
 import { Route as LocaleAuthLoginIndexRouteImport } from './routes/$locale/_auth/login/index'
@@ -102,6 +104,12 @@ const LocaleIsiSaldoPreviewIndexRoute =
     path: '/isi-saldo-preview/',
     getParentRoute: () => LocaleRouteRoute,
   } as any)
+const LocaleIntegrasiPreviewIndexRoute =
+  LocaleIntegrasiPreviewIndexRouteImport.update({
+    id: '/integrasi-preview/',
+    path: '/integrasi-preview/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 const LocaleFaqIndexRoute = LocaleFaqIndexRouteImport.update({
   id: '/faq/',
   path: '/faq/',
@@ -156,6 +164,12 @@ const LocaleMemberIsiSaldoIndexRoute =
     path: '/isi-saldo/',
     getParentRoute: () => LocaleMemberRouteRoute,
   } as any)
+const LocaleMemberIntegrasiIndexRoute =
+  LocaleMemberIntegrasiIndexRouteImport.update({
+    id: '/integrasi/',
+    path: '/integrasi/',
+    getParentRoute: () => LocaleMemberRouteRoute,
+  } as any)
 const LocaleMemberDashboardIndexRoute =
   LocaleMemberDashboardIndexRouteImport.update({
     id: '/dashboard/',
@@ -202,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
   '/$locale/dashboard-preview/': typeof LocaleDashboardPreviewIndexRoute
   '/$locale/faq/': typeof LocaleFaqIndexRoute
+  '/$locale/integrasi-preview/': typeof LocaleIntegrasiPreviewIndexRoute
   '/$locale/isi-saldo-preview/': typeof LocaleIsiSaldoPreviewIndexRoute
   '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
@@ -215,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/$locale/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/register/': typeof LocaleAuthRegisterIndexRoute
   '/$locale/dashboard/': typeof LocaleMemberDashboardIndexRoute
+  '/$locale/integrasi/': typeof LocaleMemberIntegrasiIndexRoute
   '/$locale/isi-saldo/': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/riwayat-transaksi/': typeof LocaleMemberRiwayatTransaksiIndexRoute
   '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -229,6 +245,7 @@ export interface FileRoutesByTo {
   '/$locale/daftar-harga': typeof LocaleDaftarHargaIndexRoute
   '/$locale/dashboard-preview': typeof LocaleDashboardPreviewIndexRoute
   '/$locale/faq': typeof LocaleFaqIndexRoute
+  '/$locale/integrasi-preview': typeof LocaleIntegrasiPreviewIndexRoute
   '/$locale/isi-saldo-preview': typeof LocaleIsiSaldoPreviewIndexRoute
   '/$locale/kalkulator-magic-wheel': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate': typeof LocaleKalkulatorWinRateIndexRoute
@@ -242,6 +259,7 @@ export interface FileRoutesByTo {
   '/$locale/login': typeof LocaleAuthLoginIndexRoute
   '/$locale/register': typeof LocaleAuthRegisterIndexRoute
   '/$locale/dashboard': typeof LocaleMemberDashboardIndexRoute
+  '/$locale/integrasi': typeof LocaleMemberIntegrasiIndexRoute
   '/$locale/isi-saldo': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/riwayat-transaksi': typeof LocaleMemberRiwayatTransaksiIndexRoute
   '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -260,6 +278,7 @@ export interface FileRoutesById {
   '/$locale/daftar-harga/': typeof LocaleDaftarHargaIndexRoute
   '/$locale/dashboard-preview/': typeof LocaleDashboardPreviewIndexRoute
   '/$locale/faq/': typeof LocaleFaqIndexRoute
+  '/$locale/integrasi-preview/': typeof LocaleIntegrasiPreviewIndexRoute
   '/$locale/isi-saldo-preview/': typeof LocaleIsiSaldoPreviewIndexRoute
   '/$locale/kalkulator-magic-wheel/': typeof LocaleKalkulatorMagicWheelIndexRoute
   '/$locale/kalkulator-win-rate/': typeof LocaleKalkulatorWinRateIndexRoute
@@ -273,6 +292,7 @@ export interface FileRoutesById {
   '/$locale/_auth/login/': typeof LocaleAuthLoginIndexRoute
   '/$locale/_auth/register/': typeof LocaleAuthRegisterIndexRoute
   '/$locale/_member/dashboard/': typeof LocaleMemberDashboardIndexRoute
+  '/$locale/_member/integrasi/': typeof LocaleMemberIntegrasiIndexRoute
   '/$locale/_member/isi-saldo/': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/_member/riwayat-transaksi/': typeof LocaleMemberRiwayatTransaksiIndexRoute
   '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -290,6 +310,7 @@ export interface FileRouteTypes {
     | '/$locale/daftar-harga/'
     | '/$locale/dashboard-preview/'
     | '/$locale/faq/'
+    | '/$locale/integrasi-preview/'
     | '/$locale/isi-saldo-preview/'
     | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
@@ -303,6 +324,7 @@ export interface FileRouteTypes {
     | '/$locale/login/'
     | '/$locale/register/'
     | '/$locale/dashboard/'
+    | '/$locale/integrasi/'
     | '/$locale/isi-saldo/'
     | '/$locale/riwayat-transaksi/'
     | '/$locale/invoice/$invoiceNumber/'
@@ -317,6 +339,7 @@ export interface FileRouteTypes {
     | '/$locale/daftar-harga'
     | '/$locale/dashboard-preview'
     | '/$locale/faq'
+    | '/$locale/integrasi-preview'
     | '/$locale/isi-saldo-preview'
     | '/$locale/kalkulator-magic-wheel'
     | '/$locale/kalkulator-win-rate'
@@ -330,6 +353,7 @@ export interface FileRouteTypes {
     | '/$locale/login'
     | '/$locale/register'
     | '/$locale/dashboard'
+    | '/$locale/integrasi'
     | '/$locale/isi-saldo'
     | '/$locale/riwayat-transaksi'
     | '/$locale/invoice/$invoiceNumber'
@@ -347,6 +371,7 @@ export interface FileRouteTypes {
     | '/$locale/daftar-harga/'
     | '/$locale/dashboard-preview/'
     | '/$locale/faq/'
+    | '/$locale/integrasi-preview/'
     | '/$locale/isi-saldo-preview/'
     | '/$locale/kalkulator-magic-wheel/'
     | '/$locale/kalkulator-win-rate/'
@@ -360,6 +385,7 @@ export interface FileRouteTypes {
     | '/$locale/_auth/login/'
     | '/$locale/_auth/register/'
     | '/$locale/_member/dashboard/'
+    | '/$locale/_member/integrasi/'
     | '/$locale/_member/isi-saldo/'
     | '/$locale/_member/riwayat-transaksi/'
     | '/$locale/invoice/$invoiceNumber/'
@@ -456,6 +482,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleIsiSaldoPreviewIndexRouteImport
       parentRoute: typeof LocaleRouteRoute
     }
+    '/$locale/integrasi-preview/': {
+      id: '/$locale/integrasi-preview/'
+      path: '/integrasi-preview'
+      fullPath: '/$locale/integrasi-preview/'
+      preLoaderRoute: typeof LocaleIntegrasiPreviewIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
     '/$locale/faq/': {
       id: '/$locale/faq/'
       path: '/faq'
@@ -526,6 +559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleMemberIsiSaldoIndexRouteImport
       parentRoute: typeof LocaleMemberRouteRoute
     }
+    '/$locale/_member/integrasi/': {
+      id: '/$locale/_member/integrasi/'
+      path: '/integrasi'
+      fullPath: '/$locale/integrasi/'
+      preLoaderRoute: typeof LocaleMemberIntegrasiIndexRouteImport
+      parentRoute: typeof LocaleMemberRouteRoute
+    }
     '/$locale/_member/dashboard/': {
       id: '/$locale/_member/dashboard/'
       path: '/dashboard'
@@ -589,12 +629,14 @@ const LocaleAuthRouteRouteWithChildren = LocaleAuthRouteRoute._addFileChildren(
 
 interface LocaleMemberRouteRouteChildren {
   LocaleMemberDashboardIndexRoute: typeof LocaleMemberDashboardIndexRoute
+  LocaleMemberIntegrasiIndexRoute: typeof LocaleMemberIntegrasiIndexRoute
   LocaleMemberIsiSaldoIndexRoute: typeof LocaleMemberIsiSaldoIndexRoute
   LocaleMemberRiwayatTransaksiIndexRoute: typeof LocaleMemberRiwayatTransaksiIndexRoute
 }
 
 const LocaleMemberRouteRouteChildren: LocaleMemberRouteRouteChildren = {
   LocaleMemberDashboardIndexRoute: LocaleMemberDashboardIndexRoute,
+  LocaleMemberIntegrasiIndexRoute: LocaleMemberIntegrasiIndexRoute,
   LocaleMemberIsiSaldoIndexRoute: LocaleMemberIsiSaldoIndexRoute,
   LocaleMemberRiwayatTransaksiIndexRoute:
     LocaleMemberRiwayatTransaksiIndexRoute,
@@ -614,6 +656,7 @@ interface LocaleRouteRouteChildren {
   LocaleDaftarHargaIndexRoute: typeof LocaleDaftarHargaIndexRoute
   LocaleDashboardPreviewIndexRoute: typeof LocaleDashboardPreviewIndexRoute
   LocaleFaqIndexRoute: typeof LocaleFaqIndexRoute
+  LocaleIntegrasiPreviewIndexRoute: typeof LocaleIntegrasiPreviewIndexRoute
   LocaleIsiSaldoPreviewIndexRoute: typeof LocaleIsiSaldoPreviewIndexRoute
   LocaleKalkulatorMagicWheelIndexRoute: typeof LocaleKalkulatorMagicWheelIndexRoute
   LocaleKalkulatorWinRateIndexRoute: typeof LocaleKalkulatorWinRateIndexRoute
@@ -637,6 +680,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleDaftarHargaIndexRoute: LocaleDaftarHargaIndexRoute,
   LocaleDashboardPreviewIndexRoute: LocaleDashboardPreviewIndexRoute,
   LocaleFaqIndexRoute: LocaleFaqIndexRoute,
+  LocaleIntegrasiPreviewIndexRoute: LocaleIntegrasiPreviewIndexRoute,
   LocaleIsiSaldoPreviewIndexRoute: LocaleIsiSaldoPreviewIndexRoute,
   LocaleKalkulatorMagicWheelIndexRoute: LocaleKalkulatorMagicWheelIndexRoute,
   LocaleKalkulatorWinRateIndexRoute: LocaleKalkulatorWinRateIndexRoute,

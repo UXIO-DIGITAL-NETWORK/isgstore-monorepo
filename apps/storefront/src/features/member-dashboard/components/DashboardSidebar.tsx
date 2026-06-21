@@ -53,6 +53,7 @@ export default function DashboardSidebar(): React.JSX.Element {
       key: "integrations",
       labelKey: "sidebar.integrations",
       icon: <Plug className="w-4 h-4" />,
+      href: `/${locale}/integrasi-preview`,
     },
     {
       key: "upgradeMembership",

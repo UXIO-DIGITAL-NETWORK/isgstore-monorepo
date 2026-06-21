@@ -102,6 +102,30 @@
     }
   },
 
+  "integrasi": {
+    "title": "INTEGRATIONS",
+    "subtitle": "Easily integrate our services to enhance your user experience.",
+    "apiKey": {
+      "title": "Key & Documentation",
+      "docButton": "Documentation",
+      "showLabel": "Show API key",
+      "hideLabel": "Hide API key",
+      "regenerateLabel": "Regenerate API key",
+      "notice": "This information is confidential — be careful about what you share. We are not responsible for any information leaks."
+    },
+    "callback": {
+      "title": "Callback URL",
+      "placeholder": "Enter your callback URL here",
+      "submitButton": "Send",
+      "notice": "Callbacks will be sent using the HTTP POST method to the Callback URL you have set."
+    },
+    "whitelist": {
+      "title": "Whitelist IP Address",
+      "placeholder": "Enter IP address, e.g. xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx",
+      "addButton": "Add IP Address"
+    }
+  },
+
   "transactionHistory": {
     "title": "TRANSACTION HISTORY",
     "subtitle": "Monitor all your purchase history and transaction status.",

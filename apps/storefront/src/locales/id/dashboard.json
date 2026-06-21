@@ -102,6 +102,30 @@
     }
   },
 
+  "integrasi": {
+    "title": "INTEGRASI",
+    "subtitle": "Integrasikan layanan kami dengan mudah untuk meningkatkan pengalaman pengguna Anda.",
+    "apiKey": {
+      "title": "Key & Dokumentasi",
+      "docButton": "Dokumentasi",
+      "showLabel": "Tampilkan API key",
+      "hideLabel": "Sembunyikan API key",
+      "regenerateLabel": "Regenerasi API key",
+      "notice": "Informasi ini bersifat rahasia jadi berhati-hatilah dengan apa yang Anda bagikan. Kebocoran informasi bukan tanggung jawab kami."
+    },
+    "callback": {
+      "title": "URL Callback",
+      "placeholder": "Masukkan URL callback Anda di sini",
+      "submitButton": "Kirim",
+      "notice": "Callback akan dikirim menggunakan metode HTTP POST ke Callback URL yang telah Anda tetapkan."
+    },
+    "whitelist": {
+      "title": "Whitelist IP Address",
+      "placeholder": "Masukkan Alamat IP, contoh: xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx",
+      "addButton": "Tambahkan Alamat IP"
+    }
+  },
+
   "transactionHistory": {
     "title": "RIWAYAT TRANSAKSI",
     "subtitle": "Pantau semua riwayat pembelian dan status transaksi Anda.",
