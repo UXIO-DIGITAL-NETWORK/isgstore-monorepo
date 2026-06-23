@@ -329,6 +329,7 @@ return [
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/customer/create', 'auth' => true,
      'body' => [
          'mch_customer_id'        => '{{run.uid}}CUST',
+         'type'                   => 'INDIVIDUAL',
          'mobile_number'          => '+62123456789',
          'address_category'       => 'HOME',
          'address_country'        => 'ID',
@@ -347,6 +348,7 @@ return [
      'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/customer/create', 'auth' => true,
      'body' => [
          'mch_customer_id'        => '{{customer.mch_customer_id}}',
+         'type'                   => 'INDIVIDUAL',
          'mobile_number'          => '+62123456789',
          'address_category'       => 'HOME',
          'address_country'        => 'ID',

@@ -506,6 +506,24 @@ class MonetapayService
         return $this->postSigned('/v1.0.0/customer/create', $params, passthrough: true);
     }
 
+    /** 6.5.2 Customer Update — POST /v1.0.0/customer/update */
+    public function updateCustomer(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/customer/update', $params, passthrough: true);
+    }
+
+    /** 6.5.3 Customer Query — POST /v1.0.0/customer (spec says GET but MPT uses encrypted body) */
+    public function queryCustomer(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/customer', $params);
+    }
+
+    /** 6.5.4 Subscription Apply — POST /v1.0.0/subscription/apply */
+    public function applySubscription(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/subscription/apply', $params, passthrough: true);
+    }
+
     /** 6.5.2 Subscription Create — POST /v1.0.0/subscription/create */
     public function createSubscription(array $params): array
     {
@@ -516,6 +534,12 @@ class MonetapayService
     public function deactivateSubscription(array $params): array
     {
         return $this->postSigned('/v1.0.0/subscription/deactivate', $params, passthrough: true);
+    }
+
+    /** 6.5.8 Subscription Cycle Attempt (manual deduction trigger) — POST /v1.0.0/subscription/cycle/attempt */
+    public function attemptSubscriptionCycle(array $params): array
+    {
+        return $this->postSigned('/v1.0.0/subscription/cycle/attempt', $params, passthrough: true);
     }
 
     /* =====================================================================

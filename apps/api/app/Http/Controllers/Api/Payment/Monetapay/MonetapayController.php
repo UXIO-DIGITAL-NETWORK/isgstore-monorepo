@@ -211,6 +211,43 @@ class MonetapayController extends Controller
         return $this->run('subscription_deactivate', $this->withAppId($this->orderParams($request)));
     }
 
+    public function customerUpdate(Request $request)
+    {
+        $request->validate(['mch_customer_id' => ['required', 'string']]);
+
+        return $this->run('customer_update', $this->withAppId($request->except(['sign', 'app_id'])));
+    }
+
+    public function customerQuery(Request $request)
+    {
+        $request->validate(['mch_customer_id' => ['required', 'string']]);
+
+        return $this->run('customer_query', $this->withAppId($request->except(['sign', 'app_id'])));
+    }
+
+    public function subscriptionApply(Request $request)
+    {
+        $request->validate([
+            'mch_order_no' => ['required', 'string'],
+            'mch_customer_id' => ['required', 'string'],
+            'amount' => ['required'],
+            'interval' => ['required', 'string'],
+            'interval_count' => ['required'],
+        ]);
+
+        return $this->run('subscription_apply', $this->withAppId($request->except(['sign', 'app_id'])));
+    }
+
+    public function subscriptionCycleAttempt(Request $request)
+    {
+        $request->validate([
+            'order_no' => ['required_without:mch_order_no', 'nullable', 'string'],
+            'mch_order_no' => ['required_without:order_no', 'nullable', 'string'],
+        ]);
+
+        return $this->run('subscription_cycle_attempt', $this->withAppId($this->orderParams($request)));
+    }
+
     /* ---- 7. Pay-out Create --------------------------------------------- */
 
     public function disbursementCreate(Request $request)

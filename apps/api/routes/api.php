@@ -51,6 +51,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/monetapay/va/callback',      MonetapayCallbackController::class);
     Route::post('/monetapay/ewallet/callback', MonetapayCallbackController::class);
     Route::post('/monetapay/qris/callback',    MonetapayCallbackController::class);
+    // Subscription lifecycle callbacks (EVT_ACTIVE/EVT_INACTIVE/EVT_CYCLE_PREV_TRIGGER/EVT_CYCLE_TRIGGERED)
+    Route::post('/monetapay/subscription/callback/active',         [\App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController::class, 'active']);
+    Route::post('/monetapay/subscription/callback/deduct/before',  [\App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
+    Route::post('/monetapay/subscription/callback/deduct/after',   [\App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
     Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
     Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
 
@@ -185,10 +189,14 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::post('/payment-link/create',   [MonetapayController::class, 'paymentLinkCreate']);    // 6.4.1
         Route::post('/payment-link/query',    [MonetapayController::class, 'paymentLink']);         // 6.4.2
         Route::post('/customer/create',       [MonetapayController::class, 'customerCreate']);      // 6.5.1
-        Route::post('/subscription/create',   [MonetapayController::class, 'subscriptionCreate']); // 6.5.2
+        Route::post('/customer/update',       [MonetapayController::class, 'customerUpdate']);      // 6.5.2
+        Route::post('/customer/query',        [MonetapayController::class, 'customerQuery']);       // 6.5.3
+        Route::post('/subscription/apply',    [MonetapayController::class, 'subscriptionApply']);   // 6.5.4
+        Route::post('/subscription/create',   [MonetapayController::class, 'subscriptionCreate']); // (legacy create)
         Route::post('/subscription/deactivate', [MonetapayController::class, 'subscriptionDeactivate']); // 6.5.6
         Route::post('/subscription/query',    [MonetapayController::class, 'subscription']);        // 6.5.5
         Route::post('/subscription/cycle',    [MonetapayController::class, 'subscriptionCycle']);   // 6.5.7
+        Route::post('/subscription/cycle/attempt', [MonetapayController::class, 'subscriptionCycleAttempt']); // 6.5.8
         Route::post('/refund/query',          [MonetapayController::class, 'refundQuery']);         // 6.6.4
         Route::post('/repay/query',           [MonetapayController::class, 'repay']);               // 6.6.5
         Route::post('/sub-merchant/query',    [MonetapayController::class, 'subMerchant']);         // 6.7.4
