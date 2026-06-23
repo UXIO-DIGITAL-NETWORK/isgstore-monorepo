@@ -69,8 +69,12 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 
 ```
 PENDING → PAID → PROCESSING → COMPLETED
-                            ↘ FAILED_PROVIDER → (auto-refund if applicable)
+        ↘                   ↘ FAILED_PROVIDER → (auto-refund if applicable)
+         EXPIRED
 ```
+
+- `EXPIRED` — payment window timed out; customer never paid (set by Monetapay callback or `payments:sync-expired`).
+- `FAILED_PROVIDER` — customer paid; Digiflazz supplier failed to fulfil the order.
 
 All actions, jobs, and webhook handlers must use these exact uppercase constants.
 
@@ -158,6 +162,8 @@ MONETAPAY_TOKEN=
 MONETAPAY_AES_KEY=
 MONETAPAY_AES_IV=
 MONETAPAY_IS_PRODUCTION=false
+MONETAPAY_SUCCESS_REDIRECT_URL=   # redirect after successful e-wallet / payment link payment
+MONETAPAY_FAILED_REDIRECT_URL=    # redirect after failed payment link payment (optional)
 
 DIGIFLAZZ_USERNAME=
 DIGIFLAZZ_KEY=

@@ -23,12 +23,14 @@ return [
     ],
 
     'monetapay' => [
-        'mch_id' => env('MONETAPAY_MCH_ID'),
-        'partner_key' => env('MONETAPAY_PARTNER_KEY'),
-        'token' => env('MONETAPAY_TOKEN'),
-        'aes_key' => env('MONETAPAY_AES_KEY'),
-        'aes_iv' => env('MONETAPAY_AES_IV'),
-        'is_production' => env('MONETAPAY_IS_PRODUCTION', false),
+        'mch_id'               => env('MONETAPAY_MCH_ID'),
+        'partner_key'          => env('MONETAPAY_PARTNER_KEY'),
+        'token'                => env('MONETAPAY_TOKEN'),
+        'aes_key'              => env('MONETAPAY_AES_KEY'),
+        'aes_iv'               => env('MONETAPAY_AES_IV'),
+        'is_production'        => env('MONETAPAY_IS_PRODUCTION', false),
+        'success_redirect_url' => env('MONETAPAY_SUCCESS_REDIRECT_URL', 'https://example.com'),
+        'failed_redirect_url'  => env('MONETAPAY_FAILED_REDIRECT_URL', ''),
     ],
 
     'ses' => [

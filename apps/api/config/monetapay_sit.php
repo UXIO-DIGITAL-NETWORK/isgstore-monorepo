@@ -140,7 +140,7 @@ return [
 
     ['no' => '2.9', 'sheet' => 'Virtual Account', 'service' => 'VA Merchant Callback', 'scenario' => 'Successful Callback',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
-     'route' => 'POST /api/v1/monetapay/va/callback', 'files' => ['MonetapayCallbackController', 'HandleMonetapayCallbackAction'],
+     'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController', 'HandleMonetapayCallbackAction'],
      'note' => 'Inbound callback is invoked by Monetapay with a server-signed en_data; cannot be forged without the production AES key/token.'],
 
     /* ================================ eWallet ================================ */
@@ -186,7 +186,7 @@ return [
 
     ['no' => '3.8', 'sheet' => 'eWallet', 'service' => 'eWallet Merchant Callback', 'scenario' => 'Successful Callback',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
-     'route' => 'POST /api/v1/monetapay/ewallet/callback', 'files' => ['MonetapayCallbackController'],
+     'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController'],
      'note' => 'Inbound, server-signed by Monetapay.'],
 
     /* ================================= QRIS ================================= */
@@ -235,7 +235,7 @@ return [
 
     ['no' => '4.9', 'sheet' => 'QRIS', 'service' => 'QRIS Callback', 'scenario' => 'Successful Callback',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
-     'route' => 'POST /api/v1/monetapay/qris/callback', 'files' => ['MonetapayCallbackController'], 'note' => 'Inbound, server-signed.'],
+     'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController'], 'note' => 'Inbound, server-signed.'],
 
     ['no' => '4.10', 'sheet' => 'QRIS', 'service' => 'QRIS Refund', 'scenario' => 'Successful QRIS Refund',
      'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
@@ -283,14 +283,23 @@ return [
          'currency'             => 'IDR',
          'expire_seconds'       => '36000',
          'terminal_type'        => 'WAP',
+         'regular_bank_codes'   => 'BNI,PERMATA',
          'ewallet_bank_codes'   => 'DANA',
-         'regular_bank_codes'   => 'BNI',
+         'qris_bank_code'       => 'QRIS',
+         'sender_name'          => 'SIT Tester',
+         'account_name'         => 'SIT Tester',
+         'account_phone'        => '628123456789',
+         'account_bank_code'    => '',
+         'fixed_bank_code'      => '0',
+         'success_redirect_url' => 'https://example.com',
+         'product_id'           => 'SIT-PRODUCT-001',
          'product_name'         => 'SIT Product',
+         'product_category'     => 'Toys',
+         'product_sub_category' => 'Game',
+         'product_price'        => '10000',
          'product_quantity'     => '1',
          'product_type'         => 'PRODUCT',
-         'product_category'     => 'Toys',
          'product_description'  => 'SIT payment link test',
-         'success_redirect_url' => 'https://example.com',
      ],
      'capture' => ['as' => 'payment_link', 'from' => ['order_no' => 'data.data.order_no', 'mch_order_no' => 'data.data.mch_order_no']],
      'expect_code' => '0', 'expect_http' => 200,
