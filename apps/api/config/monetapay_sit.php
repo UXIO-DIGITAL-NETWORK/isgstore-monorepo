@@ -388,6 +388,9 @@ return [
          'retry_interval_count' => '5',
          'retry_interval'       => 'DAY',
          'has_recurrence'       => '0',
+         'order_items'          => [
+             ['type' => 'PRODUCT', 'mch_order_item_id' => 1, 'name' => 'Subscription', 'net_unit_amount' => 1, 'quantity' => 1, 'category' => 'test'],
+         ],
      ],
      'capture' => ['as' => 'subscription', 'from' => ['order_no' => 'data.data.order_no', 'mch_order_no' => 'data.data.mch_order_no']],
      'expect_code' => '0', 'expect_http' => 200,

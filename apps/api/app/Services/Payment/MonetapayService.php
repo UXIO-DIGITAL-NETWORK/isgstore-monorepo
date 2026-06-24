@@ -550,7 +550,15 @@ class MonetapayService
     /** 6.5.2 Subscription Create — POST /v1.0.0/subscription/create */
     public function createSubscription(array $params): array
     {
-        return $this->postSigned('/v1.0.0/subscription/create', $params, passthrough: true);
+        $orderItems = $params['order_items'] ?? [];
+        unset($params['order_items']);
+
+        return $this->postSigned(
+            '/v1.0.0/subscription/create',
+            $params,
+            passthrough: true,
+            plainBody: $orderItems ? ['order_items' => $orderItems] : []
+        );
     }
 
     /** 6.5.6 Subscription Deactivate — POST /v1.0.0/subscription/deactivate */
