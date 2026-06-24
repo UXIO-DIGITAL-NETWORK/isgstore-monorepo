@@ -165,6 +165,19 @@ MONETAPAY_IS_PRODUCTION=false
 MONETAPAY_SUCCESS_REDIRECT_URL=   # redirect after successful e-wallet / payment link payment
 MONETAPAY_FAILED_REDIRECT_URL=    # redirect after failed payment link payment (optional)
 
+# Monetapay RDL (escrow / P2P-lending) — separate product, JSON-encrypted body.
+# base_url + paths are PLACEHOLDERS until confirmed against Monetapay's RDL spec.
+# Crypto/merchant keys fall back to the MONETAPAY_* values above when unset.
+MONETAPAY_RDL_BASE_URL=https://sandbox-api.monetapay.net
+MONETAPAY_RDL_MCH_ID=             # defaults to MONETAPAY_MCH_ID
+MONETAPAY_RDL_PATH_CUSTOMER_CREATE=     # e.g. /v1.0.0/rdl/customer/create
+MONETAPAY_RDL_PATH_CUSTOMER_INQUIRY=
+MONETAPAY_RDL_PATH_CUSTOMER_UPDATE=
+MONETAPAY_RDL_PATH_VA_CREATE=
+MONETAPAY_RDL_PATH_VA_INQUIRY=
+MONETAPAY_RDL_PATH_DISBURSEMENT_CREATE=
+MONETAPAY_RDL_PATH_DISBURSEMENT_INQUIRY=
+
 DIGIFLAZZ_USERNAME=
 DIGIFLAZZ_KEY=
 DIGIFLAZZ_BASE_URL=https://api.digiflazz.com/v1

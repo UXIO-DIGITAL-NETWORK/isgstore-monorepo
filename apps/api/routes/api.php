@@ -1,34 +1,38 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\User\UserController;
-use App\Http\Controllers\Api\User\SyncTimezoneController;
 use App\Http\Controllers\Api\ActivityLogController;
-use App\Http\Controllers\Api\LeaderboardController;
-use App\Http\Controllers\Api\Category\CategoryTypeController;
+use App\Http\Controllers\Api\AnnouncementController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\Category\CategoryController;
-use App\Http\Controllers\Api\Category\SubCategoryController;
+use App\Http\Controllers\Api\Category\CategoryTypeController;
 use App\Http\Controllers\Api\Category\ServerCategoryController;
 use App\Http\Controllers\Api\Category\ServerCategoryOptionController;
-use App\Http\Controllers\Api\Supplier\SupplierController;
-use App\Http\Controllers\Api\Supplier\SupplierCategoryController;
-use App\Http\Controllers\Api\Product\ProductController;
-use App\Http\Controllers\Api\Product\SupplierProductController;
-use App\Http\Controllers\Api\TransactionController;
-use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
-use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
-use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\PointHistoryController;
-use App\Http\Controllers\Api\RatingController;
-use App\Http\Controllers\Api\BannerController;
-use App\Http\Controllers\Api\AnnouncementController;
+use App\Http\Controllers\Api\Category\SubCategoryController;
+use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzBalanceController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzPostpaidController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
 use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
+use App\Http\Controllers\Api\LeaderboardController;
+use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
+use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
+use App\Http\Controllers\Api\Payment\Monetapay\MonetapayRdlCallbackController;
+use App\Http\Controllers\Api\Payment\Monetapay\MonetapayRdlController;
+use App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PointHistoryController;
+use App\Http\Controllers\Api\Product\ProductController;
+use App\Http\Controllers\Api\Product\SupplierProductController;
+use App\Http\Controllers\Api\RatingController;
+use App\Http\Controllers\Api\Supplier\SupplierCategoryController;
+use App\Http\Controllers\Api\Supplier\SupplierController;
+use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\User\SyncTimezoneController;
+use App\Http\Controllers\Api\User\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 // All Public Routes under v1
 Route::prefix('v1')->group(function () {
@@ -48,19 +52,22 @@ Route::prefix('v1')->group(function () {
     Route::post('/payment/callback', MonetapayCallbackController::class);
     // Method-specific Monetapay callbacks — same decrypt+verify+dispatch flow.
     // Point Monetapay's VA/E-Wallet/QRIS callback URLs at whichever you prefer.
-    Route::post('/monetapay/va/callback',      MonetapayCallbackController::class);
+    Route::post('/monetapay/va/callback', MonetapayCallbackController::class);
     Route::post('/monetapay/ewallet/callback', MonetapayCallbackController::class);
-    Route::post('/monetapay/qris/callback',    MonetapayCallbackController::class);
+    Route::post('/monetapay/qris/callback', MonetapayCallbackController::class);
     // Subscription lifecycle callbacks (EVT_ACTIVE/EVT_INACTIVE/EVT_CYCLE_PREV_TRIGGER/EVT_CYCLE_TRIGGERED)
-    Route::post('/monetapay/subscription/callback/active',         [\App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController::class, 'active']);
-    Route::post('/monetapay/subscription/callback/deduct/before',  [\App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
-    Route::post('/monetapay/subscription/callback/deduct/after',   [\App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
+    Route::post('/monetapay/subscription/callback/active', [MonetapaySubscriptionCallbackController::class, 'active']);
+    Route::post('/monetapay/subscription/callback/deduct/before', [MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
+    Route::post('/monetapay/subscription/callback/deduct/after', [MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
+    // RDL (escrow / P2P-lending) lifecycle callbacks (2.9 customer, 2.16 VA)
+    Route::post('/monetapay/rdl/customer/callback', [MonetapayRdlCallbackController::class, 'customer']);
+    Route::post('/monetapay/rdl/va/callback', [MonetapayRdlCallbackController::class, 'va']);
     Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
-    Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'store']);
+    Route::post('/checkout', [CheckoutController::class, 'store']);
 
     // Postpaid — public (guests can inquire/pay bills)
     Route::post('/digiflazz/check-bill', [DigiflazzPostpaidController::class, 'checkBill']);
-    Route::post('/digiflazz/pay-bill',   [DigiflazzPostpaidController::class, 'payBill']);
+    Route::post('/digiflazz/pay-bill', [DigiflazzPostpaidController::class, 'payBill']);
 
     // Authentication Routes
     Route::prefix('auth')->group(function () {
@@ -80,7 +87,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return response()->json([
             'status' => 'success',
-            'data' => $request->user()
+            'data' => $request->user(),
         ]);
     });
 
@@ -175,47 +182,58 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     });
 
     // Digiflazz Admin Tools
-    Route::get('/digiflazz/balance',      [DigiflazzBalanceController::class, 'index']);
+    Route::get('/digiflazz/balance', [DigiflazzBalanceController::class, 'index']);
     Route::post('/digiflazz/check-status', [DigiflazzTransactionStatusController::class, 'check']);
     Route::post('/digiflazz/sync-products', [DigiflazzSyncController::class, 'sync']);
 
     // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.
     // Outbound signed calls to Monetapay; mirror the spec's query endpoints.
     Route::prefix('monetapay')->group(function () {
-        Route::post('/balance',              [MonetapayController::class, 'balance']);              // 5.1
+        Route::post('/balance', [MonetapayController::class, 'balance']);              // 5.1
         Route::post('/virtual-account/query', [MonetapayController::class, 'virtualAccount']);      // 6.1.2
-        Route::post('/ewallet/query',         [MonetapayController::class, 'ewallet']);             // 6.2.2
-        Route::post('/qris/query',            [MonetapayController::class, 'qris']);                // 6.3.3
-        Route::post('/payment-link/create',   [MonetapayController::class, 'paymentLinkCreate']);    // 6.4.1
-        Route::post('/payment-link/query',    [MonetapayController::class, 'paymentLink']);         // 6.4.2
-        Route::post('/customer/create',       [MonetapayController::class, 'customerCreate']);      // 6.5.1
-        Route::post('/customer/update',       [MonetapayController::class, 'customerUpdate']);      // 6.5.2
-        Route::post('/customer/query',        [MonetapayController::class, 'customerQuery']);       // 6.5.3
-        Route::post('/subscription/apply',    [MonetapayController::class, 'subscriptionApply']);   // 6.5.4
-        Route::post('/subscription/create',   [MonetapayController::class, 'subscriptionCreate']); // (legacy create)
+        Route::post('/ewallet/query', [MonetapayController::class, 'ewallet']);             // 6.2.2
+        Route::post('/qris/query', [MonetapayController::class, 'qris']);                // 6.3.3
+        Route::post('/payment-link/create', [MonetapayController::class, 'paymentLinkCreate']);    // 6.4.1
+        Route::post('/payment-link/query', [MonetapayController::class, 'paymentLink']);         // 6.4.2
+        Route::post('/customer/create', [MonetapayController::class, 'customerCreate']);      // 6.5.1
+        Route::post('/customer/update', [MonetapayController::class, 'customerUpdate']);      // 6.5.2
+        Route::post('/customer/query', [MonetapayController::class, 'customerQuery']);       // 6.5.3
+        Route::post('/subscription/apply', [MonetapayController::class, 'subscriptionApply']);   // 6.5.4
+        Route::post('/subscription/create', [MonetapayController::class, 'subscriptionCreate']); // (legacy create)
         Route::post('/subscription/deactivate', [MonetapayController::class, 'subscriptionDeactivate']); // 6.5.6
-        Route::post('/subscription/query',    [MonetapayController::class, 'subscription']);        // 6.5.5
-        Route::post('/subscription/cycle',    [MonetapayController::class, 'subscriptionCycle']);   // 6.5.7
+        Route::post('/subscription/query', [MonetapayController::class, 'subscription']);        // 6.5.5
+        Route::post('/subscription/cycle', [MonetapayController::class, 'subscriptionCycle']);   // 6.5.7
         Route::post('/subscription/cycle/attempt', [MonetapayController::class, 'subscriptionCycleAttempt']); // 6.5.8
-        Route::post('/refund/query',          [MonetapayController::class, 'refundQuery']);         // 6.6.4
-        Route::post('/repay/query',           [MonetapayController::class, 'repay']);               // 6.6.5
-        Route::post('/sub-merchant/query',    [MonetapayController::class, 'subMerchant']);         // 6.7.4
-        Route::post('/cross-border/query',    [MonetapayController::class, 'crossBorder']);         // 6.8.2
-        Route::post('/cdm/query',             [MonetapayController::class, 'cdm']);                 // 6.9.2
-        Route::post('/payin/query',           [MonetapayController::class, 'payin']);               // 6.11.2
-        Route::post('/disbursement/create',    [MonetapayController::class, 'disbursementCreate']); // 7.1.1
-        Route::post('/large-payout/create',   [MonetapayController::class, 'largePayoutCreate']);  // 7.2.1
+        Route::post('/refund/query', [MonetapayController::class, 'refundQuery']);         // 6.6.4
+        Route::post('/repay/query', [MonetapayController::class, 'repay']);               // 6.6.5
+        Route::post('/sub-merchant/query', [MonetapayController::class, 'subMerchant']);         // 6.7.4
+        Route::post('/cross-border/query', [MonetapayController::class, 'crossBorder']);         // 6.8.2
+        Route::post('/cdm/query', [MonetapayController::class, 'cdm']);                 // 6.9.2
+        Route::post('/payin/query', [MonetapayController::class, 'payin']);               // 6.11.2
+        Route::post('/disbursement/create', [MonetapayController::class, 'disbursementCreate']); // 7.1.1
+        Route::post('/large-payout/create', [MonetapayController::class, 'largePayoutCreate']);  // 7.2.1
         Route::post('/ewallet-payout/create', [MonetapayController::class, 'ewalletPayoutCreate']); // 7.3.1
-        Route::post('/disbursement/query',    [MonetapayController::class, 'disbursement']);        // 7.4.1
-        Route::post('/inquiry-account',       [MonetapayController::class, 'accountValidation']);   // 8.1/8.2
-        Route::post('/bills/daily',           [MonetapayController::class, 'dailyBill']);           // 9.1
-        Route::post('/bills/flow',            [MonetapayController::class, 'billFlow']);            // 9.2
-        Route::post('/transfer/query',        [MonetapayController::class, 'transferQuery']);       // 15.2
-        Route::post('/permission/query',      [MonetapayController::class, 'merchantPermission']);  // 16.1
+        Route::post('/disbursement/query', [MonetapayController::class, 'disbursement']);        // 7.4.1
+        Route::post('/inquiry-account', [MonetapayController::class, 'accountValidation']);   // 8.1/8.2
+        Route::post('/bills/daily', [MonetapayController::class, 'dailyBill']);           // 9.1
+        Route::post('/bills/flow', [MonetapayController::class, 'billFlow']);            // 9.2
+        Route::post('/transfer/query', [MonetapayController::class, 'transferQuery']);       // 15.2
+        Route::post('/permission/query', [MonetapayController::class, 'merchantPermission']);  // 16.1
 
         // State-changing
         Route::post('/cancel', [MonetapayController::class, 'cancel']);  // 6.6.1
         Route::post('/refund', [MonetapayController::class, 'refund']);  // 6.6.2
+
+        // RDL (Rekening Dana Lender — escrow / P2P-lending) — Customer, VA, Disbursement
+        Route::prefix('rdl')->group(function () {
+            Route::post('/customer/create', [MonetapayRdlController::class, 'customerCreate']);   // 2.1–2.3
+            Route::post('/customer/inquiry', [MonetapayRdlController::class, 'customerInquiry']);  // 2.4–2.6
+            Route::post('/customer/update', [MonetapayRdlController::class, 'customerUpdate']);   // 2.7–2.8
+            Route::post('/va/create', [MonetapayRdlController::class, 'vaCreate']);         // 2.10–2.12
+            Route::post('/va/inquiry', [MonetapayRdlController::class, 'vaInquiry']);        // 2.13–2.15
+            Route::post('/disbursement/create', [MonetapayRdlController::class, 'disbursementCreate']);  // 2.17–2.19
+            Route::post('/disbursement/inquiry', [MonetapayRdlController::class, 'disbursementInquiry']); // 2.20–2.22
+        });
     });
 
     // Transaction Management (Admin CRUD)
