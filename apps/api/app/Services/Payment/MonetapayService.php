@@ -293,26 +293,27 @@ class MonetapayService
      * Build the signed + AES-encrypted envelope and POST it to Monetapay.
      * Returns the full decoded JSON response (code/message/data/...).
      *
-     * @param array<string,scalar> $businessParams Pure business params (no timestamp/sign).
+     * @param array<string,scalar> $businessParams  Pure business params (no timestamp/sign). Arrays are excluded from the encrypted payload.
+     * @param array<string,mixed>  $plainBody       Extra fields merged into the outer request body (not encrypted). Use for nested arrays like order_items.
      */
-    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false): array
+    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = []): array
     {
         // Inject merchant ID so all signed calls include app_id in the encrypted TreeMap.
         $businessParams['app_id'] = $this->mchId;
 
         // Monetapay omits blank fields from the signed TreeMap; mirror that so
         // our local sign matches what the gateway recomputes on its side.
+        // Arrays are excluded here — nested structures must go in $plainBody instead.
         $businessParams = array_filter(
             $businessParams,
-            static fn ($value) => $value !== null && $value !== ''
+            static fn ($value) => $value !== null && $value !== '' && !is_array($value)
         );
 
         ksort($businessParams);
 
         $buffer = '';
         foreach ($businessParams as $key => $value) {
-            $serialized = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : (string) $value;
-            $buffer .= $key . '=' . $serialized . '__';
+            $buffer .= $key . '=' . (string) $value . '__';
         }
         $strMap = $buffer === '' ? '' : substr($buffer, 0, -2);
 
@@ -326,12 +327,12 @@ class MonetapayService
 
         $enData = $this->encryptPayload($strToEncrypt);
 
-        $response = Http::post($this->baseUrl . $endpointSuffix, [
+        $response = Http::post($this->baseUrl . $endpointSuffix, array_merge([
             'data' => [
                 'partner_key' => $this->partnerKey,
                 'en_data'     => $enData,
             ],
-        ]);
+        ], $plainBody));
 
         return $this->parseResponse($endpointSuffix, $response, $passthrough);
     }
@@ -533,7 +534,17 @@ class MonetapayService
     /** 6.5.4 Subscription Apply — POST /v1.0.0/subscription/apply */
     public function applySubscription(array $params): array
     {
-        return $this->postSigned('/v1.0.0/subscription/apply', $params, passthrough: true);
+        // order_items is a nested array that must be sent plain outside en_data.
+        // Including it in the encrypted key=value string breaks Monetapay's parser.
+        $orderItems = $params['order_items'] ?? [];
+        unset($params['order_items']);
+
+        return $this->postSigned(
+            '/v1.0.0/subscription/apply',
+            $params,
+            passthrough: true,
+            plainBody: $orderItems ? ['order_items' => $orderItems] : []
+        );
     }
 
     /** 6.5.2 Subscription Create — POST /v1.0.0/subscription/create */
