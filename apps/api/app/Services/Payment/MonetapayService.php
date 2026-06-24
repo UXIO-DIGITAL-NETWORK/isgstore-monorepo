@@ -311,7 +311,8 @@ class MonetapayService
 
         $buffer = '';
         foreach ($businessParams as $key => $value) {
-            $buffer .= $key . '=' . (string) $value . '__';
+            $serialized = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : (string) $value;
+            $buffer .= $key . '=' . $serialized . '__';
         }
         $strMap = $buffer === '' ? '' : substr($buffer, 0, -2);
 
