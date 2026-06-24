@@ -543,7 +543,7 @@ class MonetapayService
             '/v1.0.0/subscription/apply',
             $params,
             passthrough: true,
-            plainBody: $orderItems ? ['order_items' => $orderItems] : []
+            plainBody: $orderItems ? ['order_items' => json_encode($orderItems)] : []
         );
     }
 
@@ -557,7 +557,7 @@ class MonetapayService
             '/v1.0.0/subscription/create',
             $params,
             passthrough: true,
-            plainBody: $orderItems ? ['order_items' => $orderItems] : []
+            plainBody: $orderItems ? ['order_items' => json_encode($orderItems)] : []
         );
     }
 

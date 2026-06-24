@@ -406,6 +406,9 @@ return [
          'interval_count'  => '1',
          'channel_code'    => 'DANA',
          'account_phone'   => '628123456789',
+         'order_items'     => [
+             ['type' => 'PRODUCT', 'mch_order_item_id' => 1, 'name' => 'Subscription', 'net_unit_amount' => 1, 'quantity' => 1, 'category' => 'test'],
+         ],
      ],
      'expect_code' => '4001', 'expect_http' => 400,
      'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayService::createSubscription'],
@@ -421,6 +424,9 @@ return [
          'interval_count'  => '1',
          'channel_code'    => 'DANA',
          'account_phone'   => '628123456789',
+         'order_items'     => [
+             ['type' => 'PRODUCT', 'mch_order_item_id' => 1, 'name' => 'Subscription', 'net_unit_amount' => 1, 'quantity' => 1, 'category' => 'test'],
+         ],
      ],
      'expect_code' => '-1', 'expect_http' => 400,
      'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayService::createSubscription']],
