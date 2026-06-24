@@ -2,23 +2,27 @@
 
 namespace App\Services\Payment;
 
+use Exception;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class MonetapayService
 {
     private string $mchId;
+
     private string $partnerKey;
+
     private string $token;
+
     private string $baseUrl;
 
     public function __construct()
     {
-        $this->mchId      = config('services.monetapay.mch_id');
+        $this->mchId = config('services.monetapay.mch_id');
         $this->partnerKey = config('services.monetapay.partner_key');
-        $this->token      = config('services.monetapay.token');
-        $this->baseUrl    = config('services.monetapay.is_production')
+        $this->token = config('services.monetapay.token');
+        $this->baseUrl = config('services.monetapay.is_production')
             ? 'https://api.monetapay.net'
             : 'https://sandbox-api.monetapay.net';
     }
@@ -39,7 +43,7 @@ class MonetapayService
     public function encryptPayload(string $content): string
     {
         $key = $this->deriveAesParam(config('services.monetapay.aes_key'));
-        $iv  = $this->deriveAesParam(config('services.monetapay.aes_iv'));
+        $iv = $this->deriveAesParam(config('services.monetapay.aes_iv'));
 
         $encrypted = openssl_encrypt($content, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $iv);
 
@@ -52,7 +56,7 @@ class MonetapayService
     public function decryptPayload(string $encodedContent): array
     {
         $key = $this->deriveAesParam(config('services.monetapay.aes_key'));
-        $iv  = $this->deriveAesParam(config('services.monetapay.aes_iv'));
+        $iv = $this->deriveAesParam(config('services.monetapay.aes_iv'));
 
         $decrypted = openssl_decrypt(
             base64_decode($encodedContent),
@@ -89,8 +93,8 @@ class MonetapayService
                 continue;
             }
 
-            $key          = substr($segment, 0, $delimPos);
-            $value        = substr($segment, $delimPos + 1);
+            $key = substr($segment, 0, $delimPos);
+            $value = substr($segment, $delimPos + 1);
             $result[$key] = $value;
         }
 
@@ -102,10 +106,10 @@ class MonetapayService
      */
     public function verifyCallbackSignature(array $payload): bool
     {
-        $receivedSign = $payload['sign']      ?? null;
-        $timestamp    = $payload['timestamp'] ?? null;
+        $receivedSign = $payload['sign'] ?? null;
+        $timestamp = $payload['timestamp'] ?? null;
 
-        if (!$receivedSign || !$timestamp) {
+        if (! $receivedSign || ! $timestamp) {
             return false;
         }
 
@@ -115,15 +119,15 @@ class MonetapayService
 
         $buffer = '';
         foreach ($params as $key => $value) {
-            $buffer .= $key . '=' . $value . '__';
+            $buffer .= $key.'='.$value.'__';
         }
         $strMap = rtrim($buffer, '_');
         if ($buffer !== '' && str_ends_with($buffer, '__')) {
             $strMap = substr($buffer, 0, -2);
         }
 
-        $originalString = $this->token . "*|*" . $strMap . "@!@" . $timestamp;
-        $expectedSign   = md5(md5($originalString));
+        $originalString = $this->token.'*|*'.$strMap.'@!@'.$timestamp;
+        $expectedSign = md5(md5($originalString));
 
         return hash_equals($expectedSign, strtolower((string) $receivedSign));
     }
@@ -135,45 +139,45 @@ class MonetapayService
     {
         // 1. Routing Endpoint Dinamis
         $endpointSuffix = match ($paymentType) {
-            'qris'              => '/v1.0.0/qris',
-            'virtual_account'   => '/v1.0.0/virtual_account',
-            'ewallet'           => '/v1.0.0/ewallet/charge', // 6.2.1 EWallet Create (brief p.28)
+            'qris' => '/v1.0.0/qris',
+            'virtual_account' => '/v1.0.0/virtual_account',
+            'ewallet' => '/v1.0.0/ewallet/charge', // 6.2.1 EWallet Create (brief p.28)
             'convenience_store' => '/v1.0.0/retail',  // Pastikan suffix ini sesuai dokumen Monetapay
-            default             => '/v1.0.0/virtual_account',
+            default => '/v1.0.0/virtual_account',
         };
 
-        $endpoint = $this->baseUrl . $endpointSuffix;
-        $isQris   = $paymentType === 'qris';
+        $endpoint = $this->baseUrl.$endpointSuffix;
+        $isQris = $paymentType === 'qris';
 
         // 2. Parameter Bisnis Murni (tanpa timestamp & sign)
         $requestParams = [
-            'app_id'       => $this->mchId,
+            'app_id' => $this->mchId,
             'mch_order_no' => (string) $referenceId,
-            'amount'       => (string) $amount,
-            'currency'     => 'IDR',
+            'amount' => (string) $amount,
+            'currency' => 'IDR',
         ];
 
         if ($isQris) {
-            $requestParams['is_single_use']  = "1";
-            $requestParams['qr_string_type'] = "2";
+            $requestParams['is_single_use'] = '1';
+            $requestParams['qr_string_type'] = '2';
         } elseif ($paymentType === 'ewallet') {
-            $requestParams['terminal_type']        = 'WEB';
-            $requestParams['channel_code']         = strtoupper($channelCode);
-            $requestParams['product_id']           = $customerData['product_id'] ?? '1';
-            $requestParams['product_name']         = $customerData['product_name'] ?? 'Top Up';
-            $requestParams['product_price']        = $customerData['product_price'] ?? (string) $amount;
-            $requestParams['product_quantity']     = '1';
-            $requestParams['product_type']         = 'PRODUCT';
-            $requestParams['product_category']     = $customerData['product_category'] ?? 'General';
-            $requestParams['account_phone']        = (string) ($customerData['customer_phone'] ?? '08123456789');
+            $requestParams['terminal_type'] = 'WEB';
+            $requestParams['channel_code'] = strtoupper($channelCode);
+            $requestParams['product_id'] = $customerData['product_id'] ?? '1';
+            $requestParams['product_name'] = $customerData['product_name'] ?? 'Top Up';
+            $requestParams['product_price'] = $customerData['product_price'] ?? (string) $amount;
+            $requestParams['product_quantity'] = '1';
+            $requestParams['product_type'] = 'PRODUCT';
+            $requestParams['product_category'] = $customerData['product_category'] ?? 'General';
+            $requestParams['account_phone'] = (string) ($customerData['customer_phone'] ?? '08123456789');
             $requestParams['success_redirect_url'] = config('services.monetapay.success_redirect_url', 'https://example.com');
-            $requestParams['expire_seconds']       = '7200';
+            $requestParams['expire_seconds'] = '7200';
         } else {
-            $requestParams['account_name']      = (string) ($customerData['customer_name'] ?? 'Guest');
+            $requestParams['account_name'] = (string) ($customerData['customer_name'] ?? 'Guest');
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode)));
-            $requestParams['account_phone']     = (string) ($customerData['customer_phone'] ?? '08123456789');
-            $requestParams['is_single_use']     = (string) ($customerData['is_single_use'] ?? '1');
-            $requestParams['expire_seconds']    = "600";
+            $requestParams['account_phone'] = (string) ($customerData['customer_phone'] ?? '08123456789');
+            $requestParams['is_single_use'] = (string) ($customerData['is_single_use'] ?? '1');
+            $requestParams['expire_seconds'] = '600';
         }
 
         // 3. Format menjadi TreeMap (Sorting Abjad)
@@ -182,7 +186,7 @@ class MonetapayService
         // 4. Gabungkan String (key=value__)
         $buffer = '';
         foreach ($requestParams as $key => $value) {
-            $buffer .= $key . '=' . $value . '__';
+            $buffer .= $key.'='.$value.'__';
         }
 
         // Hapus "__" di dua karakter terakhir
@@ -192,13 +196,13 @@ class MonetapayService
         $timestamp = (string) time(); // 10-digit epoch
 
         // originalString = Token + "*|*" + strMap + "@!@" + timestamp
-        $originalString = $this->token . "*|*" . $strMap . "@!@" . $timestamp;
+        $originalString = $this->token.'*|*'.$strMap.'@!@'.$timestamp;
 
         // sign = MD5(MD5(originalString))
         $sign = md5(md5($originalString));
 
         // 6. Pembentukan String Akhir yang akan Dienkripsi AES
-        $strToEncrypt = $strMap . "__sign=" . $sign . "__timestamp=" . $timestamp;
+        $strToEncrypt = $strMap.'__sign='.$sign.'__timestamp='.$timestamp;
 
         // 7. Eksekusi Enkripsi
         $enData = $this->encryptPayload($strToEncrypt);
@@ -207,15 +211,15 @@ class MonetapayService
         $requestBody = [
             'data' => [
                 'partner_key' => $this->partnerKey,
-                'en_data'     => $enData,
-            ]
+                'en_data' => $enData,
+            ],
         ];
 
         // Debug Log Trace awal
         Log::info('Monetapay Validated Trace', [
-            'strMap'         => $strMap,
+            'strMap' => $strMap,
             'originalString' => $originalString,
-            'strToEncrypt'   => $strToEncrypt,
+            'strToEncrypt' => $strToEncrypt,
         ]);
 
         try {
@@ -227,7 +231,7 @@ class MonetapayService
                 $errorMessage = $errorData['message'] ?? $errorData['msg'] ?? $response->body();
 
                 Log::error('Monetapay Create Transaction Failed', [
-                    'body'     => $requestBody,
+                    'body' => $requestBody,
                     'response' => $errorData,
                 ]);
 
@@ -239,14 +243,14 @@ class MonetapayService
             // Log respons penuh dari Monetapay API
             Log::info('Monetapay API Creation Response', $responseData);
 
-            $apiCode        = $responseData['code'] ?? null;
-            $apiMessage     = strtolower($responseData['message'] ?? $responseData['msg'] ?? '');
+            $apiCode = $responseData['code'] ?? null;
+            $apiMessage = strtolower($responseData['message'] ?? $responseData['msg'] ?? '');
             $innerErrorCode = $responseData['data']['error_code'] ?? null;
 
             // Kondisi Sukses: HTTP Code 0/200, ATAU inner error_code 7010 (Processing)
             $isSuccess = ($apiCode == 200 || $apiCode == 0 || $apiMessage === 'success' || $innerErrorCode == 7010);
 
-            if (!$isSuccess) {
+            if (! $isSuccess) {
                 // Pemetaan Retry berdasarkan Dokumen MPT
                 $retryableCodes = [7002, 7003, 7004, 7005, 7008, 7009, 7011, 7015];
                 $canRetry = in_array($innerErrorCode, $retryableCodes) || in_array($apiCode, $retryableCodes);
@@ -258,7 +262,7 @@ class MonetapayService
             }
 
             $actionData = [];
-            $resData    = $responseData['data'] ?? [];
+            $resData = $responseData['data'] ?? [];
 
             // Monetapay's own transaction ID — persisted to payments.pg_transaction_id
             $actionData['order_no'] = $resData['order_no'] ?? null;
@@ -270,7 +274,7 @@ class MonetapayService
                 $actionData['deeplink_url'] = $resData['deeplink_url'] ?? null;
             } else {
                 $actionData['virtual_account'] = $resData['virtual_account'] ?? null;
-                $actionData['bank_code']       = $resData['account_bank_code'] ?? null;
+                $actionData['bank_code'] = $resData['account_bank_code'] ?? null;
             }
 
             return ['data' => $actionData];
@@ -293,8 +297,8 @@ class MonetapayService
      * Build the signed + AES-encrypted envelope and POST it to Monetapay.
      * Returns the full decoded JSON response (code/message/data/...).
      *
-     * @param array<string,scalar> $businessParams  Pure business params (no timestamp/sign). Arrays are excluded from the encrypted payload.
-     * @param array<string,mixed>  $plainBody       Extra fields merged into the outer request body (not encrypted). Use for nested arrays like order_items.
+     * @param  array<string,scalar>  $businessParams  Pure business params (no timestamp/sign). Arrays are excluded from the encrypted payload.
+     * @param  array<string,mixed>  $plainBody  Extra fields merged into the outer request body (not encrypted). Use for nested arrays like order_items.
      */
     private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = []): array
     {
@@ -306,31 +310,31 @@ class MonetapayService
         // Arrays are excluded here — nested structures must go in $plainBody instead.
         $businessParams = array_filter(
             $businessParams,
-            static fn ($value) => $value !== null && $value !== '' && !is_array($value)
+            static fn ($value) => $value !== null && $value !== '' && ! is_array($value)
         );
 
         ksort($businessParams);
 
         $buffer = '';
         foreach ($businessParams as $key => $value) {
-            $buffer .= $key . '=' . (string) $value . '__';
+            $buffer .= $key.'='.(string) $value.'__';
         }
         $strMap = $buffer === '' ? '' : substr($buffer, 0, -2);
 
-        $timestamp      = (string) time();
-        $originalString = $this->token . "*|*" . $strMap . "@!@" . $timestamp;
-        $sign           = md5(md5($originalString));
+        $timestamp = (string) time();
+        $originalString = $this->token.'*|*'.$strMap.'@!@'.$timestamp;
+        $sign = md5(md5($originalString));
 
         $strToEncrypt = $strMap === ''
-            ? "sign=" . $sign . "__timestamp=" . $timestamp
-            : $strMap . "__sign=" . $sign . "__timestamp=" . $timestamp;
+            ? 'sign='.$sign.'__timestamp='.$timestamp
+            : $strMap.'__sign='.$sign.'__timestamp='.$timestamp;
 
         $enData = $this->encryptPayload($strToEncrypt);
 
-        $response = Http::post($this->baseUrl . $endpointSuffix, array_merge([
+        $response = Http::post($this->baseUrl.$endpointSuffix, array_merge([
             'data' => [
                 'partner_key' => $this->partnerKey,
-                'en_data'     => $enData,
+                'en_data' => $enData,
             ],
         ], $plainBody));
 
@@ -341,13 +345,13 @@ class MonetapayService
      * POST a plain (non-encrypted) JSON body. A handful of Monetapay endpoints
      * (payin query, cdm query, merchant permission) accept raw params.
      *
-     * @param array<string,mixed> $body
+     * @param  array<string,mixed>  $body
      */
     private function postPlain(string $endpointSuffix, array $body): array
     {
         $body = array_filter($body, static fn ($value) => $value !== null && $value !== '');
 
-        $response = Http::post($this->baseUrl . $endpointSuffix, $body);
+        $response = Http::post($this->baseUrl.$endpointSuffix, $body);
 
         return $this->parseResponse($endpointSuffix, $response);
     }
@@ -355,19 +359,19 @@ class MonetapayService
     /**
      * Shared HTTP failure handling + JSON decoding for the helpers above.
      */
-    private function parseResponse(string $endpointSuffix, \Illuminate\Http\Client\Response $response, bool $passthrough = false): array
+    private function parseResponse(string $endpointSuffix, Response $response, bool $passthrough = false): array
     {
         if ($response->failed()) {
-            $error   = $response->json();
+            $error = $response->json();
             $message = $error['message'] ?? $error['msg'] ?? $response->body();
 
             Log::error('Monetapay request failed', [
                 'endpoint' => $endpointSuffix,
-                'status'   => $response->status(),
+                'status' => $response->status(),
                 'response' => $error,
             ]);
 
-            if (!$passthrough) {
+            if (! $passthrough) {
                 throw new Exception("Monetapay API Error [HTTP {$response->status()}]: {$message}");
             }
 
@@ -391,7 +395,7 @@ class MonetapayService
     {
         return $this->postSigned('/v1.0.0/balance', [
             'sub_mch_id' => $subMchId,
-            'currency'   => $currency,
+            'currency' => $currency,
         ]);
     }
 
@@ -534,31 +538,25 @@ class MonetapayService
     /** 6.5.4 Subscription Apply — POST /v1.0.0/subscription/apply */
     public function applySubscription(array $params): array
     {
-        // order_items is a nested array that must be sent plain outside en_data.
-        // Including it in the encrypted key=value string breaks Monetapay's parser.
-        $orderItems = $params['order_items'] ?? [];
-        unset($params['order_items']);
+        // order_items must be SIGNED: JSON-encode it to a string so it joins the
+        // encrypted TreeMap inside en_data (Monetapay only reads signed fields).
+        if (! empty($params['order_items']) && is_array($params['order_items'])) {
+            $params['order_items'] = json_encode($params['order_items']);
+        }
 
-        return $this->postSigned(
-            '/v1.0.0/subscription/apply',
-            $params,
-            passthrough: true,
-            plainBody: $orderItems ? ['order_items' => json_encode($orderItems)] : []
-        );
+        return $this->postSigned('/v1.0.0/subscription/apply', $params, passthrough: true);
     }
 
     /** 6.5.2 Subscription Create — POST /v1.0.0/subscription/create */
     public function createSubscription(array $params): array
     {
-        $orderItems = $params['order_items'] ?? [];
-        unset($params['order_items']);
+        // order_items must be SIGNED: JSON-encode it to a string so it joins the
+        // encrypted TreeMap inside en_data (Monetapay only reads signed fields).
+        if (! empty($params['order_items']) && is_array($params['order_items'])) {
+            $params['order_items'] = json_encode($params['order_items']);
+        }
 
-        return $this->postSigned(
-            '/v1.0.0/subscription/create',
-            $params,
-            passthrough: true,
-            plainBody: $orderItems ? ['order_items' => json_encode($orderItems)] : []
-        );
+        return $this->postSigned('/v1.0.0/subscription/create', $params, passthrough: true);
     }
 
     /** 6.5.6 Subscription Deactivate — POST /v1.0.0/subscription/deactivate */
