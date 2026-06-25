@@ -584,16 +584,16 @@ class MonetapayService
         return $this->postSigned('/v1.0.0/disbursement', $params, passthrough: true, appId: $this->disbursementAppId);
     }
 
-    /** 7.2.1 Large Payout Create — POST /v1.0.0/large-payout */
+    /** 7.2.1 Large Payout Create — POST /v1.0.0/disbursement/large */
     public function createLargePayout(array $params): array
     {
-        return $this->postSigned('/v1.0.0/large-payout', $params, passthrough: true, appId: $this->disbursementAppId);
+        return $this->postSigned('/v1.0.0/disbursement/large', $params, passthrough: true, appId: $this->disbursementAppId);
     }
 
-    /** 7.3.1 EWallet Payout Create — POST /v1.0.0/ewallet/payout */
+    /** 7.3.1 EWallet Payout Create — POST /v1.0.0/ewallet-disbursement */
     public function createEwalletPayout(array $params): array
     {
-        return $this->postSigned('/v1.0.0/ewallet/payout', $params, passthrough: true, appId: $this->disbursementAppId);
+        return $this->postSigned('/v1.0.0/ewallet-disbursement', $params, passthrough: true, appId: $this->disbursementAppId);
     }
 
     /** 7.4.1 Payout Order Inquiry — POST /v1.0.0/disbursement/query */
