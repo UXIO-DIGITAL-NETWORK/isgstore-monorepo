@@ -18,8 +18,6 @@ use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
-use App\Http\Controllers\Api\Payment\Monetapay\MonetapayRdlCallbackController;
-use App\Http\Controllers\Api\Payment\Monetapay\MonetapayRdlController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PointHistoryController;
@@ -59,9 +57,6 @@ Route::prefix('v1')->group(function () {
     Route::post('/monetapay/subscription/callback/active', [MonetapaySubscriptionCallbackController::class, 'active']);
     Route::post('/monetapay/subscription/callback/deduct/before', [MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
     Route::post('/monetapay/subscription/callback/deduct/after', [MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
-    // RDL (escrow / P2P-lending) lifecycle callbacks (2.9 customer, 2.16 VA)
-    Route::post('/monetapay/rdl/customer/callback', [MonetapayRdlCallbackController::class, 'customer']);
-    Route::post('/monetapay/rdl/va/callback', [MonetapayRdlCallbackController::class, 'va']);
     Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
     Route::post('/checkout', [CheckoutController::class, 'store']);
 
@@ -223,17 +218,6 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         // State-changing
         Route::post('/cancel', [MonetapayController::class, 'cancel']);  // 6.6.1
         Route::post('/refund', [MonetapayController::class, 'refund']);  // 6.6.2
-
-        // RDL (Rekening Dana Lender — escrow / P2P-lending) — Customer, VA, Disbursement
-        Route::prefix('rdl')->group(function () {
-            Route::post('/customer/create', [MonetapayRdlController::class, 'customerCreate']);   // 2.1–2.3
-            Route::post('/customer/inquiry', [MonetapayRdlController::class, 'customerInquiry']);  // 2.4–2.6
-            Route::post('/customer/update', [MonetapayRdlController::class, 'customerUpdate']);   // 2.7–2.8
-            Route::post('/va/create', [MonetapayRdlController::class, 'vaCreate']);         // 2.10–2.12
-            Route::post('/va/inquiry', [MonetapayRdlController::class, 'vaInquiry']);        // 2.13–2.15
-            Route::post('/disbursement/create', [MonetapayRdlController::class, 'disbursementCreate']);  // 2.17–2.19
-            Route::post('/disbursement/inquiry', [MonetapayRdlController::class, 'disbursementInquiry']); // 2.20–2.22
-        });
     });
 
     // Transaction Management (Admin CRUD)

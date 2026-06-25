@@ -100,7 +100,8 @@ Key points:
 - Outbound signature: `md5(md5(TOKEN + "*|*" + sortedParams + "@!@" + timestamp))`.
 - Inbound callback: same Double MD5 algorithm, verified via `verifyCallbackSignature()` using `hash_equals()`.
 - Endpoint selection is driven by `payment_type` on `PaymentChannel`: `'qris'` → `/v1.0.0/qris`, anything else → `/v1.0.0/virtual_account`.
-- Config keys: `services.monetapay.{mch_id, partner_key, token, aes_key, aes_iv, is_production}`.
+- Config keys: `services.monetapay.{mch_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
+- `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement); defaults to `mch_id` if unset.
 
 ### Digiflazz (Product Supplier)
 
@@ -157,6 +158,7 @@ users (nullable) ──── transactions ──── payments ──── pa
 
 ```
 MONETAPAY_MCH_ID=
+MONETAPAY_DISBURSEMENT_APP_ID=   # separate app_id for payout/disbursement (7.x); defaults to MONETAPAY_MCH_ID
 MONETAPAY_PARTNER_KEY=
 MONETAPAY_TOKEN=
 MONETAPAY_AES_KEY=
@@ -164,19 +166,6 @@ MONETAPAY_AES_IV=
 MONETAPAY_IS_PRODUCTION=false
 MONETAPAY_SUCCESS_REDIRECT_URL=   # redirect after successful e-wallet / payment link payment
 MONETAPAY_FAILED_REDIRECT_URL=    # redirect after failed payment link payment (optional)
-
-# Monetapay RDL (escrow / P2P-lending) — separate product, JSON-encrypted body.
-# base_url + paths are PLACEHOLDERS until confirmed against Monetapay's RDL spec.
-# Crypto/merchant keys fall back to the MONETAPAY_* values above when unset.
-MONETAPAY_RDL_BASE_URL=https://sandbox-api.monetapay.net
-MONETAPAY_RDL_MCH_ID=             # defaults to MONETAPAY_MCH_ID
-MONETAPAY_RDL_PATH_CUSTOMER_CREATE=     # e.g. /v1.0.0/rdl/customer/create
-MONETAPAY_RDL_PATH_CUSTOMER_INQUIRY=
-MONETAPAY_RDL_PATH_CUSTOMER_UPDATE=
-MONETAPAY_RDL_PATH_VA_CREATE=
-MONETAPAY_RDL_PATH_VA_INQUIRY=
-MONETAPAY_RDL_PATH_DISBURSEMENT_CREATE=
-MONETAPAY_RDL_PATH_DISBURSEMENT_INQUIRY=
 
 DIGIFLAZZ_USERNAME=
 DIGIFLAZZ_KEY=

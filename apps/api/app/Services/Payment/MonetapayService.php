@@ -11,6 +11,8 @@ class MonetapayService
 {
     private string $mchId;
 
+    private string $disbursementAppId;
+
     private string $partnerKey;
 
     private string $token;
@@ -19,9 +21,10 @@ class MonetapayService
 
     public function __construct()
     {
-        $this->mchId = config('services.monetapay.mch_id');
-        $this->partnerKey = config('services.monetapay.partner_key');
-        $this->token = config('services.monetapay.token');
+        $this->mchId = (string) config('services.monetapay.mch_id', '');
+        $this->disbursementAppId = (string) config('services.monetapay.disbursement_app_id', '');
+        $this->partnerKey = (string) config('services.monetapay.partner_key', '');
+        $this->token = (string) config('services.monetapay.token', '');
         $this->baseUrl = config('services.monetapay.is_production')
             ? 'https://api.monetapay.net'
             : 'https://sandbox-api.monetapay.net';
@@ -300,10 +303,10 @@ class MonetapayService
      * @param  array<string,scalar>  $businessParams  Pure business params (no timestamp/sign). Arrays are excluded from the encrypted payload.
      * @param  array<string,mixed>  $plainBody  Extra fields merged into the outer request body (not encrypted). Use for nested arrays like order_items.
      */
-    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = []): array
+    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = [], ?string $appId = null): array
     {
         // Inject merchant ID so all signed calls include app_id in the encrypted TreeMap.
-        $businessParams['app_id'] = $this->mchId;
+        $businessParams['app_id'] = $appId ?? $this->mchId;
 
         // Monetapay omits blank fields from the signed TreeMap; mirror that so
         // our local sign matches what the gateway recomputes on its side.
@@ -578,25 +581,25 @@ class MonetapayService
     /** 7.1.1 Disbursement Create — POST /v1.0.0/disbursement */
     public function createDisbursement(array $params): array
     {
-        return $this->postSigned('/v1.0.0/disbursement', $params, passthrough: true);
+        return $this->postSigned('/v1.0.0/disbursement', $params, passthrough: true, appId: $this->disbursementAppId);
     }
 
     /** 7.2.1 Large Payout Create — POST /v1.0.0/large-payout */
     public function createLargePayout(array $params): array
     {
-        return $this->postSigned('/v1.0.0/large-payout', $params, passthrough: true);
+        return $this->postSigned('/v1.0.0/large-payout', $params, passthrough: true, appId: $this->disbursementAppId);
     }
 
     /** 7.3.1 EWallet Payout Create — POST /v1.0.0/ewallet/payout */
     public function createEwalletPayout(array $params): array
     {
-        return $this->postSigned('/v1.0.0/ewallet/payout', $params, passthrough: true);
+        return $this->postSigned('/v1.0.0/ewallet/payout', $params, passthrough: true, appId: $this->disbursementAppId);
     }
 
     /** 7.4.1 Payout Order Inquiry — POST /v1.0.0/disbursement/query */
     public function inquiryDisbursement(array $params): array
     {
-        return $this->postSigned('/v1.0.0/disbursement/query', $params);
+        return $this->postSigned('/v1.0.0/disbursement/query', $params, appId: $this->disbursementAppId);
     }
 
     /* =====================================================================
