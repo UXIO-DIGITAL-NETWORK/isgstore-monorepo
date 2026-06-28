@@ -188,6 +188,10 @@
     "subtitle": "Manage your profile information, security, and account preferences.",
     "personalInfo": {
       "sectionTitle": "PERSONAL INFORMATION",
+      "photoTitle": "Profile Photo",
+      "photoUploadButton": "Add Profile Photo",
+      "photoRemoveButton": "Remove",
+      "photoHint": "JPG or PNG format, max 2MB",
       "fullName": "Full Name",
       "username": "Username",
       "email": "Email",

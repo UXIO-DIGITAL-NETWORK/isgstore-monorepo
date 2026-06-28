@@ -188,6 +188,10 @@
     "subtitle": "Kelola informasi profil, keamanan, dan preferensi akun Anda.",
     "personalInfo": {
       "sectionTitle": "INFORMASI PRIBADI",
+      "photoTitle": "Foto Profil",
+      "photoUploadButton": "Tambahkan Foto Profil",
+      "photoRemoveButton": "Hapus",
+      "photoHint": "Format JPG atau PNG, maksimal 2MB",
       "fullName": "Nama Lengkap",
       "username": "Username",
       "email": "Email",

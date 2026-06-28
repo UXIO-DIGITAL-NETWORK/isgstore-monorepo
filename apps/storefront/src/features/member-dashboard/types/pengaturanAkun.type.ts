@@ -8,6 +8,9 @@ export interface UsePengaturanAkunReturn {
   setEmail: (value: string) => void;
   whatsapp: string;
   setWhatsapp: (value: string) => void;
+  avatarPreview: string | null;
+  selectPhoto: (file: File) => void;
+  removeAvatar: () => void;
   submitProfile: () => void;
 
   // Ubah Password

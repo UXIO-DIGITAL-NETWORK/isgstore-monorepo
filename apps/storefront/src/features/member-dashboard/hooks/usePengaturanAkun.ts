@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MOCK_PROFILE } from "@/features/member-dashboard/data/pengaturanAkun.mock";
 import type { UsePengaturanAkunReturn } from "@/features/member-dashboard/types/pengaturanAkun.type";
 
@@ -8,6 +8,31 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
   const [username, setUsername] = useState<string>(MOCK_PROFILE.username);
   const [email, setEmail] = useState<string>(MOCK_PROFILE.email);
   const [whatsapp, setWhatsapp] = useState<string>(MOCK_PROFILE.whatsapp);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(MOCK_PROFILE.avatarUrl);
+
+  // Revoke blob URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (avatarPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectPhoto = (file: File) => {
+    if (avatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const removeAvatar = () => {
+    if (avatarPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    setAvatarPreview(null);
+  };
 
   // Ubah Password
   const [currentPassword, setCurrentPassword] = useState<string>("");
@@ -45,6 +70,9 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
     setEmail,
     whatsapp,
     setWhatsapp,
+    avatarPreview,
+    selectPhoto,
+    removeAvatar,
     submitProfile,
     currentPassword,
     setCurrentPassword,

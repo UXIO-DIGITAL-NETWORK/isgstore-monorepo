@@ -18,6 +18,9 @@ export default function AccountSettingsPage(): React.JSX.Element {
     setEmail,
     whatsapp,
     setWhatsapp,
+    avatarPreview,
+    selectPhoto,
+    removeAvatar,
     submitProfile,
     currentPassword,
     setCurrentPassword,
@@ -64,6 +67,9 @@ export default function AccountSettingsPage(): React.JSX.Element {
           onChangeEmail={setEmail}
           whatsapp={whatsapp}
           onChangeWhatsapp={setWhatsapp}
+          avatarPreview={avatarPreview}
+          onSelectPhoto={selectPhoto}
+          onRemovePhoto={removeAvatar}
           onSubmit={submitProfile}
         />
         <UbahPasswordCard

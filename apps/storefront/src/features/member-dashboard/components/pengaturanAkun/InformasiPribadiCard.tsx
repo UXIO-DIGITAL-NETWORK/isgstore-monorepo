@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { User } from "lucide-react";
 import { Box } from "@/components/common/Box";
@@ -19,6 +19,9 @@ interface InformasiPribadiCardProps {
   onChangeEmail: (v: string) => void;
   whatsapp: string;
   onChangeWhatsapp: (v: string) => void;
+  avatarPreview: string | null;
+  onSelectPhoto: (file: File) => void;
+  onRemovePhoto: () => void;
   onSubmit: () => void;
 }
 
@@ -31,9 +34,29 @@ export default function InformasiPribadiCard({
   onChangeEmail,
   whatsapp,
   onChangeWhatsapp,
+  avatarPreview,
+  onSelectPhoto,
+  onRemovePhoto,
   onSubmit,
 }: InformasiPribadiCardProps): React.JSX.Element {
   const { t } = useTranslation("dashboard");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset so the same file can be re-selected later
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      window.alert("File harus berupa gambar (JPG atau PNG).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      window.alert("Ukuran file tidak boleh melebihi 2MB.");
+      return;
+    }
+    onSelectPhoto(file);
+  };
 
   const sectionTitle = (
     <Box className="flex items-center gap-2">
@@ -50,6 +73,72 @@ export default function InformasiPribadiCard({
   return (
     <SectionCard title={sectionTitle}>
       <Box className="flex flex-col gap-4">
+
+        {/* ── Tambahkan Foto Profil ── */}
+        {/* Hidden file input */}
+        <Box
+          as="input"
+          type="file"
+          accept="image/png,image/jpeg"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        {/* Centered avatar + buttons */}
+        <Box className="flex flex-col items-center gap-3">
+          {/* Avatar circle */}
+          <Box className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white/10 shrink-0">
+            {avatarPreview ? (
+              <Box
+                as="img"
+                src={avatarPreview}
+                alt={fullName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Box className="w-full h-full bg-linear-to-br from-[#3B82F6] to-[#9234EA] flex items-center justify-center">
+                <Text
+                  as="span"
+                  className="text-[28px] font-outfit font-bold text-white leading-none select-none"
+                >
+                  {fullName.charAt(0).toUpperCase()}
+                </Text>
+              </Box>
+            )}
+          </Box>
+
+          {/* Upload button */}
+          <Box
+            as="button"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-5 py-2 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[12px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer"
+          >
+            {t("pengaturanAkun.personalInfo.photoUploadButton")}
+          </Box>
+
+          {/* Remove button — only shown when a photo is set */}
+          {avatarPreview && (
+            <Box
+              as="button"
+              type="button"
+              onClick={onRemovePhoto}
+              className="text-[12px] font-inter text-white/50 hover:text-white/80 transition-colors cursor-pointer leading-none"
+            >
+              {t("pengaturanAkun.personalInfo.photoRemoveButton")}
+            </Box>
+          )}
+
+          {/* Helper text */}
+          <Text as="span" className="text-[11px] font-inter text-white/40 leading-none">
+            {t("pengaturanAkun.personalInfo.photoHint")}
+          </Text>
+        </Box>
+
+        {/* Divider */}
+        <Box className="h-px bg-white/10" />
+
         {/* Row 1: Nama Lengkap + Username */}
         <Box className="grid grid-cols-2 gap-4">
           <Box>
