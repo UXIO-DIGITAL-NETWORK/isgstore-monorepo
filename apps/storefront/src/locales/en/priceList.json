@@ -36,6 +36,11 @@
     "inactive": "Inactive"
   },
 
+  "noGameSelected": {
+    "title": "Select a Game First",
+    "subtitle": "Choose a game category above to view the service price list."
+  },
+
   "emptyState": "No services matched your search.",
 
   "pagination": {

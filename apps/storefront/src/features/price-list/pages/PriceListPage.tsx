@@ -7,6 +7,7 @@ import CategorySelector from "@/features/price-list/components/CategorySelector"
 import PriceListToolbar from "@/features/price-list/components/PriceListToolbar";
 import PriceTable from "@/features/price-list/components/PriceTable";
 import PriceTablePagination from "@/features/price-list/components/PriceTablePagination";
+import PriceListEmptyState from "@/features/price-list/components/PriceListEmptyState";
 import { usePriceList } from "@/features/price-list/hooks/usePriceList";
 
 export default function PriceListPage(): React.JSX.Element {
@@ -40,23 +41,29 @@ export default function PriceListPage(): React.JSX.Element {
           onSelect={setActiveGameId}
         />
 
-        {/* Sort + search toolbar */}
-        <PriceListToolbar
-          form={form}
-          sortOption={sortOption}
-          onSortChange={setSortOption}
-          onQueryChange={onQueryChange}
-        />
+        {activeGameId ? (
+          <>
+            {/* Sort + search toolbar */}
+            <PriceListToolbar
+              form={form}
+              sortOption={sortOption}
+              onSortChange={setSortOption}
+              onQueryChange={onQueryChange}
+            />
 
-        {/* Price table */}
-        <PriceTable rows={pagedRows} />
+            {/* Price table */}
+            <PriceTable rows={pagedRows} />
 
-        {/* Pagination */}
-        <PriceTablePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+            {/* Pagination */}
+            <PriceTablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </>
+        ) : (
+          <PriceListEmptyState />
+        )}
       </Box>
 
       <Footer />

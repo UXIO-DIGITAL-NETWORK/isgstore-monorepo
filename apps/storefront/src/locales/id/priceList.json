@@ -36,6 +36,11 @@
     "inactive": "Nonaktif"
   },
 
+  "noGameSelected": {
+    "title": "Pilih Game Dulu",
+    "subtitle": "Pilih kategori game di atas untuk melihat daftar harga layanan."
+  },
+
   "emptyState": "Tidak ada layanan yang cocok dengan pencarian Anda.",
 
   "pagination": {
