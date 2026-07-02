@@ -3,10 +3,9 @@
 namespace App\Actions\Digiflazz;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Payment\RefundFailedTransactionAction;
 use App\DTOs\Log\CreateActivityLogDTO;
-use App\Models\Payment;
 use App\Models\Transaction;
-use App\Services\Payment\MonetapayService;
 use App\Traits\MapsDigiflazzStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -19,7 +18,7 @@ class HandleDigiflazzWebhookAction
 
     public function __construct(
         private readonly CreateActivityLogAction $logAction,
-        private readonly MonetapayService $monetapayService,
+        private readonly RefundFailedTransactionAction $refundAction,
     ) {}
 
     /**
@@ -42,9 +41,9 @@ class HandleDigiflazzWebhookAction
         // Side effects that hit the network are captured here and run AFTER the
         // transaction commits, so we never hold a row lock across an HTTP call.
         $notification = null;   // [Transaction, oldStatus, newStatus] for Discord
-        $gatewayRefund = null;   // Payment awaiting an external Monetapay refund
+        $needsRefund = false;   // provider failed → refund after commit
 
-        DB::transaction(function () use ($data, &$notification, &$gatewayRefund) {
+        DB::transaction(function () use ($data, &$notification, &$needsRefund) {
             $transaction = Transaction::with(['payment', 'paymentChannel', 'user'])
                 ->where('invoice_number', $data['ref_id'])
                 ->lockForUpdate()
@@ -74,9 +73,9 @@ class HandleDigiflazzWebhookAction
             ]);
 
             if ($newStatus === 'FAILED_PROVIDER') {
-                // Wallet refunds happen here (atomic DB op); gateway refunds are
-                // deferred to after commit and returned for processing.
-                $gatewayRefund = $this->refundFailedTransaction($transaction);
+                // Refund is delegated to the shared, idempotent action after commit
+                // (it re-locks the row and no-ops if already refunded).
+                $needsRefund = true;
             }
 
             $this->logAction->execute(new CreateActivityLogDTO(
@@ -90,75 +89,14 @@ class HandleDigiflazzWebhookAction
         });
 
         // ── Post-commit side effects (no DB lock held) ───────────────────────
-        if ($gatewayRefund !== null) {
-            $this->processGatewayRefund($gatewayRefund);
+        if ($needsRefund && $notification !== null) {
+            // Single source of truth for wallet + gateway refund; idempotent.
+            $this->refundAction->execute($notification[0]);
         }
 
         if ($notification !== null) {
             [$transaction, $oldStatus, $newStatus] = $notification;
             $this->sendToDiscord($transaction, $oldStatus, $newStatus);
-        }
-    }
-
-    /**
-     * Refund a settled payment whose order failed at the provider.
-     *
-     * Balance-channel payments are refunded to the internal wallet inline (an
-     * atomic DB operation). External payments cannot be refunded with a DB call,
-     * so the Payment is returned for an after-commit gateway refund.
-     *
-     * @return Payment|null Payment needing a gateway refund, or null if handled/none.
-     */
-    private function refundFailedTransaction(Transaction $transaction): ?Payment
-    {
-        $payment = $transaction->payment;
-
-        // Only refund a payment that was actually settled and not already refunded.
-        if (! $payment || $payment->status !== '3') {
-            return null;
-        }
-
-        // Internal wallet: restore the deducted balance to the member.
-        if ($transaction->paymentChannel?->channel_code === 'balance') {
-            if ($transaction->user) {
-                $transaction->user->increment('balance', $payment->gross_amount);
-                $payment->update(['status' => '4']); // 4: Refunded
-                Log::info("Auto-refund (wallet): Rp {$payment->gross_amount} restored to User {$transaction->user_id} for {$transaction->invoice_number}");
-            }
-
-            return null;
-        }
-
-        // External gateway: needs an HTTP call, so defer to after commit.
-        if (! $payment->pg_transaction_id) {
-            Log::warning("Auto-refund skipped: no gateway order id for {$transaction->invoice_number}. Manual refund required.");
-
-            return null;
-        }
-
-        return $payment;
-    }
-
-    /**
-     * Request a refund back to the original payment method via Monetapay.
-     * Runs after commit; a failure here is logged for manual follow-up rather
-     * than rolling back the already-finalised FAILED_PROVIDER status.
-     */
-    private function processGatewayRefund(Payment $payment): void
-    {
-        try {
-            $this->monetapayService->refundTransaction([
-                'app_id' => config('services.monetapay.mch_id'),
-                'refund_mch_order_no' => 'RFD-'.$payment->reference_id,
-                'payment_order_no' => $payment->pg_transaction_id,
-                'amount' => (string) $payment->gross_amount,
-                'reason' => 'Auto-refund: Digiflazz order failed',
-            ]);
-
-            $payment->update(['status' => '4']); // 4: Refunded
-            Log::info("Auto-refund (gateway): Monetapay refund requested Rp {$payment->gross_amount} for payment {$payment->reference_id}");
-        } catch (Throwable $e) {
-            Log::error("Auto-refund (gateway) failed for payment {$payment->reference_id}: {$e->getMessage()}");
         }
     }
 
@@ -172,10 +110,10 @@ class HandleDigiflazzWebhookAction
             }
 
             $color = match ($newStatus) {
-                'COMPLETED'       => 5763719,   // green
+                'COMPLETED' => 5763719,   // green
                 'FAILED_PROVIDER' => 15548997,  // red
-                'EXPIRED'         => 16744448,  // orange
-                default           => 16705372,  // yellow
+                'EXPIRED' => 16744448,  // orange
+                default => 16705372,  // yellow
             };
 
             Http::post($webhookUrl, [
