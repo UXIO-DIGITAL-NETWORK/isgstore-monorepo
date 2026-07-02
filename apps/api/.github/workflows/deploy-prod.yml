@@ -23,11 +23,11 @@ jobs:
           port: ${{ secrets.PROD_PORT }}
           envs: ENV_FILE_CONTENT
           script: |
-            # 0. Bootstrap: clone repo on first deploy if prod dir doesn't exist yet
+            # 0. Bootstrap: clone repo on first deploy if prod dir isn't a git repo yet
             PROD_DIR="/home/uxioserver1/web-topup/api/prod"
             if [ ! -d "$PROD_DIR/.git" ]; then
-              echo "First-time setup: cloning repo into $PROD_DIR..."
-              mkdir -p "$PROD_DIR"
+              echo "First-time setup: removing stale dir and cloning repo into $PROD_DIR..."
+              rm -rf "$PROD_DIR"
               git clone git@github.com:UXIO-DIGITAL-NETWORK/web-topup-api.git "$PROD_DIR"
               git -C "$PROD_DIR" checkout main
             fi
