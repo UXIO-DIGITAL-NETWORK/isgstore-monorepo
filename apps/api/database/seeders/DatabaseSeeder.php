@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             CategoryTypeSeeder::class,
             SupplierSeeder::class,
-            PaymentMethodSeeder::class,
+            PaymentChannelSeeder::class,
 
             // === 2. Users ===
             UserSeeder::class,
@@ -40,16 +40,19 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             SupplierCategorySeeder::class,
             SupplierProductSeeder::class,
+            
+            // Map the exact integration required data after all raw data is seeded
+            MasterDataSeeder::class,
 
             // === 5. Transactions ===
-            OrderSeeder::class,
-            PaymentSeeder::class,
+            // OrderSeeder::class, // Table renamed to transactions
+            // PaymentSeeder::class,
 
             // === 6. Auxiliary (depends on Orders) ===
-            PointHistorySeeder::class,
-            RatingSeeder::class,
-            UserSpendingSeeder::class,
-            ActivityLogSeeder::class,
+            // PointHistorySeeder::class,
+            // RatingSeeder::class,
+            // UserSpendingSeeder::class,
+            // ActivityLogSeeder::class,
 
             // === 7. CMS Content ===
             BannerSeeder::class,

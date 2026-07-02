@@ -6,7 +6,7 @@ readonly class UpdatePointHistoryDTO
 {
     public function __construct(
         public int $userId,
-        public ?int $orderId,
+        public ?int $transactionId,
         public int $pointsBefore,
         public int $pointsAdded,
         public int $pointsAfter,

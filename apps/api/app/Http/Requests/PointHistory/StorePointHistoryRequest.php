@@ -25,7 +25,7 @@ class StorePointHistoryRequest extends FormRequest
     {
         return [
             'user_id' => ['required', 'exists:users,id'],
-            'order_id' => ['nullable', 'exists:orders,id'],
+            'transaction_id' => ['nullable', 'exists:transactions,id'],
             'points_before' => ['required', 'integer'],
             'points_added' => ['required', 'integer'],
             'points_after' => ['required', 'integer'],
@@ -37,7 +37,7 @@ class StorePointHistoryRequest extends FormRequest
     {
         return new CreatePointHistoryDTO(
             userId: (int) $this->validated('user_id'),
-            orderId: $this->validated('order_id') ? (int) $this->validated('order_id') : null,
+            transactionId: $this->validated('transaction_id') ? (int) $this->validated('transaction_id') : null,
             pointsBefore: (int) $this->validated('points_before'),
             pointsAdded: (int) $this->validated('points_added'),
             pointsAfter: (int) $this->validated('points_after'),

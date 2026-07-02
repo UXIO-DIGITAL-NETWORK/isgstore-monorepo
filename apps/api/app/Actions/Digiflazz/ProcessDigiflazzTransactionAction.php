@@ -2,65 +2,57 @@
 
 namespace App\Actions\Digiflazz;
 
-use App\Models\Order;
-use App\Services\DigiflazzService;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Transaction;
+use App\Services\DigiflazzService;
+use App\Traits\MapsDigiflazzStatus;
 use Exception;
 
 class ProcessDigiflazzTransactionAction
 {
+    use MapsDigiflazzStatus;
+
     public function __construct(
         private readonly DigiflazzService $digiflazzService,
         private readonly CreateActivityLogAction $logAction
     ) {}
 
-    public function execute(Order $order): Order
+    public function execute(Transaction $transaction): Transaction
     {
-        // Cari mapping supplier aktif untuk produk ini
-        $supplierProduct = $order->product->supplierProducts()
+        // Resolve the active supplier mapping for this product
+        $supplierProduct = $transaction->product
+            ->supplierProducts()
             ->where('is_active', true)
             ->first();
 
-        if (!$supplierProduct) {
-            throw new Exception("Produk ini belum dipetakan ke supplier aktif.");
+        if (! $supplierProduct) {
+            throw new Exception('Produk ini belum dipetakan ke supplier aktif.');
         }
 
-        // Format: UID + ServerID (sesuai format game di Digiflazz)
-        $customerNo = $order->target_uid . $order->target_server;
+        // Digiflazz customer_no = UID + Server (e.g. "123456789" + "2001" for ML)
+        $customerNo = $transaction->target_uid.$transaction->target_server;
 
-        // Eksekusi tembakan API
         $response = $this->digiflazzService->createTransaction(
             $supplierProduct->buyer_sku_code,
             $customerNo,
-            $order->invoice_number // ref_id
+            $transaction->invoice_number // used as Digiflazz ref_id
         );
 
-        // Update database dengan response balikan
-        $order->update([
+        $transaction->update([
             'supplier_trx_id' => $response['trx_id'] ?? null,
             'sn' => $response['sn'] ?? null,
             'supplier_status' => $response['status'] ?? 'Pending',
-            'status' => $this->mapInternalStatus($response['status'] ?? 'Pending'),
+            'status' => $this->mapDigiflazzStatus($response['status'] ?? 'Pending'),
         ]);
 
-        // Catat Audit Trail dari sistem
         $this->logAction->execute(new CreateActivityLogDTO(
-            userId: null, // Oleh Sistem
+            userId: null,
             ipAddress: '127.0.0.1',
             userAgent: 'System/DigiflazzWorker',
-            message: "Menembak Digiflazz untuk Order {$order->invoice_number}. Status: {$order->supplier_status}"
+            message: "Digiflazz request sent for {$transaction->invoice_number}. Status: {$transaction->supplier_status}"
         ));
 
-        return $order;
-    }
-
-    private function mapInternalStatus(string $digiflazzStatus): string
-    {
-        return match($digiflazzStatus) {
-            'Sukses' => 'Success',
-            'Gagal' => 'Failed',
-            default => 'Processing',
-        };
+        return $transaction;
     }
 }

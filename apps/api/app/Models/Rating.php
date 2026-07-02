@@ -8,9 +8,9 @@ class Rating extends Model
 {
     protected $guarded = ['id'];
 
-    public function order()
+    public function transaction()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Transaction::class);
     }
 
     public function user()

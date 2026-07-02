@@ -16,7 +16,7 @@ class CreatePointHistoryAction
     {
         $pointHistory = PointHistory::create([
             'user_id' => $dto->userId,
-            'order_id' => $dto->orderId,
+            'transaction_id' => $dto->transactionId,
             'points_before' => $dto->pointsBefore,
             'points_added' => $dto->pointsAdded,
             'points_after' => $dto->pointsAfter,

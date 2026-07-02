@@ -13,8 +13,8 @@ class PointHistory extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function order()
+    public function transaction()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Transaction::class);
     }
 }

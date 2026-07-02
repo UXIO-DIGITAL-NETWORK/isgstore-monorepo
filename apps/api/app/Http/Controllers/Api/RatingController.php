@@ -29,7 +29,7 @@ class RatingController extends Controller
     {
         $rating = $action->execute($request->toDTO());
         return $this->success(
-            new RatingResource($rating->load(['order', 'user'])),
+            new RatingResource($rating->load(['transaction', 'user'])),
             'Rating created successfully',
             201
         );
@@ -38,7 +38,7 @@ class RatingController extends Controller
     public function show(Rating $rating)
     {
         return $this->success(
-            new RatingResource($rating->load(['order', 'user'])),
+            new RatingResource($rating->load(['transaction', 'user'])),
             'Rating retrieved successfully'
         );
     }
@@ -47,7 +47,7 @@ class RatingController extends Controller
     {
         $rating = $action->execute($rating, $request->toDTO());
         return $this->success(
-            new RatingResource($rating->load(['order', 'user'])),
+            new RatingResource($rating->load(['transaction', 'user'])),
             'Rating updated successfully'
         );
     }

@@ -24,8 +24,8 @@ class StorePaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'order_id' => ['required', 'exists:orders,id'],
-            'payment_method_id' => ['required', 'exists:payment_methods,id'],
+            'transaction_id' => ['required', 'exists:transactions,id'],
+            'payment_channel_id' => ['required', 'exists:payment_channels,id'],
             'pg_transaction_id' => ['nullable', 'string', 'max:255'],
             'gross_amount' => ['required', 'integer'],
             'admin_fee' => ['required', 'integer'],
@@ -38,8 +38,8 @@ class StorePaymentRequest extends FormRequest
     public function toDTO(): CreatePaymentDTO
     {
         return new CreatePaymentDTO(
-            orderId: (int) $this->validated('order_id'),
-            paymentMethodId: (int) $this->validated('payment_method_id'),
+            transactionId: (int) $this->validated('transaction_id'),
+            paymentChannelId: (int) $this->validated('payment_channel_id'),
             pgTransactionId: $this->validated('pg_transaction_id'),
             grossAmount: (int) $this->validated('gross_amount'),
             adminFee: (int) $this->validated('admin_fee'),

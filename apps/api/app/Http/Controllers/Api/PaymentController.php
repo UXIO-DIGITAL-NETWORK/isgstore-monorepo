@@ -32,7 +32,7 @@ class PaymentController extends Controller
     {
         $payment = $action->execute($request->toDTO());
         return $this->successResponse(
-            new PaymentResource($payment->load(['order', 'paymentMethod'])),
+            new PaymentResource($payment->load(['transaction', 'paymentChannel'])),
             'Payment created successfully',
             201
         );
@@ -41,7 +41,7 @@ class PaymentController extends Controller
     public function show(Payment $payment)
     {
         return $this->successResponse(
-            new PaymentResource($payment->load(['order', 'paymentMethod'])),
+            new PaymentResource($payment->load(['transaction', 'paymentChannel'])),
             'Payment retrieved successfully'
         );
     }
@@ -50,7 +50,7 @@ class PaymentController extends Controller
     {
         $payment = $action->execute($payment, $request->toDTO());
         return $this->successResponse(
-            new PaymentResource($payment->load(['order', 'paymentMethod'])),
+            new PaymentResource($payment->load(['transaction', 'paymentChannel'])),
             'Payment updated successfully'
         );
     }

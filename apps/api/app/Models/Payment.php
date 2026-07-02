@@ -13,13 +13,13 @@ class Payment extends Model
         'paid_at' => 'datetime',
     ];
 
-    public function order()
+    public function transaction()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Transaction::class);
     }
 
-    public function paymentMethod()
+    public function paymentChannel()
     {
-        return $this->belongsTo(PaymentMethod::class);
+        return $this->belongsTo(PaymentChannel::class);
     }
 }

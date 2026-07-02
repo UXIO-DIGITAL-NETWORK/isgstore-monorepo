@@ -15,8 +15,8 @@ class UpdatePaymentAction
     public function execute(Payment $payment, UpdatePaymentDTO $dto): Payment
     {
         $payment->update([
-            'order_id' => $dto->orderId,
-            'payment_method_id' => $dto->paymentMethodId,
+            'transaction_id' => $dto->transactionId,
+            'payment_channel_id' => $dto->paymentChannelId,
             'pg_transaction_id' => $dto->pgTransactionId,
             'gross_amount' => $dto->grossAmount,
             'admin_fee' => $dto->adminFee,

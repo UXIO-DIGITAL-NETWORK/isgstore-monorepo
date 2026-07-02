@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Api\Category;
 use App\Http\Controllers\Controller;
 use App\Models\CategoryType;
 use App\Traits\ApiResponse;
-use App\Actions\Category\GetCategoryTypesAction;
-use App\Actions\Category\CreateCategoryTypeAction;
-use App\Actions\Category\UpdateCategoryTypeAction;
-use App\Actions\Category\DeleteCategoryTypeAction;
-use App\Http\Requests\Category\StoreCategoryTypeRequest;
-use App\Http\Requests\Category\UpdateCategoryTypeRequest;
-use App\Http\Resources\Api\Category\CategoryTypeResource;
+use App\Actions\Category\CategoryType\GetCategoryTypesAction;
+use App\Actions\Category\CategoryType\CreateCategoryTypeAction;
+use App\Actions\Category\CategoryType\UpdateCategoryTypeAction;
+use App\Actions\Category\CategoryType\DeleteCategoryTypeAction;
+use App\Http\Requests\Category\CategoryType\StoreCategoryTypeRequest;
+use App\Http\Requests\Category\CategoryType\UpdateCategoryTypeRequest;
+use App\Http\Resources\Api\Category\CategoryType\CategoryTypeResource;
 
 class CategoryTypeController extends Controller
 {

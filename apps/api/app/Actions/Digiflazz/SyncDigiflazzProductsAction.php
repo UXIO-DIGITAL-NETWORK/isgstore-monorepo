@@ -2,11 +2,11 @@
 
 namespace App\Actions\Digiflazz;
 
-use App\Services\DigiflazzService;
-use App\Models\SupplierProduct;
-use App\Models\Supplier;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Supplier;
+use App\Models\SupplierProduct;
+use App\Services\DigiflazzService;
 
 class SyncDigiflazzProductsAction
 {
@@ -15,9 +15,13 @@ class SyncDigiflazzProductsAction
         private readonly CreateActivityLogAction $logAction
     ) {}
 
-    public function execute(): int
+    public function execute(string $type = 'prepaid'): int
     {
-        $products = $this->digiflazzService->getPriceList();
+        if (! in_array($type, ['prepaid', 'pasca'], true)) {
+            throw new \InvalidArgumentException("Type harus 'prepaid' atau 'pasca'.");
+        }
+
+        $products = $this->digiflazzService->getPriceList($type);
 
         // Ambil ID supplier Digiflazz dari database
         $supplier = Supplier::where('name', 'Digiflazz')->firstOrFail();

@@ -2,144 +2,136 @@
 
 namespace App\Actions\Digiflazz;
 
-use App\Models\Order;
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Payment\RefundFailedTransactionAction;
 use App\DTOs\Log\CreateActivityLogDTO;
-use Illuminate\Support\Facades\Log;
+use App\Models\Transaction;
+use App\Traits\MapsDigiflazzStatus;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http; // Tambahan untuk memanggil API Discord
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class HandleDigiflazzWebhookAction
 {
+    use MapsDigiflazzStatus;
+
     public function __construct(
-        private readonly CreateActivityLogAction $logAction
+        private readonly CreateActivityLogAction $logAction,
+        private readonly RefundFailedTransactionAction $refundAction,
     ) {}
 
+    /**
+     * Process a Digiflazz status webhook.
+     *
+     * Infrastructure failures are allowed to propagate so the controller can
+     * return a non-2xx response and Digiflazz will retry delivery. Non-retryable
+     * cases (unknown ref_id, already-terminal transaction) return quietly.
+     *
+     * @param  array<string,mixed>  $payload
+     */
     public function execute(array $payload): void
     {
-        try {
-            $data = $payload['data'] ?? [];
-            if (empty($data) || !isset($data['ref_id'])) {
+        $data = $payload['data'] ?? [];
+
+        if (empty($data) || ! isset($data['ref_id'])) {
+            return;
+        }
+
+        // Side effects that hit the network are captured here and run AFTER the
+        // transaction commits, so we never hold a row lock across an HTTP call.
+        $notification = null;   // [Transaction, oldStatus, newStatus] for Discord
+        $needsRefund = false;   // provider failed → refund after commit
+
+        DB::transaction(function () use ($data, &$notification, &$needsRefund) {
+            $transaction = Transaction::with(['payment', 'paymentChannel', 'user'])
+                ->where('invoice_number', $data['ref_id'])
+                ->lockForUpdate()
+                ->first();
+
+            if (! $transaction) {
+                Log::warning("Digiflazz Webhook: Transaction not found for ref_id {$data['ref_id']}");
+
                 return;
             }
 
-            DB::transaction(function () use ($data) {
-                $order = Order::where('invoice_number', $data['ref_id'])->lockForUpdate()->first();
+            // Idempotency guard: skip if already in a terminal state
+            if (in_array($transaction->status, ['COMPLETED', 'FAILED_PROVIDER'], true)) {
+                Log::info("Digiflazz Webhook: Skipped — {$transaction->invoice_number} already {$transaction->status}");
 
-                if (!$order) {
-                    Log::warning("Digiflazz Webhook: Order tidak ditemukan untuk ref_id {$data['ref_id']}");
-                    return;
-                }
+                return;
+            }
 
-                if (in_array($order->status, ['Success', 'Failed'])) {
-                    Log::info("Digiflazz Webhook: Diabaikan. Order {$order->invoice_number} sudah final ({$order->status}).");
-                    return;
-                }
+            $oldStatus = $transaction->status;
+            $newStatus = $this->mapDigiflazzStatus($data['status'] ?? 'Pending');
 
-                $oldStatus = $order->status;
-                $newStatus = $this->mapInternalStatus($data['status']);
+            $transaction->update([
+                'supplier_trx_id' => $data['trx_id'] ?? $transaction->supplier_trx_id,
+                'sn' => $data['sn'] ?? $transaction->sn,
+                'supplier_status' => $data['status'] ?? $transaction->supplier_status,
+                'status' => $newStatus,
+            ]);
 
-                // Update Database
-                $order->update([
-                    'supplier_trx_id' => $data['trx_id'] ?? $order->supplier_trx_id,
-                    'sn' => $data['sn'] ?? $order->sn,
-                    'supplier_status' => $data['status'],
-                    'status' => $newStatus,
-                ]);
+            if ($newStatus === 'FAILED_PROVIDER') {
+                // Refund is delegated to the shared, idempotent action after commit
+                // (it re-locks the row and no-ops if already refunded).
+                $needsRefund = true;
+            }
 
-                // Logika Refund Otomatis
-                if ($newStatus === 'Failed') {
-                    $payment = $order->payment;
-                    if ($payment && $payment->status == '3') {
-                        $user = $order->user;
-                        $user->increment('balance', $payment->gross_amount);
-                        $payment->update(['status' => '4']);
-                        Log::info("Refund Otomatis: Saldo Rp {$payment->gross_amount} dikembalikan ke User ID {$user->id} untuk Invoice {$order->invoice_number}.");
-                    }
-                }
+            $this->logAction->execute(new CreateActivityLogDTO(
+                userId: $transaction->user_id,
+                ipAddress: request()->ip() ?? '127.0.0.1',
+                userAgent: 'Digiflazz Webhook',
+                message: "Digiflazz updated {$transaction->invoice_number} to ".($data['status'] ?? $newStatus).'. SN: '.($data['sn'] ?? '-'),
+            ));
 
-                // Catat di Activity Log (Database)
-                $this->logAction->execute(new CreateActivityLogDTO(
-                    userId: $order->user_id,
-                    ipAddress: request()->ip() ?? '127.0.0.1',
-                    userAgent: 'Digiflazz Webhook',
-                    message: "Webhook Digiflazz memperbarui Order {$order->invoice_number} menjadi {$data['status']}. SN: " . ($data['sn'] ?? '-')
-                ));
+            $notification = [$transaction->fresh(), $oldStatus, $newStatus];
+        });
 
-                // Kirim Notifikasi ke Discord
-                $this->sendToDiscord($order, $oldStatus, $newStatus);
-            });
-        } catch (\Exception $e) {
-            Log::error("Gagal memproses Webhook Digiflazz: " . $e->getMessage());
+        // ── Post-commit side effects (no DB lock held) ───────────────────────
+        if ($needsRefund && $notification !== null) {
+            // Single source of truth for wallet + gateway refund; idempotent.
+            $this->refundAction->execute($notification[0]);
+        }
+
+        if ($notification !== null) {
+            [$transaction, $oldStatus, $newStatus] = $notification;
+            $this->sendToDiscord($transaction, $oldStatus, $newStatus);
         }
     }
 
-    private function mapInternalStatus(string $digiflazzStatus): string
-    {
-        return match (strtolower($digiflazzStatus)) {
-            'sukses' => 'Success',
-            'gagal' => 'Failed',
-            default => 'Processing',
-        };
-    }
-
-    /**
-     * Fungsi khusus untuk mengirim log ke Discord Webhook
-     */
-    private function sendToDiscord(Order $order, string $oldStatus, string $newStatus): void
+    private function sendToDiscord(Transaction $transaction, string $oldStatus, string $newStatus): void
     {
         try {
             $webhookUrl = config('services.discord.webhook_log_url');
 
-            // Jangan eksekusi jika URL tidak ada di .env
-            if (!$webhookUrl) return;
+            if (! $webhookUrl) {
+                return;
+            }
 
-            // Tentukan warna embed berdasarkan status (Desimal Hex Color)
             $color = match ($newStatus) {
-                'Success' => 5763719,  // Hijau
-                'Failed' => 15548997,  // Merah
-                default => 16705372,   // Kuning
+                'COMPLETED' => 5763719,   // green
+                'FAILED_PROVIDER' => 15548997,  // red
+                'EXPIRED' => 16744448,  // orange
+                default => 16705372,  // yellow
             };
 
-            // Format pesan Embed Discord
-            $embed = [
-                'title' => '🔔 Update Transaksi Digiflazz',
-                'color' => $color,
-                'fields' => [
-                    [
-                        'name' => '🧾 Invoice',
-                        'value' => '`' . $order->invoice_number . '`',
-                        'inline' => true
-                    ],
-                    [
-                        'name' => '📱 Target / Tujuan',
-                        'value' => '`' . $order->target_uid . ($order->target_server ? ' (' . $order->target_server . ')' : '') . '`',
-                        'inline' => true
-                    ],
-                    [
-                        'name' => '📊 Status',
-                       'value' => "~~$oldStatus~~ ➔ **$newStatus**",
-                        'inline' => false
-                    ],
-                    [
-                        'name' => '🔑 Serial Number (SN)',
-                        'value' => $order->sn ? '`' . $order->sn . '`' : '*Belum ada SN*',
-                        'inline' => false
-                    ]
-                ],
-                'footer' => [
-                    'text' => 'Uxio System Auto-Log'
-                ],
-                'timestamp' => now()->toIso8601String(),
-            ];
-
-            // Tembak ke API Discord
             Http::post($webhookUrl, [
-                'embeds' => [$embed]
+                'embeds' => [[
+                    'title' => '🔔 Update Transaksi Digiflazz',
+                    'color' => $color,
+                    'fields' => [
+                        ['name' => '🧾 Invoice',       'value' => '`'.$transaction->invoice_number.'`', 'inline' => true],
+                        ['name' => '📱 Target',        'value' => '`'.$transaction->target_uid.($transaction->target_server ? " ({$transaction->target_server})" : '').'`', 'inline' => true],
+                        ['name' => '📊 Status',        'value' => "~~{$oldStatus}~~ ➔ **{$newStatus}**", 'inline' => false],
+                        ['name' => '🔑 Serial Number', 'value' => $transaction->sn ? '`'.$transaction->sn.'`' : '*Belum ada SN*', 'inline' => false],
+                    ],
+                    'footer' => ['text' => 'Uxio System Auto-Log'],
+                    'timestamp' => now()->toIso8601String(),
+                ]],
             ]);
-        } catch (\Exception $e) {
-            // Kita log secara internal saja agar tidak mengganggu transaksi jika discord error
-            Log::error("Gagal mengirim log ke Discord: " . $e->getMessage());
+        } catch (Throwable $e) {
+            Log::error('Discord notification failed: '.$e->getMessage());
         }
     }
 }

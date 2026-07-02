@@ -3,11 +3,10 @@
 namespace App\Actions\Payment;
 
 use App\Models\Payment;
-use App\Models\Order;
+use App\Models\Transaction;
 use App\DTOs\Payment\CreatePaymentDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
 class CreatePaymentAction
@@ -16,16 +15,14 @@ class CreatePaymentAction
 
     public function execute(CreatePaymentDTO $dto): Payment
     {
-        $order = Order::findOrFail($dto->orderId);
-        
-        // Auto-generate reference ID based on order invoice
-        // Count existing payments for this order to append a retry count
-        $retryCount = Payment::where('order_id', $order->id)->count() + 1;
-        $referenceId = 'PAY-' . $order->invoice_number . '-' . str_pad($retryCount, 2, '0', STR_PAD_LEFT);
+        $transaction = Transaction::findOrFail($dto->transactionId);
+
+        $retryCount = Payment::where('transaction_id', $transaction->id)->count() + 1;
+        $referenceId = 'PAY-' . $transaction->invoice_number . '-' . str_pad($retryCount, 2, '0', STR_PAD_LEFT);
 
         $payment = Payment::create([
-            'order_id' => $dto->orderId,
-            'payment_method_id' => $dto->paymentMethodId,
+            'transaction_id' => $dto->transactionId,
+            'payment_channel_id' => $dto->paymentChannelId,
             'reference_id' => $referenceId,
             'pg_transaction_id' => $dto->pgTransactionId,
             'gross_amount' => $dto->grossAmount,
@@ -39,7 +36,7 @@ class CreatePaymentAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Created Payment: {$referenceId} for Order: {$order->invoice_number}"
+            message: "Created Payment: {$referenceId} for Transaction: {$transaction->invoice_number}"
         ));
 
         return $payment;
