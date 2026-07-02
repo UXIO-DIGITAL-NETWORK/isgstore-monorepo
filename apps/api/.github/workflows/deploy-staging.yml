@@ -23,6 +23,15 @@ jobs:
           port: ${{ secrets.STAGING_PORT }}
           envs: ENV_FILE_CONTENT
           script: |
+            # 0. Bootstrap: clone repo on first deploy if staging dir doesn't exist yet
+            STAGING_DIR="/home/uxioserver1/web-topup/api/staging"
+            if [ ! -d "$STAGING_DIR/.git" ]; then
+              echo "First-time setup: cloning repo into $STAGING_DIR..."
+              mkdir -p "$STAGING_DIR"
+              git clone git@github.com:UXIO-DIGITAL-NETWORK/web-topup-api.git "$STAGING_DIR"
+              git -C "$STAGING_DIR" checkout staging
+            fi
+
             # 1. Masuk ke direktori staging yang tepat
             cd /home/uxioserver1/web-topup/api/staging
 
