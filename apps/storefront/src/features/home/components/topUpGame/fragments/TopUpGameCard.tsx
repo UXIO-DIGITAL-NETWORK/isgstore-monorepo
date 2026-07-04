@@ -1,7 +1,9 @@
 import React from "react";
+import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
+import { Link } from "@/components/common/Link";
 import { cn } from "@/lib/utils";
 import type { TopUpGame } from "@/features/home/types/topUpGames.type";
 
@@ -10,11 +12,13 @@ type Props = {
 };
 
 export default function TopUpGameCard({ game }: Props): React.JSX.Element {
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+
   return (
-    <Box
-      as="article"
+    <Link
+      href={`/${locale}/checkout/${game.id}`}
       className={cn(
-        "group relative rounded-xl overflow-hidden cursor-pointer aspect-3/4",
+        "group relative block rounded-xl overflow-hidden cursor-pointer aspect-3/4",
         game.borderColor === "azure"
           ? "border border-[#3B82F6]/50 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
           : "border border-[#9333EA]/50 shadow-[0_0_12px_rgba(147,51,234,0.15)]"
@@ -52,6 +56,6 @@ export default function TopUpGameCard({ game }: Props): React.JSX.Element {
           </Text>
         </Box>
       </Box>
-    </Box>
+    </Link>
   );
 }

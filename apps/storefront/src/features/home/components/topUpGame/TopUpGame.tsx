@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
 import { GAME_CATEGORIES, TOP_UP_GAMES } from "@/features/home/data/topUpGames.data";
 import type { GameCategory } from "@/features/home/types/topUpGames.type";
 import CategoryTabs from "./fragments/CategoryTabs";
@@ -11,6 +13,7 @@ import TopUpGameCard from "./fragments/TopUpGameCard";
 
 export default function TopUpGame(): React.JSX.Element {
   const { t } = useTranslation("home");
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   const [activeTab, setActiveTab] = useState<GameCategory>("semua");
 
   const visibleGames =
@@ -57,14 +60,13 @@ export default function TopUpGame(): React.JSX.Element {
 
         {/* Show more */}
         <Box className="flex justify-center">
-          <Box
-            as="button"
-            type="button"
+          <Link
+            href={`/${locale}/daftar-harga`}
             className="flex items-center gap-2 px-8 py-3 rounded-full border border-[#9333EA] text-[#9333EA] text-[13px] font-semibold font-outfit uppercase tracking-widest hover:bg-[#9333EA]/10 active:bg-[#9333EA]/20 transition-colors cursor-pointer"
           >
             {t("topUpGame.showMore")}
             <ChevronDown className="w-4 h-4 shrink-0" />
-          </Box>
+          </Link>
         </Box>
 
       </Box>

@@ -1,14 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Image } from "@/components/common/Image";
+import { Link } from "@/components/common/Link";
 import ctaBg from "@/assets/images/CTA/CTA_1.png";
 import ctaMascot from "@/assets/images/CTA/CTA_2.png";
 
 export default function CtaBanner(): React.JSX.Element {
   const { t } = useTranslation("home");
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   return (
     <Box as="section" className="relative w-full h-auto md:h-135.25 overflow-hidden">
 
@@ -56,20 +59,18 @@ export default function CtaBanner(): React.JSX.Element {
               </Text>
 
               <Box className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                <Box
-                  as="button"
-                  type="button"
+                <Link
+                  href={`/${locale}/register`}
                   className="h-13 md:h-16.5 px-8 md:px-10 rounded-full bg-white font-inter font-bold text-[16px] md:text-[18px] text-[#0A0A0C] cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap flex items-center justify-center"
                 >
                   {t("cta.register")}
-                </Box>
-                <Box
-                  as="button"
-                  type="button"
+                </Link>
+                <Link
+                  href={`/${locale}/login`}
                   className="h-13 md:h-16.5 px-8 rounded-full bg-white/10 border border-white/30 font-inter font-bold text-[16px] md:text-[18px] text-white backdrop-blur-sm cursor-pointer hover:bg-white/15 transition-colors whitespace-nowrap flex items-center justify-center"
                 >
                   {t("cta.login")}
-                </Box>
+                </Link>
               </Box>
             </Box>
           </Box>

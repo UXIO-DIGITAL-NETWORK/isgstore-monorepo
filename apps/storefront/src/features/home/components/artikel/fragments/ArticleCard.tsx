@@ -1,8 +1,10 @@
 import React from "react";
+import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Image } from "@/components/common/Image";
+import { Link } from "@/components/common/Link";
 import type { Article } from "@/features/home/types/artikel.type";
 
 type Props = {
@@ -48,19 +50,24 @@ function CardInner({ article }: { article: Article }) {
 }
 
 export default function ArticleCard({ article, isFeatured }: Props): React.JSX.Element {
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+  const href = `/${locale}/berita/${article.slug}`;
+
   if (isFeatured) {
     return (
       <Box as="article" className="flex-1 min-w-0">
-        <Box className="p-0.5 h-full rounded-2xl bg-linear-to-br from-[#9B3BF6] to-[#3B82F6]">
+        <Link href={href} className="block p-0.5 h-full rounded-2xl bg-linear-to-br from-[#9B3BF6] to-[#3B82F6]">
           <CardInner article={article} />
-        </Box>
+        </Link>
       </Box>
     );
   }
 
   return (
     <Box as="article" className="flex-1 min-w-0 rounded-2xl border border-[#9333EA]/50">
-      <CardInner article={article} />
+      <Link href={href} className="block">
+        <CardInner article={article} />
+      </Link>
     </Box>
   );
 }

@@ -47,11 +47,11 @@ export function Footer(): React.JSX.Element {
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
 
   const MENU_LINKS: { labelKey: string; href: string }[] = [
-    { labelKey: "footer.menu.dashboard", href: "#" },
+    { labelKey: "footer.menu.dashboard", href: `/${locale}/dashboard` },
     { labelKey: "footer.menu.priceList", href: `/${locale}/daftar-harga` },
-    { labelKey: "footer.menu.leaderboard", href: "#" },
-    { labelKey: "footer.menu.news", href: "#" },
-    { labelKey: "footer.menu.calculator", href: "#" },
+    { labelKey: "footer.menu.leaderboard", href: `/${locale}/leaderboard` },
+    { labelKey: "footer.menu.news", href: `/${locale}/berita` },
+    { labelKey: "footer.menu.calculator", href: `/${locale}/kalkulator-win-rate` },
     { labelKey: "footer.menu.faq", href: `/${locale}/faq` },
   ];
 

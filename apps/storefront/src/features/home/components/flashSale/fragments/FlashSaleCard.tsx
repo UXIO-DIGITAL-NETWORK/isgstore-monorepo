@@ -1,6 +1,7 @@
 import React from "react";
 import { cva } from "class-variance-authority";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
@@ -43,6 +44,8 @@ export default function FlashSaleCard({ item, isActive }: Props): React.JSX.Elem
   const { t, i18n } = useTranslation("home");
   const locale = i18n.language;
   const stockPercent = Math.round((item.stockAvailable / item.stockTotal) * 100);
+  const navigate = useNavigate();
+  const { locale: routeLocale = locale } = useParams({ strict: false }) as { locale?: string };
 
   return (
     <Box
@@ -97,6 +100,7 @@ export default function FlashSaleCard({ item, isActive }: Props): React.JSX.Elem
       <Box
         as="button"
         type="button"
+        onClick={() => navigate({ to: "/$locale/checkout/$gameSlug", params: { locale: routeLocale, gameSlug: item.id } })}
         className={buttonVariants({ active: isActive })}
       >
         {t("flashSale.topUpNow")}

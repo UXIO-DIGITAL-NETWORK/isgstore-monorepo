@@ -1,8 +1,10 @@
 import React from "react";
+import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Image } from "@/components/common/Image";
+import { Link } from "@/components/common/Link";
 import { cn } from "@/lib/utils";
 import type { PopularGame } from "@/features/home/types/popularGames.type";
 
@@ -75,20 +77,25 @@ function CardInner({ game, tintVariant }: { game: PopularGame; tintVariant: Tint
 }
 
 export default function PopularGameCard({ game, isFeatured, tintVariant }: Props): React.JSX.Element {
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+  const href = `/${locale}/checkout/${game.id}`;
+
   if (isFeatured) {
     return (
       <Box as="article" className="shrink-0 w-60">
         {/* 3px padding + rounded-[19px] outer = rounded-2xl (16px) inner fits flush */}
-        <Box className="p-0.75 rounded-[13px] bg-linear-to-b from-purple-600 to-blue-500">
+        <Link href={href} className="block p-0.75 rounded-[13px] bg-linear-to-b from-purple-600 to-blue-500">
           <CardInner game={game} tintVariant={tintVariant} />
-        </Box>
+        </Link>
       </Box>
     );
   }
 
   return (
     <Box as="article" className="shrink-0 w-60 rounded-[10px] border border-[#9333EA]/30">
-      <CardInner game={game} tintVariant={tintVariant} />
+      <Link href={href} className="block">
+        <CardInner game={game} tintVariant={tintVariant} />
+      </Link>
     </Box>
   );
 }
