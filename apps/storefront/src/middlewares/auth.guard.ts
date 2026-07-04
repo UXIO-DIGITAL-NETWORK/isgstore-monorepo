@@ -13,23 +13,23 @@ type RequireGuestOptions = {
 export const requireAuth = ({ role, locale }: RequireAuthOptions) => {
   const { token, user } = useAuthStore.getState();
   if (!token || !user) {
-    throw redirect({ href: `/${locale}/login` });
+    throw redirect({ to: "/$locale/login", params: { locale } });
   }
   if (user.role !== role) {
-    throw redirect({ href: `/${locale}` });
+    throw redirect({ to: "/$locale", params: { locale } });
   }
 };
 
 export const requireGuest = ({ locale }: RequireGuestOptions) => {
   const { token } = useAuthStore.getState();
   if (token) {
-    throw redirect({ href: `/${locale}` });
+    throw redirect({ to: "/$locale", params: { locale } });
   }
 };
 
 export const requireRole = (role: "member" | "superadmin") => {
   const { user } = useAuthStore.getState();
   if (!user || user.role !== role) {
-    throw redirect({ href: "/id" });
+    throw redirect({ to: "/$locale", params: { locale: "id" } });
   }
 };
