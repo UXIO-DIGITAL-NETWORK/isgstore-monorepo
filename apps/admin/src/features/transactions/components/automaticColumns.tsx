@@ -1,0 +1,186 @@
+import type { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { Clock } from "lucide-react";
+
+import { Box } from "@/components/common/Box";
+import { Text } from "@/components/common/Text";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/utils/currency";
+import { formatElapsed } from "../lib/formatElapsed";
+import type { Transaction } from "../types/transaction.type";
+import { RowActionMenu } from "./RowActionMenu";
+import { StatusBadge } from "./StatusBadge";
+
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+/** Automatic tab columns, exact shape from the reference (product_requirements.md §4.3). */
+export const automaticColumns: ColumnDef<Transaction>[] = [
+  {
+    accessorKey: "invoice_no",
+    header: "Invoice No.",
+    cell: ({ row }) => (
+      <Box className="flex flex-col">
+        <Text
+          as="span"
+          className="font-medium tabular-nums"
+        >
+          {row.original.invoice_no}
+        </Text>
+        {row.original.invoice_ref && (
+          <Text
+            variant="muted"
+            as="span"
+          >
+            {row.original.invoice_ref}
+          </Text>
+        )}
+      </Box>
+    ),
+  },
+  {
+    id: "user",
+    header: "User",
+    cell: ({ row }) => {
+      const { customer } = row.original;
+      return (
+        <Box className="flex items-center gap-2">
+          <Avatar size="sm">
+            <AvatarImage
+              src={customer.avatar_url}
+              alt={customer.name}
+            />
+            <AvatarFallback>{initials(customer.name)}</AvatarFallback>
+          </Avatar>
+          <Box className="flex flex-col">
+            <Text as="span">{customer.name}</Text>
+            <Text
+              variant="muted"
+              as="span"
+            >
+              {customer.phone}
+            </Text>
+          </Box>
+        </Box>
+      );
+    },
+  },
+  {
+    id: "product",
+    header: "Product",
+    cell: ({ row }) => (
+      <Box className="flex flex-col">
+        <Text as="span">{row.original.product.name}</Text>
+        <Text
+          variant="muted"
+          as="span"
+        >
+          {row.original.game.name}
+        </Text>
+      </Box>
+    ),
+  },
+  {
+    id: "cost",
+    header: "Cost",
+    cell: ({ row }) => (
+      <Box className="flex flex-col">
+        <Text
+          as="span"
+          className="tabular-nums"
+        >
+          {formatCurrency(row.original.cost, { fractionDigits: 0 })}
+        </Text>
+        {row.original.profit !== undefined && (
+          <Text
+            variant="muted"
+            as="span"
+            className="tabular-nums"
+          >
+            Profit: {formatCurrency(row.original.profit, { fractionDigits: 0 })}
+          </Text>
+        )}
+      </Box>
+    ),
+  },
+  {
+    accessorKey: "target_ref",
+    header: "Target",
+    cell: ({ row }) => <Text as="span">{row.original.target_ref ?? "—"}</Text>,
+  },
+  {
+    id: "status",
+    header: "Status",
+    cell: ({ row }) => (
+      <Box className="flex flex-col items-start gap-1">
+        <StatusBadge status={row.original.payment_status} />
+        <StatusBadge status={row.original.invoice_status} />
+      </Box>
+    ),
+  },
+  {
+    id: "method",
+    header: "Method",
+    cell: ({ row }) => (
+      <Box className="flex flex-col">
+        <Text as="span">{row.original.payment_method}</Text>
+        {row.original.admin_fee !== undefined && (
+          <Text
+            variant="muted"
+            as="span"
+            className="tabular-nums"
+          >
+            Admin fee: {formatCurrency(row.original.admin_fee, { fractionDigits: 0 })}
+          </Text>
+        )}
+      </Box>
+    ),
+  },
+  {
+    id: "time",
+    header: "Time",
+    cell: ({ row }) => {
+      const tx = row.original;
+      const outcomeLabel = tx.invoice_status === "failed" ? "Failed" : "Success";
+      return (
+        <Box className="flex flex-col gap-1">
+          <Text
+            variant="muted"
+            as="span"
+          >
+            Created: {format(new Date(tx.created_at), "MMM d, HH:mm")}
+          </Text>
+          {tx.resolved_at && (
+            <Text
+              variant="muted"
+              as="span"
+            >
+              {outcomeLabel}: {format(new Date(tx.resolved_at), "MMM d, HH:mm")}
+            </Text>
+          )}
+          {tx.elapsed_seconds !== undefined && (
+            <Badge
+              variant="outline"
+              className="w-fit gap-1 tabular-nums"
+            >
+              <Clock className="size-3" />
+              {formatElapsed(tx.elapsed_seconds)}
+            </Badge>
+          )}
+        </Box>
+      );
+    },
+  },
+  {
+    id: "action",
+    header: "Action",
+    cell: ({ row }) => <RowActionMenu transaction={row.original} />,
+  },
+];

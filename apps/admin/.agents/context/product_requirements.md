@@ -118,32 +118,44 @@ A read-first financial monitoring surface — a summary view, not a ledger or re
 
 ### 4.3 Transaction (`/transactions`)
 
-The operational core. A **server-side-ready** transaction list plus a rich detail view with operator actions.
+> **Revision (2026-07-10):** enriched with confirmed detail from the Automatic Transaction History reference (image + Figma). This elaborates the original spec below rather than replacing it — the operator actions and recap/export intent still hold; the shape is now concrete.
 
-**List view**
+The operational core, split into **two tabs — Automatic and Manual** — reflected in the breadcrumb ("Transaction › Automatic") as real nested routes, not just client-side tab state: `/transactions/automatic` (default) and `/transactions/manual`. **Automatic** is fully specified below from the reference. **Manual** has no reference yet — build it reusing the same table/filter pattern with a reduced, sensible column set (no provider/callback fields), and treat its exact shape as provisional pending a design.
 
-- A **data table** with **server-side pagination, filtering, and sorting** (params sent to the API; Laravel-paginator response shape — see `system_architecture.md §1`).
-- Suggested columns: transaction ID/invoice, date/time, customer (user or guest), game & product/nominal, payment method/channel, amount, status (badge), and a row action menu.
-- Filters: status, date range, game/product, payment channel, search (ID/customer). Sort: date, amount, status.
-- Bulk affordance: **export CSV/Excel** of the current filtered result set.
+**Automatic tab — header:** "Automatic Transaction History" + subcopy "Monitor all automated transactions that have been processed along with their status and details."
 
-**Detail view**
+**Status pills (×3, clickable filters with counts + tooltip):**
 
-- Full transaction record: identifiers, timeline/status history, customer info (or guest), line item (game → product/nominal), pricing (amount; cost/margin where available), payment channel, and provider references.
+- `Pending` — "Invoice paid but not yet processed by supplier"
+- `Partial Refund` — "Some item refunded, other still in progress"
+- `Partial Success` — "Some item succeeded, other still in progress"
+
+**Filter bar (10 fields):** Search, User, Category, Product, Invoice Status, Payment Status, Start Date, End Date, Invoice From, Payment Method — all wired into the server-side table's query params per `system_architecture.md §4.8`.
+
+**Table columns:** Invoice No. (+ sub-reference code), User (avatar + name + phone), Product (name + game), Cost (+ Profit, muted, below), Target (provider/destination account ref), **Status — two stacked badges** (Payment Status over Invoice Status, matching the two separate status fields confirmed by the edit modal below), Method (+ Admin fee, muted, below), Time (created timestamp + resolved timestamp + a small elapsed-duration badge — confirm its exact unit format via the Figma frame, it's not fully legible in the flat image), Action (row menu).
+
+**Row action menu (exact items, in order):** Activity Log, Resend Callback, Retry Invoice, View Invoice, Transaction Detail, Edit Invoice, **Delete** (destructive-styled). `Edit Invoice` opens the manual-status-override modal below. Confirm via Figma whether this menu differs for success vs. failed rows — the reference only shows it open on a failed row.
+
+**Edit Transaction modal (= manual status override):** fields are Status Payment (select), Invoice Status (select), Serial Number, and an Invoice Proof file dropzone (JPG/JPEG/PNG up to 10MB, multipart upload per `system_architecture.md §4.9`, no S3). The reference's modal subcopy ("Set the dimentions for the layer.") is an unedited shadcn dialog template default, not real copy — write an accurate one. The Serial Number field renders as a select showing the literal word "Text" in the reference, which reads as a template artifact rather than an intentional design — build it as a plain text input unless the Figma frame shows otherwise.
+
+**Still open / not visible in this reference — don't invent, flag instead:**
+
+- **Export** and **Recap** (per the original spec below) aren't visible in these four images — check the Figma frame for a header action that may be off-screen; if genuinely absent from the design too, build the underlying service capability but leave the trigger's placement TBD.
+- A horizontal slider spans the table footer with no visible label or connected control. Likely a decorative/leftover element (the modal already has one confirmed template artifact) — verify via Figma; if it isn't wired to anything there either, omit it.
 
 **Operator actions (all required this phase — UI + wired to typed service stubs):**
 
-- **Manual status override** — set a transaction's status (e.g. mark `success`/`failed`) with a confirmation dialog.
+- **Manual status override** — the Edit Transaction modal above.
 - **Refund** — initiate a refund (confirmation + reason).
-- **Re-trigger provider callback** — re-fire the upstream provider callback for stuck transactions.
-- **Resend receipt** — resend the transaction receipt to the customer.
-- **Export** — download the transaction (or filtered set) as CSV/Excel.
+- **Re-trigger provider callback** — "Resend Callback" in the row menu.
+- **Resend receipt** — resend the transaction receipt to the customer (not visible as a distinct menu item in the reference — confirm whether "View Invoice" covers this or it's a genuine gap).
+- **Export** — download the transaction (or filtered set) as CSV/Excel (placement TBD, see above).
 
 **Recap**
 
-- A **transaction recap** report: daily and monthly summaries, downloadable, with **breakdown per game / product / payment channel** (totals, counts, revenue). This is the concrete meaning of "rekap transaksi".
+- A **transaction recap** report: daily and monthly summaries, downloadable, with **breakdown per game / product / payment channel** (totals, counts, revenue). This is the concrete meaning of "rekap transaksi". Placement TBD, see above.
 
-> Destructive/irreversible actions (refund, status override) MUST use a confirmation step and surface success/failure via toasts (`sonner`). Actions are permission-gated via `<Can>` even though Super Admin holds all permissions today.
+> Destructive/irreversible actions (refund, status override, delete) MUST use a confirmation step and surface success/failure via toasts (`sonner`). Actions are permission-gated via `<Can>` even though Super Admin holds all permissions today. Hard-deleting a financial transaction record is unusual for audit/compliance reasons — build the `Delete` menu item and its confirmation as shown, but flag this as worth confirming rather than assuming it's truly a permanent hard delete.
 
 ---
 
@@ -167,7 +179,7 @@ Documented so architecture and navigation accommodate them; **not built this pha
 Backend is not built; these are **FE-facing entity briefs** to shape typed models and mock fixtures. They live in `src/types/models/` (global) or the owning feature's `types/` (feature-specific). Treat all fields as provisional and revise when the API contract lands.
 
 - **AdminUser** — `id`, `name`, `email`, `avatar_url?`, `roles: string[]`, `permissions: string[]`, `email_verified_at`, `two_factor_confirmed_at` (reserved), `created_at`, `updated_at`.
-- **Transaction** — `id`, `invoice_no`, `status` (`pending | processing | success | failed | refunded | …`), `customer` (user ref or guest snapshot, `user_id: number | null`), `game` ref, `product` ref (nominal), `amount`, `cost?`, `margin?`, `payment_channel`, `provider_ref?`, `status_history[]`, `created_at`, `updated_at`.
+- **Transaction** — `id`, `invoice_no`, `invoice_ref?` (the sub-code shown under the invoice number), `payment_status` and `invoice_status` (confirmed as **two separate fields**, not one — `pending | processing | success | failed | partial_refund | partial_success | …`), `customer` (user ref or guest snapshot, `user_id: number | null`), `game` ref, `product` ref (nominal), `cost`, `profit?`, `admin_fee?`, `target_ref?` (provider/destination account reference), `payment_method`, `serial_number?`, `proof_url?` (from the edit-modal upload), `created_at`, `resolved_at?`, `status_history[]`, `updated_at`.
 - **BalanceMovement (ledger)** — `id`, `type` (`credit | debit`), `amount`, `running_balance`, `source`/`reference`, `status`, `created_at`.
 - **Game** — `id`, `name`, `publisher`, `image_url`, `is_active` (referenced by transactions/dashboard).
 - **Product (nominal)** — `id`, `game_id`, `name`, `cost_price`, `selling_price`, `provider_sku?`, `is_available` (referenced; full CRUD is roadmap).

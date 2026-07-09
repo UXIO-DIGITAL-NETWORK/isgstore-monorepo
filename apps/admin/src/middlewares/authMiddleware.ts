@@ -16,3 +16,14 @@ export const requireGuest = () => {
     throw redirect({ to: "/dashboard" });
   }
 };
+
+// Middleware for route that requires a specific permission (resource.action).
+// Wildcard ("*", held by super-admin) grants everything — see
+// system_architecture.md §5.
+export const requirePermission = (permission: string) => {
+  const { permissions } = useAuthStore.getState();
+  const allowed = permissions.includes("*") || permissions.includes(permission);
+  if (!allowed) {
+    throw redirect({ to: "/dashboard" });
+  }
+};

@@ -3,12 +3,18 @@
  * "Rp 15.231,89". Intl.NumberFormat("id-ID") inserts a non-breaking space
  * (U+00A0) after "Rp" — normalized to a regular space for predictable
  * string equality in tests/snapshots.
+ *
+ * `fractionDigits` defaults to 2 (unchanged for existing Dashboard/Financial
+ * callers). Transactions renders whole rupiah per its reference (e.g.
+ * "Rp 4.752"), so it passes `{ fractionDigits: 0 }`.
  */
-export function formatCurrency(value: number): string {
+export function formatCurrency(value: number, options?: { fractionDigits?: number }): string {
+  const fractionDigits = options?.fractionDigits ?? 2;
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
-    minimumFractionDigits: 2,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   })
     .format(value)
     .replace(/\u00A0/g, " ");

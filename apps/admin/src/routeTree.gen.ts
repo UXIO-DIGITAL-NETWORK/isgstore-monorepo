@@ -13,11 +13,16 @@ import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as PreviewRouteImport } from './routes/_preview'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProtectedTransactionsRouteRouteImport } from './routes/_protected/transactions/route'
+import { Route as ProtectedTransactionsIndexRouteImport } from './routes/_protected/transactions/index'
 import { Route as ProtectedFinancialIndexRouteImport } from './routes/_protected/financial/index'
 import { Route as ProtectedDashboardIndexRouteImport } from './routes/_protected/dashboard/index'
+import { Route as PreviewTransactionPreviewIndexRouteImport } from './routes/_preview/transaction-preview/index'
 import { Route as PreviewFinancePreviewIndexRouteImport } from './routes/_preview/finance-preview/index'
 import { Route as PreviewDashboardPreviewIndexRouteImport } from './routes/_preview/dashboard-preview/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
+import { Route as ProtectedTransactionsManualIndexRouteImport } from './routes/_protected/transactions/manual/index'
+import { Route as ProtectedTransactionsAutomaticIndexRouteImport } from './routes/_protected/transactions/automatic/index'
 
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
@@ -36,6 +41,18 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProtectedTransactionsRouteRoute =
+  ProtectedTransactionsRouteRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
+const ProtectedTransactionsIndexRoute =
+  ProtectedTransactionsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProtectedTransactionsRouteRoute,
+  } as any)
 const ProtectedFinancialIndexRoute = ProtectedFinancialIndexRouteImport.update({
   id: '/financial/',
   path: '/financial/',
@@ -46,6 +63,12 @@ const ProtectedDashboardIndexRoute = ProtectedDashboardIndexRouteImport.update({
   path: '/dashboard/',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const PreviewTransactionPreviewIndexRoute =
+  PreviewTransactionPreviewIndexRouteImport.update({
+    id: '/transaction-preview/',
+    path: '/transaction-preview/',
+    getParentRoute: () => PreviewRoute,
+  } as any)
 const PreviewFinancePreviewIndexRoute =
   PreviewFinancePreviewIndexRouteImport.update({
     id: '/finance-preview/',
@@ -63,22 +86,43 @@ const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
   path: '/login/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const ProtectedTransactionsManualIndexRoute =
+  ProtectedTransactionsManualIndexRouteImport.update({
+    id: '/manual/',
+    path: '/manual/',
+    getParentRoute: () => ProtectedTransactionsRouteRoute,
+  } as any)
+const ProtectedTransactionsAutomaticIndexRoute =
+  ProtectedTransactionsAutomaticIndexRouteImport.update({
+    id: '/automatic/',
+    path: '/automatic/',
+    getParentRoute: () => ProtectedTransactionsRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/transactions': typeof ProtectedTransactionsRouteRouteWithChildren
   '/login/': typeof AuthLoginIndexRoute
   '/dashboard-preview/': typeof PreviewDashboardPreviewIndexRoute
   '/finance-preview/': typeof PreviewFinancePreviewIndexRoute
+  '/transaction-preview/': typeof PreviewTransactionPreviewIndexRoute
   '/dashboard/': typeof ProtectedDashboardIndexRoute
   '/financial/': typeof ProtectedFinancialIndexRoute
+  '/transactions/': typeof ProtectedTransactionsIndexRoute
+  '/transactions/automatic/': typeof ProtectedTransactionsAutomaticIndexRoute
+  '/transactions/manual/': typeof ProtectedTransactionsManualIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof AuthLoginIndexRoute
   '/dashboard-preview': typeof PreviewDashboardPreviewIndexRoute
   '/finance-preview': typeof PreviewFinancePreviewIndexRoute
+  '/transaction-preview': typeof PreviewTransactionPreviewIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/financial': typeof ProtectedFinancialIndexRoute
+  '/transactions': typeof ProtectedTransactionsIndexRoute
+  '/transactions/automatic': typeof ProtectedTransactionsAutomaticIndexRoute
+  '/transactions/manual': typeof ProtectedTransactionsManualIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,40 +130,59 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteRouteWithChildren
   '/_preview': typeof PreviewRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
+  '/_protected/transactions': typeof ProtectedTransactionsRouteRouteWithChildren
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/_preview/dashboard-preview/': typeof PreviewDashboardPreviewIndexRoute
   '/_preview/finance-preview/': typeof PreviewFinancePreviewIndexRoute
+  '/_preview/transaction-preview/': typeof PreviewTransactionPreviewIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
   '/_protected/financial/': typeof ProtectedFinancialIndexRoute
+  '/_protected/transactions/': typeof ProtectedTransactionsIndexRoute
+  '/_protected/transactions/automatic/': typeof ProtectedTransactionsAutomaticIndexRoute
+  '/_protected/transactions/manual/': typeof ProtectedTransactionsManualIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/transactions'
     | '/login/'
     | '/dashboard-preview/'
     | '/finance-preview/'
+    | '/transaction-preview/'
     | '/dashboard/'
     | '/financial/'
+    | '/transactions/'
+    | '/transactions/automatic/'
+    | '/transactions/manual/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/dashboard-preview'
     | '/finance-preview'
+    | '/transaction-preview'
     | '/dashboard'
     | '/financial'
+    | '/transactions'
+    | '/transactions/automatic'
+    | '/transactions/manual'
   id:
     | '__root__'
     | '/'
     | '/_auth'
     | '/_preview'
     | '/_protected'
+    | '/_protected/transactions'
     | '/_auth/login/'
     | '/_preview/dashboard-preview/'
     | '/_preview/finance-preview/'
+    | '/_preview/transaction-preview/'
     | '/_protected/dashboard/'
     | '/_protected/financial/'
+    | '/_protected/transactions/'
+    | '/_protected/transactions/automatic/'
+    | '/_protected/transactions/manual/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -159,6 +222,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_protected/transactions': {
+      id: '/_protected/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof ProtectedTransactionsRouteRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/transactions/': {
+      id: '/_protected/transactions/'
+      path: '/'
+      fullPath: '/transactions/'
+      preLoaderRoute: typeof ProtectedTransactionsIndexRouteImport
+      parentRoute: typeof ProtectedTransactionsRouteRoute
+    }
     '/_protected/financial/': {
       id: '/_protected/financial/'
       path: '/financial'
@@ -172,6 +249,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/'
       preLoaderRoute: typeof ProtectedDashboardIndexRouteImport
       parentRoute: typeof ProtectedRoute
+    }
+    '/_preview/transaction-preview/': {
+      id: '/_preview/transaction-preview/'
+      path: '/transaction-preview'
+      fullPath: '/transaction-preview/'
+      preLoaderRoute: typeof PreviewTransactionPreviewIndexRouteImport
+      parentRoute: typeof PreviewRoute
     }
     '/_preview/finance-preview/': {
       id: '/_preview/finance-preview/'
@@ -194,6 +278,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_protected/transactions/manual/': {
+      id: '/_protected/transactions/manual/'
+      path: '/manual'
+      fullPath: '/transactions/manual/'
+      preLoaderRoute: typeof ProtectedTransactionsManualIndexRouteImport
+      parentRoute: typeof ProtectedTransactionsRouteRoute
+    }
+    '/_protected/transactions/automatic/': {
+      id: '/_protected/transactions/automatic/'
+      path: '/automatic'
+      fullPath: '/transactions/automatic/'
+      preLoaderRoute: typeof ProtectedTransactionsAutomaticIndexRouteImport
+      parentRoute: typeof ProtectedTransactionsRouteRoute
+    }
   }
 }
 
@@ -212,22 +310,46 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 interface PreviewRouteChildren {
   PreviewDashboardPreviewIndexRoute: typeof PreviewDashboardPreviewIndexRoute
   PreviewFinancePreviewIndexRoute: typeof PreviewFinancePreviewIndexRoute
+  PreviewTransactionPreviewIndexRoute: typeof PreviewTransactionPreviewIndexRoute
 }
 
 const PreviewRouteChildren: PreviewRouteChildren = {
   PreviewDashboardPreviewIndexRoute: PreviewDashboardPreviewIndexRoute,
   PreviewFinancePreviewIndexRoute: PreviewFinancePreviewIndexRoute,
+  PreviewTransactionPreviewIndexRoute: PreviewTransactionPreviewIndexRoute,
 }
 
 const PreviewRouteWithChildren =
   PreviewRoute._addFileChildren(PreviewRouteChildren)
 
+interface ProtectedTransactionsRouteRouteChildren {
+  ProtectedTransactionsIndexRoute: typeof ProtectedTransactionsIndexRoute
+  ProtectedTransactionsAutomaticIndexRoute: typeof ProtectedTransactionsAutomaticIndexRoute
+  ProtectedTransactionsManualIndexRoute: typeof ProtectedTransactionsManualIndexRoute
+}
+
+const ProtectedTransactionsRouteRouteChildren: ProtectedTransactionsRouteRouteChildren =
+  {
+    ProtectedTransactionsIndexRoute: ProtectedTransactionsIndexRoute,
+    ProtectedTransactionsAutomaticIndexRoute:
+      ProtectedTransactionsAutomaticIndexRoute,
+    ProtectedTransactionsManualIndexRoute:
+      ProtectedTransactionsManualIndexRoute,
+  }
+
+const ProtectedTransactionsRouteRouteWithChildren =
+  ProtectedTransactionsRouteRoute._addFileChildren(
+    ProtectedTransactionsRouteRouteChildren,
+  )
+
 interface ProtectedRouteChildren {
+  ProtectedTransactionsRouteRoute: typeof ProtectedTransactionsRouteRouteWithChildren
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
   ProtectedFinancialIndexRoute: typeof ProtectedFinancialIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
+  ProtectedTransactionsRouteRoute: ProtectedTransactionsRouteRouteWithChildren,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
   ProtectedFinancialIndexRoute: ProtectedFinancialIndexRoute,
 }
