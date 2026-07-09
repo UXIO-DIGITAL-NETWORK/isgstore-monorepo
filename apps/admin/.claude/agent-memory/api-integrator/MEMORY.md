@@ -14,6 +14,9 @@
 ## Mock-swap seam (this phase)
 - Each feature service exposes a typed interface (e.g. `transactionsService.list(params): Promise<PaginatedResponse<Transaction>>`), implemented against **typed fixtures in `features/<f>/data/`** (optionally a small artificial delay). Later, replace only the service body with real `api.*` calls. Optionally gate via `ENV.USE_MOCKS`. **Never put mock data in components.**
 
+## Testing (TDD, mandatory — set up on first use)
+Same Vitest + RTL harness as frontend (`src/test/setup.ts` + `test-utils.tsx`), shared across the whole app — don't build a second one. Before implementing a service or hook, write a failing test asserting its typed contract/shape (mock fixture matches the type; list params like `page`/`sort`/`filter[...]` map correctly), confirm it fails for the right reason, then implement to green. Colocated `*.test.tsx` next to the service/hook file.
+
 ## Wiring facts
 - `api` in `src/lib/axios.ts` (STAYS): Bearer from `useAuthStore`, unwraps `response.data`, on 401 (not `/login`) `clearAuth()` + redirect `/login`. Base URL `ENV.API_BASE_URL` (`src/config/env.ts`, Laravel dev `127.0.0.1:8000/api/`).
 - `QueryClient` is inline in `src/main.tsx`; `src/lib/react-query.ts` is empty -> move the client + defaults there.

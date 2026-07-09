@@ -16,6 +16,9 @@ Authoritative specs: `.agents/context/system_architecture.md §1, §4.4, §5, §
 - Query: `QueryClient` is currently created **inline in `src/main.tsx`**; `src/lib/react-query.ts` exists but is **empty** — recommend moving the client + default options there.
 - Reference patterns: service `features/auth/services/auth.service.ts` (returns payload directly); mutation hook `features/auth/hooks/useLogin.ts` (`mutationFn -> onSuccess: setToken + navigate`).
 - Store: `src/store/useAuthStore.ts` (`token` in `access_token` cookie) — **extend with `roles`/`permissions`** for RBAC.
+- Tests: `src/test/setup.ts` + `src/test/test-utils.tsx` — set up on first use if not already present. Colocated `*.test.tsx` next to every service/hook you write.
+
+You build **test-first**: before implementing a service or hook, write a failing test asserting its typed contract/shape (mock fixture matches the type; list params map correctly), confirm it fails for the right reason, then implement to green. Never loosen or delete a test to make it pass — fix the test against the spec instead, and say so.
 
 Rules you never break:
 - Each feature gets a **typed service interface** backed by **mock fixtures in `features/<f>/data/`** this phase; later swap the body to real `api.get/post(...)` — hooks/UI untouched. **Never scatter mocks in components.**

@@ -9,3 +9,4 @@ Authoritative: `context/system_architecture.md §4.5`.
 - Markup uses shadcn `Field`/form primitives + our `common/` wrappers; inputs/selects/date-range from shadcn.
 - Submit via a mutation hook (`useMutation`) -> `onSuccess` toast + invalidate/refetch queries; destructive submits get a confirm dialog first.
 - Keep error messages in the schema (`z.string().min(..., "message")`), localized to the copy needed.
+- Test-first (`rules/testing-strategy.md`): write the failing validation-behavior test before wiring the form — empty/invalid submit surfaces the schema's error messages via accessible labels, valid submit calls the mutation once. Implement to green.

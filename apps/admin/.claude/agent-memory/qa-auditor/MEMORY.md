@@ -6,6 +6,7 @@
 Per feature (before its gate) and once globally: `tsc --noEmit` + `lint` clean, no `any`, no cross-feature imports, no raw hex / off-token palette classes, no bare HTML tags in feature TSX, `tabular-nums` on numbers, both light+dark render, Figma reconciled, server-side tables with loading/empty/error states, mocks behind the service boundary, `<Can>` on privileged actions + guards in `beforeLoad`, keyboard/focus/labels/overlay containment, `logs/feature-changes/` entry present.
 
 ## Grep checks
+- Tests: `npm run test` must be clean; spot-check the audited feature has colocated `*.test.tsx` covering reachability/content (pages), contract shape (services/hooks), and validation behavior (forms) — not just a trivial "renders" smoke test.
 - Cross-feature: `grep -rn 'from "@/features/' src/features`
 - Raw hex: `grep -rnE '#[0-9a-fA-F]{3,6}\b' src/components src/features`; palette classes: `grep -rnE '\b(slate|zinc|gray|neutral)-[0-9]' src/features src/components`
 - Bare HTML in features: `grep -rnE '<(div|p|span|h[1-6]|img|a)[ >]' src/features`

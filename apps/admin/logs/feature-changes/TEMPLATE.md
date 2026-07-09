@@ -16,6 +16,8 @@
 - `src/...`
 
 ## Verification
+- [ ] Built TDD-first: test cases defined, failing tests written, then implemented to green
+- [ ] `npm run test` passes
 - [ ] `npx tsc --noEmit` clean
 - [ ] `npm run lint` clean
 - [ ] `/qa-audit` run (findings in `.artifacts/qa-log.md`)

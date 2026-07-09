@@ -4,7 +4,7 @@ Master brief for Claude Code in this repo. It points at the deeper specs; it doe
 
 ## What this is
 
-An internal back-office SPA to manage the UDN multi-game top-up platform. **Monochrome** (shadcn `neutral`), **Inter** everywhere, **light + dark (dark default)**. Stack: **React 19 + Vite + TypeScript (strict) + Tailwind v4 (`@theme`, no config file) + shadcn/ui (`new-york`) + TanStack Router/Query/Table + Zustand + React Hook Form + Zod + Axios + recharts + sonner + next-themes**.
+An internal back-office SPA to manage the UDN multi-game top-up platform. **Monochrome** (shadcn `neutral`), **Inter** everywhere, **light + dark (dark default)**. Stack: **React 19 + Vite + TypeScript (strict) + Tailwind v4 (`@theme`, no config file) + shadcn/ui (`new-york`) + TanStack Router/Query/Table + Zustand + React Hook Form + Zod + Axios + recharts + sonner + next-themes**. Testing: **Vitest + React Testing Library**, TDD-first.
 
 ## Authoritative documents (read before any task)
 
@@ -23,34 +23,35 @@ Precedence when they conflict:
 - **The shipped `src/index.css` is blue-tinted;** the true-neutral retune + `--success` token are in `design_system.md §3.1`. **Style by token _name_** so the retune is a one-file change.
 - **Only role = `super-admin`** (all permissions = `["*"]`), but build the `<Can>` / `useCan` / `requirePermission` scaffold now.
 - Admin is **English-only** (no i18n).
+- **Every feature is built TDD-first:** test cases → failing tests → implementation to green (`system_architecture.md §4.11`). No exceptions, not a per-feature decision.
 
 ## Workflow (non-negotiable)
 
 **Plan -> Approve -> Build.**
 
 1. `/plan-feature` — @pm reads the context docs, writes **`PLAN.md`** (whole-scope), lists open decisions with recommended defaults, then **STOPS for your approval**. No implementation code in this stage.
-2. `/build-feature <feature>` — @frontend + @api build **one** feature/screen, QA it, commit — then **STOP for approval** before the next. Planning is whole-scope; execution is per-feature.
+2. `/build-feature <feature>` — @frontend + @api build **one** feature/screen **test-first** (write the test cases, write the failing tests, then implement until green — `system_architecture.md §4.11`), QA it, commit — then **STOP for approval** before the next. Planning is whole-scope; execution is per-feature.
 3. Never invent business rules. Finance settlement/fees are deliberately **TBD** — surface them, don't guess. When unsure about design/architecture, present 2 options with a recommended default.
 
 ## Where things live
 
 - `.agents/` — portable, agent-agnostic spec: `context/` (the 3 docs), `roles/` (pm, frontend, api_integrator, qa), `rules/`, `workflows/`, `skills/`, `agents.md` (roster/index).
 - `.claude/` — Claude Code native layer: `agents/` (subagents), `agent-memory/` (per-agent MEMORY.md — read before, update after), `commands/`, `rules/` (always-on enforcement mirrors), `skills/` (incl. vendored **impeccable**), `output-styles/custom-components.md`, `hooks/format.sh`, `settings.json`.
-- `src/` (per `system_architecture.md §3`): `features/*` (the app — isolated slices), `components/{ui,common,layouts}`, `routes/` (registry-only), `middlewares/authMiddleware.ts`, `store/`, `lib/{axios,react-query,utils}`, `types/{api.type,models}`, `config/env.ts`, `utils/`, `index.css`. `routeTree.gen.ts` is generated — never hand-edit.
+- `src/` (per `system_architecture.md §3`): `features/*` (the app — isolated slices), `components/{ui,common,layouts}`, `routes/` (registry-only), `middlewares/authMiddleware.ts`, `store/`, `lib/{axios,react-query,utils}`, `types/{api.type,models}`, `config/env.ts`, `utils/`, `test/` (Vitest harness — `setup.ts`, `test-utils.tsx`), `index.css`. `routeTree.gen.ts` is generated — never hand-edit.
 
 ## Commands
 
-| Command                       | Does                                                                  |
-| ----------------------------- | --------------------------------------------------------------------- |
-| `/plan-feature [focus]`       | Whole-scope plan -> `PLAN.md`, then STOP for approval                 |
-| `/build-feature <feature>`    | Build one feature (data + UI), QA, then STOP for approval             |
-| `/qa-audit [feature\|global]` | Definition of Done -> `.artifacts/qa-log.md`                          |
-| `/add-shadcn <component>`     | Add a shadcn primitive, restyle with neutral tokens                   |
-| `/commit [scope]`             | One Conventional Commit + its log entry                               |
-| `/typecheck`                  | `tsc --noEmit` + `eslint`, summarized                                 |
-| `/log-change <slug>`          | Append a `logs/feature-changes/` entry                                |
-| `/update-memory <agent>`      | Refresh an agent's `MEMORY.md`                                        |
-| `/impeccable <mode> [target]` | Production-grade UI craft/critique (run `/impeccable init` first use) |
+| Command                       | Does                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| `/plan-feature [focus]`       | Whole-scope plan -> `PLAN.md`, then STOP for approval                       |
+| `/build-feature <feature>`    | Build one feature TDD-first (tests before code), QA, then STOP for approval |
+| `/qa-audit [feature\|global]` | Definition of Done -> `.artifacts/qa-log.md`                                |
+| `/add-shadcn <component>`     | Add a shadcn primitive, restyle with neutral tokens                         |
+| `/commit [scope]`             | One Conventional Commit + its log entry                                     |
+| `/typecheck`                  | `tsc --noEmit` + `eslint`, summarized                                       |
+| `/log-change <slug>`          | Append a `logs/feature-changes/` entry                                      |
+| `/update-memory <agent>`      | Refresh an agent's `MEMORY.md`                                              |
+| `/impeccable <mode> [target]` | Production-grade UI craft/critique (run `/impeccable init` first use)       |
 
 ## Subagents (keep the main context clean)
 
@@ -58,14 +59,15 @@ Precedence when they conflict:
 
 ## Always-on rules (`.claude/rules/`)
 
-`project`, `react-typescript`, `tailwind-styling`, `custom-components`, `feature-isolation`, `rbac-security`, `accessibility`, `logging`, `memory-context`, `commit`. Digest:
+`project`, `react-typescript`, `tailwind-styling`, `custom-components`, `feature-isolation`, `rbac-security`, `accessibility`, `logging`, `memory-context`, `commit`, `testing-strategy`. Digest:
 
 - **Feature isolation** — no cross-feature imports; promote shared code up.
 - **Custom primitives only** in feature TSX (`Box`/`Container`/`Text`/`Heading`/`Link`/`Image`); interactive controls -> shadcn/ui.
 - **Tokens only** — no raw hex / palette classes; monochrome; color only via `text-success`/`text-destructive`/`chart-*`; numbers use `tabular-nums`.
 - **Routing is registry-only**; guards (`requireAuth`/`requirePermission`) in `beforeLoad`, never in components.
 - **Server data via TanStack Query only**; global client state via Zustand; mocks behind the service boundary.
-- TS strict, no `any`. Green (`tsc` + `lint`) before commit. Never `Read`/commit `.env*`.
+- **TDD, always:** test cases → failing tests → implementation to green. Colocated `*.test.tsx`, Vitest + React Testing Library. Never loosen/delete a test to pass it.
+- TS strict, no `any`. Green (`tsc` + `lint` + `test`) before commit. Never `Read`/commit `.env*`.
 
 ## MCP (`.mcp.json`)
 
@@ -77,4 +79,4 @@ A `PostToolUse` hook (`.claude/hooks/format.sh`) prettier-formats every `Edit`/`
 
 ## Definition of Done
 
-See `system_architecture.md §9` and `.agents/workflows/qa.md`. A feature is done only when it's isolated, tokens-only, both-theme correct, Figma-reconciled, type/lint-clean, `<Can>`-gated where privileged, tables have loading/empty/error states, and it carries a `logs/feature-changes/` entry.
+See `system_architecture.md §9` and `.agents/workflows/qa.md`. A feature is done only when it's built **TDD-first** with `npm run test` passing, isolated, tokens-only, both-theme correct, Figma-reconciled, type/lint-clean, `<Can>`-gated where privileged, tables have loading/empty/error states, and it carries a `logs/feature-changes/` entry.

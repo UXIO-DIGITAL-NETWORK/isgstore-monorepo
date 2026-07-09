@@ -27,6 +27,9 @@ UDN Admin Dashboard: monochrome (shadcn `neutral`), Inter everywhere, light+dark
 - `PerformanceChartCard` — recharts area via shadcn `chart` wrapper; series `chart-1` (Revenue, blue) + `chart-2` (Net Income, green); month/range `Select` in header. Used by Dashboard + Financial.
 - `DataTable` — `@tanstack/react-table` **server mode** + shadcn `table`; server params -> `PaginatedResponse<T>`; compact rows `h-11`, numeric cols right-aligned `tabular-nums`, entity cell avatar+name, `Badge` status, `dropdown-menu` row actions (`<Can>`-gated), Skeleton/empty/error states. Used by Transactions + ledger.
 
+## Testing (TDD, mandatory — set up on first use)
+Vitest + React Testing Library on `jsdom`, config in `vitest.config.ts` (separate from `vite.config.ts`; no `globals: true`). Harness lives in `src/test/`: `setup.ts` (jest-dom matchers + a `window.matchMedia` stub, `next-themes`' `ThemeProvider` needs it and jsdom doesn't implement it) and `test-utils.tsx` (`renderRoute(initialPath)` — real router from `routeTree.gen.ts` + `createMemoryHistory`, fresh `QueryClientProvider` with `retry: false`, wrapped in `ThemeProvider`). Tests are colocated (`Thing.tsx` + `Thing.test.tsx`). Build every page/component test-first: define cases in plain language against the PRD spec, write failing tests, implement to green. Test accessible content/behavior (`getByRole`/`getByLabelText`), never className/token strings — that's `/qa-audit`'s job. Charts/animation are smoke-tested only. Scripts: `npm run test` / `npm run test:watch`.
+
 ## Conventions / DRY
 - TS strict, no `any`. `cn()` for conditional classes, `cva` for variants. Functional components, named exports.
 - **Tokens only** (no raw hex/px, no `slate-`/`zinc-`/`gray-`); monochrome; color only via `text-success`/`text-destructive`/`chart-*`. Numbers use `tabular-nums`; money via `formatCurrency` (`src/utils/`).

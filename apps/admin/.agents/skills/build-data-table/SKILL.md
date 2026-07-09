@@ -9,4 +9,5 @@ Authoritative: `context/system_architecture.md §4.8`, `design_system.md §8.6`.
 - Columns: header row `text-xs text-muted-foreground` with sortable chevrons; body rows compact (`h-11`, `hover:bg-accent/50`, `border-b border-border`); **numeric columns right-aligned + `tabular-nums`**; entity cell = `Avatar` + name over `text-xs` sub-label; status via `Badge` variants; row actions via `dropdown-menu` (gate with `<Can>`).
 - **Always** provide `Skeleton` rows (loading), an empty component, and an inline error with retry.
 - Filters (status, date range, game/product, channel, search) live in a feature `components/` filter bar; export CSV/Excel from the current filtered result.
+- Test-first (`rules/testing-strategy.md`): before wiring state, write failing tests for the table state → query params mapping (page/sort/filter change produces the expected params) and for the three render states (loading shows skeletons, empty shows the empty component, populated shows rows) — then implement to green.
 Reuse one generic `DataTable` across `transactions` and the financial ledger.

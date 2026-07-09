@@ -9,4 +9,5 @@ Authoritative: `context/system_architecture.md §1, §4.4, §6`.
 - **Hook** (`features/<f>/hooks/`) wraps the service in `useQuery`/`useMutation`. Mutation pattern (from `features/auth/hooks/useLogin.ts`): `mutationFn -> onSuccess: update store -> navigate`.
 - `api` (`src/lib/axios.ts`) injects Bearer, **unwraps `response.data`** (services return the payload directly), and auto-logs-out on 401. Server-side tables send `page`/`per_page`/`sort`/`filter[...]`/`search`.
 - Never call `api` from a component; never scatter mocks in components; never move axios out of `src/lib/`. Recommend the `QueryClient` move to `src/lib/react-query.ts`.
+- Test-first (`rules/testing-strategy.md`): before implementing a service, write a failing test asserting its mock fixture matches the declared type and that list params (page/sort/filter) map correctly — then implement to green.
 Enforcement mirror: `.claude/rules/project.md`.

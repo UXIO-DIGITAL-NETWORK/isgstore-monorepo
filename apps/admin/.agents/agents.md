@@ -13,6 +13,7 @@ Before any task, every agent MUST read: `context/system_architecture.md` (struct
 - **Only `auth` is a real feature.** `dashboard` still holds template/demo widgets that MUST be replaced.
 - **Theme is monochrome neutral**, but the shipped `src/index.css` is still blue-tinted — retune per `design_system.md §3.1`. Style by token *name*.
 - **Only role = `super-admin`** (all permissions), but build the `<Can>`/`requirePermission` scaffold now.
+- **Every feature is built TDD-first**: test cases → failing tests → implementation to green (`system_architecture.md §4.11`). Vitest + React Testing Library, harness set up on first use.
 
 ## Team Roster & Execution Flow
 ### @pm — Project Manager / Lead Architect (`roles/project_manager.md`)
@@ -31,12 +32,12 @@ Audits type-safety, feature isolation, design fidelity, authorization, and a11y.
 - `/add-shadcn <component>`, `/log-change`, `/update-memory`, `/commit`, `/typecheck` — see `.claude/commands/`.
 
 ## Skills (`.agents/skills/`) — activate by task
-**Knowledge (conventions; enforcement mirrors in `.claude/rules/`):** `tanstack-router`, `tailwind-v4-shadcn`, `typescript-react-strict`, `api-service-layer`, `rbac-guards`, `build-data-table`, `charts-recharts`, `form-with-zod`, `discover-tooling`.
+**Knowledge (conventions; enforcement mirrors in `.claude/rules/`):** `tanstack-router`, `tailwind-v4-shadcn`, `typescript-react-strict`, `api-service-layer`, `rbac-guards`, `build-data-table`, `charts-recharts`, `form-with-zod`, `testing-strategy`, `discover-tooling`.
 **Process (mirrors of the invokable `.claude/skills/` slash-commands):** `plan-feature`, `build-crud-feature`, `qa-audit`, `update-memory`, `log-change`, `add-shadcn`.
 **Vendored design skill:** `impeccable` (v3.9.1) lives in `.claude/skills/impeccable/` — invoke `/impeccable <craft|polish|audit|…>` (run `/impeccable init` first use) for production-grade UI craft on dashboards/forms/app-shells.
 
 ## Rules (`.agents/rules/`) — always on
-`code-quality`, `feature-isolation`, `design-fidelity`, `rbac-security`, `commit-rules`, `workflow-discipline`, `memory-context`, `logging`, `accessibility`.
+`code-quality`, `feature-isolation`, `design-fidelity`, `rbac-security`, `commit-rules`, `workflow-discipline`, `memory-context`, `logging`, `accessibility`, `testing-strategy`.
 
 ## MCP (`.mcp.json`)
 `context7` (live TanStack/Tailwind v4/shadcn/Zod docs), `shadcn` (browse/install primitives — pairs with `/add-shadcn`), `chrome-devtools` (QA screenshots/console/perf), `figma` (pull frames/tokens from the UDN Admin Dashboard file — see `design_system.md`).

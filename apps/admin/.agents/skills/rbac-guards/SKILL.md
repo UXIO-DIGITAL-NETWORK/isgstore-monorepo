@@ -9,4 +9,5 @@ Authoritative: `context/system_architecture.md §5`, `rules/rbac-security.md`.
 - **UI:** `<Can permission="transactions.refund">...</Can>` component + `useCan(perm): boolean` hook to gate action buttons/menu items.
 - Permission strings = `resource.action` (`transactions.view`, `transactions.refund`, `financial.export`, ...).
 - Destructive actions: gate with `<Can>` + confirm dialog + `sonner` toast.
+- Test-first: a failing test asserting `<Can>` hides/shows the gated action for a given permission set, written before wiring the gate into the screen.
 Build the plumbing even though only one role exists — future roles become a data change, not a refactor.

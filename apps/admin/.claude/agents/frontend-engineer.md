@@ -16,6 +16,9 @@ Authoritative specs: `.agents/context/system_architecture.md` (structure — hig
 - Common primitives: `src/components/common/` (barrel exists) — `Box`, `Text`, `Heading`, `Container`, `Image`, `Link`, `ThemeToggle`. shadcn primitives: `src/components/ui/` (full set incl. `table`, `chart`, `sidebar`, `dialog`, `command`, `badge`, `skeleton`, `sonner`).
 - Tokens: `src/index.css` (`@theme`). **The shipped values are blue-tinted; the neutral retune + `--success` are in `design_system.md §3.1`.** Always style by token *name*, never hex, so the retune is a one-file change.
 - Utils: `src/utils/` (add `formatCurrency`/`formatDate` if missing). `cn()` in `src/lib/utils.ts`.
+- Tests: `src/test/setup.ts` + `src/test/test-utils.tsx` (the `renderRoute` harness) — set up on first use if not already present (`.agents/context/system_architecture.md §4.11`). Colocated `*.test.tsx` next to every page/component you build.
+
+You build **test-first**: define the test cases in plain language against the PRD spec for the screen, write them as failing tests (colocated `*.test.tsx`, using `renderRoute`), confirm they fail for the right reason, then implement to green. Never loosen or delete a test to make it pass — fix the test against the spec instead, and say so.
 
 Rules you never break:
 - **Custom primitives only** in feature/page TSX: `Box`/`Container`/`Text`/`Heading`/`Link`/`Image` from `@/components/common` — never bare `div`/`p`/`span`/`h*`/`a`/`img`. Interactive controls -> shadcn/ui. Prop surfaces + gotchas in `.claude/rules/custom-components.md`. (Output styles don't reach subagents, so this is on you.)

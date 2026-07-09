@@ -8,8 +8,9 @@
 - Produce `PLAN.md` at the repo root containing:
   - the file/component tree to create (matching `system_architecture.md §3`);
   - the ordered build list for MVP — **Dashboard → Financial → Transaction** — with the shared primitives to build first (`StatCard`, `TrendPill`, chart card, server-side `DataTable`);
-  - the true dependency delta (most is installed: TanStack Router/Query/Table, Zustand, RHF+Zod, Axios, recharts, sonner, next-themes) — state the real remainder;
-  - a data-mapping table: PRD screens → typed view-models / mock fixtures location (`features/<f>/data/*`), typed against `src/types/models/*`.
+  - the true dependency delta (most is installed: TanStack Router/Query/Table, Zustand, RHF+Zod, Axios, recharts, sonner, next-themes) — state the real remainder, including whether the Vitest + React Testing Library harness (`system_architecture.md §4.11`) still needs first-time setup;
+  - a data-mapping table: PRD screens → typed view-models / mock fixtures location (`features/<f>/data/*`), typed against `src/types/models/*`;
+  - a note that every feature in Stage 2 is built TDD-first (`workflows/feature.md`) — standing policy, not something to re-decide per feature.
 - Surface the **open decisions** with a recommended default each: Finance business scope (settlement/fees are TBD — do not invent), provisional entity fields (pending API), the neutral re-theme + `--success` token, the `src/models/` → `src/types/models/` migration, moving the inline `QueryClient` into `src/lib/react-query.ts`, and setting `ThemeProvider` `defaultTheme` to `dark` + mounting a `sonner` `<Toaster />`.
 
 ## Hard Rules

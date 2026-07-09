@@ -16,4 +16,7 @@
 - Feature service exposes a typed interface, backed by **mock fixtures in `features/<f>/data/`** this phase (swap to real `api.*` later — one file per service). `api` (`src/lib/axios.ts`) unwraps `response.data`; services return the payload directly. Axios stays in `src/lib/`.
 - `VITE_*` only in `src/config/env.ts`. Never `Read`/commit `.env*` (denied in `settings.json`).
 
-**Why this matters here:** the backend is separate and not built yet, only `auth` is real, and `dashboard` still holds template widgets — so the conventions above (isolation, tokens, mock-swap seam, registry routing) are what keep three sibling MVP features consistent as they're built one approval gate at a time.
+## Testing (mirrors `.agents/rules/testing-strategy` — see `.claude/rules/testing-strategy.md` for the full rule)
+- Every feature is built **test-first**: test cases -> failing tests -> implementation to green. No exceptions, no per-feature re-litigating.
+
+**Why this matters here:** the backend is separate and not built yet, only `auth` is real, and `dashboard` still holds template widgets — so the conventions above (isolation, tokens, mock-swap seam, registry routing, TDD) are what keep three sibling MVP features consistent as they're built one approval gate at a time.
