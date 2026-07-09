@@ -1,271 +1,246 @@
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState, type ComponentType } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard,
-  BarChart2,
-  ShoppingCart,
-  Users,
-  Rocket,
-  LineChart,
-  Package,
-  FileText,
-  Book,
-  ChevronRight,
-  LogOut,
+  Activity,
   Command,
+  CreditCard,
+  FileStack,
+  FileText,
+  Globe,
+  LayoutGrid,
+  Megaphone,
+  Package,
+  Plug,
+  Receipt,
+  Search,
+  Tag,
+  Users,
+  Wallet,
+  Zap,
 } from "lucide-react";
-import { useLogout } from "@/features/auth/hooks/useLogout";
+
+import { Box } from "@/components/common/Box";
+import { Button } from "@/components/ui/button";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuBadge,
 } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Text } from "@/components/common/Text";
+import { Link } from "@/components/common/Link";
+import { cn } from "@/lib/utils";
+
+type NavItem = { label: string; href: string; icon: ComponentType<{ className?: string }> };
+type NavGroup = { label: string; items: NavItem[] };
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "General",
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
+      { label: "Reports", href: "/dashboard", icon: FileText },
+      { label: "Financial", href: "/financial", icon: Wallet },
+      { label: "Integration", href: "/dashboard", icon: Plug },
+    ],
+  },
+  {
+    label: "Orders",
+    items: [
+      { label: "Transaction", href: "/transactions", icon: Receipt },
+      { label: "Activity", href: "/dashboard", icon: Activity },
+    ],
+  },
+  {
+    label: "Products & Services",
+    items: [
+      { label: "Category", href: "/dashboard", icon: Tag },
+      { label: "Product", href: "/dashboard", icon: Package },
+      { label: "Payment", href: "/dashboard", icon: CreditCard },
+      { label: "Membership", href: "/dashboard", icon: Users },
+    ],
+  },
+  {
+    label: "Marketing & Content Management",
+    items: [
+      { label: "Promo", href: "/dashboard", icon: Megaphone },
+      { label: "Flash Sale", href: "/dashboard", icon: Zap },
+      { label: "Website Content", href: "/dashboard", icon: Globe },
+      { label: "Pages", href: "/dashboard", icon: FileStack },
+    ],
+  },
+];
 
 export function DashboardSidebar() {
-  const { mutate: logout } = useLogout();
+  const [commandOpen, setCommandOpen] = useState(false);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const goTo = (href: string) => {
+    setCommandOpen(false);
+    navigate({ to: href as unknown as string });
+  };
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
+      <SidebarHeader className="gap-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
               asChild
             >
-              <Link to="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-500 text-white">
+              <Link href="/dashboard">
+                <Box className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-bold tracking-tight text-base">Flux</span>
-                  <span className="truncate text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Dashboard</span>
-                </div>
+                </Box>
+                <Box className="grid flex-1 text-left text-sm leading-tight">
+                  <Text
+                    as="span"
+                    className="truncate text-base font-bold"
+                  >
+                    Admin Dashboard
+                  </Text>
+                  <Text
+                    as="span"
+                    className="truncate text-[10px] font-semibold tracking-wider text-muted-foreground uppercase"
+                  >
+                    UXIOTOPUP
+                  </Text>
+                </Box>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        <Box className="relative px-1">
+          <Box
+            as="button"
+            type="button"
+            onClick={() => setCommandOpen(true)}
+            className="ring-offset-background flex h-9 w-full items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <Search className="size-4 shrink-0" />
+            <Text
+              as="span"
+              className="flex-1 text-left"
+            >
+              Search
+            </Text>
+            <Text
+              as="span"
+              className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium"
+            >
+              ⌘F
+            </Text>
+          </Box>
+        </Box>
       </SidebarHeader>
 
       <SidebarContent>
-        {/* OVERVIEW */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground">OVERVIEW</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive
-                  className="data-[active=true]:bg-blue-50 data-[active=true]:text-blue-600 data-[active=true]:font-medium rounded-full"
-                >
-                  <Link to="/dashboard">
-                    <LayoutDashboard />
-                    <span>Dashboard</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <BarChart2 />
-                    <span>Analytics</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <ShoppingCart />
-                    <span>eCommerce</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <Users />
-                    <span>CRM</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <Rocket />
-                    <span>SaaS</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <LineChart />
-                    <span>Charts</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* COMMERCE */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground mt-4">COMMERCE</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full relative">
-                  <Link to="/dashboard">
-                    <ShoppingCart />
-                    <span>Orders</span>
-                  </Link>
-                </SidebarMenuButton>
-                <SidebarMenuBadge className="bg-blue-600 text-white rounded-full px-2 py-0.5 mt-1.5 text-xs font-semibold mr-2 border-transparent">12</SidebarMenuBadge>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <Package />
-                    <span>Products</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <Users />
-                    <span>Customers</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <FileText />
-                    <span>Invoices</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* OTHER COLLAPSIBLES */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <Collapsible className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="rounded-full font-medium text-muted-foreground text-[11px] uppercase tracking-wider">
-                      <span>APPS</span>
-                      <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 size-3" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                </SidebarMenuItem>
-              </Collapsible>
-              <Collapsible className="group/collapsible mt-2">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="rounded-full font-medium text-muted-foreground text-[11px] uppercase tracking-wider">
-                      <span>DEV TOOLS</span>
-                      <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 size-3" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                </SidebarMenuItem>
-              </Collapsible>
-              <Collapsible className="group/collapsible mt-2">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="rounded-full font-medium text-muted-foreground text-[11px] uppercase tracking-wider">
-                      <span>FINANCE</span>
-                      <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 size-3" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                </SidebarMenuItem>
-              </Collapsible>
-              <Collapsible className="group/collapsible mt-2">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="rounded-full font-medium text-muted-foreground text-[11px] uppercase tracking-wider">
-                      <span>SYSTEM</span>
-                      <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 size-3" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                </SidebarMenuItem>
-              </Collapsible>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupContent>
-             <SidebarMenu>
-               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="rounded-full">
-                  <Link to="/dashboard">
-                    <Book />
-                    <span>Documentation</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-             </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {NAV_GROUPS.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground uppercase">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <SidebarMenuItem key={item.label}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        className={cn(
+                          "rounded-md",
+                          isActive
+                            ? "bg-accent text-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                      >
+                        <Link href={item.href}>
+                          <item.icon className="size-4" />
+                          <Text as="span">{item.label}</Text>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground font-medium py-6 px-2"
-                >
-                  <Avatar className="h-9 w-9 bg-blue-600 text-white rounded-full">
-                    <AvatarFallback className="bg-blue-600 text-white font-semibold">AS</AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight ml-1">
-                    <span className="truncate font-bold">Aigars S.</span>
-                    <span className="truncate text-xs text-muted-foreground">Admin</span>
-                  </div>
-                  <LogOut className="size-4 ml-auto text-muted-foreground" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-full min-w-56 rounded-lg"
-                side="top"
-                align="start"
-                sideOffset={4}
-              >
-                <DropdownMenuItem
-                  onClick={() => logout()}
-                  className="font-medium text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-                >
-                  <LogOut className="mr-2 h-4 w-4" /> Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="border-t border-border">
+        <Box className="flex flex-col gap-2 rounded-lg bg-accent p-4">
+          <Text
+            as="span"
+            className="text-sm font-semibold text-foreground"
+          >
+            Subscribe to our newsletter
+          </Text>
+          <Text variant="small">Opt-in to receive updates and news about the sidebar.</Text>
+          <Button
+            size="sm"
+            className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Subscribe
+          </Button>
+        </Box>
       </SidebarFooter>
+
+      <CommandDialog
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+      >
+        <CommandInput placeholder="Jump to a page..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          {NAV_GROUPS.map((group) => (
+            <CommandGroup
+              key={group.label}
+              heading={group.label}
+            >
+              {group.items.map((item) => (
+                <CommandItem
+                  key={item.label}
+                  onSelect={() => goTo(item.href)}
+                >
+                  <item.icon className="mr-2 size-4" />
+                  {item.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ))}
+        </CommandList>
+      </CommandDialog>
     </Sidebar>
   );
 }

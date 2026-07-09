@@ -1,47 +1,130 @@
-import { Search, Plus, Bell, History } from "lucide-react";
-import { Box } from "@/components/common/Box";
-import { Input } from "@/components/ui/input";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import { Bell, ChevronDown, HelpCircle, LogOut, Zap } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Box } from "@/components/common/Box";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Text } from "@/components/common/Text";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useOperator } from "../hooks/useDashboard";
+
+const getInitials = (name: string) =>
+  name
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
 export function DashboardNavbar() {
+  const { data: operator } = useOperator();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    useAuthStore.getState().clearAuth();
+    navigate({ to: "/login" });
+  };
+
   return (
     <Box
       as="header"
-      className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-4 border-b border-border bg-white px-4 lg:px-6"
+      className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-4 border-b border-border bg-background px-4 lg:px-6"
     >
-      <Box className="flex items-center gap-2 flex-1">
+      <Box className="flex flex-1 items-center gap-2">
         <SidebarTrigger className="-ml-1" />
-        <form className="hidden sm:block flex-1 max-w-sm">
-          <Box className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search anything...   HK"
-              className="w-[280px] rounded-full bg-slate-100/80 pl-9 border-none focus-visible:ring-1 focus-visible:ring-primary/50 text-xs"
-            />
-          </Box>
-        </form>
+        <Text
+          as="span"
+          className="text-sm font-medium text-foreground"
+        >
+          Dashboard
+        </Text>
       </Box>
 
-      <Box className="flex items-center gap-4">
-        <Button size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-4">
-          <Plus className="mr-1 h-3.5 w-3.5" />
-          New Order
+      <Box className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 rounded-md text-muted-foreground"
+        >
+          <HelpCircle className="size-4" />
+          <Text
+            as="span"
+            className="sr-only"
+          >
+            Help
+          </Text>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 rounded-md text-muted-foreground"
+        >
+          <Zap className="size-4" />
+          <Text
+            as="span"
+            className="sr-only"
+          >
+            Quick actions
+          </Text>
         </Button>
         <ThemeToggle />
-        <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-slate-100">
-          <History className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 rounded-md text-muted-foreground"
+        >
+          <Bell className="size-4" />
+          <Text
+            as="span"
+            className="sr-only"
+          >
+            Notifications
+          </Text>
         </Button>
-        <Button variant="ghost" size="icon" className="rounded-full relative text-muted-foreground hover:bg-slate-100">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-2 right-2.5 h-1.5 w-1.5 rounded-full bg-red-500 border border-white" />
-        </Button>
-        <Avatar className="h-8 w-8 bg-blue-600 text-white rounded-full cursor-pointer">
-          <AvatarFallback className="bg-blue-600 text-white text-xs font-semibold">AS</AvatarFallback>
-        </Avatar>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="ml-1 h-auto items-center gap-2 rounded-md px-2 py-1.5"
+            >
+              <Avatar size="sm">
+                <AvatarFallback>{operator ? getInitials(operator.name) : ""}</AvatarFallback>
+              </Avatar>
+              <Box className="hidden flex-col items-start text-left sm:flex">
+                <Text
+                  as="span"
+                  className="text-sm leading-tight font-medium text-foreground"
+                >
+                  {operator?.name}
+                </Text>
+                <Text
+                  as="span"
+                  className="text-xs leading-tight text-muted-foreground"
+                >
+                  {operator?.email}
+                </Text>
+              </Box>
+              <ChevronDown className="size-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={handleLogout}
+              variant="destructive"
+            >
+              <LogOut className="mr-2 size-4" /> Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </Box>
     </Box>
   );

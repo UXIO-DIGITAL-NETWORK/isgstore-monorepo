@@ -1,46 +1,177 @@
+import { useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
-import { CardMRR, CardActiveUsers, CardDeployments, CardUptime } from "../components/OverviewCards";
-import { SaleActivityChart } from "../components/SaleActivityChart";
-import { SprintProgress } from "../components/SprintProgress";
-import { TeamActivity } from "../components/TeamActivity";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/common/Text";
+import { formatBannerDate } from "@/utils/date";
+import { ActivityFeedCard } from "../components/ActivityFeedCard";
+import { DataTable } from "../components/DataTable";
+import { PendingOrdersCard } from "../components/PendingOrdersCard";
+import { PerformanceChartCard } from "../components/PerformanceChartCard";
+import { StatCard } from "../components/StatCard";
+import { useOperator, usePerformanceRows, useStatCards } from "../hooks/useDashboard";
+import type { PerformanceRow, PerformanceTabKey } from "../types/dashboard.type";
+
+const PERFORMANCE_TABS: { key: PerformanceTabKey; label: string; entityLabel: string }[] = [
+  { key: "category", label: "Category Performance", entityLabel: "Category" },
+  { key: "product", label: "Product Performance", entityLabel: "Product" },
+  { key: "user", label: "User Performance", entityLabel: "User" },
+];
+
+const getInitials = (name: string) =>
+  name
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+function buildColumns(entityLabel: string): ColumnDef<PerformanceRow>[] {
+  return [
+    {
+      accessorKey: "name",
+      header: entityLabel,
+      cell: ({ row }) => (
+        <Box className="flex items-center gap-2 text-left">
+          <Avatar size="sm">
+            <AvatarFallback>{getInitials(row.original.name)}</AvatarFallback>
+          </Avatar>
+          <Box className="flex flex-col">
+            <Text
+              as="span"
+              className="text-sm font-medium text-foreground"
+            >
+              {row.original.name}
+            </Text>
+            <Text variant="small">{row.original.subLabel}</Text>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      accessorKey: "totalTransaction",
+      header: "Total Transaction",
+      cell: ({ getValue }) => (
+        <Text
+          as="span"
+          className="tabular-nums"
+        >
+          {getValue<number>()}
+        </Text>
+      ),
+    },
+    {
+      accessorKey: "revenue",
+      header: "Revenue",
+      cell: ({ getValue }) => (
+        <Text
+          as="span"
+          className="tabular-nums"
+        >
+          {getValue<number>()}
+        </Text>
+      ),
+    },
+  ];
+}
 
 export default function DashboardPage() {
+  const { data: operator } = useOperator();
+  const { data: statCards, isLoading: statCardsLoading } = useStatCards();
+  const [activeTab, setActiveTab] = useState<PerformanceTabKey>("category");
+  const activeTabMeta = PERFORMANCE_TABS.find((tab) => tab.key === activeTab)!;
+  const {
+    data: performanceRows,
+    isLoading: performanceLoading,
+    isError: performanceError,
+    refetch: refetchPerformance,
+  } = usePerformanceRows(activeTab);
+
+  const columns = useMemo(() => buildColumns(activeTabMeta.entityLabel), [activeTabMeta.entityLabel]);
+
   return (
     <Box className="flex flex-col gap-6">
-      {/* Blue Gradient Header Area */}
-      <Box className="bg-linear-to-br from-blue-600 to-[#1e88e5] rounded-3xl p-8 shadow-sm">
-        <Box className="mb-8">
-          <Heading
-            level={2}
-            className="text-2xl font-bold tracking-tight text-white mb-1"
-          >
-            Good morning, Aigars
-          </Heading>
-          <Text className="text-blue-100/90 text-sm">Here's what's happening with your product today.</Text>
-        </Box>
+      <Box className="rounded-xl border border-border bg-card p-6">
+        <Heading
+          level={1}
+          variant="section"
+        >
+          {`Welcome, ${operator?.name ?? "Admin"}!`}
+        </Heading>
+        <Text variant="muted">{formatBannerDate(new Date())}</Text>
+      </Box>
 
-        <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <CardMRR />
-          <CardActiveUsers />
-          <CardDeployments />
-          <CardUptime />
+      <Box className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {statCardsLoading || !statCards
+          ? Array.from({ length: 3 }).map((_, index) => (
+              <Box
+                key={index}
+                className="h-32 animate-pulse rounded-xl border border-border bg-card"
+              />
+            ))
+          : statCards.map((card) => (
+              <StatCard
+                key={card.id}
+                data={card}
+              />
+            ))}
+      </Box>
+
+      <Box className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Box className="lg:col-span-2">
+          <PerformanceChartCard />
+        </Box>
+        <Box className="flex flex-col gap-6">
+          <PendingOrdersCard />
+          <ActivityFeedCard />
         </Box>
       </Box>
 
-      {/* Main Content Grid */}
-      <Box className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (Span 2) */}
-        <Box className="flex flex-col gap-6 lg:col-span-2">
-          <SaleActivityChart />
-        </Box>
+      <Box className="rounded-xl border border-border bg-card p-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as PerformanceTabKey)}
+        >
+          <Box className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <TabsList>
+              {PERFORMANCE_TABS.map((tab) => (
+                <TabsTrigger
+                  key={tab.key}
+                  value={tab.key}
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-        {/* Right Column (Span 1) */}
-        <Box className="flex flex-col gap-6 lg:col-span-1">
-          <SprintProgress />
-          <TeamActivity />
-        </Box>
+            {/* Decorative only — scoped to visual parity with the reference; not wired to data. */}
+            <Select defaultValue="this-week">
+              <SelectTrigger
+                size="sm"
+                className="w-[130px]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="this-week">This Week</SelectItem>
+              </SelectContent>
+            </Select>
+          </Box>
+
+          <TabsContent value={activeTab}>
+            <DataTable
+              columns={columns}
+              data={performanceRows ?? []}
+              isLoading={performanceLoading}
+              isError={performanceError}
+              onRetry={() => refetchPerformance()}
+            />
+          </TabsContent>
+        </Tabs>
       </Box>
     </Box>
   );

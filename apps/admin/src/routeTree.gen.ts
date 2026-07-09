@@ -10,13 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtectedRouteImport } from './routes/_protected'
+import { Route as PreviewRouteImport } from './routes/_preview'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedDashboardIndexRouteImport } from './routes/_protected/dashboard/index'
+import { Route as PreviewDashboardPreviewIndexRouteImport } from './routes/_preview/dashboard-preview/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
 
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewRoute = PreviewRouteImport.update({
+  id: '/_preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
@@ -33,6 +39,12 @@ const ProtectedDashboardIndexRoute = ProtectedDashboardIndexRouteImport.update({
   path: '/dashboard/',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const PreviewDashboardPreviewIndexRoute =
+  PreviewDashboardPreviewIndexRouteImport.update({
+    id: '/dashboard-preview/',
+    path: '/dashboard-preview/',
+    getParentRoute: () => PreviewRoute,
+  } as any)
 const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
   id: '/login/',
   path: '/login/',
@@ -42,38 +54,45 @@ const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login/': typeof AuthLoginIndexRoute
+  '/dashboard-preview/': typeof PreviewDashboardPreviewIndexRoute
   '/dashboard/': typeof ProtectedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof AuthLoginIndexRoute
+  '/dashboard-preview': typeof PreviewDashboardPreviewIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteRouteWithChildren
+  '/_preview': typeof PreviewRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
   '/_auth/login/': typeof AuthLoginIndexRoute
+  '/_preview/dashboard-preview/': typeof PreviewDashboardPreviewIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login/' | '/dashboard/'
+  fullPaths: '/' | '/login/' | '/dashboard-preview/' | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard'
+  to: '/' | '/login' | '/dashboard-preview' | '/dashboard'
   id:
     | '__root__'
     | '/'
     | '/_auth'
+    | '/_preview'
     | '/_protected'
     | '/_auth/login/'
+    | '/_preview/dashboard-preview/'
     | '/_protected/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  PreviewRoute: typeof PreviewRouteWithChildren
   ProtectedRoute: typeof ProtectedRouteWithChildren
 }
 
@@ -84,6 +103,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof ProtectedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_preview': {
+      id: '/_preview'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -107,6 +133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedDashboardIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_preview/dashboard-preview/': {
+      id: '/_preview/dashboard-preview/'
+      path: '/dashboard-preview'
+      fullPath: '/dashboard-preview/'
+      preLoaderRoute: typeof PreviewDashboardPreviewIndexRouteImport
+      parentRoute: typeof PreviewRoute
+    }
     '/_auth/login/': {
       id: '/_auth/login/'
       path: '/login'
@@ -129,6 +162,17 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
 )
 
+interface PreviewRouteChildren {
+  PreviewDashboardPreviewIndexRoute: typeof PreviewDashboardPreviewIndexRoute
+}
+
+const PreviewRouteChildren: PreviewRouteChildren = {
+  PreviewDashboardPreviewIndexRoute: PreviewDashboardPreviewIndexRoute,
+}
+
+const PreviewRouteWithChildren =
+  PreviewRoute._addFileChildren(PreviewRouteChildren)
+
 interface ProtectedRouteChildren {
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
 }
@@ -144,6 +188,7 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  PreviewRoute: PreviewRouteWithChildren,
   ProtectedRoute: ProtectedRouteWithChildren,
 }
 export const routeTree = rootRouteImport
