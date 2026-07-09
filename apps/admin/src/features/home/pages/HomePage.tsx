@@ -53,22 +53,13 @@ export default function HomePage() {
               </Button>
             </React.Fragment>
           ) : (
-            <React.Fragment>
-              <Button
-                variant="ghost"
-                className="font-semibold px-4"
-                asChild
-              >
-                <Link to="/login">Log in</Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="font-semibold px-6"
-                asChild
-              >
-                <Link to="/register">Register</Link>
-              </Button>
-            </React.Fragment>
+            <Button
+              variant="ghost"
+              className="font-semibold px-4"
+              asChild
+            >
+              <Link to="/login">Log in</Link>
+            </Button>
           )}
         </Box>
       </Box>

@@ -1,6 +1,5 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "@tanstack/react-router";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -42,10 +41,10 @@ export default function LoginPage() {
           level={2}
           className="text-[32px] font-extrabold text-slate-900 mb-4 tracking-tight"
         >
-          Selamat Datang
+          Sign in
         </Heading>
         <Text className="text-slate-500 text-[15px] font-medium">
-          Silahkan masukkan detail akun Anda untuk mengakses sistem.
+          Enter your credentials to access the admin dashboard.
         </Text>
       </Box>
 
@@ -79,7 +78,7 @@ export default function LoginPage() {
               type="email"
               {...register("email")}
               placeholder="you@company.com"
-              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:border-black"
             />
           </Box>
           {errors.email && <Text className="text-red-500 text-xs font-medium">{errors.email.message}</Text>}
@@ -102,7 +101,7 @@ export default function LoginPage() {
               type="password"
               {...register("password")}
               placeholder="••••••••"
-              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:border-black"
             />
           </Box>
           {errors.password && <Text className="text-red-500 text-xs font-medium">{errors.password.message}</Text>}
@@ -114,13 +113,13 @@ export default function LoginPage() {
             <Checkbox
               id="remember"
               onCheckedChange={(checked) => setValue("remember", checked as boolean)}
-              className="w-5 h-5 bg-white border-slate-300 rounded-md data-[state=checked]:bg-blue-600 data-[state=checked]:text-white data-[state=checked]:border-blue-600 focus-visible:ring-blue-600/20"
+              className="w-5 h-5 bg-white border-slate-300 rounded-md data-[state=checked]:bg-black data-[state=checked]:text-white data-[state=checked]:border-black focus-visible:ring-black/20"
             />
             <Label
               htmlFor="remember"
               className="text-sm font-semibold text-slate-700 cursor-pointer"
             >
-              Ingat saya
+              Remember me
             </Label>
           </Box>
         </Box>
@@ -130,23 +129,13 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={isPending}
-            className="w-full h-auto flex items-center justify-center py-3 px-4 bg-linear-to-r from-blue-600 to-blue-500 hover:to-blue-600 text-white text-[15px] font-bold rounded-xl shadow-[0_8px_20px_rgba(37,99,235,0.25)] border-0 disabled:opacity-70"
+            className="w-full h-auto flex items-center justify-center py-3 px-4 bg-black hover:bg-neutral-800 text-white text-[15px] font-bold rounded-xl shadow-[0_8px_20px_rgba(0,0,0,0.25)] border-0 disabled:opacity-70"
           >
-            {isPending ? "Memproses..." : "Masuk ke Sistem"}
+            {isPending ? "Signing in…" : "Sign in"}
             {!isPending && <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />}
           </Button>
         </Box>
       </Box>
-
-      <Text className="block text-center text-sm text-slate-500 mt-8 font-medium">
-        Belum memiliki akun?{" "}
-        <Link
-          to="/register"
-          className="text-blue-600 font-bold hover:underline transition-colors"
-        >
-          Daftar sekarang
-        </Link>
-      </Text>
     </Box>
   );
 }
