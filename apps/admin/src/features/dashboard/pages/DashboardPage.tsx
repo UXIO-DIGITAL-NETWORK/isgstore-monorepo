@@ -122,56 +122,57 @@ export default function DashboardPage() {
       </Box>
 
       <Box className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Box className="lg:col-span-2">
+        <Box className="flex flex-col gap-6 lg:col-span-2">
           <PerformanceChartCard />
+
+          <Box className="rounded-xl border border-border bg-card p-4">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as PerformanceTabKey)}
+            >
+              <Box className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <TabsList>
+                  {PERFORMANCE_TABS.map((tab) => (
+                    <TabsTrigger
+                      key={tab.key}
+                      value={tab.key}
+                    >
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+
+                {/* Decorative only — scoped to visual parity with the reference; not wired to data. */}
+                <Select defaultValue="this-week">
+                  <SelectTrigger
+                    size="sm"
+                    className="w-[130px]"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="this-week">This Week</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Box>
+
+              <TabsContent value={activeTab}>
+                <DataTable
+                  columns={columns}
+                  data={performanceRows ?? []}
+                  isLoading={performanceLoading}
+                  isError={performanceError}
+                  onRetry={() => refetchPerformance()}
+                />
+              </TabsContent>
+            </Tabs>
+          </Box>
         </Box>
+
         <Box className="flex flex-col gap-6">
           <PendingOrdersCard />
           <ActivityFeedCard />
         </Box>
-      </Box>
-
-      <Box className="rounded-xl border border-border bg-card p-4">
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as PerformanceTabKey)}
-        >
-          <Box className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList>
-              {PERFORMANCE_TABS.map((tab) => (
-                <TabsTrigger
-                  key={tab.key}
-                  value={tab.key}
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {/* Decorative only — scoped to visual parity with the reference; not wired to data. */}
-            <Select defaultValue="this-week">
-              <SelectTrigger
-                size="sm"
-                className="w-[130px]"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="this-week">This Week</SelectItem>
-              </SelectContent>
-            </Select>
-          </Box>
-
-          <TabsContent value={activeTab}>
-            <DataTable
-              columns={columns}
-              data={performanceRows ?? []}
-              isLoading={performanceLoading}
-              isError={performanceError}
-              onRetry={() => refetchPerformance()}
-            />
-          </TabsContent>
-        </Tabs>
       </Box>
     </Box>
   );

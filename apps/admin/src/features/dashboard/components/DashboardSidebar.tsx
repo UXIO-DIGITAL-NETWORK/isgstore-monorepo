@@ -40,6 +40,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
@@ -89,6 +90,7 @@ export function DashboardSidebar() {
   const [commandOpen, setCommandOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { state } = useSidebar();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -139,30 +141,42 @@ export function DashboardSidebar() {
         </SidebarMenu>
 
         <Box className="relative px-1">
-          <Box
-            as="button"
-            type="button"
-            onClick={() => setCommandOpen(true)}
-            className="ring-offset-background flex h-9 w-full items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            <Search className="size-4 shrink-0" />
-            <Text
-              as="span"
-              className="flex-1 text-left"
+          {state === "collapsed" ? (
+            <Box
+              as="button"
+              type="button"
+              onClick={() => setCommandOpen(true)}
+              aria-label="Search"
+              className="ring-offset-background mx-auto flex size-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-              Search
-            </Text>
-            <Text
-              as="span"
-              className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium"
+              <Search className="size-4" />
+            </Box>
+          ) : (
+            <Box
+              as="button"
+              type="button"
+              onClick={() => setCommandOpen(true)}
+              className="ring-offset-background flex h-9 w-full items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-              ⌘F
-            </Text>
-          </Box>
+              <Search className="size-4 shrink-0" />
+              <Text
+                as="span"
+                className="flex-1 text-left"
+              >
+                Search
+              </Text>
+              <Text
+                as="span"
+                className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium"
+              >
+                ⌘F
+              </Text>
+            </Box>
+          )}
         </Box>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="[&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {NAV_GROUPS.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground uppercase">
@@ -199,7 +213,7 @@ export function DashboardSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border">
-        <Box className="flex flex-col gap-2 rounded-lg bg-accent p-4">
+        <Box className="group-data-[collapsible=icon]:hidden flex flex-col gap-2 rounded-lg bg-accent p-4">
           <Text
             as="span"
             className="text-sm font-semibold text-foreground"

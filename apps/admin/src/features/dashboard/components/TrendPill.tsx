@@ -38,7 +38,10 @@ export function TrendPill({ direction, deltaPct, className }: TrendPillProps) {
       className={cn(trendPillVariants({ direction }), className)}
     >
       <Icon className="size-3" />
-      <Text as="span">{`${sign}${deltaPct}%`}</Text>
+      <Text
+        as="span"
+        className="text-xs text-current"
+      >{`${sign}${deltaPct}%`}</Text>
     </Box>
   );
 }
