@@ -4,30 +4,33 @@ declare(strict_types=1);
 
 namespace App\Actions\Auth;
 
-use App\DTOs\Auth\LoginDTO;
 use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Auth\LoginDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class LoginAction
 {
     public function __construct(private CreateActivityLogAction $activityLogAction) {}
+
     /**
      * Execute the login action.
      *
-     * @return array{access_token: string, refresh_token: string, user: \App\Models\User}
+     * @return array{access_token: string, refresh_token: string, user: User}
+     *
      * @throws ValidationException
      */
     public function execute(LoginDTO $dto): array
     {
-        if (!Auth::attempt(['email' => $dto->email, 'password' => $dto->password])) {
+        if (! Auth::attempt(['email' => $dto->email, 'password' => $dto->password])) {
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
         }
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
 
         // Piggyback Timezone Synchronization: Update jika ada perbedaan
@@ -46,13 +49,13 @@ class LoginAction
             userId: $user->id,
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "User logged in successfully"
+            message: 'User logged in successfully'
         ));
 
         return [
-            'access_token'  => $accessToken,
+            'access_token' => $accessToken,
             'refresh_token' => $refreshToken,
-            'user'          => $user,
+            'user' => $user,
         ];
     }
 }

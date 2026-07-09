@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers\Api\User;
 
+use App\Actions\User\CreateUserAction;
+use App\Actions\User\DeleteUserAction;
+use App\Actions\User\GetUsersAction; // Import FormRequest baru
+use App\Actions\User\UpdateUserAction;
+use App\DTOs\User\UserDTO;
+use App\DTOs\User\UserFilterDTO; // Import DTO baru
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Http\Requests\User\IndexUserRequest; // Import FormRequest baru
+use App\Http\Requests\User\IndexUserRequest; // Import Action baru
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
-use App\DTOs\User\UserFilterDTO; // Import DTO baru
-use App\DTOs\User\UserDTO;
-use App\Actions\User\GetUsersAction; // Import Action baru
-use App\Actions\User\CreateUserAction;
-use App\Actions\User\UpdateUserAction;
-use App\Actions\User\DeleteUserAction;
 use App\Http\Resources\User\UserResource;
+use App\Models\User;
 use App\Traits\ApiResponse;
 
 class UserController extends Controller
 {
     use ApiResponse;
+
     public function index(IndexUserRequest $request, GetUsersAction $action)
     {
         $dto = UserFilterDTO::fromValidated($request->validated());
@@ -57,6 +58,7 @@ class UserController extends Controller
     public function destroy(User $user, DeleteUserAction $action)
     {
         $action->execute($user);
+
         return $this->successResponse(null, 'User berhasil dihapus');
     }
 }

@@ -2,12 +2,14 @@
 
 namespace App\DTOs\Category\SubCategory;
 
+use Illuminate\Http\UploadedFile;
+
 readonly class CreateSubCategoryDTO
 {
     public function __construct(
         public int $categoryId,
         public string $name,
-        public \Illuminate\Http\UploadedFile|string|null $logo,
+        public UploadedFile|string|null $logo,
         public bool $status
     ) {}
 }

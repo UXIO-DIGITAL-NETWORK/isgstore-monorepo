@@ -2,11 +2,19 @@
 
 namespace App\Models;
 
+use App\Enums\TransactionStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
+    use HasFactory;
+
     protected $guarded = ['id'];
+
+    protected $casts = [
+        'status' => TransactionStatus::class,
+    ];
 
     public function user()
     {
@@ -40,6 +48,6 @@ class Transaction extends Model
 
     public function paymentChannel()
     {
-        return $this->belongsTo(\App\Models\PaymentChannel::class);
+        return $this->belongsTo(PaymentChannel::class);
     }
 }

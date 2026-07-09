@@ -2,9 +2,9 @@
 
 namespace App\Actions\Announcement;
 
-use App\Models\Announcement;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Announcement;
 use Illuminate\Support\Facades\Auth;
 
 class DeleteAnnouncementAction

@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Order;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
-use App\Models\Order;
 
 class UserSpendingSeeder extends Seeder
 {
@@ -23,17 +23,17 @@ class UserSpendingSeeder extends Seeder
         $items = [];
         foreach ($userOrders as $row) {
             $items[] = [
-                'user_id'       => $row->user_id,
-                'period'        => $period,
-                'total_amount'  => (int) $row->total_amount,
-                'total_orders'  => $row->total_orders,
+                'user_id' => $row->user_id,
+                'period' => $period,
+                'total_amount' => (int) $row->total_amount,
+                'total_orders' => $row->total_orders,
                 'last_order_at' => $row->last_order_at,
-                'created_at'    => $now,
-                'updated_at'    => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
         }
 
-        if (!empty($items)) {
+        if (! empty($items)) {
             DB::table('user_spendings')->insert($items);
         }
     }

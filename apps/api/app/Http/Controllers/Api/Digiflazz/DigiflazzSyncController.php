@@ -16,11 +16,11 @@ class DigiflazzSyncController extends Controller
     {
         try {
             $type = $request->string('type')->toString() ?: 'prepaid';
-            $count = $action->execute($type);
+            $report = $action->execute($type);
 
             return $this->successResponse(
-                ['synced' => $count, 'type' => $type],
-                "Berhasil sinkronisasi {$count} produk Digiflazz ({$type})"
+                $report->toArray(),
+                "Berhasil sinkronisasi {$report->totalFetched} produk Digiflazz ({$type})"
             );
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 502);

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserSpending;
 use App\Http\Resources\Api\LeaderboardResource;
+use App\Models\UserSpending;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -29,7 +29,7 @@ class LeaderboardController extends Controller
                 'last_page' => $spendings->lastPage(),
                 'per_page' => $spendings->perPage(),
                 'total' => $spendings->total(),
-            ]
+            ],
         ], 'Leaderboard retrieved successfully');
     }
 }

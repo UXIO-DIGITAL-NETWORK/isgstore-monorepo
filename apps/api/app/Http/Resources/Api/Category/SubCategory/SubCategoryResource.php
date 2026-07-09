@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources\Api\Category\SubCategory;
 
+use App\Http\Resources\Api\Category\CategoryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\Api\Category\CategoryResource;
 
 class SubCategoryResource extends JsonResource
 {

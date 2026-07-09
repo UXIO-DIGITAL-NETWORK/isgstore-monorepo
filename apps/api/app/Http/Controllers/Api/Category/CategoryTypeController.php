@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Category;
 
-use App\Http\Controllers\Controller;
-use App\Models\CategoryType;
-use App\Traits\ApiResponse;
-use App\Actions\Category\CategoryType\GetCategoryTypesAction;
 use App\Actions\Category\CategoryType\CreateCategoryTypeAction;
-use App\Actions\Category\CategoryType\UpdateCategoryTypeAction;
 use App\Actions\Category\CategoryType\DeleteCategoryTypeAction;
+use App\Actions\Category\CategoryType\GetCategoryTypesAction;
+use App\Actions\Category\CategoryType\UpdateCategoryTypeAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\CategoryType\StoreCategoryTypeRequest;
 use App\Http\Requests\Category\CategoryType\UpdateCategoryTypeRequest;
 use App\Http\Resources\Api\Category\CategoryType\CategoryTypeResource;
+use App\Models\CategoryType;
+use App\Traits\ApiResponse;
 
 class CategoryTypeController extends Controller
 {
@@ -20,7 +20,7 @@ class CategoryTypeController extends Controller
     public function index(GetCategoryTypesAction $action)
     {
         $types = $action->execute(15);
-        
+
         return $this->successResponse([
             'data' => CategoryTypeResource::collection($types),
             'meta' => [
@@ -28,7 +28,7 @@ class CategoryTypeController extends Controller
                 'last_page' => $types->lastPage(),
                 'per_page' => $types->perPage(),
                 'total' => $types->total(),
-            ]
+            ],
         ], 'Category Types retrieved successfully');
     }
 

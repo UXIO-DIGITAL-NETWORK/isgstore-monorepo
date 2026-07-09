@@ -2,12 +2,12 @@
 
 namespace App\Actions\User;
 
-use App\Models\User;
-use App\DTOs\User\UserFilterDTO;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\User\UserFilterDTO;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 
 class GetUsersAction
@@ -22,8 +22,8 @@ class GetUsersAction
         if ($dto->search) {
             $query->where(function (Builder $q) use ($dto) {
                 $q->where('name', 'like', "%{$dto->search}%")
-                  ->orWhere('email', 'like', "%{$dto->search}%")
-                  ->orWhere('phone', 'like', "%{$dto->search}%");
+                    ->orWhere('email', 'like', "%{$dto->search}%")
+                    ->orWhere('phone', 'like', "%{$dto->search}%");
             });
         }
 
@@ -72,7 +72,7 @@ class GetUsersAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Fetched users list with filters"
+            message: 'Fetched users list with filters'
         ));
 
         return $result;

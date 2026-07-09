@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Category\ServerCategory;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Category\ServerCategory\UpdateServerCategoryDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateServerCategoryRequest extends FormRequest

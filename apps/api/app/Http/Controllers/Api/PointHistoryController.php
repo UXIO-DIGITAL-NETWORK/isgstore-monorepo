@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\PointHistory\CreatePointHistoryAction;
+use App\Actions\PointHistory\DeletePointHistoryAction;
+use App\Actions\PointHistory\GetPointHistoriesAction;
+use App\Actions\PointHistory\UpdatePointHistoryAction;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Traits\ApiResponse;
-use App\Models\PointHistory;
-use App\Http\Resources\Api\PointHistory\PointHistoryResource;
 use App\Http\Requests\PointHistory\StorePointHistoryRequest;
 use App\Http\Requests\PointHistory\UpdatePointHistoryRequest;
-use App\Actions\PointHistory\GetPointHistoriesAction;
-use App\Actions\PointHistory\CreatePointHistoryAction;
-use App\Actions\PointHistory\UpdatePointHistoryAction;
-use App\Actions\PointHistory\DeletePointHistoryAction;
+use App\Http\Resources\Api\PointHistory\PointHistoryResource;
+use App\Models\PointHistory;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class PointHistoryController extends Controller
 {
@@ -22,12 +22,14 @@ class PointHistoryController extends Controller
     {
         $perPage = $request->query('per_page', 15);
         $pointHistories = $action->execute((int) $perPage);
+
         return PointHistoryResource::collection($pointHistories);
     }
 
     public function store(StorePointHistoryRequest $request, CreatePointHistoryAction $action)
     {
         $pointHistory = $action->execute($request->toDTO());
+
         return $this->success(
             new PointHistoryResource($pointHistory->load(['user', 'transaction'])),
             'Point History created successfully',
@@ -46,6 +48,7 @@ class PointHistoryController extends Controller
     public function update(UpdatePointHistoryRequest $request, PointHistory $pointHistory, UpdatePointHistoryAction $action)
     {
         $pointHistory = $action->execute($pointHistory, $request->toDTO());
+
         return $this->success(
             new PointHistoryResource($pointHistory->load(['user', 'transaction'])),
             'Point History updated successfully'
@@ -55,6 +58,7 @@ class PointHistoryController extends Controller
     public function destroy(PointHistory $pointHistory, DeletePointHistoryAction $action)
     {
         $action->execute($pointHistory);
+
         return $this->success(null, 'Point History deleted successfully');
     }
 }

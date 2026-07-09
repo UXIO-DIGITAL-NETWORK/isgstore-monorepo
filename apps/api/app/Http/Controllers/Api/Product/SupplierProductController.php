@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Product;
 
-use App\Http\Controllers\Controller;
-use App\Models\SupplierProduct;
-use App\Traits\ApiResponse;
-use App\Actions\Product\GetSupplierProductsAction;
 use App\Actions\Product\CreateSupplierProductAction;
-use App\Actions\Product\UpdateSupplierProductAction;
 use App\Actions\Product\DeleteSupplierProductAction;
+use App\Actions\Product\GetSupplierProductsAction;
+use App\Actions\Product\UpdateSupplierProductAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\StoreSupplierProductRequest;
 use App\Http\Requests\Product\UpdateSupplierProductRequest;
 use App\Http\Resources\Api\Product\SupplierProductResource;
+use App\Models\SupplierProduct;
+use App\Traits\ApiResponse;
 
 class SupplierProductController extends Controller
 {
@@ -20,7 +20,7 @@ class SupplierProductController extends Controller
     public function index(GetSupplierProductsAction $action)
     {
         $products = $action->execute(15);
-        
+
         return $this->successResponse([
             'data' => SupplierProductResource::collection($products),
             'meta' => [
@@ -28,7 +28,7 @@ class SupplierProductController extends Controller
                 'last_page' => $products->lastPage(),
                 'per_page' => $products->perPage(),
                 'total' => $products->total(),
-            ]
+            ],
         ], 'Supplier Products retrieved successfully');
     }
 

@@ -2,11 +2,13 @@
 
 namespace App\Actions\Category;
 
-use App\Models\Category;
-use App\DTOs\Category\UpdateCategoryDTO;
 use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Category\UpdateCategoryDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Category;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UpdateCategoryAction
 {
@@ -16,9 +18,9 @@ class UpdateCategoryAction
     {
         $logoPath = $category->logo;
 
-        if ($dto->logo instanceof \Illuminate\Http\UploadedFile) {
-            if ($logoPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($logoPath);
+        if ($dto->logo instanceof UploadedFile) {
+            if ($logoPath && Storage::disk('public')->exists($logoPath)) {
+                Storage::disk('public')->delete($logoPath);
             }
             $logoPath = $dto->logo->store('categories/logos', 'public');
         }

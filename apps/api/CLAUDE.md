@@ -58,12 +58,15 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 
 ### Checkout (`POST /v1/checkout`) — public, no auth
 
-1. Resolves User (nullable for guests), Product (with active SupplierProducts eager-loaded), PaymentChannel.
-2. Price is role-resolved: `vip → reseller → agent → member → guest` (guests receive `price_member`).
-3. Margin guard: aborts if `selling_price - supplier_price < 0`.
-4. Creates `Transaction` (status: `PENDING`) then `Payment` (status: `'1'`) inside a single `DB::transaction()`.
-5. **Balance path** (`channel_code === 'balance'`): deducts `user->balance`, marks Payment `'3'`, calls `ProcessDigiflazzTransactionAction` synchronously.
-6. **External path**: calls `MonetapayService::createTransaction()`, returns `qr_string` or `virtual_account` to the client.
+1. Duplicate-submit guard: an atomic `Cache::add` fingerprint rejects an identical checkout within 15s; the key is released on failure so a rejected attempt can retry immediately.
+2. Resolves User (nullable for guests), Product (with active SupplierProducts eager-loaded, `status` must be true), PaymentChannel.
+3. Price is role-resolved: `vip → reseller → agent → member → guest` (guests receive `price_member`).
+4. Margin guard: aborts if `selling_price - supplier_price < 0`. The price/margin are frozen into the Transaction row at checkout — a later supplier price change (daily sync) is margin variance, not a correctness bug.
+5. Creates `Transaction` (status: `PENDING`) then `Payment` (status: `'1'`) inside a single `DB::transaction()`.
+6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, deducts `user->balance`, marks Payment `'3'`, calls `ProcessDigiflazzTransactionAction` synchronously.
+7. **External path**: calls `MonetapayService::createTransaction()`, returns `qr_string` or `virtual_account` to the client.
+
+Rate limiting (named limiters in `AppServiceProvider`): `throttle:checkout` (10/min) on checkout + postpaid endpoints, `throttle:webhooks` (120/min per IP) on all callback routes, `throttle:login` (5/min per IP), and a global `throttle:api` (120/min) via `bootstrap/app.php`.
 
 ### Transaction Status Machine
 
@@ -76,16 +79,20 @@ PENDING → PAID → PROCESSING → COMPLETED
 - `EXPIRED` — payment window timed out; customer never paid (set by Monetapay callback or `payments:sync-expired`).
 - `FAILED_PROVIDER` — customer paid; Digiflazz supplier failed to fulfil the order.
 
-All actions, jobs, and webhook handlers must use these exact uppercase constants.
+Statuses are backed enums cast on the models: `App\Enums\TransactionStatus` (values are the exact uppercase strings above) and `App\Enums\PaymentStatus`. `$model->status` returns the enum instance — compare against enum cases, never raw strings; JSON output is unchanged (enums serialize to their values).
 
-### Payment Status Codes (stored as string in `payments.status`)
+### Payment Status Codes (`App\Enums\PaymentStatus`, stored as string in `payments.status`)
 
-| Value | Meaning |
-|---|---|
-| `'1'` | Pending |
-| `'2'` | Expired / Failed |
-| `'3'` | Success |
-| `'4'` | Refunded |
+| Value | Enum case | Meaning |
+|---|---|---|
+| `'1'` | `PENDING` | Pending |
+| `'2'` | `EXPIRED` | Expired / Failed |
+| `'3'` | `SUCCESS` | Success |
+| `'4'` | `REFUNDED` | Refunded |
+
+### Refunds
+
+`RefundFailedTransactionAction` is idempotent (row lock + `PaymentStatus::SUCCESS` check). Wallet refunds lock the user row and credit inline; gateway refunds dispatch `RefundGatewayJob` (5 tries, escalating backoff, deterministic `RFD-{reference_id}` order number) — exhausted retries alert Discord for manual follow-up.
 
 ---
 
@@ -113,8 +120,24 @@ Key points:
 
 ### Discord (Operational Notifications)
 
-- `HandleDigiflazzWebhookAction` sends embed notifications on every status transition.
-- Silently skipped if `services.discord.webhook_log_url` is not set — safe to omit in dev.
+- All Discord sends go through `App\Services\DiscordWebhookService` (`sendEmbed`/`sendAlert`) — never `Http::post` a webhook URL directly.
+- Silently no-ops (and never throws) if `services.discord.webhook_log_url` is not set — safe to omit in dev.
+- Used by: Digiflazz status transitions, the daily sync report, `RefundGatewayJob::failed`, and scheduler `onFailure` alerts.
+
+---
+
+## Daily Digiflazz Price Sync
+
+`digiflazz:sync-products {--type=all}` (scheduled daily 04:30 in `routes/console.php`; also `POST /v1/digiflazz/sync-products`, auth) pulls the Digiflazz price list and:
+
+- Updates `supplier_products` cost/availability via chunked `upsert()` on the unique `(supplier_id, buyer_sku_code)` key.
+- **Selling prices**: recalculated from the new cost through `App\Services\PricingService` using `pricing_rules` (percent + flat markup per role, per-category override, global fallback; `ceil()` rounding). Only products with `auto_price = true` are touched — set it false to hand-price a product. Prices resolve `(category_id, role) → (NULL, role) → built-in defaults` (member 20 / vip 15 / reseller 10 / agent 5 %).
+- **New SKUs**: auto-created as `status = false` products (hidden until admin review) categorised via `config/digiflazz.php` `category_map` (Digiflazz `brand` → `categories.code`), falling back to a self-provisioned `uncategorized` category. SKUs matching an existing `products.code` get a mapping linked instead.
+- **Availability**: unavailable SKUs get `is_active = false` + `sync_deactivated_at` stamp; only stamped rows are ever auto-reactivated, so a manual admin deactivation is never overridden.
+- Pasca items store `admin` → `price`/`admin_fee` and `commission` (used as postpaid margin in `PayDigiflazzBillAction`).
+- Emits a report (`SyncProductsReportDTO`): new products, price changes, negative-margin products (below active supplier cost — these fail checkout until repriced), deactivated/reactivated SKUs, unmapped brands — printed to console and sent to Discord.
+
+Markup rules are managed via `Route::apiResource('pricing-rules')` (auth).
 
 ---
 

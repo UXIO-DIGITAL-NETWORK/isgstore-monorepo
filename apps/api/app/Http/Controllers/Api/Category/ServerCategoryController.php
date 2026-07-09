@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Category;
 
-use App\Http\Controllers\Controller;
-use App\Models\ServerCategory;
-use App\Traits\ApiResponse;
 use App\Actions\Category\GetServerCategoriesAction;
 use App\Actions\Category\ServerCategory\CreateServerCategoryAction;
-use App\Actions\Category\ServerCategory\UpdateServerCategoryAction;
 use App\Actions\Category\ServerCategory\DeleteServerCategoryAction;
+use App\Actions\Category\ServerCategory\UpdateServerCategoryAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\ServerCategory\StoreServerCategoryRequest;
 use App\Http\Requests\Category\ServerCategory\UpdateServerCategoryRequest;
 use App\Http\Resources\Api\Category\ServerCategory\ServerCategoryResource;
+use App\Models\ServerCategory;
+use App\Traits\ApiResponse;
 
 class ServerCategoryController extends Controller
 {
@@ -20,7 +20,7 @@ class ServerCategoryController extends Controller
     public function index(GetServerCategoriesAction $action)
     {
         $serverCategories = $action->execute(15);
-        
+
         return $this->successResponse([
             'data' => ServerCategoryResource::collection($serverCategories),
             'meta' => [
@@ -28,7 +28,7 @@ class ServerCategoryController extends Controller
                 'last_page' => $serverCategories->lastPage(),
                 'per_page' => $serverCategories->perPage(),
                 'total' => $serverCategories->total(),
-            ]
+            ],
         ], 'Server Categories retrieved successfully');
     }
 

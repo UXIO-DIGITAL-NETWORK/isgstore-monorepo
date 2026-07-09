@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Supplier;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Supplier\UpdateSupplierCategoryDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateSupplierCategoryRequest extends FormRequest

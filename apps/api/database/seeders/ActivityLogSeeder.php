@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
 
 class ActivityLogSeeder extends Seeder
 {
@@ -44,10 +44,10 @@ class ActivityLogSeeder extends Seeder
         $items = [];
         for ($i = 0; $i < 50; $i++) {
             $items[] = [
-                'user_id'    => $userIds[array_rand($userIds)],
+                'user_id' => $userIds[array_rand($userIds)],
                 'ip_address' => fake()->ipv4(),
                 'user_agent' => fake()->userAgent(),
-                'message'    => $messages[array_rand($messages)],
+                'message' => $messages[array_rand($messages)],
                 'created_at' => $now->copy()->subDays(rand(0, 30))->subMinutes(rand(0, 1440)),
                 'updated_at' => $now,
             ];

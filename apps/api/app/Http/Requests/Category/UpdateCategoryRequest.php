@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Category;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Category\UpdateCategoryDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

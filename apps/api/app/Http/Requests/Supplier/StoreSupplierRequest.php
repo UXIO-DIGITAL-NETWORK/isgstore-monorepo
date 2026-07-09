@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Supplier;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Supplier\CreateSupplierDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreSupplierRequest extends FormRequest

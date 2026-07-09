@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Category\CategoryType;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Category\CategoryType\CreateCategoryTypeDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCategoryTypeRequest extends FormRequest

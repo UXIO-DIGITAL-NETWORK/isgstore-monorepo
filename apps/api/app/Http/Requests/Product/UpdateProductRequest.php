@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\Product;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Product\UpdateProductDTO;
-use Illuminate\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
@@ -37,6 +37,7 @@ class UpdateProductRequest extends FormRequest
             'price_reseller' => ['required', 'integer'],
             'price_agent' => ['required', 'integer'],
             'status' => ['required', 'boolean'],
+            'auto_price' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -52,7 +53,8 @@ class UpdateProductRequest extends FormRequest
             priceVip: (int) $this->validated('price_vip'),
             priceReseller: (int) $this->validated('price_reseller'),
             priceAgent: (int) $this->validated('price_agent'),
-            status: (bool) $this->validated('status')
+            status: (bool) $this->validated('status'),
+            autoPrice: $this->has('auto_price') ? (bool) $this->validated('auto_price') : null
         );
     }
 }

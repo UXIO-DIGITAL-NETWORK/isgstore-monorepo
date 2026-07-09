@@ -2,10 +2,10 @@
 
 namespace App\Actions\Product;
 
-use App\Models\Product;
-use App\DTOs\Product\UpdateProductDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\Product\UpdateProductDTO;
+use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateProductAction
@@ -15,6 +15,8 @@ class UpdateProductAction
     public function execute(Product $product, UpdateProductDTO $dto): Product
     {
         $product->update([
+            // Omitting auto_price keeps the product's current setting.
+            ...($dto->autoPrice !== null ? ['auto_price' => $dto->autoPrice] : []),
             'category_id' => $dto->categoryId,
             'sub_category_id' => $dto->subCategoryId,
             'name' => $dto->name,

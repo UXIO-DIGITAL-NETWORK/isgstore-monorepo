@@ -5,6 +5,7 @@ namespace App\Actions\Payment\Monetapay;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Payment\Monetapay\MonetapayTransactionDTO;
+use App\Enums\TransactionStatus;
 use App\Services\Payment\MonetapayService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +33,7 @@ class CreateMonetapayTransactionAction
             'reference_id' => $dto->referenceId,
             'amount' => $dto->amount,
             'payment_method_code' => $dto->channel, // From the payment_methods table
-            'status' => 'PENDING',
+            'status' => TransactionStatus::PENDING,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

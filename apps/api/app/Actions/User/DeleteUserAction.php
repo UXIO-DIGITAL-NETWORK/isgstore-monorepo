@@ -2,20 +2,19 @@
 
 namespace App\Actions\User;
 
-use App\Models\User;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class DeleteUserAction
 {
     public function __construct(private CreateActivityLogAction $activityLogAction) {}
+
     /**
      * Mengeksekusi proses penghapusan user dengan proteksi keamanan.
      *
-     * @param User $user
-     * @return bool
      * @throws HttpException
      */
     public function execute(User $user): bool

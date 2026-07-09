@@ -14,10 +14,10 @@ class PayBillRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id'         => ['required', 'integer', 'exists:products,id'],
+            'product_id' => ['required', 'integer', 'exists:products,id'],
             'payment_channel_id' => ['required', 'integer', 'exists:payment_channels,id'],
-            'customer_no'        => ['required', 'string', 'max:50'],
-            'guest_contact'      => $this->user()
+            'customer_no' => ['required', 'string', 'max:50'],
+            'guest_contact' => $this->user()
                 ? ['nullable', 'string', 'max:20']
                 : ['required', 'string', 'max:20'],
         ];

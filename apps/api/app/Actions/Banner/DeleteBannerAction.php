@@ -2,9 +2,9 @@
 
 namespace App\Actions\Banner;
 
-use App\Models\Banner;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Banner;
 use Illuminate\Support\Facades\Auth;
 
 class DeleteBannerAction

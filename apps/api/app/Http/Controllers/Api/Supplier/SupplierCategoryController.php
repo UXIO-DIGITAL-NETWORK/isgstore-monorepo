@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Supplier;
 
-use App\Http\Controllers\Controller;
-use App\Models\SupplierCategory;
-use App\Traits\ApiResponse;
-use App\Actions\Supplier\GetSupplierCategoriesAction;
 use App\Actions\Supplier\CreateSupplierCategoryAction;
-use App\Actions\Supplier\UpdateSupplierCategoryAction;
 use App\Actions\Supplier\DeleteSupplierCategoryAction;
+use App\Actions\Supplier\GetSupplierCategoriesAction;
+use App\Actions\Supplier\UpdateSupplierCategoryAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Supplier\StoreSupplierCategoryRequest;
 use App\Http\Requests\Supplier\UpdateSupplierCategoryRequest;
 use App\Http\Resources\Api\Supplier\SupplierCategoryResource;
+use App\Models\SupplierCategory;
+use App\Traits\ApiResponse;
 
 class SupplierCategoryController extends Controller
 {
@@ -20,7 +20,7 @@ class SupplierCategoryController extends Controller
     public function index(GetSupplierCategoriesAction $action)
     {
         $categories = $action->execute(15);
-        
+
         return $this->successResponse([
             'data' => SupplierCategoryResource::collection($categories),
             'meta' => [
@@ -28,7 +28,7 @@ class SupplierCategoryController extends Controller
                 'last_page' => $categories->lastPage(),
                 'per_page' => $categories->perPage(),
                 'total' => $categories->total(),
-            ]
+            ],
         ], 'Supplier Categories retrieved successfully');
     }
 

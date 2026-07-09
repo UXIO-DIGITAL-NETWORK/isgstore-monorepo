@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             CategoryTypeSeeder::class,
             SupplierSeeder::class,
             PaymentChannelSeeder::class,
+            PricingRuleSeeder::class,
 
             // === 2. Users ===
             UserSeeder::class,
@@ -40,7 +41,7 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             SupplierCategorySeeder::class,
             SupplierProductSeeder::class,
-            
+
             // Map the exact integration required data after all raw data is seeded
             MasterDataSeeder::class,
 

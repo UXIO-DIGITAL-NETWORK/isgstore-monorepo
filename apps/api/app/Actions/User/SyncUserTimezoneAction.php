@@ -2,15 +2,16 @@
 
 namespace App\Actions\User;
 
-use App\Models\User;
-use App\DTOs\User\SyncTimezoneDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\User\SyncTimezoneDTO;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class SyncUserTimezoneAction
 {
     public function __construct(private CreateActivityLogAction $activityLogAction) {}
+
     /**
      * Memperbarui timezone pengguna jika terdapat perbedaan.
      * Mengembalikan true jika diperbarui atau sudah sama, false jika gagal.

@@ -2,9 +2,9 @@
 
 namespace App\Actions\Category\CategoryType;
 
-use App\Models\CategoryType;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\CategoryType;
 use Illuminate\Support\Facades\Auth;
 
 class DeleteCategoryTypeAction

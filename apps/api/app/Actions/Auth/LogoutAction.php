@@ -6,19 +6,19 @@ namespace App\Actions\Auth;
 
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class LogoutAction
 {
     public function __construct(private CreateActivityLogAction $activityLogAction) {}
+
     /**
      * Execute the logout action.
-     *
-     * @return void
      */
     public function execute(): void
     {
-        /** @var \App\Models\User|null $user */
+        /** @var User|null $user */
         $user = Auth::user();
 
         if ($user && $user->currentAccessToken()) {
@@ -30,7 +30,7 @@ class LogoutAction
                 userId: $user->id,
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                message: "User logged out successfully"
+                message: 'User logged out successfully'
             ));
         }
     }

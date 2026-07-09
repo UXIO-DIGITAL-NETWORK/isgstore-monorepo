@@ -8,6 +8,5 @@ readonly class RefreshTokenDTO
 {
     public function __construct(
         public string $refreshToken,
-    ) {
-    }
+    ) {}
 }

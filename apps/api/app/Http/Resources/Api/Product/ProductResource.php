@@ -2,10 +2,10 @@
 
 namespace App\Http\Resources\Api\Product;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\Api\Category\CategoryResource;
 use App\Http\Resources\Api\Category\SubCategory\SubCategoryResource;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductResource extends JsonResource
 {

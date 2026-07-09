@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Product;
 
-use App\Http\Controllers\Controller;
-use App\Models\Product;
-use App\Traits\ApiResponse;
-use App\Actions\Product\GetProductsAction;
 use App\Actions\Product\CreateProductAction;
-use App\Actions\Product\UpdateProductAction;
 use App\Actions\Product\DeleteProductAction;
+use App\Actions\Product\GetProductsAction;
+use App\Actions\Product\UpdateProductAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Resources\Api\Product\ProductResource;
+use App\Models\Product;
+use App\Traits\ApiResponse;
 
 class ProductController extends Controller
 {
@@ -20,7 +20,7 @@ class ProductController extends Controller
     public function index(GetProductsAction $action)
     {
         $products = $action->execute(15);
-        
+
         return $this->successResponse([
             'data' => ProductResource::collection($products),
             'meta' => [
@@ -28,7 +28,7 @@ class ProductController extends Controller
                 'last_page' => $products->lastPage(),
                 'per_page' => $products->perPage(),
                 'total' => $products->total(),
-            ]
+            ],
         ], 'Products retrieved successfully');
     }
 

@@ -5,6 +5,8 @@ namespace App\Actions\Payment\Monetapay;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Payment\Monetapay\MonetapayCallbackDTO;
+use App\Enums\PaymentStatus;
+use App\Enums\TransactionStatus;
 use App\Jobs\ProcessDigiflazzBillPayment;
 use App\Jobs\ProcessDigiflazzTopup;
 use App\Models\Payment;
@@ -40,8 +42,14 @@ class HandleMonetapayCallbackAction
 
             // ── Idempotency guard ────────────────────────────────────────────
             // Monetapay may retry webhooks; return 200 without re-processing
-            if (in_array($transaction->status, ['PAID', 'PROCESSING', 'COMPLETED', 'EXPIRED', 'FAILED_PROVIDER'], true)) {
-                Log::info("Monetapay callback ignored — already {$transaction->status}", [
+            if (in_array($transaction->status, [
+                TransactionStatus::PAID,
+                TransactionStatus::PROCESSING,
+                TransactionStatus::COMPLETED,
+                TransactionStatus::EXPIRED,
+                TransactionStatus::FAILED_PROVIDER,
+            ], true)) {
+                Log::info("Monetapay callback ignored — already {$transaction->status->value}", [
                     'reference_id' => $dto->outNo,
                 ]);
 
@@ -68,12 +76,12 @@ class HandleMonetapayCallbackAction
 
             // ── Persist payment result ───────────────────────────────────────
             $payment->update([
-                'status' => $isSuccess ? '3' : '2',   // 3: Success, 2: Failed/Expired
+                'status' => $isSuccess ? PaymentStatus::SUCCESS : PaymentStatus::EXPIRED,
                 'paid_at' => $isSuccess ? now() : null,
             ]);
 
             $transaction->update([
-                'status' => $isSuccess ? 'PAID' : 'EXPIRED',
+                'status' => $isSuccess ? TransactionStatus::PAID : TransactionStatus::EXPIRED,
             ]);
 
             $this->log($dto->outNo, "Callback processed — Monetapay status: {$dto->status}");

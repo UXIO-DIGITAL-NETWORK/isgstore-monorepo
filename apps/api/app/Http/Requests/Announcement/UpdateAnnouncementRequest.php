@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Announcement;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Announcement\UpdateAnnouncementDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateAnnouncementRequest extends FormRequest
@@ -25,9 +25,9 @@ class UpdateAnnouncementRequest extends FormRequest
     {
         return [
             'category_id' => ['nullable', 'exists:categories,id'],
-            'content'     => ['required', 'string'],
-            'image_path'  => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-            'is_active'   => ['nullable', 'boolean'],
+            'content' => ['required', 'string'],
+            'image_path' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'is_active' => ['nullable', 'boolean'],
         ];
     }
 

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Banner;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Banner\CreateBannerDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreBannerRequest extends FormRequest
@@ -25,9 +25,9 @@ class StoreBannerRequest extends FormRequest
     {
         return [
             'category_id' => ['nullable', 'exists:categories,id'],
-            'name'        => ['required', 'string', 'max:255'],
-            'image_path'  => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-            'link'        => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'image_path' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'link' => ['nullable', 'string', 'max:255'],
         ];
     }
 

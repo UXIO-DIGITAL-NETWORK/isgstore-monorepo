@@ -2,10 +2,11 @@
 
 namespace App\Actions\Announcement;
 
-use App\Models\Announcement;
-use App\DTOs\Announcement\CreateAnnouncementDTO;
 use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Announcement\CreateAnnouncementDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Announcement;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 
 class CreateAnnouncementAction
@@ -16,15 +17,15 @@ class CreateAnnouncementAction
     {
         $imagePath = $dto->imagePath;
 
-        if ($dto->imagePath instanceof \Illuminate\Http\UploadedFile) {
+        if ($dto->imagePath instanceof UploadedFile) {
             $imagePath = $dto->imagePath->store('announcements/images', 'public');
         }
 
         $announcement = Announcement::create([
             'category_id' => $dto->categoryId,
-            'content'     => $dto->content,
-            'image_path'  => $imagePath,
-            'is_active'   => $dto->isActive,
+            'content' => $dto->content,
+            'image_path' => $imagePath,
+            'is_active' => $dto->isActive,
         ]);
 
         $scope = $dto->categoryId ? "Category ID: {$dto->categoryId}" : 'Global';
@@ -33,7 +34,7 @@ class CreateAnnouncementAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Admin created Announcement [{$scope}]: " . substr($dto->content, 0, 50),
+            message: "Admin created Announcement [{$scope}]: ".substr($dto->content, 0, 50),
         ));
 
         return $announcement;

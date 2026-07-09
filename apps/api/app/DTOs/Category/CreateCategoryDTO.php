@@ -2,6 +2,8 @@
 
 namespace App\DTOs\Category;
 
+use Illuminate\Http\UploadedFile;
+
 readonly class CreateCategoryDTO
 {
     public function __construct(
@@ -10,7 +12,7 @@ readonly class CreateCategoryDTO
         public string $code,
         public ?string $validasiNickname,
         public ?string $region,
-        public \Illuminate\Http\UploadedFile|string|null $logo,
+        public UploadedFile|string|null $logo,
         public ?string $description,
         public bool $status
     ) {}

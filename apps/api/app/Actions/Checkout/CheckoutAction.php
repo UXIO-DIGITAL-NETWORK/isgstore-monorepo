@@ -6,6 +6,8 @@ use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Checkout\CheckoutDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Enums\PaymentStatus;
+use App\Enums\TransactionStatus;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\Product;
@@ -13,6 +15,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -26,6 +29,27 @@ class CheckoutAction
 
     public function execute(CheckoutDTO $dto): array
     {
+        // Duplicate-submit guard: an identical checkout within 15s (double-tap,
+        // client retry) is rejected instead of creating a second transaction.
+        // Cache::add is atomic; the key is released on failure so the customer
+        // can retry immediately after a rejected attempt.
+        $identity = $dto->userId ?? $dto->guestContact ?? request()?->ip() ?? 'anon';
+        $dedupeKey = 'checkout:dedupe:'.md5($identity.'|'.$dto->productId.'|'.$dto->paymentChannelId.'|'.$dto->targetUid.'|'.$dto->targetServer);
+
+        if (! Cache::add($dedupeKey, 1, 15)) {
+            throw new Exception('Permintaan duplikat terdeteksi. Mohon tunggu beberapa detik sebelum mencoba lagi.');
+        }
+
+        try {
+            return $this->process($dto);
+        } catch (Exception $e) {
+            Cache::forget($dedupeKey);
+            throw $e;
+        }
+    }
+
+    private function process(CheckoutDTO $dto): array
+    {
         return DB::transaction(function () use ($dto) {
 
             // ── 1. Resolve entities ──────────────────────────────────────────
@@ -35,6 +59,11 @@ class CheckoutAction
                 'category',
                 'subCategory',
             ])->findOrFail($dto->productId);
+
+            if (! $product->status) {
+                throw new Exception('Produk sedang tidak tersedia.');
+            }
+
             $channel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
             // ── 2. Guest guards ──────────────────────────────────────────────
@@ -65,7 +94,8 @@ class CheckoutAction
             }
 
             // ── 5. Fee & total ───────────────────────────────────────────────
-            $adminFee = $channel->fee_flat + (int) round($sellingPrice * ($channel->fee_percent / 100));
+            $feePercent = max(0, min(100, (float) $channel->fee_percent));
+            $adminFee = $channel->fee_flat + (int) round($sellingPrice * ($feePercent / 100));
             $grossAmount = $sellingPrice + $adminFee;
 
             if ($grossAmount < $channel->min_amount) {
@@ -93,7 +123,7 @@ class CheckoutAction
                 'amount_fee' => $adminFee,
                 'amount_total' => $grossAmount,
                 'margin' => $margin,
-                'status' => 'PENDING',
+                'status' => TransactionStatus::PENDING,
             ]);
 
             $payment = Payment::create([
@@ -102,12 +132,12 @@ class CheckoutAction
                 'reference_id' => $referenceId,
                 'gross_amount' => $grossAmount,
                 'admin_fee' => $adminFee,
-                'status' => '1', // Pending
+                'status' => PaymentStatus::PENDING,
             ]);
 
             // ── 7. Execute payment ───────────────────────────────────────────
             $paymentInstructions = null;
-            $transactionStatus = 'PENDING';
+            $transactionStatus = TransactionStatus::PENDING;
 
             if ($channel->channel_code === 'balance') {
                 // ── Balance path ─────────────────────────────────────────────
@@ -122,7 +152,7 @@ class CheckoutAction
                 }
 
                 $user->decrement('balance', $grossAmount);
-                $payment->update(['status' => '3', 'paid_at' => now()]);
+                $payment->update(['status' => PaymentStatus::SUCCESS, 'paid_at' => now()]);
 
                 $transaction = $this->digiflazzAction->execute($transaction);
                 $transactionStatus = $transaction->status; // COMPLETED / PROCESSING / FAILED_PROVIDER

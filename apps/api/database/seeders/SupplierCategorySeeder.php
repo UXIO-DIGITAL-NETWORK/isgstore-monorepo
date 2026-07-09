@@ -20,7 +20,7 @@ class SupplierCategorySeeder extends Seeder
             11 => 'pulsa',
             12 => 'data',
             13 => 'emoney',
-            14 => 'ppob'
+            14 => 'ppob',
         ];
 
         foreach ($digiflazzCategories as $catId => $code) {
@@ -29,7 +29,7 @@ class SupplierCategorySeeder extends Seeder
                 'supplier_id' => 1,
                 'template_code' => $code,
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ];
         }
 

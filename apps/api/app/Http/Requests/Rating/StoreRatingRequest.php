@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Rating;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Rating\CreateRatingDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRatingRequest extends FormRequest

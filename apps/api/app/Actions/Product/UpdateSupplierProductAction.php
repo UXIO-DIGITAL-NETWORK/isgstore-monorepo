@@ -2,10 +2,10 @@
 
 namespace App\Actions\Product;
 
-use App\Models\SupplierProduct;
-use App\DTOs\Product\UpdateSupplierProductDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\Product\UpdateSupplierProductDTO;
+use App\Models\SupplierProduct;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateSupplierProductAction
@@ -15,7 +15,7 @@ class UpdateSupplierProductAction
     public function execute(SupplierProduct $supplierProduct, UpdateSupplierProductDTO $dto): SupplierProduct
     {
         // If this product is set to active, ensure others for the same product are inactive
-        if ($dto->isActive && !$supplierProduct->is_active) {
+        if ($dto->isActive && ! $supplierProduct->is_active) {
             SupplierProduct::where('product_id', $dto->productId)
                 ->where('id', '!=', $supplierProduct->id)
                 ->update(['is_active' => false]);

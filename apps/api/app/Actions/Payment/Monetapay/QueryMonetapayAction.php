@@ -66,7 +66,7 @@ class QueryMonetapayAction
         if ($resource === 'balance') {
             return $this->monetapayService->inquiryBalance(
                 $params['sub_mch_id'] ?? null,
-                $params['currency']   ?? null,
+                $params['currency'] ?? null,
             );
         }
 

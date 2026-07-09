@@ -2,9 +2,9 @@
 
 namespace App\Actions\Category\ServerCategoryOption;
 
-use App\Models\ServerCategoryOption;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\ServerCategoryOption;
 use Illuminate\Support\Facades\Auth;
 
 class DeleteServerCategoryOptionAction

@@ -1,0 +1,4332 @@
+{
+ "info": {
+  "name": "Uxio TopUp API v2",
+  "description": "Complete collection for the Uxio Web TopUp API (v2 — regenerated 2026-07-09).\n\nResponse envelope: `{ \"status\": \"success|fail|error\", \"code\": <int>, \"message\": \"...\", \"data\": ... }`\n\nAuth: run **Auth → Login** first — the test script stores `data.access_token` into `{{token}}` (collection-level Bearer auth) and `data.refresh_token` into `{{refresh_token}}`.\n\nRate limits: global API 120/min, checkout & postpaid 10/min, webhooks 120/min per IP, login 5/min per IP. Checkout/pay-bill also enforce a 15-second duplicate-submit guard.\n\nStatus enums: Transaction = PENDING/PAID/PROCESSING/COMPLETED/FAILED_PROVIDER/EXPIRED/REFUNDED; Payment = '1' Pending / '2' Expired / '3' Success / '4' Refunded.",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+ },
+ "auth": {
+  "type": "bearer",
+  "bearer": [
+   {
+    "key": "token",
+    "value": "{{token}}",
+    "type": "string"
+   }
+  ]
+ },
+ "variable": [
+  {
+   "key": "base_url",
+   "value": "http://localhost:8000/api/v1"
+  },
+  {
+   "key": "token",
+   "value": ""
+  },
+  {
+   "key": "refresh_token",
+   "value": ""
+  },
+  {
+   "key": "id",
+   "value": "1"
+  }
+ ],
+ "item": [
+  {
+   "name": "Auth",
+   "item": [
+    {
+     "name": "Login",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/auth/login",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "auth",
+        "login"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "description": "Throttled 5/min per IP. Captures access_token → {{token}} and refresh_token → {{refresh_token}}.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password\",\n  \"timezone\": \"Asia/Jakarta\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "const res = pm.response.json();",
+         "if (res.data && res.data.access_token) {",
+         "    pm.collectionVariables.set('token', res.data.access_token);",
+         "    pm.collectionVariables.set('refresh_token', res.data.refresh_token || '');",
+         "    console.log('Access + refresh token captured.');",
+         "} else {",
+         "    console.warn('Login succeeded but no token found in res.data.access_token');",
+         "}"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Refresh Token",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/auth/refresh",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "auth",
+        "refresh"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "description": "Exchanges the 30-day refresh token for a fresh 60-minute access token.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "exec": [
+         "const res = pm.response.json();",
+         "if (res.data && res.data.access_token) {",
+         "    pm.collectionVariables.set('token', res.data.access_token);",
+         "    pm.collectionVariables.set('refresh_token', res.data.refresh_token || '');",
+         "}"
+        ],
+        "type": "text/javascript"
+       }
+      }
+     ]
+    },
+    {
+     "name": "Logout",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/auth/logout",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "auth",
+        "logout"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Current User",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/user",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "user"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "System",
+   "item": [
+    {
+     "name": "Ping",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/ping",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "ping"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      }
+     }
+    },
+    {
+     "name": "Health",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/health",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "health"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Checkout (Public)",
+   "item": [
+    {
+     "name": "Checkout — Member (auth)",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/checkout",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "checkout"
+       ]
+      },
+      "description": "Authenticated checkout — price resolved by role (vip/reseller/agent/member). Balance channel deducts wallet and fulfils synchronously.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"payment_channel_id\": 1,\n  \"target_uid\": \"123456789\",\n  \"target_server\": \"2001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Checkout — Guest",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/checkout",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "checkout"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "description": "Guest checkout — guest_contact (WhatsApp) is required; guests always pay price_member.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"payment_channel_id\": 1,\n  \"target_uid\": \"123456789\",\n  \"target_server\": \"2001\",\n  \"guest_contact\": \"6281234567890\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "description": "Throttled 10/min per user/IP. An identical checkout within 15 seconds is rejected as a duplicate submit (HTTP 400 \"Permintaan duplikat terdeteksi\")."
+  },
+  {
+   "name": "Digiflazz Postpaid (Public)",
+   "item": [
+    {
+     "name": "Check Bill",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/digiflazz/check-bill",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "digiflazz",
+        "check-bill"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "description": "Inquires the outstanding bill from Digiflazz (cek tagihan).",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"buyer_sku_code\": \"pln\",\n  \"customer_no\": \"530000000001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Pay Bill — Member (auth)",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/digiflazz/pay-bill",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "digiflazz",
+        "pay-bill"
+       ]
+      },
+      "description": "Bill amount is re-inquired server-side; margin = supplier commission.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"payment_channel_id\": 1,\n  \"customer_no\": \"530000000001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Pay Bill — Guest",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/digiflazz/pay-bill",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "digiflazz",
+        "pay-bill"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"payment_channel_id\": 1,\n  \"customer_no\": \"530000000001\",\n  \"guest_contact\": \"6281234567890\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "description": "Throttled 10/min (shares the checkout limiter). Same 15s duplicate-submit guard as checkout."
+  },
+  {
+   "name": "Digiflazz Admin",
+   "item": [
+    {
+     "name": "Get Digiflazz Balance",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/digiflazz/balance",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "digiflazz",
+        "balance"
+       ]
+      },
+      "description": "Queries the Digiflazz deposit balance (cek saldo)."
+     }
+    },
+    {
+     "name": "Check Transaction Status",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/digiflazz/check-status",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "digiflazz",
+        "check-status"
+       ]
+      },
+      "description": "Re-queries Digiflazz for a PROCESSING transaction (duplicate ref_id acts as a status check).",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"invoice_number\": \"INV-20260709-ABC123\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Sync Products (Price List)",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/digiflazz/sync-products",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "digiflazz",
+        "sync-products"
+       ]
+      },
+      "description": "type: prepaid | pasca (defaults to prepaid). Pulls the Digiflazz price list, updates supplier costs/availability, recalculates auto-priced selling prices via pricing rules, auto-creates new SKUs as INACTIVE products, and returns a report: {type, total_fetched, price_changed, new_products[], deactivated[], reactivated[], negative_margin[], unmapped_brands[], skipped_skus[]}. Also runs daily at 04:30 via the scheduler (digiflazz:sync-products --type=all).",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"type\": \"prepaid\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Pricing Rules",
+   "item": [
+    {
+     "name": "List Pricing Rules",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/pricing-rules",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "pricing-rules"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Pricing Rule",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/pricing-rules",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "pricing-rules"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": null,\n  \"role\": \"member\",\n  \"markup_percent\": 20,\n  \"markup_flat\": 0\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Pricing Rule",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/pricing-rules/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "pricing-rules",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Pricing Rule",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/pricing-rules/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "pricing-rules",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": null,\n  \"role\": \"member\",\n  \"markup_percent\": 25,\n  \"markup_flat\": 100\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Pricing Rule",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/pricing-rules/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "pricing-rules",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "Markup rules used by the daily Digiflazz sync to compute selling prices from supplier cost. role: member|vip|reseller|agent. category_id null = global fallback rule; a category-specific rule overrides the global one. price = ceil(cost × (1 + markup_percent/100)) + markup_flat. One rule per (category, role) — duplicates are rejected 422."
+  },
+  {
+   "name": "Users",
+   "item": [
+    {
+     "name": "List Users",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/users?search=&role_id=&per_page=15",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "users"
+       ],
+       "query": [
+        {
+         "key": "search",
+         "value": ""
+        },
+        {
+         "key": "role_id",
+         "value": ""
+        },
+        {
+         "key": "per_page",
+         "value": "15"
+        }
+       ]
+      },
+      "description": "Filters: search, role_id, min/max_balance, min/max_point, is_email_verified, date_from/to, per_page."
+     }
+    },
+    {
+     "name": "Create User",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/users",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "users"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"role_id\": 2,\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"6281234567890\",\n  \"balance\": 0,\n  \"point\": 0,\n  \"locale\": \"id\",\n  \"timezone\": \"Asia/Jakarta\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get User",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/users/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "users",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update User",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/users/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "users",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"role_id\": 2,\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"6281234567890\",\n  \"balance\": 50000,\n  \"point\": 10\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete User",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/users/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "users",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Sync Timezone",
+     "request": {
+      "method": "PATCH",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/users/sync-timezone",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "users",
+        "sync-timezone"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"timezone\": \"Asia/Jakarta\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Category Types",
+   "item": [
+    {
+     "name": "List Category Types",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/category-types",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "category-types"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Category Type",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/category-types",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "category-types"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Mobile Game\",\n  \"status\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Category Type",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/category-types/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "category-types",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Category Type",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/category-types/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "category-types",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Mobile Game\",\n  \"status\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Category Type",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/category-types/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "category-types",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Categories",
+   "item": [
+    {
+     "name": "List Categories",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/categories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "categories"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Category",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/categories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "categories"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"type_id\": 1,\n  \"name\": \"Mobile Legends\",\n  \"code\": \"mlbb\",\n  \"validasi_nickname\": null,\n  \"region\": \"ID\",\n  \"description\": \"MOBA game top-up\",\n  \"status\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Category",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "categories",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Category",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "categories",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"type_id\": 1,\n  \"name\": \"Mobile Legends\",\n  \"code\": \"mlbb\",\n  \"validasi_nickname\": null,\n  \"region\": \"ID\",\n  \"description\": \"MOBA game top-up\",\n  \"status\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Category",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "categories",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "logo is an optional image upload — switch the body to form-data when sending one."
+  },
+  {
+   "name": "Sub-Categories",
+   "item": [
+    {
+     "name": "List Sub-Categories",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/sub-categories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "sub-categories"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Sub-Category",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/sub-categories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "sub-categories"
+       ]
+      },
+      "description": "multipart/form-data — includes a file upload field.",
+      "body": {
+       "mode": "formdata",
+       "formdata": [
+        {
+         "key": "category_id",
+         "type": "text",
+         "value": "1"
+        },
+        {
+         "key": "name",
+         "type": "text",
+         "value": "Diamonds"
+        },
+        {
+         "key": "logo",
+         "type": "file",
+         "src": []
+        },
+        {
+         "key": "status",
+         "type": "text",
+         "value": "1"
+        }
+       ]
+      }
+     }
+    },
+    {
+     "name": "Get Sub-Category",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/sub-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "sub-categories",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Sub-Category",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/sub-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "sub-categories",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"name\": \"Diamonds\",\n  \"status\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Sub-Category",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/sub-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "sub-categories",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "Create requires a logo image (multipart). Update logo is optional (JSON body shown)."
+  },
+  {
+   "name": "Server Categories",
+   "item": [
+    {
+     "name": "List Server Categories",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-categories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-categories"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Server Category",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-categories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-categories"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"name\": \"Server ID\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Server Category",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-categories",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Server Category",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-categories",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"name\": \"Server ID\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Server Category",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-categories",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Server Category Options",
+   "item": [
+    {
+     "name": "List Server Category Options",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-category-options",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-category-options"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Server Category Option",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-category-options",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-category-options"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"server_category_id\": 1,\n  \"name\": \"Asia\",\n  \"value\": \"2001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Server Category Option",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-category-options/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-category-options",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Server Category Option",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-category-options/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-category-options",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"server_category_id\": 1,\n  \"name\": \"Asia\",\n  \"value\": \"2001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Server Category Option",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/server-category-options/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "server-category-options",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Suppliers",
+   "item": [
+    {
+     "name": "List Suppliers",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/suppliers",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "suppliers"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Supplier",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/suppliers",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "suppliers"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Digiflazz\",\n  \"status\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Supplier",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/suppliers/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "suppliers",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Supplier",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/suppliers/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "suppliers",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"name\": \"Digiflazz\",\n  \"status\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Supplier",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/suppliers/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "suppliers",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Supplier Categories",
+   "item": [
+    {
+     "name": "List Supplier Categories",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-categories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-categories"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Supplier Category",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-categories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-categories"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"supplier_id\": 1,\n  \"template_code\": \"mlbb\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Supplier Category",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-categories",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Supplier Category",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-categories",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"supplier_id\": 1,\n  \"template_code\": \"mlbb\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Supplier Category",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-categories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-categories",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Products",
+   "item": [
+    {
+     "name": "List Products",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/products",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "products"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Product",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/products",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "products"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"sub_category_id\": null,\n  \"name\": \"MOBILELEGEND - 5 Diamond\",\n  \"code\": \"ml5\",\n  \"price_modal\": 1375,\n  \"price_member\": 1650,\n  \"price_vip\": 1582,\n  \"price_reseller\": 1513,\n  \"price_agent\": 1444,\n  \"status\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Product",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/products/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "products",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Product",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/products/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "products",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"sub_category_id\": null,\n  \"name\": \"MOBILELEGEND - 5 Diamond\",\n  \"code\": \"ml5\",\n  \"price_modal\": 1375,\n  \"price_member\": 1650,\n  \"price_vip\": 1582,\n  \"price_reseller\": 1513,\n  \"price_agent\": 1444,\n  \"status\": true,\n  \"auto_price\": false\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Product",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/products/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "products",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "auto_price (update only, optional): true = daily Digiflazz sync recalculates selling prices from supplier cost via pricing rules; false = prices are manual and the sync leaves them alone."
+  },
+  {
+   "name": "Supplier Products",
+   "item": [
+    {
+     "name": "List Supplier Products",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-products",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-products"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Supplier Product",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-products",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-products"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"supplier_id\": 1,\n  \"buyer_sku_code\": \"ml5\",\n  \"price\": 1375,\n  \"buyer_product_status\": true,\n  \"seller_product_status\": true,\n  \"is_active\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Supplier Product",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-products/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-products",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Supplier Product",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-products/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-products",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"supplier_id\": 1,\n  \"buyer_sku_code\": \"ml5\",\n  \"price\": 1375,\n  \"buyer_product_status\": true,\n  \"seller_product_status\": true,\n  \"is_active\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Supplier Product",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/supplier-products/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "supplier-products",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "Maps a product to a supplier SKU. Only ONE active mapping per product is used at checkout. The daily sync updates price/availability on the (supplier_id, buyer_sku_code) unique key."
+  },
+  {
+   "name": "Transactions",
+   "item": [
+    {
+     "name": "List Transactions",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/transactions",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "transactions"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Transaction",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/transactions",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "transactions"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"product_id\": 1,\n  \"user_id\": null,\n  \"payment_channel_id\": 1,\n  \"supplier_id\": 1,\n  \"guest_contact\": \"6281234567890\",\n  \"target_uid\": \"123456789\",\n  \"target_server\": \"2001\",\n  \"amount_base\": 12000,\n  \"amount_fee\": 0,\n  \"amount_total\": 12000,\n  \"margin\": 2000,\n  \"status\": \"PENDING\",\n  \"is_manual\": true,\n  \"sn\": null\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Transaction",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/transactions/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "transactions",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Transaction",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/transactions/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "transactions",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"user_id\": null,\n  \"payment_channel_id\": 1,\n  \"supplier_id\": 1,\n  \"guest_contact\": \"6281234567890\",\n  \"target_uid\": \"123456789\",\n  \"target_server\": \"2001\",\n  \"amount_base\": 12000,\n  \"amount_fee\": 0,\n  \"amount_total\": 12000,\n  \"margin\": 2000,\n  \"status\": \"COMPLETED\",\n  \"sn\": \"SN-EXAMPLE-123\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Transaction",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/transactions/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "transactions",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "status enum: PENDING | PAID | PROCESSING | COMPLETED | FAILED_PROVIDER | EXPIRED | REFUNDED. Index supports ?status= and ?search= filters."
+  },
+  {
+   "name": "Payments",
+   "item": [
+    {
+     "name": "List Payments",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/payments",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "payments"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Payment",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/payments",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "payments"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"transaction_id\": 1,\n  \"payment_channel_id\": 1,\n  \"pg_transaction_id\": null,\n  \"gross_amount\": 12000,\n  \"admin_fee\": 0,\n  \"payment_data\": null,\n  \"status\": \"1\",\n  \"paid_at\": null\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Payment",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/payments/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "payments",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Payment",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/payments/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "payments",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"transaction_id\": 1,\n  \"payment_channel_id\": 1,\n  \"pg_transaction_id\": \"MP-ORDER-001\",\n  \"gross_amount\": 12000,\n  \"admin_fee\": 0,\n  \"payment_data\": null,\n  \"status\": \"3\",\n  \"paid_at\": \"2026-07-09 10:00:00\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Payment",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/payments/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "payments",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "status codes (string): '1' Pending, '2' Expired/Failed, '3' Success, '4' Refunded."
+  },
+  {
+   "name": "Point Histories",
+   "item": [
+    {
+     "name": "List Point Histories",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/point-histories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "point-histories"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Point History",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/point-histories",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "point-histories"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"user_id\": 1,\n  \"transaction_id\": 1,\n  \"points_before\": 0,\n  \"points_added\": 10,\n  \"points_after\": 10,\n  \"description\": \"Points from transaction\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Point History",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/point-histories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "point-histories",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Point History",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/point-histories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "point-histories",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"user_id\": 1,\n  \"transaction_id\": 1,\n  \"points_before\": 0,\n  \"points_added\": 10,\n  \"points_after\": 10,\n  \"description\": \"Points from transaction\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Point History",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/point-histories/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "point-histories",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Ratings",
+   "item": [
+    {
+     "name": "List Ratings",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/ratings",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "ratings"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Rating",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/ratings",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "ratings"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"transaction_id\": 1,\n  \"user_id\": 1,\n  \"rating\": 5\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Rating",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/ratings/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "ratings",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Rating",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/ratings/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "ratings",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"transaction_id\": 1,\n  \"user_id\": 1,\n  \"rating\": 5\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Rating",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/ratings/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "ratings",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Banners",
+   "item": [
+    {
+     "name": "List Banners",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/banners",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "banners"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Banner",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/banners",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "banners"
+       ]
+      },
+      "description": "multipart/form-data — includes a file upload field.",
+      "body": {
+       "mode": "formdata",
+       "formdata": [
+        {
+         "key": "category_id",
+         "type": "text",
+         "value": "1"
+        },
+        {
+         "key": "name",
+         "type": "text",
+         "value": "Promo Banner"
+        },
+        {
+         "key": "image_path",
+         "type": "file",
+         "src": []
+        },
+        {
+         "key": "link",
+         "type": "text",
+         "value": "https://example.com/promo"
+        }
+       ]
+      }
+     }
+    },
+    {
+     "name": "Get Banner",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/banners/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "banners",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Banner",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/banners/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "banners",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"name\": \"Promo Banner\",\n  \"link\": \"https://example.com/promo\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Banner",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/banners/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "banners",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "Create requires an image (multipart). Update image is optional (JSON body shown)."
+  },
+  {
+   "name": "Announcements",
+   "item": [
+    {
+     "name": "List Announcements",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/announcements",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "announcements"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Create Announcement",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/announcements",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "announcements"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"content\": \"Maintenance tonight 00:00-01:00 WIB\",\n  \"is_active\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Get Announcement",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/announcements/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "announcements",
+        "{{id}}"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Update Announcement",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/announcements/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "announcements",
+        "{{id}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"category_id\": 1,\n  \"content\": \"Maintenance tonight 00:00-01:00 WIB\",\n  \"is_active\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Delete Announcement",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/announcements/{{id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "announcements",
+        "{{id}}"
+       ]
+      }
+     }
+    }
+   ],
+   "description": "image_path is an optional image upload — switch to form-data when sending one."
+  },
+  {
+   "name": "Reports & Logs",
+   "item": [
+    {
+     "name": "List Activity Logs",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/activity-logs",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "activity-logs"
+       ]
+      }
+     }
+    },
+    {
+     "name": "Get Leaderboard",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/leaderboard",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "leaderboard"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Monetapay Admin",
+   "item": [
+    {
+     "name": "5.1 Balance Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/balance",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "balance"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"sub_mch_id\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.1.2 VA Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/virtual-account/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "virtual-account",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"INV-20260611-001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.2.2 E-Wallet Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/ewallet/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "ewallet",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"INV-20260611-001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.3.3 QRIS Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/qris/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "qris",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"INV-20260611-001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.4.1 Payment Link Create",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/payment-link/create",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "payment-link",
+        "create"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"PL-20260709-0001\",\n  \"amount\": \"15000\",\n  \"currency\": \"IDR\",\n  \"regular_bank_codes\": \"BNI\",\n  \"ewallet_bank_codes\": \"DANA\",\n  \"qris_bank_code\": \"QRIS\",\n  \"terminal_type\": \"WAP\",\n  \"expire_seconds\": \"36000\",\n  \"account_name\": \"John Doe\",\n  \"account_phone\": \"6281234567890\",\n  \"product_id\": \"1\",\n  \"product_name\": \"MOBILELEGEND - 5 Diamond\",\n  \"product_category\": \"Mobile Legends\",\n  \"product_price\": \"15000\",\n  \"product_quantity\": 1,\n  \"product_type\": \"PRODUCT\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.4.2 Payment Link Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/payment-link/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "payment-link",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"INV-20260611-001\",\n  \"order_no\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.1 Customer Create",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/customer/create",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "customer",
+        "create"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_customer_id\": \"CUST-0001\",\n  \"customer_name\": \"John Doe\",\n  \"customer_email\": \"john@example.com\",\n  \"customer_phone\": \"6281234567890\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.2 Customer Update",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/customer/update",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "customer",
+        "update"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_customer_id\": \"CUST-0001\",\n  \"customer_name\": \"John Doe Updated\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.3 Customer Query",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/customer/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "customer",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_customer_id\": \"CUST-0001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.4 Subscription Apply",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/apply",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "apply"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"SUB-20260709-0001\",\n  \"mch_customer_id\": \"CUST-0001\",\n  \"amount\": \"50000\",\n  \"interval\": \"MONTH\",\n  \"interval_count\": \"1\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.x Subscription Create (legacy)",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/create",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "create"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"SUB-20260709-0001\",\n  \"mch_customer_id\": \"CUST-0001\",\n  \"amount\": \"50000\",\n  \"interval\": \"MONTH\",\n  \"interval_count\": \"1\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.5 Subscription Order Query",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"order_no\": \"\",\n  \"mch_order_no\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.6 Subscription Deactivate",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/deactivate",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "deactivate"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"SUB-20260709-0001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.7 Subscription Cycle Query",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/cycle",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "cycle"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"order_no\": \"\",\n  \"page\": \"1\",\n  \"page_size\": \"20\",\n  \"after_cycle_period_index\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.5.8 Subscription Cycle Attempt",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/cycle/attempt",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "cycle",
+        "attempt"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"SUB-20260709-0001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.6.1 Cancel Order",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/cancel",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "cancel"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"order_no\": \"\",\n  \"mch_order_no\": \"INV-20260611-001\",\n  \"sub_mch_id\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.6.2 Refund",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/refund",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "refund"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"refund_mch_order_no\": \"RFND-20260611-001\",\n  \"payment_order_no\": \"\",\n  \"payment_trade_no\": \"\",\n  \"amount\": \"10000\",\n  \"reason\": \"customer request\",\n  \"additional_info\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.6.4 Refund Query",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/refund/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "refund",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"payment_order_no\": \"\",\n  \"refund_order_no\": \"\",\n  \"payment_trade_no\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.6.5 Repay Order Query",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/repay/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "repay",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"order_no\": \"\",\n  \"mch_order_no\": \"INV-20260611-001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.7.4 Sub-merchant Status",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/sub-merchant/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "sub-merchant",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_external_id\": \"\",\n  \"external_id\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.8.2 Cross-Border QR Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/cross-border/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "cross-border",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"INV-20260611-001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.9.2 CDM Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/cdm/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "cdm",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"order_no\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "6.11.2 Payin Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/payin/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "payin",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"INV-20260611-001\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "7.1.1 Disbursement Create",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/disbursement/create",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "disbursement",
+        "create"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"DISB-20260709-0001\",\n  \"amount\": \"100000\",\n  \"account_bank_code\": \"BCA\",\n  \"account_number\": \"1234567890\",\n  \"account_name\": \"John Doe\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "7.2.1 Large Payout Create",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/large-payout/create",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "large-payout",
+        "create"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"LP-20260709-0001\",\n  \"amount\": \"100000000\",\n  \"account_bank_code\": \"BCA\",\n  \"account_number\": \"1234567890\",\n  \"account_name\": \"John Doe\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "7.3.1 E-Wallet Payout Create",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/ewallet-payout/create",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "ewallet-payout",
+        "create"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"EWP-20260709-0001\",\n  \"amount\": \"50000\",\n  \"account_bank_code\": \"DANA\",\n  \"account_phone\": \"6281234567890\",\n  \"account_name\": \"John Doe\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "7.4.1 Payout Order Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/disbursement/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "disbursement",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"\",\n  \"order_no\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "8.x Account Validation",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/inquiry-account",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "inquiry-account"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"mch_order_no\": \"VERIFY-001\",\n  \"account_bank_code\": \"BNI\",\n  \"account_number\": \"1234567890\",\n  \"account_type\": \"1\",\n  \"ori_account_name\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "9.1 Daily Bill Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/bills/daily",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "bills",
+        "daily"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"start_date\": \"2026-06-01\",\n  \"end_date\": \"2026-06-11\",\n  \"currency\": \"IDR\",\n  \"page\": \"1\",\n  \"page_size\": \"20\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "9.2 Bill Flow Inquiry",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/bills/flow",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "bills",
+        "flow"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"start_time\": \"2026-06-01 00:00:00\",\n  \"end_time\": \"2026-06-11 00:00:00\",\n  \"page\": \"1\",\n  \"page_size\": \"20\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "15.2 Transfer Query",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/transfer/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "transfer",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"transfer_order_no\": \"\",\n  \"mch_order_no\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "16.1 Merchant Permission",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/permission/query",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "permission",
+        "query"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"external_id\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "description": "Outbound signed calls to Monetapay (app_id/sign injected server-side). Numbers reference the Monetapay API spec sections. Requires auth."
+  },
+  {
+   "name": "_Webhooks (Reference Only)",
+   "item": [
+    {
+     "name": "Monetapay Payment Callback",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/payment/callback",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "payment",
+        "callback"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"out_no\": \"INV-20260605-001\",\n  \"amount\": \"16000\",\n  \"status\": \"3\",\n  \"sign\": \"<double-md5-signature>\",\n  \"timestamp\": \"1717574400\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Monetapay VA Callback",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/va/callback",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "va",
+        "callback"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"data\": {\n    \"en_data\": \"<AES-128-CBC base64 ciphertext from Monetapay>\",\n    \"partner_key\": \"{{monetapay_partner_key}}\",\n    \"mch_order_no\": \"INV-20260611-001\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Monetapay E-Wallet Callback",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/ewallet/callback",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "ewallet",
+        "callback"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"data\": {\n    \"en_data\": \"<AES-128-CBC base64 ciphertext from Monetapay>\",\n    \"partner_key\": \"{{monetapay_partner_key}}\",\n    \"mch_order_no\": \"INV-20260611-001\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Monetapay QRIS Callback",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/qris/callback",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "qris",
+        "callback"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"data\": {\n    \"en_data\": \"<AES-128-CBC base64 ciphertext from Monetapay>\",\n    \"partner_key\": \"{{monetapay_partner_key}}\",\n    \"mch_order_no\": \"INV-20260611-001\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Monetapay Subscription Active Callback",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/callback/active",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "callback",
+        "active"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"data\": {\n    \"en_data\": \"<aes-encrypted>\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Monetapay Subscription Before-Deduct Callback",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/callback/deduct/before",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "callback",
+        "deduct",
+        "before"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"data\": {\n    \"en_data\": \"<aes-encrypted>\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Monetapay Subscription After-Deduct Callback",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/monetapay/subscription/callback/deduct/after",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "monetapay",
+        "subscription",
+        "callback",
+        "deduct",
+        "after"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"data\": {\n    \"en_data\": \"<aes-encrypted>\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Digiflazz Webhook Callback",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/digiflazz/callback",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "digiflazz",
+        "callback"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"data\": {\n    \"ref_id\": \"INV-20260605-001\",\n    \"status\": \"Sukses\",\n    \"rc\": \"00\",\n    \"sn\": \"SN-ABC123\",\n    \"buyer_sku_code\": \"mlbb-86-diamond\"\n  }\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "description": "Reference only — these are called BY the payment gateway/supplier, not by clients. Monetapay callbacks carry an AES-encrypted en_data payload with a Double-MD5 signature; Digiflazz callbacks are HMAC-SHA1 signed (X-Hub-Signature) over the raw body. Unsigned requests are rejected. Throttled 120/min per IP."
+  }
+ ]
+}

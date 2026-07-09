@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Category\SubCategory;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Category\SubCategory\UpdateSubCategoryDTO;
 use Illuminate\Foundation\Http\FormRequest;
 

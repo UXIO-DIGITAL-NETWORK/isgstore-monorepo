@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests\Payment;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Payment\CreatePaymentDTO;
+use App\Enums\PaymentStatus;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePaymentRequest extends FormRequest
 {
@@ -27,10 +29,10 @@ class StorePaymentRequest extends FormRequest
             'transaction_id' => ['required', 'exists:transactions,id'],
             'payment_channel_id' => ['required', 'exists:payment_channels,id'],
             'pg_transaction_id' => ['nullable', 'string', 'max:255'],
-            'gross_amount' => ['required', 'integer'],
-            'admin_fee' => ['required', 'integer'],
+            'gross_amount' => ['required', 'integer', 'min:0'],
+            'admin_fee' => ['required', 'integer', 'min:0'],
             'payment_data' => ['nullable', 'array'],
-            'status' => ['required', 'string', 'max:255'],
+            'status' => ['required', Rule::enum(PaymentStatus::class)],
             'paid_at' => ['nullable', 'date'],
         ];
     }

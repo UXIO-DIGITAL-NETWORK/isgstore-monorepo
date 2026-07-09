@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ActivityLog;
 use App\Http\Resources\Api\ActivityLogResource;
+use App\Models\ActivityLog;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -23,7 +23,7 @@ class ActivityLogController extends Controller
                 'last_page' => $logs->lastPage(),
                 'per_page' => $logs->perPage(),
                 'total' => $logs->total(),
-            ]
+            ],
         ], 'Activity logs retrieved successfully');
     }
 }

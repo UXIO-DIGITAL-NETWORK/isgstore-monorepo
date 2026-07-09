@@ -2,10 +2,11 @@
 
 namespace App\Actions\Category;
 
-use App\Models\Category;
-use App\DTOs\Category\CreateCategoryDTO;
 use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Category\CreateCategoryDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Category;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 
 class CreateCategoryAction
@@ -16,7 +17,7 @@ class CreateCategoryAction
     {
         $logoPath = null;
 
-        if ($dto->logo instanceof \Illuminate\Http\UploadedFile) {
+        if ($dto->logo instanceof UploadedFile) {
             $logoPath = $dto->logo->store('categories/logos', 'public');
         }
 
