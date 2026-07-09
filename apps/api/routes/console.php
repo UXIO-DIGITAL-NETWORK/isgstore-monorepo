@@ -19,4 +19,14 @@ Schedule::command('digiflazz:sync-products --type=all')
     ->dailyAt('04:30')
     ->withoutOverlapping()
     ->runInBackground()
+    ->before(fn () => app(DiscordWebhookService::class)->sendEmbed(
+        '⏰ Digiflazz Sync Started',
+        [['name' => 'Schedule', 'value' => 'Daily at 04:30', 'inline' => true]],
+        DiscordWebhookService::COLOR_YELLOW,
+    ))
+    ->onSuccess(fn () => app(DiscordWebhookService::class)->sendEmbed(
+        '✅ Digiflazz Sync Completed',
+        [['name' => 'Schedule', 'value' => 'Daily at 04:30', 'inline' => true]],
+        DiscordWebhookService::COLOR_GREEN,
+    ))
     ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: digiflazz:sync-products'));
