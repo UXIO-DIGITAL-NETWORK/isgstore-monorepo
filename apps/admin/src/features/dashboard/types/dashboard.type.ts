@@ -11,16 +11,8 @@ export type Operator = {
   updated_at: string;
 };
 
-export type TrendDirection = "up" | "down";
-
-export type StatCardData = {
-  id: string;
-  label: string;
-  value: number;
-  deltaPct: number;
-  direction: TrendDirection;
-  caption: string;
-};
+export type { TrendDirection } from "@/components/common/TrendPill";
+export type { StatCardData } from "@/components/common/StatCard";
 
 /** date is an ISO string. */
 export type ChartPoint = {

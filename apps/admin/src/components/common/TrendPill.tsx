@@ -4,7 +4,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
-import type { TrendDirection } from "../types/dashboard.type";
+
+export type TrendDirection = "up" | "down";
 
 const trendPillVariants = cva(
   "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums",

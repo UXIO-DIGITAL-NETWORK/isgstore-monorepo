@@ -13,7 +13,9 @@ import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as PreviewRouteImport } from './routes/_preview'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProtectedFinancialIndexRouteImport } from './routes/_protected/financial/index'
 import { Route as ProtectedDashboardIndexRouteImport } from './routes/_protected/dashboard/index'
+import { Route as PreviewFinancePreviewIndexRouteImport } from './routes/_preview/finance-preview/index'
 import { Route as PreviewDashboardPreviewIndexRouteImport } from './routes/_preview/dashboard-preview/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
 
@@ -34,11 +36,22 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProtectedFinancialIndexRoute = ProtectedFinancialIndexRouteImport.update({
+  id: '/financial/',
+  path: '/financial/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedDashboardIndexRoute = ProtectedDashboardIndexRouteImport.update({
   id: '/dashboard/',
   path: '/dashboard/',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const PreviewFinancePreviewIndexRoute =
+  PreviewFinancePreviewIndexRouteImport.update({
+    id: '/finance-preview/',
+    path: '/finance-preview/',
+    getParentRoute: () => PreviewRoute,
+  } as any)
 const PreviewDashboardPreviewIndexRoute =
   PreviewDashboardPreviewIndexRouteImport.update({
     id: '/dashboard-preview/',
@@ -55,13 +68,17 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login/': typeof AuthLoginIndexRoute
   '/dashboard-preview/': typeof PreviewDashboardPreviewIndexRoute
+  '/finance-preview/': typeof PreviewFinancePreviewIndexRoute
   '/dashboard/': typeof ProtectedDashboardIndexRoute
+  '/financial/': typeof ProtectedFinancialIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof AuthLoginIndexRoute
   '/dashboard-preview': typeof PreviewDashboardPreviewIndexRoute
+  '/finance-preview': typeof PreviewFinancePreviewIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
+  '/financial': typeof ProtectedFinancialIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,13 +88,27 @@ export interface FileRoutesById {
   '/_protected': typeof ProtectedRouteWithChildren
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/_preview/dashboard-preview/': typeof PreviewDashboardPreviewIndexRoute
+  '/_preview/finance-preview/': typeof PreviewFinancePreviewIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
+  '/_protected/financial/': typeof ProtectedFinancialIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login/' | '/dashboard-preview/' | '/dashboard/'
+  fullPaths:
+    | '/'
+    | '/login/'
+    | '/dashboard-preview/'
+    | '/finance-preview/'
+    | '/dashboard/'
+    | '/financial/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard-preview' | '/dashboard'
+  to:
+    | '/'
+    | '/login'
+    | '/dashboard-preview'
+    | '/finance-preview'
+    | '/dashboard'
+    | '/financial'
   id:
     | '__root__'
     | '/'
@@ -86,7 +117,9 @@ export interface FileRouteTypes {
     | '/_protected'
     | '/_auth/login/'
     | '/_preview/dashboard-preview/'
+    | '/_preview/finance-preview/'
     | '/_protected/dashboard/'
+    | '/_protected/financial/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -126,12 +159,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_protected/financial/': {
+      id: '/_protected/financial/'
+      path: '/financial'
+      fullPath: '/financial/'
+      preLoaderRoute: typeof ProtectedFinancialIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/dashboard/': {
       id: '/_protected/dashboard/'
       path: '/dashboard'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof ProtectedDashboardIndexRouteImport
       parentRoute: typeof ProtectedRoute
+    }
+    '/_preview/finance-preview/': {
+      id: '/_preview/finance-preview/'
+      path: '/finance-preview'
+      fullPath: '/finance-preview/'
+      preLoaderRoute: typeof PreviewFinancePreviewIndexRouteImport
+      parentRoute: typeof PreviewRoute
     }
     '/_preview/dashboard-preview/': {
       id: '/_preview/dashboard-preview/'
@@ -164,10 +211,12 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface PreviewRouteChildren {
   PreviewDashboardPreviewIndexRoute: typeof PreviewDashboardPreviewIndexRoute
+  PreviewFinancePreviewIndexRoute: typeof PreviewFinancePreviewIndexRoute
 }
 
 const PreviewRouteChildren: PreviewRouteChildren = {
   PreviewDashboardPreviewIndexRoute: PreviewDashboardPreviewIndexRoute,
+  PreviewFinancePreviewIndexRoute: PreviewFinancePreviewIndexRoute,
 }
 
 const PreviewRouteWithChildren =
@@ -175,10 +224,12 @@ const PreviewRouteWithChildren =
 
 interface ProtectedRouteChildren {
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
+  ProtectedFinancialIndexRoute: typeof ProtectedFinancialIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
+  ProtectedFinancialIndexRoute: ProtectedFinancialIndexRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

@@ -38,8 +38,8 @@ The design language is **pure black-and-white (shadcn `neutral`)**, prioritizing
 
 ### 2.1 Personas
 
-| Persona | Description | Primary needs |
-| --- | --- | --- |
+| Persona         | Description                                                                | Primary needs                                                                   |
+| --------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | **Super Admin** | The only role in MVP. Internal operator with full access to every feature. | Fast oversight, reliable transaction operations, trustworthy financial numbers. |
 
 ### 2.2 Authorization model (scaffold now, expand later)
@@ -58,22 +58,22 @@ The design language is **pure black-and-white (shadcn `neutral`)**, prioritizing
 
 The left sidebar is grouped. The full IA below is the target structure; **only the MVP-scoped items are implemented this phase** — the rest are placeholders/roadmap and should render a lightweight "coming soon" state (or be route-guarded off) rather than broken screens.
 
-| Group | Item | Route (indicative) | Phase |
-| --- | --- | --- | --- |
-| **General** | Dashboard | `/dashboard` | **MVP** |
-| | Reports | `/reports` | Near-term |
-| | Financial | `/financial` | **MVP** |
-| | Integration | `/integration` | Roadmap |
-| **Orders** | Transaction | `/transactions` | **MVP** |
-| | Activity | `/activity` | Near-term |
-| **Products & Services** | Category | `/categories` | Roadmap |
-| | Product | `/products` | Roadmap |
-| | Payment | `/payments` | Roadmap |
-| | Membership | `/memberships` | Roadmap |
-| **Marketing & Content** | Promo | `/promos` | Roadmap |
-| | Flash Sale | `/flash-sales` | Roadmap |
-| | Website Content | `/content` | Roadmap |
-| | Pages | `/pages` | Roadmap |
+| Group                   | Item            | Route (indicative) | Phase     |
+| ----------------------- | --------------- | ------------------ | --------- |
+| **General**             | Dashboard       | `/dashboard`       | **MVP**   |
+|                         | Reports         | `/reports`         | Near-term |
+|                         | Financial       | `/financial`       | **MVP**   |
+|                         | Integration     | `/integration`     | Roadmap   |
+| **Orders**              | Transaction     | `/transactions`    | **MVP**   |
+|                         | Activity        | `/activity`        | Near-term |
+| **Products & Services** | Category        | `/categories`      | Roadmap   |
+|                         | Product         | `/products`        | Roadmap   |
+|                         | Payment         | `/payments`        | Roadmap   |
+|                         | Membership      | `/memberships`     | Roadmap   |
+| **Marketing & Content** | Promo           | `/promos`          | Roadmap   |
+|                         | Flash Sale      | `/flash-sales`     | Roadmap   |
+|                         | Website Content | `/content`         | Roadmap   |
+|                         | Pages           | `/pages`           | Roadmap   |
 
 Global chrome (top bar): global search, support/help, language/utility action, **theme toggle (light/dark)**, notifications, and the user menu (avatar + name + email + dropdown → profile/logout).
 
@@ -95,33 +95,44 @@ The landing screen. Composed of the following regions (all read-only in MVP, fed
 
 > All numeric values use tabular figures; all money uses the shared IDR formatter (`src/utils/`). No hardcoded colors — trend pills use the `success`/`destructive` tokens.
 
-### 4.2 Finance / Financial (`/financial`)
+### 4.2 Financial (`/financial`)
 
-Financial oversight built around the platform's money movement. Because the platform supports **both a user wallet/balance and one-off purchases**, finance surfaces both flows.
+> **Revision (2026-07-10):** replaced with the confirmed Figma/reference design. The original version of this section (revenue/net-income chart, credit/debit ledger) was written speculatively before any Finance design existed and did not match reality — it's superseded below.
 
-**Screens/sections to build (data shapes provisional pending API):**
+A read-first financial monitoring surface — a summary view, not a ledger or report builder. Per the reference: header **"Financial Summary"** with subcopy **"Monitor payment gateway credit, user debit, and supplier balances in real time. Click an amount to copy."**
 
-- **Financial overview** — aggregate cards for total **Credit**, total **Debit**, **Net**, and current **Platform Balance**, each with period-over-period trend pills.
-- **Revenue vs. Net Income report** — time-series (reuse the dashboard chart component) with range filters (day/week/month/custom) and breakdowns.
-- **Credit/Debit ledger** — a server-side data table of balance movements (date, type `credit|debit`, source/reference, amount, running balance, status), filterable and exportable.
-- **Export** — CSV/Excel export of the current filtered view.
+**Overview stat cards (×3):** `Total Credit`, `Total Debit`, `Profit` — same `StatCard` + `TrendPill` pattern as the Dashboard (now a shared component, not dashboard-only), each with a period-over-period trend pill.
 
-> Precise financial business rules (settlement, payouts, fee accounting) are **TBD pending backend definition**. Build the **screens and typed data shapes**; do not invent settlement logic. Flag any assumption in `PLAN.md §Open Decisions`.
+**Payment Gateway section** — "Summary of balances on each payment gateway." A list of the platform's own payment gateway(s); the reference shows one (**UxioPay**), but the data shape must support multiple (the roadmap already anticipates more payment methods). Each row shows the gateway's logo, name, and two balances side by side:
+
+- **Saldo Aktif** (Active Balance) — currently usable/withdrawable.
+- **Saldo Tertahan** (Held Balance) — funds in a rolling reserve or pending settlement, not yet usable.
+
+> These two labels appear in Indonesian in the reference even though the rest of the admin is English-only. Treated as gateway-specific domain terminology (kept as-is) rather than general admin copy — confirm if you'd rather translate them.
+
+**Supplier section** — "Summary of the balances available with each supplier." A grid of the platform's upstream digital-goods providers — the reference shows five (**Digiflazz Buyer, Digiflazz Seller, UxioTopup, Zelpoint, Topupkuy**), each showing a logo, name, and a single balance: the platform's prepaid deposit held with that provider (used to fulfill top-up orders) — a distinct concept from the Payment Gateway balances above.
+
+**Interaction:** every currency amount on this screen is click-to-copy, per the subcopy.
+
+> **Still provisional (do not invent):** the precise definition of "Profit" (gross margin vs. net of gateway fees), whether balances are polled/live or point-in-time, and whether a deeper ledger/export view exists beyond this summary — the reference only shows this one screen. Build exactly what's shown; surface anything beyond it as an open question rather than inventing it.
 
 ### 4.3 Transaction (`/transactions`)
 
 The operational core. A **server-side-ready** transaction list plus a rich detail view with operator actions.
 
 **List view**
+
 - A **data table** with **server-side pagination, filtering, and sorting** (params sent to the API; Laravel-paginator response shape — see `system_architecture.md §1`).
 - Suggested columns: transaction ID/invoice, date/time, customer (user or guest), game & product/nominal, payment method/channel, amount, status (badge), and a row action menu.
 - Filters: status, date range, game/product, payment channel, search (ID/customer). Sort: date, amount, status.
 - Bulk affordance: **export CSV/Excel** of the current filtered result set.
 
 **Detail view**
+
 - Full transaction record: identifiers, timeline/status history, customer info (or guest), line item (game → product/nominal), pricing (amount; cost/margin where available), payment channel, and provider references.
 
 **Operator actions (all required this phase — UI + wired to typed service stubs):**
+
 - **Manual status override** — set a transaction's status (e.g. mark `success`/`failed`) with a confirmation dialog.
 - **Refund** — initiate a refund (confirmation + reason).
 - **Re-trigger provider callback** — re-fire the upstream provider callback for stuck transactions.
@@ -129,6 +140,7 @@ The operational core. A **server-side-ready** transaction list plus a rich detai
 - **Export** — download the transaction (or filtered set) as CSV/Excel.
 
 **Recap**
+
 - A **transaction recap** report: daily and monthly summaries, downloadable, with **breakdown per game / product / payment channel** (totals, counts, revenue). This is the concrete meaning of "rekap transaksi".
 
 > Destructive/irreversible actions (refund, status override) MUST use a confirmation step and surface success/failure via toasts (`sonner`). Actions are permission-gated via `<Can>` even though Super Admin holds all permissions today.
@@ -159,7 +171,8 @@ Backend is not built; these are **FE-facing entity briefs** to shape typed model
 - **BalanceMovement (ledger)** — `id`, `type` (`credit | debit`), `amount`, `running_balance`, `source`/`reference`, `status`, `created_at`.
 - **Game** — `id`, `name`, `publisher`, `image_url`, `is_active` (referenced by transactions/dashboard).
 - **Product (nominal)** — `id`, `game_id`, `name`, `cost_price`, `selling_price`, `provider_sku?`, `is_available` (referenced; full CRUD is roadmap).
-- **DashboardSummary / FinanceSummary** — aggregate view-models for the stat cards and charts (not raw tables): totals, trend deltas, time-series points.
+- **DashboardSummary** — aggregate view-model for the dashboard stat cards and chart (not a raw table): totals, trend deltas, time-series points.
+- **PaymentGatewayBalance / SupplierBalance** (new, §4.2) — feature-local to `features/financial/types/` for now, not global: `{ id, name, logoUrl }` plus `activeBalance`/`heldBalance` (gateway) or a single `balance` (supplier). Promote to `src/types/models/` only if another feature (e.g. Transaction, referencing which supplier fulfilled an order) needs them too.
 
 Shared API envelopes (single vs. list) are defined in `system_architecture.md §1`.
 

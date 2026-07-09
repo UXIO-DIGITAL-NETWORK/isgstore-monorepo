@@ -19,9 +19,13 @@ Per feature (before its gate) and once globally: `tsc --noEmit` + `lint` clean, 
 - Numbers missing `tabular-nums`; tables missing empty/error states; server data stashed in `useState`/Zustand — dashboard itself is clean on this axis now (see rebuild audit); keep checking new features.
 - `src/models/` not yet migrated to `src/types/models/` — status unverified since last check, re-confirm.
 - `DashboardLayout` is app-wide chrome living under `features/dashboard/layouts/`, imported by deep path (not through the feature barrel) from `_protected.tsx`/`_preview.tsx` — watch whether this gets promoted to `components/layouts/` before `financial`/`transactions` add routes (see [dashboard rebuild audit](dashboard_rebuild_audit.md)).
+- `<Toaster />` mount and `ThemeProvider defaultTheme="system"` — **PARTIALLY RESOLVED 2026-07-10 (financial audit)**: `<Toaster />` now mounted in `src/main.tsx`. `defaultTheme` is still `"system"`, not `"dark"` — still open.
+- `logs/feature-changes/` entries keep getting missed at the actual feature-build step (dashboard had a partial-completeness gap; financial had zero entries at audit time despite a new feature + a cross-feature promotion) — **check this first, every audit**, it's the single most consistent DoD miss so far.
+- Shared-component promotions (e.g. `StatCard`/`TrendPill` dashboard -> `src/components/common/`) have been done cleanly both times: no orphaned duplicate left behind, consuming feature re-exports types by re-pointing `export type { X } from` rather than duplicating. Confirmed-good pattern, keep checking `find src/features/<origin> -iname "*<name>*"` returns empty after a promotion.
 
 ## Tooling
 - chrome-devtools MCP for screenshots/console/network where available. Write findings to `.artifacts/qa-log.md` (severity + concrete fix).
 
 ## Detailed audit notes
 - [Dashboard rebuild audit — 2026-07-10](dashboard_rebuild_audit.md) — full-feature rebuild findings: app-wide-chrome-in-a-feature issue, log-entry completeness gap, confirmed-good reusable patterns (DataTable states, sr-only icon labels, shadcn CommandDialog).
+- Financial feature audit — 2026-07-10 (full findings in `.artifacts/qa-log.md`): clean build overall (tsc/lint/test/grep gates all pass for the feature scope). H-1: zero `logs/feature-changes/` entry for the feature + the `StatCard`/`TrendPill` promotion. L-1: summary-cards section has loading state only, no error/retry (unlike the two list sections in the same page, which both correctly have loading/empty/error+retry). Confirmed `<Toaster />` now mounted (`src/main.tsx`), route guard correctly inherited (no duplicate `beforeLoad` in `_protected/financial/index.tsx`), click-to-copy uses a real shadcn `Button` with `aria-label` (keyboard + focus-ring free).

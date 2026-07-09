@@ -12,7 +12,7 @@ import { ActivityFeedCard } from "../components/ActivityFeedCard";
 import { DataTable } from "../components/DataTable";
 import { PendingOrdersCard } from "../components/PendingOrdersCard";
 import { PerformanceChartCard } from "../components/PerformanceChartCard";
-import { StatCard } from "../components/StatCard";
+import { StatCard } from "@/components/common/StatCard";
 import { useOperator, usePerformanceRows, useStatCards } from "../hooks/useDashboard";
 import type { PerformanceRow, PerformanceTabKey } from "../types/dashboard.type";
 

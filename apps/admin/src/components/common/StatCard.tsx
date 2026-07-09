@@ -1,8 +1,16 @@
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { formatCurrency } from "@/utils/currency";
-import { TrendPill } from "./TrendPill";
-import type { StatCardData } from "../types/dashboard.type";
+import { TrendPill, type TrendDirection } from "./TrendPill";
+
+export interface StatCardData {
+  id: string;
+  label: string;
+  value: number;
+  deltaPct: number;
+  direction: TrendDirection;
+  caption: string;
+}
 
 interface StatCardProps {
   data: StatCardData;

@@ -67,3 +67,13 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => false,
   }),
 });
+
+// jsdom doesn't implement the Clipboard API; the financial feature's
+// CopyableAmount calls navigator.clipboard.writeText(). navigator is
+// read-only in jsdom, so it must be replaced via defineProperty.
+// configurable: true lets @testing-library/user-event redefine it too.
+Object.defineProperty(navigator, "clipboard", {
+  writable: true,
+  configurable: true,
+  value: { writeText: vi.fn() },
+});
