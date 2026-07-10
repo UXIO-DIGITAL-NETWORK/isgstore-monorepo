@@ -119,7 +119,7 @@ export default function IntegrationPage() {
       >
         <TabsList
           variant="line"
-          className="w-full justify-start overflow-x-auto"
+          className="w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
         >
           {CATEGORIES.map(({ value, label, icon: Icon }) => (
             <TabsTrigger

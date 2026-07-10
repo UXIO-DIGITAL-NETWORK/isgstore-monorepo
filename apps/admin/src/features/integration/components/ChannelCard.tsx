@@ -48,7 +48,7 @@ export function ChannelCard({ channel }: ChannelCardProps) {
           <Heading
             level={3}
             variant="default"
-            className="text-base"
+            className="text-sm md:text-sm"
           >
             {channel.name}
           </Heading>
