@@ -140,14 +140,14 @@ export function DashboardSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <Box className="relative px-1">
+        <Box className={cn("relative", state !== "collapsed" && "px-1")}>
           {state === "collapsed" ? (
             <Box
               as="button"
               type="button"
               onClick={() => setCommandOpen(true)}
               aria-label="Search"
-              className="ring-offset-background mx-auto flex size-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="ring-offset-background flex size-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <Search className="size-4" />
             </Box>
