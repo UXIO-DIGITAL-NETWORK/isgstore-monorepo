@@ -49,7 +49,7 @@ class RefundGatewayJob implements ShouldQueue
 
         // HTTP call runs outside any DB transaction so no row lock spans it.
         $response = $monetapay->refundTransaction([
-            'app_id' => config('services.monetapay.mch_id'),
+            'app_id' => config('services.monetapay.collection_app_id'),
             'refund_mch_order_no' => 'RFD-'.$current->reference_id,
             'payment_order_no' => $current->pg_transaction_id,
             'amount' => (string) $current->gross_amount,

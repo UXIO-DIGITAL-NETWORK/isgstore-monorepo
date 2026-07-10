@@ -107,8 +107,10 @@ Key points:
 - Outbound signature: `md5(md5(TOKEN + "*|*" + sortedParams + "@!@" + timestamp))`.
 - Inbound callback: same Double MD5 algorithm, verified via `verifyCallbackSignature()` using `hash_equals()`.
 - Endpoint selection is driven by `payment_type` on `PaymentChannel`: `'qris'` → `/v1.0.0/qris`, anything else → `/v1.0.0/virtual_account`.
-- Config keys: `services.monetapay.{mch_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
-- `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement); defaults to `mch_id` if unset.
+- Config keys: `services.monetapay.{mch_id, collection_app_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
+- Three distinct identifiers — do not conflate them: `mch_id` is the merchant identity (only sent where the gateway expects a real `mch_id`/`parent_app_id`, e.g. `merchant_permission`, `sub_merchant`); `collection_app_id` is the pay-in `app_id` (checkout/`createTransaction`, refund, and all collection inquiries); `disbursement_app_id` is the payout `app_id`.
+- `collection_app_id` has **no fallback** — set `MONETAPAY_COLLECTION_APP_ID` explicitly per environment or collection calls sign with a blank `app_id`.
+- `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement, plus the account-validation pre-payout check); defaults to `mch_id` if unset.
 
 ### Digiflazz (Product Supplier)
 
