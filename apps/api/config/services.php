@@ -49,7 +49,11 @@ return [
     ],
     'digiflazz' => [
         'username' => env('DIGIFLAZZ_USERNAME'),
-        'key' => env('DIGIFLAZZ_KEY'),
+        // apiKey is bound to the account's API mode. Legacy DIGIFLAZZ_KEY is kept
+        // as the fallback for both so existing dev/staging envs keep working.
+        'production' => env('DIGIFLAZZ_PRODUCTION', false),
+        'dev_key' => env('DIGIFLAZZ_DEV_KEY', env('DIGIFLAZZ_KEY')),
+        'prod_key' => env('DIGIFLAZZ_PROD_KEY', env('DIGIFLAZZ_KEY')),
         'base_url' => env('DIGIFLAZZ_BASE_URL', 'https://api.digiflazz.com/v1'),
         'webhook_secret' => env('DIGIFLAZZ_WEBHOOK_SECRET'),
     ],

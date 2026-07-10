@@ -114,10 +114,11 @@ Key points:
 
 ### Digiflazz (Product Supplier)
 
-- Signature: `md5(username + key + refId)`.
+- Signature: `md5(username + key + refId)` — the formula is **mode-agnostic**; only the apiKey *value* differs between Development and Production. A wrong-mode key returns rc `41` ("Signature tidak valid").
+- The apiKey is selected by `DIGIFLAZZ_PRODUCTION`: `true` → `prod_key`, `false` → `dev_key` (resolved in `DigiflazzService::__construct`). Both fall back to legacy `DIGIFLAZZ_KEY` if the mode-specific key is unset, so older envs keep working.
 - `customer_no` sent to Digiflazz = `target_uid . target_server` (concatenated, no separator).
 - `invoice_number` is used as the Digiflazz `ref_id`.
-- Config keys: `services.digiflazz.{username, key, base_url, webhook_secret}`.
+- Config keys: `services.digiflazz.{username, production, dev_key, prod_key, base_url, webhook_secret}`.
 - Inbound webhook authenticated via HMAC-SHA1 on raw body against `X-Hub-Signature` header.
 
 ### Discord (Operational Notifications)

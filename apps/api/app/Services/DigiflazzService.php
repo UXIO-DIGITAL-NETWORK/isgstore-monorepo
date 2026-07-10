@@ -22,7 +22,11 @@ class DigiflazzService
     public function __construct()
     {
         $this->username = config('services.digiflazz.username');
-        $this->key = config('services.digiflazz.key');
+        // apiKey is bound to the account's API mode; the formula is identical in both
+        // modes, only the key value differs. Prevents a dev key hitting the prod API (rc 41).
+        $this->key = config('services.digiflazz.production')
+            ? config('services.digiflazz.prod_key')
+            : config('services.digiflazz.dev_key');
         $this->baseUrl = config('services.digiflazz.base_url');
     }
 
