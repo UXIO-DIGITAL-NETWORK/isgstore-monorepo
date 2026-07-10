@@ -40,8 +40,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
+import { useSidebar } from "@/hooks/useSidebar";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
 import { cn } from "@/lib/utils";
