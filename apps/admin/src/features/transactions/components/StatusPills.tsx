@@ -11,7 +11,9 @@ const PILLS: {
   tooltip: string;
   countKey: keyof StatusCounts;
   borderClass: string;
-  ringClass: string;
+  bgClass: string;
+  hoverBgClass: string;
+  activeClass: string;
 }[] = [
   {
     status: "pending",
@@ -19,7 +21,9 @@ const PILLS: {
     tooltip: "Invoice paid but not yet processed by supplier",
     countKey: "pending",
     borderClass: "border-warning",
-    ringClass: "ring-warning/40 bg-warning/10",
+    bgClass: "bg-warning/10",
+    hoverBgClass: "hover:bg-warning/15",
+    activeClass: "bg-warning/20 ring-2 ring-warning/30",
   },
   {
     status: "partial_refund",
@@ -27,7 +31,9 @@ const PILLS: {
     tooltip: "Some item refunded, other still in progress",
     countKey: "partial_refund",
     borderClass: "border-chart-1",
-    ringClass: "ring-chart-1/40 bg-chart-1/10",
+    bgClass: "bg-chart-1/10",
+    hoverBgClass: "hover:bg-chart-1/15",
+    activeClass: "bg-chart-1/20 ring-2 ring-chart-1/30",
   },
   {
     status: "partial_success",
@@ -35,7 +41,9 @@ const PILLS: {
     tooltip: "Some item succeeded, other still in progress",
     countKey: "partial_success",
     borderClass: "border-destructive",
-    ringClass: "ring-destructive/40 bg-destructive/10",
+    bgClass: "bg-destructive/10",
+    hoverBgClass: "hover:bg-destructive/15",
+    activeClass: "bg-destructive/20 ring-2 ring-destructive/30",
   },
 ];
 
@@ -66,9 +74,9 @@ export function StatusPills({ active, onToggle }: StatusPillsProps) {
                 type="button"
                 onClick={() => onToggle(pill.status)}
                 className={cn(
-                  "flex items-center justify-between gap-2 rounded-xl border-2 bg-card p-4 text-left transition-colors",
+                  "flex items-center justify-between gap-2 rounded-2xl border-2 p-4 text-left transition-colors duration-200",
                   pill.borderClass,
-                  isActive && pill.ringClass,
+                  isActive ? pill.activeClass : cn(pill.bgClass, pill.hoverBgClass),
                 )}
               >
                 <Text

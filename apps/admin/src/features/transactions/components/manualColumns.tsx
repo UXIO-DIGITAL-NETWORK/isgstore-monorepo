@@ -130,6 +130,7 @@ export const manualColumns: ColumnDef<Transaction>[] = [
   {
     id: "action",
     header: "Action",
+    enableSorting: false,
     cell: ({ row }) => (
       <RowActionMenu
         transaction={row.original}

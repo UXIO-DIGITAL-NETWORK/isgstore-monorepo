@@ -23,3 +23,6 @@ Self-contained (own their `usePendingOrders()`/`useActivityLog()` calls), `bg-ca
 
 ## `Table` primitive's `containerClassName` (added 2026-07-10)
 `src/components/ui/table.tsx`'s `Table` takes an optional `containerClassName` prop, forwarded via `cn()` onto its `data-slot="table-container"` wrapper div (the one with `overflow-x-auto`) — added so a consumer can style a real horizontal-scroll indicator (rounded scrollbar track/thumb via `[&::-webkit-scrollbar]:...`/`[scrollbar-width:thin]` arbitrary-variant utilities, token-based, no hex) without touching every other `Table` consumer. Default behavior unchanged for existing consumers (`DataTable` etc.) — purely additive. See `topics/transactions-feature.md` for the concrete usage.
+
+## `Table`'s `TableRow` and `Button` are now `forwardRef` (added 2026-07-10)
+Both were plain function components (no ref forwarding) until the transactions table needed to attach dnd-kit's `setNodeRef`/`setActivatorNodeRef` for drag-and-drop rows/handles. Both changes are additive/backward-compatible — existing call sites that don't pass a `ref` are unaffected. If a future shared `ui/*` primitive needs the same (e.g. for a tooltip anchor, a measured element, another dnd/virtualization use), forwardRef is the established pattern here, not a special case.

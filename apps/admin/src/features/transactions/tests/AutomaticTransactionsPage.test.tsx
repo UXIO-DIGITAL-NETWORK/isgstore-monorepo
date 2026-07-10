@@ -158,4 +158,39 @@ describe("AutomaticTransactionsPage", () => {
     expect(await within(dialog).findByText("Only JPG, JPEG, or PNG files are allowed")).toBeInTheDocument();
     expect(editSpy).not.toHaveBeenCalled();
   });
+
+  it("selects all rows via the header checkbox, and a single row via its own checkbox", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/transaction-preview");
+
+    const selectAll = await screen.findByRole("checkbox", { name: "Select all rows" });
+    const rowCheckboxes = await screen.findAllByRole("checkbox", { name: "Select row" });
+    expect(rowCheckboxes.length).toBeGreaterThan(0);
+    expect(rowCheckboxes[0]).not.toBeChecked();
+
+    await user.click(rowCheckboxes[0]);
+    expect(rowCheckboxes[0]).toBeChecked();
+
+    await user.click(selectAll);
+    for (const checkbox of rowCheckboxes) expect(checkbox).toBeChecked();
+  });
+
+  it("clicking a sortable column header re-queries the service with real sort params", async () => {
+    const listSpy = vi.spyOn(transactionsService, "list");
+    const user = userEvent.setup();
+    await renderRoute("/transaction-preview");
+
+    await screen.findByText("ZP2607016UJFJVSHCJ");
+    listSpy.mockClear();
+
+    await user.click(await screen.findByRole("button", { name: "Cost" }));
+
+    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ sortBy: "cost", sortDir: "asc" }));
+  });
+
+  it("shows a keyboard-accessible drag handle per row for manual reordering", async () => {
+    await renderRoute("/transaction-preview");
+
+    expect((await screen.findAllByRole("button", { name: "Drag to reorder row" })).length).toBeGreaterThan(0);
+  });
 });

@@ -46,6 +46,21 @@ describe("transactionsService.list", () => {
       expect(row.invoice_status).toBe("failed");
     }
   });
+
+  it("sorts by cost ascending/descending when sortBy/sortDir are given", async () => {
+    const asc = await transactionsService.list({ per_page: 50, sortBy: "cost", sortDir: "asc" });
+    const costs = asc.data.map((row) => row.cost);
+    expect(costs).toEqual([...costs].sort((a, b) => a - b));
+
+    const desc = await transactionsService.list({ per_page: 50, sortBy: "cost", sortDir: "desc" });
+    const descCosts = desc.data.map((row) => row.cost);
+    expect(descCosts).toEqual([...descCosts].sort((a, b) => b - a));
+  });
+
+  it("leaves row order unchanged when sortBy is omitted", async () => {
+    const result = await transactionsService.list({ per_page: 50 });
+    expect(result.data.map((row) => row.id)).toEqual(TRANSACTIONS.slice(0, 50).map((row) => row.id));
+  });
 });
 
 describe("transactionsService.getById", () => {

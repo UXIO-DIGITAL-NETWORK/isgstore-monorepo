@@ -50,7 +50,7 @@ export interface Transaction {
   updated_at: string;
 }
 
-/** The 10 filter-bar fields from product_requirements.md §4.3, plus pagination. */
+/** The 10 filter-bar fields from product_requirements.md §4.3, plus pagination + sorting. */
 export interface TransactionListParams {
   search?: string;
   userId?: string;
@@ -64,6 +64,9 @@ export interface TransactionListParams {
   paymentMethod?: string;
   page?: number;
   per_page?: number;
+  /** Column id from the table (e.g. "invoice_no", "cost", "time") — see SORTERS in transactions.service.ts. */
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 }
 
 /** Matches the three clickable status pills above the table. */

@@ -102,9 +102,14 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
           <Text
             variant="muted"
             as="span"
-            className="tabular-nums"
           >
-            Profit: {formatCurrency(row.original.profit, { fractionDigits: 0 })}
+            Profit:{" "}
+            <Text
+              as="span"
+              className="text-success tabular-nums"
+            >
+              {formatCurrency(row.original.profit, { fractionDigits: 0 })}
+            </Text>
           </Text>
         )}
       </Box>
@@ -135,9 +140,14 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
           <Text
             variant="muted"
             as="span"
-            className="tabular-nums"
           >
-            Admin fee: {formatCurrency(row.original.admin_fee, { fractionDigits: 0 })}
+            Admin fee:{" "}
+            <Text
+              as="span"
+              className="text-warning tabular-nums"
+            >
+              {formatCurrency(row.original.admin_fee, { fractionDigits: 0 })}
+            </Text>
           </Text>
         )}
       </Box>
@@ -148,7 +158,8 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
     header: "Time",
     cell: ({ row }) => {
       const tx = row.original;
-      const outcomeLabel = tx.invoice_status === "failed" ? "Failed" : "Success";
+      const outcomeFailed = tx.invoice_status === "failed";
+      const outcomeLabel = outcomeFailed ? "Failed" : "Success";
       return (
         <Box className="flex flex-col gap-1">
           <Text
@@ -159,8 +170,8 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
           </Text>
           {tx.resolved_at && (
             <Text
-              variant="muted"
               as="span"
+              className={outcomeFailed ? "text-destructive" : "text-success"}
             >
               {outcomeLabel}: {format(new Date(tx.resolved_at), "MMM d, HH:mm")}
             </Text>
@@ -181,6 +192,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   {
     id: "action",
     header: "Action",
+    enableSorting: false,
     cell: ({ row }) => <RowActionMenu transaction={row.original} />,
   },
 ];

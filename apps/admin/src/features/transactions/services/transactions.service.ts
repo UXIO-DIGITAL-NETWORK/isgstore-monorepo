@@ -7,6 +7,38 @@ const DEFAULT_PER_PAGE = 10;
  * ("1-10 of 9999999 transactions") — not a real dataset count. */
 const MOCK_TOTAL_PLACEHOLDER = 9999999;
 
+/**
+ * Maps a table column id (see automaticColumns.tsx/manualColumns.tsx) to a
+ * sortable value accessor. Extend this map, not the columns, when a new
+ * sortable column is added — the header sort UI in TransactionsTable is
+ * generic and works for any column with `enableSorting !== false`.
+ */
+const SORTERS: Record<string, (t: Transaction) => string | number> = {
+  invoice_no: (t) => t.invoice_no,
+  user: (t) => t.customer.name,
+  product: (t) => t.product.name,
+  cost: (t) => t.cost,
+  target_ref: (t) => t.target_ref ?? "",
+  status: (t) => t.invoice_status,
+  method: (t) => t.payment_method,
+  payment_method: (t) => t.payment_method,
+  time: (t) => t.created_at,
+};
+
+function sortRows(rows: Transaction[], params: TransactionListParams): Transaction[] {
+  const sorter = params.sortBy ? SORTERS[params.sortBy] : undefined;
+  if (!sorter) return rows;
+
+  const direction = params.sortDir === "desc" ? -1 : 1;
+  return [...rows].sort((a, b) => {
+    const aValue = sorter(a);
+    const bValue = sorter(b);
+    if (aValue < bValue) return -1 * direction;
+    if (aValue > bValue) return 1 * direction;
+    return 0;
+  });
+}
+
 function matchesFilters(row: Transaction, params: TransactionListParams): boolean {
   if (params.search) {
     const needle = params.search.toLowerCase();
@@ -30,7 +62,10 @@ export const transactionsService = {
   list: async (params: TransactionListParams): Promise<PaginatedResponse<Transaction>> => {
     const page = params.page ?? 1;
     const perPage = params.per_page ?? DEFAULT_PER_PAGE;
-    const filtered = TRANSACTIONS.filter((row) => matchesFilters(row, params));
+    const filtered = sortRows(
+      TRANSACTIONS.filter((row) => matchesFilters(row, params)),
+      params,
+    );
 
     const start = (page - 1) * perPage;
     const pageRows = filtered.slice(start, start + perPage);

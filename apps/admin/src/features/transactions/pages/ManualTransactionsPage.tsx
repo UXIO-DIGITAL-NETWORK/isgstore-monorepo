@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { SortingState } from "@tanstack/react-table";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -26,8 +27,18 @@ export default function ManualTransactionsPage() {
   const [filters, setFilters] = useState<TransactionFilters>({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
-  const params = useMemo(() => ({ ...filters, page, per_page: pageSize }), [filters, page, pageSize]);
+  const params = useMemo(
+    () => ({
+      ...filters,
+      page,
+      per_page: pageSize,
+      sortBy: sorting[0]?.id,
+      sortDir: sorting[0] ? ((sorting[0].desc ? "desc" : "asc") as const) : undefined,
+    }),
+    [filters, page, pageSize, sorting],
+  );
   const { data, isLoading, isError, refetch } = useTransactionList(params);
 
   const handleFilterChange = (patch: Partial<TransactionFilters>) => {
@@ -37,7 +48,7 @@ export default function ManualTransactionsPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Box className="rounded-xl border border-border bg-card p-6">
+      <Box className="rounded-2xl border border-border bg-card p-6">
         <Heading
           level={1}
           variant="section"
@@ -68,6 +79,8 @@ export default function ManualTransactionsPage() {
           lastPage={data?.meta.last_page ?? 1}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
+          sorting={sorting}
+          onSortingChange={setSorting}
         />
       </Box>
     </Box>

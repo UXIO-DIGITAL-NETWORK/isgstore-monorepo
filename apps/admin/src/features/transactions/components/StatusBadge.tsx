@@ -11,15 +11,18 @@ const STATUS_LABELS: Record<TransactionStatus, string> = {
   partial_success: "Partial Success",
 };
 
-// Monochrome by rule — color only via text-success/text-destructive, every
-// other status stays neutral/muted (design_system.md §3).
-const STATUS_TEXT_CLASS: Record<TransactionStatus, string> = {
-  pending: "text-muted-foreground",
-  processing: "text-muted-foreground",
-  success: "text-success",
-  failed: "text-destructive",
-  partial_refund: "text-muted-foreground",
-  partial_success: "text-muted-foreground",
+// Monochrome by rule — color only via text-success/text-warning/text-destructive,
+// every other status stays neutral/muted (design_system.md §3). The border
+// always matches the text color (not the Badge `outline` variant's neutral
+// `border-border` default) so the pill reads as one consistent color, not a
+// colored label inside a gray outline.
+const STATUS_BADGE_CLASS: Record<TransactionStatus, string> = {
+  pending: "text-muted-foreground border-border",
+  processing: "text-warning border-warning",
+  success: "text-success border-success",
+  failed: "text-destructive border-destructive",
+  partial_refund: "text-muted-foreground border-border",
+  partial_success: "text-muted-foreground border-border",
 };
 
 interface StatusBadgeProps {
@@ -30,7 +33,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <Badge
       variant="outline"
-      className={cn(STATUS_TEXT_CLASS[status])}
+      className={cn(STATUS_BADGE_CLASS[status])}
     >
       {STATUS_LABELS[status]}
     </Badge>

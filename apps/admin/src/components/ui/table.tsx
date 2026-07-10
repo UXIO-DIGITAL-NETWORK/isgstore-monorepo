@@ -51,15 +51,18 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   );
 }
 
-function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
-  return (
-    <tr
-      data-slot="table-row"
-      className={cn("hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors", className)}
-      {...props}
-    />
-  );
-}
+// forwardRef so a draggable/sortable row (e.g. dnd-kit's useSortable
+// setNodeRef) can attach directly to the <tr> — additive, existing
+// consumers that don't pass a ref are unaffected.
+const TableRow = React.forwardRef<HTMLTableRowElement, React.ComponentProps<"tr">>(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    data-slot="table-row"
+    className={cn("hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors", className)}
+    {...props}
+  />
+));
+TableRow.displayName = "TableRow";
 
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
