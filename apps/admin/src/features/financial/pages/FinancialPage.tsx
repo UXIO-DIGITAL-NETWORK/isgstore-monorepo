@@ -30,7 +30,7 @@ export default function FinancialPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Box className="rounded-xl border border-border bg-card p-6">
+      <Box className="rounded-2xl border border-border bg-card p-6">
         <Heading
           level={1}
           variant="section"
@@ -44,7 +44,7 @@ export default function FinancialPage() {
 
       <Box className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {summaryError ? (
-          <Box className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-4 md:col-span-3">
+          <Box className="flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-4 md:col-span-3">
             <Text variant="muted">Failed to load summary cards.</Text>
             <Button
               variant="outline"
@@ -58,7 +58,7 @@ export default function FinancialPage() {
           Array.from({ length: 3 }).map((_, index) => (
             <Box
               key={index}
-              className="h-32 animate-pulse rounded-xl border border-border bg-card"
+              className="h-32 animate-pulse rounded-2xl border border-border bg-card"
             />
           ))
         ) : (
@@ -71,7 +71,7 @@ export default function FinancialPage() {
         )}
       </Box>
 
-      <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4">
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4">
         <Box>
           <Heading
             level={2}
@@ -108,7 +108,7 @@ export default function FinancialPage() {
             gateways.map((gateway) => (
               <Box
                 key={gateway.id}
-                className="flex flex-col gap-4 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-4 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <Box className="flex items-center gap-3">
                   <Image
@@ -116,7 +116,7 @@ export default function FinancialPage() {
                     alt={gateway.name}
                     width={40}
                     height={40}
-                    className="shrink-0 rounded-md"
+                    className="shrink-0 rounded-xl"
                   />
                   <Text
                     as="span"
@@ -127,11 +127,11 @@ export default function FinancialPage() {
                 </Box>
 
                 <Box className="flex flex-col gap-3 sm:flex-row sm:gap-3">
-                  <Box className="flex items-center justify-between gap-6 rounded-md bg-muted px-4 py-2">
+                  <Box className="flex items-center justify-between gap-6 rounded-xl bg-muted px-4 py-2">
                     <Text variant="small">Saldo Aktif</Text>
                     <CopyableAmount value={gateway.activeBalance} />
                   </Box>
-                  <Box className="flex items-center justify-between gap-6 rounded-md bg-muted px-4 py-2">
+                  <Box className="flex items-center justify-between gap-6 rounded-xl bg-muted px-4 py-2">
                     <Text variant="small">Saldo Tertahan</Text>
                     <CopyableAmount value={gateway.heldBalance} />
                   </Box>
@@ -142,7 +142,7 @@ export default function FinancialPage() {
         </Box>
       </Box>
 
-      <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4">
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4">
         <Box>
           <Heading
             level={2}
@@ -179,7 +179,7 @@ export default function FinancialPage() {
             suppliers.map((supplier) => (
               <Box
                 key={supplier.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+                className="flex items-center justify-between gap-3 rounded-xl border border-border p-3"
               >
                 <Box className="flex items-center gap-3">
                   <Image
@@ -187,7 +187,7 @@ export default function FinancialPage() {
                     alt={supplier.name}
                     width={32}
                     height={32}
-                    className="shrink-0 rounded-md"
+                    className="shrink-0 rounded-xl"
                   />
                   <Text
                     as="span"
