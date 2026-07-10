@@ -29,19 +29,19 @@ export function ChannelCard({ channel }: ChannelCardProps) {
 
   return (
     <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4">
-      <Box className="flex items-start gap-3">
+      <Box className="flex flex-col gap-3">
         {channel.logo_url ? (
           <Image
             src={channel.logo_url}
             alt={channel.name}
-            width={48}
-            height={48}
+            width={64}
+            height={40}
             className="shrink-0 rounded-lg"
           />
         ) : (
           <Box
             aria-hidden="true"
-            className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted"
+            className="h-10 w-16 shrink-0 rounded-lg bg-muted"
           />
         )}
         <Box className="flex flex-col gap-0.5">
