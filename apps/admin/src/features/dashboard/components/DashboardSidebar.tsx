@@ -56,7 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
       { label: "Reports", href: "/dashboard", icon: FileText },
       { label: "Financial", href: "/financial", icon: Wallet },
-      { label: "Integration", href: "/dashboard", icon: Plug },
+      { label: "Integration", href: "/integration", icon: Plug },
     ],
   },
   {

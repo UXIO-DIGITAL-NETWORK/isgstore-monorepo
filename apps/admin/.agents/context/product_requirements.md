@@ -58,28 +58,30 @@ The design language is **pure black-and-white (shadcn `neutral`)**, prioritizing
 
 The left sidebar is grouped. The full IA below is the target structure; **only the MVP-scoped items are implemented this phase** — the rest are placeholders/roadmap and should render a lightweight "coming soon" state (or be route-guarded off) rather than broken screens.
 
-| Group                   | Item            | Route (indicative) | Phase     |
-| ----------------------- | --------------- | ------------------ | --------- |
-| **General**             | Dashboard       | `/dashboard`       | **MVP**   |
-|                         | Reports         | `/reports`         | Near-term |
-|                         | Financial       | `/financial`       | **MVP**   |
-|                         | Integration     | `/integration`     | Roadmap   |
-| **Orders**              | Transaction     | `/transactions`    | **MVP**   |
-|                         | Activity        | `/activity`        | Near-term |
-| **Products & Services** | Category        | `/categories`      | Roadmap   |
-|                         | Product         | `/products`        | Roadmap   |
-|                         | Payment         | `/payments`        | Roadmap   |
-|                         | Membership      | `/memberships`     | Roadmap   |
-| **Marketing & Content** | Promo           | `/promos`          | Roadmap   |
-|                         | Flash Sale      | `/flash-sales`     | Roadmap   |
-|                         | Website Content | `/content`         | Roadmap   |
-|                         | Pages           | `/pages`           | Roadmap   |
+| Group                   | Item            | Route (indicative) | Phase                                   |
+| ----------------------- | --------------- | ------------------ | --------------------------------------- |
+| **General**             | Dashboard       | `/dashboard`       | **MVP**                                 |
+|                         | Reports         | `/reports`         | Near-term                               |
+|                         | Financial       | `/financial`       | **MVP**                                 |
+|                         | Integration     | `/integration`     | **Active** (added 2026-07-10, see §4.4) |
+| **Orders**              | Transaction     | `/transactions`    | **MVP**                                 |
+|                         | Activity        | `/activity`        | Near-term                               |
+| **Products & Services** | Category        | `/categories`      | Roadmap                                 |
+|                         | Product         | `/products`        | Roadmap                                 |
+|                         | Payment         | `/payments`        | Roadmap                                 |
+|                         | Membership      | `/memberships`     | Roadmap                                 |
+| **Marketing & Content** | Promo           | `/promos`          | Roadmap                                 |
+|                         | Flash Sale      | `/flash-sales`     | Roadmap                                 |
+|                         | Website Content | `/content`         | Roadmap                                 |
+|                         | Pages           | `/pages`           | Roadmap                                 |
 
 Global chrome (top bar): global search, support/help, language/utility action, **theme toggle (light/dark)**, notifications, and the user menu (avatar + name + email + dropdown → profile/logout).
 
 ---
 
 ## 4. MVP Feature Specs
+
+> **Revision (2026-07-10):** Integration (§4.4) was originally scoped as Roadmap/post-MVP (§5). It's added here as an active build at the user's direction, alongside a concrete reference design — this is a deliberate scope addition, not a silent one; the original three-feature MVP order (Dashboard → Financial → Transaction) is unchanged, Integration is simply now also in active scope.
 
 ### 4.1 Dashboard (`/dashboard`)
 
@@ -157,6 +159,26 @@ The operational core, split into **two tabs — Automatic and Manual** — refle
 
 > Destructive/irreversible actions (refund, status override, delete) MUST use a confirmation step and surface success/failure via toasts (`sonner`). Actions are permission-gated via `<Can>` even though Super Admin holds all permissions today. Hard-deleting a financial transaction record is unusual for audit/compliance reasons — build the `Delete` menu item and its confirmation as shown, but flag this as worth confirming rather than assuming it's truly a permanent hard delete.
 
+### 4.4 Integration (`/integration`)
+
+Connection/health management for every external channel the platform depends on — **distinct from Financial (`§4.2`)**: Financial tracks _money_ (balances); Integration tracks _connectivity_ (is the channel reachable, when did we last check). Both may reference the same real-world channel (e.g. "UxioPay", "Digiflazz Buyer") and both may show a balance, but they answer different questions and are separate data concerns — don't merge them into one shared entity.
+
+**Header:** "Integration" + subcopy "Manage digital supplier connections, payment gateways, and WhatsApp gateways. Ping status and balances update per channel."
+
+**Overview stat cards (×3, a variant without trend pills):** each has a small leading icon, a plain label, a big count, and a **plain descriptive caption** (not a trend pill or "since last month"):
+
+- `Total Channels` — count, caption breaks it down by type (e.g. "4 Supplier, 2 Payment, 1 WhatsApp").
+- `Active` — count, caption "Channels with an active connection (status ping)."
+- `Disconnected` — count, caption "Registered channels with a lost connection."
+
+**Category filter (segmented control, 5 options):** `All` (default), `Supplier`, `Payment Gateway`, `Whatsapp Gateway`, `Email Gateway` — four channel types exist even if a type currently has zero registered channels (Email Gateway has none in the reference, yet still appears as a filterable category).
+
+**Channel cards (grid):** logo (placeholder square if none set), name, a currency/config description line (e.g. "Indonesia Rupiah (Rp) IDR - Rp 1" — read this as the channel's currency/minimum-unit configuration, distinct from its balance), then a row with a connection-status badge (`Connected` / `Disconnected`) and a balance badge, plus a row-level menu (ping/refresh now, edit connection, view details — exact set not confirmed by a reference, build a sensible default and flag it).
+
+**Ping & balance refresh:** per the header subcopy, connection status and balances update per channel — implement via TanStack Query polling (`system_architecture.md §4.9`), not a one-time fetch.
+
+> **Provisional / flagged, not invented:** the row-level menu's exact items (no reference shows it open); the precise meaning of the per-card currency line; whether the four "Supplier" channels are a subset of Financial's five (`UxioTopup` being self/in-house and needing no external integration is a plausible reconciliation, not confirmed); and a second Payment Gateway beyond `UxioPay` shown in Financial (`Monetapay`, the consumer platform's gateway, is a reasonable candidate given these are related products, but this isn't confirmed either).
+
 ---
 
 ## 5. Roadmap (Post-MVP Modules)
@@ -169,7 +191,7 @@ Documented so architecture and navigation accommodate them; **not built this pha
 - **Payment methods** — enable/disable channels, configure fees (gateway is backend-proxied on the consumer side).
 - **Users (customers)** — manage the consumer platform's end-users: profile, **wallet/balance** (top-up/adjust), transaction history, suspend/ban. Guests have no user record (one-off purchases).
 - **Membership** — tiering/loyalty (scope TBD).
-- **Settings / SEO**, **Integration**, **Audit Logs**, and **Reports** (dedicated reporting hub).
+- **Settings / SEO**, **Audit Logs**, and **Reports** (dedicated reporting hub). (Integration moved to `§4.4` — no longer roadmap.)
 - **Security** — **2FA (TOTP)** for admin login.
 
 ---
@@ -184,7 +206,8 @@ Backend is not built; these are **FE-facing entity briefs** to shape typed model
 - **Game** — `id`, `name`, `publisher`, `image_url`, `is_active` (referenced by transactions/dashboard).
 - **Product (nominal)** — `id`, `game_id`, `name`, `cost_price`, `selling_price`, `provider_sku?`, `is_available` (referenced; full CRUD is roadmap).
 - **DashboardSummary** — aggregate view-model for the dashboard stat cards and chart (not a raw table): totals, trend deltas, time-series points.
-- **PaymentGatewayBalance / SupplierBalance** (new, §4.2) — feature-local to `features/financial/types/` for now, not global: `{ id, name, logoUrl }` plus `activeBalance`/`heldBalance` (gateway) or a single `balance` (supplier). Promote to `src/types/models/` only if another feature (e.g. Transaction, referencing which supplier fulfilled an order) needs them too.
+- **PaymentGatewayBalance / SupplierBalance** (§4.2) — feature-local to `features/financial/types/` for now, not global: `{ id, name, logoUrl }` plus `activeBalance`/`heldBalance` (gateway) or a single `balance` (supplier). Promote to `src/types/models/` only if another feature (e.g. Transaction, referencing which supplier fulfilled an order) needs them too.
+- **IntegrationChannel** (new, §4.4) — feature-local to `features/integration/types/`, a deliberately separate concern from the two entries above (connectivity, not money): `id`, `type` (`supplier | payment_gateway | whatsapp_gateway | email_gateway`), `name`, `logo_url?`, `currency_config?`, `connection_status` (`connected | disconnected`), `balance?`, `last_ping_at?`, `created_at`, `updated_at`.
 
 Shared API envelopes (single vs. list) are defined in `system_architecture.md §1`.
 

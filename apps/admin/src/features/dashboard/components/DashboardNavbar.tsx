@@ -1,5 +1,5 @@
 import { Bell, ChevronDown, HelpCircle, LogOut, Zap } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Box } from "@/components/common/Box";
@@ -24,9 +24,24 @@ const getInitials = (name: string) =>
     .join("")
     .toUpperCase();
 
+// Pathname -> topbar breadcrumb title. No route-meta plumbing exists yet
+// (see src/routes/), so this mirrors the sidebar's own useLocation-driven
+// active-nav lookup rather than introducing a new mechanism.
+const PAGE_TITLES: Record<string, string> = {
+  "/financial": "Financial",
+  "/integration": "Integration",
+  "/transactions": "Transaction",
+};
+
+function getPageTitle(pathname: string) {
+  const match = Object.keys(PAGE_TITLES).find((path) => pathname === path || pathname.startsWith(`${path}/`));
+  return match ? PAGE_TITLES[match] : "Dashboard";
+}
+
 export function DashboardNavbar() {
   const { data: operator } = useOperator();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const handleLogout = () => {
     useAuthStore.getState().clearAuth();
@@ -44,7 +59,7 @@ export function DashboardNavbar() {
           as="span"
           className="text-sm font-medium text-foreground"
         >
-          Dashboard
+          {getPageTitle(pathname)}
         </Text>
       </Box>
 

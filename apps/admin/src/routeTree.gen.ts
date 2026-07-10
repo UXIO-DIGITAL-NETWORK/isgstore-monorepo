@@ -15,9 +15,11 @@ import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedTransactionsRouteRouteImport } from './routes/_protected/transactions/route'
 import { Route as ProtectedTransactionsIndexRouteImport } from './routes/_protected/transactions/index'
+import { Route as ProtectedIntegrationIndexRouteImport } from './routes/_protected/integration/index'
 import { Route as ProtectedFinancialIndexRouteImport } from './routes/_protected/financial/index'
 import { Route as ProtectedDashboardIndexRouteImport } from './routes/_protected/dashboard/index'
 import { Route as PreviewTransactionPreviewIndexRouteImport } from './routes/_preview/transaction-preview/index'
+import { Route as PreviewIntegrationPreviewIndexRouteImport } from './routes/_preview/integration-preview/index'
 import { Route as PreviewFinancePreviewIndexRouteImport } from './routes/_preview/finance-preview/index'
 import { Route as PreviewDashboardPreviewIndexRouteImport } from './routes/_preview/dashboard-preview/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
@@ -53,6 +55,12 @@ const ProtectedTransactionsIndexRoute =
     path: '/',
     getParentRoute: () => ProtectedTransactionsRouteRoute,
   } as any)
+const ProtectedIntegrationIndexRoute =
+  ProtectedIntegrationIndexRouteImport.update({
+    id: '/integration/',
+    path: '/integration/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedFinancialIndexRoute = ProtectedFinancialIndexRouteImport.update({
   id: '/financial/',
   path: '/financial/',
@@ -67,6 +75,12 @@ const PreviewTransactionPreviewIndexRoute =
   PreviewTransactionPreviewIndexRouteImport.update({
     id: '/transaction-preview/',
     path: '/transaction-preview/',
+    getParentRoute: () => PreviewRoute,
+  } as any)
+const PreviewIntegrationPreviewIndexRoute =
+  PreviewIntegrationPreviewIndexRouteImport.update({
+    id: '/integration-preview/',
+    path: '/integration-preview/',
     getParentRoute: () => PreviewRoute,
   } as any)
 const PreviewFinancePreviewIndexRoute =
@@ -105,9 +119,11 @@ export interface FileRoutesByFullPath {
   '/login/': typeof AuthLoginIndexRoute
   '/dashboard-preview/': typeof PreviewDashboardPreviewIndexRoute
   '/finance-preview/': typeof PreviewFinancePreviewIndexRoute
+  '/integration-preview/': typeof PreviewIntegrationPreviewIndexRoute
   '/transaction-preview/': typeof PreviewTransactionPreviewIndexRoute
   '/dashboard/': typeof ProtectedDashboardIndexRoute
   '/financial/': typeof ProtectedFinancialIndexRoute
+  '/integration/': typeof ProtectedIntegrationIndexRoute
   '/transactions/': typeof ProtectedTransactionsIndexRoute
   '/transactions/automatic/': typeof ProtectedTransactionsAutomaticIndexRoute
   '/transactions/manual/': typeof ProtectedTransactionsManualIndexRoute
@@ -117,9 +133,11 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginIndexRoute
   '/dashboard-preview': typeof PreviewDashboardPreviewIndexRoute
   '/finance-preview': typeof PreviewFinancePreviewIndexRoute
+  '/integration-preview': typeof PreviewIntegrationPreviewIndexRoute
   '/transaction-preview': typeof PreviewTransactionPreviewIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/financial': typeof ProtectedFinancialIndexRoute
+  '/integration': typeof ProtectedIntegrationIndexRoute
   '/transactions': typeof ProtectedTransactionsIndexRoute
   '/transactions/automatic': typeof ProtectedTransactionsAutomaticIndexRoute
   '/transactions/manual': typeof ProtectedTransactionsManualIndexRoute
@@ -134,9 +152,11 @@ export interface FileRoutesById {
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/_preview/dashboard-preview/': typeof PreviewDashboardPreviewIndexRoute
   '/_preview/finance-preview/': typeof PreviewFinancePreviewIndexRoute
+  '/_preview/integration-preview/': typeof PreviewIntegrationPreviewIndexRoute
   '/_preview/transaction-preview/': typeof PreviewTransactionPreviewIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
   '/_protected/financial/': typeof ProtectedFinancialIndexRoute
+  '/_protected/integration/': typeof ProtectedIntegrationIndexRoute
   '/_protected/transactions/': typeof ProtectedTransactionsIndexRoute
   '/_protected/transactions/automatic/': typeof ProtectedTransactionsAutomaticIndexRoute
   '/_protected/transactions/manual/': typeof ProtectedTransactionsManualIndexRoute
@@ -149,9 +169,11 @@ export interface FileRouteTypes {
     | '/login/'
     | '/dashboard-preview/'
     | '/finance-preview/'
+    | '/integration-preview/'
     | '/transaction-preview/'
     | '/dashboard/'
     | '/financial/'
+    | '/integration/'
     | '/transactions/'
     | '/transactions/automatic/'
     | '/transactions/manual/'
@@ -161,9 +183,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard-preview'
     | '/finance-preview'
+    | '/integration-preview'
     | '/transaction-preview'
     | '/dashboard'
     | '/financial'
+    | '/integration'
     | '/transactions'
     | '/transactions/automatic'
     | '/transactions/manual'
@@ -177,9 +201,11 @@ export interface FileRouteTypes {
     | '/_auth/login/'
     | '/_preview/dashboard-preview/'
     | '/_preview/finance-preview/'
+    | '/_preview/integration-preview/'
     | '/_preview/transaction-preview/'
     | '/_protected/dashboard/'
     | '/_protected/financial/'
+    | '/_protected/integration/'
     | '/_protected/transactions/'
     | '/_protected/transactions/automatic/'
     | '/_protected/transactions/manual/'
@@ -236,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedTransactionsIndexRouteImport
       parentRoute: typeof ProtectedTransactionsRouteRoute
     }
+    '/_protected/integration/': {
+      id: '/_protected/integration/'
+      path: '/integration'
+      fullPath: '/integration/'
+      preLoaderRoute: typeof ProtectedIntegrationIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/financial/': {
       id: '/_protected/financial/'
       path: '/financial'
@@ -255,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/transaction-preview'
       fullPath: '/transaction-preview/'
       preLoaderRoute: typeof PreviewTransactionPreviewIndexRouteImport
+      parentRoute: typeof PreviewRoute
+    }
+    '/_preview/integration-preview/': {
+      id: '/_preview/integration-preview/'
+      path: '/integration-preview'
+      fullPath: '/integration-preview/'
+      preLoaderRoute: typeof PreviewIntegrationPreviewIndexRouteImport
       parentRoute: typeof PreviewRoute
     }
     '/_preview/finance-preview/': {
@@ -310,12 +350,14 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 interface PreviewRouteChildren {
   PreviewDashboardPreviewIndexRoute: typeof PreviewDashboardPreviewIndexRoute
   PreviewFinancePreviewIndexRoute: typeof PreviewFinancePreviewIndexRoute
+  PreviewIntegrationPreviewIndexRoute: typeof PreviewIntegrationPreviewIndexRoute
   PreviewTransactionPreviewIndexRoute: typeof PreviewTransactionPreviewIndexRoute
 }
 
 const PreviewRouteChildren: PreviewRouteChildren = {
   PreviewDashboardPreviewIndexRoute: PreviewDashboardPreviewIndexRoute,
   PreviewFinancePreviewIndexRoute: PreviewFinancePreviewIndexRoute,
+  PreviewIntegrationPreviewIndexRoute: PreviewIntegrationPreviewIndexRoute,
   PreviewTransactionPreviewIndexRoute: PreviewTransactionPreviewIndexRoute,
 }
 
@@ -346,12 +388,14 @@ interface ProtectedRouteChildren {
   ProtectedTransactionsRouteRoute: typeof ProtectedTransactionsRouteRouteWithChildren
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
   ProtectedFinancialIndexRoute: typeof ProtectedFinancialIndexRoute
+  ProtectedIntegrationIndexRoute: typeof ProtectedIntegrationIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedTransactionsRouteRoute: ProtectedTransactionsRouteRouteWithChildren,
   ProtectedDashboardIndexRoute: ProtectedDashboardIndexRoute,
   ProtectedFinancialIndexRoute: ProtectedFinancialIndexRoute,
+  ProtectedIntegrationIndexRoute: ProtectedIntegrationIndexRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
