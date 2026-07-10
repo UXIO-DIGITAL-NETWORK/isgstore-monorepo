@@ -1,6 +1,6 @@
 # Frontend Engineer — Project Memory (index)
 
-> **STATUS:** `auth`, `dashboard`, `financial`, `transactions` are all real, built features (MVP = Dashboard -> Financial -> Transaction, one approval gate at a time — all three now built, plus a same-day UI polish pass on transactions). Backend is separate and **not built yet** — screens are backed by typed mock fixtures (coordinate with @api). `src/index.css` is retuned to true-neutral (`--success`, `--warning`, `--chart-1/2` exist) — do not touch it without checking first.
+> **STATUS:** `auth`, `dashboard`, `financial`, `transactions` are all real, built features (MVP = Dashboard -> Financial -> Transaction, one approval gate at a time — all three now built, plus a same-day UI polish pass on transactions). Backend is separate and **not built yet** — screens are backed by typed mock fixtures (coordinate with @api). `src/index.css` is retuned to true-neutral (`--success`, `--warning`, `--chart-1/2` exist) and now `@import "tw-animate-css"` (added 2026-07-10 — was missing, so every `animate-in`/`fade-in-0`/`zoom-in-95`/etc. class across 13 shadcn primitives — dialog, alert-dialog, dropdown-menu, select, tooltip, popover, sheet, drawer, etc. — was silently inert app-wide until this landed; don't remove it). Check `src/index.css` before touching it.
 
 Detail lives in `topics/*.md` — read the relevant one before touching that area. This file is a one-line-per-entry index only.
 
