@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { Eye, History, MoreHorizontal, Pencil, Receipt, RotateCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { Can } from "@/components/common/Can";
@@ -51,22 +51,39 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
             <MoreHorizontal className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => toast("Activity Log — coming soon")}>Activity Log</DropdownMenuItem>
+        <DropdownMenuContent
+          align="end"
+          className="rounded-2xl"
+        >
+          <DropdownMenuItem onSelect={() => toast("Activity Log — coming soon")}>
+            <History />
+            Activity Log
+          </DropdownMenuItem>
           {showCallbackActions && (
             <>
               <DropdownMenuItem onSelect={() => resendCallback.mutate(transaction.id)}>
+                <Upload />
                 Resend Callback
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => retryInvoice.mutate(transaction.id)}>Retry Invoice</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => retryInvoice.mutate(transaction.id)}>
+                <RotateCw />
+                Retry Invoice
+              </DropdownMenuItem>
             </>
           )}
-          <DropdownMenuItem onSelect={() => toast("View Invoice — coming soon")}>View Invoice</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => toast("View Invoice — coming soon")}>
+            <Receipt />
+            View Invoice
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => toast("Transaction Detail — coming soon")}>
+            <Eye />
             Transaction Detail
           </DropdownMenuItem>
           <Can permission="transactions.edit">
-            <DropdownMenuItem onSelect={() => setEditOpen(true)}>Edit Invoice</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+              <Pencil />
+              Edit Invoice
+            </DropdownMenuItem>
           </Can>
           <DropdownMenuSeparator />
           <Can permission="transactions.delete">
@@ -74,6 +91,7 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
+              <Trash2 />
               Delete
             </DropdownMenuItem>
           </Can>

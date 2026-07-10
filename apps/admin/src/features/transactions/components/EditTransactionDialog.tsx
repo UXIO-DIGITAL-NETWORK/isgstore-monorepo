@@ -90,7 +90,10 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent className="rounded-2xl duration-300 data-[state=closed]:zoom-out-90 data-[state=open]:zoom-in-90">
+      <DialogContent
+        className="rounded-2xl duration-300 data-[state=closed]:zoom-out-90 data-[state=open]:zoom-in-90"
+        overlayClassName="bg-black/70 duration-300"
+      >
         <DialogHeader>
           <DialogTitle>Edit Transaction</DialogTitle>
           <DialogDescription>

@@ -26,3 +26,6 @@ Self-contained (own their `usePendingOrders()`/`useActivityLog()` calls), `bg-ca
 
 ## `Table`'s `TableRow` and `Button` are now `forwardRef` (added 2026-07-10)
 Both were plain function components (no ref forwarding) until the transactions table needed to attach dnd-kit's `setNodeRef`/`setActivatorNodeRef` for drag-and-drop rows/handles. Both changes are additive/backward-compatible — existing call sites that don't pass a `ref` are unaffected. If a future shared `ui/*` primitive needs the same (e.g. for a tooltip anchor, a measured element, another dnd/virtualization use), forwardRef is the established pattern here, not a special case.
+
+## `Dialog`'s `DialogContent` now takes an optional `overlayClassName` (added 2026-07-10)
+`src/components/ui/dialog.tsx` — forwarded to the internal `DialogOverlay`'s `className`, so one dialog instance can darken/restyle its own overlay (e.g. `EditTransactionDialog` uses `bg-black/70 duration-300`) without changing every other dialog's scrim. Same additive/scoped-override family as `Table`'s `containerClassName` and the `Button`/`TableRow` `forwardRef` changes above — the established pattern for "this one screen needs X" asks against a shared `ui/*` primitive: add an optional prop, don't touch the default.
