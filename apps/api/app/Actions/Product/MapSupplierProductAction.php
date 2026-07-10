@@ -2,10 +2,10 @@
 
 namespace App\Actions\Product;
 
-use App\Models\Product;
-use App\Models\SupplierProduct;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Product;
+use App\Models\SupplierProduct;
 use Illuminate\Support\Facades\DB;
 
 class MapSupplierProductAction

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Digiflazz;
 
+use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use App\Services\DigiflazzService;
 use App\Traits\MapsDigiflazzStatus;
@@ -16,7 +17,7 @@ class CheckDigiflazzTransactionStatusAction
     public function execute(string $invoiceNumber): Transaction
     {
         $transaction = Transaction::where('invoice_number', $invoiceNumber)
-            ->where('status', 'PROCESSING')
+            ->where('status', TransactionStatus::PROCESSING->value)
             ->firstOrFail();
 
         $supplierProduct = $transaction->product

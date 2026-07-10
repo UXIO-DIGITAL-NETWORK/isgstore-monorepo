@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Payment\RefundFailedTransactionAction;
+use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -25,7 +26,7 @@ class ProcessDigiflazzTopup implements ShouldQueue
 
     public function handle(ProcessDigiflazzTransactionAction $digiflazzAction): void
     {
-        $this->transaction->update(['status' => 'PROCESSING']);
+        $this->transaction->update(['status' => TransactionStatus::PROCESSING]);
 
         try {
             $digiflazzAction->execute($this->transaction);
@@ -47,7 +48,7 @@ class ProcessDigiflazzTopup implements ShouldQueue
 
     public function failed(Throwable $e): void
     {
-        $this->transaction->update(['status' => 'FAILED_PROVIDER']);
+        $this->transaction->update(['status' => TransactionStatus::FAILED_PROVIDER]);
 
         // Retries exhausted: the customer paid but fulfilment never succeeded,
         // so refund them. The action is idempotent (locks + checks payment '3').

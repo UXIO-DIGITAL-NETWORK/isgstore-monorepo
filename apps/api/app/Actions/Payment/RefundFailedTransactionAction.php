@@ -2,12 +2,12 @@
 
 namespace App\Actions\Payment;
 
-use App\Models\Payment;
+use App\Enums\PaymentStatus;
+use App\Jobs\RefundGatewayJob;
 use App\Models\Transaction;
-use App\Services\Payment\MonetapayService;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 
 /**
  * Refund a settled payment whose order failed at the provider (FAILED_PROVIDER).
@@ -18,15 +18,11 @@ use Throwable;
  * so repeated calls credit the wallet / request the gateway refund exactly once.
  *
  *   - Balance channel  → restore the wallet balance inline (atomic DB op).
- *   - External channel → defer the Monetapay refund HTTP call until AFTER commit,
- *                        so a row lock is never held across a network call.
+ *   - External channel → dispatch RefundGatewayJob AFTER commit, so the Monetapay
+ *                        HTTP call gets queue retries and no row lock spans it.
  */
 class RefundFailedTransactionAction
 {
-    public function __construct(
-        private readonly MonetapayService $monetapayService,
-    ) {}
-
     public function execute(Transaction $transaction): void
     {
         // Payment needing an external gateway refund, captured for after-commit.
@@ -46,15 +42,21 @@ class RefundFailedTransactionAction
             $payment = $locked->payment;
 
             // Only refund a payment that was actually settled and not already refunded.
-            if (! $payment || $payment->status !== '3') {
+            if (! $payment || $payment->status !== PaymentStatus::SUCCESS) {
                 return;
             }
 
             // Internal wallet: restore the deducted balance to the member inline.
+            // The user row is locked FOR UPDATE so concurrent refunds/checkouts
+            // can't interleave and lose an increment.
             if ($locked->paymentChannel?->channel_code === 'balance') {
-                if ($locked->user) {
-                    $locked->user->increment('balance', $payment->gross_amount);
-                    $payment->update(['status' => '4']); // 4: Refunded
+                $user = $locked->user_id
+                    ? User::whereKey($locked->user_id)->lockForUpdate()->first()
+                    : null;
+
+                if ($user) {
+                    $user->increment('balance', $payment->gross_amount);
+                    $payment->update(['status' => PaymentStatus::REFUNDED]);
                     Log::info("Auto-refund (wallet): Rp {$payment->gross_amount} restored to User {$locked->user_id} for {$locked->invoice_number}");
                 }
 
@@ -71,32 +73,9 @@ class RefundFailedTransactionAction
             $gatewayRefund = $payment;
         });
 
-        // ── Post-commit side effect: gateway refund (no DB lock held) ────────
+        // ── Post-commit: queue the gateway refund (retryable, no lock held) ──
         if ($gatewayRefund !== null) {
-            $this->processGatewayRefund($gatewayRefund);
-        }
-    }
-
-    /**
-     * Request a refund back to the original payment method via Monetapay.
-     * A failure here is logged for manual follow-up rather than rolling back the
-     * already-finalised FAILED_PROVIDER status.
-     */
-    private function processGatewayRefund(Payment $payment): void
-    {
-        try {
-            $this->monetapayService->refundTransaction([
-                'app_id' => config('services.monetapay.mch_id'),
-                'refund_mch_order_no' => 'RFD-'.$payment->reference_id,
-                'payment_order_no' => $payment->pg_transaction_id,
-                'amount' => (string) $payment->gross_amount,
-                'reason' => 'Auto-refund: Digiflazz order failed',
-            ]);
-
-            $payment->update(['status' => '4']); // 4: Refunded
-            Log::info("Auto-refund (gateway): Monetapay refund requested Rp {$payment->gross_amount} for payment {$payment->reference_id}");
-        } catch (Throwable $e) {
-            Log::error("Auto-refund (gateway) failed for payment {$payment->reference_id}: {$e->getMessage()}");
+            RefundGatewayJob::dispatch($gatewayRefund);
         }
     }
 }

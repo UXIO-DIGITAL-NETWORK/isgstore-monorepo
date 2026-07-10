@@ -2,10 +2,10 @@
 
 namespace App\Actions\Supplier;
 
-use App\Models\SupplierCategory;
-use App\DTOs\Supplier\CreateSupplierCategoryDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\Supplier\CreateSupplierCategoryDTO;
+use App\Models\SupplierCategory;
 use Illuminate\Support\Facades\Auth;
 
 class CreateSupplierCategoryAction

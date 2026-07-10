@@ -58,12 +58,15 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 
 ### Checkout (`POST /v1/checkout`) — public, no auth
 
-1. Resolves User (nullable for guests), Product (with active SupplierProducts eager-loaded), PaymentChannel.
-2. Price is role-resolved: `vip → reseller → agent → member → guest` (guests receive `price_member`).
-3. Margin guard: aborts if `selling_price - supplier_price < 0`.
-4. Creates `Transaction` (status: `PENDING`) then `Payment` (status: `'1'`) inside a single `DB::transaction()`.
-5. **Balance path** (`channel_code === 'balance'`): deducts `user->balance`, marks Payment `'3'`, calls `ProcessDigiflazzTransactionAction` synchronously.
-6. **External path**: calls `MonetapayService::createTransaction()`, returns `qr_string` or `virtual_account` to the client.
+1. Duplicate-submit guard: an atomic `Cache::add` fingerprint rejects an identical checkout within 15s; the key is released on failure so a rejected attempt can retry immediately.
+2. Resolves User (nullable for guests), Product (with active SupplierProducts eager-loaded, `status` must be true), PaymentChannel.
+3. Price is role-resolved: `vip → reseller → agent → member → guest` (guests receive `price_member`).
+4. Margin guard: aborts if `selling_price - supplier_price < 0`. The price/margin are frozen into the Transaction row at checkout — a later supplier price change (daily sync) is margin variance, not a correctness bug.
+5. Creates `Transaction` (status: `PENDING`) then `Payment` (status: `'1'`) inside a single `DB::transaction()`.
+6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, deducts `user->balance`, marks Payment `'3'`, calls `ProcessDigiflazzTransactionAction` synchronously.
+7. **External path**: calls `MonetapayService::createTransaction()`, returns `qr_string` or `virtual_account` to the client.
+
+Rate limiting (named limiters in `AppServiceProvider`): `throttle:checkout` (10/min) on checkout + postpaid endpoints, `throttle:webhooks` (120/min per IP) on all callback routes, `throttle:login` (5/min per IP), and a global `throttle:api` (120/min) via `bootstrap/app.php`.
 
 ### Transaction Status Machine
 
@@ -76,16 +79,20 @@ PENDING → PAID → PROCESSING → COMPLETED
 - `EXPIRED` — payment window timed out; customer never paid (set by Monetapay callback or `payments:sync-expired`).
 - `FAILED_PROVIDER` — customer paid; Digiflazz supplier failed to fulfil the order.
 
-All actions, jobs, and webhook handlers must use these exact uppercase constants.
+Statuses are backed enums cast on the models: `App\Enums\TransactionStatus` (values are the exact uppercase strings above) and `App\Enums\PaymentStatus`. `$model->status` returns the enum instance — compare against enum cases, never raw strings; JSON output is unchanged (enums serialize to their values).
 
-### Payment Status Codes (stored as string in `payments.status`)
+### Payment Status Codes (`App\Enums\PaymentStatus`, stored as string in `payments.status`)
 
-| Value | Meaning |
-|---|---|
-| `'1'` | Pending |
-| `'2'` | Expired / Failed |
-| `'3'` | Success |
-| `'4'` | Refunded |
+| Value | Enum case | Meaning |
+|---|---|---|
+| `'1'` | `PENDING` | Pending |
+| `'2'` | `EXPIRED` | Expired / Failed |
+| `'3'` | `SUCCESS` | Success |
+| `'4'` | `REFUNDED` | Refunded |
+
+### Refunds
+
+`RefundFailedTransactionAction` is idempotent (row lock + `PaymentStatus::SUCCESS` check). Wallet refunds lock the user row and credit inline; gateway refunds dispatch `RefundGatewayJob` (5 tries, escalating backoff, deterministic `RFD-{reference_id}` order number) — exhausted retries alert Discord for manual follow-up.
 
 ---
 
@@ -100,8 +107,10 @@ Key points:
 - Outbound signature: `md5(md5(TOKEN + "*|*" + sortedParams + "@!@" + timestamp))`.
 - Inbound callback: same Double MD5 algorithm, verified via `verifyCallbackSignature()` using `hash_equals()`.
 - Endpoint selection is driven by `payment_type` on `PaymentChannel`: `'qris'` → `/v1.0.0/qris`, anything else → `/v1.0.0/virtual_account`.
-- Config keys: `services.monetapay.{mch_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
-- `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement); defaults to `mch_id` if unset.
+- Config keys: `services.monetapay.{mch_id, collection_app_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
+- Three distinct identifiers — do not conflate them: `mch_id` is the merchant identity (only sent where the gateway expects a real `mch_id`/`parent_app_id`, e.g. `merchant_permission`, `sub_merchant`); `collection_app_id` is the pay-in `app_id` (checkout/`createTransaction`, refund, and all collection inquiries); `disbursement_app_id` is the payout `app_id`.
+- `collection_app_id` has **no fallback** — set `MONETAPAY_COLLECTION_APP_ID` explicitly per environment or collection calls sign with a blank `app_id`.
+- `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement, plus the account-validation pre-payout check); defaults to `mch_id` if unset.
 
 ### Digiflazz (Product Supplier)
 
@@ -113,8 +122,38 @@ Key points:
 
 ### Discord (Operational Notifications)
 
-- `HandleDigiflazzWebhookAction` sends embed notifications on every status transition.
-- Silently skipped if `services.discord.webhook_log_url` is not set — safe to omit in dev.
+- All Discord sends go through `App\Services\DiscordWebhookService` (`sendEmbed`/`sendAlert`) — never `Http::post` a webhook URL directly.
+- Silently no-ops (and never throws) if `services.discord.webhook_log_url` is not set — safe to omit in dev.
+- Used by: Digiflazz status transitions, the manual price-check report, `RefundGatewayJob::failed`, and scheduler `onFailure` alerts.
+
+---
+
+## Digiflazz Price Checker & Manual Product Management
+
+Core principle: **supplier cost is fact (auto-updated), selling price is the admin's decision (never auto-changed), products are never auto-created**. Full admin guide: `docs/digiflazz-product-management.md`.
+
+### 5-minute price checker
+
+`digiflazz:check-prices {--type=all}` (scheduled `everyFiveMinutes` in `routes/console.php`, Discord alert only on failure) runs `CheckDigiflazzPricesAction`:
+
+- Fetches the price list (warming the shared cache `digiflazz:price-list:{prepaid|pasca}`, TTL 300s — `DigiflazzService::getPriceListCached()` / `findSkuInPriceList()` read it).
+- Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Pasca items store `admin` → `price`/`admin_fee` and `commission`.
+- **Availability**: unavailable SKUs get `is_active = false` + `sync_deactivated_at` stamp; only stamped rows are ever auto-reactivated, so a manual admin deactivation is never overridden.
+- **Cost changes** raise `price_change_alerts` rows (enum `App\Enums\PriceAlertStatus`). Dedupe: one pending alert per mapping — repeat changes update `new_price` (original `old_price` kept); a revert to `old_price` deletes the pending alert; acknowledged alerts stay as history and a later change creates a fresh pending row.
+- **Never** creates products (unknown SKUs are only counted/sampled in the report) and **never** touches selling prices.
+- Report DTO: `PriceCheckReportDTO` (type, total_fetched, price_changed, alerts_created/updated, deactivated/reactivated, negative_margin, unknown_count/sample).
+
+`digiflazz:sync-products {--type=all}` (name kept; also `POST /v1/digiflazz/sync-products`) is the **manual** run of the same action with a console table + Discord report — it no longer auto-creates or reprices anything.
+
+### Manual product creation
+
+- `GET /v1/digiflazz/sku-preview` — previews a SKU from the cached price list (name/brand/cost/availability, `already_mapped`, `suggested_prices` from `PricingService`).
+- `POST /v1/digiflazz/products` — `CreateDigiflazzProductAction`: creates Product (price_modal = Digiflazz cost) + SupplierProduct mapping; admin supplies all 4 selling prices. Business-rule failures throw `App\Exceptions\DigiflazzProductException` → 422.
+- `POST /v1/digiflazz/products/import` — Excel bulk import (`ImportDigiflazzProductsAction`, PhpSpreadsheet): headers matched by NAME on row 1 (`buyer_sku_code, category_code, name, code, price_member..price_agent, status`), max 500 rows, per-row validation + transaction so bad rows never abort the batch; blank prices default from `PricingService`.
+- `GET /v1/digiflazz/products/import-template` — generated xlsx (sheet "Produk" + "Petunjuk" with live category codes). **Binary response — intentional deviation from the ApiResponse envelope.**
+- `GET/POST /v1/digiflazz/price-alerts...` — paginated alert list, `{id}/acknowledge` (idempotent), `acknowledge-all`.
+
+`products.auto_price` was **dropped**; `config/digiflazz.php` (brand→category map) was **deleted** — category is always explicit admin input. `PricingService` + `pricing-rules` CRUD remain for suggested/default prices only (member 20 / vip 15 / reseller 10 / agent 5 % built-in fallback).
 
 ---
 
@@ -138,8 +177,8 @@ Queue driver is `database` by default (`QUEUE_CONNECTION=database`). Tests run w
 users (nullable) ──── transactions ──── payments ──── payment_channels
                            │
                      products ──── supplier_products ──── suppliers
-                           │
-                     point_histories, ratings
+                           │              │
+             point_histories, ratings   price_change_alerts
 ```
 
 - `transactions.user_id` is nullable — guest checkouts are supported.

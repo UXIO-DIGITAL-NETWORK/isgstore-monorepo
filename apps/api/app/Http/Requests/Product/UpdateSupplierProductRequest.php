@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Product;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Product\UpdateSupplierProductDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateSupplierProductRequest extends FormRequest

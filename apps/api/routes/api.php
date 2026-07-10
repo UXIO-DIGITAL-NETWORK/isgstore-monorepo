@@ -10,10 +10,15 @@ use App\Http\Controllers\Api\Category\ServerCategoryController;
 use App\Http\Controllers\Api\Category\ServerCategoryOptionController;
 use App\Http\Controllers\Api\Category\SubCategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzBalanceController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzPostpaidController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzProductController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzProductImportController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzSkuLookupController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
+use App\Http\Controllers\Api\Digiflazz\PriceAlertController;
 use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
@@ -21,6 +26,7 @@ use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PointHistoryController;
+use App\Http\Controllers\Api\Pricing\PricingRuleController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Product\SupplierProductController;
 use App\Http\Controllers\Api\RatingController;
@@ -46,27 +52,33 @@ Route::prefix('v1')->group(function () {
         'ping_ms' => (int) round((microtime(true) - LARAVEL_START) * 1000),
     ]));
 
-    // Payment Webhooks (No Auth Required)
-    Route::post('/payment/callback', MonetapayCallbackController::class);
-    // Method-specific Monetapay callbacks — same decrypt+verify+dispatch flow.
-    // Point Monetapay's VA/E-Wallet/QRIS callback URLs at whichever you prefer.
-    Route::post('/monetapay/va/callback', MonetapayCallbackController::class);
-    Route::post('/monetapay/ewallet/callback', MonetapayCallbackController::class);
-    Route::post('/monetapay/qris/callback', MonetapayCallbackController::class);
-    // Subscription lifecycle callbacks (EVT_ACTIVE/EVT_INACTIVE/EVT_CYCLE_PREV_TRIGGER/EVT_CYCLE_TRIGGERED)
-    Route::post('/monetapay/subscription/callback/active', [MonetapaySubscriptionCallbackController::class, 'active']);
-    Route::post('/monetapay/subscription/callback/deduct/before', [MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
-    Route::post('/monetapay/subscription/callback/deduct/after', [MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
-    Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
-    Route::post('/checkout', [CheckoutController::class, 'store']);
+    // Payment Webhooks (No Auth Required) — throttled per IP; the real gate is
+    // signature verification inside each controller.
+    Route::middleware('throttle:webhooks')->group(function () {
+        Route::post('/payment/callback', MonetapayCallbackController::class);
+        // Method-specific Monetapay callbacks — same decrypt+verify+dispatch flow.
+        // Point Monetapay's VA/E-Wallet/QRIS callback URLs at whichever you prefer.
+        Route::post('/monetapay/va/callback', MonetapayCallbackController::class);
+        Route::post('/monetapay/ewallet/callback', MonetapayCallbackController::class);
+        Route::post('/monetapay/qris/callback', MonetapayCallbackController::class);
+        // Subscription lifecycle callbacks (EVT_ACTIVE/EVT_INACTIVE/EVT_CYCLE_PREV_TRIGGER/EVT_CYCLE_TRIGGERED)
+        Route::post('/monetapay/subscription/callback/active', [MonetapaySubscriptionCallbackController::class, 'active']);
+        Route::post('/monetapay/subscription/callback/deduct/before', [MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
+        Route::post('/monetapay/subscription/callback/deduct/after', [MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
+        Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
+    });
 
-    // Postpaid — public (guests can inquire/pay bills)
-    Route::post('/digiflazz/check-bill', [DigiflazzPostpaidController::class, 'checkBill']);
-    Route::post('/digiflazz/pay-bill', [DigiflazzPostpaidController::class, 'payBill']);
+    Route::middleware('throttle:checkout')->group(function () {
+        Route::post('/checkout', [CheckoutController::class, 'store']);
+
+        // Postpaid — public (guests can inquire/pay bills)
+        Route::post('/digiflazz/check-bill', [DigiflazzPostpaidController::class, 'checkBill']);
+        Route::post('/digiflazz/pay-bill', [DigiflazzPostpaidController::class, 'payBill']);
+    });
 
     // Authentication Routes
     Route::prefix('auth')->group(function () {
-        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
         Route::post('/refresh', [AuthController::class, 'refreshToken']);
 
         Route::middleware('auth:sanctum')->group(function () {
@@ -95,6 +107,9 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
     });
+
+    // Dashboard (admin overview aggregates)
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
     // Activity Logs
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
@@ -176,10 +191,24 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::delete('/{supplierProduct}', [SupplierProductController::class, 'destroy']);
     });
 
+    // Pricing Rules (markup config used by the daily Digiflazz price sync)
+    Route::apiResource('pricing-rules', PricingRuleController::class);
+
     // Digiflazz Admin Tools
     Route::get('/digiflazz/balance', [DigiflazzBalanceController::class, 'index']);
     Route::post('/digiflazz/check-status', [DigiflazzTransactionStatusController::class, 'check']);
     Route::post('/digiflazz/sync-products', [DigiflazzSyncController::class, 'sync']);
+
+    // Digiflazz Manual Product Management (products are never auto-created)
+    Route::get('/digiflazz/sku-preview', [DigiflazzSkuLookupController::class, 'show']);
+    Route::post('/digiflazz/products', [DigiflazzProductController::class, 'store']);
+    Route::get('/digiflazz/products/import-template', [DigiflazzProductImportController::class, 'template']);
+    Route::post('/digiflazz/products/import', [DigiflazzProductImportController::class, 'import']);
+
+    // Digiflazz Price Change Alerts (raised by the 5-minute checker)
+    Route::get('/digiflazz/price-alerts', [PriceAlertController::class, 'index']);
+    Route::post('/digiflazz/price-alerts/acknowledge-all', [PriceAlertController::class, 'acknowledgeAll']);
+    Route::post('/digiflazz/price-alerts/{priceChangeAlert}/acknowledge', [PriceAlertController::class, 'acknowledge']);
 
     // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.
     // Outbound signed calls to Monetapay; mirror the spec's query endpoints.

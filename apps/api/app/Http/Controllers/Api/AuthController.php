@@ -25,8 +25,8 @@ class AuthController extends Controller
         $result = $action->execute($request->toDTO());
 
         return $this->successResponse([
-            'user'          => $result['user'],
-            'access_token'  => $result['access_token'],
+            'user' => $result['user'],
+            'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
         ], 'Login successful');
     }
@@ -39,7 +39,7 @@ class AuthController extends Controller
         $result = $action->execute($request->toDTO());
 
         return $this->successResponse([
-            'access_token'  => $result['access_token'],
+            'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
         ], 'Token refreshed successfully');
     }

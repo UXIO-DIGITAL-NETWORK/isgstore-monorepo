@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Payment\CreatePaymentAction;
+use App\Actions\Payment\DeletePaymentAction;
+use App\Actions\Payment\GetPaymentsAction;
+use App\Actions\Payment\UpdatePaymentAction;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Traits\ApiResponse;
-use App\Models\Payment;
-use App\Http\Resources\Api\Payment\PaymentResource;
 use App\Http\Requests\Payment\StorePaymentRequest;
 use App\Http\Requests\Payment\UpdatePaymentRequest;
-use App\Actions\Payment\GetPaymentsAction;
-use App\Actions\Payment\CreatePaymentAction;
-use App\Actions\Payment\UpdatePaymentAction;
-use App\Actions\Payment\DeletePaymentAction;
+use App\Http\Resources\Api\Payment\PaymentResource;
+use App\Models\Payment;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
@@ -31,6 +31,7 @@ class PaymentController extends Controller
     public function store(StorePaymentRequest $request, CreatePaymentAction $action)
     {
         $payment = $action->execute($request->toDTO());
+
         return $this->successResponse(
             new PaymentResource($payment->load(['transaction', 'paymentChannel'])),
             'Payment created successfully',
@@ -49,6 +50,7 @@ class PaymentController extends Controller
     public function update(UpdatePaymentRequest $request, Payment $payment, UpdatePaymentAction $action)
     {
         $payment = $action->execute($payment, $request->toDTO());
+
         return $this->successResponse(
             new PaymentResource($payment->load(['transaction', 'paymentChannel'])),
             'Payment updated successfully'
@@ -58,6 +60,7 @@ class PaymentController extends Controller
     public function destroy(Payment $payment, DeletePaymentAction $action)
     {
         $action->execute($payment);
+
         return $this->successResponse(null, 'Payment deleted successfully');
     }
 }

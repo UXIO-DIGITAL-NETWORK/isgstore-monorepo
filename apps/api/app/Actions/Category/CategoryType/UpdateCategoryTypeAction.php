@@ -2,10 +2,10 @@
 
 namespace App\Actions\Category\CategoryType;
 
-use App\Models\CategoryType;
-use App\DTOs\Category\CategoryType\UpdateCategoryTypeDTO;
 use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Category\CategoryType\UpdateCategoryTypeDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\CategoryType;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateCategoryTypeAction

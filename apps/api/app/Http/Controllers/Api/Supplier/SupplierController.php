@@ -2,25 +2,29 @@
 
 namespace App\Http\Controllers\Api\Supplier;
 
-use App\Http\Controllers\Controller;
-use App\Models\Supplier;
-use App\Traits\ApiResponse;
-use App\Actions\Supplier\GetSuppliersAction;
 use App\Actions\Supplier\CreateSupplierAction;
-use App\Actions\Supplier\UpdateSupplierAction;
 use App\Actions\Supplier\DeleteSupplierAction;
+use App\Actions\Supplier\GetSuppliersAction;
+use App\Actions\Supplier\UpdateSupplierAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Supplier\StoreSupplierRequest;
 use App\Http\Requests\Supplier\UpdateSupplierRequest;
 use App\Http\Resources\Api\Supplier\SupplierResource;
+use App\Models\Supplier;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
     use ApiResponse;
 
-    public function index(GetSuppliersAction $action)
+    public function index(Request $request, GetSuppliersAction $action)
     {
-        $suppliers = $action->execute(15);
-        
+        $suppliers = $action->execute(
+            min(100, max(1, (int) $request->query('per_page', 15))),
+            $request->query('search')
+        );
+
         return $this->successResponse([
             'data' => SupplierResource::collection($suppliers),
             'meta' => [
@@ -28,7 +32,7 @@ class SupplierController extends Controller
                 'last_page' => $suppliers->lastPage(),
                 'per_page' => $suppliers->perPage(),
                 'total' => $suppliers->total(),
-            ]
+            ],
         ], 'Suppliers retrieved successfully');
     }
 

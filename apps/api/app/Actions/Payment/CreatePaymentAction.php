@@ -2,11 +2,11 @@
 
 namespace App\Actions\Payment;
 
-use App\Models\Payment;
-use App\Models\Transaction;
-use App\DTOs\Payment\CreatePaymentDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\Payment\CreatePaymentDTO;
+use App\Models\Payment;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 
 class CreatePaymentAction
@@ -18,7 +18,7 @@ class CreatePaymentAction
         $transaction = Transaction::findOrFail($dto->transactionId);
 
         $retryCount = Payment::where('transaction_id', $transaction->id)->count() + 1;
-        $referenceId = 'PAY-' . $transaction->invoice_number . '-' . str_pad($retryCount, 2, '0', STR_PAD_LEFT);
+        $referenceId = 'PAY-'.$transaction->invoice_number.'-'.str_pad($retryCount, 2, '0', STR_PAD_LEFT);
 
         $payment = Payment::create([
             'transaction_id' => $dto->transactionId,

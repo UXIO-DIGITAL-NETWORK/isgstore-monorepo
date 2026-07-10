@@ -2,9 +2,9 @@
 
 namespace App\Actions\Supplier;
 
-use App\Models\Supplier;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Auth;
 
 class DeleteSupplierAction

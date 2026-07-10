@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Transaction\CreateTransactionAction;
+use App\Actions\Transaction\DeleteTransactionAction;
+use App\Actions\Transaction\GetTransactionsAction;
+use App\Actions\Transaction\UpdateTransactionAction;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Traits\ApiResponse;
-use App\Models\Transaction;
-use App\Http\Resources\Api\Transaction\TransactionResource;
 use App\Http\Requests\Transaction\StoreTransactionRequest;
 use App\Http\Requests\Transaction\UpdateTransactionRequest;
-use App\Actions\Transaction\GetTransactionsAction;
-use App\Actions\Transaction\CreateTransactionAction;
-use App\Actions\Transaction\UpdateTransactionAction;
-use App\Actions\Transaction\DeleteTransactionAction;
+use App\Http\Resources\Api\Transaction\TransactionResource;
+use App\Models\Transaction;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
@@ -20,9 +20,9 @@ class TransactionController extends Controller
 
     public function index(Request $request, GetTransactionsAction $action)
     {
-        $perPage      = (int) $request->query('per_page', 15);
-        $status       = $request->query('status');       // e.g. ?status=PENDING
-        $search       = $request->query('search');       // e.g. ?search=INV-20260605
+        $perPage = (int) $request->query('per_page', 15);
+        $status = $request->query('status');       // e.g. ?status=PENDING
+        $search = $request->query('search');       // e.g. ?search=INV-20260605
 
         $transactions = $action->execute($perPage, $status, $search);
 

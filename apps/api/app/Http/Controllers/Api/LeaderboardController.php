@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserSpending;
 use App\Http\Resources\Api\LeaderboardResource;
+use App\Models\UserSpending;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -20,7 +20,7 @@ class LeaderboardController extends Controller
             ->where('period', $period)
             ->orderBy('total_amount', 'desc')
             ->orderBy('last_order_at', 'asc')
-            ->paginate(15);
+            ->paginate(min(100, max(1, (int) $request->query('per_page', 15))));
 
         return $this->successResponse([
             'data' => LeaderboardResource::collection($spendings),
@@ -29,7 +29,7 @@ class LeaderboardController extends Controller
                 'last_page' => $spendings->lastPage(),
                 'per_page' => $spendings->perPage(),
                 'total' => $spendings->total(),
-            ]
+            ],
         ], 'Leaderboard retrieved successfully');
     }
 }

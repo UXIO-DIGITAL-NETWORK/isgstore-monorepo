@@ -2,10 +2,10 @@
 
 namespace App\Actions\PointHistory;
 
-use App\Models\PointHistory;
-use App\DTOs\PointHistory\CreatePointHistoryDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\PointHistory\CreatePointHistoryDTO;
+use App\Models\PointHistory;
 use Illuminate\Support\Facades\Auth;
 
 class CreatePointHistoryAction

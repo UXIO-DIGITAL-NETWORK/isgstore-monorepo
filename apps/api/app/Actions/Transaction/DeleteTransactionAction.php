@@ -2,9 +2,9 @@
 
 namespace App\Actions\Transaction;
 
-use App\Models\Transaction;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 
 class DeleteTransactionAction

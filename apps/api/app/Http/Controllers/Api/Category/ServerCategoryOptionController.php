@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Category;
 
-use App\Http\Controllers\Controller;
-use App\Models\ServerCategoryOption;
-use App\Traits\ApiResponse;
-use App\Actions\Category\ServerCategoryOption\GetServerCategoryOptionsAction;
 use App\Actions\Category\ServerCategoryOption\CreateServerCategoryOptionAction;
-use App\Actions\Category\ServerCategoryOption\UpdateServerCategoryOptionAction;
 use App\Actions\Category\ServerCategoryOption\DeleteServerCategoryOptionAction;
+use App\Actions\Category\ServerCategoryOption\GetServerCategoryOptionsAction;
+use App\Actions\Category\ServerCategoryOption\UpdateServerCategoryOptionAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\ServerCategoryOption\StoreServerCategoryOptionRequest;
 use App\Http\Requests\Category\ServerCategoryOption\UpdateServerCategoryOptionRequest;
 use App\Http\Resources\Api\Category\ServerCategoryOption\ServerCategoryOptionResource;
+use App\Models\ServerCategoryOption;
+use App\Traits\ApiResponse;
 
 class ServerCategoryOptionController extends Controller
 {
@@ -20,7 +20,7 @@ class ServerCategoryOptionController extends Controller
     public function index(GetServerCategoryOptionsAction $action)
     {
         $options = $action->execute(15);
-        
+
         return $this->successResponse([
             'data' => ServerCategoryOptionResource::collection($options),
             'meta' => [
@@ -28,7 +28,7 @@ class ServerCategoryOptionController extends Controller
                 'last_page' => $options->lastPage(),
                 'per_page' => $options->perPage(),
                 'total' => $options->total(),
-            ]
+            ],
         ], 'Server Category Options retrieved successfully');
     }
 

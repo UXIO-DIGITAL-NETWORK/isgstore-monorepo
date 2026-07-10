@@ -3,33 +3,40 @@
 namespace App\Services;
 
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class DigiflazzService
 {
+    public const PRICE_LIST_CACHE_KEY = 'digiflazz:price-list:';
+
+    public const PRICE_LIST_CACHE_TTL = 300;
+
     private string $username;
+
     private string $key;
+
     private string $baseUrl;
 
     public function __construct()
     {
         $this->username = config('services.digiflazz.username');
-        $this->key      = config('services.digiflazz.key');
-        $this->baseUrl  = config('services.digiflazz.base_url');
+        $this->key = config('services.digiflazz.key');
+        $this->baseUrl = config('services.digiflazz.base_url');
     }
 
     private function generateSignature(string $refId): string
     {
-        return md5($this->username . $this->key . $refId);
+        return md5($this->username.$this->key.$refId);
     }
 
     public function getPriceList(string $cmd = 'prepaid'): array
     {
         $payload = [
-            'cmd'      => $cmd,
+            'cmd' => $cmd,
             'username' => $this->username,
-            'sign'     => $this->generateSignature('pricelist'),
+            'sign' => $this->generateSignature('pricelist'),
         ];
 
         // [CHECKPOINT 1] Pre-request — full payload before the wire call
@@ -38,14 +45,14 @@ class DigiflazzService
         try {
             $response = Http::post("{$this->baseUrl}/price-list", $payload);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 // [CHECKPOINT 3] HTTP-level failure (4xx/5xx)
                 Log::error('Digiflazz getPriceList Failed', [
                     'http_status' => $response->status(),
-                    'body'        => $response->body(),
+                    'body' => $response->body(),
                 ]);
 
-                throw new Exception('Digiflazz API Error: ' . $response->body());
+                throw new Exception('Digiflazz API Error: '.$response->body());
             }
 
             $data = $response->json('data') ?? [];
@@ -66,12 +73,42 @@ class DigiflazzService
         }
     }
 
+    /**
+     * Price list via a 5-minute shared cache. The scheduled price checker
+     * refreshes this cache on every run, so lookups (SKU preview, manual add,
+     * Excel import) almost never trigger their own Digiflazz fetch.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function getPriceListCached(string $cmd = 'prepaid'): array
+    {
+        return Cache::remember(
+            self::PRICE_LIST_CACHE_KEY.$cmd,
+            self::PRICE_LIST_CACHE_TTL,
+            fn () => $this->getPriceList($cmd)
+        );
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public function findSkuInPriceList(string $sku, string $cmd = 'prepaid'): ?array
+    {
+        foreach ($this->getPriceListCached($cmd) as $item) {
+            if (($item['buyer_sku_code'] ?? null) === $sku) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
     public function getBalance(): array
     {
         $payload = [
-            'cmd'      => 'deposit',
+            'cmd' => 'deposit',
             'username' => $this->username,
-            'sign'     => md5($this->username . $this->key . 'depo'),
+            'sign' => md5($this->username.$this->key.'depo'),
         ];
 
         Log::info('Digiflazz getBalance Request', $payload);
@@ -79,16 +116,17 @@ class DigiflazzService
         try {
             $response = Http::post("{$this->baseUrl}/cek-saldo", $payload);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::error('Digiflazz getBalance Failed', [
                     'http_status' => $response->status(),
-                    'body'        => $response->body(),
+                    'body' => $response->body(),
                 ]);
-                throw new Exception('Digiflazz Balance Error: ' . $response->body());
+                throw new Exception('Digiflazz Balance Error: '.$response->body());
             }
 
             $data = $response->json('data') ?? [];
             Log::info('Digiflazz getBalance Response', $data);
+
             return $data;
 
         } catch (Exception $e) {
@@ -100,11 +138,11 @@ class DigiflazzService
     public function checkBill(string $buyerSkuCode, string $customerNo, string $refId): array
     {
         $payload = [
-            'username'       => $this->username,
+            'username' => $this->username,
             'buyer_sku_code' => $buyerSkuCode,
-            'customer_no'    => $customerNo,
-            'ref_id'         => $refId,
-            'sign'           => $this->generateSignature($refId),
+            'customer_no' => $customerNo,
+            'ref_id' => $refId,
+            'sign' => $this->generateSignature($refId),
         ];
 
         Log::info('Digiflazz checkBill Request', $payload);
@@ -112,24 +150,25 @@ class DigiflazzService
         try {
             $response = Http::post("{$this->baseUrl}/cek-tagihan", $payload);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::error('Digiflazz checkBill Failed', [
                     'http_status' => $response->status(),
-                    'body'        => $response->body(),
+                    'body' => $response->body(),
                 ]);
-                throw new Exception('Digiflazz Bill Inquiry Error: ' . $response->body());
+                throw new Exception('Digiflazz Bill Inquiry Error: '.$response->body());
             }
 
             $data = $response->json('data') ?? [];
             Log::info('Digiflazz checkBill Response', $data);
+
             return $data;
 
         } catch (Exception $e) {
             Log::error('Digiflazz checkBill Exception', [
                 'buyer_sku_code' => $buyerSkuCode,
-                'customer_no'    => $customerNo,
-                'ref_id'         => $refId,
-                'message'        => $e->getMessage(),
+                'customer_no' => $customerNo,
+                'ref_id' => $refId,
+                'message' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -138,11 +177,11 @@ class DigiflazzService
     public function payBill(string $buyerSkuCode, string $customerNo, string $refId): array
     {
         $payload = [
-            'username'       => $this->username,
+            'username' => $this->username,
             'buyer_sku_code' => $buyerSkuCode,
-            'customer_no'    => $customerNo,
-            'ref_id'         => $refId,
-            'sign'           => $this->generateSignature($refId),
+            'customer_no' => $customerNo,
+            'ref_id' => $refId,
+            'sign' => $this->generateSignature($refId),
         ];
 
         Log::info('Digiflazz payBill Request', $payload);
@@ -150,24 +189,25 @@ class DigiflazzService
         try {
             $response = Http::post("{$this->baseUrl}/pay-pasca", $payload);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::error('Digiflazz payBill Failed', [
                     'http_status' => $response->status(),
-                    'body'        => $response->body(),
+                    'body' => $response->body(),
                 ]);
-                throw new Exception('Digiflazz Bill Payment Error: ' . $response->body());
+                throw new Exception('Digiflazz Bill Payment Error: '.$response->body());
             }
 
             $responseData = $response->json();
             Log::info('Digiflazz payBill Response', $responseData ?? []);
+
             return $responseData['data'] ?? [];
 
         } catch (Exception $e) {
             Log::error('Digiflazz payBill Exception', [
                 'buyer_sku_code' => $buyerSkuCode,
-                'customer_no'    => $customerNo,
-                'ref_id'         => $refId,
-                'message'        => $e->getMessage(),
+                'customer_no' => $customerNo,
+                'ref_id' => $refId,
+                'message' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -183,11 +223,11 @@ class DigiflazzService
     public function createTransaction(string $buyerSkuCode, string $customerNo, string $refId): array
     {
         $payload = [
-            'username'       => $this->username,
+            'username' => $this->username,
             'buyer_sku_code' => $buyerSkuCode,
-            'customer_no'    => $customerNo,
-            'ref_id'         => $refId,
-            'sign'           => $this->generateSignature($refId),
+            'customer_no' => $customerNo,
+            'ref_id' => $refId,
+            'sign' => $this->generateSignature($refId),
         ];
 
         // [CHECKPOINT 1] Pre-request — exact JSON body going to Digiflazz
@@ -196,15 +236,15 @@ class DigiflazzService
         try {
             $response = Http::post("{$this->baseUrl}/transaction", $payload);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 // [CHECKPOINT 3] HTTP-level failure before we even get a data envelope
                 Log::error('Digiflazz createTransaction HTTP Failed', [
                     'http_status' => $response->status(),
-                    'payload'     => $payload,
-                    'response'    => $response->body(),
+                    'payload' => $payload,
+                    'response' => $response->body(),
                 ]);
 
-                throw new Exception('Digiflazz Transaction Error: ' . $response->body());
+                throw new Exception('Digiflazz Transaction Error: '.$response->body());
             }
 
             $responseData = $response->json();
@@ -218,10 +258,10 @@ class DigiflazzService
             // [CHECKPOINT 3] Exception re-logged with key identifiers, then re-thrown
             // so ProcessDigiflazzTopup can honour its $tries/$backoff retry policy
             Log::error('Digiflazz createTransaction Exception', [
-                'ref_id'         => $refId,
+                'ref_id' => $refId,
                 'buyer_sku_code' => $buyerSkuCode,
-                'customer_no'    => $customerNo,
-                'message'        => $e->getMessage(),
+                'customer_no' => $customerNo,
+                'message' => $e->getMessage(),
             ]);
             throw $e;
         }

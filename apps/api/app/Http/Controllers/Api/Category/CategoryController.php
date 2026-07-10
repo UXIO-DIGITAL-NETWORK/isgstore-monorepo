@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Category;
 
-use App\Http\Controllers\Controller;
-use App\Models\Category;
-use App\Traits\ApiResponse;
-use App\Actions\Category\GetCategoriesAction;
 use App\Actions\Category\CreateCategoryAction;
-use App\Actions\Category\UpdateCategoryAction;
 use App\Actions\Category\DeleteCategoryAction;
+use App\Actions\Category\GetCategoriesAction;
+use App\Actions\Category\UpdateCategoryAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Http\Resources\Api\Category\CategoryResource;
+use App\Models\Category;
+use App\Traits\ApiResponse;
 
 class CategoryController extends Controller
 {
@@ -20,7 +20,7 @@ class CategoryController extends Controller
     public function index(GetCategoriesAction $action)
     {
         $categories = $action->execute(15);
-        
+
         return $this->successResponse([
             'data' => CategoryResource::collection($categories),
             'meta' => [
@@ -28,7 +28,7 @@ class CategoryController extends Controller
                 'last_page' => $categories->lastPage(),
                 'per_page' => $categories->perPage(),
                 'total' => $categories->total(),
-            ]
+            ],
         ], 'Categories retrieved successfully');
     }
 

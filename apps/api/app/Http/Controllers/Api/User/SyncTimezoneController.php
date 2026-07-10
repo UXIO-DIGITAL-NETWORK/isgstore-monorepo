@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api\User;
 
+use App\Actions\User\SyncUserTimezoneAction;
+use App\DTOs\User\SyncTimezoneDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\SyncTimezoneRequest;
-use App\DTOs\User\SyncTimezoneDTO;
-use App\Actions\User\SyncUserTimezoneAction;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 
 class SyncTimezoneController extends Controller
@@ -17,18 +18,18 @@ class SyncTimezoneController extends Controller
     {
         $dto = SyncTimezoneDTO::fromValidated($request->validated());
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
         $action->execute($user, $dto);
 
         return response()->json([
-            'status'  => 'success',
-            'code'    => 200,
+            'status' => 'success',
+            'code' => 200,
             'message' => 'Zona waktu berhasil disinkronisasi.',
-            'data'    => [
-                'timezone' => $dto->timezone
-            ]
+            'data' => [
+                'timezone' => $dto->timezone,
+            ],
         ], 200);
     }
 }

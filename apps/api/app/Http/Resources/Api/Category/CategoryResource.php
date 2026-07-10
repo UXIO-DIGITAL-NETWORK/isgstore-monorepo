@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources\Api\Category;
 
+use App\Http\Resources\Api\Category\CategoryType\CategoryTypeResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\Api\Category\CategoryType\CategoryTypeResource;
 
 class CategoryResource extends JsonResource
 {
@@ -25,10 +25,10 @@ class CategoryResource extends JsonResource
             'logo' => $this->logo,
             'description' => $this->description,
             'status' => (bool) $this->status,
-            
+
             // ROOT CAUSE FIX: Gunakan pengondisian deklaratif bawaan API Resource
             'type' => new CategoryTypeResource($this->whenLoaded('categoryType')),
-            
+
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

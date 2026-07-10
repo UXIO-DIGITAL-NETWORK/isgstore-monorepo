@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources\Api\Product;
 
+use App\Http\Resources\Api\Supplier\SupplierResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\Api\Supplier\SupplierResource;
 
 class SupplierProductResource extends JsonResource
 {

@@ -15,8 +15,9 @@ use Illuminate\Http\Request;
  *
  * Validation is intentionally inline here (not via FormRequest): these are
  * thin operator tools whose payloads are just id pairs forwarded verbatim to
- * Monetapay. app_id defaults to the configured merchant id where the gateway
- * expects it, so testers only need to supply the order identifiers.
+ * Monetapay. app_id defaults to the configured collection app id (or the
+ * disbursement app id for payout endpoints) where the gateway expects it, so
+ * testers only need to supply the order identifiers.
  */
 class MonetapayController extends Controller
 {
@@ -261,7 +262,7 @@ class MonetapayController extends Controller
             'account_name' => ['required', 'string'],
         ]);
 
-        return $this->run('disbursement_create', $this->withAppId($request->except(['sign', 'app_id'])));
+        return $this->run('disbursement_create', $this->withDisbursementAppId($request->except(['sign', 'app_id'])));
     }
 
     public function largePayoutCreate(Request $request)
@@ -273,7 +274,7 @@ class MonetapayController extends Controller
             'account_name' => ['required', 'string'],
         ]);
 
-        return $this->run('large_payout_create', $this->withAppId($request->except(['sign', 'app_id'])));
+        return $this->run('large_payout_create', $this->withDisbursementAppId($request->except(['sign', 'app_id'])));
     }
 
     public function ewalletPayoutCreate(Request $request)
@@ -286,7 +287,7 @@ class MonetapayController extends Controller
             'account_bank_code' => ['required', 'string'],
         ]);
 
-        return $this->run('ewallet_payout_create', $this->withAppId($request->except(['sign', 'app_id'])));
+        return $this->run('ewallet_payout_create', $this->withDisbursementAppId($request->except(['sign', 'app_id'])));
     }
 
     /* ---- 7. Pay-out Inquiry -------------------------------------------- */
@@ -313,7 +314,7 @@ class MonetapayController extends Controller
             'ori_account_name' => ['nullable', 'string'],
         ]);
 
-        return $this->run('account_validation', $this->withAppId(array_merge($validated, [
+        return $this->run('account_validation', $this->withDisbursementAppId(array_merge($validated, [
             'account_type' => $validated['account_type'] ?? '1',
         ])));
     }
@@ -461,14 +462,28 @@ class MonetapayController extends Controller
     }
 
     /**
-     * Default app_id to the configured merchant id when the caller omits it.
+     * Default app_id to the configured collection app id when the caller omits it.
      *
      * @param  array<string,mixed>  $params
      * @return array<string,mixed>
      */
     private function withAppId(array $params): array
     {
-        $params['app_id'] ??= config('services.monetapay.mch_id');
+        $params['app_id'] ??= config('services.monetapay.collection_app_id');
+
+        return $params;
+    }
+
+    /**
+     * Default app_id to the configured disbursement app id when the caller omits it.
+     * Used by payout endpoints, which sign with a different app id than collection.
+     *
+     * @param  array<string,mixed>  $params
+     * @return array<string,mixed>
+     */
+    private function withDisbursementAppId(array $params): array
+    {
+        $params['app_id'] ??= config('services.monetapay.disbursement_app_id');
 
         return $params;
     }

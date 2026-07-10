@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources\Api\Category\ServerCategoryOption;
 
+use App\Http\Resources\Api\Category\ServerCategory\ServerCategoryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\Api\Category\ServerCategory\ServerCategoryResource;
 
 class ServerCategoryOptionResource extends JsonResource
 {
@@ -16,6 +16,7 @@ class ServerCategoryOptionResource extends JsonResource
     public function toArray(Request $request): array
     {
         $serverCategory = $this->whenLoaded('serverCategory');
+
         return [
             'id' => $this->id,
             'server_category_id' => $this->server_category_id,

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Rating;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Rating\UpdateRatingDTO;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRatingRequest extends FormRequest

@@ -17,12 +17,12 @@ class CheckoutController extends Controller
     {
         try {
             $dto = new CheckoutDTO(
-                userId:           $request->user()?->id,
-                productId:        $request->integer('product_id'),
+                userId: $request->user()?->id,
+                productId: $request->integer('product_id'),
                 paymentChannelId: $request->integer('payment_channel_id'),
-                targetUid:        $request->string('target_uid')->toString(),
-                targetServer:     $request->string('target_server')->toString() ?: null,
-                guestContact:     $request->string('guest_contact')->toString() ?: null,
+                targetUid: $request->string('target_uid')->toString(),
+                targetServer: $request->string('target_server')->toString() ?: null,
+                guestContact: $request->string('guest_contact')->toString() ?: null,
             );
 
             $result = $action->execute($dto);

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class MonetapayService
 {
-    private string $mchId;
+    private string $collectionAppId;
 
     private string $disbursementAppId;
 
@@ -21,7 +21,7 @@ class MonetapayService
 
     public function __construct()
     {
-        $this->mchId = (string) config('services.monetapay.mch_id', '');
+        $this->collectionAppId = (string) config('services.monetapay.collection_app_id', '');
         $this->disbursementAppId = (string) config('services.monetapay.disbursement_app_id', '');
         $this->partnerKey = (string) config('services.monetapay.partner_key', '');
         $this->token = (string) config('services.monetapay.token', '');
@@ -154,7 +154,7 @@ class MonetapayService
 
         // 2. Parameter Bisnis Murni (tanpa timestamp & sign)
         $requestParams = [
-            'app_id' => $this->mchId,
+            'app_id' => $this->collectionAppId,
             'mch_order_no' => (string) $referenceId,
             'amount' => (string) $amount,
             'currency' => 'IDR',
@@ -305,8 +305,9 @@ class MonetapayService
      */
     private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = [], ?string $appId = null): array
     {
-        // Inject merchant ID so all signed calls include app_id in the encrypted TreeMap.
-        $businessParams['app_id'] = $appId ?? $this->mchId;
+        // Inject the collection app id so all signed calls include app_id in the encrypted
+        // TreeMap. Callers (e.g. disbursement) override via $appId where a different id applies.
+        $businessParams['app_id'] = $appId ?? $this->collectionAppId;
 
         // Monetapay omits blank fields from the signed TreeMap; mirror that so
         // our local sign matches what the gateway recomputes on its side.

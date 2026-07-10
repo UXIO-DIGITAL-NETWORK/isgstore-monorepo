@@ -15,7 +15,7 @@ class CheckBillRequest extends FormRequest
     {
         return [
             'buyer_sku_code' => ['required', 'string'],
-            'customer_no'    => ['required', 'string', 'max:50'],
+            'customer_no' => ['required', 'string', 'max:50'],
         ];
     }
 }

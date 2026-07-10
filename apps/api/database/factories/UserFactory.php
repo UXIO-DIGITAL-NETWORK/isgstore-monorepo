@@ -2,12 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
@@ -32,7 +33,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
 
             // Kolom kustom
-            'phone' => '628' . fake()->numerify('##########'),
+            'phone' => '628'.fake()->numerify('##########'),
             'balance' => fake()->randomFloat(2, 0, 5000000), // Saldo acak 0 - 5 juta
             'point' => fake()->numberBetween(0, 1000),
             'locale' => 'id',

@@ -46,13 +46,13 @@ class MonetapaySitCommand extends Command
         // The template carries 32 sheets + embedded logos; PhpSpreadsheet needs headroom.
         @ini_set('memory_limit', '2048M');
 
-        $base     = rtrim((string) $this->option('base'), '/');
-        $api      = $base . '/api/v1';
+        $base = rtrim((string) $this->option('base'), '/');
+        $api = $base.'/api/v1';
         $template = $this->option('template') ?: storage_path('app/sit/template.xlsx');
-        $out      = $this->option('out')  ?: storage_path('app/sit/Monetapay_SIT_filled.xlsx');
-        $html     = $this->option('html') ?: storage_path('app/sit/monetapay_sit_report.html');
-        $only     = $this->option('only') ? array_map('trim', explode(',', (string) $this->option('only'))) : null;
-        $dry      = (bool) $this->option('dry-run');
+        $out = $this->option('out') ?: storage_path('app/sit/Monetapay_SIT_filled.xlsx');
+        $html = $this->option('html') ?: storage_path('app/sit/monetapay_sit_report.html');
+        $only = $this->option('only') ? array_map('trim', explode(',', (string) $this->option('only'))) : null;
+        $dry = (bool) $this->option('dry-run');
 
         $scenarios = config('monetapay_sit');
         if ($only) {
@@ -64,6 +64,7 @@ class MonetapaySitCommand extends Command
         if ($dry) {
             $this->table(['No', 'Sheet', 'Service', 'Exec', 'Route'],
                 array_map(fn ($s) => [$s['no'], $s['sheet'], $s['service'], $s['exec'], $s['route'] ?? ''], $scenarios));
+
             return self::SUCCESS;
         }
 
@@ -72,12 +73,13 @@ class MonetapaySitCommand extends Command
         if ($token === '') {
             $this->line('Logging in…');
             $login = Http::acceptJson()->post("$api/auth/login", [
-                'email'    => $this->option('email'),
+                'email' => $this->option('email'),
                 'password' => $this->option('password'),
             ]);
             $token = data_get($login->json(), 'data.access_token', '');
             if ($token === '') {
-                $this->error('Login failed: ' . $login->body());
+                $this->error('Login failed: '.$login->body());
+
                 return self::FAILURE;
             }
         }
@@ -86,12 +88,12 @@ class MonetapaySitCommand extends Command
         $now = now();
         $ctx = [
             'now' => [
-                'month_start'      => $now->copy()->startOfMonth()->format('Y-m-d 00:00:00'),
-                'today'            => $now->format('Y-m-d 00:00:00'),
+                'month_start' => $now->copy()->startOfMonth()->format('Y-m-d 00:00:00'),
+                'today' => $now->format('Y-m-d 00:00:00'),
                 'month_start_date' => $now->copy()->startOfMonth()->format('Y-m-d'),
-                'today_date'       => $now->format('Y-m-d'),
+                'today_date' => $now->format('Y-m-d'),
             ],
-            'run' => ['uid' => 'SIT' . $now->format('ymdHis')],
+            'run' => ['uid' => 'SIT'.$now->format('ymdHis')],
         ];
 
         // ── Execute ──────────────────────────────────────────────────────────
@@ -106,7 +108,7 @@ class MonetapaySitCommand extends Command
         try {
             $this->fillSpreadsheet($template, $out, $results);
         } catch (\Throwable $e) {
-            $this->warn('Spreadsheet fill failed (' . $e->getMessage() . '). HTML report still written.');
+            $this->warn('Spreadsheet fill failed ('.$e->getMessage().'). HTML report still written.');
         }
 
         // ── Console summary ─────────────────────────────────────────────────
@@ -140,27 +142,28 @@ class MonetapaySitCommand extends Command
         // exec === 'http'
         [$body, $missing] = $this->resolve($s['body'] ?? [], $ctx);
         if ($missing) {
-            $base['notes'] = trim(($base['notes'] ? $base['notes'] . ' | ' : '') . 'Skipped: missing dependency ' . implode(', ', $missing) . ' (a prior create step did not return an id).');
+            $base['notes'] = trim(($base['notes'] ? $base['notes'].' | ' : '').'Skipped: missing dependency '.implode(', ', $missing).' (a prior create step did not return an id).');
+
             return ['status' => 'Skip'] + $base;
         }
 
-        $url = $api . $s['path'];
+        $url = $api.$s['path'];
         $req = Http::acceptJson();
         if (! empty($s['auth'])) {
             $req = $req->withToken($token);
         }
 
-        $base['request'] = "POST $url\n" . ($s['auth'] ? "Authorization: Bearer <token>\n" : '')
-            . "Content-Type: application/json\n\n" . json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $base['request'] = "POST $url\n".($s['auth'] ? "Authorization: Bearer <token>\n" : '')
+            ."Content-Type: application/json\n\n".json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         try {
             $resp = $req->timeout(60)->retry(2, 800, throw: false)->post($url, $body);
         } catch (\Throwable $e) {
-            return ['status' => 'Failed', 'response' => 'Transport error: ' . $e->getMessage()] + $base;
+            return ['status' => 'Failed', 'response' => 'Transport error: '.$e->getMessage()] + $base;
         }
 
         $json = $resp->json();
-        $base['http']     = (string) $resp->status();
+        $base['http'] = (string) $resp->status();
         $base['response'] = json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: $resp->body();
 
         // Capture ids for later chained scenarios (only on success).
@@ -183,7 +186,7 @@ class MonetapaySitCommand extends Command
         if ($isCheckout) {
             $pass = in_array($expect, ['0', ''], true)
                 ? $resp->successful()
-                : (!$resp->successful() && $expect !== '' && str_contains($raw, $expect));
+                : (! $resp->successful() && $expect !== '' && str_contains($raw, $expect));
         } elseif ($actual !== null && $actual !== '') {
             $pass = (string) $actual === $expect;
         } else {
@@ -192,11 +195,13 @@ class MonetapaySitCommand extends Command
         }
 
         $base['status'] = $pass ? 'Passed' : 'Failed';
+
         return $base;
     }
 
     /**
      * Replace {{key.field}} tokens from $ctx. Returns [resolvedBody, missingTokens].
+     *
      * @return array{0: array<string,mixed>, 1: array<int,string>}
      */
     private function resolve(array $body, array $ctx): array
@@ -216,6 +221,7 @@ class MonetapaySitCommand extends Command
                 $out[$k] = $v;
             }
         }
+
         return [$out, $missing];
     }
 
@@ -223,6 +229,7 @@ class MonetapaySitCommand extends Command
     {
         if (! is_file($template)) {
             $this->warn("Template not found at $template — skipping xlsx fill.");
+
             return;
         }
         // Load ONLY the sheets we fill. The full 32-sheet template (with embedded
@@ -235,20 +242,26 @@ class MonetapaySitCommand extends Command
         $rowIndex = [];
         foreach (self::SHEET_NAMES as $name) {
             $sheet = $ss->getSheetByName($name);
-            if (! $sheet) { continue; }
+            if (! $sheet) {
+                continue;
+            }
             $map = [];
             $high = $sheet->getHighestDataRow();
             for ($r = 9; $r <= $high; $r++) {
                 $no = trim((string) $sheet->getCell("A$r")->getValue());
-                if ($no !== '') { $map[$no] = $r; }
+                if ($no !== '') {
+                    $map[$no] = $r;
+                }
             }
             $rowIndex[$name] = $map;
         }
 
         foreach ($results as $res) {
             $sheet = $ss->getSheetByName($res['sheet']);
-            $row   = $rowIndex[$res['sheet']][$res['no']] ?? null;
-            if (! $sheet || ! $row) { continue; }
+            $row = $rowIndex[$res['sheet']][$res['no']] ?? null;
+            if (! $sheet || ! $row) {
+                continue;
+            }
 
             $sheet->setCellValue("G$row", $res['request']);                                  // PostURL/Header/Request
             $sheet->setCellValue("H$row", "HTTP {$res['http']}\n{$res['response']}");        // Response
@@ -272,32 +285,32 @@ class MonetapaySitCommand extends Command
         $color = [
             'Passed' => '#16a34a',
             'Failed' => '#dc2626',
-            'Skip'   => '#6b7280',
+            'Skip' => '#6b7280',
         ];
 
         $rows = '';
         foreach ($results as $r) {
             $c = $color[$r['status']] ?? '#374151';
             $rows .= '<tr>'
-                . '<td>' . e($r['no']) . '</td>'
-                . '<td>' . e($r['sheet']) . '</td>'
-                . '<td>' . e($r['service']) . '<br><small>' . e($r['scenario']) . '</small></td>'
-                . '<td><code>' . e($r['route']) . '</code></td>'
-                . '<td><small>' . e($r['files']) . '</small></td>'
-                . '<td style="text-align:center">' . e($r['expect_code']) . '</td>'
-                . '<td style="text-align:center">' . e($r['actual_code'] ?: '—') . ' <small>(' . e($r['http'] ?: '—') . ')</small></td>'
-                . '<td style="text-align:center;font-weight:700;color:' . $c . '">' . e($r['status']) . '</td>'
-                . '<td><details><summary>view</summary><pre>' . e($r['request']) . "\n--- response ---\n" . e($r['response']) . '</pre>'
-                . ($r['notes'] ? '<p><b>Notes:</b> ' . e($r['notes']) . '</p>' : '') . '</details></td>'
-                . '</tr>';
+                .'<td>'.e($r['no']).'</td>'
+                .'<td>'.e($r['sheet']).'</td>'
+                .'<td>'.e($r['service']).'<br><small>'.e($r['scenario']).'</small></td>'
+                .'<td><code>'.e($r['route']).'</code></td>'
+                .'<td><small>'.e($r['files']).'</small></td>'
+                .'<td style="text-align:center">'.e($r['expect_code']).'</td>'
+                .'<td style="text-align:center">'.e($r['actual_code'] ?: '—').' <small>('.e($r['http'] ?: '—').')</small></td>'
+                .'<td style="text-align:center;font-weight:700;color:'.$c.'">'.e($r['status']).'</td>'
+                .'<td><details><summary>view</summary><pre>'.e($r['request'])."\n--- response ---\n".e($r['response']).'</pre>'
+                .($r['notes'] ? '<p><b>Notes:</b> '.e($r['notes']).'</p>' : '').'</details></td>'
+                .'</tr>';
         }
 
         $summary = '';
         foreach (['Passed', 'Failed', 'Skip'] as $k) {
-            $summary .= '<span class="pill" style="background:' . ($color[$k] ?? '#374151') . '">' . $k . ': ' . ($counts[$k] ?? 0) . '</span> ';
+            $summary .= '<span class="pill" style="background:'.($color[$k] ?? '#374151').'">'.$k.': '.($counts[$k] ?? 0).'</span> ';
         }
 
-        $when  = now()->toDayDateTimeString();
+        $when = now()->toDayDateTimeString();
         $total = count($results);
         $doc = <<<HTML
 <!doctype html><html><head><meta charset="utf-8"><title>Monetapay SIT Report</title>

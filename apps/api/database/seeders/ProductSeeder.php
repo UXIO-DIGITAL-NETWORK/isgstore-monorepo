@@ -15,18 +15,18 @@ class ProductSeeder extends Seeder
         // Helper: tiered pricing – modal is base, member +20%, vip +15%, reseller +10%, agent +5%
         $p = function ($catId, $subCatId, $name, $code, $modal) use (&$products, $now) {
             $products[] = [
-                'category_id'    => $catId,
+                'category_id' => $catId,
                 'sub_category_id' => $subCatId,
-                'name'           => $name,
-                'code'           => $code, // Ini adalah buyer_sku_code
-                'price_modal'    => $modal,
-                'price_member'   => (int)($modal * 1.20),
-                'price_vip'      => (int)($modal * 1.15),
-                'price_reseller' => (int)($modal * 1.10),
-                'price_agent'    => (int)($modal * 1.05),
-                'status'         => true,
-                'created_at'     => $now,
-                'updated_at'     => $now,
+                'name' => $name,
+                'code' => $code, // Ini adalah buyer_sku_code
+                'price_modal' => $modal,
+                'price_member' => (int) ($modal * 1.20),
+                'price_vip' => (int) ($modal * 1.15),
+                'price_reseller' => (int) ($modal * 1.10),
+                'price_agent' => (int) ($modal * 1.05),
+                'status' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
         };
 

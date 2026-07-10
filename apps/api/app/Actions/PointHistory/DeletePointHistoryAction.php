@@ -2,9 +2,9 @@
 
 namespace App\Actions\PointHistory;
 
-use App\Models\PointHistory;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\PointHistory;
 use Illuminate\Support\Facades\Auth;
 
 class DeletePointHistoryAction

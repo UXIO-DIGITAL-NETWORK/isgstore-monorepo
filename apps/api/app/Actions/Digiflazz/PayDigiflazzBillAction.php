@@ -5,6 +5,8 @@ namespace App\Actions\Digiflazz;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Digiflazz\PayBillDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Enums\PaymentStatus;
+use App\Enums\TransactionStatus;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\Product;
@@ -13,6 +15,7 @@ use App\Models\User;
 use App\Services\DigiflazzService;
 use App\Services\Payment\MonetapayService;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -27,6 +30,25 @@ class PayDigiflazzBillAction
 
     public function execute(PayBillDTO $dto): array
     {
+        // Duplicate-submit guard — same semantics as CheckoutAction: identical
+        // pay-bill requests within 15s are rejected; key released on failure.
+        $identity = $dto->userId ?? $dto->guestContact ?? request()?->ip() ?? 'anon';
+        $dedupeKey = 'checkout:dedupe:'.md5($identity.'|paybill|'.$dto->productId.'|'.$dto->paymentChannelId.'|'.$dto->customerNo);
+
+        if (! Cache::add($dedupeKey, 1, 15)) {
+            throw new Exception('Permintaan duplikat terdeteksi. Mohon tunggu beberapa detik sebelum mencoba lagi.');
+        }
+
+        try {
+            return $this->process($dto);
+        } catch (Exception $e) {
+            Cache::forget($dedupeKey);
+            throw $e;
+        }
+    }
+
+    private function process(PayBillDTO $dto): array
+    {
         // Generate identifiers before the DB transaction so we can use invoice_number
         // as the Digiflazz inquiry ref_id inside the transaction scope.
         $invoiceNumber = 'INV-'.date('Ymd').'-'.strtoupper(Str::random(6));
@@ -39,6 +61,11 @@ class PayDigiflazzBillAction
             $user = $dto->userId ? User::with('role')->find($dto->userId) : null;
             $product = Product::with(['supplierProducts' => fn ($q) => $q->where('is_active', true)])
                 ->findOrFail($dto->productId);
+
+            if (! $product->status) {
+                throw new Exception('Produk sedang tidak tersedia.');
+            }
+
             $channel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
             $supplierProduct = $product->supplierProducts->first();
@@ -66,8 +93,17 @@ class PayDigiflazzBillAction
                 throw new Exception('Gagal mendapatkan tagihan dari Digiflazz. Pastikan nomor pelanggan benar.');
             }
 
-            $adminFee = $channel->fee_flat + (int) round($totalBayar * ($channel->fee_percent / 100));
+            $feePercent = max(0, min(100, (float) $channel->fee_percent));
+            $adminFee = $channel->fee_flat + (int) round($totalBayar * ($feePercent / 100));
             $grossAmount = $totalBayar + $adminFee;
+
+            // Postpaid earnings come from the supplier commission, not a price
+            // spread. Record it as the margin and refuse a mapping that would
+            // make this a loss-making payment.
+            $commission = (int) ($supplierProduct->commission ?? 0);
+            if ($commission < 0) {
+                throw new Exception('Transaksi dibatalkan otomatis: komisi supplier tidak valid.');
+            }
 
             if ($grossAmount < $channel->min_amount) {
                 throw new Exception(
@@ -89,8 +125,8 @@ class PayDigiflazzBillAction
                 'amount_base' => $totalBayar,
                 'amount_fee' => $adminFee,
                 'amount_total' => $grossAmount,
-                'margin' => 0,
-                'status' => 'PENDING',
+                'margin' => $commission,
+                'status' => TransactionStatus::PENDING,
             ]);
 
             $payment = Payment::create([
@@ -99,19 +135,24 @@ class PayDigiflazzBillAction
                 'reference_id' => $referenceId,
                 'gross_amount' => $grossAmount,
                 'admin_fee' => $adminFee,
-                'status' => '1',
+                'status' => PaymentStatus::PENDING,
             ]);
 
             $paymentInstructions = null;
-            $transactionStatus = 'PENDING';
+            $transactionStatus = TransactionStatus::PENDING;
 
             if ($channel->channel_code === 'balance') {
+                // Pessimistic lock — same TOCTOU guard as CheckoutAction: without
+                // it two concurrent pay-bill requests could both pass the balance
+                // check and both decrement.
+                $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+
                 if ($user->balance < $grossAmount) {
                     throw new Exception('Saldo tidak mencukupi. Sisa saldo: Rp '.number_format($user->balance));
                 }
 
                 $user->decrement('balance', $grossAmount);
-                $payment->update(['status' => '3', 'paid_at' => now()]);
+                $payment->update(['status' => PaymentStatus::SUCCESS, 'paid_at' => now()]);
 
                 $transaction = $this->billPaymentAction->execute($transaction);
                 $transactionStatus = $transaction->status;

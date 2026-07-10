@@ -2,11 +2,13 @@
 
 namespace App\Actions\Announcement;
 
-use App\Models\Announcement;
-use App\DTOs\Announcement\UpdateAnnouncementDTO;
 use App\Actions\Log\CreateActivityLogAction;
+use App\DTOs\Announcement\UpdateAnnouncementDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\Announcement;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UpdateAnnouncementAction
 {
@@ -16,18 +18,18 @@ class UpdateAnnouncementAction
     {
         $imagePath = $announcement->image_path;
 
-        if ($dto->imagePath instanceof \Illuminate\Http\UploadedFile) {
-            if ($imagePath && \Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagePath);
+        if ($dto->imagePath instanceof UploadedFile) {
+            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
             }
             $imagePath = $dto->imagePath->store('announcements/images', 'public');
         }
 
         $announcement->update([
             'category_id' => $dto->categoryId,
-            'content'     => $dto->content,
-            'image_path'  => $imagePath,
-            'is_active'   => $dto->isActive,
+            'content' => $dto->content,
+            'image_path' => $imagePath,
+            'is_active' => $dto->isActive,
         ]);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(

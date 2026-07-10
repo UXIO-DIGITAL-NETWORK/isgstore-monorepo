@@ -7,10 +7,67 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Run Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # Test suite uses in-memory SQLite (phpunit.xml) — no services needed.
+      - name: Run tests
+        run: php artisan test
+
+      - name: Notify Discord — tests failed
+        if: failure()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_REF: ${{ github.ref_name }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"❌ Production Tests Failed\",\"description\":\"**${GH_ACTOR}** — test suite failed on **${GH_REF}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":15548997,\"footer\":{\"text\":\"Uxio System Auto-Log\"}}]}" || true
+
   deploy:
     name: Deploy to Production VPS
     runs-on: ubuntu-latest
+    needs: test # Deploy hanya berjalan jika seluruh test suite hijau
     steps:
+      - name: Notify Discord — deploy started
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_REF: ${{ github.ref_name }}
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"🚀 Production Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_SHA:0:7}** on **${GH_REF}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372,\"footer\":{\"text\":\"Uxio System Auto-Log\"}}]}" || true
+
       - name: Execute Deployment Commands via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -41,8 +98,8 @@ jobs:
             # 3. Tulis ulang file .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
 
-            # 4. Install dependensi (mengabaikan interaksi manual)
-            composer install --no-interaction --prefer-dist --optimize-autoloader
+            # 4. Install dependensi (tanpa dev packages di production)
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
             # 5. Jalankan migrasi database
             php artisan migrate --force
@@ -52,12 +109,22 @@ jobs:
             php artisan config:cache
             php artisan route:cache
 
-            # 7. Pastikan permission tetap aman setelah file baru turun
+            # 7. Pastikan symlink storage publik ada (logo kategori, banner)
+            php artisan storage:link || true
+
+            # 8. Pastikan permission tetap aman setelah file baru turun
             sudo chown -R uxioserver1:www-data /home/uxioserver1/web-topup/api/prod
             sudo chmod -R 775 /home/uxioserver1/web-topup/api/prod/storage
             sudo chmod -R 775 /home/uxioserver1/web-topup/api/prod/bootstrap/cache
 
-            # 8. Install supervisor jika belum ada
+            # 9. Pasang cron Laravel scheduler (idempotent, spesifik per environment).
+            # Tanpa ini payments:sync-expired & digiflazz:sync-products tidak pernah jalan.
+            CRON_ENTRY="* * * * * cd /home/uxioserver1/web-topup/api/prod && php artisan schedule:run >> /dev/null 2>&1"
+            ( crontab -l 2>/dev/null | grep -vF "web-topup/api/prod && php artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
+            echo "Scheduler cron installed:"
+            crontab -l | grep "schedule:run"
+
+            # 10. Install supervisor jika belum ada
             if ! command -v supervisorctl &> /dev/null; then
               echo "Supervisor not found — installing..."
               sudo apt-get update -qq
@@ -68,17 +135,49 @@ jobs:
               echo "Supervisor already installed — skipping install"
             fi
 
-            # 9. Pastikan direktori conf.d ada
+            # 11. Pastikan direktori conf.d ada
             sudo mkdir -p /etc/supervisor/conf.d
 
-            # 10. Deploy supervisor config untuk queue worker
+            # 12. Deploy supervisor config untuk queue worker
             sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/laravel-queue-prod.conf \
                     /etc/supervisor/conf.d/laravel-queue-prod.conf
 
-            # 11. Reload supervisor agar membaca config terbaru
+            # 13. Reload supervisor agar membaca config terbaru
             sudo supervisorctl reread
             sudo supervisorctl update
 
-            # 12. Restart queue worker agar muat kode yang baru di-deploy
+            # 14. Restart queue worker agar muat kode yang baru di-deploy
             # (queue:work meng-cache kode — harus restart setiap deploy)
             sudo supervisorctl restart laravel-queue-prod:*
+
+      - name: Notify Discord — deploy succeeded
+        if: success()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_REF: ${{ github.ref_name }}
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"✅ Production Deploy Succeeded\",\"description\":\"**${GH_SHA:0:7}** on **${GH_REF}** deployed by **${GH_ACTOR}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":5763719,\"footer\":{\"text\":\"Uxio System Auto-Log\"}}]}" || true
+
+      - name: Notify Discord — deploy failed
+        if: failure()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_REF: ${{ github.ref_name }}
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"❌ Production Deploy Failed\",\"description\":\"**${GH_ACTOR}** — deploy of **${GH_SHA:0:7}** on **${GH_REF}** failed!\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":15548997,\"footer\":{\"text\":\"Uxio System Auto-Log\"}}]}" || true

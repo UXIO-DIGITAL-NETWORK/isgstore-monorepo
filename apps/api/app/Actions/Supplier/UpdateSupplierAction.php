@@ -2,10 +2,10 @@
 
 namespace App\Actions\Supplier;
 
-use App\Models\Supplier;
-use App\DTOs\Supplier\UpdateSupplierDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\Supplier\UpdateSupplierDTO;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateSupplierAction

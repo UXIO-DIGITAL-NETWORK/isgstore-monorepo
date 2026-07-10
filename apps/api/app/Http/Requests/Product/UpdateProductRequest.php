@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\Product;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\DTOs\Product\UpdateProductDTO;
-use Illuminate\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {

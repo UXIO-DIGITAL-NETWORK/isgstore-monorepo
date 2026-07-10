@@ -2,12 +2,12 @@
 
 namespace App\Actions\User;
 
-use App\Models\User;
-use App\DTOs\User\UserDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
-use Illuminate\Support\Facades\Hash;
+use App\DTOs\User\UserDTO;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class UpdateUserAction
 {

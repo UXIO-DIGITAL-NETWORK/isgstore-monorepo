@@ -14,12 +14,12 @@ class StoreCheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id'         => ['required', 'integer', 'exists:products,id'],
+            'product_id' => ['required', 'integer', 'exists:products,id'],
             'payment_channel_id' => ['required', 'integer', 'exists:payment_channels,id'],
-            'target_uid'         => ['required', 'string'],
-            'target_server'      => ['nullable', 'string'],
+            'target_uid' => ['required', 'string'],
+            'target_server' => ['nullable', 'string'],
             // Required for guests; optional for authenticated members
-            'guest_contact'      => $this->user() ? ['nullable', 'string', 'max:20'] : ['required', 'string', 'max:20'],
+            'guest_contact' => $this->user() ? ['nullable', 'string', 'max:20'] : ['required', 'string', 'max:20'],
         ];
     }
 

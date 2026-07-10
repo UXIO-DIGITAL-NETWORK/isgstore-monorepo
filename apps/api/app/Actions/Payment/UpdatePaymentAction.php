@@ -2,10 +2,10 @@
 
 namespace App\Actions\Payment;
 
-use App\Models\Payment;
-use App\DTOs\Payment\UpdatePaymentDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\Payment\UpdatePaymentDTO;
+use App\Models\Payment;
 use Illuminate\Support\Facades\Auth;
 
 class UpdatePaymentAction

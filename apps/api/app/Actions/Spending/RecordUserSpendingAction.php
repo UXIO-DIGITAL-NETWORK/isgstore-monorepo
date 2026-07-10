@@ -2,15 +2,16 @@
 
 namespace App\Actions\Spending;
 
-use App\DTOs\Spending\UpdateUserSpendingDTO;
-use App\Models\UserSpending;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\Spending\UpdateUserSpendingDTO;
+use App\Models\UserSpending;
 use Illuminate\Support\Facades\Auth;
 
 class RecordUserSpendingAction
 {
     public function __construct(private CreateActivityLogAction $activityLogAction) {}
+
     public function execute(UpdateUserSpendingDTO $dto): void
     {
         $periods = [date('Y-m'), 'ALL_TIME'];
@@ -29,7 +30,7 @@ class RecordUserSpendingAction
 
             $spending->increment('total_amount', $dto->amount);
             $spending->increment('total_orders', 1);
-            
+
             $spending->update([
                 'last_order_at' => now(),
             ]);

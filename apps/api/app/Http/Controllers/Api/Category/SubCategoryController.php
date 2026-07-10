@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Category;
 
-use App\Http\Controllers\Controller;
-use App\Models\SubCategory;
-use App\Traits\ApiResponse;
 use App\Actions\Category\GetSubCategoriesAction;
 use App\Actions\Category\SubCategory\CreateSubCategoryAction;
-use App\Actions\Category\SubCategory\UpdateSubCategoryAction;
 use App\Actions\Category\SubCategory\DeleteSubCategoryAction;
+use App\Actions\Category\SubCategory\UpdateSubCategoryAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\SubCategory\StoreSubCategoryRequest;
 use App\Http\Requests\Category\SubCategory\UpdateSubCategoryRequest;
 use App\Http\Resources\Api\Category\SubCategory\SubCategoryResource;
+use App\Models\SubCategory;
+use App\Traits\ApiResponse;
 
 class SubCategoryController extends Controller
 {
@@ -28,7 +28,7 @@ class SubCategoryController extends Controller
                 'last_page' => $subCategories->lastPage(),
                 'per_page' => $subCategories->perPage(),
                 'total' => $subCategories->total(),
-            ]
+            ],
         ], 'Sub Categories retrieved successfully');
     }
 

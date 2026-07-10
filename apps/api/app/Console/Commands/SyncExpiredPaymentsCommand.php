@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\PaymentStatus;
+use App\Enums\TransactionStatus;
 use App\Jobs\ProcessDigiflazzBillPayment;
 use App\Jobs\ProcessDigiflazzTopup;
 use App\Models\Payment;
@@ -23,10 +25,10 @@ class SyncExpiredPaymentsCommand extends Command
      * = Monetapay expire_seconds + 5-minute grace so their own callback can arrive first.
      */
     private const EXPIRE_WINDOWS = [
-        'virtual_account'   => 600   + 300,   // 15 min
-        'qris'              => 900   + 300,   // 20 min
-        'ewallet'           => 7200  + 300,   // 2 hr 5 min
-        'payment_link'      => 36000 + 300,   // 10 hr 5 min
+        'virtual_account' => 600 + 300,   // 15 min
+        'qris' => 900 + 300,   // 20 min
+        'ewallet' => 7200 + 300,   // 2 hr 5 min
+        'payment_link' => 36000 + 300,   // 10 hr 5 min
         'convenience_store' => 86400 + 300,   // 24 hr 5 min
     ];
 
@@ -50,11 +52,11 @@ class SyncExpiredPaymentsCommand extends Command
         }
 
         $payments = Payment::with(['transaction', 'paymentChannel'])
-            ->where('status', '1')
-            ->whereHas('transaction', fn ($q) => $q->where('status', 'PENDING'))
+            ->where('status', PaymentStatus::PENDING->value)
+            ->whereHas('transaction', fn ($q) => $q->where('status', TransactionStatus::PENDING->value))
             ->get()
             ->filter(function (Payment $payment) {
-                $type   = $payment->paymentChannel->payment_type ?? null;
+                $type = $payment->paymentChannel->payment_type ?? null;
                 $window = self::EXPIRE_WINDOWS[$type] ?? null;
 
                 return $window && $payment->created_at->addSeconds($window)->isPast();
@@ -62,6 +64,7 @@ class SyncExpiredPaymentsCommand extends Command
 
         if ($payments->isEmpty()) {
             $this->info('No stale pending payments found.');
+
             return self::SUCCESS;
         }
 
@@ -84,21 +87,22 @@ class SyncExpiredPaymentsCommand extends Command
 
     private function syncPayment(Payment $payment, bool $dry): string
     {
-        $ref  = $payment->reference_id;
+        $ref = $payment->reference_id;
         $type = $payment->paymentChannel->payment_type ?? 'unknown';
 
         try {
-            $params   = ['mch_order_no' => $ref];
+            $params = ['mch_order_no' => $ref];
             $response = match ($type) {
-                'virtual_account'   => $this->monetapay->inquiryVirtualAccount($params),
-                'qris'              => $this->monetapay->inquiryQris($params),
-                'ewallet'           => $this->monetapay->inquiryEwallet($params),
-                'payment_link'      => $this->monetapay->inquiryPaymentLink($params),
-                default             => null,
+                'virtual_account' => $this->monetapay->inquiryVirtualAccount($params),
+                'qris' => $this->monetapay->inquiryQris($params),
+                'ewallet' => $this->monetapay->inquiryEwallet($params),
+                'payment_link' => $this->monetapay->inquiryPaymentLink($params),
+                default => null,
             };
 
-            if (!$response) {
+            if (! $response) {
                 $this->warn("  SKIP  {$ref} — payment type '{$type}' has no inquiry endpoint.");
+
                 return 'skipped';
             }
 
@@ -107,17 +111,19 @@ class SyncExpiredPaymentsCommand extends Command
                 $this->warn("  SKIP  {$ref} — Monetapay inquiry failed: {$msg}");
                 Log::warning('payments:sync-expired inquiry failed', [
                     'reference_id' => $ref,
-                    'response'     => $response,
+                    'response' => $response,
                 ]);
+
                 return 'skipped';
             }
 
-            $mpStatus  = strtolower($response['data']['status'] ?? '');
+            $mpStatus = strtolower($response['data']['status'] ?? '');
             $isSuccess = in_array($mpStatus, self::SUCCESS_STATUSES, true);
             $isPending = in_array($mpStatus, self::PENDING_STATUSES, true);
 
             if ($isPending) {
                 $this->line("  WAIT  {$ref} — Monetapay reports still pending (status: '{$mpStatus}').");
+
                 return 'skipped';
             }
 
@@ -136,17 +142,17 @@ class SyncExpiredPaymentsCommand extends Command
                     ->lockForUpdate()
                     ->find($payment->id);
 
-                if (!$locked || $locked->transaction->status !== 'PENDING') {
+                if (! $locked || $locked->transaction->status !== TransactionStatus::PENDING) {
                     return; // already handled by another process
                 }
 
                 $locked->update([
-                    'status'  => $isSuccess ? '3' : '2',
+                    'status' => $isSuccess ? PaymentStatus::SUCCESS : PaymentStatus::EXPIRED,
                     'paid_at' => $isSuccess ? now() : null,
                 ]);
 
                 $locked->transaction->update([
-                    'status' => $isSuccess ? 'PAID' : 'EXPIRED',
+                    'status' => $isSuccess ? TransactionStatus::PAID : TransactionStatus::EXPIRED,
                 ]);
 
                 $dispatched = $isSuccess;
@@ -163,8 +169,8 @@ class SyncExpiredPaymentsCommand extends Command
 
             Log::info('payments:sync-expired updated', [
                 'reference_id' => $ref,
-                'outcome'      => $isSuccess ? 'paid' : 'expired',
-                'mp_status'    => $mpStatus,
+                'outcome' => $isSuccess ? 'paid' : 'expired',
+                'mp_status' => $mpStatus,
             ]);
 
             return $isSuccess ? 'paid' : 'expired';
@@ -173,8 +179,9 @@ class SyncExpiredPaymentsCommand extends Command
             $this->error("  ERROR {$ref} — {$e->getMessage()}");
             Log::error('payments:sync-expired exception', [
                 'reference_id' => $ref,
-                'error'        => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return 'errors';
         }
     }

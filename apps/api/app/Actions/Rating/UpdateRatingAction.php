@@ -2,10 +2,10 @@
 
 namespace App\Actions\Rating;
 
-use App\Models\Rating;
-use App\DTOs\Rating\UpdateRatingDTO;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\DTOs\Rating\UpdateRatingDTO;
+use App\Models\Rating;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateRatingAction
