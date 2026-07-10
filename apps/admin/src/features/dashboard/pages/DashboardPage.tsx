@@ -95,7 +95,7 @@ export default function DashboardPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Box className="rounded-xl border border-border bg-card p-6">
+      <Box className="rounded-2xl border border-border bg-card p-6">
         <Heading
           level={1}
           variant="section"
@@ -110,7 +110,7 @@ export default function DashboardPage() {
           ? Array.from({ length: 3 }).map((_, index) => (
               <Box
                 key={index}
-                className="h-32 animate-pulse rounded-xl border border-border bg-card"
+                className="h-32 animate-pulse rounded-2xl border border-border bg-card"
               />
             ))
           : statCards.map((card) => (
@@ -125,17 +125,18 @@ export default function DashboardPage() {
         <Box className="flex flex-col gap-6 lg:col-span-2">
           <PerformanceChartCard />
 
-          <Box className="rounded-xl border border-border bg-card p-4">
+          <Box className="rounded-2xl border border-border bg-card p-4">
             <Tabs
               value={activeTab}
               onValueChange={(value) => setActiveTab(value as PerformanceTabKey)}
             >
               <Box className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <TabsList>
+                <TabsList className="h-auto gap-2 rounded-full border border-border bg-transparent p-1">
                   {PERFORMANCE_TABS.map((tab) => (
                     <TabsTrigger
                       key={tab.key}
                       value={tab.key}
+                      className="h-auto flex-none rounded-full border-transparent px-4 py-2 data-[state=active]:border-transparent data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-background"
                     >
                       {tab.label}
                     </TabsTrigger>

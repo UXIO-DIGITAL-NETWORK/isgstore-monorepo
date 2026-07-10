@@ -36,7 +36,7 @@ export function PerformanceChartCard() {
     <Box
       as="section"
       aria-label="Monthly Performance"
-      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4"
+      className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4"
     >
       <Box className="flex items-start justify-between gap-4">
         <Box className="flex flex-col gap-1">
@@ -73,7 +73,7 @@ export function PerformanceChartCard() {
       </Box>
 
       {isError ? (
-        <Box className="flex h-[280px] w-full flex-col items-center justify-center gap-3 rounded-lg border border-border">
+        <Box className="flex h-[280px] w-full flex-col items-center justify-center gap-3 rounded-xl border border-border">
           <Text variant="muted">Failed to load performance data.</Text>
           <Button
             variant="outline"

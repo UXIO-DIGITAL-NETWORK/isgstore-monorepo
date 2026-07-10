@@ -19,7 +19,7 @@ export function ActivityFeedCard() {
   const { data, isLoading, isError, refetch } = useActivityLog();
 
   return (
-    <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4">
+    <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4">
       <Box className="flex items-center justify-between">
         <Heading
           level={3}
