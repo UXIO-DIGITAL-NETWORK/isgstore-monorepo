@@ -34,21 +34,21 @@ export function ChannelCard({ channel }: ChannelCardProps) {
           <Image
             src={channel.logo_url}
             alt={channel.name}
-            width={64}
-            height={40}
+            width={88}
+            height={56}
             className="shrink-0 rounded-lg"
           />
         ) : (
           <Box
             aria-hidden="true"
-            className="h-10 w-16 shrink-0 rounded-lg bg-muted"
+            className="h-14 w-22 shrink-0 rounded-lg bg-muted"
           />
         )}
         <Box className="flex flex-col gap-0.5">
           <Heading
             level={3}
             variant="default"
-            className="text-sm md:text-sm"
+            className="text-lg md:text-lg"
           >
             {channel.name}
           </Heading>
