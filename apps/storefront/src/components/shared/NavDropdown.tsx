@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useRouterState } from "@tanstack/react-router";
@@ -16,6 +16,7 @@ export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
   const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
+  const [left, setLeft] = useState(0);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { location } = useRouterState();
@@ -23,9 +24,20 @@ export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
   // Capture trigger position when opening
   useEffect(() => {
     if (open && triggerRef.current) {
-      setTriggerRect(triggerRef.current.getBoundingClientRect());
+      const rect = triggerRef.current.getBoundingClientRect();
+      setTriggerRect(rect);
+      setLeft(rect.left);
     }
   }, [open]);
+
+  // Clamp horizontal position so the dropdown stays within the viewport
+  useLayoutEffect(() => {
+    if (open && triggerRect && dropdownRef.current) {
+      const margin = 8;
+      const maxLeft = window.innerWidth - dropdownRef.current.offsetWidth - margin;
+      setLeft(Math.max(margin, Math.min(triggerRect.left, maxLeft)));
+    }
+  }, [open, triggerRect]);
 
   // Close on outside click
   useEffect(() => {
@@ -75,7 +87,7 @@ export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
             style={{
               position: "fixed",
               top: triggerRect.bottom + 8,
-              left: triggerRect.left,
+              left,
             }}
             className="bg-[#18182A] border border-white/10 rounded-xl overflow-hidden min-w-48 z-[9999] py-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
           >
