@@ -3,12 +3,34 @@ import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tan
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const LOADING_ROW_COUNT = 5;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const PAGE_WINDOW = 2;
+
+/** Small ± window of page numbers around the current page, clamped to [1, lastPage] — no ellipsis needed at this scale. */
+function pageWindow(page: number, lastPage: number): number[] {
+  const start = Math.max(1, page - PAGE_WINDOW);
+  const end = Math.min(lastPage, page + PAGE_WINDOW);
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+}
+
+// Rounded, always-visible horizontal scrollbar for the table container — a
+// real functional scroll affordance (native overflow-x-auto), replacing the
+// unlabeled decorative slider the original build correctly omitted.
+const SCROLLBAR_CLASSNAME =
+  "[&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/40 [&::-webkit-scrollbar-thumb]:hover:bg-foreground/60 [scrollbar-width:thin]";
 
 interface TransactionsTableProps<TData> {
   columns: ColumnDef<TData>[];
@@ -70,7 +92,7 @@ export function TransactionsTable<TData>({
 
   return (
     <Box className="flex flex-col gap-3">
-      <Table>
+      <Table containerClassName={SCROLLBAR_CLASSNAME}>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -147,30 +169,47 @@ export function TransactionsTable<TData>({
           {`${from}-${to} of ${total} transactions`}
         </Text>
 
-        <Box className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
-          >
-            Previous
-          </Button>
-          <Text
-            variant="small"
-            className="tabular-nums"
-          >
-            Page {page} of {lastPage}
-          </Text>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= lastPage}
-            onClick={() => onPageChange(page + 1)}
-          >
-            Next
-          </Button>
-        </Box>
+        <Pagination className="mx-0 w-auto">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                aria-disabled={page <= 1}
+                className={page <= 1 ? "pointer-events-none opacity-50" : undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (page > 1) onPageChange(page - 1);
+                }}
+              />
+            </PaginationItem>
+            {pageWindow(page, lastPage).map((pageNumber) => (
+              <PaginationItem key={pageNumber}>
+                <PaginationLink
+                  href="#"
+                  isActive={pageNumber === page}
+                  className="tabular-nums"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onPageChange(pageNumber);
+                  }}
+                >
+                  {pageNumber}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                aria-disabled={page >= lastPage}
+                className={page >= lastPage ? "pointer-events-none opacity-50" : undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (page < lastPage) onPageChange(page + 1);
+                }}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </Box>
     </Box>
   );

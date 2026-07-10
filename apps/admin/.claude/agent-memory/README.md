@@ -3,3 +3,4 @@
 - `project` scope -> committed here (VCS-tracked). Local-only notes go in `.claude/agent-memory-local/` (gitignored).
 - Keep each MEMORY.md updated whenever a pattern, decision, file location, or reusable util changes (`/update-memory` or edit directly).
 - Known Claude Code caveat: subagent auto-write of MEMORY.md can be unreliable — each subagent lists `Write, Edit` in its `tools` and treats updating memory as an explicit step.
+- If a `MEMORY.md` grows past ~200 lines / the auto-injected read limit, split it: keep `MEMORY.md` a one-line-per-entry index, move full detail into `<agent>/topics/<name>.md` files (not auto-injected — read the relevant one explicitly when it's on-topic). Precedent: `frontend-engineer/topics/`.

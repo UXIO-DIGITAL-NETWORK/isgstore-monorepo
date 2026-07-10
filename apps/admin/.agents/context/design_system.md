@@ -43,8 +43,11 @@ Grayscale is true-neutral (chroma `0`). Sampled reference values from the Figma 
 | Extra-muted (section labels) | `#5C5C5C` | `#A3A3A3` |
 | Success (positive trend) | `#22C55E` (bg tint `#173121`) | `#16A34A` |
 | Destructive (negative / dangerous) | `#EF4444` (bg tint `#261818`) | `#DC2626` |
+| Warning (pending/attention, amber) | `oklch(0.828 0.189 84.429)` | `oklch(0.769 0.188 70.08)` |
 | Chart 1 — Revenue | `#3B82F6` (blue) | `#3B82F6` |
 | Chart 2 — Net Income | `#22C55E` (green) | `#16A34A` |
+
+> **Revision (2026-07-10):** added `--warning`/`--warning-foreground` (amber) as a 3rd functional-color exception alongside success/destructive, for the Transaction feature's "Pending" status pill (`text-warning`/`border-warning`/`bg-warning`). Same rule applies: functional use only, never decorative.
 
 ### 3.1 Ready-to-paste tokens (`src/index.css`)
 

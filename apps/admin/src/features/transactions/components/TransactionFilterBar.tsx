@@ -93,7 +93,7 @@ function FilterSelect({
       >
         <SelectTrigger
           id={id}
-          className="w-full"
+          className="w-full rounded-xl"
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
@@ -135,7 +135,7 @@ function FilterDate({
             id={id}
             type="button"
             variant="outline"
-            className={cn("w-full justify-start font-normal", !date && "text-muted-foreground")}
+            className={cn("w-full justify-start rounded-xl font-normal", !date && "text-muted-foreground")}
           >
             <CalendarIcon className="size-4" />
             {date ? format(date, "PPP") : "Pick a date"}
@@ -173,6 +173,7 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
           <Label htmlFor={`${uid}-search`}>Search</Label>
           <Input
             id={`${uid}-search`}
+            className="rounded-xl"
             placeholder="Invoice no. or customer name"
             value={filters.search ?? ""}
             onChange={(event) => onChange({ search: event.target.value || undefined })}

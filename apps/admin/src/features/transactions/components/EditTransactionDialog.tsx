@@ -90,7 +90,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent>
+      <DialogContent className="rounded-2xl duration-300 data-[state=closed]:zoom-out-90 data-[state=open]:zoom-in-90">
         <DialogHeader>
           <DialogTitle>Edit Transaction</DialogTitle>
           <DialogDescription>
@@ -115,7 +115,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
                 >
                   <SelectTrigger
                     id="edit-payment-status"
-                    className="w-full"
+                    className="w-full rounded-xl"
                   >
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -154,7 +154,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
                 >
                   <SelectTrigger
                     id="edit-invoice-status"
-                    className="w-full"
+                    className="w-full rounded-xl"
                   >
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -185,6 +185,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
             <Label htmlFor="edit-serial-number">Serial Number</Label>
             <Input
               id="edit-serial-number"
+              className="rounded-xl"
               placeholder="e.g. SN-00123"
               {...register("serialNumber")}
             />
@@ -204,7 +205,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
                 handleFiles(event.dataTransfer.files);
               }}
               className={cn(
-                "flex flex-col items-center gap-2 rounded-lg border border-dashed border-border p-6 text-center",
+                "flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-6 text-center",
                 dragActive && "border-foreground bg-accent",
               )}
             >
@@ -223,6 +224,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
                 type="button"
                 variant="outline"
                 size="sm"
+                className="rounded-xl"
                 onClick={() => fileInputRef.current?.click()}
               >
                 Browse files
@@ -243,12 +245,14 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
             <Button
               type="button"
               variant="outline"
+              className="rounded-xl"
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              className="rounded-xl"
               disabled={editTransaction.isPending}
             >
               {editTransaction.isPending ? "Saving..." : "Save"}

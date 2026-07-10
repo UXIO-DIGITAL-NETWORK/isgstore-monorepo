@@ -184,4 +184,55 @@ export const TRANSACTIONS: Transaction[] = [
     elapsed_seconds: 112,
     updated_at: "2026-07-10T07:46:52.000Z",
   },
+  ...generateSyntheticRows(30),
 ];
+
+/**
+ * ~30 additional synthetic rows (cycling the same names/products/statuses
+ * already used above — nothing new invented) so the fixture totals ~40 rows.
+ * At the default page size (10) that's `lastPage = 4`, matching the
+ * reference's 4 live, clickable pagination pages — without this, `lastPage`
+ * would always be 1 and Next/page-2+ would be permanently disabled.
+ * `meta.total` in the service response stays the deliberate `9999999`
+ * placeholder; only `last_page` (derived from real fixture length) changes.
+ */
+function generateSyntheticRows(count: number): Transaction[] {
+  const names = ["Randy Galang", "Sinta Dewi", "Budi Santoso", "Wulan Ayu", "Agus Setiawan", "Rina Marlina"];
+  const phones = ["+629876543210", "+628123456789", "+628234567890", "+628345678901", "+628567890123", "+628678901234"];
+  const games = [
+    { id: "game-mlbb-id", name: "Mobile Legends Indonesia" },
+    { id: "game-ff", name: "Free Fire" },
+    { id: "game-pubgm", name: "PUBG Mobile" },
+    { id: "game-genshin", name: "Genshin Impact" },
+  ];
+  const products = ["19 Diamond (17 + 2 Bonus)", "100 Diamond", "660 UC", "980 Genesis Crystal", "310 Diamond"];
+  const methods = ["Credits", "QRIS", "Virtual Account", "E-Wallet"];
+  const statuses: Transaction["invoice_status"][] = ["success", "failed", "pending", "processing"];
+
+  return Array.from({ length: count }, (_, i) => {
+    const n = i % names.length;
+    const status = statuses[i % statuses.length];
+    const game = games[i % games.length];
+    const day = 11 + i; // continues from txn-10's Jul 10
+    const createdAt = new Date(Date.UTC(2026, 6, day, 8 + (i % 12), (i * 7) % 60, 0));
+    const resolved = status === "success" || status === "failed";
+
+    return {
+      id: `txn-synthetic-${i + 1}`,
+      invoice_no: `ZP2607${String(200 + i)}SYN${i}`,
+      payment_status: status,
+      invoice_status: status,
+      customer: { user_id: 2000 + i, name: names[n], phone: phones[n] },
+      game,
+      product: { id: `prod-synthetic-${i}`, name: products[i % products.length] },
+      cost: 10000 + i * 1000,
+      profit: resolved ? 100 + i * 10 : undefined,
+      admin_fee: i % 3 === 0 ? 0 : 500,
+      payment_method: methods[i % methods.length],
+      created_at: createdAt.toISOString(),
+      resolved_at: resolved ? new Date(createdAt.getTime() + 90_000).toISOString() : undefined,
+      elapsed_seconds: resolved ? 90 : undefined,
+      updated_at: (resolved ? new Date(createdAt.getTime() + 90_000) : createdAt).toISOString(),
+    };
+  });
+}

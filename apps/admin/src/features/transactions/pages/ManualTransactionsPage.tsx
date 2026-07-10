@@ -47,7 +47,7 @@ export default function ManualTransactionsPage() {
         <Text variant="muted">Review transactions entered or overridden manually by an operator.</Text>
       </Box>
 
-      <Box className="rounded-xl border border-border bg-card p-4">
+      <Box className="rounded-2xl border border-border bg-card p-4">
         <TransactionFilterBar
           filters={filters}
           onChange={handleFilterChange}
@@ -55,7 +55,7 @@ export default function ManualTransactionsPage() {
         />
       </Box>
 
-      <Box className="rounded-xl border border-border bg-card p-4">
+      <Box className="rounded-2xl border border-border bg-card p-4">
         <TransactionsTable
           columns={manualColumns}
           data={data?.data ?? []}

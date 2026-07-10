@@ -1,0 +1,13 @@
+# Routing patterns
+
+## Directory-layout route pattern (a real path segment with its own layout + an index redirect + children)
+Precedent: `src/routes/_protected/transactions/`. A folder named after the path segment (`transactions/`) containing `route.tsx` (`createFileRoute("/_protected/transactions")({ beforeLoad, component: <Layout> })`) creates the layout for that segment (parent's `requireAuth` still applies; add a feature-specific guard like `requirePermission("transactions.view")` here). A sibling `index.tsx` in the same folder (`createFileRoute("/_protected/transactions/")({ beforeLoad: () => { throw redirect({ to: "/transactions/automatic" }); } })`, no `component`) handles the bare path — use this when a feature has tabs and the bare path should redirect to a default tab. Subfolders (`automatic/`, `manual/`) are the actual tab routes. Same pattern possible under `_preview/` for a preview-only variant of one tab.
+
+## Preview-route pattern (dev-only, unauthenticated screen viewing before auth/API exist)
+`src/routes/_preview.tsx` — pathless layout, `component: DashboardLayout`, no auth guard, gated via `beforeLoad: () => { if (import.meta.env.PROD) throw notFound(); }`. One shared layout for **all** preview screens — add a new preview route as a sibling child under `src/routes/_preview/<name>/index.tsx` (e.g. `finance-preview/index.tsx`), never a second `_preview.tsx`. Each real protected route (`_protected/<feature>/index.tsx`) has no guard of its own — auth is inherited from the parent `_protected.tsx`'s `beforeLoad: () => requireAuth()`.
+
+## `requirePermission` (real, added 2026-07-10)
+`src/middlewares/authMiddleware.ts` exports `requirePermission(permission)` alongside `requireAuth`/`requireGuest` — reads `useAuthStore`'s `permissions`, wildcard `"*"` passes, else redirects to `/dashboard`. Pairs with `<Can>`/`useCan` (`src/components/common/Can.tsx`, `src/hooks/useCan.ts`) for UI-level gating. First route consumer: `src/routes/_protected/transactions/route.tsx` (`requirePermission("transactions.view")`).
+
+## `Link`/`useNavigate` to not-yet-registered routes
+`Link`'s internal `RouterLink` gets `to={href as unknown as string}` — it bypasses TanStack Router's strict route-literal typing on purpose. Use `<Link href="/financial">` (not raw `<Link to="/financial">` from `@tanstack/react-router`) for any nav item whose route isn't registered yet in `routeTree.gen.ts` (e.g. sidebar items for MVP features not yet built) — raw `Link`/`useNavigate` will fail `tsc` on unregistered paths. For `useNavigate` calls to a dynamic/not-yet-registered path, cast the same way: `navigate({ to: href as unknown as string })`.

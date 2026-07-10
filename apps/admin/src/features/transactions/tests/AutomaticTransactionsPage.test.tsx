@@ -33,9 +33,18 @@ describe("AutomaticTransactionsPage", () => {
   it("shows the 3 status pills with exact labels and counts", async () => {
     await renderRoute("/transaction-preview");
 
-    expect(await screen.findByRole("button", { name: "Pending (12)" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Partial Refund (32)" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Partial Success (8)" })).toBeInTheDocument();
+    // Pills are now full-width stat-card buttons with the label and count as
+    // separate elements (matching the reference's visual layout), rather
+    // than a single "Label (count)" text node — assert both are present
+    // within each button rather than an exact accessible name.
+    const pending = await screen.findByRole("button", { name: /Pending/ });
+    expect(within(pending).getByText("12")).toBeInTheDocument();
+
+    const partialRefund = screen.getByRole("button", { name: /Partial Refund/ });
+    expect(within(partialRefund).getByText("32")).toBeInTheDocument();
+
+    const partialSuccess = screen.getByRole("button", { name: /Partial Success/ });
+    expect(within(partialSuccess).getByText("8")).toBeInTheDocument();
   });
 
   it("shows all 10 filter bar field labels", async () => {
