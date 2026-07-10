@@ -7,6 +7,7 @@ readonly class UserFilterDTO
     public function __construct(
         public ?string $search = null,
         public ?int $roleId = null,
+        public ?int $excludeRoleId = null,
         public ?float $minBalance = null,
         public ?float $maxBalance = null,
         public ?int $minPoint = null,
@@ -23,6 +24,7 @@ readonly class UserFilterDTO
         return new self(
             search: $validated['search'] ?? null,
             roleId: $validated['role_id'] ?? null,
+            excludeRoleId: $validated['exclude_role_id'] ?? null,
             minBalance: isset($validated['min_balance']) ? (float) $validated['min_balance'] : null,
             maxBalance: isset($validated['max_balance']) ? (float) $validated['max_balance'] : null,
             minPoint: isset($validated['min_point']) ? (int) $validated['min_point'] : null,

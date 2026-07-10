@@ -3,11 +3,16 @@
 namespace App\Services;
 
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class DigiflazzService
 {
+    public const PRICE_LIST_CACHE_KEY = 'digiflazz:price-list:';
+
+    public const PRICE_LIST_CACHE_TTL = 300;
+
     private string $username;
 
     private string $key;
@@ -66,6 +71,36 @@ class DigiflazzService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Price list via a 5-minute shared cache. The scheduled price checker
+     * refreshes this cache on every run, so lookups (SKU preview, manual add,
+     * Excel import) almost never trigger their own Digiflazz fetch.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function getPriceListCached(string $cmd = 'prepaid'): array
+    {
+        return Cache::remember(
+            self::PRICE_LIST_CACHE_KEY.$cmd,
+            self::PRICE_LIST_CACHE_TTL,
+            fn () => $this->getPriceList($cmd)
+        );
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public function findSkuInPriceList(string $sku, string $cmd = 'prepaid'): ?array
+    {
+        foreach ($this->getPriceListCached($cmd) as $item) {
+            if (($item['buyer_sku_code'] ?? null) === $sku) {
+                return $item;
+            }
+        }
+
+        return null;
     }
 
     public function getBalance(): array

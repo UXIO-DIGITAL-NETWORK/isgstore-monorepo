@@ -30,7 +30,7 @@ class PointHistoryController extends Controller
     {
         $pointHistory = $action->execute($request->toDTO());
 
-        return $this->success(
+        return $this->successResponse(
             new PointHistoryResource($pointHistory->load(['user', 'transaction'])),
             'Point History created successfully',
             201
@@ -39,7 +39,7 @@ class PointHistoryController extends Controller
 
     public function show(PointHistory $pointHistory)
     {
-        return $this->success(
+        return $this->successResponse(
             new PointHistoryResource($pointHistory->load(['user', 'transaction'])),
             'Point History retrieved successfully'
         );
@@ -49,7 +49,7 @@ class PointHistoryController extends Controller
     {
         $pointHistory = $action->execute($pointHistory, $request->toDTO());
 
-        return $this->success(
+        return $this->successResponse(
             new PointHistoryResource($pointHistory->load(['user', 'transaction'])),
             'Point History updated successfully'
         );
@@ -59,6 +59,6 @@ class PointHistoryController extends Controller
     {
         $action->execute($pointHistory);
 
-        return $this->success(null, 'Point History deleted successfully');
+        return $this->successResponse(null, 'Point History deleted successfully');
     }
 }

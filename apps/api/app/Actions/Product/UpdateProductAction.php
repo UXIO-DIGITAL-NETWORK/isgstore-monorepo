@@ -15,8 +15,6 @@ class UpdateProductAction
     public function execute(Product $product, UpdateProductDTO $dto): Product
     {
         $product->update([
-            // Omitting auto_price keeps the product's current setting.
-            ...($dto->autoPrice !== null ? ['auto_price' => $dto->autoPrice] : []),
             'category_id' => $dto->categoryId,
             'sub_category_id' => $dto->subCategoryId,
             'name' => $dto->name,

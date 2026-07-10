@@ -29,7 +29,7 @@ class BannerController extends Controller
     {
         $banner = $action->execute($request->toDTO());
 
-        return $this->success(
+        return $this->successResponse(
             new BannerResource($banner->load('category')),
             'Banner created successfully',
             201
@@ -38,7 +38,7 @@ class BannerController extends Controller
 
     public function show(Banner $banner)
     {
-        return $this->success(
+        return $this->successResponse(
             new BannerResource($banner->load('category')),
             'Banner retrieved successfully'
         );
@@ -48,7 +48,7 @@ class BannerController extends Controller
     {
         $banner = $action->execute($banner, $request->toDTO());
 
-        return $this->success(
+        return $this->successResponse(
             new BannerResource($banner->load('category')),
             'Banner updated successfully'
         );
@@ -58,6 +58,6 @@ class BannerController extends Controller
     {
         $action->execute($banner);
 
-        return $this->success(null, 'Banner deleted successfully');
+        return $this->successResponse(null, 'Banner deleted successfully');
     }
 }

@@ -31,6 +31,9 @@ class GetUsersAction
         if ($dto->roleId) {
             $query->where('role_id', $dto->roleId);
         }
+        if ($dto->excludeRoleId) {
+            $query->where('role_id', '!=', $dto->excludeRoleId);
+        }
 
         // 3. Filter Range Saldo
         if ($dto->minBalance !== null) {

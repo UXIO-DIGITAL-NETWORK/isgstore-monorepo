@@ -2,21 +2,26 @@
 
 namespace App\Console\Commands;
 
-use App\Actions\Digiflazz\SyncDigiflazzProductsAction;
-use App\DTOs\Digiflazz\SyncProductsReportDTO;
+use App\Actions\Digiflazz\CheckDigiflazzPricesAction;
+use App\DTOs\Digiflazz\PriceCheckReportDTO;
 use App\Services\DiscordWebhookService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
+/**
+ * Manual price check (name kept for operator familiarity — the old auto-sync
+ * behavior is gone). Delegates to the same checker the 5-minute schedule uses,
+ * then sends a full report to Discord.
+ */
 class SyncDigiflazzProductsCommand extends Command
 {
     protected $signature = 'digiflazz:sync-products
-                            {--type=all : Price list to sync: prepaid, pasca, or all}';
+                            {--type=all : Price list to check: prepaid, pasca, or all}';
 
-    protected $description = 'Sync Digiflazz price list: supplier costs, availability, auto-created products and recalculated selling prices';
+    protected $description = 'Cek harga Digiflazz manual: update modal/availability + buat price alert. TIDAK membuat produk / mengubah harga jual.';
 
-    public function handle(SyncDigiflazzProductsAction $action, DiscordWebhookService $discord): int
+    public function handle(CheckDigiflazzPricesAction $action, DiscordWebhookService $discord): int
     {
         $option = (string) $this->option('type');
         $types = $option === 'all' ? ['prepaid', 'pasca'] : [$option];
@@ -27,7 +32,7 @@ class SyncDigiflazzProductsCommand extends Command
             try {
                 $report = $action->execute($type);
             } catch (Throwable $e) {
-                $this->error("Sync {$type} failed: {$e->getMessage()}");
+                $this->error("Price check {$type} failed: {$e->getMessage()}");
                 Log::error("digiflazz:sync-products ({$type}) failed", ['error' => $e->getMessage()]);
 
                 return self::FAILURE;
@@ -42,18 +47,18 @@ class SyncDigiflazzProductsCommand extends Command
         return self::SUCCESS;
     }
 
-    private function renderReport(SyncProductsReportDTO $report): void
+    private function renderReport(PriceCheckReportDTO $report): void
     {
-        $this->info("Digiflazz sync — {$report->type}");
+        $this->info("Digiflazz price check — {$report->type}");
         $this->table(['Metric', 'Value'], [
             ['SKUs fetched', $report->totalFetched],
             ['Cost changes', $report->priceChangedCount],
-            ['New products (inactive)', count($report->newProducts)],
+            ['Alerts created', $report->alertsCreated],
+            ['Alerts updated', $report->alertsUpdated],
             ['Mappings deactivated', count($report->deactivated)],
             ['Mappings reactivated', count($report->reactivated)],
             ['Negative margin products', count($report->negativeMargin)],
-            ['Unmapped brands', implode(', ', $report->unmappedBrands) ?: '-'],
-            ['Skipped SKUs', count($report->skippedSkus)],
+            ['Unknown SKUs (not mapped locally)', $report->unknownCount],
         ]);
 
         foreach ($report->negativeMargin as $row) {
@@ -62,7 +67,7 @@ class SyncDigiflazzProductsCommand extends Command
     }
 
     /**
-     * @param  array<int,SyncProductsReportDTO>  $reports
+     * @param  array<int,PriceCheckReportDTO>  $reports
      */
     private function sendDiscordReport(DiscordWebhookService $discord, array $reports): void
     {
@@ -70,28 +75,15 @@ class SyncDigiflazzProductsCommand extends Command
         $hasNegativeMargin = false;
 
         foreach ($reports as $report) {
-            $newList = array_slice(
-                array_map(fn ($p) => "`{$p['sku']}` {$p['name']}", $report->newProducts),
-                0,
-                15
-            );
-            $extra = count($report->newProducts) - count($newList);
-
             $fields[] = [
                 'name' => strtoupper($report->type),
-                'value' => "SKU: {$report->totalFetched} • Harga berubah: {$report->priceChangedCount} • "
-                    .'Baru: '.count($report->newProducts).' • Nonaktif: '.count($report->deactivated)
-                    .' • Aktif lagi: '.count($report->reactivated),
+                'value' => "SKU: {$report->totalFetched} • Modal berubah: {$report->priceChangedCount} • "
+                    ."Alert baru: {$report->alertsCreated} • Alert diperbarui: {$report->alertsUpdated} • "
+                    .'Nonaktif: '.count($report->deactivated)
+                    .' • Aktif lagi: '.count($report->reactivated)
+                    ." • SKU tak dikenal: {$report->unknownCount}",
                 'inline' => false,
             ];
-
-            if ($newList !== []) {
-                $fields[] = [
-                    'name' => '🆕 Produk baru (nonaktif, perlu review)',
-                    'value' => implode("\n", $newList).($extra > 0 ? "\n… +{$extra} lainnya" : ''),
-                    'inline' => false,
-                ];
-            }
 
             if ($report->negativeMargin !== []) {
                 $hasNegativeMargin = true;
@@ -105,17 +97,18 @@ class SyncDigiflazzProductsCommand extends Command
                 ];
             }
 
-            if ($report->unmappedBrands !== []) {
+            if ($report->unknownSkusSample !== []) {
                 $fields[] = [
-                    'name' => '🏷️ Brand tanpa mapping kategori',
-                    'value' => implode(', ', array_slice($report->unmappedBrands, 0, 30)),
+                    'name' => 'ℹ️ Contoh SKU Digiflazz yang belum ditambahkan',
+                    'value' => '`'.implode('`, `', array_slice($report->unknownSkusSample, 0, 20)).'`'
+                        .($report->unknownCount > 20 ? " … total {$report->unknownCount}" : ''),
                     'inline' => false,
                 ];
             }
         }
 
         $discord->sendEmbed(
-            '📦 Laporan Sinkronisasi Digiflazz',
+            '📦 Laporan Cek Harga Digiflazz',
             $fields,
             $hasNegativeMargin ? DiscordWebhookService::COLOR_ORANGE : DiscordWebhookService::COLOR_GREEN
         );

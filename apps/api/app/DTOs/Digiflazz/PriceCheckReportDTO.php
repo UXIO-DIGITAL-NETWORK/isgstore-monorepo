@@ -2,26 +2,25 @@
 
 namespace App\DTOs\Digiflazz;
 
-readonly class SyncProductsReportDTO
+readonly class PriceCheckReportDTO
 {
     /**
-     * @param  array<int,array{sku:string,name:string,category:string}>  $newProducts
      * @param  array<int,string>  $deactivated  buyer_sku_codes turned off by this run
      * @param  array<int,string>  $reactivated  buyer_sku_codes turned back on by this run
      * @param  array<int,array{sku:string,product:string,cost:int,price_member:int}>  $negativeMargin
-     * @param  array<int,string>  $unmappedBrands  Digiflazz brands that fell back to `uncategorized`
-     * @param  array<int,string>  $skippedSkus  SKUs skipped due to product code collisions or bad data
+     * @param  array<int,string>  $unknownSkusSample  first N SKUs with no local mapping (never auto-created)
      */
     public function __construct(
         public string $type,
         public int $totalFetched,
         public int $priceChangedCount,
-        public array $newProducts = [],
+        public int $alertsCreated = 0,
+        public int $alertsUpdated = 0,
         public array $deactivated = [],
         public array $reactivated = [],
         public array $negativeMargin = [],
-        public array $unmappedBrands = [],
-        public array $skippedSkus = [],
+        public int $unknownCount = 0,
+        public array $unknownSkusSample = [],
     ) {}
 
     /**
@@ -33,12 +32,13 @@ readonly class SyncProductsReportDTO
             'type' => $this->type,
             'total_fetched' => $this->totalFetched,
             'price_changed' => $this->priceChangedCount,
-            'new_products' => $this->newProducts,
+            'alerts_created' => $this->alertsCreated,
+            'alerts_updated' => $this->alertsUpdated,
             'deactivated' => $this->deactivated,
             'reactivated' => $this->reactivated,
             'negative_margin' => $this->negativeMargin,
-            'unmapped_brands' => $this->unmappedBrands,
-            'skipped_skus' => $this->skippedSkus,
+            'unknown_count' => $this->unknownCount,
+            'unknown_skus_sample' => $this->unknownSkusSample,
         ];
     }
 }

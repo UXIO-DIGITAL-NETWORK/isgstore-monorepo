@@ -122,22 +122,36 @@ Key points:
 
 - All Discord sends go through `App\Services\DiscordWebhookService` (`sendEmbed`/`sendAlert`) — never `Http::post` a webhook URL directly.
 - Silently no-ops (and never throws) if `services.discord.webhook_log_url` is not set — safe to omit in dev.
-- Used by: Digiflazz status transitions, the daily sync report, `RefundGatewayJob::failed`, and scheduler `onFailure` alerts.
+- Used by: Digiflazz status transitions, the manual price-check report, `RefundGatewayJob::failed`, and scheduler `onFailure` alerts.
 
 ---
 
-## Daily Digiflazz Price Sync
+## Digiflazz Price Checker & Manual Product Management
 
-`digiflazz:sync-products {--type=all}` (scheduled daily 04:30 in `routes/console.php`; also `POST /v1/digiflazz/sync-products`, auth) pulls the Digiflazz price list and:
+Core principle: **supplier cost is fact (auto-updated), selling price is the admin's decision (never auto-changed), products are never auto-created**. Full admin guide: `docs/digiflazz-product-management.md`.
 
-- Updates `supplier_products` cost/availability via chunked `upsert()` on the unique `(supplier_id, buyer_sku_code)` key.
-- **Selling prices**: recalculated from the new cost through `App\Services\PricingService` using `pricing_rules` (percent + flat markup per role, per-category override, global fallback; `ceil()` rounding). Only products with `auto_price = true` are touched — set it false to hand-price a product. Prices resolve `(category_id, role) → (NULL, role) → built-in defaults` (member 20 / vip 15 / reseller 10 / agent 5 %).
-- **New SKUs**: auto-created as `status = false` products (hidden until admin review) categorised via `config/digiflazz.php` `category_map` (Digiflazz `brand` → `categories.code`), falling back to a self-provisioned `uncategorized` category. SKUs matching an existing `products.code` get a mapping linked instead.
+### 5-minute price checker
+
+`digiflazz:check-prices {--type=all}` (scheduled `everyFiveMinutes` in `routes/console.php`, Discord alert only on failure) runs `CheckDigiflazzPricesAction`:
+
+- Fetches the price list (warming the shared cache `digiflazz:price-list:{prepaid|pasca}`, TTL 300s — `DigiflazzService::getPriceListCached()` / `findSkuInPriceList()` read it).
+- Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Pasca items store `admin` → `price`/`admin_fee` and `commission`.
 - **Availability**: unavailable SKUs get `is_active = false` + `sync_deactivated_at` stamp; only stamped rows are ever auto-reactivated, so a manual admin deactivation is never overridden.
-- Pasca items store `admin` → `price`/`admin_fee` and `commission` (used as postpaid margin in `PayDigiflazzBillAction`).
-- Emits a report (`SyncProductsReportDTO`): new products, price changes, negative-margin products (below active supplier cost — these fail checkout until repriced), deactivated/reactivated SKUs, unmapped brands — printed to console and sent to Discord.
+- **Cost changes** raise `price_change_alerts` rows (enum `App\Enums\PriceAlertStatus`). Dedupe: one pending alert per mapping — repeat changes update `new_price` (original `old_price` kept); a revert to `old_price` deletes the pending alert; acknowledged alerts stay as history and a later change creates a fresh pending row.
+- **Never** creates products (unknown SKUs are only counted/sampled in the report) and **never** touches selling prices.
+- Report DTO: `PriceCheckReportDTO` (type, total_fetched, price_changed, alerts_created/updated, deactivated/reactivated, negative_margin, unknown_count/sample).
 
-Markup rules are managed via `Route::apiResource('pricing-rules')` (auth).
+`digiflazz:sync-products {--type=all}` (name kept; also `POST /v1/digiflazz/sync-products`) is the **manual** run of the same action with a console table + Discord report — it no longer auto-creates or reprices anything.
+
+### Manual product creation
+
+- `GET /v1/digiflazz/sku-preview` — previews a SKU from the cached price list (name/brand/cost/availability, `already_mapped`, `suggested_prices` from `PricingService`).
+- `POST /v1/digiflazz/products` — `CreateDigiflazzProductAction`: creates Product (price_modal = Digiflazz cost) + SupplierProduct mapping; admin supplies all 4 selling prices. Business-rule failures throw `App\Exceptions\DigiflazzProductException` → 422.
+- `POST /v1/digiflazz/products/import` — Excel bulk import (`ImportDigiflazzProductsAction`, PhpSpreadsheet): headers matched by NAME on row 1 (`buyer_sku_code, category_code, name, code, price_member..price_agent, status`), max 500 rows, per-row validation + transaction so bad rows never abort the batch; blank prices default from `PricingService`.
+- `GET /v1/digiflazz/products/import-template` — generated xlsx (sheet "Produk" + "Petunjuk" with live category codes). **Binary response — intentional deviation from the ApiResponse envelope.**
+- `GET/POST /v1/digiflazz/price-alerts...` — paginated alert list, `{id}/acknowledge` (idempotent), `acknowledge-all`.
+
+`products.auto_price` was **dropped**; `config/digiflazz.php` (brand→category map) was **deleted** — category is always explicit admin input. `PricingService` + `pricing-rules` CRUD remain for suggested/default prices only (member 20 / vip 15 / reseller 10 / agent 5 % built-in fallback).
 
 ---
 
@@ -161,8 +175,8 @@ Queue driver is `database` by default (`QUEUE_CONNECTION=database`). Tests run w
 users (nullable) ──── transactions ──── payments ──── payment_channels
                            │
                      products ──── supplier_products ──── suppliers
-                           │
-                     point_histories, ratings
+                           │              │
+             point_histories, ratings   price_change_alerts
 ```
 
 - `transactions.user_id` is nullable — guest checkouts are supported.

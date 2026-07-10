@@ -23,7 +23,6 @@ class ProductFactory extends Factory
             'price_vip' => 11500,
             'price_reseller' => 11000,
             'price_agent' => 10500,
-            'auto_price' => true,
             'status' => true,
         ];
     }

@@ -29,7 +29,7 @@ class AnnouncementController extends Controller
     {
         $announcement = $action->execute($request->toDTO());
 
-        return $this->success(
+        return $this->successResponse(
             new AnnouncementResource($announcement->load('category')),
             'Announcement created successfully',
             201
@@ -38,7 +38,7 @@ class AnnouncementController extends Controller
 
     public function show(Announcement $announcement)
     {
-        return $this->success(
+        return $this->successResponse(
             new AnnouncementResource($announcement->load('category')),
             'Announcement retrieved successfully'
         );
@@ -48,7 +48,7 @@ class AnnouncementController extends Controller
     {
         $announcement = $action->execute($announcement, $request->toDTO());
 
-        return $this->success(
+        return $this->successResponse(
             new AnnouncementResource($announcement->load('category')),
             'Announcement updated successfully'
         );
@@ -58,6 +58,6 @@ class AnnouncementController extends Controller
     {
         $action->execute($announcement);
 
-        return $this->success(null, 'Announcement deleted successfully');
+        return $this->successResponse(null, 'Announcement deleted successfully');
     }
 }

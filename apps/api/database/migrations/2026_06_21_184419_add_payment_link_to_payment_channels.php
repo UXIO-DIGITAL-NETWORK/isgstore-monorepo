@@ -12,6 +12,12 @@ return new class extends Migration
         if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE payment_channels MODIFY COLUMN payment_type
                 ENUM('virtual_account','qris','ewallet','convenience_store','payment_link') NOT NULL");
+        } else {
+            // SQLite (local/testing): the original enum became a CHECK constraint
+            // that would reject 'payment_link' — rebuild the column as a plain string.
+            Schema::table('payment_channels', function (Blueprint $table) {
+                $table->string('payment_type')->change();
+            });
         }
 
         Schema::table('payment_channels', function (Blueprint $table) {

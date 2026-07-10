@@ -15,18 +15,10 @@ Schedule::command('payments:sync-expired')
     ->runInBackground()
     ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: payments:sync-expired'));
 
-Schedule::command('digiflazz:sync-products --type=all')
-    ->dailyAt('04:30')
+// Price checker: updates supplier cost/availability + raises price change
+// alerts. No success/before Discord embeds — 288 runs/day would be spam.
+Schedule::command('digiflazz:check-prices --type=all')
+    ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground()
-    ->before(fn () => app(DiscordWebhookService::class)->sendEmbed(
-        '⏰ Digiflazz Sync Started',
-        [['name' => 'Schedule', 'value' => 'Daily at 04:30', 'inline' => true]],
-        DiscordWebhookService::COLOR_YELLOW,
-    ))
-    ->onSuccess(fn () => app(DiscordWebhookService::class)->sendEmbed(
-        '✅ Digiflazz Sync Completed',
-        [['name' => 'Schedule', 'value' => 'Daily at 04:30', 'inline' => true]],
-        DiscordWebhookService::COLOR_GREEN,
-    ))
-    ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: digiflazz:sync-products'));
+    ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: digiflazz:check-prices'));

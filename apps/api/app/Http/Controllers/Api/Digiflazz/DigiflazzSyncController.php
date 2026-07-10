@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\Digiflazz;
 
-use App\Actions\Digiflazz\SyncDigiflazzProductsAction;
+use App\Actions\Digiflazz\CheckDigiflazzPricesAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Digiflazz\SyncProductsRequest;
 use App\Traits\ApiResponse;
@@ -12,7 +12,7 @@ class DigiflazzSyncController extends Controller
 {
     use ApiResponse;
 
-    public function sync(SyncProductsRequest $request, SyncDigiflazzProductsAction $action)
+    public function sync(SyncProductsRequest $request, CheckDigiflazzPricesAction $action)
     {
         try {
             $type = $request->string('type')->toString() ?: 'prepaid';
@@ -20,7 +20,7 @@ class DigiflazzSyncController extends Controller
 
             return $this->successResponse(
                 $report->toArray(),
-                "Berhasil sinkronisasi {$report->totalFetched} produk Digiflazz ({$type})"
+                "Cek harga selesai: {$report->totalFetched} SKU Digiflazz ({$type}), {$report->priceChangedCount} perubahan modal"
             );
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 502);

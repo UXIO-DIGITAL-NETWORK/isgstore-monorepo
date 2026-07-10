@@ -14,7 +14,6 @@ readonly class UpdateProductDTO
         public int $priceVip,
         public int $priceReseller,
         public int $priceAgent,
-        public bool $status,
-        public ?bool $autoPrice = null
+        public bool $status
     ) {}
 }

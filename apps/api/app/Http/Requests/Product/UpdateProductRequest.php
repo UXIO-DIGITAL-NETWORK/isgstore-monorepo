@@ -37,7 +37,6 @@ class UpdateProductRequest extends FormRequest
             'price_reseller' => ['required', 'integer'],
             'price_agent' => ['required', 'integer'],
             'status' => ['required', 'boolean'],
-            'auto_price' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -53,8 +52,7 @@ class UpdateProductRequest extends FormRequest
             priceVip: (int) $this->validated('price_vip'),
             priceReseller: (int) $this->validated('price_reseller'),
             priceAgent: (int) $this->validated('price_agent'),
-            status: (bool) $this->validated('status'),
-            autoPrice: $this->has('auto_price') ? (bool) $this->validated('auto_price') : null
+            status: (bool) $this->validated('status')
         );
     }
 }

@@ -10,10 +10,15 @@ use App\Http\Controllers\Api\Category\ServerCategoryController;
 use App\Http\Controllers\Api\Category\ServerCategoryOptionController;
 use App\Http\Controllers\Api\Category\SubCategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzBalanceController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzPostpaidController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzProductController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzProductImportController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzSkuLookupController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
+use App\Http\Controllers\Api\Digiflazz\PriceAlertController;
 use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
@@ -103,6 +108,9 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::delete('/{user}', [UserController::class, 'destroy']);
     });
 
+    // Dashboard (admin overview aggregates)
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
     // Activity Logs
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
@@ -190,6 +198,17 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/digiflazz/balance', [DigiflazzBalanceController::class, 'index']);
     Route::post('/digiflazz/check-status', [DigiflazzTransactionStatusController::class, 'check']);
     Route::post('/digiflazz/sync-products', [DigiflazzSyncController::class, 'sync']);
+
+    // Digiflazz Manual Product Management (products are never auto-created)
+    Route::get('/digiflazz/sku-preview', [DigiflazzSkuLookupController::class, 'show']);
+    Route::post('/digiflazz/products', [DigiflazzProductController::class, 'store']);
+    Route::get('/digiflazz/products/import-template', [DigiflazzProductImportController::class, 'template']);
+    Route::post('/digiflazz/products/import', [DigiflazzProductImportController::class, 'import']);
+
+    // Digiflazz Price Change Alerts (raised by the 5-minute checker)
+    Route::get('/digiflazz/price-alerts', [PriceAlertController::class, 'index']);
+    Route::post('/digiflazz/price-alerts/acknowledge-all', [PriceAlertController::class, 'acknowledgeAll']);
+    Route::post('/digiflazz/price-alerts/{priceChangeAlert}/acknowledge', [PriceAlertController::class, 'acknowledge']);
 
     // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.
     // Outbound signed calls to Monetapay; mirror the spec's query endpoints.
