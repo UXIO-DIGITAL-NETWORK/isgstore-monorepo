@@ -81,7 +81,8 @@ jobs:
           envs: ENV_FILE_CONTENT
           script: |
             # 0. Bootstrap: clone repo on first deploy if prod dir isn't a git repo yet
-            PROD_DIR="/home/uxioserver1/web-topup/api/prod"
+            # Updated to dreamy-8 path
+            PROD_DIR="/home/dreamy-8/web-topup/api/prod"
             if [ ! -d "$PROD_DIR/.git" ]; then
               echo "First-time setup: removing stale dir and cloning repo into $PROD_DIR..."
               rm -rf "$PROD_DIR"
@@ -90,7 +91,7 @@ jobs:
             fi
 
             # 1. Masuk ke direktori production yang tepat
-            cd /home/uxioserver1/web-topup/api/prod
+            cd /home/dreamy-8/web-topup/api/prod
 
             # 2. Tarik kode terbaru dari branch main
             git pull origin main
@@ -113,13 +114,14 @@ jobs:
             php artisan storage:link || true
 
             # 8. Pastikan permission tetap aman setelah file baru turun
-            sudo chown -R uxioserver1:www-data /home/uxioserver1/web-topup/api/prod
-            sudo chmod -R 775 /home/uxioserver1/web-topup/api/prod/storage
-            sudo chmod -R 775 /home/uxioserver1/web-topup/api/prod/bootstrap/cache
+            # Updated user/group and paths to dreamy-8
+            sudo chown -R dreamy-8:www-data /home/dreamy-8/web-topup/api/prod
+            sudo chmod -R 775 /home/dreamy-8/web-topup/api/prod/storage
+            sudo chmod -R 775 /home/dreamy-8/web-topup/api/prod/bootstrap/cache
 
             # 9. Pasang cron Laravel scheduler (idempotent, spesifik per environment).
-            # Tanpa ini payments:sync-expired & digiflazz:sync-products tidak pernah jalan.
-            CRON_ENTRY="* * * * * cd /home/uxioserver1/web-topup/api/prod && php artisan schedule:run >> /dev/null 2>&1"
+            # Updated cron path to dreamy-8
+            CRON_ENTRY="* * * * * cd /home/dreamy-8/web-topup/api/prod && php artisan schedule:run >> /dev/null 2>&1"
             ( crontab -l 2>/dev/null | grep -vF "web-topup/api/prod && php artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
             echo "Scheduler cron installed:"
             crontab -l | grep "schedule:run"
@@ -139,7 +141,8 @@ jobs:
             sudo mkdir -p /etc/supervisor/conf.d
 
             # 12. Deploy supervisor config untuk queue worker
-            sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/laravel-queue-prod.conf \
+            # Updated source file path to dreamy-8
+            sudo cp /home/dreamy-8/web-topup/api/prod/supervisor/laravel-queue-prod.conf \
                     /etc/supervisor/conf.d/laravel-queue-prod.conf
 
             # 13. Reload supervisor agar membaca config terbaru
@@ -147,7 +150,6 @@ jobs:
             sudo supervisorctl update
 
             # 14. Restart queue worker agar muat kode yang baru di-deploy
-            # (queue:work meng-cache kode — harus restart setiap deploy)
             sudo supervisorctl restart laravel-queue-prod:*
 
       - name: Notify Discord — deploy succeeded
