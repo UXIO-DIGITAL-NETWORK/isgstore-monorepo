@@ -66,7 +66,7 @@ The left sidebar is grouped. The full IA below is the target structure; **only t
 |                         | Integration     | `/integration`     | **Active** (added 2026-07-10, see §4.4) |
 | **Orders**              | Transaction     | `/transactions`    | **MVP**                                 |
 |                         | Activity        | `/activity`        | Near-term                               |
-| **Products & Services** | Category        | `/categories`      | Roadmap                                 |
+| **Products & Services** | Category        | `/categories`      | **Active** (added 2026-07-11, see §4.5) |
 |                         | Product         | `/products`        | Roadmap                                 |
 |                         | Payment         | `/payments`        | Roadmap                                 |
 |                         | Membership      | `/memberships`     | Roadmap                                 |
@@ -179,13 +179,27 @@ Connection/health management for every external channel the platform depends on 
 
 > **Provisional / flagged, not invented:** the row-level menu's exact items (no reference shows it open); the precise meaning of the per-card currency line; whether the four "Supplier" channels are a subset of Financial's five (`UxioTopup` being self/in-house and needing no external integration is a plausible reconciliation, not confirmed); and a second Payment Gateway beyond `UxioPay` shown in Financial (`Monetapay`, the consumer platform's gateway, is a reasonable candidate given these are related products, but this isn't confirmed either).
 
+### 4.5 Category (`/categories`)
+
+> **Revision (2026-07-11):** promoted from Roadmap (§5) to active scope, same pattern as Integration (§4.4) — a deliberate addition at the user's direction, not a silent one.
+
+Product taxonomy management — how games/products are grouped for the storefront. **Five tabs**, reflected as nested routes: `Category` (default), `Sub Category`, `Category Type`, `Server Category`, `Supplier Category`. Only the first tab (`Category`) has a confirmed reference this round, for both its list and its add-form — the other four are provisional, build them with the same list+add pattern and a reduced/sensible field set, flagged as such.
+
+**Critical flag on the reference's list-view table:** the table shown in the reference (columns Header/Section Type/Status/Target/Limit/Reviewer; rows "Cover Page", "Table of Contents", "Executive Summary", reviewers "Jamik Tashpulatov"/"Eddie Lake") is the **stock shadcn/ui data-table demo dataset**, verbatim — a document-review-workflow example, not anything related to top-up categories. **Do not reproduce this content or its column semantics.** The visual/interaction _pattern_ (checkbox select, status badge, search + type-filter toolbar, refresh button, row action menu, "+ Add X" primary button) is worth keeping; the specific columns and data are not. Build sensible columns instead: Category Name, Category Type, Code/Slug, Status (a simple `active | inactive` toggle — not a review-workflow state, that doesn't fit a taxonomy record), and Actions. The row menu showed only `Delete` (destructive) in the reference; add `Edit` too since there's no other way to reach the edit form otherwise, and flag that only Delete was visually confirmed.
+
+**Add Category form** (this part of the reference **is** deliberately designed, follow it precisely) — breadcrumb `Category › Category › Add Category`. Header "Add Category" with a real subcopy you write (the reference repeats the same "lorem ipsum dolot sit amet" placeholder on both the list and add pages — not real copy, don't use it anywhere).
+
+_Basic information_ section (subcopy: "Type, validation, and category identity on the storefront."), two-column grid: `Category Type` (select), `Category UID Parser` (select), `Category Name` (the reference renders every field with a "Type to search..." select-style placeholder uniformly, but a _name_ is typed, not chosen from existing options — build this and `Category Sub Name` as plain text inputs, not selects), `Category Sub Name` (text), `Account Nickname Validation` (select), `Region` (select), `Category Code` (text), `Category Slug` (text, reasonable to auto-derive from the name but keep it editable).
+
+_Category form_ section (subcopy: "Input fields shown to buyers when ordering.") — a **dynamic, repeatable field-definition builder**: each entry defines one input the _consumer_ top-up site's order form will show for this category (e.g. a `user_id` or `server_id` field). This is the first place Admin's data model directly describes consumer-facing behavior — worth noting for later backend work, not something to wire up now (UI-first, no real connection to the consumer app). Include the reference's info callout verbatim, it's real product guidance, not placeholder: "Do not use whatsapp or email keys — buyer contact is taken from their account." / "Suggested keys: user_id, server_id." Empty state: "No forms yet. Click "Add Form" to add one." with an "+ Add Form" button that appends a new field-definition row (`useFieldArray` from React Hook Form is the natural fit).
+
 ---
 
 ## 5. Roadmap (Post-MVP Modules)
 
 Documented so architecture and navigation accommodate them; **not built this phase.**
 
-- **Product management** — `Game → hasMany Product (nominal)`. Each product stores **cost price + selling price** (admin sees margin), an upstream **provider/SKU mapping**, and an **availability toggle**. Categories group games/products.
+- **Product management** — `Game → hasMany Product (nominal)`. Each product stores **cost price + selling price** (admin sees margin), an upstream **provider/SKU mapping**, and an **availability toggle**. (Category, which groups games/products, moved to `§4.5` — no longer roadmap; Product itself is still roadmap.)
 - **Promo management** — promo **types** (percentage / fixed amount / special price); **scope** (global / per-game / per-product / per-payment-method); **quota** (total + per-user); **validity window**; **minimum purchase**; optional tie-in to a consumer homepage promo banner. Flash Sale is a time-boxed variant.
 - **Content / Website Content** — manage consumer homepage content: hero/CTA banners, articles/blog, "Game Populer", testimonials, payment-method logos, footer. **Pages** for static content.
 - **Payment methods** — enable/disable channels, configure fees (gateway is backend-proxied on the consumer side).
@@ -207,7 +221,8 @@ Backend is not built; these are **FE-facing entity briefs** to shape typed model
 - **Product (nominal)** — `id`, `game_id`, `name`, `cost_price`, `selling_price`, `provider_sku?`, `is_available` (referenced; full CRUD is roadmap).
 - **DashboardSummary** — aggregate view-model for the dashboard stat cards and chart (not a raw table): totals, trend deltas, time-series points.
 - **PaymentGatewayBalance / SupplierBalance** (§4.2) — feature-local to `features/financial/types/` for now, not global: `{ id, name, logoUrl }` plus `activeBalance`/`heldBalance` (gateway) or a single `balance` (supplier). Promote to `src/types/models/` only if another feature (e.g. Transaction, referencing which supplier fulfilled an order) needs them too.
-- **IntegrationChannel** (new, §4.4) — feature-local to `features/integration/types/`, a deliberately separate concern from the two entries above (connectivity, not money): `id`, `type` (`supplier | payment_gateway | whatsapp_gateway | email_gateway`), `name`, `logo_url?`, `currency_config?`, `connection_status` (`connected | disconnected`), `balance?`, `last_ping_at?`, `created_at`, `updated_at`.
+- **IntegrationChannel** (§4.4) — feature-local to `features/integration/types/`, a deliberately separate concern from the two entries above (connectivity, not money): `id`, `type` (`supplier | payment_gateway | whatsapp_gateway | email_gateway`), `name`, `logo_url?`, `currency_config?`, `connection_status` (`connected | disconnected`), `balance?`, `last_ping_at?`, `created_at`, `updated_at`.
+- **Category** (new, §4.5) — feature-local to `features/categories/types/`: `id`, `type`, `uid_parser`, `name`, `sub_name?`, `account_nickname_validation?`, `region?`, `code`, `slug`, `status` (`active | inactive`), `order_form_fields: { key: string; label?: string; required?: boolean }[]` (the buyer-facing dynamic field definitions — this is the piece with a direct, if not-yet-wired, relationship to the consumer platform's order form), `created_at`, `updated_at`. Global entity references (`Game`, `Product`) may link to a category later; keep this feature-local until that link is actually built.
 
 Shared API envelopes (single vs. list) are defined in `system_architecture.md §1`.
 
