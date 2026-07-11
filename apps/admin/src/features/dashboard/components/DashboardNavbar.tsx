@@ -38,10 +38,13 @@ const CATEGORY_TAB_LABELS: Record<string, string> = {
 };
 
 function getCategoryBreadcrumb(pathname: string): string[] | null {
-  const base = pathname.startsWith("/categories")
-    ? "/categories"
-    : pathname.startsWith("/categories-preview")
-      ? "/categories-preview"
+  // "/categories-preview" also starts with the substring "/categories", so
+  // the preview base must be checked first or every preview path would
+  // resolve to the (wrong, one-character-short) real base instead.
+  const base = pathname.startsWith("/categories-preview")
+    ? "/categories-preview"
+    : pathname.startsWith("/categories")
+      ? "/categories"
       : null;
   if (!base) return null;
 

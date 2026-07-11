@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { CategoryListPage } from "@/features/categories";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_preview/categories-preview/")({
-  component: CategoryListPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/categories-preview/category" });
+  },
 });

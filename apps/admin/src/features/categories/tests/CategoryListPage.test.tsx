@@ -48,7 +48,16 @@ describe("CategoryListPage", () => {
     await renderRoute("/categories-preview");
 
     const addLink = await screen.findByRole("link", { name: /Add Category/i });
-    expect(addLink).toHaveAttribute("href", "/categories-preview/add");
+    expect(addLink).toHaveAttribute("href", "/categories-preview/category/add");
+  });
+
+  it("shows all five tabs, mirroring the real route, without leaking out of preview", async () => {
+    await renderRoute("/categories-preview");
+
+    for (const label of ["Category", "Sub Category", "Category Type", "Server Category", "Supplier Category"]) {
+      const tab = await screen.findByRole("tab", { name: label });
+      expect(tab).toHaveAttribute("href", expect.stringMatching(/^\/categories-preview\//));
+    }
   });
 
   it("a row's action menu shows Edit and Delete", async () => {

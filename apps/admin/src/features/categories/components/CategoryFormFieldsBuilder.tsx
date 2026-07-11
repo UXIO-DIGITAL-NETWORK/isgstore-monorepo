@@ -27,7 +27,7 @@ export function CategoryFormFieldsBuilder({ control, register, errors }: Categor
 
   return (
     <Box className="flex flex-col gap-4">
-      <Alert>
+      <Alert className="border-warning/40 bg-card text-warning [&>svg]:text-current *:data-[slot=alert-description]:text-warning/90">
         <Info />
         <AlertTitle>Field key guide</AlertTitle>
         <AlertDescription>
@@ -36,13 +36,20 @@ export function CategoryFormFieldsBuilder({ control, register, errors }: Categor
         </AlertDescription>
       </Alert>
 
+      <Button
+        type="button"
+        variant="outline"
+        className="w-fit self-end rounded-xl"
+        onClick={() => append({ key: "", label: "", required: false })}
+      >
+        <Plus className="size-4" />
+        Add Form
+      </Button>
+
       {fields.length === 0 ? (
-        <Text
-          variant="muted"
-          className="py-4 text-center"
-        >
-          No forms yet. Click &quot;Add Form&quot; to add one.
-        </Text>
+        <Box className="rounded-xl border border-border bg-card p-10 text-center">
+          <Text variant="muted">No forms yet. Click &quot;Add Form&quot; to add one.</Text>
+        </Box>
       ) : (
         <Box className="flex flex-col gap-3">
           {fields.map((field, index) => (
@@ -104,16 +111,6 @@ export function CategoryFormFieldsBuilder({ control, register, errors }: Categor
           ))}
         </Box>
       )}
-
-      <Button
-        type="button"
-        variant="outline"
-        className="w-fit rounded-xl"
-        onClick={() => append({ key: "", label: "", required: false })}
-      >
-        <Plus className="size-4" />
-        Add Form
-      </Button>
     </Box>
   );
 }
