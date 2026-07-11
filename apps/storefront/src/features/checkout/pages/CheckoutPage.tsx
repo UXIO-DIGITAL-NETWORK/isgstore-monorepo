@@ -10,6 +10,7 @@ import {
   DiamondPackages,
   PaymentMethods,
   ContactDetail,
+  PromoCode,
   CustomerReviews,
   OrderSummary,
 } from "@/features/checkout/components";
@@ -119,13 +120,13 @@ export default function CheckoutPage(): React.JSX.Element {
               onServerIdChange={setServerId}
             />
             {/* Reviews: order-last on mobile (after right col), natural position on desktop */}
-            <Box className="order-last lg:order-none">
+            <Box className="order-last lg:order-0">
               <CustomerReviews />
             </Box>
           </Box>
 
           {/* ── Right column (mobile: order-2 so it sits between AccountDetail and Reviews) ── */}
-          <Box className="flex flex-col gap-5 order-2 lg:order-none">
+          <Box className="flex flex-col gap-5 order-2 lg:order-0">
             <DiamondPackages
               packages={filteredPackages}
               selectedPackageId={selectedPackageId}
@@ -145,6 +146,8 @@ export default function CheckoutPage(): React.JSX.Element {
               whatsapp={whatsapp}
               onWhatsappChange={setWhatsapp}
             />
+
+            <PromoCode />
 
             <OrderSummary
               selectedPackage={selectedPackage}

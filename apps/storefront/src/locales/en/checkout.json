@@ -74,6 +74,25 @@
     "receiptNote": "We will send the transaction receipt to the WhatsApp number you entered above."
   },
 
+  "promo": {
+    "title": "Promo Code",
+    "trigger": {
+      "title": "Use voucher",
+      "subtitle": "Promo code & public voucher — for all users",
+      "cta": "Select"
+    },
+    "modal": {
+      "close": "Close",
+      "eyebrow": "Public Voucher",
+      "title": "Get a discount",
+      "description": "Use a voucher code manually, or pick one from the list valid for your selected product.",
+      "inputPlaceholder": "Enter voucher code",
+      "apply": "Apply code",
+      "availableTitle": "Vouchers available for everyone",
+      "empty": "No public vouchers available right now."
+    }
+  },
+
   "reviews": {
     "title": "Customer Reviews",
     "basedOn": "Based on {{count}} reviews",

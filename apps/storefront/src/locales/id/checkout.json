@@ -74,6 +74,25 @@
     "receiptNote": "Bukti transaksi akan kami kirim ke whatsapp yang kamu isi di atas."
   },
 
+  "promo": {
+    "title": "Kode Promo",
+    "trigger": {
+      "title": "Pakai voucher",
+      "subtitle": "Kode promo & voucher publik — untuk semua pengguna",
+      "cta": "Pilih"
+    },
+    "modal": {
+      "close": "Tutup",
+      "eyebrow": "Voucher Publik",
+      "title": "Dapatkan potongan harga",
+      "description": "Pakai kode voucher manual atau pilih dari daftar yang berlaku untuk produk yang kamu pilih.",
+      "inputPlaceholder": "Masukkan kode voucher",
+      "apply": "Pakai kode",
+      "availableTitle": "Voucher tersedia untuk semua",
+      "empty": "Belum ada voucher publik yang bisa dipakai saat ini."
+    }
+  },
+
   "reviews": {
     "title": "Ulasan Pelanggan",
     "basedOn": "Berdasarkan {{count}} ulasan",
