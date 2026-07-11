@@ -12,7 +12,7 @@ import type { PriceListItem } from "@/features/price-list/types/priceList.type";
  * Columns: Game | Layanan | Harga Normal | Member | Gold | Status
  */
 export const TABLE_GRID_COLS =
-  "grid-cols-[1.4fr_2.2fr_1.3fr_1.3fr_1.3fr_0.9fr]";
+  "grid-cols-[minmax(0,1.4fr)_minmax(0,2.2fr)_minmax(0,1.3fr)_minmax(0,1.3fr)_minmax(0,1.3fr)_minmax(0,0.9fr)]";
 
 interface Props {
   item: PriceListItem;
@@ -55,11 +55,11 @@ export default function PriceTableRow({ item, index }: Props): React.JSX.Element
         </Box>
 
         {/* Service name + ID sub-label */}
-        <Box className="flex flex-col gap-0.5">
-          <Text as="span" className="font-inter text-[13px] text-white leading-none">
+        <Box className="flex flex-col gap-0.5 min-w-0">
+          <Text as="span" className="font-inter text-[13px] text-white leading-none truncate">
             {item.serviceName}
           </Text>
-          <Text as="span" className="font-plex text-[11px] text-white/40 leading-none">
+          <Text as="span" className="font-plex text-[11px] text-white/40 leading-none truncate">
             ID: {item.id}
           </Text>
         </Box>
@@ -124,7 +124,7 @@ export default function PriceTableRow({ item, index }: Props): React.JSX.Element
         </Box>
 
         {/* Prices row */}
-        <Box className="flex items-center gap-4 flex-wrap">
+        <Box className="grid grid-cols-3 gap-x-4 gap-y-2">
           <Box className="flex flex-col gap-0.5">
             <Text as="span" className="font-inter text-[10px] text-white/40 leading-none uppercase tracking-wide">
               Normal
