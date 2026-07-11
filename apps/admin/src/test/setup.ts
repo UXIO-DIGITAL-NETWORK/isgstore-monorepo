@@ -77,3 +77,13 @@ Object.defineProperty(navigator, "clipboard", {
   configurable: true,
   value: { writeText: vi.fn() },
 });
+
+// jsdom doesn't implement PointerEvent capture or scrollIntoView; Radix
+// Select's trigger/option handlers call hasPointerCapture/
+// releasePointerCapture on click, and its viewport calls scrollIntoView
+// when an item is selected — both throw as "not a function" otherwise. Only
+// surfaces once a test actually opens a Select and clicks an option (the
+// categories Add-form's submit-validation tests are the first to do so).
+Element.prototype.hasPointerCapture ??= () => false;
+Element.prototype.releasePointerCapture ??= () => {};
+Element.prototype.scrollIntoView ??= () => {};

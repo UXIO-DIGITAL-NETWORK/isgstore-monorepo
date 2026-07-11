@@ -1,0 +1,104 @@
+import { useLocation } from "@tanstack/react-router";
+import { Plus, RefreshCw, Search } from "lucide-react";
+
+import { Box } from "@/components/common/Box";
+import { Label } from "@/components/ui/label";
+import { Link } from "@/components/common/Link";
+import { Text } from "@/components/common/Text";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CATEGORY_TYPE_OPTIONS } from "../data/select-options.data";
+
+const CLEAR_VALUE = "all";
+
+interface CategoryToolbarProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  type?: string;
+  onTypeChange: (value: string | undefined) => void;
+  onRefresh: () => void;
+}
+
+/**
+ * Toolbar (product_requirements.md §4.5) — search, a "Type Category" filter,
+ * a refresh icon button, and "+ Add Category". The add link derives its
+ * target from the current tab's pathname rather than a hardcoded absolute
+ * path, so it stays inside the unauthenticated preview route (Part 6) too.
+ */
+export function CategoryToolbar({ search, onSearchChange, type, onTypeChange, onRefresh }: CategoryToolbarProps) {
+  const { pathname } = useLocation();
+  const addHref = `${pathname.replace(/\/$/, "")}/add`;
+
+  return (
+    <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="category-search">Search</Label>
+          <Box className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="category-search"
+              className="w-64 rounded-xl pl-8"
+              placeholder="Search categories"
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+            />
+          </Box>
+        </Box>
+
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="category-type-filter">Type Category</Label>
+          <Select
+            value={type ?? CLEAR_VALUE}
+            onValueChange={(next) => onTypeChange(next === CLEAR_VALUE ? undefined : next)}
+          >
+            <SelectTrigger
+              id="category-type-filter"
+              className="w-44 rounded-xl"
+            >
+              <SelectValue placeholder="Type Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={CLEAR_VALUE}>All types</SelectItem>
+              {CATEGORY_TYPE_OPTIONS.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Box>
+      </Box>
+
+      <Box className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-xl"
+          onClick={onRefresh}
+        >
+          <RefreshCw className="size-4" />
+          <Text
+            as="span"
+            className="sr-only"
+          >
+            Refresh
+          </Text>
+        </Button>
+        <Button
+          asChild
+          className="rounded-xl"
+        >
+          <Link href={addHref}>
+            <Plus className="size-4" />
+            Add Category
+          </Link>
+        </Button>
+      </Box>
+    </Box>
+  );
+}

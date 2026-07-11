@@ -1,8 +1,16 @@
+import { Fragment } from "react";
 import { Bell, ChevronDown, HelpCircle, LogOut, Zap } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Box } from "@/components/common/Box";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,6 +23,34 @@ import { Text } from "@/components/common/Text";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useOperator } from "../hooks/useDashboard";
+
+// Tab segment -> breadcrumb label, mirrors CategoryTabsLayout's TABS
+// (features/categories/layouts/CategoryTabsLayout.tsx). Category is the only
+// section with real nested routes deep enough to need a multi-segment trail
+// ("Category › Category", "Category › Category › Add Category") — every
+// other route keeps the single-title lookup below.
+const CATEGORY_TAB_LABELS: Record<string, string> = {
+  category: "Category",
+  "sub-category": "Sub Category",
+  "category-type": "Category Type",
+  "server-category": "Server Category",
+  "supplier-category": "Supplier Category",
+};
+
+function getCategoryBreadcrumb(pathname: string): string[] | null {
+  const base = pathname.startsWith("/categories")
+    ? "/categories"
+    : pathname.startsWith("/categories-preview")
+      ? "/categories-preview"
+      : null;
+  if (!base) return null;
+
+  const segments = pathname.slice(base.length).split("/").filter(Boolean);
+  const tabLabel = CATEGORY_TAB_LABELS[segments[0] ?? "category"] ?? "Category";
+  const trail = ["Category", tabLabel];
+  if (segments[segments.length - 1] === "add") trail.push("Add Category");
+  return trail;
+}
 
 const getInitials = (name: string) =>
   name
@@ -48,6 +84,8 @@ export function DashboardNavbar() {
     navigate({ to: "/login" });
   };
 
+  const categoryTrail = getCategoryBreadcrumb(pathname);
+
   return (
     <Box
       as="header"
@@ -55,12 +93,31 @@ export function DashboardNavbar() {
     >
       <Box className="flex flex-1 items-center gap-2">
         <SidebarTrigger className="-ml-1" />
-        <Text
-          as="span"
-          className="text-sm font-medium text-foreground"
-        >
-          {getPageTitle(pathname)}
-        </Text>
+        {categoryTrail ? (
+          <Breadcrumb>
+            <BreadcrumbList className="flex-nowrap text-sm">
+              {categoryTrail.map((label, index) => (
+                <Fragment key={`${label}-${index}`}>
+                  <BreadcrumbItem>
+                    {index === categoryTrail.length - 1 ? (
+                      <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
+                    ) : (
+                      label
+                    )}
+                  </BreadcrumbItem>
+                  {index < categoryTrail.length - 1 && <BreadcrumbSeparator />}
+                </Fragment>
+              ))}
+            </BreadcrumbList>
+          </Breadcrumb>
+        ) : (
+          <Text
+            as="span"
+            className="text-sm font-medium text-foreground"
+          >
+            {getPageTitle(pathname)}
+          </Text>
+        )}
       </Box>
 
       <Box className="flex items-center gap-1">

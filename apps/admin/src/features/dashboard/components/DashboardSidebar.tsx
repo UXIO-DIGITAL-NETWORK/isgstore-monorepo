@@ -69,7 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Products & Services",
     items: [
-      { label: "Category", href: "/dashboard", icon: Tag },
+      { label: "Category", href: "/categories", icon: Tag },
       { label: "Product", href: "/dashboard", icon: Package },
       { label: "Payment", href: "/dashboard", icon: CreditCard },
       { label: "Membership", href: "/dashboard", icon: Users },
