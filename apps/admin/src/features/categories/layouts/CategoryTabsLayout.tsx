@@ -39,7 +39,7 @@ export function CategoryTabsLayout() {
     <Box className="flex flex-col gap-6">
       {!onAddRoute && (
         <Tabs value={activeTab}>
-          <TabsList>
+          <TabsList variant="line">
             {TAB_SEGMENTS.map((tab) => (
               <TabsTrigger
                 key={tab.value}
