@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { renderRoute, screen, within } from "@/test/test-utils";
+import { renderRoute, screen, within, makeUser } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatCurrency } from "@/utils/currency";
 import { STAT_CARDS } from "../data/stat-cards.data";
@@ -28,13 +28,15 @@ import { ACTIVITY_LOG } from "../data/activity-log.data";
  * behind `requireAuth` (see `src/middlewares/authMiddleware.ts`) and there is
  * no unauthenticated preview route for this screen.
  */
+const mockUser = makeUser();
+
 describe("DashboardPage", () => {
   beforeEach(() => {
-    useAuthStore.setState({ token: "test-token" });
+    useAuthStore.setState({ token: "test-token", user: mockUser });
   });
 
   afterEach(() => {
-    useAuthStore.setState({ token: null });
+    useAuthStore.setState({ token: null, user: null });
   });
 
   it("resolves /dashboard for an authenticated operator", async () => {
@@ -43,11 +45,12 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("heading", { name: /welcome/i })).toBeInTheDocument();
   });
 
-  it("shows the welcome banner greeting the operator by name", async () => {
+  it("shows the welcome banner greeting the authenticated user by name", async () => {
     await renderRoute("/dashboard");
 
-    // Operator loads async via useOperator(); await resolution before asserting the full name.
-    expect(await screen.findByRole("heading", { name: /welcome, randy galang!/i })).toBeInTheDocument();
+    // The name now comes synchronously from the auth store's user (real login
+    // response), not the retired operator fixture.
+    expect(screen.getByRole("heading", { name: /welcome, dimas sufyan!/i })).toBeInTheDocument();
   });
 
   it("shows the 3 stat cards with their labels and formatted values", async () => {

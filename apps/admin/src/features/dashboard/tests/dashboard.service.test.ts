@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { dashboardService } from "../services/dashboard.service";
-import { OPERATOR } from "../data/operator.data";
 import { STAT_CARDS } from "../data/stat-cards.data";
 import { CHART_SERIES } from "../data/chart-series.data";
 import { PENDING_ORDERS } from "../data/pending-orders.data";
@@ -8,10 +7,6 @@ import { ACTIVITY_LOG } from "../data/activity-log.data";
 import { PERFORMANCE_ROWS } from "../data/performance-rows.data";
 
 describe("dashboardService", () => {
-  it("getOperator resolves the operator fixture", async () => {
-    await expect(dashboardService.getOperator()).resolves.toEqual(OPERATOR);
-  });
-
   it("getStatCards resolves the stat-card fixtures", async () => {
     await expect(dashboardService.getStatCards()).resolves.toEqual(STAT_CARDS);
   });

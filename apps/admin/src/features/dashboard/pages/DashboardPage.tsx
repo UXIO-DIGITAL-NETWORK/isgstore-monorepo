@@ -13,7 +13,8 @@ import { DataTable } from "../components/DataTable";
 import { PendingOrdersCard } from "../components/PendingOrdersCard";
 import { PerformanceChartCard } from "../components/PerformanceChartCard";
 import { StatCard } from "@/components/common/StatCard";
-import { useOperator, usePerformanceRows, useStatCards } from "../hooks/useDashboard";
+import { useAuthStore } from "@/store/useAuthStore";
+import { usePerformanceRows, useStatCards } from "../hooks/useDashboard";
 import type { PerformanceRow, PerformanceTabKey } from "../types/dashboard.type";
 
 const PERFORMANCE_TABS: { key: PerformanceTabKey; label: string; entityLabel: string }[] = [
@@ -80,7 +81,7 @@ function buildColumns(entityLabel: string): ColumnDef<PerformanceRow>[] {
 }
 
 export default function DashboardPage() {
-  const { data: operator } = useOperator();
+  const user = useAuthStore((state) => state.user);
   const { data: statCards, isLoading: statCardsLoading } = useStatCards();
   const [activeTab, setActiveTab] = useState<PerformanceTabKey>("category");
   const activeTabMeta = PERFORMANCE_TABS.find((tab) => tab.key === activeTab)!;
@@ -100,7 +101,7 @@ export default function DashboardPage() {
           level={1}
           variant="section"
         >
-          {`Welcome, ${operator?.name ?? "Admin"}!`}
+          {`Welcome, ${user?.name ?? "Admin"}!`}
         </Heading>
         <Text variant="muted">{formatBannerDate(new Date())}</Text>
       </Box>

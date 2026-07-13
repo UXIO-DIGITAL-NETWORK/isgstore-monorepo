@@ -27,7 +27,7 @@ api.interceptors.response.use(
   (response) => response.data,
   (error: AxiosError) => {
     const isUnauthorized = error.response?.status === 401;
-    const isNotLoginRequest = error.config?.url !== "/login";
+    const isNotLoginRequest = error.config?.url !== "/auth/login";
 
     if (isUnauthorized && isNotLoginRequest) {
       useAuthStore.getState().clearAuth();

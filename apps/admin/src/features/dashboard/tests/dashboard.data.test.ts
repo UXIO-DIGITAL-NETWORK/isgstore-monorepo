@@ -1,19 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { OPERATOR } from "../data/operator.data";
 import { STAT_CARDS } from "../data/stat-cards.data";
 import { CHART_SERIES } from "../data/chart-series.data";
 import { PENDING_ORDERS } from "../data/pending-orders.data";
 import { ACTIVITY_LOG } from "../data/activity-log.data";
 import { PERFORMANCE_ROWS } from "../data/performance-rows.data";
 
-describe("operator.data", () => {
-  it("matches the reference operator", () => {
-    expect(OPERATOR.name).toBe("Randy Galang");
-    expect(OPERATOR.email).toBe("randy@uxio.com");
-    expect(OPERATOR.roles).toEqual(["super-admin"]);
-    expect(OPERATOR.permissions).toEqual(["*"]);
-  });
-});
+// The operator fixture and its test were removed with the mock operator —
+// the navbar/banner identity now comes from the real login response via
+// useAuthStore (see DashboardNavbar.test.tsx).
 
 describe("stat-cards.data", () => {
   it("has the three reference stat cards with exact figures", () => {

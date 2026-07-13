@@ -2,6 +2,7 @@ export type ApiResponseStatus = "success" | "error";
 
 export interface ApiResponse<T> {
   status: ApiResponseStatus;
+  code: number;
   message: string;
   data: T;
 }

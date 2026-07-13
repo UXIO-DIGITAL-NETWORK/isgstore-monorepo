@@ -2,9 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { dashboardService } from "../services/dashboard.service";
 import type { MonthOption, PerformanceTabKey } from "../types/dashboard.type";
 
-export const useOperator = () =>
-  useQuery({ queryKey: ["dashboard", "operator"], queryFn: dashboardService.getOperator });
-
 export const useStatCards = () =>
   useQuery({ queryKey: ["dashboard", "stat-cards"], queryFn: dashboardService.getStatCards });
 

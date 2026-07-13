@@ -1,16 +1,3 @@
-export type Operator = {
-  id: number;
-  name: string;
-  email: string;
-  avatar_url?: string;
-  roles: string[];
-  permissions: string[];
-  email_verified_at: string;
-  two_factor_confirmed_at?: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
 export type { TrendDirection } from "@/components/common/TrendPill";
 export type { StatCardData } from "@/components/common/StatCard";
 

@@ -22,7 +22,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/common/Text";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useOperator } from "../hooks/useDashboard";
 
 // Tab segment -> breadcrumb label, mirrors CategoryTabsLayout's TABS
 // (features/categories/layouts/CategoryTabsLayout.tsx). Category is the only
@@ -78,7 +77,7 @@ function getPageTitle(pathname: string) {
 }
 
 export function DashboardNavbar() {
-  const { data: operator } = useOperator();
+  const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -172,20 +171,20 @@ export function DashboardNavbar() {
               className="ml-1 h-auto items-center gap-2 rounded-md px-2 py-1.5"
             >
               <Avatar size="sm">
-                <AvatarFallback>{operator ? getInitials(operator.name) : ""}</AvatarFallback>
+                <AvatarFallback>{user ? getInitials(user.name) : ""}</AvatarFallback>
               </Avatar>
               <Box className="hidden flex-col items-start text-left sm:flex">
                 <Text
                   as="span"
                   className="text-sm leading-tight font-medium text-foreground"
                 >
-                  {operator?.name}
+                  {user?.name}
                 </Text>
                 <Text
                   as="span"
                   className="text-xs leading-tight text-muted-foreground"
                 >
-                  {operator?.email}
+                  {user?.email}
                 </Text>
               </Box>
               <ChevronDown className="size-4 text-muted-foreground" />
