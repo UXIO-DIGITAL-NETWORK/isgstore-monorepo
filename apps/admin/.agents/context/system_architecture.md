@@ -212,6 +212,15 @@ Every feature/screen is built **test-first**: write the test cases, write the fa
 - **Scope:** every new page/screen gets a reachability + content test at minimum; every service/hook gets a test asserting its typed contract/shape; every form gets a validation-behavior test (empty submit surfaces errors; valid submit calls the mutation). Don't assert exact className/token strings in tests — that's `/qa-audit`'s grep gate. Charts/animation are smoke-tested only (renders without crashing, key labels present) — deep visual assertions are brittle and low-value; this is a narrow, deliberate exception, not a loophole.
 - **Scripts:** `npm run test` (single run) / `npm run test:watch` (dev loop) — add both to `package.json` the first time the harness is set up.
 
+### 4.12 Error & not-found pages
+
+`src/routes/__root.tsx` currently has no `notFoundComponent`/`errorComponent` at all — this is greenfield. Build one shared status-page component used by both:
+
+- **Not Found (404):** the router's not-found mechanism (config surface for this version, `^1.162.8`, should be verified via the context7 MCP rather than assumed — it's evolved across releases).
+- **Error boundary (used for a "503 Server Error" presentation):** the router's error-boundary mechanism, same verification note.
+
+Both render **full-screen, outside `DashboardLayout`** (no sidebar/topbar) — these are boundary states, not authenticated screens, and aren't gated by auth (a person can hit a bad URL or an error whether logged in or not). The "back to home" action should route to `/dashboard` if a token exists, `/` otherwise.
+
 ---
 
 ## 5. Authorization Architecture (RBAC scaffold)

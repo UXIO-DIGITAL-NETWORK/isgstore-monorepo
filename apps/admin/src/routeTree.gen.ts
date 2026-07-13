@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ErrorPreviewRouteImport } from './routes/error-preview'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as PreviewRouteImport } from './routes/_preview'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
@@ -42,6 +43,11 @@ import { Route as PreviewCategoriesPreviewCategoryTypeIndexRouteImport } from '.
 import { Route as ProtectedCategoriesCategoryAddIndexRouteImport } from './routes/_protected/categories/category/add/index'
 import { Route as PreviewCategoriesPreviewCategoryAddIndexRouteImport } from './routes/_preview/categories-preview/category/add/index'
 
+const ErrorPreviewRoute = ErrorPreviewRouteImport.update({
+  id: '/error-preview',
+  path: '/error-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
@@ -227,6 +233,7 @@ const PreviewCategoriesPreviewCategoryAddIndexRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/error-preview': typeof ErrorPreviewRoute
   '/categories-preview': typeof PreviewCategoriesPreviewRouteRouteWithChildren
   '/categories': typeof ProtectedCategoriesRouteRouteWithChildren
   '/transactions': typeof ProtectedTransactionsRouteRouteWithChildren
@@ -258,6 +265,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/error-preview': typeof ErrorPreviewRoute
   '/login': typeof AuthLoginIndexRoute
   '/categories-preview': typeof PreviewCategoriesPreviewIndexRoute
   '/dashboard-preview': typeof PreviewDashboardPreviewIndexRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteRouteWithChildren
   '/_preview': typeof PreviewRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
+  '/error-preview': typeof ErrorPreviewRoute
   '/_preview/categories-preview': typeof PreviewCategoriesPreviewRouteRouteWithChildren
   '/_protected/categories': typeof ProtectedCategoriesRouteRouteWithChildren
   '/_protected/transactions': typeof ProtectedTransactionsRouteRouteWithChildren
@@ -323,6 +332,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/error-preview'
     | '/categories-preview'
     | '/categories'
     | '/transactions'
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/error-preview'
     | '/login'
     | '/categories-preview'
     | '/dashboard-preview'
@@ -385,6 +396,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_preview'
     | '/_protected'
+    | '/error-preview'
     | '/_preview/categories-preview'
     | '/_protected/categories'
     | '/_protected/transactions'
@@ -420,10 +432,18 @@ export interface RootRouteChildren {
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   PreviewRoute: typeof PreviewRouteWithChildren
   ProtectedRoute: typeof ProtectedRouteWithChildren
+  ErrorPreviewRoute: typeof ErrorPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/error-preview': {
+      id: '/error-preview'
+      path: '/error-preview'
+      fullPath: '/error-preview'
+      preLoaderRoute: typeof ErrorPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_protected': {
       id: '/_protected'
       path: ''
@@ -792,6 +812,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRouteRoute: AuthRouteRouteWithChildren,
   PreviewRoute: PreviewRouteWithChildren,
   ProtectedRoute: ProtectedRouteWithChildren,
+  ErrorPreviewRoute: ErrorPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
