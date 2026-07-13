@@ -46,7 +46,12 @@ import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
 import { cn } from "@/lib/utils";
 
-type NavItem = { label: string; href: string; icon: ComponentType<{ className?: string }> };
+type NavItem = {
+  label: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  disabled?: boolean;
+};
 type NavGroup = { label: string; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -54,7 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "General",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-      { label: "Reports", href: "/dashboard", icon: FileText },
+      { label: "Reports", href: "/dashboard", icon: FileText, disabled: true },
       { label: "Financial", href: "/financial", icon: Wallet },
       { label: "Integration", href: "/integration", icon: Plug },
     ],
@@ -63,25 +68,25 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Orders",
     items: [
       { label: "Transaction", href: "/transactions", icon: Receipt },
-      { label: "Activity", href: "/dashboard", icon: Activity },
+      { label: "Activity", href: "/dashboard", icon: Activity, disabled: true },
     ],
   },
   {
     label: "Products & Services",
     items: [
       { label: "Category", href: "/categories", icon: Tag },
-      { label: "Product", href: "/dashboard", icon: Package },
-      { label: "Payment", href: "/dashboard", icon: CreditCard },
-      { label: "Membership", href: "/dashboard", icon: Users },
+      { label: "Product", href: "/dashboard", icon: Package, disabled: true },
+      { label: "Payment", href: "/dashboard", icon: CreditCard, disabled: true },
+      { label: "Membership", href: "/dashboard", icon: Users, disabled: true },
     ],
   },
   {
     label: "Marketing & Content Management",
     items: [
-      { label: "Promo", href: "/dashboard", icon: Megaphone },
-      { label: "Flash Sale", href: "/dashboard", icon: Zap },
-      { label: "Website Content", href: "/dashboard", icon: Globe },
-      { label: "Pages", href: "/dashboard", icon: FileStack },
+      { label: "Promo", href: "/dashboard", icon: Megaphone, disabled: true },
+      { label: "Flash Sale", href: "/dashboard", icon: Zap, disabled: true },
+      { label: "Website Content", href: "/dashboard", icon: Globe, disabled: true },
+      { label: "Pages", href: "/dashboard", icon: FileStack, disabled: true },
     ],
   },
 ];
@@ -185,23 +190,40 @@ export function DashboardSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive = !item.disabled && (pathname === item.href || pathname.startsWith(`${item.href}/`));
                   return (
                     <SidebarMenuItem key={item.label}>
                       <SidebarMenuButton
-                        asChild
+                        asChild={!item.disabled}
                         isActive={isActive}
+                        disabled={item.disabled}
                         className={cn(
-                          "rounded-md",
-                          isActive
-                            ? "bg-accent text-foreground"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                          "rounded-md text-muted-foreground hover:bg-accent hover:text-foreground",
+                          "data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary data-[active=true]:hover:text-primary-foreground",
+                          item.disabled && "disabled:opacity-100",
                         )}
                       >
-                        <Link href={item.href}>
-                          <item.icon className="size-4" />
-                          <Text as="span">{item.label}</Text>
-                        </Link>
+                        {item.disabled ? (
+                          <>
+                            <item.icon className="size-4" />
+                            <Text
+                              as="span"
+                              className="text-current"
+                            >
+                              {item.label}
+                            </Text>
+                          </>
+                        ) : (
+                          <Link href={item.href}>
+                            <item.icon className="size-4" />
+                            <Text
+                              as="span"
+                              className="text-current"
+                            >
+                              {item.label}
+                            </Text>
+                          </Link>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -245,6 +267,7 @@ export function DashboardSidebar() {
               {group.items.map((item) => (
                 <CommandItem
                   key={item.label}
+                  disabled={item.disabled}
                   onSelect={() => goTo(item.href)}
                 >
                   <item.icon className="mr-2 size-4" />
