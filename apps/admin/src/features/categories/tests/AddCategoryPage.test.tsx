@@ -119,4 +119,68 @@ describe("AddCategoryPage", () => {
     expect(await screen.findByRole("heading", { name: "Category" })).toBeInTheDocument();
     expect(await screen.findByText("Wild Rift")).toBeInTheDocument();
   });
+
+  it("shows the Media & description and SEO section headings and their exact subcopies", async () => {
+    await renderRoute("/categories-preview/category/add");
+
+    expect(await screen.findByRole("heading", { name: "Media & description" })).toBeInTheDocument();
+    expect(screen.getByText("Category logo and description content for the product page.")).toBeInTheDocument();
+
+    expect(screen.getByRole("heading", { name: "SEO" })).toBeInTheDocument();
+    expect(screen.getByText("Meta tags for the category page on search engines.")).toBeInTheDocument();
+  });
+
+  it("shows every Media & description and SEO field by label", async () => {
+    await renderRoute("/categories-preview/category/add");
+
+    for (const label of [
+      "Category Logo",
+      "Description",
+      "Meta Title",
+      "Meta Description",
+      "OG Image",
+      "Meta Keyword",
+      "Meta Robot",
+    ]) {
+      expect(await screen.findByLabelText(label)).toBeInTheDocument();
+    }
+  });
+
+  it("keeps the Meta Description character count and percentage in sync", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/categories-preview/category/add");
+
+    // "Fourteen chars" = 14 chars → 14/280 = 5%.
+    await user.type(await screen.findByLabelText("Meta Description"), "Fourteen chars");
+
+    expect(screen.getByText("14/280 characters")).toBeInTheDocument();
+    expect(screen.getByText("5% used")).toBeInTheDocument();
+  });
+
+  it("includes the media and SEO fields in the create payload on valid submit", async () => {
+    const createSpy = vi.spyOn(categoriesService, "create");
+    const user = userEvent.setup();
+    await renderRoute("/categories-preview/category/add");
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Description"), "Top up MLBB diamonds instantly.");
+    await user.type(screen.getByLabelText("Meta Title"), "Mobile Legends Top Up");
+    await user.type(screen.getByLabelText("Meta Description"), "Cheap MLBB diamonds");
+    await user.type(screen.getByLabelText("Meta Keyword"), "top up ml, diamond ml");
+    await user.click(screen.getByRole("combobox", { name: "Meta Robot" }));
+    await user.click(await screen.findByRole("option", { name: "Index, Follow" }));
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByRole("heading", { name: "Category" })).toBeInTheDocument();
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: "Top up MLBB diamonds instantly.",
+        meta_title: "Mobile Legends Top Up",
+        meta_description: "Cheap MLBB diamonds",
+        meta_keywords: ["top up ml", "diamond ml"],
+        meta_robots: "Index, Follow",
+      }),
+    );
+  });
 });

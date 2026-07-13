@@ -35,7 +35,7 @@ export default function ManualTransactionsPage() {
       page,
       per_page: pageSize,
       sortBy: sorting[0]?.id,
-      sortDir: sorting[0] ? ((sorting[0].desc ? "desc" : "asc") as "desc" | "asc") : undefined,
+      sortDir: sorting[0] ? (sorting[0].desc ? ("desc" as const) : ("asc" as const)) : undefined,
     }),
     [filters, page, pageSize, sorting],
   );

@@ -10,15 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { CategoryFormFieldsBuilder } from "../components/CategoryFormFieldsBuilder";
+import { CategoryImageUpload } from "../components/CategoryImageUpload";
 import {
   ACCOUNT_NICKNAME_VALIDATION_OPTIONS,
   CATEGORY_TYPE_OPTIONS,
   CATEGORY_UID_PARSER_OPTIONS,
+  META_ROBOTS_OPTIONS,
   REGION_OPTIONS,
 } from "../data/select-options.data";
 import { useCreateCategory } from "../hooks/useCategories";
-import { categoryFormSchema, type CategoryFormValues } from "../schemas/categoryForm.schema";
+import { categoryFormSchema, META_DESCRIPTION_MAX, type CategoryFormValues } from "../schemas/categoryForm.schema";
 import type { SelectOption } from "../types/category.type";
 
 function slugify(value: string): string {
@@ -36,6 +39,7 @@ function SelectField({
   value,
   onChange,
   error,
+  placeholder = "Type to search...",
 }: {
   id: string;
   label: string;
@@ -43,6 +47,7 @@ function SelectField({
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  placeholder?: string;
 }) {
   return (
     <Box className="flex flex-col gap-1.5">
@@ -55,7 +60,7 @@ function SelectField({
           id={id}
           className="w-full rounded-xl"
         >
-          <SelectValue placeholder="Type to search..." />
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
@@ -91,6 +96,7 @@ export default function AddCategoryPage() {
     handleSubmit,
     setValue,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
@@ -104,8 +110,16 @@ export default function AddCategoryPage() {
       code: "",
       slug: "",
       orderFormFields: [],
+      description: "",
+      metaTitle: "",
+      metaDescription: "",
+      metaKeywords: "",
+      metaRobots: "",
     },
   });
+
+  const metaDescriptionLength = (watch("metaDescription") ?? "").length;
+  const metaDescriptionPercent = Math.round((metaDescriptionLength / META_DESCRIPTION_MAX) * 100);
 
   const createCategory = useCreateCategory();
 
@@ -115,6 +129,11 @@ export default function AddCategoryPage() {
   };
 
   const onSubmit = (values: CategoryFormValues) => {
+    const metaKeywords = (values.metaKeywords ?? "")
+      .split(",")
+      .map((keyword) => keyword.trim())
+      .filter(Boolean);
+
     createCategory.mutate(
       {
         type: values.categoryType,
@@ -127,6 +146,15 @@ export default function AddCategoryPage() {
         slug: values.slug,
         status: "active",
         order_form_fields: values.orderFormFields,
+        // ponytail: file name stands in for the uploaded URL (UI-first, no backend);
+        // swap to the URL returned by the §4.9 upload helper once it ships.
+        logo_url: values.logo?.name,
+        description: values.description || undefined,
+        meta_title: values.metaTitle || undefined,
+        meta_description: values.metaDescription || undefined,
+        og_image_url: values.ogImage?.name,
+        meta_keywords: metaKeywords.length ? metaKeywords : undefined,
+        meta_robots: values.metaRobots || undefined,
       },
       { onSuccess: () => navigate({ to: listHref as unknown as string }) },
     );
@@ -291,6 +319,121 @@ export default function AddCategoryPage() {
           control={control}
           register={register}
           errors={errors}
+        />
+      </Box>
+
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+        <Box>
+          <Heading
+            as="h2"
+            level={5}
+          >
+            Media & description
+          </Heading>
+          <Text variant="muted">Category logo and description content for the product page.</Text>
+        </Box>
+
+        <Controller
+          control={control}
+          name="logo"
+          render={({ field }) => (
+            <CategoryImageUpload
+              id="category-logo"
+              label="Category Logo"
+              caption="3:4 ratio recommended · max display 800×600 px"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.logo?.message}
+            />
+          )}
+        />
+
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="category-description">Description</Label>
+          <Textarea
+            id="category-description"
+            className="rounded-xl"
+            {...register("description")}
+          />
+        </Box>
+      </Box>
+
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+        <Box>
+          <Heading
+            as="h2"
+            level={5}
+          >
+            SEO
+          </Heading>
+          <Text variant="muted">Meta tags for the category page on search engines.</Text>
+        </Box>
+
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="meta-title">Meta Title</Label>
+          <Input
+            id="meta-title"
+            className="rounded-xl"
+            placeholder="Title for search results & the browser tab"
+            {...register("metaTitle")}
+          />
+        </Box>
+
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="meta-description">Meta Description</Label>
+          <Textarea
+            id="meta-description"
+            className="rounded-xl"
+            placeholder="Short summary for search results"
+            maxLength={META_DESCRIPTION_MAX}
+            {...register("metaDescription")}
+          />
+          <Box className="flex justify-between">
+            <Text variant="small">
+              {metaDescriptionLength}/{META_DESCRIPTION_MAX} characters
+            </Text>
+            <Text variant="small">{metaDescriptionPercent}% used</Text>
+          </Box>
+        </Box>
+
+        <Controller
+          control={control}
+          name="ogImage"
+          render={({ field }) => (
+            <CategoryImageUpload
+              id="og-image"
+              label="OG Image"
+              caption="1.91:1 ratio recommended · max display 1200×630 px"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.ogImage?.message}
+            />
+          )}
+        />
+
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="meta-keyword">Meta Keyword</Label>
+          <Input
+            id="meta-keyword"
+            className="rounded-xl"
+            placeholder="Separate with commas, e.g. top up ml, diamond ml"
+            {...register("metaKeywords")}
+          />
+        </Box>
+
+        <Controller
+          control={control}
+          name="metaRobots"
+          render={({ field }) => (
+            <SelectField
+              id="meta-robot"
+              label="Meta Robot"
+              placeholder="Select"
+              options={META_ROBOTS_OPTIONS}
+              value={field.value ?? ""}
+              onChange={field.onChange}
+            />
+          )}
         />
       </Box>
 
