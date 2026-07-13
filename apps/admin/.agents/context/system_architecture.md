@@ -17,11 +17,12 @@
 
 ### 1.1 Response envelopes (the two shapes)
 
-**Single resource / action** — the existing envelope in `src/types/api.type.ts`:
+**Single resource / action** — the envelope in `src/types/api.type.ts`, confirmed against the real login endpoint's response (2026-07-11) — it also carries a `code`, missed in the original speculative version:
 
 ```ts
 interface ApiResponse<T> {
   status: "success" | "error";
+  code: number;
   message: string;
   data: T;
 }
@@ -227,7 +228,9 @@ Both render **full-screen, outside `DashboardLayout`** (no sidebar/topbar) — t
 
 Only **`super-admin`** exists in MVP and holds **all permissions**, but the plumbing is built for multi-role from day one.
 
-- **Store:** `useAuthStore` holds `token`, `roles: string[]`, `permissions: string[]` (hydrated from the login/`me` response).
+> **Revision (2026-07-11):** the real login response returns a single `role_id: number` on the user object, not the `roles: string[]` / `permissions: string[]` arrays originally speculated here. The `<Can>`/`useCan`/`requirePermission` interface below is unaffected — it's still the right frontend abstraction — but **something has to derive `permissions: string[]` from `role_id` client-side** until either a dedicated permissions endpoint exists or the backend documents a full role→permission map. For now: a small hardcoded map (`role_id === 1 → ["*"]`, everything else → `[]`) is the pragmatic stopgap, since only `super-admin` (`role_id: 1`) is confirmed to exist right now anyway. Treat any other `role_id` as unmapped/no-permissions until confirmed, don't guess at what it means.
+
+- **Store:** `useAuthStore` holds the access token, a `refreshToken`, the authenticated `user` (see `product_requirements.md §6`), and a derived `permissions: string[]` (via the stopgap map above, hydrated after login).
 - **Route gate:** `requirePermission(permission)` in `beforeLoad` (throws `redirect` to a safe route if missing). `super-admin` short-circuits to allowed.
 - **UI gate:** a `<Can permission="transactions.refund">…</Can>` component and a `useCan(permission): boolean` hook for conditionally rendering actions/menu items.
 - **Convention:** permission strings are `resource.action` (e.g. `transactions.view`, `transactions.refund`, `financial.export`). Wildcards (`*`) grant all — Super Admin gets `["*"]`.
