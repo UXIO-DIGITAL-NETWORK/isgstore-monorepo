@@ -25,7 +25,7 @@ export default function AutomaticTransactionsPage() {
       page,
       per_page: pageSize,
       sortBy: sorting[0]?.id,
-      sortDir: sorting[0] ? ((sorting[0].desc ? "desc" : "asc") as const) : undefined,
+      sortDir: sorting[0] ? ((sorting[0].desc ? "desc" : "asc") as "desc" | "asc") : undefined,
     }),
     [filters, page, pageSize, sorting],
   );
