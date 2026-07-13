@@ -26,3 +26,10 @@ export const REGION_OPTIONS: SelectOption[] = [
   { value: "Southeast Asia", label: "Southeast Asia" },
   { value: "Global", label: "Global" },
 ];
+
+export const META_ROBOTS_OPTIONS: SelectOption[] = [
+  { value: "Index, Follow", label: "Index, Follow" },
+  { value: "No Index, No Follow", label: "No Index, No Follow" },
+  { value: "Index, No Follow", label: "Index, No Follow" },
+  { value: "No Index, Follow", label: "No Index, Follow" },
+];

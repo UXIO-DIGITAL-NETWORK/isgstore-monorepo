@@ -26,6 +26,14 @@ export interface Category {
   slug: string;
   status: CategoryStatus;
   order_form_fields: CategoryOrderFormField[];
+  // Media & description + SEO (§4.5, added 2026-07-11). All optional/provisional.
+  logo_url?: string;
+  description?: string;
+  meta_title?: string;
+  meta_description?: string;
+  og_image_url?: string;
+  meta_keywords?: string[];
+  meta_robots?: string;
   created_at: string;
   updated_at: string;
 }
