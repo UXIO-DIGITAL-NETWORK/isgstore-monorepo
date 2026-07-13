@@ -21,7 +21,7 @@ export function TransactionsLayout() {
   return (
     <Box className="flex flex-col gap-6">
       <Tabs value={activeTab}>
-        <TabsList>
+        <TabsList variant="line">
           {TABS.map((tab) => (
             <TabsTrigger
               key={tab.value}
