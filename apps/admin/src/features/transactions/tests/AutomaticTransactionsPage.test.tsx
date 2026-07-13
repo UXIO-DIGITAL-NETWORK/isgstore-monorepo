@@ -7,7 +7,7 @@ import { transactionsService } from "../services/transactions.service";
 /**
  * Part 4 — test cases (see product_requirements.md §4.3, revised 2026-07-10):
  *
- * - /transaction-preview (unauthenticated preview route) resolves the
+ * - /admin/transaction-preview (unauthenticated preview route) resolves the
  *   Automatic Transaction History page: header + exact subcopy.
  * - The 3 status pills render with their exact labels and counts (12/32/8).
  * - The filter bar's 10 field labels are present.
@@ -19,8 +19,8 @@ import { transactionsService } from "../services/transactions.service";
  * - "Delete" opens a confirmation dialog BEFORE any delete mutation fires.
  */
 describe("AutomaticTransactionsPage", () => {
-  it("resolves /transaction-preview with the header and exact subcopy", async () => {
-    await renderRoute("/transaction-preview");
+  it("resolves /admin/transaction-preview with the header and exact subcopy", async () => {
+    await renderRoute("/admin/transaction-preview");
 
     expect(await screen.findByRole("heading", { name: "Automatic Transaction History" })).toBeInTheDocument();
     expect(
@@ -31,7 +31,7 @@ describe("AutomaticTransactionsPage", () => {
   });
 
   it("shows the 3 status pills with exact labels and counts", async () => {
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     // Pills are now full-width stat-card buttons with the label and count as
     // separate elements (matching the reference's visual layout), rather
@@ -48,7 +48,7 @@ describe("AutomaticTransactionsPage", () => {
   });
 
   it("shows all 10 filter bar field labels", async () => {
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     // Scoped to the filter bar's landmark: the sidebar also has an unrelated
     // "Search" trigger, so an unscoped query would match more than one node.
@@ -70,7 +70,7 @@ describe("AutomaticTransactionsPage", () => {
   });
 
   it("shows the table column headers", async () => {
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     const table = await screen.findByRole("table");
     for (const header of ["Invoice No.", "User", "Product", "Cost", "Target", "Status", "Method", "Time", "Action"]) {
@@ -79,7 +79,7 @@ describe("AutomaticTransactionsPage", () => {
   });
 
   it("shows the exact-fidelity row's key content", async () => {
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     expect(await screen.findByText("ZP2607016UJFJVSHCJ")).toBeInTheDocument();
     expect((await screen.findAllByText("Randy Galang")).length).toBeGreaterThan(0);
@@ -90,7 +90,7 @@ describe("AutomaticTransactionsPage", () => {
 
   it("opens a row's action menu with all 7 items, in order", async () => {
     const user = userEvent.setup();
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     const menuButton = await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i });
     await user.click(menuButton);
@@ -109,7 +109,7 @@ describe("AutomaticTransactionsPage", () => {
 
   it("opens the Edit Transaction dialog with its 4 fields on Edit Invoice", async () => {
     const user = userEvent.setup();
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     const menuButton = await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i });
     await user.click(menuButton);
@@ -125,7 +125,7 @@ describe("AutomaticTransactionsPage", () => {
   it("opens a confirmation dialog before calling the delete service on Delete", async () => {
     const removeSpy = vi.spyOn(transactionsService, "remove");
     const user = userEvent.setup();
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     const menuButton = await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i });
     await user.click(menuButton);
@@ -138,7 +138,7 @@ describe("AutomaticTransactionsPage", () => {
   it("rejects an invalid Invoice Proof file and blocks Save (Zod file validation)", async () => {
     const editSpy = vi.spyOn(transactionsService, "edit");
     const user = userEvent.setup();
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     const menuButton = await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i });
     await user.click(menuButton);
@@ -161,7 +161,7 @@ describe("AutomaticTransactionsPage", () => {
 
   it("selects all rows via the header checkbox, and a single row via its own checkbox", async () => {
     const user = userEvent.setup();
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     const selectAll = await screen.findByRole("checkbox", { name: "Select all rows" });
     const rowCheckboxes = await screen.findAllByRole("checkbox", { name: "Select row" });
@@ -178,7 +178,7 @@ describe("AutomaticTransactionsPage", () => {
   it("clicking a sortable column header re-queries the service with real sort params", async () => {
     const listSpy = vi.spyOn(transactionsService, "list");
     const user = userEvent.setup();
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     await screen.findByText("ZP2607016UJFJVSHCJ");
     listSpy.mockClear();
@@ -189,7 +189,7 @@ describe("AutomaticTransactionsPage", () => {
   });
 
   it("shows a keyboard-accessible drag handle per row for manual reordering", async () => {
-    await renderRoute("/transaction-preview");
+    await renderRoute("/admin/transaction-preview");
 
     expect((await screen.findAllByRole("button", { name: "Drag to reorder row" })).length).toBeGreaterThan(0);
   });

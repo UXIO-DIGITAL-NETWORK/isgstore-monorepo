@@ -9,7 +9,7 @@ import { ACTIVITY_LOG } from "../data/activity-log.data";
 /**
  * Part 4 — test cases (see product_requirements.md §4.1 + design_system.md §8/§11):
  *
- * - Navigating to /dashboard as an authenticated operator resolves the real
+ * - Navigating to /admin/dashboard as an authenticated operator resolves the real
  *   dashboard page (not the old template widgets).
  * - The welcome banner renders a heading greeting the operator by name.
  * - The 3 stat cards render their labels ("Credit", "Debit", "Today's Sales")
@@ -24,7 +24,7 @@ import { ACTIVITY_LOG } from "../data/activity-log.data";
  *   default tab, the "Category" / "Total Transaction" / "Revenue" column
  *   headers.
  *
- * Seeds `useAuthStore` with a fake token before rendering since /dashboard is
+ * Seeds `useAuthStore` with a fake token before rendering since /admin/dashboard is
  * behind `requireAuth` (see `src/middlewares/authMiddleware.ts`) and there is
  * no unauthenticated preview route for this screen.
  */
@@ -39,14 +39,14 @@ describe("DashboardPage", () => {
     useAuthStore.setState({ token: null, user: null });
   });
 
-  it("resolves /dashboard for an authenticated operator", async () => {
-    await renderRoute("/dashboard");
+  it("resolves /admin/dashboard for an authenticated operator", async () => {
+    await renderRoute("/admin/dashboard");
 
     expect(screen.getByRole("heading", { name: /welcome/i })).toBeInTheDocument();
   });
 
   it("shows the welcome banner greeting the authenticated user by name", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     // The name now comes synchronously from the auth store's user (real login
     // response), not the retired operator fixture.
@@ -54,7 +54,7 @@ describe("DashboardPage", () => {
   });
 
   it("shows the 3 stat cards with their labels and formatted values", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     for (const card of STAT_CARDS) {
       expect(await screen.findByText(card.label)).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe("DashboardPage", () => {
   });
 
   it("shows the Monthly Performance card with a month selector", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     expect(await screen.findByRole("heading", { name: "Monthly Performance" })).toBeInTheDocument();
     // The performance table header also has a (decorative) "This Week" combobox, so
@@ -73,7 +73,7 @@ describe("DashboardPage", () => {
   });
 
   it("shows the Pending Orders card with the 4 human-readable labels", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     expect(screen.getByRole("heading", { name: "Pending Orders" })).toBeInTheDocument();
     expect(screen.getByText("Manual Orders")).toBeInTheDocument();
@@ -83,14 +83,14 @@ describe("DashboardPage", () => {
   });
 
   it("shows the Recent Log Activity card with at least one entry", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     expect(screen.getByRole("heading", { name: "Recent Log Activity" })).toBeInTheDocument();
     expect(await screen.findAllByText(ACTIVITY_LOG[0].action)).not.toHaveLength(0);
   });
 
   it("shows the tabbed performance table with all 3 tab labels", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     expect(screen.getByRole("tab", { name: "Category Performance" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Product Performance" })).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe("DashboardPage", () => {
   });
 
   it("shows the default tab's table with Category / Total Transaction / Revenue columns", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     const table = await screen.findByRole("table");
     expect(within(table).getByRole("columnheader", { name: "Category" })).toBeInTheDocument();

@@ -37,7 +37,7 @@ export function StatusPage({
   actionLabel,
 }: StatusPageProps) {
   const token = useAuthStore((state) => state.token);
-  const homeHref = token ? "/dashboard" : "/";
+  const homeHref = token ? "/admin/dashboard" : "/";
 
   return (
     <Box

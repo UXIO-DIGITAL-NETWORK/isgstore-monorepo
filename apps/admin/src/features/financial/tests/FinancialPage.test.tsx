@@ -9,7 +9,7 @@ import { SUPPLIERS } from "../data/suppliers.data";
 /**
  * Part 4 — test cases (see product_requirements.md §4.2):
  *
- * - /finance-preview (unauthenticated preview route) resolves the Financial
+ * - /admin/finance-preview (unauthenticated preview route) resolves the Financial
  *   Summary page: header + the exact subcopy.
  * - The 3 stat cards render their labels and formatted currency values.
  * - The Payment Gateway section renders its heading + subcopy, and at least
@@ -20,8 +20,8 @@ import { SUPPLIERS } from "../data/suppliers.data";
  *   to the clipboard.
  */
 describe("FinancialPage", () => {
-  it("resolves /finance-preview with the header and subcopy", async () => {
-    await renderRoute("/finance-preview");
+  it("resolves /admin/finance-preview with the header and subcopy", async () => {
+    await renderRoute("/admin/finance-preview");
 
     expect(await screen.findByRole("heading", { name: "Financial Summary" })).toBeInTheDocument();
     expect(
@@ -32,7 +32,7 @@ describe("FinancialPage", () => {
   });
 
   it("shows the 3 stat cards with their labels and formatted values", async () => {
-    await renderRoute("/finance-preview");
+    await renderRoute("/admin/finance-preview");
 
     for (const card of SUMMARY_CARDS) {
       expect(await screen.findByText(card.label)).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("FinancialPage", () => {
   });
 
   it("shows the Payment Gateway section with the UxioPay row and both balance labels", async () => {
-    await renderRoute("/finance-preview");
+    await renderRoute("/admin/finance-preview");
 
     expect(await screen.findByRole("heading", { name: "Payment Gateway" })).toBeInTheDocument();
     expect(screen.getByText("Summary of balances on each payment gateway.")).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("FinancialPage", () => {
   });
 
   it("shows the Supplier section with at least one supplier row", async () => {
-    await renderRoute("/finance-preview");
+    await renderRoute("/admin/finance-preview");
 
     expect(await screen.findByRole("heading", { name: "Supplier" })).toBeInTheDocument();
     expect(screen.getByText("Summary of the balances available with each supplier.")).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("FinancialPage", () => {
   });
 
   it("copies the exact displayed amount when a balance is clicked", async () => {
-    await renderRoute("/finance-preview");
+    await renderRoute("/admin/finance-preview");
 
     const gateway = PAYMENT_GATEWAYS[0];
     const formatted = formatCurrency(gateway.activeBalance);

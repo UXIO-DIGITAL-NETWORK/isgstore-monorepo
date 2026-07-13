@@ -13,7 +13,7 @@ export const useLogin = () => {
     mutationFn: (values: LoginFormValues) => authService.login({ ...values, timezone: getBrowserTimezone() }),
     onSuccess: (response, variables) => {
       setAuth(response.data, variables.remember);
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/admin/dashboard" });
     },
   });
 };

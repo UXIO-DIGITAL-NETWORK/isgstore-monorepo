@@ -58,35 +58,35 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "General",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-      { label: "Reports", href: "/dashboard", icon: FileText, disabled: true },
-      { label: "Financial", href: "/financial", icon: Wallet },
-      { label: "Integration", href: "/integration", icon: Plug },
+      { label: "Dashboard", href: "/admin/dashboard", icon: LayoutGrid },
+      { label: "Reports", href: "/admin/dashboard", icon: FileText, disabled: true },
+      { label: "Financial", href: "/admin/financial", icon: Wallet },
+      { label: "Integration", href: "/admin/integration", icon: Plug },
     ],
   },
   {
     label: "Orders",
     items: [
-      { label: "Transaction", href: "/transactions", icon: Receipt },
-      { label: "Activity", href: "/dashboard", icon: Activity, disabled: true },
+      { label: "Transaction", href: "/admin/transactions", icon: Receipt },
+      { label: "Activity", href: "/admin/dashboard", icon: Activity, disabled: true },
     ],
   },
   {
     label: "Products & Services",
     items: [
-      { label: "Category", href: "/categories", icon: Tag },
-      { label: "Product", href: "/dashboard", icon: Package, disabled: true },
-      { label: "Payment", href: "/dashboard", icon: CreditCard, disabled: true },
-      { label: "Membership", href: "/dashboard", icon: Users, disabled: true },
+      { label: "Category", href: "/admin/categories", icon: Tag },
+      { label: "Product", href: "/admin/dashboard", icon: Package, disabled: true },
+      { label: "Payment", href: "/admin/dashboard", icon: CreditCard, disabled: true },
+      { label: "Membership", href: "/admin/dashboard", icon: Users, disabled: true },
     ],
   },
   {
     label: "Marketing & Content Management",
     items: [
-      { label: "Promo", href: "/dashboard", icon: Megaphone, disabled: true },
-      { label: "Flash Sale", href: "/dashboard", icon: Zap, disabled: true },
-      { label: "Website Content", href: "/dashboard", icon: Globe, disabled: true },
-      { label: "Pages", href: "/dashboard", icon: FileStack, disabled: true },
+      { label: "Promo", href: "/admin/dashboard", icon: Megaphone, disabled: true },
+      { label: "Flash Sale", href: "/admin/dashboard", icon: Zap, disabled: true },
+      { label: "Website Content", href: "/admin/dashboard", icon: Globe, disabled: true },
+      { label: "Pages", href: "/admin/dashboard", icon: FileStack, disabled: true },
     ],
   },
 ];
@@ -122,7 +122,7 @@ export function DashboardSidebar() {
               size="lg"
               asChild
             >
-              <Link href="/dashboard">
+              <Link href="/admin/dashboard">
                 <Box className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <Command className="size-4" />
                 </Box>

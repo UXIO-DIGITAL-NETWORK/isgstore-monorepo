@@ -17,19 +17,19 @@ describe("categories routes", () => {
     useAuthStore.setState({ token: null });
   });
 
-  it("redirects /categories to the Category tab for an authenticated admin", async () => {
-    await renderRoute("/categories");
+  it("redirects /admin/categories to the Category tab for an authenticated admin", async () => {
+    await renderRoute("/admin/categories");
     expect(await screen.findByRole("heading", { name: "Category" })).toBeInTheDocument();
   });
 
-  it("redirects /categories/category to /login when unauthenticated", async () => {
+  it("redirects /admin/categories/category to /login when unauthenticated", async () => {
     useAuthStore.setState({ token: null });
-    await renderRoute("/categories/category");
+    await renderRoute("/admin/categories/category");
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
   });
 
   it("shows all five tab links", async () => {
-    await renderRoute("/categories");
+    await renderRoute("/admin/categories");
     for (const label of ["Category", "Sub Category", "Category Type", "Server Category", "Supplier Category"]) {
       expect(await screen.findByRole("tab", { name: label })).toBeInTheDocument();
     }

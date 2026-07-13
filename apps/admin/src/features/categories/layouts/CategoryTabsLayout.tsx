@@ -12,8 +12,8 @@ const TAB_SEGMENTS = [
   { value: "supplier-category", label: "Supplier Category", segment: "supplier-category" },
 ];
 
-const PREVIEW_BASE = "/categories-preview";
-const REAL_BASE = "/categories";
+const PREVIEW_BASE = "/admin/categories-preview";
+const REAL_BASE = "/admin/categories";
 
 /**
  * Shell for the five Category tabs (product_requirements.md §4.5) — real
@@ -21,12 +21,13 @@ const REAL_BASE = "/categories";
  * actual URL ("Category › Category"). The tab list is hidden on the Add
  * Category sub-route (matches the reference, which shows no tabs there).
  *
- * Reused under both the real route (`/categories/*`) and the unauthenticated
- * preview route (`/categories-preview/*`, which mirrors the same nested
- * shape) — tab hrefs are built from whichever base the current pathname is
- * under, so a preview tab click can never leak out into the real,
- * auth-guarded route. Check the preview base first: "/categories-preview"
- * also starts with the substring "/categories".
+ * Reused under both the real route (`/admin/categories/*`) and the
+ * unauthenticated preview route (`/admin/categories-preview/*`, which mirrors
+ * the same nested shape) — tab hrefs are built from whichever base the
+ * current pathname is under, so a preview tab click can never leak out into
+ * the real, auth-guarded route. Check the preview base first:
+ * "/admin/categories-preview" also starts with the substring
+ * "/admin/categories".
  */
 export function CategoryTabsLayout() {
   const { pathname } = useLocation();

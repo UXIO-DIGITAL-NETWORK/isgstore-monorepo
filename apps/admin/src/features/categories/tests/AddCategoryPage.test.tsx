@@ -20,13 +20,13 @@ async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>) {
  * unauthenticated preview route.
  */
 describe("AddCategoryPage", () => {
-  it("resolves /categories-preview/category/add with the header", async () => {
-    await renderRoute("/categories-preview/category/add");
+  it("resolves /admin/categories-preview/category/add with the header", async () => {
+    await renderRoute("/admin/categories-preview/category/add");
     expect(await screen.findByRole("heading", { name: "Add Category" })).toBeInTheDocument();
   });
 
   it("shows both section headings and their exact subcopies", async () => {
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     expect(await screen.findByRole("heading", { name: "Basic information" })).toBeInTheDocument();
     expect(screen.getByText("Type, validation, and category identity on the storefront.")).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe("AddCategoryPage", () => {
   });
 
   it("shows all eight Basic information fields by label", async () => {
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     for (const label of [
       "Category Type",
@@ -53,7 +53,7 @@ describe("AddCategoryPage", () => {
   });
 
   it("shows the field-key guide text verbatim", async () => {
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     expect(
       await screen.findByText("Do not use whatsapp or email keys — buyer contact is taken from their account."),
@@ -62,14 +62,14 @@ describe("AddCategoryPage", () => {
   });
 
   it("shows the empty-forms message before any field is added", async () => {
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     expect(await screen.findByText('No forms yet. Click "Add Form" to add one.')).toBeInTheDocument();
   });
 
   it("clicking '+ Add Form' adds a new field-definition row", async () => {
     const user = userEvent.setup();
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     expect(screen.queryByLabelText(/^Key$/i)).not.toBeInTheDocument();
 
@@ -82,7 +82,7 @@ describe("AddCategoryPage", () => {
   it("shows validation errors and blocks submit when required fields are empty", async () => {
     const createSpy = vi.spyOn(categoriesService, "create");
     const user = userEvent.setup();
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     await user.click(await screen.findByRole("button", { name: "Save" }));
 
@@ -97,7 +97,7 @@ describe("AddCategoryPage", () => {
   it("blocks submit and shows the reserved-key message for a whatsapp/email field key", async () => {
     const createSpy = vi.spyOn(categoriesService, "create");
     const user = userEvent.setup();
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     await fillRequiredFields(user);
     await user.click(screen.getByRole("button", { name: /Add Form/i }));
@@ -111,7 +111,7 @@ describe("AddCategoryPage", () => {
 
   it("creates the category and navigates back to the list with the new row on valid submit", async () => {
     const user = userEvent.setup();
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     await fillRequiredFields(user);
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -121,7 +121,7 @@ describe("AddCategoryPage", () => {
   });
 
   it("shows the Media & description and SEO section headings and their exact subcopies", async () => {
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     expect(await screen.findByRole("heading", { name: "Media & description" })).toBeInTheDocument();
     expect(screen.getByText("Category logo and description content for the product page.")).toBeInTheDocument();
@@ -131,7 +131,7 @@ describe("AddCategoryPage", () => {
   });
 
   it("shows every Media & description and SEO field by label", async () => {
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     for (const label of [
       "Category Logo",
@@ -148,7 +148,7 @@ describe("AddCategoryPage", () => {
 
   it("keeps the Meta Description character count and percentage in sync", async () => {
     const user = userEvent.setup();
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     // "Fourteen chars" = 14 chars → 14/280 = 5%.
     await user.type(await screen.findByLabelText("Meta Description"), "Fourteen chars");
@@ -160,7 +160,7 @@ describe("AddCategoryPage", () => {
   it("includes the media and SEO fields in the create payload on valid submit", async () => {
     const createSpy = vi.spyOn(categoriesService, "create");
     const user = userEvent.setup();
-    await renderRoute("/categories-preview/category/add");
+    await renderRoute("/admin/categories-preview/category/add");
 
     await fillRequiredFields(user);
     await user.type(screen.getByLabelText("Description"), "Top up MLBB diamonds instantly.");

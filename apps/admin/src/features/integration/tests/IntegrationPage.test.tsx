@@ -7,7 +7,7 @@ import { CHANNELS } from "../data/channels.data";
 /**
  * Part 5 — test cases (see product_requirements.md §4.4):
  *
- * - /integration-preview (unauthenticated preview route) resolves the
+ * - /admin/integration-preview (unauthenticated preview route) resolves the
  *   Integration page: header + the exact subcopy.
  * - The 3 overview stat cards render their labels, counts, and plain
  *   captions (this variant has no trend pill).
@@ -18,8 +18,8 @@ import { CHANNELS } from "../data/channels.data";
  * - Switching the category filter changes which cards render.
  */
 describe("IntegrationPage", () => {
-  it("resolves /integration-preview with the header and subcopy", async () => {
-    await renderRoute("/integration-preview");
+  it("resolves /admin/integration-preview with the header and subcopy", async () => {
+    await renderRoute("/admin/integration-preview");
 
     expect(await screen.findByRole("heading", { name: "Integration" })).toBeInTheDocument();
     expect(
@@ -30,7 +30,7 @@ describe("IntegrationPage", () => {
   });
 
   it("shows the 3 overview stat cards with labels, counts, and plain captions", async () => {
-    await renderRoute("/integration-preview");
+    await renderRoute("/admin/integration-preview");
 
     expect(await screen.findByText("Total Channels")).toBeInTheDocument();
     expect(screen.getByText("Active")).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe("IntegrationPage", () => {
   });
 
   it("shows all 5 category filter options, including Email Gateway with zero channels", async () => {
-    await renderRoute("/integration-preview");
+    await renderRoute("/admin/integration-preview");
 
     expect(await screen.findByRole("tab", { name: "All" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Supplier" })).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe("IntegrationPage", () => {
   });
 
   it("shows at least one channel card per non-empty type with its name and both badges", async () => {
-    await renderRoute("/integration-preview");
+    await renderRoute("/admin/integration-preview");
 
     const supplier = CHANNELS.find((channel) => channel.type === "supplier")!;
     const gateway = CHANNELS.find((channel) => channel.type === "payment_gateway")!;
@@ -72,7 +72,7 @@ describe("IntegrationPage", () => {
 
   it("switching the category filter changes which cards render", async () => {
     const user = userEvent.setup();
-    await renderRoute("/integration-preview");
+    await renderRoute("/admin/integration-preview");
 
     const supplierChannel = CHANNELS.find((channel) => channel.type === "supplier")!;
     const gatewayChannel = CHANNELS.find((channel) => channel.type === "payment_gateway")!;

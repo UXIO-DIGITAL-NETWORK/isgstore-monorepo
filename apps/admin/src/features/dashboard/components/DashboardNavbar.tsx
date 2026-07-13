@@ -37,13 +37,13 @@ const CATEGORY_TAB_LABELS: Record<string, string> = {
 };
 
 function getCategoryBreadcrumb(pathname: string): string[] | null {
-  // "/categories-preview" also starts with the substring "/categories", so
-  // the preview base must be checked first or every preview path would
-  // resolve to the (wrong, one-character-short) real base instead.
-  const base = pathname.startsWith("/categories-preview")
-    ? "/categories-preview"
-    : pathname.startsWith("/categories")
-      ? "/categories"
+  // "/admin/categories-preview" also starts with the substring
+  // "/admin/categories", so the preview base must be checked first or every
+  // preview path would resolve to the (wrong, one-segment-short) real base.
+  const base = pathname.startsWith("/admin/categories-preview")
+    ? "/admin/categories-preview"
+    : pathname.startsWith("/admin/categories")
+      ? "/admin/categories"
       : null;
   if (!base) return null;
 
@@ -66,9 +66,9 @@ const getInitials = (name: string) =>
 // (see src/routes/), so this mirrors the sidebar's own useLocation-driven
 // active-nav lookup rather than introducing a new mechanism.
 const PAGE_TITLES: Record<string, string> = {
-  "/financial": "Financial",
-  "/integration": "Integration",
-  "/transactions": "Transaction",
+  "/admin/financial": "Financial",
+  "/admin/integration": "Integration",
+  "/admin/transactions": "Transaction",
 };
 
 function getPageTitle(pathname: string) {

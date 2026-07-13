@@ -22,14 +22,14 @@ describe("DashboardNavbar user menu", () => {
   });
 
   it("renders the authenticated user's name and email from the auth store", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     expect(screen.getByText("Dimas Sufyan")).toBeInTheDocument();
     expect(screen.getByText("dimas@udn.com")).toBeInTheDocument();
   });
 
   it("no longer renders the mock operator fixture identity", async () => {
-    await renderRoute("/dashboard");
+    await renderRoute("/admin/dashboard");
 
     expect(screen.queryByText("Randy Galang")).not.toBeInTheDocument();
     expect(screen.queryByText("randy@uxio.com")).not.toBeInTheDocument();

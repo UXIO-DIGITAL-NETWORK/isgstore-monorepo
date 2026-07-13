@@ -13,7 +13,7 @@ export const requireAuth = () => {
 export const requireGuest = () => {
   const { token } = useAuthStore.getState();
   if (token) {
-    throw redirect({ to: "/dashboard" });
+    throw redirect({ to: "/admin/dashboard" });
   }
 };
 
@@ -24,6 +24,6 @@ export const requirePermission = (permission: string) => {
   const { permissions } = useAuthStore.getState();
   const allowed = permissions.includes("*") || permissions.includes(permission);
   if (!allowed) {
-    throw redirect({ to: "/dashboard" });
+    throw redirect({ to: "/admin/dashboard" });
   }
 };

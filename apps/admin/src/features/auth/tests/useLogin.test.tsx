@@ -64,6 +64,6 @@ describe("useLogin", () => {
       expect(state.user).toEqual(mockUser);
       expect(state.permissions).toEqual(["*"]);
     });
-    await waitFor(() => expect(router.state.location.pathname).toBe("/dashboard"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/admin/dashboard"));
   });
 });

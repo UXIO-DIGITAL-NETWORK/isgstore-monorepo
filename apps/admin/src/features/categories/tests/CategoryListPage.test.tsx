@@ -11,15 +11,15 @@ import { renderRoute, screen, within } from "@/test/test-utils";
  * unauthenticated preview route, same pattern as every other feature.
  */
 describe("CategoryListPage", () => {
-  it("resolves /categories-preview with the header and a real subcopy", async () => {
-    await renderRoute("/categories-preview");
+  it("resolves /admin/categories-preview with the header and a real subcopy", async () => {
+    await renderRoute("/admin/categories-preview");
 
     expect(await screen.findByRole("heading", { name: "Category" })).toBeInTheDocument();
     expect(screen.queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
   });
 
   it("shows the toolbar: search, type filter, refresh, and Add Category", async () => {
-    await renderRoute("/categories-preview");
+    await renderRoute("/admin/categories-preview");
 
     expect(await screen.findByRole("textbox", { name: /search/i })).toBeInTheDocument();
     expect(screen.getByLabelText("Type Category")).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe("CategoryListPage", () => {
   });
 
   it("shows the table column headers", async () => {
-    await renderRoute("/categories-preview");
+    await renderRoute("/admin/categories-preview");
 
     const table = await screen.findByRole("table");
     for (const header of ["Category Name", "Category Type", "Code / Slug", "Status", "Actions"]) {
@@ -37,7 +37,7 @@ describe("CategoryListPage", () => {
   });
 
   it("shows at least one real game-related mock row, not shadcn demo content", async () => {
-    await renderRoute("/categories-preview");
+    await renderRoute("/admin/categories-preview");
 
     expect(await screen.findByText("Mobile Legends")).toBeInTheDocument();
     expect(screen.queryByText("Cover Page")).not.toBeInTheDocument();
@@ -45,24 +45,24 @@ describe("CategoryListPage", () => {
   });
 
   it("the '+ Add Category' link navigates relative to the current tab (stays in preview)", async () => {
-    await renderRoute("/categories-preview");
+    await renderRoute("/admin/categories-preview");
 
     const addLink = await screen.findByRole("link", { name: /Add Category/i });
-    expect(addLink).toHaveAttribute("href", "/categories-preview/category/add");
+    expect(addLink).toHaveAttribute("href", "/admin/categories-preview/category/add");
   });
 
   it("shows all five tabs, mirroring the real route, without leaking out of preview", async () => {
-    await renderRoute("/categories-preview");
+    await renderRoute("/admin/categories-preview");
 
     for (const label of ["Category", "Sub Category", "Category Type", "Server Category", "Supplier Category"]) {
       const tab = await screen.findByRole("tab", { name: label });
-      expect(tab).toHaveAttribute("href", expect.stringMatching(/^\/categories-preview\//));
+      expect(tab).toHaveAttribute("href", expect.stringMatching(/^\/admin\/categories-preview\//));
     }
   });
 
   it("a row's action menu shows Edit and Delete", async () => {
     const user = userEvent.setup();
-    await renderRoute("/categories-preview");
+    await renderRoute("/admin/categories-preview");
 
     const menuButton = await screen.findByRole("button", { name: /Actions for Mobile Legends/i });
     await user.click(menuButton);

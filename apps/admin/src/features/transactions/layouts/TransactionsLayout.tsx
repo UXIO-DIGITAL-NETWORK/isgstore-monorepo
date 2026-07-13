@@ -5,8 +5,8 @@ import { Link } from "@/components/common/Link";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TABS = [
-  { value: "automatic", label: "Automatic", href: "/transactions/automatic" },
-  { value: "manual", label: "Manual", href: "/transactions/manual" },
+  { value: "automatic", label: "Automatic", href: "/admin/transactions/automatic" },
+  { value: "manual", label: "Manual", href: "/admin/transactions/manual" },
 ];
 
 /**
