@@ -4,7 +4,7 @@ argument-hint: [feature name, or "global"]
 ---
 Run the static gates and summarize (file + line + concrete fix):
 
-!`npx tsc --noEmit`
+!`npx tsc -b --force`
 !`npm run lint`
 !`npm run test`
 !`grep -rn 'from "@/features/' src/features || echo "OK: no cross-feature imports"`

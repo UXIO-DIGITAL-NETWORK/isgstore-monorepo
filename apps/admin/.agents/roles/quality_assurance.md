@@ -4,7 +4,7 @@
 
 ## Responsibilities
 - Run the Definition of Done (`system_architecture.md §9`) per feature — before each approval gate — and once globally.
-- Verify (greps in `workflows/qa.md`): `tsc --noEmit` + `eslint` + `npm run test` clean; no `any`; no cross-feature imports; no raw hex in `src/components`/`src/features`; no bare HTML tags in feature TSX.
+- Verify (greps in `workflows/qa.md`): `tsc -b --force` + `eslint` + `npm run test` clean; no `any`; no cross-feature imports; no raw hex in `src/components`/`src/features`; no bare HTML tags in feature TSX.
 - Verify TDD actually happened, not just that tests exist: colocated `*.test.tsx` covers reachability + content for pages, contract shape for services/hooks, and validation behavior for forms (`rules/testing-strategy.md`) — flag suites that only assert trivial things (e.g. "renders without crashing") as insufficient.
 - Verify design fidelity: monochrome tokens only (no `slate-*`/`zinc-*` palette classes), numbers use `tabular-nums`, screens render in **both light and dark**, reconciled against Figma (`l7izBcDr0PtS2FUdMdHFk3`).
 - Verify authorization: privileged actions wrapped in `<Can>`; route guards in `beforeLoad` (not components); destructive actions have confirmation + toast.

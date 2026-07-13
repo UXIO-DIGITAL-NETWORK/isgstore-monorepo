@@ -33,7 +33,7 @@
 
 - [x] Built TDD-first: 6 failing tests written and confirmed red for the right reasons (wrong URL, interceptor clearing on `/auth/login`, missing timezone, undefined tokens, fixture identity rendering), then implemented to green
 - [x] `npm run test` passes — 25 files / 132 tests
-- [x] `npx tsc --noEmit` clean
+- [x] `npx tsc -b --force` clean (correction: this entry originally cited `npx tsc --noEmit`, which is vacuous under the solution-style root tsconfig — checks 0 files. Re-verified with `tsc -b --force` (236 src files) and full `npm run build`, both clean; QA-gate docs updated to `tsc -b --force` the same day)
 - [x] `npm run lint` clean (0 errors; the 5 pre-existing TanStack-Table `react-hooks/incompatible-library` warnings are unchanged and unrelated)
 - [ ] `/qa-audit` run (findings in `.artifacts/qa-log.md`)
 - [x] Live staging check: `POST /auth/login` reachable from this environment (no CORS/network issue via curl); a seeded-credentials attempt returned **HTTP 422** `{"message":"These credentials do not match our records.","errors":{"email":[...]}}` — endpoint and error path confirmed live, but a real *successful* login (tokens/user landing in the store in-browser) is unverified pending valid staging credentials

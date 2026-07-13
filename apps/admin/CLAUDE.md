@@ -48,7 +48,7 @@ Precedence when they conflict:
 | `/qa-audit [feature\|global]` | Definition of Done -> `.artifacts/qa-log.md`                                |
 | `/add-shadcn <component>`     | Add a shadcn primitive, restyle with neutral tokens                         |
 | `/commit [scope]`             | One Conventional Commit + its log entry                                     |
-| `/typecheck`                  | `tsc --noEmit` + `eslint`, summarized                                       |
+| `/typecheck`                  | `tsc -b --force` + `eslint`, summarized                                       |
 | `/log-change <slug>`          | Append a `logs/feature-changes/` entry                                      |
 | `/update-memory <agent>`      | Refresh an agent's `MEMORY.md`                                              |
 | `/impeccable <mode> [target]` | Production-grade UI craft/critique (run `/impeccable init` first use)       |
