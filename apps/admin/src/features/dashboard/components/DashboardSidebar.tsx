@@ -152,7 +152,7 @@ export function DashboardSidebar() {
               type="button"
               onClick={() => setCommandOpen(true)}
               aria-label="Search"
-              className="ring-offset-background flex size-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="ring-offset-background flex size-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <Search className="size-4" />
             </Box>
@@ -161,7 +161,7 @@ export function DashboardSidebar() {
               as="button"
               type="button"
               onClick={() => setCommandOpen(true)}
-              className="ring-offset-background flex h-9 w-full items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="ring-offset-background flex h-9 w-full items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <Search className="size-4 shrink-0" />
               <Text
@@ -198,7 +198,7 @@ export function DashboardSidebar() {
                         isActive={isActive}
                         disabled={item.disabled}
                         className={cn(
-                          "rounded-md text-muted-foreground hover:bg-accent hover:text-foreground",
+                          "rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground",
                           "data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary data-[active=true]:hover:text-primary-foreground",
                           item.disabled && "disabled:opacity-100",
                         )}
@@ -245,7 +245,7 @@ export function DashboardSidebar() {
           <Text variant="small">Opt-in to receive updates and news about the sidebar.</Text>
           <Button
             size="sm"
-            className="mt-1 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="mt-1 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
           >
             Subscribe
           </Button>
