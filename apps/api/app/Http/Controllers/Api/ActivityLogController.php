@@ -14,7 +14,8 @@ class ActivityLogController extends Controller
 
     public function index(Request $request)
     {
-        $logs = ActivityLog::latest()
+        $logs = ActivityLog::with('user.role')
+            ->latest()
             ->paginate(min(100, max(1, (int) $request->query('per_page', 15))));
 
         return $this->paginatedResponse(ActivityLogResource::collection($logs), 'Activity logs retrieved successfully');

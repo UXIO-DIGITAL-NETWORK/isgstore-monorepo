@@ -77,4 +77,25 @@ class DashboardStatsTest extends TestCase
             collect($response->json('data.chart'))->sum('transactions')
         );
     }
+
+    public function test_dashboard_stats_includes_stat_cards_and_pending_orders(): void
+    {
+        $this->actingAsAdmin();
+
+        Transaction::factory()->create(['status' => 'PENDING']);
+        Transaction::factory()->create(['status' => 'PROCESSING']);
+        Transaction::factory()->create(['status' => 'FAILED_PROVIDER']);
+        Transaction::factory()->create(['status' => 'PENDING', 'is_manual' => true]);
+
+        $response = $this->getJson('/api/v1/dashboard/stats')->assertOk();
+
+        $statCardKeys = collect($response->json('data.stat_cards'))->pluck('key');
+        $this->assertSame(['credit', 'debit', 'todays_sales'], $statCardKeys->all());
+
+        $response
+            ->assertJsonPath('data.pending_orders.manual_orders', 1)
+            ->assertJsonPath('data.pending_orders.pending_payment', 2)
+            ->assertJsonPath('data.pending_orders.processing', 1)
+            ->assertJsonPath('data.pending_orders.failed_transaction', 1);
+    }
 }

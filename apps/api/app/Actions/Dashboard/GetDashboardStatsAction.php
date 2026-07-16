@@ -23,11 +23,18 @@ class GetDashboardStatsAction
     {
         $todayStart = now()->startOfDay();
         $monthStart = now()->startOfMonth();
+        $yesterdayStart = now()->subDay()->startOfDay();
 
         $collected = Payment::where('status', PaymentStatus::SUCCESS->value)
             ->selectRaw('COALESCE(SUM(gross_amount),0) as all_time')
             ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? THEN gross_amount ELSE 0 END),0) as this_month', [$monthStart])
             ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? THEN gross_amount ELSE 0 END),0) as today', [$todayStart])
+            ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? AND paid_at < ? THEN gross_amount ELSE 0 END),0) as yesterday', [$yesterdayStart, $todayStart])
+            ->first();
+
+        $refunded = Payment::where('status', PaymentStatus::REFUNDED->value)
+            ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? THEN gross_amount ELSE 0 END),0) as today', [$todayStart])
+            ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? AND paid_at < ? THEN gross_amount ELSE 0 END),0) as yesterday', [$yesterdayStart, $todayStart])
             ->first();
 
         $periods = [
@@ -35,6 +42,7 @@ class GetDashboardStatsAction
             'this_month' => $this->periodStats($monthStart, (int) $collected->this_month),
             'all_time' => $this->periodStats(null, (int) $collected->all_time),
         ];
+        $yesterdayRevenue = $this->periodStats($yesterdayStart, 0, $todayStart)['revenue'];
 
         return [
             'totals' => [
@@ -42,6 +50,23 @@ class GetDashboardStatsAction
                 'transactions' => $periods['all_time']['count'],
             ],
             'periods' => $periods,
+            // First-pass definitions pending a confirmed finance spec (mirrors
+            // the "Credit/Debit/Profit" TBD noted for the Financial page):
+            // credit = today's successfully collected payments, debit = today's
+            // refunds, both trended against yesterday's same metric.
+            'stat_cards' => [
+                $this->statCard('credit', (int) $collected->today, (int) $collected->yesterday, 'Since yesterday'),
+                $this->statCard('debit', (int) $refunded->today, (int) $refunded->yesterday, 'Since yesterday'),
+                $this->statCard('todays_sales', $periods['today']['revenue'], $yesterdayRevenue, 'Since yesterday'),
+            ],
+            'pending_orders' => [
+                'manual_orders' => Transaction::where('is_manual', true)
+                    ->whereIn('status', [TransactionStatus::PENDING->value, TransactionStatus::PROCESSING->value])
+                    ->count(),
+                'pending_payment' => Transaction::where('status', TransactionStatus::PENDING->value)->count(),
+                'processing' => Transaction::where('status', TransactionStatus::PROCESSING->value)->count(),
+                'failed_transaction' => Transaction::where('status', TransactionStatus::FAILED_PROVIDER->value)->count(),
+            ],
             'chart' => $this->chartSeries(),
             'recent_transactions' => TransactionResource::collection(
                 Transaction::with(['user', 'product', 'supplier', 'payment', 'paymentChannel'])
@@ -52,15 +77,36 @@ class GetDashboardStatsAction
         ];
     }
 
+    private function statCard(string $key, int $value, int $previousValue, string $caption): array
+    {
+        $deltaPct = null;
+        $direction = null;
+
+        if ($previousValue > 0) {
+            $pct = (($value - $previousValue) / $previousValue) * 100;
+            $deltaPct = round(abs($pct), 1);
+            $direction = $pct >= 0 ? 'up' : 'down';
+        }
+
+        return [
+            'key' => $key,
+            'value' => $value,
+            'delta_pct' => $deltaPct,
+            'direction' => $direction,
+            'caption' => $caption,
+        ];
+    }
+
     /**
      * @return array{revenue:int, margin:int, collected:int, count:int, by_status:array<string,int>}
      */
-    private function periodStats(?CarbonInterface $from, int $collected): array
+    private function periodStats(?CarbonInterface $from, int $collected, ?CarbonInterface $to = null): array
     {
         // toBase(): skip model hydration so `status` stays a raw string
         // (the enum cast would break keyBy) and no casts run on aggregates.
         $rows = Transaction::query()
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<', $to))
             ->selectRaw('status, COUNT(*) as cnt, COALESCE(SUM(amount_total),0) as amount, COALESCE(SUM(margin),0) as margin')
             ->groupBy('status')
             ->toBase()

@@ -118,6 +118,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
 
     // Dashboard (admin overview aggregates)
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('/dashboard/performance', [DashboardController::class, 'performance']);
 
     // Activity Logs
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
