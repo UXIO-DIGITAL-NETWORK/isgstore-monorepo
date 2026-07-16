@@ -12,14 +12,17 @@ use App\Http\Requests\Category\ServerCategory\UpdateServerCategoryRequest;
 use App\Http\Resources\Api\Category\ServerCategory\ServerCategoryResource;
 use App\Models\ServerCategory;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class ServerCategoryController extends Controller
 {
     use ApiResponse;
 
-    public function index(GetServerCategoriesAction $action)
+    public function index(Request $request, GetServerCategoriesAction $action)
     {
-        $serverCategories = $action->execute(15);
+        $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
+        $categoryId = $request->query('category_id');
+        $serverCategories = $action->execute($perPage, $categoryId !== null ? (int) $categoryId : null);
 
         return $this->paginatedResponse(ServerCategoryResource::collection($serverCategories), 'Server Categories retrieved successfully');
     }

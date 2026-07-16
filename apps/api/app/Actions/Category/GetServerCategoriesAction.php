@@ -7,8 +7,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class GetServerCategoriesAction
 {
-    public function execute(int $perPage = 15): LengthAwarePaginator
+    public function execute(int $perPage = 15, ?int $categoryId = null): LengthAwarePaginator
     {
-        return ServerCategory::with('category')->latest()->paginate($perPage);
+        return ServerCategory::with('category')
+            ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
+            ->latest()
+            ->paginate($perPage);
     }
 }

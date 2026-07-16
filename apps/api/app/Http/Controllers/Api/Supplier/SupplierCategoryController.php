@@ -12,14 +12,22 @@ use App\Http\Requests\Supplier\UpdateSupplierCategoryRequest;
 use App\Http\Resources\Api\Supplier\SupplierCategoryResource;
 use App\Models\SupplierCategory;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class SupplierCategoryController extends Controller
 {
     use ApiResponse;
 
-    public function index(GetSupplierCategoriesAction $action)
+    public function index(Request $request, GetSupplierCategoriesAction $action)
     {
-        $categories = $action->execute(15);
+        $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
+        $categoryId = $request->query('category_id');
+        $supplierId = $request->query('supplier_id');
+        $categories = $action->execute(
+            $perPage,
+            $categoryId !== null ? (int) $categoryId : null,
+            $supplierId !== null ? (int) $supplierId : null
+        );
 
         return $this->paginatedResponse(SupplierCategoryResource::collection($categories), 'Supplier Categories retrieved successfully');
     }

@@ -12,14 +12,16 @@ use App\Http\Requests\Category\CategoryType\UpdateCategoryTypeRequest;
 use App\Http\Resources\Api\Category\CategoryType\CategoryTypeResource;
 use App\Models\CategoryType;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class CategoryTypeController extends Controller
 {
     use ApiResponse;
 
-    public function index(GetCategoryTypesAction $action)
+    public function index(Request $request, GetCategoryTypesAction $action)
     {
-        $types = $action->execute(15);
+        $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
+        $types = $action->execute($perPage, $request->query('search'));
 
         return $this->paginatedResponse(CategoryTypeResource::collection($types), 'Category Types retrieved successfully');
     }
