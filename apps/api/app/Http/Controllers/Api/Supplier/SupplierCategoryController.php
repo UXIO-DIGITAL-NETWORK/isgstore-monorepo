@@ -21,15 +21,7 @@ class SupplierCategoryController extends Controller
     {
         $categories = $action->execute(15);
 
-        return $this->successResponse([
-            'data' => SupplierCategoryResource::collection($categories),
-            'meta' => [
-                'current_page' => $categories->currentPage(),
-                'last_page' => $categories->lastPage(),
-                'per_page' => $categories->perPage(),
-                'total' => $categories->total(),
-            ],
-        ], 'Supplier Categories retrieved successfully');
+        return $this->paginatedResponse(SupplierCategoryResource::collection($categories), 'Supplier Categories retrieved successfully');
     }
 
     public function store(StoreSupplierCategoryRequest $request, CreateSupplierCategoryAction $action)

@@ -25,15 +25,7 @@ class SupplierController extends Controller
             $request->query('search')
         );
 
-        return $this->successResponse([
-            'data' => SupplierResource::collection($suppliers),
-            'meta' => [
-                'current_page' => $suppliers->currentPage(),
-                'last_page' => $suppliers->lastPage(),
-                'per_page' => $suppliers->perPage(),
-                'total' => $suppliers->total(),
-            ],
-        ], 'Suppliers retrieved successfully');
+        return $this->paginatedResponse(SupplierResource::collection($suppliers), 'Suppliers retrieved successfully');
     }
 
     public function store(StoreSupplierRequest $request, CreateSupplierAction $action)

@@ -21,15 +21,7 @@ class SupplierProductController extends Controller
     {
         $products = $action->execute(15);
 
-        return $this->successResponse([
-            'data' => SupplierProductResource::collection($products),
-            'meta' => [
-                'current_page' => $products->currentPage(),
-                'last_page' => $products->lastPage(),
-                'per_page' => $products->perPage(),
-                'total' => $products->total(),
-            ],
-        ], 'Supplier Products retrieved successfully');
+        return $this->paginatedResponse(SupplierProductResource::collection($products), 'Supplier Products retrieved successfully');
     }
 
     public function store(StoreSupplierProductRequest $request, CreateSupplierProductAction $action)

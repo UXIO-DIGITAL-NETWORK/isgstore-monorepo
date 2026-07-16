@@ -21,15 +21,7 @@ class SubCategoryController extends Controller
     {
         $subCategories = $action->execute(15);
 
-        return $this->successResponse([
-            'data' => SubCategoryResource::collection($subCategories),
-            'meta' => [
-                'current_page' => $subCategories->currentPage(),
-                'last_page' => $subCategories->lastPage(),
-                'per_page' => $subCategories->perPage(),
-                'total' => $subCategories->total(),
-            ],
-        ], 'Sub Categories retrieved successfully');
+        return $this->paginatedResponse(SubCategoryResource::collection($subCategories), 'Sub Categories retrieved successfully');
     }
 
     public function store(StoreSubCategoryRequest $request, CreateSubCategoryAction $action)

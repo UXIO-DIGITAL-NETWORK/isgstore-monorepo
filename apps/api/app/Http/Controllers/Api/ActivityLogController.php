@@ -17,14 +17,6 @@ class ActivityLogController extends Controller
         $logs = ActivityLog::latest()
             ->paginate(min(100, max(1, (int) $request->query('per_page', 15))));
 
-        return $this->successResponse([
-            'data' => ActivityLogResource::collection($logs),
-            'meta' => [
-                'current_page' => $logs->currentPage(),
-                'last_page' => $logs->lastPage(),
-                'per_page' => $logs->perPage(),
-                'total' => $logs->total(),
-            ],
-        ], 'Activity logs retrieved successfully');
+        return $this->paginatedResponse(ActivityLogResource::collection($logs), 'Activity logs retrieved successfully');
     }
 }

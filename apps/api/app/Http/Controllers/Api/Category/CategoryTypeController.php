@@ -21,15 +21,7 @@ class CategoryTypeController extends Controller
     {
         $types = $action->execute(15);
 
-        return $this->successResponse([
-            'data' => CategoryTypeResource::collection($types),
-            'meta' => [
-                'current_page' => $types->currentPage(),
-                'last_page' => $types->lastPage(),
-                'per_page' => $types->perPage(),
-                'total' => $types->total(),
-            ],
-        ], 'Category Types retrieved successfully');
+        return $this->paginatedResponse(CategoryTypeResource::collection($types), 'Category Types retrieved successfully');
     }
 
     public function store(StoreCategoryTypeRequest $request, CreateCategoryTypeAction $action)

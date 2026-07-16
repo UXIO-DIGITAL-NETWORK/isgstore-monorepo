@@ -21,15 +21,7 @@ class ServerCategoryController extends Controller
     {
         $serverCategories = $action->execute(15);
 
-        return $this->successResponse([
-            'data' => ServerCategoryResource::collection($serverCategories),
-            'meta' => [
-                'current_page' => $serverCategories->currentPage(),
-                'last_page' => $serverCategories->lastPage(),
-                'per_page' => $serverCategories->perPage(),
-                'total' => $serverCategories->total(),
-            ],
-        ], 'Server Categories retrieved successfully');
+        return $this->paginatedResponse(ServerCategoryResource::collection($serverCategories), 'Server Categories retrieved successfully');
     }
 
     public function store(StoreServerCategoryRequest $request, CreateServerCategoryAction $action)

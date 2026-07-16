@@ -23,7 +23,7 @@ class RatingController extends Controller
         $perPage = $request->query('per_page', 15);
         $ratings = $action->execute((int) $perPage);
 
-        return RatingResource::collection($ratings);
+        return $this->paginatedResponse(RatingResource::collection($ratings), 'Ratings retrieved successfully');
     }
 
     public function store(StoreRatingRequest $request, CreateRatingAction $action)

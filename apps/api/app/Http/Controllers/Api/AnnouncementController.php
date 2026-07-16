@@ -22,7 +22,7 @@ class AnnouncementController extends Controller
     {
         $announcements = $action->execute((int) $request->query('per_page', 15));
 
-        return AnnouncementResource::collection($announcements);
+        return $this->paginatedResponse(AnnouncementResource::collection($announcements), 'Announcements retrieved successfully');
     }
 
     public function store(StoreAnnouncementRequest $request, CreateAnnouncementAction $action)

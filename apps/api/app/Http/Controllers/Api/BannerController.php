@@ -22,7 +22,7 @@ class BannerController extends Controller
     {
         $banners = $action->execute((int) $request->query('per_page', 15));
 
-        return BannerResource::collection($banners);
+        return $this->paginatedResponse(BannerResource::collection($banners), 'Banners retrieved successfully');
     }
 
     public function store(StoreBannerRequest $request, CreateBannerAction $action)

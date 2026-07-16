@@ -26,7 +26,7 @@ class TransactionController extends Controller
 
         $transactions = $action->execute($perPage, $status, $search);
 
-        return TransactionResource::collection($transactions);
+        return $this->paginatedResponse(TransactionResource::collection($transactions), 'Transactions retrieved successfully');
     }
 
     public function store(StoreTransactionRequest $request, CreateTransactionAction $action)

@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\Supplier\SupplierController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\User\SyncTimezoneController;
 use App\Http\Controllers\Api\User\UserController;
+use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -90,17 +91,24 @@ Route::prefix('v1')->group(function () {
 // Protected Routes (Requires Auth)
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
-    // User Info (Current Auth User)
+    // User Info (Current Auth User) — any authenticated user, not admin-only
     Route::get('/user', function (Request $request) {
         return response()->json([
             'status' => 'success',
-            'data' => $request->user(),
+            'code' => 200,
+            'message' => 'Success',
+            'data' => new UserResource($request->user()),
         ]);
     });
 
+    Route::patch('/users/sync-timezone', SyncTimezoneController::class);
+});
+
+// Admin-only management API (requires auth:sanctum + role_id 1 — see EnsureUserIsAdmin)
+Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
+
     // CRUD Users
     Route::prefix('users')->group(function () {
-        Route::patch('/sync-timezone', SyncTimezoneController::class);
         Route::get('/', [UserController::class, 'index']);
         Route::post('/', [UserController::class, 'store']);
         Route::get('/{user}', [UserController::class, 'show']);
