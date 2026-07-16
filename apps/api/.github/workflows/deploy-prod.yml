@@ -136,11 +136,22 @@ jobs:
               echo "Supervisor already installed — skipping install"
             fi
 
+            # 11. Pastikan direktori conf.d ada
+            sudo mkdir -p /etc/supervisor/conf.d
+
+            # 12. Deploy supervisor config untuk queue worker
+            # Updated source file path to uxioserver1
+            # (dilakukan sebelum daemon start/health-check di bawah — config yang salah
+            # di conf.d bisa membuat seluruh supervisord gagal start, jadi config terbaru
+            # harus sudah ter-copy sebelum kita mencoba (re)start daemonnya)
+            sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/laravel-queue-prod.conf \
+                    /etc/supervisor/conf.d/laravel-queue-prod.conf
+
             # Pastikan daemon supervisord benar-benar berjalan (idempotent — no-op jika sudah up).
             # Binary bisa saja sudah terpasang tapi daemonnya mati/belum pernah dijalankan.
             if ! sudo systemctl is-active --quiet supervisor; then
               echo "supervisord not running — starting..."
-              sudo systemctl start supervisor
+              sudo systemctl restart supervisor
               sleep 2
             fi
 
@@ -148,14 +159,6 @@ jobs:
               echo "ERROR: supervisor.sock still missing after start attempt — check 'systemctl status supervisor' / 'journalctl -u supervisor' on the host."
               exit 1
             fi
-
-            # 11. Pastikan direktori conf.d ada
-            sudo mkdir -p /etc/supervisor/conf.d
-
-            # 12. Deploy supervisor config untuk queue worker
-            # Updated source file path to uxioserver1
-            sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/laravel-queue-prod.conf \
-                    /etc/supervisor/conf.d/laravel-queue-prod.conf
 
             # 13. Reload supervisor agar membaca config terbaru
             sudo supervisorctl reread
