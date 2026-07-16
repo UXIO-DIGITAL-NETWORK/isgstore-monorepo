@@ -36,8 +36,20 @@ class TransactionController extends Controller
         $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
         $status = $request->query('status');       // e.g. ?status=PENDING
         $search = $request->query('search');       // e.g. ?search=INV-20260605
+        $userId = $request->query('user_id');
+        $productId = $request->query('product_id');
+        $paymentChannelId = $request->query('payment_channel_id');
 
-        $transactions = $action->execute($perPage, $status, $search);
+        $transactions = $action->execute(
+            $perPage,
+            $status,
+            $search,
+            $userId !== null ? (int) $userId : null,
+            $productId !== null ? (int) $productId : null,
+            $paymentChannelId !== null ? (int) $paymentChannelId : null,
+            $request->query('start_date'),
+            $request->query('end_date'),
+        );
 
         return $this->paginatedResponse(TransactionResource::collection($transactions), 'Transactions retrieved successfully');
     }
