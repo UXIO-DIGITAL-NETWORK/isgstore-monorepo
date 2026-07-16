@@ -5,8 +5,10 @@ namespace App\Http\Resources\Api\Transaction;
 use App\Http\Resources\Api\Payment\PaymentResource;
 use App\Http\Resources\Api\Product\ProductResource;
 use App\Http\Resources\Api\Supplier\SupplierResource;
+use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionResource extends JsonResource
 {
@@ -32,7 +34,9 @@ class TransactionResource extends JsonResource
             'sn' => $this->sn,
             'supplier_trx_id' => $this->supplier_trx_id,
             'supplier_status' => $this->supplier_status,
-            'user' => $this->whenLoaded('user'),
+            'proof' => $this->proof,
+            'proof_url' => $this->proof ? Storage::disk('public')->url($this->proof) : null,
+            'user' => new UserResource($this->whenLoaded('user')),
             'product' => new ProductResource($this->whenLoaded('product')),
             'supplier' => new SupplierResource($this->whenLoaded('supplier')),
             // PaymentResource → TransactionResource only renders if payment.transaction is loaded;

@@ -259,7 +259,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     });
 
     // Transaction Management (Admin CRUD)
+    // status-counts must be registered before the apiResource's {transaction}
+    // wildcard, or Laravel tries to route-model-bind "status-counts" as an id.
+    Route::get('/transactions/status-counts', [TransactionController::class, 'statusCounts']);
     Route::apiResource('transactions', TransactionController::class);
+    Route::post('/transactions/{transaction}/manual-review', [TransactionController::class, 'manualReview']);
+    Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund']);
+    Route::post('/transactions/{transaction}/resend-callback', [TransactionController::class, 'resendCallback']);
+    Route::post('/transactions/{transaction}/retry', [TransactionController::class, 'retry']);
 
     // Payment Management
     Route::get('/payments', [PaymentController::class, 'index']);
