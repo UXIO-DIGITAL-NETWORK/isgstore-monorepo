@@ -71,4 +71,28 @@ class TransactionListTest extends TestCase
             ->assertJsonCount(1, 'data.data')
             ->assertJsonPath('data.data.0.id', $inScope->id);
     }
+
+    public function test_sorts_by_amount_total_ascending(): void
+    {
+        $this->actingAsAdmin();
+        Transaction::factory()->create(['amount_total' => 50000, 'invoice_number' => 'INV-HIGH']);
+        Transaction::factory()->create(['amount_total' => 10000, 'invoice_number' => 'INV-LOW']);
+
+        $this->getJson('/api/v1/transactions?sort_by=amount_total&sort_dir=asc')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.invoice_number', 'INV-LOW')
+            ->assertJsonPath('data.data.1.invoice_number', 'INV-HIGH');
+    }
+
+    public function test_rejects_an_unwhitelisted_sort_column_and_falls_back_to_created_at(): void
+    {
+        $this->actingAsAdmin();
+        $older = Transaction::factory()->create(['created_at' => now()->subDay()]);
+        $newer = Transaction::factory()->create(['created_at' => now()]);
+
+        $this->getJson('/api/v1/transactions?sort_by=margin&sort_dir=asc')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.id', $older->id)
+            ->assertJsonPath('data.data.1.id', $newer->id);
+    }
 }

@@ -49,6 +49,8 @@ class TransactionController extends Controller
             $paymentChannelId !== null ? (int) $paymentChannelId : null,
             $request->query('start_date'),
             $request->query('end_date'),
+            $request->query('sort_by'),
+            (string) $request->query('sort_dir', 'desc'),
         );
 
         return $this->paginatedResponse(TransactionResource::collection($transactions), 'Transactions retrieved successfully');
