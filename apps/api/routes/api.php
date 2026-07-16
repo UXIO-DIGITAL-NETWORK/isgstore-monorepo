@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
 use App\Http\Controllers\Api\Digiflazz\PriceAlertController;
 use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
+use App\Http\Controllers\Api\FinancialController;
+use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
@@ -119,6 +121,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     // Dashboard (admin overview aggregates)
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     Route::get('/dashboard/performance', [DashboardController::class, 'performance']);
+
+    // Financial Summary
+    Route::get('/financial/summary', [FinancialController::class, 'summary']);
+    Route::get('/financial/payment-gateways', [FinancialController::class, 'paymentGateways']);
+    Route::get('/financial/suppliers', [FinancialController::class, 'suppliers']);
+
+    // Integration channel connectivity overview
+    Route::get('/integration/channels', [IntegrationController::class, 'channels']);
 
     // Activity Logs
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
