@@ -12,24 +12,24 @@ use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Http\Resources\Api\Category\CategoryResource;
 use App\Models\Category;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
     use ApiResponse;
 
-    public function index(GetCategoriesAction $action)
+    public function index(Request $request, GetCategoriesAction $action)
     {
-        $categories = $action->execute(15);
+        $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
+        $typeId = $request->query('type_id');
 
-        return $this->successResponse([
-            'data' => CategoryResource::collection($categories),
-            'meta' => [
-                'current_page' => $categories->currentPage(),
-                'last_page' => $categories->lastPage(),
-                'per_page' => $categories->perPage(),
-                'total' => $categories->total(),
-            ],
-        ], 'Categories retrieved successfully');
+        $categories = $action->execute(
+            $perPage,
+            $request->query('search'),
+            $typeId !== null ? (int) $typeId : null
+        );
+
+        return $this->paginatedResponse(CategoryResource::collection($categories), 'Categories retrieved successfully');
     }
 
     public function store(StoreCategoryRequest $request, CreateCategoryAction $action)
