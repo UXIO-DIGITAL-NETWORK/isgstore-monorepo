@@ -188,9 +188,11 @@ describe("AutomaticTransactionsPage", () => {
     expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ sortBy: "cost", sortDir: "asc" }));
   });
 
-  it("shows a keyboard-accessible drag handle per row for manual reordering", async () => {
+  it("shows a row number column instead of a drag handle", async () => {
     await renderRoute("/admin/transaction-preview");
 
-    expect((await screen.findAllByRole("button", { name: "Drag to reorder row" })).length).toBeGreaterThan(0);
+    await screen.findByText("ZP2607016UJFJVSHCJ");
+    expect(screen.getByRole("columnheader", { name: "#" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Drag to reorder row" })).not.toBeInTheDocument();
   });
 });
