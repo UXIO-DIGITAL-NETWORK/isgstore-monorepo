@@ -24,7 +24,10 @@ const MANUAL_FILTER_FIELDS: FilterField[] = [
 
 /** Provisional pending a real Manual design — reuses the Automatic table/filter pattern with fewer columns/fields. */
 export default function ManualTransactionsPage() {
-  const [filters, setFilters] = useState<TransactionFilters>({});
+  const [filters, setFilters] = useState<TransactionFilters>(() => {
+    const today = new Date().toISOString();
+    return { startDate: today, endDate: today };
+  });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sorting, setSorting] = useState<SortingState>([]);

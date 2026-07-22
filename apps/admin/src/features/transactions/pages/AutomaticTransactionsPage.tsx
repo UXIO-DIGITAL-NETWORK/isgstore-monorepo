@@ -14,7 +14,10 @@ import type { TransactionStatus } from "../types/transaction.type";
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function AutomaticTransactionsPage() {
-  const [filters, setFilters] = useState<TransactionFilters>({});
+  const [filters, setFilters] = useState<TransactionFilters>(() => {
+    const today = new Date().toISOString();
+    return { startDate: today, endDate: today };
+  });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sorting, setSorting] = useState<SortingState>([]);
