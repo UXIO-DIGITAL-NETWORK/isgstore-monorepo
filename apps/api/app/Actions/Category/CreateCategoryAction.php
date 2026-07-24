@@ -21,15 +21,30 @@ class CreateCategoryAction
             $logoPath = $dto->logo->store('categories/logos', 'public');
         }
 
+        $ogImagePath = null;
+
+        if ($dto->ogImage instanceof UploadedFile) {
+            $ogImagePath = $dto->ogImage->store('categories/og-images', 'public');
+        }
+
         $category = Category::create([
             'type_id' => $dto->typeId,
             'name' => $dto->name,
+            'sub_name' => $dto->subName,
             'code' => $dto->code,
+            'slug' => $dto->slug,
+            'uid_parser' => $dto->uidParser,
             'validasi_nickname' => $dto->validasiNickname,
             'region' => $dto->region,
             'logo' => $logoPath,
             'description' => $dto->description,
             'status' => $dto->status,
+            'order_form_fields' => $dto->orderFormFields,
+            'meta_title' => $dto->metaTitle,
+            'meta_description' => $dto->metaDescription,
+            'og_image' => $ogImagePath,
+            'meta_keywords' => $dto->metaKeywords,
+            'meta_robots' => $dto->metaRobots,
         ]);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(

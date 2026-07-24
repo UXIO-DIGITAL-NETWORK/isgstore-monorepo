@@ -21,15 +21,7 @@ class ProductController extends Controller
     {
         $products = $action->execute(15);
 
-        return $this->successResponse([
-            'data' => ProductResource::collection($products),
-            'meta' => [
-                'current_page' => $products->currentPage(),
-                'last_page' => $products->lastPage(),
-                'per_page' => $products->perPage(),
-                'total' => $products->total(),
-            ],
-        ], 'Products retrieved successfully');
+        return $this->paginatedResponse(ProductResource::collection($products), 'Products retrieved successfully');
     }
 
     public function store(StoreProductRequest $request, CreateProductAction $action)

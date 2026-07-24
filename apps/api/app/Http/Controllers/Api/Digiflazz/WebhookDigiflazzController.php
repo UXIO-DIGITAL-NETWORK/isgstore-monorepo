@@ -19,7 +19,7 @@ class WebhookDigiflazzController extends Controller
         $expected = 'sha1='.hash_hmac('sha1', $postData, (string) $secret);
 
         if (! hash_equals($expected, (string) $request->header('X-Hub-Signature'))) {
-            Log::warning('Digiflazz Webhook: Invalid Signature', ['ip' => $request->ip()]);
+            Log::channel('digiflazz')->warning('Digiflazz Webhook: Invalid Signature', ['ip' => $request->ip()]);
 
             return response()->json(['message' => 'Forbidden'], 403);
         }
@@ -37,7 +37,7 @@ class WebhookDigiflazzController extends Controller
             try {
                 $action->execute($payload);
             } catch (Exception $e) {
-                Log::error('Digiflazz Webhook processing failed', ['error' => $e->getMessage()]);
+                Log::channel('digiflazz')->error('Digiflazz Webhook processing failed', ['error' => $e->getMessage()]);
 
                 return response()->json(['status' => 'error'], 500);
             }

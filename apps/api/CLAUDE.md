@@ -46,7 +46,8 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 - **Controllers** are pure routers. They validate, build a DTO, call one Action, and return. No DB calls, no conditionals, no business logic.
 - **Actions** own all logic. One Action = one task. They receive a DTO, run inside `DB::transaction()` where state changes are involved, and return a plain array or model.
 - **DTOs** are `readonly` PHP 8.2+ value objects. They are the only thing passed between Controller and Action.
-- **`ApiResponse` trait** (`app/Traits/ApiResponse.php`) is used in all controllers: `successResponse()`, `errorResponse()`, `validationErrorResponse()`.
+- **`ApiResponse` trait** (`app/Traits/ApiResponse.php`) is used in all controllers: `successResponse()`, `errorResponse()`, `validationErrorResponse()`, `paginatedResponse()`. Every paginated `index()` returns `paginatedResponse(XResource::collection($paginator), $message)` so all list endpoints share one shape: `{status, code, message, data: {data, links, meta}}`. `validationErrorResponse()`'s shape (`{status:"fail", code:422, message, errors}`) is also what `bootstrap/app.php`'s `withExceptions()` renders for every `ValidationException` on API routes — don't let a controller's manual 422 drift from it.
+- Admin-only middleware: `EnsureUserIsAdmin` (aliased as `admin` in `bootstrap/app.php`) matches the authenticated user's `role()->name` against `App\Enums\RoleType::ADMIN` (case-insensitively) — not a hardcoded `role_id`, since role ids aren't guaranteed stable outside the seeded prod data. Applied to the whole admin-management route group in `routes/api.php`; `GET /v1/user` and `PATCH /v1/users/sync-timezone` stay on plain `auth:sanctum` for any authenticated caller.
 
 ### Notable Deviation: CheckoutController
 

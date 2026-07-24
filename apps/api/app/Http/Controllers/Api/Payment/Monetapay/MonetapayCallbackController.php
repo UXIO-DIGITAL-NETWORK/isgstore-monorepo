@@ -23,7 +23,7 @@ class MonetapayCallbackController extends Controller
     public function __invoke(Request $request)
     {
         // Gatekeeper: log raw payload before any validation so failures are always traceable
-        Log::info('Monetapay Webhook Hit', $request->all());
+        Log::channel('monetapay')->info('Monetapay Webhook Hit', $request->all());
 
         try {
             // Actual envelope: { "data": { "en_data": "...", "partner_key": "...", "mch_order_no": "..." } }
@@ -39,7 +39,7 @@ class MonetapayCallbackController extends Controller
 
             // Step 2: Verify Double MD5 signature — reject forged/replayed callbacks
             if (! $this->monetapayService->verifyCallbackSignature($decrypted)) {
-                Log::warning('Monetapay callback signature mismatch', [
+                Log::channel('monetapay')->warning('Monetapay callback signature mismatch', [
                     'mch_order_no' => $validated['data']['mch_order_no'] ?? null,
                     'decrypted' => $decrypted,
                 ]);
@@ -57,14 +57,14 @@ class MonetapayCallbackController extends Controller
             // ==========================================
             // FIX: Tambahkan log untuk melihat isi murni dari Monetapay
             // ==========================================
-            Log::info('Monetapay Decrypted Payload', $decrypted);
+            Log::channel('monetapay')->info('Monetapay Decrypted Payload', $decrypted);
 
             $this->action->execute($dto);
 
             return response()->json(['code' => 0, 'message' => 'success'], 200);
 
         } catch (Exception $e) {
-            Log::error('Monetapay Callback Error', [
+            Log::channel('monetapay')->error('Monetapay Callback Error', [
                 'error' => $e->getMessage(),
                 'payload' => $request->all(),
             ]);

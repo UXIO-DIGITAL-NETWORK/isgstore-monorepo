@@ -31,7 +31,7 @@ class ProcessDigiflazzTopup implements ShouldQueue
         try {
             $digiflazzAction->execute($this->transaction);
         } catch (Throwable $e) {
-            Log::error('ProcessDigiflazzTopup: attempt failed', [
+            Log::channel('digiflazz')->error('ProcessDigiflazzTopup: attempt failed', [
                 'transaction_id' => $this->transaction->id,
                 'invoice_number' => $this->transaction->invoice_number,
                 'attempt' => $this->attempts(),
@@ -54,7 +54,7 @@ class ProcessDigiflazzTopup implements ShouldQueue
         // so refund them. The action is idempotent (locks + checks payment '3').
         app(RefundFailedTransactionAction::class)->execute($this->transaction);
 
-        Log::error('ProcessDigiflazzTopup: all retries exhausted — marked FAILED_PROVIDER & refunded', [
+        Log::channel('digiflazz')->error('ProcessDigiflazzTopup: all retries exhausted — marked FAILED_PROVIDER & refunded', [
             'transaction_id' => $this->transaction->id,
             'invoice_number' => $this->transaction->invoice_number,
             'error' => $e->getMessage(),

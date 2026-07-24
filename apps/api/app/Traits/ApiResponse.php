@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
 trait ApiResponse
 {
@@ -14,6 +15,15 @@ trait ApiResponse
             'message' => $message,
             'data' => $data,
         ], $code);
+    }
+
+    /**
+     * Wrap a paginated API Resource collection so every list endpoint returns the
+     * same shape: {status, code, message, data: {data, links, meta}}.
+     */
+    public function paginatedResponse(ResourceCollection $resourceCollection, string $message = 'Success', int $code = 200): JsonResponse
+    {
+        return $this->successResponse($resourceCollection->response()->getData(true), $message, $code);
     }
 
     public function errorResponse(string $message = 'Error', int $code = 500, $data = null): JsonResponse

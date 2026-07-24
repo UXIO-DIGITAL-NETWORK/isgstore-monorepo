@@ -25,10 +25,7 @@ class UserController extends Controller
         $dto = UserFilterDTO::fromValidated($request->validated());
         $users = $action->execute($dto);
 
-        return $this->successResponse(
-            UserResource::collection($users)->response()->getData(true),
-            'Data user berhasil diambil'
-        );
+        return $this->paginatedResponse(UserResource::collection($users), 'Data user berhasil diambil');
     }
 
     public function store(StoreUserRequest $request, CreateUserAction $action)

@@ -11,6 +11,15 @@ class Category extends Model
 
     protected $guarded = ['id'];
 
+    protected function casts(): array
+    {
+        return [
+            'status' => 'boolean',
+            'order_form_fields' => 'array',
+            'meta_keywords' => 'array',
+        ];
+    }
+
     public function categoryType()
     {
         return $this->belongsTo(CategoryType::class, 'type_id');

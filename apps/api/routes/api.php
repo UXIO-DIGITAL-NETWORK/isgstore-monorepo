@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
 use App\Http\Controllers\Api\Digiflazz\PriceAlertController;
 use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
+use App\Http\Controllers\Api\FinancialController;
+use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
@@ -35,6 +37,7 @@ use App\Http\Controllers\Api\Supplier\SupplierController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\User\SyncTimezoneController;
 use App\Http\Controllers\Api\User\UserController;
+use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -90,17 +93,24 @@ Route::prefix('v1')->group(function () {
 // Protected Routes (Requires Auth)
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
-    // User Info (Current Auth User)
+    // User Info (Current Auth User) — any authenticated user, not admin-only
     Route::get('/user', function (Request $request) {
         return response()->json([
             'status' => 'success',
-            'data' => $request->user(),
+            'code' => 200,
+            'message' => 'Success',
+            'data' => new UserResource($request->user()),
         ]);
     });
 
+    Route::patch('/users/sync-timezone', SyncTimezoneController::class);
+});
+
+// Admin-only management API (requires auth:sanctum + role_id 1 — see EnsureUserIsAdmin)
+Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
+
     // CRUD Users
     Route::prefix('users')->group(function () {
-        Route::patch('/sync-timezone', SyncTimezoneController::class);
         Route::get('/', [UserController::class, 'index']);
         Route::post('/', [UserController::class, 'store']);
         Route::get('/{user}', [UserController::class, 'show']);
@@ -110,6 +120,15 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
     // Dashboard (admin overview aggregates)
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('/dashboard/performance', [DashboardController::class, 'performance']);
+
+    // Financial Summary
+    Route::get('/financial/summary', [FinancialController::class, 'summary']);
+    Route::get('/financial/payment-gateways', [FinancialController::class, 'paymentGateways']);
+    Route::get('/financial/suppliers', [FinancialController::class, 'suppliers']);
+
+    // Integration channel connectivity overview
+    Route::get('/integration/channels', [IntegrationController::class, 'channels']);
 
     // Activity Logs
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
@@ -250,7 +269,14 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     });
 
     // Transaction Management (Admin CRUD)
+    // status-counts must be registered before the apiResource's {transaction}
+    // wildcard, or Laravel tries to route-model-bind "status-counts" as an id.
+    Route::get('/transactions/status-counts', [TransactionController::class, 'statusCounts']);
     Route::apiResource('transactions', TransactionController::class);
+    Route::post('/transactions/{transaction}/manual-review', [TransactionController::class, 'manualReview']);
+    Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund']);
+    Route::post('/transactions/{transaction}/resend-callback', [TransactionController::class, 'resendCallback']);
+    Route::post('/transactions/{transaction}/retry', [TransactionController::class, 'retry']);
 
     // Payment Management
     Route::get('/payments', [PaymentController::class, 'index']);

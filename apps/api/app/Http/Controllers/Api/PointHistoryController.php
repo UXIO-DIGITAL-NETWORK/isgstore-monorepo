@@ -23,7 +23,7 @@ class PointHistoryController extends Controller
         $perPage = $request->query('per_page', 15);
         $pointHistories = $action->execute((int) $perPage);
 
-        return PointHistoryResource::collection($pointHistories);
+        return $this->paginatedResponse(PointHistoryResource::collection($pointHistories), 'Point histories retrieved successfully');
     }
 
     public function store(StorePointHistoryRequest $request, CreatePointHistoryAction $action)

@@ -22,14 +22,6 @@ class LeaderboardController extends Controller
             ->orderBy('last_order_at', 'asc')
             ->paginate(min(100, max(1, (int) $request->query('per_page', 15))));
 
-        return $this->successResponse([
-            'data' => LeaderboardResource::collection($spendings),
-            'meta' => [
-                'current_page' => $spendings->currentPage(),
-                'last_page' => $spendings->lastPage(),
-                'per_page' => $spendings->perPage(),
-                'total' => $spendings->total(),
-            ],
-        ], 'Leaderboard retrieved successfully');
+        return $this->paginatedResponse(LeaderboardResource::collection($spendings), 'Leaderboard retrieved successfully');
     }
 }

@@ -73,6 +73,22 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'digiflazz' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/digiflazz.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
+        'monetapay' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/monetapay.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

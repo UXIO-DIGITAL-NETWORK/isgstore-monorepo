@@ -21,15 +21,7 @@ class ServerCategoryOptionController extends Controller
     {
         $options = $action->execute(15);
 
-        return $this->successResponse([
-            'data' => ServerCategoryOptionResource::collection($options),
-            'meta' => [
-                'current_page' => $options->currentPage(),
-                'last_page' => $options->lastPage(),
-                'per_page' => $options->perPage(),
-                'total' => $options->total(),
-            ],
-        ], 'Server Category Options retrieved successfully');
+        return $this->paginatedResponse(ServerCategoryOptionResource::collection($options), 'Server Category Options retrieved successfully');
     }
 
     public function store(StoreServerCategoryOptionRequest $request, CreateServerCategoryOptionAction $action)

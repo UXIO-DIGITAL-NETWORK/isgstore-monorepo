@@ -10,6 +10,7 @@ use App\Actions\Auth\RefreshTokenAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RefreshTokenRequest;
+use App\Http\Resources\User\UserResource;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -25,7 +26,7 @@ class AuthController extends Controller
         $result = $action->execute($request->toDTO());
 
         return $this->successResponse([
-            'user' => $result['user'],
+            'user' => new UserResource($result['user']),
             'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
         ], 'Login successful');

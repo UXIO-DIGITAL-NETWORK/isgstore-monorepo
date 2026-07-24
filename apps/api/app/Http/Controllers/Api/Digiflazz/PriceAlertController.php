@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Digiflazz\GetPriceAlertsRequest;
 use App\Models\PriceChangeAlert;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class PriceAlertController extends Controller
 {
@@ -21,15 +22,7 @@ class PriceAlertController extends Controller
             (int) ($request->validated('per_page') ?? 15)
         );
 
-        return $this->successResponse([
-            'data' => $alerts->items(),
-            'meta' => [
-                'current_page' => $alerts->currentPage(),
-                'last_page' => $alerts->lastPage(),
-                'per_page' => $alerts->perPage(),
-                'total' => $alerts->total(),
-            ],
-        ], 'Price alerts retrieved successfully');
+        return $this->paginatedResponse(JsonResource::collection($alerts), 'Price alerts retrieved successfully');
     }
 
     public function acknowledge(PriceChangeAlert $priceChangeAlert, AcknowledgePriceAlertAction $action)

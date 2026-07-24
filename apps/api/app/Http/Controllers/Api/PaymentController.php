@@ -23,9 +23,7 @@ class PaymentController extends Controller
         $perPage = $request->query('per_page', 15);
         $payments = $action->execute((int) $perPage);
 
-        // Opsional: Jika ingin disamakan dengan format response lain
-        // return $this->successResponse(PaymentResource::collection($payments)->response()->getData(true), 'Data payments berhasil diambil');
-        return PaymentResource::collection($payments);
+        return $this->paginatedResponse(PaymentResource::collection($payments), 'Payments retrieved successfully');
     }
 
     public function store(StorePaymentRequest $request, CreatePaymentAction $action)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\Category\ServerCategory;
 
+use App\Http\Resources\Api\Category\CategoryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

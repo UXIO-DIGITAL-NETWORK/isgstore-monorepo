@@ -64,14 +64,17 @@ class RefundGatewayJob implements ShouldQueue
         }
 
         $current->update(['status' => PaymentStatus::REFUNDED]);
-        Log::info("Auto-refund (gateway): Monetapay refund requested Rp {$current->gross_amount} for payment {$current->reference_id}");
+        Log::channel('monetapay')->info("Auto-refund (gateway): Monetapay refund requested Rp {$current->gross_amount} for payment {$current->reference_id}");
     }
 
     public function failed(Throwable $e): void
     {
-        Log::error("RefundGatewayJob: retries exhausted for payment {$this->payment->reference_id}: {$e->getMessage()}");
+        Log::channel('monetapay')->error("RefundGatewayJob: retries exhausted for payment {$this->payment->reference_id}: {$e->getMessage()}");
 
-        app(DiscordWebhookService::class)->sendAlert(
+        app(DiscordWebhookService::class)->sendEmbed(
+            '[MONETAPAY] 🚨 System Alert',
+            [],
+            DiscordWebhookService::COLOR_RED,
             "Manual refund required: payment `{$this->payment->reference_id}` (Rp ".number_format($this->payment->gross_amount).') — Monetapay refund failed after all retries.'
         );
     }

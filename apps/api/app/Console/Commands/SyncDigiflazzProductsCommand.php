@@ -33,7 +33,7 @@ class SyncDigiflazzProductsCommand extends Command
                 $report = $action->execute($type);
             } catch (Throwable $e) {
                 $this->error("Price check {$type} failed: {$e->getMessage()}");
-                Log::error("digiflazz:sync-products ({$type}) failed", ['error' => $e->getMessage()]);
+                Log::channel('digiflazz')->error("digiflazz:sync-products ({$type}) failed", ['error' => $e->getMessage()]);
 
                 return self::FAILURE;
             }
@@ -108,7 +108,7 @@ class SyncDigiflazzProductsCommand extends Command
         }
 
         $discord->sendEmbed(
-            '📦 Laporan Cek Harga Digiflazz',
+            '[DIGIFLAZZ] 📦 Laporan Cek Harga Digiflazz',
             $fields,
             $hasNegativeMargin ? DiscordWebhookService::COLOR_ORANGE : DiscordWebhookService::COLOR_GREEN
         );
