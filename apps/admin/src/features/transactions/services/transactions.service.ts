@@ -91,9 +91,12 @@ export const transactionsService = {
     };
   },
 
-  getById: async (id: string): Promise<Transaction> => {
-    const found = TRANSACTIONS.find((row) => row.id === id);
-    if (!found) throw new Error(`No transaction found for id: ${id}`);
+  // ponytail: accepts either key so the edit route can be invoice-addressable
+  // (/transactions/automatic/{invoice_no}/edit, product_requirements.md §4.3)
+  // without a second lookup method; the real GET /transactions/{ref} decides.
+  getById: async (ref: string): Promise<Transaction> => {
+    const found = TRANSACTIONS.find((row) => row.id === ref || row.invoice_no === ref);
+    if (!found) throw new Error(`No transaction found for id: ${ref}`);
     return found;
   },
 

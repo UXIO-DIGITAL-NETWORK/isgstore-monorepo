@@ -17,22 +17,27 @@ const TABS = [
 export function TransactionsLayout() {
   const { pathname } = useLocation();
   const activeTab = TABS.find((tab) => pathname.startsWith(tab.href))?.value ?? "automatic";
+  // The nested Edit Transaction page is a full-page form, not a third tab —
+  // same escape hatch CategoryTabsLayout uses for Add Category.
+  const onEditRoute = pathname.endsWith("/edit");
 
   return (
     <Box className="flex flex-col gap-6">
-      <Tabs value={activeTab}>
-        <TabsList variant="line">
-          {TABS.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              asChild
-            >
-              <Link href={tab.href}>{tab.label}</Link>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      {!onEditRoute && (
+        <Tabs value={activeTab}>
+          <TabsList variant="line">
+            {TABS.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                asChild
+              >
+                <Link href={tab.href}>{tab.label}</Link>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
       <Outlet />
     </Box>
   );

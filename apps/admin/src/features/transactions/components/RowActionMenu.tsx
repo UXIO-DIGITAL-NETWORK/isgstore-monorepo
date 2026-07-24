@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Eye, History, MoreHorizontal, Pencil, Receipt, RotateCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,7 +16,6 @@ import { useDeleteTransaction, useResendCallback, useRetryInvoice } from "../hoo
 import type { Transaction } from "../types/transaction.type";
 import { ActivityLogDialog } from "./ActivityLogDialog";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
-import { EditTransactionDialog } from "./EditTransactionDialog";
 
 interface RowActionMenuProps {
   transaction: Transaction;
@@ -35,11 +35,17 @@ interface RowActionMenuProps {
  */
 export function RowActionMenu({ transaction, showCallbackActions = true }: RowActionMenuProps) {
   const [activityOpen, setActivityOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const resendCallback = useResendCallback();
   const retryInvoice = useRetryInvoice();
   const deleteTransaction = useDeleteTransaction();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  // Derived from the current tab's pathname rather than hardcoded, so the
+  // same menu reaches the Manual tab's mirror and the unauthenticated preview
+  // without special-casing — same trick as CategoryToolbar's "+ Add Category".
+  const editHref = `${pathname.replace(/\/$/, "")}/${transaction.invoice_no}/edit`;
 
   return (
     <>
@@ -82,7 +88,7 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
             Transaction Detail
           </DropdownMenuItem>
           <Can permission="transactions.edit">
-            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+            <DropdownMenuItem onSelect={() => navigate({ to: editHref as unknown as string })}>
               <Pencil />
               Edit Invoice
             </DropdownMenuItem>
@@ -104,11 +110,6 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
         transactionId={transaction.id}
         open={activityOpen}
         onOpenChange={setActivityOpen}
-      />
-      <EditTransactionDialog
-        transaction={transaction}
-        open={editOpen}
-        onOpenChange={setEditOpen}
       />
       <DeleteConfirmDialog
         open={deleteOpen}

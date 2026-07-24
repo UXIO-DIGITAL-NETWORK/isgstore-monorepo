@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 // ponytail: categories-local copy of the transactions "Invoice Proof" dropzone
-// (EditTransactionDialog). Two uses in this form justify the extraction. Promote
+// (EditTransactionForm). Two uses in this form justify the extraction. Promote
 // to components/common only if a third upload appears — don't refactor transactions now.
 interface CategoryImageUploadProps {
   id: string;

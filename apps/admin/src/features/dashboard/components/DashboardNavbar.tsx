@@ -54,6 +54,30 @@ function getCategoryBreadcrumb(pathname: string): string[] | null {
   return trail;
 }
 
+// Tab segment -> breadcrumb label, mirrors TransactionsLayout's TABS. The
+// preview seam is flat (no tab segment), and only ever renders the Automatic
+// table, so an unrecognised first segment falls back to "Automatic".
+const TRANSACTION_TAB_LABELS: Record<string, string> = {
+  automatic: "Automatic",
+  manual: "Manual",
+};
+
+function getTransactionBreadcrumb(pathname: string): string[] | null {
+  // Same preview-first ordering caveat as getCategoryBreadcrumb, for the same
+  // reason: distinct prefixes here, but keeping one shape avoids a trap later.
+  const base = pathname.startsWith("/admin/transaction-preview")
+    ? "/admin/transaction-preview"
+    : pathname.startsWith("/admin/transactions")
+      ? "/admin/transactions"
+      : null;
+  if (!base) return null;
+
+  const segments = pathname.slice(base.length).split("/").filter(Boolean);
+  const trail = ["Transaction", TRANSACTION_TAB_LABELS[segments[0] ?? "automatic"] ?? "Automatic"];
+  if (segments[segments.length - 1] === "edit") trail.push("Edit Transaction");
+  return trail;
+}
+
 const getInitials = (name: string) =>
   name
     .split(" ")
@@ -68,7 +92,6 @@ const getInitials = (name: string) =>
 const PAGE_TITLES: Record<string, string> = {
   "/admin/financial": "Financial",
   "/admin/integration": "Integration",
-  "/admin/transactions": "Transaction",
 };
 
 function getPageTitle(pathname: string) {
@@ -86,7 +109,7 @@ export function DashboardNavbar() {
     navigate({ to: "/login" });
   };
 
-  const categoryTrail = getCategoryBreadcrumb(pathname);
+  const trail = getCategoryBreadcrumb(pathname) ?? getTransactionBreadcrumb(pathname);
 
   return (
     <Box
@@ -95,19 +118,19 @@ export function DashboardNavbar() {
     >
       <Box className="flex flex-1 items-center gap-2">
         <SidebarTrigger className="-ml-1" />
-        {categoryTrail ? (
+        {trail ? (
           <Breadcrumb>
             <BreadcrumbList className="flex-nowrap text-sm">
-              {categoryTrail.map((label, index) => (
+              {trail.map((label, index) => (
                 <Fragment key={`${label}-${index}`}>
                   <BreadcrumbItem>
-                    {index === categoryTrail.length - 1 ? (
+                    {index === trail.length - 1 ? (
                       <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
                     ) : (
                       label
                     )}
                   </BreadcrumbItem>
-                  {index < categoryTrail.length - 1 && <BreadcrumbSeparator />}
+                  {index < trail.length - 1 && <BreadcrumbSeparator />}
                 </Fragment>
               ))}
             </BreadcrumbList>

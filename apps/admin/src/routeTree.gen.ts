@@ -41,7 +41,10 @@ import { Route as AdminPreviewCategoriesPreviewServerCategoryIndexRouteImport } 
 import { Route as AdminPreviewCategoriesPreviewCategoryIndexRouteImport } from './routes/admin/_preview/categories-preview/category/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryTypeIndexRouteImport } from './routes/admin/_preview/categories-preview/category-type/index'
 import { Route as AdminProtectedCategoriesCategoryAddIndexRouteImport } from './routes/admin/_protected/categories/category/add/index'
+import { Route as AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport } from './routes/admin/_preview/transaction-preview/$invoiceNo/edit/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryAddIndexRouteImport } from './routes/admin/_preview/categories-preview/category/add/index'
+import { Route as AdminProtectedTransactionsManualInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/manual/$invoiceNo/edit/index'
+import { Route as AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/automatic/$invoiceNo/edit/index'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -228,11 +231,29 @@ const AdminProtectedCategoriesCategoryAddIndexRoute =
     path: '/category/add/',
     getParentRoute: () => AdminProtectedCategoriesRouteRoute,
   } as any)
+const AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute =
+  AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport.update({
+    id: '/transaction-preview/$invoiceNo/edit/',
+    path: '/transaction-preview/$invoiceNo/edit/',
+    getParentRoute: () => AdminPreviewRoute,
+  } as any)
 const AdminPreviewCategoriesPreviewCategoryAddIndexRoute =
   AdminPreviewCategoriesPreviewCategoryAddIndexRouteImport.update({
     id: '/category/add/',
     path: '/category/add/',
     getParentRoute: () => AdminPreviewCategoriesPreviewRouteRoute,
+  } as any)
+const AdminProtectedTransactionsManualInvoiceNoEditIndexRoute =
+  AdminProtectedTransactionsManualInvoiceNoEditIndexRouteImport.update({
+    id: '/manual/$invoiceNo/edit/',
+    path: '/manual/$invoiceNo/edit/',
+    getParentRoute: () => AdminProtectedTransactionsRouteRoute,
+  } as any)
+const AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute =
+  AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRouteImport.update({
+    id: '/automatic/$invoiceNo/edit/',
+    path: '/automatic/$invoiceNo/edit/',
+    getParentRoute: () => AdminProtectedTransactionsRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -266,7 +287,10 @@ export interface FileRoutesByFullPath {
   '/admin/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/categories-preview/category/add/': typeof AdminPreviewCategoriesPreviewCategoryAddIndexRoute
+  '/admin/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/categories/category/add/': typeof AdminProtectedCategoriesCategoryAddIndexRoute
+  '/admin/transactions/automatic/$invoiceNo/edit/': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
+  '/admin/transactions/manual/$invoiceNo/edit/': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -296,7 +320,10 @@ export interface FileRoutesByTo {
   '/admin/transactions/automatic': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/categories-preview/category/add': typeof AdminPreviewCategoriesPreviewCategoryAddIndexRoute
+  '/admin/transaction-preview/$invoiceNo/edit': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/categories/category/add': typeof AdminProtectedCategoriesCategoryAddIndexRoute
+  '/admin/transactions/automatic/$invoiceNo/edit': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
+  '/admin/transactions/manual/$invoiceNo/edit': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -332,7 +359,10 @@ export interface FileRoutesById {
   '/admin/_protected/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/_protected/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/_preview/categories-preview/category/add/': typeof AdminPreviewCategoriesPreviewCategoryAddIndexRoute
+  '/admin/_preview/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/_protected/categories/category/add/': typeof AdminProtectedCategoriesCategoryAddIndexRoute
+  '/admin/_protected/transactions/automatic/$invoiceNo/edit/': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
+  '/admin/_protected/transactions/manual/$invoiceNo/edit/': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -367,7 +397,10 @@ export interface FileRouteTypes {
     | '/admin/transactions/automatic/'
     | '/admin/transactions/manual/'
     | '/admin/categories-preview/category/add/'
+    | '/admin/transaction-preview/$invoiceNo/edit/'
     | '/admin/categories/category/add/'
+    | '/admin/transactions/automatic/$invoiceNo/edit/'
+    | '/admin/transactions/manual/$invoiceNo/edit/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -397,7 +430,10 @@ export interface FileRouteTypes {
     | '/admin/transactions/automatic'
     | '/admin/transactions/manual'
     | '/admin/categories-preview/category/add'
+    | '/admin/transaction-preview/$invoiceNo/edit'
     | '/admin/categories/category/add'
+    | '/admin/transactions/automatic/$invoiceNo/edit'
+    | '/admin/transactions/manual/$invoiceNo/edit'
   id:
     | '__root__'
     | '/'
@@ -432,7 +468,10 @@ export interface FileRouteTypes {
     | '/admin/_protected/transactions/automatic/'
     | '/admin/_protected/transactions/manual/'
     | '/admin/_preview/categories-preview/category/add/'
+    | '/admin/_preview/transaction-preview/$invoiceNo/edit/'
     | '/admin/_protected/categories/category/add/'
+    | '/admin/_protected/transactions/automatic/$invoiceNo/edit/'
+    | '/admin/_protected/transactions/manual/$invoiceNo/edit/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -669,12 +708,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedCategoriesCategoryAddIndexRouteImport
       parentRoute: typeof AdminProtectedCategoriesRouteRoute
     }
+    '/admin/_preview/transaction-preview/$invoiceNo/edit/': {
+      id: '/admin/_preview/transaction-preview/$invoiceNo/edit/'
+      path: '/transaction-preview/$invoiceNo/edit'
+      fullPath: '/admin/transaction-preview/$invoiceNo/edit/'
+      preLoaderRoute: typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport
+      parentRoute: typeof AdminPreviewRoute
+    }
     '/admin/_preview/categories-preview/category/add/': {
       id: '/admin/_preview/categories-preview/category/add/'
       path: '/category/add'
       fullPath: '/admin/categories-preview/category/add/'
       preLoaderRoute: typeof AdminPreviewCategoriesPreviewCategoryAddIndexRouteImport
       parentRoute: typeof AdminPreviewCategoriesPreviewRouteRoute
+    }
+    '/admin/_protected/transactions/manual/$invoiceNo/edit/': {
+      id: '/admin/_protected/transactions/manual/$invoiceNo/edit/'
+      path: '/manual/$invoiceNo/edit'
+      fullPath: '/admin/transactions/manual/$invoiceNo/edit/'
+      preLoaderRoute: typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRouteImport
+      parentRoute: typeof AdminProtectedTransactionsRouteRoute
+    }
+    '/admin/_protected/transactions/automatic/$invoiceNo/edit/': {
+      id: '/admin/_protected/transactions/automatic/$invoiceNo/edit/'
+      path: '/automatic/$invoiceNo/edit'
+      fullPath: '/admin/transactions/automatic/$invoiceNo/edit/'
+      preLoaderRoute: typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRouteImport
+      parentRoute: typeof AdminProtectedTransactionsRouteRoute
     }
   }
 }
@@ -730,6 +790,7 @@ interface AdminPreviewRouteChildren {
   AdminPreviewFinancePreviewIndexRoute: typeof AdminPreviewFinancePreviewIndexRoute
   AdminPreviewIntegrationPreviewIndexRoute: typeof AdminPreviewIntegrationPreviewIndexRoute
   AdminPreviewTransactionPreviewIndexRoute: typeof AdminPreviewTransactionPreviewIndexRoute
+  AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute: typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
 }
 
 const AdminPreviewRouteChildren: AdminPreviewRouteChildren = {
@@ -742,6 +803,8 @@ const AdminPreviewRouteChildren: AdminPreviewRouteChildren = {
     AdminPreviewIntegrationPreviewIndexRoute,
   AdminPreviewTransactionPreviewIndexRoute:
     AdminPreviewTransactionPreviewIndexRoute,
+  AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute:
+    AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute,
 }
 
 const AdminPreviewRouteWithChildren = AdminPreviewRoute._addFileChildren(
@@ -784,6 +847,8 @@ interface AdminProtectedTransactionsRouteRouteChildren {
   AdminProtectedTransactionsIndexRoute: typeof AdminProtectedTransactionsIndexRoute
   AdminProtectedTransactionsAutomaticIndexRoute: typeof AdminProtectedTransactionsAutomaticIndexRoute
   AdminProtectedTransactionsManualIndexRoute: typeof AdminProtectedTransactionsManualIndexRoute
+  AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute: typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
+  AdminProtectedTransactionsManualInvoiceNoEditIndexRoute: typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
 
 const AdminProtectedTransactionsRouteRouteChildren: AdminProtectedTransactionsRouteRouteChildren =
@@ -793,6 +858,10 @@ const AdminProtectedTransactionsRouteRouteChildren: AdminProtectedTransactionsRo
       AdminProtectedTransactionsAutomaticIndexRoute,
     AdminProtectedTransactionsManualIndexRoute:
       AdminProtectedTransactionsManualIndexRoute,
+    AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute:
+      AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute,
+    AdminProtectedTransactionsManualInvoiceNoEditIndexRoute:
+      AdminProtectedTransactionsManualInvoiceNoEditIndexRoute,
   }
 
 const AdminProtectedTransactionsRouteRouteWithChildren =

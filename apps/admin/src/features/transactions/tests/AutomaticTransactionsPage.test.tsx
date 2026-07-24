@@ -16,7 +16,8 @@ import { transactionsService } from "../services/transactions.service";
  * - The exact-fidelity fixture row's key content renders (invoice no,
  *   customer name, product, game, formatted cost).
  * - Opening a row's action menu shows all 7 items, in order.
- * - "Edit Invoice" opens the Edit Transaction dialog with its 4 fields.
+ * - "Edit Invoice" NAVIGATES to the Edit Transaction page with its 4 fields
+ *   (product_requirements.md §4.3, revised 2026-07-13 — was a modal).
  * - "Delete" opens a confirmation dialog BEFORE any delete mutation fires.
  *
  * Activity Log modal (product_requirements.md §4.3, confirmed 2026-07-13):
@@ -127,19 +128,23 @@ describe("AutomaticTransactionsPage", () => {
     ]);
   });
 
-  it("opens the Edit Transaction dialog with its 4 fields on Edit Invoice", async () => {
+  it("navigates to the Edit Transaction page with its 4 fields on Edit Invoice", async () => {
     const user = userEvent.setup();
-    await renderRoute("/admin/transaction-preview");
+    const { router } = await renderRoute("/admin/transaction-preview");
 
     const menuButton = await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i });
     await user.click(menuButton);
     await user.click(await screen.findByRole("menuitem", { name: "Edit Invoice" }));
 
-    const dialog = await screen.findByRole("dialog", { name: "Edit Transaction" });
-    expect(within(dialog).getByLabelText("Status Payment")).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Invoice Status")).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Serial Number")).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Invoice Proof")).toBeInTheDocument();
+    // The row's own invoice drives the URL, and it's a real route now — the
+    // list is gone from the DOM rather than sitting behind an overlay.
+    expect(await screen.findByRole("heading", { name: "Edit Transaction" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/admin/transaction-preview/ZP2607016UJFJVSHCJ/edit");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    for (const label of ["Status Payment", "Invoice Status", "Serial Number", "Invoice Proof"]) {
+      expect(screen.getByLabelText(label)).toBeInTheDocument();
+    }
   });
 
   it("opens the Activity Log dialog with its subcopy, 5 headers, and that row's real entries", async () => {
@@ -221,8 +226,7 @@ describe("AutomaticTransactionsPage", () => {
     await user.click(menuButton);
     await user.click(await screen.findByRole("menuitem", { name: "Edit Invoice" }));
 
-    const dialog = await screen.findByRole("dialog", { name: "Edit Transaction" });
-    const fileInput = within(dialog).getByLabelText("Invoice Proof");
+    const fileInput = await screen.findByLabelText("Invoice Proof");
     const invalidFile = new File(["not-an-image"], "proof.pdf", { type: "application/pdf" });
     // fireEvent (not user-event) here: the file input is visually hidden
     // behind the "Browse files" button, and user-event's upload() no-ops on
@@ -230,9 +234,9 @@ describe("AutomaticTransactionsPage", () => {
     // caveat already documented in FinancialPage.test.tsx for the clipboard
     // stub.
     fireEvent.change(fileInput, { target: { files: [invalidFile] } });
-    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await within(dialog).findByText("Only JPG, JPEG, or PNG files are allowed")).toBeInTheDocument();
+    expect(await screen.findByText("Only JPG, JPEG, or PNG files are allowed")).toBeInTheDocument();
     expect(editSpy).not.toHaveBeenCalled();
   });
 
