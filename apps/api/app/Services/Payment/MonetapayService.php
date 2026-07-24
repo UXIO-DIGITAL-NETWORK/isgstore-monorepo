@@ -17,6 +17,14 @@ class MonetapayService
 
     private string $token;
 
+    private string $disbursementPartnerKey;
+
+    private string $disbursementToken;
+
+    private string $disbursementAesKey;
+
+    private string $disbursementAesIv;
+
     private string $baseUrl;
 
     public function __construct()
@@ -25,6 +33,10 @@ class MonetapayService
         $this->disbursementAppId = (string) config('services.monetapay.disbursement_app_id', '');
         $this->partnerKey = (string) config('services.monetapay.partner_key', '');
         $this->token = (string) config('services.monetapay.token', '');
+        $this->disbursementPartnerKey = (string) config('services.monetapay.disbursement_partner_key', '');
+        $this->disbursementToken = (string) config('services.monetapay.disbursement_token', '');
+        $this->disbursementAesKey = (string) config('services.monetapay.disbursement_aes_key', '');
+        $this->disbursementAesIv = (string) config('services.monetapay.disbursement_aes_iv', '');
         $this->baseUrl = config('services.monetapay.is_production')
             ? 'https://api.monetapay.net'
             : 'https://sandbox-api.monetapay.net';
@@ -303,7 +315,7 @@ class MonetapayService
      * @param  array<string,scalar>  $businessParams  Pure business params (no timestamp/sign). Arrays are excluded from the encrypted payload.
      * @param  array<string,mixed>  $plainBody  Extra fields merged into the outer request body (not encrypted). Use for nested arrays like order_items.
      */
-    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = [], ?string $appId = null): array
+    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = [], ?string $appId = null, bool $forDisbursement = false): array
     {
         // Inject the collection app id so all signed calls include app_id in the encrypted
         // TreeMap. Callers (e.g. disbursement) override via $appId where a different id applies.
@@ -326,18 +338,27 @@ class MonetapayService
         $strMap = $buffer === '' ? '' : substr($buffer, 0, -2);
 
         $timestamp = (string) time();
-        $originalString = $this->token.'*|*'.$strMap.'@!@'.$timestamp;
+
+        // Disbursement apps may have separate token/AES credentials from the collection app.
+        $token = $forDisbursement ? $this->disbursementToken : $this->token;
+        $partnerKey = $forDisbursement ? $this->disbursementPartnerKey : $this->partnerKey;
+        $aesKey = $forDisbursement ? $this->disbursementAesKey : null;
+        $aesIv = $forDisbursement ? $this->disbursementAesIv : null;
+
+        $originalString = $token.'*|*'.$strMap.'@!@'.$timestamp;
         $sign = md5(md5($originalString));
 
         $strToEncrypt = $strMap === ''
             ? 'sign='.$sign.'__timestamp='.$timestamp
             : $strMap.'__sign='.$sign.'__timestamp='.$timestamp;
 
-        $enData = $this->encryptPayload($strToEncrypt);
+        $enData = $aesKey !== null && $aesKey !== ''
+            ? base64_encode(openssl_encrypt($strToEncrypt, 'AES-128-CBC', $this->deriveAesParam($aesKey), OPENSSL_RAW_DATA, $this->deriveAesParam($aesIv)))
+            : $this->encryptPayload($strToEncrypt);
 
         $response = Http::post($this->baseUrl.$endpointSuffix, array_merge([
             'data' => [
-                'partner_key' => $this->partnerKey,
+                'partner_key' => $partnerKey,
                 'en_data' => $enData,
             ],
         ], $plainBody));
@@ -582,25 +603,25 @@ class MonetapayService
     /** 7.1.1 Disbursement Create — POST /v1.0.0/disbursement */
     public function createDisbursement(array $params): array
     {
-        return $this->postSigned('/v1.0.0/disbursement', $params, passthrough: true, appId: $this->disbursementAppId);
+        return $this->postSigned('/v1.0.0/disbursement', $params, passthrough: true, appId: $this->disbursementAppId, forDisbursement: true);
     }
 
     /** 7.2.1 Large Payout Create — POST /v1.0.0/disbursement/large */
     public function createLargePayout(array $params): array
     {
-        return $this->postSigned('/v1.0.0/disbursement/large', $params, passthrough: true, appId: $this->disbursementAppId);
+        return $this->postSigned('/v1.0.0/disbursement/large', $params, passthrough: true, appId: $this->disbursementAppId, forDisbursement: true);
     }
 
     /** 7.3.1 EWallet Payout Create — POST /v1.0.0/ewallet-disbursement */
     public function createEwalletPayout(array $params): array
     {
-        return $this->postSigned('/v1.0.0/ewallet-disbursement', $params, passthrough: true, appId: $this->disbursementAppId);
+        return $this->postSigned('/v1.0.0/ewallet-disbursement', $params, passthrough: true, appId: $this->disbursementAppId, forDisbursement: true);
     }
 
     /** 7.4.1 Payout Order Inquiry — POST /v1.0.0/disbursement/query */
     public function inquiryDisbursement(array $params): array
     {
-        return $this->postSigned('/v1.0.0/disbursement/query', $params, appId: $this->disbursementAppId);
+        return $this->postSigned('/v1.0.0/disbursement/query', $params, appId: $this->disbursementAppId, forDisbursement: true);
     }
 
     /* =====================================================================
