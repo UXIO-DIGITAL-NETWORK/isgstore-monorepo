@@ -1,6 +1,6 @@
 import type { PaginatedResponse } from "@/types/api.type";
 import { TRANSACTIONS } from "../data/transactions.data";
-import type { StatusCounts, Transaction, TransactionListParams } from "../types/transaction.type";
+import type { ActivityLogEntry, StatusCounts, Transaction, TransactionListParams } from "../types/transaction.type";
 
 const DEFAULT_PER_PAGE = 10;
 /** Deliberate mock placeholder matching the reference footer
@@ -95,6 +95,13 @@ export const transactionsService = {
     const found = TRANSACTIONS.find((row) => row.id === id);
     if (!found) throw new Error(`No transaction found for id: ${id}`);
     return found;
+  },
+
+  /** Scoped to one transaction — mirrors the eventual GET /transactions/{id}/activity-log. */
+  getActivityLog: async (id: string): Promise<ActivityLogEntry[]> => {
+    const found = TRANSACTIONS.find((row) => row.id === id);
+    if (!found) throw new Error(`No transaction found for id: ${id}`);
+    return found.activity_log;
   },
 
   getStatusCounts: async (): Promise<StatusCounts> => ({

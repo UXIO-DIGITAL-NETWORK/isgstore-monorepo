@@ -22,6 +22,27 @@ export interface TransactionProductRef {
   name: string;
 }
 
+/** Human operator who performed an entry. No avatar_url — fixtures carry no
+ *  images and AvatarFallback covers it (same as TransactionCustomer today). */
+export interface ActivityLogActor {
+  name: string;
+  phone?: string;
+}
+
+/**
+ * One audit-trail row for the Activity Log modal (product_requirements.md
+ * §4.3/§6). `actor` is the literal "system" for automated events. `action` is
+ * a short event label ("Status Changed"); `description` is that event's
+ * specific detail ("Status changed from Processing to Success.").
+ */
+export interface ActivityLogEntry {
+  id: string;
+  actor: ActivityLogActor | "system";
+  action: string;
+  description: string;
+  created_at: string;
+}
+
 export interface Transaction {
   id: string;
   invoice_no: string;
@@ -47,6 +68,8 @@ export interface Transaction {
   elapsed_seconds?: number;
   /** PRD-provisional; shape not specified yet. */
   status_history?: unknown[];
+  /** Audit trail shown by the Activity Log modal. */
+  activity_log: ActivityLogEntry[];
   updated_at: string;
 }
 

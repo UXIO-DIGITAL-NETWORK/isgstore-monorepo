@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
+import { endOfDay, startOfDay } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -25,8 +26,10 @@ const MANUAL_FILTER_FIELDS: FilterField[] = [
 /** Provisional pending a real Manual design — reuses the Automatic table/filter pattern with fewer columns/fields. */
 export default function ManualTransactionsPage() {
   const [filters, setFilters] = useState<TransactionFilters>(() => {
-    const today = new Date().toISOString();
-    return { startDate: today, endDate: today };
+    // Day boundaries — see AutomaticTransactionsPage: an identical start/end
+    // instant is a zero-width window the service can never match.
+    const now = new Date();
+    return { startDate: startOfDay(now).toISOString(), endDate: endOfDay(now).toISOString() };
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);

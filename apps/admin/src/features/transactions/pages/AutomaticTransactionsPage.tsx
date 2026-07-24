@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
+import { endOfDay, startOfDay } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -15,8 +16,11 @@ const DEFAULT_PAGE_SIZE = 10;
 
 export default function AutomaticTransactionsPage() {
   const [filters, setFilters] = useState<TransactionFilters>(() => {
-    const today = new Date().toISOString();
-    return { startDate: today, endDate: today };
+    // Day boundaries, not `new Date().toISOString()` twice — the service
+    // compares created_at against these as raw ISO strings, so an identical
+    // start/end instant is a zero-width window that matches nothing.
+    const now = new Date();
+    return { startDate: startOfDay(now).toISOString(), endDate: endOfDay(now).toISOString() };
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);

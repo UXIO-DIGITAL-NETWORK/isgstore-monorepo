@@ -7,19 +7,11 @@ import { Text } from "@/components/common/Text";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/currency";
+import { initials } from "@/utils/initials";
 import { formatElapsed } from "../lib/formatElapsed";
 import type { Transaction } from "../types/transaction.type";
 import { RowActionMenu } from "./RowActionMenu";
 import { StatusBadge } from "./StatusBadge";
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 /** Automatic tab columns, exact shape from the reference (product_requirements.md §4.3). */
 export const automaticColumns: ColumnDef<Transaction>[] = [

@@ -15,6 +15,18 @@ export const useTransaction = (id: string) =>
     queryFn: () => transactionsService.getById(id),
   });
 
+/**
+ * `enabled` is the dialog's open state, and is load-bearing: the Activity Log
+ * dialog is mounted once per table row, so without it every visible row would
+ * fetch its log on mount.
+ */
+export const useTransactionActivityLog = (id: string, enabled: boolean) =>
+  useQuery({
+    queryKey: ["transactions", "activity-log", id],
+    queryFn: () => transactionsService.getActivityLog(id),
+    enabled,
+  });
+
 export const useStatusCounts = () =>
   useQuery({
     queryKey: ["transactions", "status-counts"],

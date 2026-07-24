@@ -74,6 +74,68 @@ describe("transactionsService.getById", () => {
   });
 });
 
+describe("transactionsService.getActivityLog", () => {
+  it("resolves the typed entries for a known id", async () => {
+    const known = TRANSACTIONS[0];
+    const entries = await transactionsService.getActivityLog(known.id);
+
+    expect(entries).toEqual(known.activity_log);
+    expect(entries.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("throws for an unknown id", async () => {
+    await expect(transactionsService.getActivityLog("does-not-exist")).rejects.toThrow();
+  });
+});
+
+/**
+ * Contract test — asserts the activity_log fixture shape before any UI
+ * consumes it (system_architecture.md §4.11). The timestamp assertions are
+ * the guard against a Date.now()-relative fixture: entries must be derived
+ * from the row's own created_at/resolved_at so the suite is deterministic.
+ */
+describe("transaction activity_log fixtures", () => {
+  it("gives every row (synthetic included) at least 2 entries anchored to its own timestamps", () => {
+    for (const row of TRANSACTIONS) {
+      expect(row.activity_log.length).toBeGreaterThanOrEqual(2);
+      expect(row.activity_log[0].created_at).toBe(row.created_at);
+
+      if (row.resolved_at) {
+        expect(row.activity_log[row.activity_log.length - 1].created_at).toBe(row.resolved_at);
+      }
+
+      const times = row.activity_log.map((entry) => new Date(entry.created_at).getTime());
+      expect(times).toEqual([...times].sort((a, b) => a - b));
+
+      const ids = row.activity_log.map((entry) => entry.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
+
+  it("carries a full typed entry — never a blank action or description", () => {
+    for (const entry of TRANSACTIONS.flatMap((row) => row.activity_log)) {
+      expect(entry.action.trim().length).toBeGreaterThan(0);
+      expect(entry.description.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it("varies the log across rows rather than repeating one canned sequence", () => {
+    const signatures = TRANSACTIONS.map((row) => row.activity_log.map((entry) => entry.action).join("|"));
+    expect(new Set(signatures).size).toBeGreaterThanOrEqual(4);
+
+    const descriptions = TRANSACTIONS.flatMap((row) => row.activity_log).map((entry) => entry.description);
+    expect(new Set(descriptions).size).toBeGreaterThanOrEqual(10);
+  });
+
+  it("attributes every entry to that transaction's own customer", () => {
+    for (const row of TRANSACTIONS) {
+      for (const entry of row.activity_log) {
+        expect(entry.actor).toEqual({ name: row.customer.name, phone: row.customer.phone });
+      }
+    }
+  });
+});
+
 describe("transactionsService.getStatusCounts", () => {
   it("resolves the exact reference pill counts", async () => {
     await expect(transactionsService.getStatusCounts()).resolves.toEqual({

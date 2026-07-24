@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 
 import { fireEvent, renderRoute, screen, within } from "@/test/test-utils";
+import { TRANSACTIONS } from "../data/transactions.data";
 import { transactionsService } from "../services/transactions.service";
 
 /**
@@ -17,8 +18,27 @@ import { transactionsService } from "../services/transactions.service";
  * - Opening a row's action menu shows all 7 items, in order.
  * - "Edit Invoice" opens the Edit Transaction dialog with its 4 fields.
  * - "Delete" opens a confirmation dialog BEFORE any delete mutation fires.
+ *
+ * Activity Log modal (product_requirements.md §4.3, confirmed 2026-07-13):
+ * - "Activity Log" opens a dialog with the corrected subcopy, the 5 column
+ *   headers, and that transaction's real fixture entries.
+ * - Automated ("System") entries render distinctly from operator entries.
  */
 describe("AutomaticTransactionsPage", () => {
+  // The page defaults its date filter to today (commit 11e4238), so without a
+  // pinned clock this suite silently depends on the real calendar — the
+  // exact-fidelity Jul 1 fixture row drops out of every assertion below.
+  // Only Date is faked; setTimeout/setInterval stay real so user-event and
+  // React Query behave normally.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-07-01T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("resolves /admin/transaction-preview with the header and exact subcopy", async () => {
     await renderRoute("/admin/transaction-preview");
 
@@ -122,6 +142,63 @@ describe("AutomaticTransactionsPage", () => {
     expect(within(dialog).getByLabelText("Invoice Proof")).toBeInTheDocument();
   });
 
+  it("opens the Activity Log dialog with its subcopy, 5 headers, and that row's real entries", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    const menuButton = await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i });
+    await user.click(menuButton);
+    await user.click(await screen.findByRole("menuitem", { name: "Activity Log" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Activity Log" });
+    expect(
+      within(dialog).getByText("A record of every status change and action taken on this transaction."),
+    ).toBeInTheDocument();
+
+    // Scoped to the dialog: the parent table also has "User" and "Action"
+    // column headers, so an unscoped query would match two nodes.
+    for (const header of ["No.", "User", "Action", "Description", "Time"]) {
+      expect(within(dialog).getByRole("columnheader", { name: header })).toBeInTheDocument();
+    }
+
+    // Real logged content, not just "a table rendered" — the actual fixture
+    // entries for txn-1, whose descriptions are event details rather than
+    // the product/target values the reference image repeated.
+    const log = TRANSACTIONS[0].activity_log;
+    expect(await within(dialog).findByText("Invoice Created")).toBeInTheDocument();
+    expect(within(dialog).getByText("Status Changed")).toBeInTheDocument();
+    for (const entry of log) {
+      expect(within(dialog).getByText(entry.description)).toBeInTheDocument();
+    }
+  });
+
+  it("shows the parent row's own customer in the User column, on every entry", async () => {
+    // txn-2, dated Jul 2, so the clock moves a day forward BEFORE render —
+    // the page seeds its date filter from `new Date()` in a useState
+    // initializer. Its customer differs from txn-1's, which is the point:
+    // the User column must follow the transaction the modal was opened from.
+    vi.setSystemTime(new Date("2026-07-02T12:00:00.000Z"));
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    const transaction = TRANSACTIONS[1];
+    const { name, phone } = transaction.customer;
+
+    await user.click(
+      await screen.findByRole("button", { name: new RegExp(`Actions for ${transaction.invoice_no}`, "i") }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: "Activity Log" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Activity Log" });
+    // One name + one phone per entry — never the other row's customer, and
+    // never a "System" placeholder.
+    const entryCount = transaction.activity_log.length;
+    expect((await within(dialog).findAllByText(name)).length).toBe(entryCount);
+    expect(within(dialog).getAllByText(phone).length).toBe(entryCount);
+    expect(within(dialog).queryByText("System")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(TRANSACTIONS[0].customer.name)).not.toBeInTheDocument();
+  });
+
   it("opens a confirmation dialog before calling the delete service on Delete", async () => {
     const removeSpy = vi.spyOn(transactionsService, "remove");
     const user = userEvent.setup();
@@ -170,6 +247,13 @@ describe("AutomaticTransactionsPage", () => {
 
     await user.click(rowCheckboxes[0]);
     expect(rowCheckboxes[0]).toBeChecked();
+
+    // Cleared before exercising the header checkbox: the default date filter
+    // narrows the page to a single day, and with one row still selected the
+    // header is already in its all-checked state, so clicking it would
+    // deselect rather than select.
+    await user.click(rowCheckboxes[0]);
+    expect(rowCheckboxes[0]).not.toBeChecked();
 
     await user.click(selectAll);
     for (const checkbox of rowCheckboxes) expect(checkbox).toBeChecked();

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeleteTransaction, useResendCallback, useRetryInvoice } from "../hooks/useTransactions";
 import type { Transaction } from "../types/transaction.type";
+import { ActivityLogDialog } from "./ActivityLogDialog";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { EditTransactionDialog } from "./EditTransactionDialog";
 
@@ -33,6 +34,7 @@ interface RowActionMenuProps {
  * built rather than inventing a second shape.
  */
 export function RowActionMenu({ transaction, showCallbackActions = true }: RowActionMenuProps) {
+  const [activityOpen, setActivityOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const resendCallback = useResendCallback();
@@ -55,7 +57,7 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
           align="end"
           className="rounded-2xl"
         >
-          <DropdownMenuItem onSelect={() => toast("Activity Log — coming soon")}>
+          <DropdownMenuItem onSelect={() => setActivityOpen(true)}>
             <History />
             Activity Log
           </DropdownMenuItem>
@@ -98,6 +100,11 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <ActivityLogDialog
+        transactionId={transaction.id}
+        open={activityOpen}
+        onOpenChange={setActivityOpen}
+      />
       <EditTransactionDialog
         transaction={transaction}
         open={editOpen}

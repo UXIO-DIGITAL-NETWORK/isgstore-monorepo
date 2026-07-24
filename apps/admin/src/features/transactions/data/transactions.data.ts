@@ -1,4 +1,5 @@
-import type { Transaction } from "../types/transaction.type";
+import { formatCurrency } from "@/utils/currency";
+import type { ActivityLogActor, ActivityLogEntry, Transaction } from "../types/transaction.type";
 
 /**
  * Typed mock fixtures (backend not built yet). The first two rows reproduce
@@ -6,8 +7,12 @@ import type { Transaction } from "../types/transaction.type";
  * — a deliberate exact-fidelity exception, same precedent as
  * dashboard/financial fixtures. The rest are synthetic rows so
  * pagination/filtering has something to act on.
+ *
+ * Seeds carry every field except `activity_log` — the audit trail is derived
+ * from each row below, so neither the 10 literals nor the synthetic generator
+ * has to hand-write one.
  */
-export const TRANSACTIONS: Transaction[] = [
+const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
   {
     id: "txn-1",
     invoice_no: "ZP2607016UJFJVSHCJ",
@@ -187,6 +192,11 @@ export const TRANSACTIONS: Transaction[] = [
   ...generateSyntheticRows(30),
 ];
 
+export const TRANSACTIONS: Transaction[] = TRANSACTION_SEEDS.map((row) => ({
+  ...row,
+  activity_log: buildActivityLog(row),
+}));
+
 /**
  * ~30 additional synthetic rows (cycling the same names/products/statuses
  * already used above — nothing new invented) so the fixture totals ~40 rows.
@@ -196,7 +206,7 @@ export const TRANSACTIONS: Transaction[] = [
  * `meta.total` in the service response stays the deliberate `9999999`
  * placeholder; only `last_page` (derived from real fixture length) changes.
  */
-function generateSyntheticRows(count: number): Transaction[] {
+function generateSyntheticRows(count: number): Omit<Transaction, "activity_log">[] {
   const names = ["Randy Galang", "Sinta Dewi", "Budi Santoso", "Wulan Ayu", "Agus Setiawan", "Rina Marlina"];
   const phones = ["+629876543210", "+628123456789", "+628234567890", "+628345678901", "+628567890123", "+628678901234"];
   const games = [
@@ -235,4 +245,122 @@ function generateSyntheticRows(count: number): Transaction[] {
       updated_at: (resolved ? new Date(createdAt.getTime() + 90_000) : createdAt).toISOString(),
     };
   });
+}
+
+type ActivityStep = Omit<ActivityLogEntry, "id" | "created_at">;
+
+/**
+ * The event sequence a row actually went through, branched on its invoice
+ * status. Exhaustive over TransactionStatus on purpose — a new status becomes
+ * a compile error rather than a silently empty log.
+ *
+ * The reference image's two example rows repeated the parent transaction's
+ * product name and target reference in Action/Description, which reads as
+ * unvaried placeholder content rather than logged events
+ * (product_requirements.md §4.3). Action is therefore a short event label and
+ * Description that event's specific detail, per the PRD's reinterpretation.
+ *
+ * Every entry is attributed to the transaction's own customer: the reference
+ * repeats the same user on every row, so the User column identifies whose
+ * transaction the trail belongs to rather than who performed each event. The
+ * `"system"` actor stays in the type (product_requirements.md §6) for when
+ * the real API sends it, but no fixture produces one.
+ */
+function activitySteps(row: Omit<Transaction, "activity_log">): ActivityStep[] {
+  const actor: ActivityLogActor = { name: row.customer.name, phone: row.customer.phone };
+  const created: ActivityStep = {
+    actor,
+    action: "Invoice Created",
+    description: `Invoice ${row.invoice_no} created for ${row.product.name}.`,
+  };
+  const paid: ActivityStep = {
+    actor,
+    action: "Payment Received",
+    description: `Payment of ${formatCurrency(row.cost, { fractionDigits: 0 })} confirmed via ${row.payment_method}.`,
+  };
+
+  switch (row.invoice_status) {
+    case "pending":
+      return [
+        created,
+        { actor, action: "Payment Pending", description: `Awaiting payment via ${row.payment_method}.` },
+      ];
+    case "processing":
+      return [
+        created,
+        paid,
+        {
+          actor,
+          action: "Order Forwarded",
+          description: `Order forwarded to the provider for ${row.game.name}, awaiting fulfilment.`,
+        },
+      ];
+    case "success":
+      return [
+        created,
+        paid,
+        { actor, action: "Callback Received", description: "Callback received from provider, HTTP 200 OK." },
+        { actor, action: "Status Changed", description: "Status changed from Processing to Success." },
+      ];
+    case "failed":
+      return [
+        created,
+        paid,
+        {
+          actor,
+          action: "Provider Error",
+          description: "Provider returned HTTP 502, top-up was not delivered.",
+        },
+        { actor, action: "Status Changed", description: "Status changed from Processing to Failed." },
+        {
+          actor,
+          action: "Callback Resent",
+          description: "Callback resent to the provider for reconciliation.",
+        },
+      ];
+    case "partial_refund":
+      return [
+        created,
+        paid,
+        { actor, action: "Status Changed", description: "Status changed from Processing to Success." },
+        {
+          actor,
+          action: "Refund Issued",
+          description: `Partial refund issued to ${row.customer.name} for the undelivered items.`,
+        },
+      ];
+    case "partial_success":
+      return [
+        created,
+        paid,
+        { actor, action: "Status Changed", description: "Status changed from Pending to Success." },
+        {
+          actor,
+          action: "Manually Edited",
+          description: "Invoice status set to Partial Success after operator review.",
+        },
+      ];
+  }
+}
+
+/**
+ * Deterministic audit trail per row. Every timestamp derives from that row's
+ * own created_at/resolved_at — never Date.now() — so tests can assert exact
+ * values (the opposite of dashboard/data/activity-log.data.ts, which is
+ * intentionally relative-to-now). Steps are spread evenly across the row's
+ * lifetime, which keeps them chronological without hand-tuning an offset per
+ * fixture; Math.round pins the last entry exactly on resolved_at.
+ */
+function buildActivityLog(row: Omit<Transaction, "activity_log">): ActivityLogEntry[] {
+  const created = new Date(row.created_at).getTime();
+  // Rows that never resolved get a nominal 2-minute window to spread across.
+  const end = row.resolved_at ? new Date(row.resolved_at).getTime() : created + 120_000;
+  const steps = activitySteps(row);
+  const gap = (end - created) / (steps.length - 1);
+
+  return steps.map((step, index) => ({
+    id: `${row.id}-act-${index + 1}`,
+    ...step,
+    created_at: new Date(created + Math.round(gap * index)).toISOString(),
+  }));
 }
