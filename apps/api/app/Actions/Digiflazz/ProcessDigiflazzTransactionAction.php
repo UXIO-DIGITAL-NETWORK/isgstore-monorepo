@@ -31,7 +31,7 @@ class ProcessDigiflazzTransactionAction
         }
 
         // Digiflazz customer_no = UID + Server (e.g. "123456789" + "2001" for ML)
-        $customerNo = $transaction->target_uid.$transaction->target_server;
+        $customerNo = $transaction->target_uid.($transaction->target_server ?? '');
 
         $response = $this->digiflazzService->createTransaction(
             $supplierProduct->buyer_sku_code,

@@ -20,8 +20,8 @@ class CheckoutController extends Controller
                 userId: $request->user()?->id,
                 productId: $request->integer('product_id'),
                 paymentChannelId: $request->integer('payment_channel_id'),
-                targetUid: $request->string('target_uid')->toString(),
-                targetServer: $request->string('target_server')->toString() ?: null,
+                targetUid: trim($request->string('target_uid')->toString()),
+                targetServer: ($s = trim($request->string('target_server')->toString())) !== '' ? $s : null,
                 guestContact: $request->string('guest_contact')->toString() ?: null,
             );
 

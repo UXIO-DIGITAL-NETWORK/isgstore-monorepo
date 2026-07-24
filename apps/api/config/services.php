@@ -30,6 +30,12 @@ return [
         'token' => env('MONETAPAY_TOKEN'),
         'aes_key' => env('MONETAPAY_AES_KEY'),
         'aes_iv' => env('MONETAPAY_AES_IV'),
+        // Disbursement apps may have separate credentials from the collection app.
+        // Falls back to the collection credentials if not explicitly set.
+        'disbursement_partner_key' => env('MONETAPAY_DISBURSEMENT_PARTNER_KEY', env('MONETAPAY_PARTNER_KEY')),
+        'disbursement_token' => env('MONETAPAY_DISBURSEMENT_TOKEN', env('MONETAPAY_TOKEN')),
+        'disbursement_aes_key' => env('MONETAPAY_DISBURSEMENT_AES_KEY', env('MONETAPAY_AES_KEY')),
+        'disbursement_aes_iv' => env('MONETAPAY_DISBURSEMENT_AES_IV', env('MONETAPAY_AES_IV')),
         'is_production' => env('MONETAPAY_IS_PRODUCTION', false),
         'success_redirect_url' => env('MONETAPAY_SUCCESS_REDIRECT_URL', 'https://example.com'),
         'failed_redirect_url' => env('MONETAPAY_FAILED_REDIRECT_URL', ''),
