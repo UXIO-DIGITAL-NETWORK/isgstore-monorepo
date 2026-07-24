@@ -28,7 +28,7 @@ class CheckDigiflazzPricesCommand extends Command
                 $report = $action->execute($type);
             } catch (Throwable $e) {
                 $this->error("Price check {$type} failed: {$e->getMessage()}");
-                Log::error("digiflazz:check-prices ({$type}) failed", ['error' => $e->getMessage()]);
+                Log::channel('digiflazz')->error("digiflazz:check-prices ({$type}) failed", ['error' => $e->getMessage()]);
 
                 return self::FAILURE;
             }

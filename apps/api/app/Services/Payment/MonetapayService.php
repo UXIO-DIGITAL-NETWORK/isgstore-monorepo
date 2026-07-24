@@ -219,7 +219,7 @@ class MonetapayService
         ];
 
         // Debug Log Trace awal
-        Log::info('Monetapay Validated Trace', [
+        Log::channel('monetapay')->info('Monetapay Validated Trace', [
             'strMap' => $strMap,
             'originalString' => $originalString,
             'strToEncrypt' => $strToEncrypt,
@@ -233,7 +233,7 @@ class MonetapayService
                 $errorData = $response->json();
                 $errorMessage = $errorData['message'] ?? $errorData['msg'] ?? $response->body();
 
-                Log::error('Monetapay Create Transaction Failed', [
+                Log::channel('monetapay')->error('Monetapay Create Transaction Failed', [
                     'body' => $requestBody,
                     'response' => $errorData,
                 ]);
@@ -244,7 +244,7 @@ class MonetapayService
             $responseData = $response->json();
 
             // Log respons penuh dari Monetapay API
-            Log::info('Monetapay API Creation Response', $responseData);
+            Log::channel('monetapay')->info('Monetapay API Creation Response', $responseData);
 
             $apiCode = $responseData['code'] ?? null;
             $apiMessage = strtolower($responseData['message'] ?? $responseData['msg'] ?? '');
@@ -282,7 +282,7 @@ class MonetapayService
 
             return ['data' => $actionData];
         } catch (Exception $e) {
-            Log::error('Monetapay Exception', ['message' => $e->getMessage()]);
+            Log::channel('monetapay')->error('Monetapay Exception', ['message' => $e->getMessage()]);
             throw $e;
         }
     }
@@ -369,7 +369,7 @@ class MonetapayService
             $error = $response->json();
             $message = $error['message'] ?? $error['msg'] ?? $response->body();
 
-            Log::error('Monetapay request failed', [
+            Log::channel('monetapay')->error('Monetapay request failed', [
                 'endpoint' => $endpointSuffix,
                 'status' => $response->status(),
                 'response' => $error,
@@ -382,7 +382,7 @@ class MonetapayService
             return $response->json() ?? [];
         }
 
-        Log::info('Monetapay request OK', [
+        Log::channel('monetapay')->info('Monetapay request OK', [
             'endpoint' => $endpointSuffix,
             'response' => $response->json(),
         ]);

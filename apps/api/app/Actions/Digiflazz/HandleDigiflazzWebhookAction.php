@@ -51,14 +51,14 @@ class HandleDigiflazzWebhookAction
                 ->first();
 
             if (! $transaction) {
-                Log::warning("Digiflazz Webhook: Transaction not found for ref_id {$data['ref_id']}");
+                Log::channel('digiflazz')->warning("Digiflazz Webhook: Transaction not found for ref_id {$data['ref_id']}");
 
                 return;
             }
 
             // Idempotency guard: skip if already in a terminal state
             if (in_array($transaction->status, [TransactionStatus::COMPLETED, TransactionStatus::FAILED_PROVIDER], true)) {
-                Log::info("Digiflazz Webhook: Skipped — {$transaction->invoice_number} already {$transaction->status->value}");
+                Log::channel('digiflazz')->info("Digiflazz Webhook: Skipped — {$transaction->invoice_number} already {$transaction->status->value}");
 
                 return;
             }
@@ -110,7 +110,7 @@ class HandleDigiflazzWebhookAction
             default => DiscordWebhookService::COLOR_YELLOW,
         };
 
-        $this->discord->sendEmbed('🔔 Update Transaksi Digiflazz', [
+        $this->discord->sendEmbed('[DIGIFLAZZ] 🔔 Update Transaksi Digiflazz', [
             ['name' => '🧾 Invoice',       'value' => '`'.$transaction->invoice_number.'`', 'inline' => true],
             ['name' => '📱 Target',        'value' => '`'.$transaction->target_uid.($transaction->target_server ? " ({$transaction->target_server})" : '').'`', 'inline' => true],
             ['name' => '📊 Status',        'value' => "~~{$oldStatus->value}~~ ➔ **{$newStatus->value}**", 'inline' => false],

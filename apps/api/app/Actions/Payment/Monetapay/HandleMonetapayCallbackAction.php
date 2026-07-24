@@ -49,7 +49,7 @@ class HandleMonetapayCallbackAction
                 TransactionStatus::EXPIRED,
                 TransactionStatus::FAILED_PROVIDER,
             ], true)) {
-                Log::info("Monetapay callback ignored — already {$transaction->status->value}", [
+                Log::channel('monetapay')->info("Monetapay callback ignored — already {$transaction->status->value}", [
                     'reference_id' => $dto->outNo,
                 ]);
 

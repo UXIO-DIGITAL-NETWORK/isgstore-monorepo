@@ -19,7 +19,7 @@ class MonetapaySubscriptionCallbackController extends Controller
     /** EVT_ACTIVE_SUBSCRIPTION / EVT_INACTIVE_SUBSCRIPTION */
     public function active(Request $request): JsonResponse
     {
-        Log::channel('stack')->info('Monetapay subscription status callback', $request->all());
+        Log::channel('monetapay')->info('Monetapay subscription status callback', $request->all());
 
         return response()->json(['code' => 0, 'message' => 'success']);
     }
@@ -27,7 +27,7 @@ class MonetapaySubscriptionCallbackController extends Controller
     /** EVT_CYCLE_PREV_TRIGGER — notification sent before deduction */
     public function beforeDeduct(Request $request): JsonResponse
     {
-        Log::channel('stack')->info('Monetapay subscription before-deduct callback', $request->all());
+        Log::channel('monetapay')->info('Monetapay subscription before-deduct callback', $request->all());
 
         return response()->json(['code' => 0, 'message' => 'success']);
     }
@@ -35,7 +35,7 @@ class MonetapaySubscriptionCallbackController extends Controller
     /** EVT_CYCLE_TRIGGERED — deduction result notification */
     public function afterDeduct(Request $request): JsonResponse
     {
-        Log::channel('stack')->info('Monetapay subscription after-deduct callback', $request->all());
+        Log::channel('monetapay')->info('Monetapay subscription after-deduct callback', $request->all());
 
         return response()->json(['code' => 0, 'message' => 'success']);
     }

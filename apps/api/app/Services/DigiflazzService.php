@@ -44,14 +44,14 @@ class DigiflazzService
         ];
 
         // [CHECKPOINT 1] Pre-request — full payload before the wire call
-        Log::info('Digiflazz getPriceList Request', $payload);
+        Log::channel('digiflazz')->info('Digiflazz getPriceList Request', $payload);
 
         try {
             $response = Http::post("{$this->baseUrl}/price-list", $payload);
 
             if (! $response->successful()) {
                 // [CHECKPOINT 3] HTTP-level failure (4xx/5xx)
-                Log::error('Digiflazz getPriceList Failed', [
+                Log::channel('digiflazz')->error('Digiflazz getPriceList Failed', [
                     'http_status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -62,7 +62,7 @@ class DigiflazzService
             $data = $response->json('data') ?? [];
 
             // [CHECKPOINT 2] Post-response — summary of what Digiflazz returned
-            Log::info('Digiflazz getPriceList Response', [
+            Log::channel('digiflazz')->info('Digiflazz getPriceList Response', [
                 'product_count' => count($data),
             ]);
 
@@ -70,7 +70,7 @@ class DigiflazzService
 
         } catch (Exception $e) {
             // [CHECKPOINT 3] Connection/infrastructure exception
-            Log::error('Digiflazz getPriceList Exception', [
+            Log::channel('digiflazz')->error('Digiflazz getPriceList Exception', [
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -115,13 +115,13 @@ class DigiflazzService
             'sign' => md5($this->username.$this->key.'depo'),
         ];
 
-        Log::info('Digiflazz getBalance Request', $payload);
+        Log::channel('digiflazz')->info('Digiflazz getBalance Request', $payload);
 
         try {
             $response = Http::post("{$this->baseUrl}/cek-saldo", $payload);
 
             if (! $response->successful()) {
-                Log::error('Digiflazz getBalance Failed', [
+                Log::channel('digiflazz')->error('Digiflazz getBalance Failed', [
                     'http_status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -129,12 +129,12 @@ class DigiflazzService
             }
 
             $data = $response->json('data') ?? [];
-            Log::info('Digiflazz getBalance Response', $data);
+            Log::channel('digiflazz')->info('Digiflazz getBalance Response', $data);
 
             return $data;
 
         } catch (Exception $e) {
-            Log::error('Digiflazz getBalance Exception', ['message' => $e->getMessage()]);
+            Log::channel('digiflazz')->error('Digiflazz getBalance Exception', ['message' => $e->getMessage()]);
             throw $e;
         }
     }
@@ -149,13 +149,13 @@ class DigiflazzService
             'sign' => $this->generateSignature($refId),
         ];
 
-        Log::info('Digiflazz checkBill Request', $payload);
+        Log::channel('digiflazz')->info('Digiflazz checkBill Request', $payload);
 
         try {
             $response = Http::post("{$this->baseUrl}/cek-tagihan", $payload);
 
             if (! $response->successful()) {
-                Log::error('Digiflazz checkBill Failed', [
+                Log::channel('digiflazz')->error('Digiflazz checkBill Failed', [
                     'http_status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -163,12 +163,12 @@ class DigiflazzService
             }
 
             $data = $response->json('data') ?? [];
-            Log::info('Digiflazz checkBill Response', $data);
+            Log::channel('digiflazz')->info('Digiflazz checkBill Response', $data);
 
             return $data;
 
         } catch (Exception $e) {
-            Log::error('Digiflazz checkBill Exception', [
+            Log::channel('digiflazz')->error('Digiflazz checkBill Exception', [
                 'buyer_sku_code' => $buyerSkuCode,
                 'customer_no' => $customerNo,
                 'ref_id' => $refId,
@@ -188,13 +188,13 @@ class DigiflazzService
             'sign' => $this->generateSignature($refId),
         ];
 
-        Log::info('Digiflazz payBill Request', $payload);
+        Log::channel('digiflazz')->info('Digiflazz payBill Request', $payload);
 
         try {
             $response = Http::post("{$this->baseUrl}/pay-pasca", $payload);
 
             if (! $response->successful()) {
-                Log::error('Digiflazz payBill Failed', [
+                Log::channel('digiflazz')->error('Digiflazz payBill Failed', [
                     'http_status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -202,12 +202,12 @@ class DigiflazzService
             }
 
             $responseData = $response->json();
-            Log::info('Digiflazz payBill Response', $responseData ?? []);
+            Log::channel('digiflazz')->info('Digiflazz payBill Response', $responseData ?? []);
 
             return $responseData['data'] ?? [];
 
         } catch (Exception $e) {
-            Log::error('Digiflazz payBill Exception', [
+            Log::channel('digiflazz')->error('Digiflazz payBill Exception', [
                 'buyer_sku_code' => $buyerSkuCode,
                 'customer_no' => $customerNo,
                 'ref_id' => $refId,
@@ -235,14 +235,14 @@ class DigiflazzService
         ];
 
         // [CHECKPOINT 1] Pre-request — exact JSON body going to Digiflazz
-        Log::info('Digiflazz createTransaction Request', $payload);
+        Log::channel('digiflazz')->info('Digiflazz createTransaction Request', $payload);
 
         try {
             $response = Http::post("{$this->baseUrl}/transaction", $payload);
 
             if (! $response->successful()) {
                 // [CHECKPOINT 3] HTTP-level failure before we even get a data envelope
-                Log::error('Digiflazz createTransaction HTTP Failed', [
+                Log::channel('digiflazz')->error('Digiflazz createTransaction HTTP Failed', [
                     'http_status' => $response->status(),
                     'payload' => $payload,
                     'response' => $response->body(),
@@ -254,14 +254,14 @@ class DigiflazzService
             $responseData = $response->json();
 
             // [CHECKPOINT 2] Post-response — full Digiflazz response envelope
-            Log::info('Digiflazz createTransaction Response', $responseData ?? []);
+            Log::channel('digiflazz')->info('Digiflazz createTransaction Response', $responseData ?? []);
 
             return $responseData['data'] ?? [];
 
         } catch (Exception $e) {
             // [CHECKPOINT 3] Exception re-logged with key identifiers, then re-thrown
             // so ProcessDigiflazzTopup can honour its $tries/$backoff retry policy
-            Log::error('Digiflazz createTransaction Exception', [
+            Log::channel('digiflazz')->error('Digiflazz createTransaction Exception', [
                 'ref_id' => $refId,
                 'buyer_sku_code' => $buyerSkuCode,
                 'customer_no' => $customerNo,
