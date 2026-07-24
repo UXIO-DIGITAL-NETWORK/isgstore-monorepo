@@ -65,6 +65,16 @@ class MonetapayService
         return base64_encode($encrypted);
     }
 
+    private function guardDisbursementCredentials(): void
+    {
+        $effectiveToken = $this->disbursementToken ?: $this->token;
+        if ($effectiveToken === '') {
+            throw new \RuntimeException(
+                'Monetapay token is not configured. Set MONETAPAY_TOKEN in your .env, then run php artisan config:clear.'
+            );
+        }
+    }
+
     /**
      * AES-128-CBC decrypt → associative array.
      */
@@ -339,11 +349,19 @@ class MonetapayService
 
         $timestamp = (string) time();
 
-        // Disbursement apps may have separate token/AES credentials from the collection app.
-        $token = $forDisbursement ? $this->disbursementToken : $this->token;
-        $partnerKey = $forDisbursement ? $this->disbursementPartnerKey : $this->partnerKey;
-        $aesKey = $forDisbursement ? $this->disbursementAesKey : null;
-        $aesIv = $forDisbursement ? $this->disbursementAesIv : null;
+        // Disbursement uses the same credentials as collection unless explicitly overridden.
+        // PHP-level ?: fallback ensures collection creds are used when disbursement-specific
+        // ones are empty (e.g. config cache built before MONETAPAY_DISBURSEMENT_* were added).
+        $token = $forDisbursement ? ($this->disbursementToken ?: $this->token) : $this->token;
+        $partnerKey = $forDisbursement ? ($this->disbursementPartnerKey ?: $this->partnerKey) : $this->partnerKey;
+        $aesKey = $forDisbursement ? ($this->disbursementAesKey ?: null) : null;
+        $aesIv = $forDisbursement ? ($this->disbursementAesIv ?: null) : null;
+
+        if (! $forDisbursement && $token === '') {
+            Log::channel('monetapay')->warning('postSigned: MONETAPAY_TOKEN is not set — signature will be invalid', [
+                'endpoint' => $endpointSuffix,
+            ]);
+        }
 
         $originalString = $token.'*|*'.$strMap.'@!@'.$timestamp;
         $sign = md5(md5($originalString));
@@ -355,6 +373,18 @@ class MonetapayService
         $enData = $aesKey !== null && $aesKey !== ''
             ? base64_encode(openssl_encrypt($strToEncrypt, 'AES-128-CBC', $this->deriveAesParam($aesKey), OPENSSL_RAW_DATA, $this->deriveAesParam($aesIv)))
             : $this->encryptPayload($strToEncrypt);
+
+        if ($forDisbursement) {
+            Log::channel('monetapay')->debug('[Disbursement] postSigned pre-flight', [
+                'endpoint'        => $endpointSuffix,
+                'app_id'          => $businessParams['app_id'] ?? '(missing)',
+                'partner_key_set' => $partnerKey !== '',
+                'token_set'       => $token !== '',
+                'aes_key_set'     => ($aesKey ?? '') !== '',
+                'aes_iv_set'      => ($aesIv ?? '') !== '',
+                'strMap'          => $strMap,
+            ]);
+        }
 
         $response = Http::post($this->baseUrl.$endpointSuffix, array_merge([
             'data' => [
@@ -603,24 +633,32 @@ class MonetapayService
     /** 7.1.1 Disbursement Create — POST /v1.0.0/disbursement */
     public function createDisbursement(array $params): array
     {
+        $this->guardDisbursementCredentials();
+
         return $this->postSigned('/v1.0.0/disbursement', $params, passthrough: true, appId: $this->disbursementAppId, forDisbursement: true);
     }
 
     /** 7.2.1 Large Payout Create — POST /v1.0.0/disbursement/large */
     public function createLargePayout(array $params): array
     {
+        $this->guardDisbursementCredentials();
+
         return $this->postSigned('/v1.0.0/disbursement/large', $params, passthrough: true, appId: $this->disbursementAppId, forDisbursement: true);
     }
 
     /** 7.3.1 EWallet Payout Create — POST /v1.0.0/ewallet-disbursement */
     public function createEwalletPayout(array $params): array
     {
+        $this->guardDisbursementCredentials();
+
         return $this->postSigned('/v1.0.0/ewallet-disbursement', $params, passthrough: true, appId: $this->disbursementAppId, forDisbursement: true);
     }
 
     /** 7.4.1 Payout Order Inquiry — POST /v1.0.0/disbursement/query */
     public function inquiryDisbursement(array $params): array
     {
+        $this->guardDisbursementCredentials();
+
         return $this->postSigned('/v1.0.0/disbursement/query', $params, appId: $this->disbursementAppId, forDisbursement: true);
     }
 
