@@ -8,10 +8,11 @@ interface ProvisionalTabPageProps {
 }
 
 /**
- * Shared shell for the four secondary Category tabs (Sub Category/Category
- * Type/Server Category/Supplier Category) — product_requirements.md §4.5
- * gives no confirmed reference for these this round, so each is a reduced
- * placeholder pending its own design, explicitly flagged as provisional.
+ * Shared shell for the Category tabs with no confirmed reference yet
+ * (Category Type / Server Category / Category Provider) —
+ * product_requirements.md §4.5 gives no design for these, so each is a
+ * reduced placeholder, explicitly flagged as provisional. Sub Category
+ * graduated off this shell on 2026-07-27 once its reference landed.
  */
 export function ProvisionalTabPage({ title, subcopy }: ProvisionalTabPageProps) {
   return (

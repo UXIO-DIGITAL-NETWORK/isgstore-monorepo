@@ -26,14 +26,14 @@ import { useAuthStore } from "@/store/useAuthStore";
 // Tab segment -> breadcrumb label, mirrors CategoryTabsLayout's TABS
 // (features/categories/layouts/CategoryTabsLayout.tsx). Category is the only
 // section with real nested routes deep enough to need a multi-segment trail
-// ("Category › Category", "Category › Category › Add Category") — every
-// other route keeps the single-title lookup below.
+// ("Category › Sub Category", "Category › Sub Category › Add Sub Category")
+// — every other route keeps the single-title lookup below.
 const CATEGORY_TAB_LABELS: Record<string, string> = {
   category: "Category",
   "sub-category": "Sub Category",
   "category-type": "Category Type",
   "server-category": "Server Category",
-  "supplier-category": "Supplier Category",
+  "category-provider": "Category Provider",
 };
 
 function getCategoryBreadcrumb(pathname: string): string[] | null {
@@ -50,7 +50,12 @@ function getCategoryBreadcrumb(pathname: string): string[] | null {
   const segments = pathname.slice(base.length).split("/").filter(Boolean);
   const tabLabel = CATEGORY_TAB_LABELS[segments[0] ?? "category"] ?? "Category";
   const trail = ["Category", tabLabel];
-  if (segments[segments.length - 1] === "add") trail.push("Add Category");
+  // The leaf is derived from the active tab, not hardcoded: the reference
+  // showed "Add Category" on every tab's add page, which is wrong anywhere
+  // but the Category tab (product_requirements.md §4.5).
+  const leaf = segments[segments.length - 1];
+  if (leaf === "add") trail.push(`Add ${tabLabel}`);
+  else if (leaf === "edit") trail.push(`Edit ${tabLabel}`);
   return trail;
 }
 

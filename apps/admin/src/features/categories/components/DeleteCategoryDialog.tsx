@@ -33,8 +33,13 @@ export function DeleteCategoryDialog({ open, onOpenChange, categoryName, onConfi
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
+          {/* `variant`, not a `bg-destructive` className — see
+              DeleteSubCategoryDialog: a caller className lands on the inner
+              Radix action and loses the tie with the Button's `bg-primary`,
+              so this button rendered near-black instead of red. */}
           <AlertDialogAction
-            className="bg-destructive text-white hover:bg-destructive/90"
+            variant="destructive"
+            className="dark:bg-destructive"
             onClick={() => {
               onConfirm();
               onOpenChange(false);

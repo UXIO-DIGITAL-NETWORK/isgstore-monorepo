@@ -30,21 +30,25 @@ import { Route as AdminPreviewDashboardPreviewIndexRouteImport } from './routes/
 import { Route as AdminPreviewCategoriesPreviewIndexRouteImport } from './routes/admin/_preview/categories-preview/index'
 import { Route as AdminProtectedTransactionsManualIndexRouteImport } from './routes/admin/_protected/transactions/manual/index'
 import { Route as AdminProtectedTransactionsAutomaticIndexRouteImport } from './routes/admin/_protected/transactions/automatic/index'
-import { Route as AdminProtectedCategoriesSupplierCategoryIndexRouteImport } from './routes/admin/_protected/categories/supplier-category/index'
 import { Route as AdminProtectedCategoriesSubCategoryIndexRouteImport } from './routes/admin/_protected/categories/sub-category/index'
 import { Route as AdminProtectedCategoriesServerCategoryIndexRouteImport } from './routes/admin/_protected/categories/server-category/index'
 import { Route as AdminProtectedCategoriesCategoryIndexRouteImport } from './routes/admin/_protected/categories/category/index'
 import { Route as AdminProtectedCategoriesCategoryTypeIndexRouteImport } from './routes/admin/_protected/categories/category-type/index'
-import { Route as AdminPreviewCategoriesPreviewSupplierCategoryIndexRouteImport } from './routes/admin/_preview/categories-preview/supplier-category/index'
+import { Route as AdminProtectedCategoriesCategoryProviderIndexRouteImport } from './routes/admin/_protected/categories/category-provider/index'
 import { Route as AdminPreviewCategoriesPreviewSubCategoryIndexRouteImport } from './routes/admin/_preview/categories-preview/sub-category/index'
 import { Route as AdminPreviewCategoriesPreviewServerCategoryIndexRouteImport } from './routes/admin/_preview/categories-preview/server-category/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryIndexRouteImport } from './routes/admin/_preview/categories-preview/category/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryTypeIndexRouteImport } from './routes/admin/_preview/categories-preview/category-type/index'
+import { Route as AdminPreviewCategoriesPreviewCategoryProviderIndexRouteImport } from './routes/admin/_preview/categories-preview/category-provider/index'
+import { Route as AdminProtectedCategoriesSubCategoryAddIndexRouteImport } from './routes/admin/_protected/categories/sub-category/add/index'
 import { Route as AdminProtectedCategoriesCategoryAddIndexRouteImport } from './routes/admin/_protected/categories/category/add/index'
 import { Route as AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport } from './routes/admin/_preview/transaction-preview/$invoiceNo/edit/index'
+import { Route as AdminPreviewCategoriesPreviewSubCategoryAddIndexRouteImport } from './routes/admin/_preview/categories-preview/sub-category/add/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryAddIndexRouteImport } from './routes/admin/_preview/categories-preview/category/add/index'
 import { Route as AdminProtectedTransactionsManualInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/manual/$invoiceNo/edit/index'
 import { Route as AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/automatic/$invoiceNo/edit/index'
+import { Route as AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRouteImport } from './routes/admin/_protected/categories/sub-category/$subCategoryId/edit/index'
+import { Route as AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRouteImport } from './routes/admin/_preview/categories-preview/sub-category/$subCategoryId/edit/index'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -165,12 +169,6 @@ const AdminProtectedTransactionsAutomaticIndexRoute =
     path: '/automatic/',
     getParentRoute: () => AdminProtectedTransactionsRouteRoute,
   } as any)
-const AdminProtectedCategoriesSupplierCategoryIndexRoute =
-  AdminProtectedCategoriesSupplierCategoryIndexRouteImport.update({
-    id: '/supplier-category/',
-    path: '/supplier-category/',
-    getParentRoute: () => AdminProtectedCategoriesRouteRoute,
-  } as any)
 const AdminProtectedCategoriesSubCategoryIndexRoute =
   AdminProtectedCategoriesSubCategoryIndexRouteImport.update({
     id: '/sub-category/',
@@ -195,11 +193,11 @@ const AdminProtectedCategoriesCategoryTypeIndexRoute =
     path: '/category-type/',
     getParentRoute: () => AdminProtectedCategoriesRouteRoute,
   } as any)
-const AdminPreviewCategoriesPreviewSupplierCategoryIndexRoute =
-  AdminPreviewCategoriesPreviewSupplierCategoryIndexRouteImport.update({
-    id: '/supplier-category/',
-    path: '/supplier-category/',
-    getParentRoute: () => AdminPreviewCategoriesPreviewRouteRoute,
+const AdminProtectedCategoriesCategoryProviderIndexRoute =
+  AdminProtectedCategoriesCategoryProviderIndexRouteImport.update({
+    id: '/category-provider/',
+    path: '/category-provider/',
+    getParentRoute: () => AdminProtectedCategoriesRouteRoute,
   } as any)
 const AdminPreviewCategoriesPreviewSubCategoryIndexRoute =
   AdminPreviewCategoriesPreviewSubCategoryIndexRouteImport.update({
@@ -225,6 +223,18 @@ const AdminPreviewCategoriesPreviewCategoryTypeIndexRoute =
     path: '/category-type/',
     getParentRoute: () => AdminPreviewCategoriesPreviewRouteRoute,
   } as any)
+const AdminPreviewCategoriesPreviewCategoryProviderIndexRoute =
+  AdminPreviewCategoriesPreviewCategoryProviderIndexRouteImport.update({
+    id: '/category-provider/',
+    path: '/category-provider/',
+    getParentRoute: () => AdminPreviewCategoriesPreviewRouteRoute,
+  } as any)
+const AdminProtectedCategoriesSubCategoryAddIndexRoute =
+  AdminProtectedCategoriesSubCategoryAddIndexRouteImport.update({
+    id: '/sub-category/add/',
+    path: '/sub-category/add/',
+    getParentRoute: () => AdminProtectedCategoriesRouteRoute,
+  } as any)
 const AdminProtectedCategoriesCategoryAddIndexRoute =
   AdminProtectedCategoriesCategoryAddIndexRouteImport.update({
     id: '/category/add/',
@@ -236,6 +246,12 @@ const AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute =
     id: '/transaction-preview/$invoiceNo/edit/',
     path: '/transaction-preview/$invoiceNo/edit/',
     getParentRoute: () => AdminPreviewRoute,
+  } as any)
+const AdminPreviewCategoriesPreviewSubCategoryAddIndexRoute =
+  AdminPreviewCategoriesPreviewSubCategoryAddIndexRouteImport.update({
+    id: '/sub-category/add/',
+    path: '/sub-category/add/',
+    getParentRoute: () => AdminPreviewCategoriesPreviewRouteRoute,
   } as any)
 const AdminPreviewCategoriesPreviewCategoryAddIndexRoute =
   AdminPreviewCategoriesPreviewCategoryAddIndexRouteImport.update({
@@ -255,6 +271,20 @@ const AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute =
     path: '/automatic/$invoiceNo/edit/',
     getParentRoute: () => AdminProtectedTransactionsRouteRoute,
   } as any)
+const AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRoute =
+  AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRouteImport.update({
+    id: '/sub-category/$subCategoryId/edit/',
+    path: '/sub-category/$subCategoryId/edit/',
+    getParentRoute: () => AdminProtectedCategoriesRouteRoute,
+  } as any)
+const AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRoute =
+  AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRouteImport.update(
+    {
+      id: '/sub-category/$subCategoryId/edit/',
+      path: '/sub-category/$subCategoryId/edit/',
+      getParentRoute: () => AdminPreviewCategoriesPreviewRouteRoute,
+    } as any,
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -274,21 +304,25 @@ export interface FileRoutesByFullPath {
   '/admin/financial/': typeof AdminProtectedFinancialIndexRoute
   '/admin/integration/': typeof AdminProtectedIntegrationIndexRoute
   '/admin/transactions/': typeof AdminProtectedTransactionsIndexRoute
+  '/admin/categories-preview/category-provider/': typeof AdminPreviewCategoriesPreviewCategoryProviderIndexRoute
   '/admin/categories-preview/category-type/': typeof AdminPreviewCategoriesPreviewCategoryTypeIndexRoute
   '/admin/categories-preview/category/': typeof AdminPreviewCategoriesPreviewCategoryIndexRoute
   '/admin/categories-preview/server-category/': typeof AdminPreviewCategoriesPreviewServerCategoryIndexRoute
   '/admin/categories-preview/sub-category/': typeof AdminPreviewCategoriesPreviewSubCategoryIndexRoute
-  '/admin/categories-preview/supplier-category/': typeof AdminPreviewCategoriesPreviewSupplierCategoryIndexRoute
+  '/admin/categories/category-provider/': typeof AdminProtectedCategoriesCategoryProviderIndexRoute
   '/admin/categories/category-type/': typeof AdminProtectedCategoriesCategoryTypeIndexRoute
   '/admin/categories/category/': typeof AdminProtectedCategoriesCategoryIndexRoute
   '/admin/categories/server-category/': typeof AdminProtectedCategoriesServerCategoryIndexRoute
   '/admin/categories/sub-category/': typeof AdminProtectedCategoriesSubCategoryIndexRoute
-  '/admin/categories/supplier-category/': typeof AdminProtectedCategoriesSupplierCategoryIndexRoute
   '/admin/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/categories-preview/category/add/': typeof AdminPreviewCategoriesPreviewCategoryAddIndexRoute
+  '/admin/categories-preview/sub-category/add/': typeof AdminPreviewCategoriesPreviewSubCategoryAddIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/categories/category/add/': typeof AdminProtectedCategoriesCategoryAddIndexRoute
+  '/admin/categories/sub-category/add/': typeof AdminProtectedCategoriesSubCategoryAddIndexRoute
+  '/admin/categories-preview/sub-category/$subCategoryId/edit/': typeof AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRoute
+  '/admin/categories/sub-category/$subCategoryId/edit/': typeof AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRoute
   '/admin/transactions/automatic/$invoiceNo/edit/': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
   '/admin/transactions/manual/$invoiceNo/edit/': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
@@ -307,21 +341,25 @@ export interface FileRoutesByTo {
   '/admin/financial': typeof AdminProtectedFinancialIndexRoute
   '/admin/integration': typeof AdminProtectedIntegrationIndexRoute
   '/admin/transactions': typeof AdminProtectedTransactionsIndexRoute
+  '/admin/categories-preview/category-provider': typeof AdminPreviewCategoriesPreviewCategoryProviderIndexRoute
   '/admin/categories-preview/category-type': typeof AdminPreviewCategoriesPreviewCategoryTypeIndexRoute
   '/admin/categories-preview/category': typeof AdminPreviewCategoriesPreviewCategoryIndexRoute
   '/admin/categories-preview/server-category': typeof AdminPreviewCategoriesPreviewServerCategoryIndexRoute
   '/admin/categories-preview/sub-category': typeof AdminPreviewCategoriesPreviewSubCategoryIndexRoute
-  '/admin/categories-preview/supplier-category': typeof AdminPreviewCategoriesPreviewSupplierCategoryIndexRoute
+  '/admin/categories/category-provider': typeof AdminProtectedCategoriesCategoryProviderIndexRoute
   '/admin/categories/category-type': typeof AdminProtectedCategoriesCategoryTypeIndexRoute
   '/admin/categories/category': typeof AdminProtectedCategoriesCategoryIndexRoute
   '/admin/categories/server-category': typeof AdminProtectedCategoriesServerCategoryIndexRoute
   '/admin/categories/sub-category': typeof AdminProtectedCategoriesSubCategoryIndexRoute
-  '/admin/categories/supplier-category': typeof AdminProtectedCategoriesSupplierCategoryIndexRoute
   '/admin/transactions/automatic': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/categories-preview/category/add': typeof AdminPreviewCategoriesPreviewCategoryAddIndexRoute
+  '/admin/categories-preview/sub-category/add': typeof AdminPreviewCategoriesPreviewSubCategoryAddIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/categories/category/add': typeof AdminProtectedCategoriesCategoryAddIndexRoute
+  '/admin/categories/sub-category/add': typeof AdminProtectedCategoriesSubCategoryAddIndexRoute
+  '/admin/categories-preview/sub-category/$subCategoryId/edit': typeof AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRoute
+  '/admin/categories/sub-category/$subCategoryId/edit': typeof AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRoute
   '/admin/transactions/automatic/$invoiceNo/edit': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
   '/admin/transactions/manual/$invoiceNo/edit': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
@@ -346,21 +384,25 @@ export interface FileRoutesById {
   '/admin/_protected/financial/': typeof AdminProtectedFinancialIndexRoute
   '/admin/_protected/integration/': typeof AdminProtectedIntegrationIndexRoute
   '/admin/_protected/transactions/': typeof AdminProtectedTransactionsIndexRoute
+  '/admin/_preview/categories-preview/category-provider/': typeof AdminPreviewCategoriesPreviewCategoryProviderIndexRoute
   '/admin/_preview/categories-preview/category-type/': typeof AdminPreviewCategoriesPreviewCategoryTypeIndexRoute
   '/admin/_preview/categories-preview/category/': typeof AdminPreviewCategoriesPreviewCategoryIndexRoute
   '/admin/_preview/categories-preview/server-category/': typeof AdminPreviewCategoriesPreviewServerCategoryIndexRoute
   '/admin/_preview/categories-preview/sub-category/': typeof AdminPreviewCategoriesPreviewSubCategoryIndexRoute
-  '/admin/_preview/categories-preview/supplier-category/': typeof AdminPreviewCategoriesPreviewSupplierCategoryIndexRoute
+  '/admin/_protected/categories/category-provider/': typeof AdminProtectedCategoriesCategoryProviderIndexRoute
   '/admin/_protected/categories/category-type/': typeof AdminProtectedCategoriesCategoryTypeIndexRoute
   '/admin/_protected/categories/category/': typeof AdminProtectedCategoriesCategoryIndexRoute
   '/admin/_protected/categories/server-category/': typeof AdminProtectedCategoriesServerCategoryIndexRoute
   '/admin/_protected/categories/sub-category/': typeof AdminProtectedCategoriesSubCategoryIndexRoute
-  '/admin/_protected/categories/supplier-category/': typeof AdminProtectedCategoriesSupplierCategoryIndexRoute
   '/admin/_protected/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/_protected/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/_preview/categories-preview/category/add/': typeof AdminPreviewCategoriesPreviewCategoryAddIndexRoute
+  '/admin/_preview/categories-preview/sub-category/add/': typeof AdminPreviewCategoriesPreviewSubCategoryAddIndexRoute
   '/admin/_preview/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/_protected/categories/category/add/': typeof AdminProtectedCategoriesCategoryAddIndexRoute
+  '/admin/_protected/categories/sub-category/add/': typeof AdminProtectedCategoriesSubCategoryAddIndexRoute
+  '/admin/_preview/categories-preview/sub-category/$subCategoryId/edit/': typeof AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRoute
+  '/admin/_protected/categories/sub-category/$subCategoryId/edit/': typeof AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRoute
   '/admin/_protected/transactions/automatic/$invoiceNo/edit/': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
   '/admin/_protected/transactions/manual/$invoiceNo/edit/': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
@@ -384,21 +426,25 @@ export interface FileRouteTypes {
     | '/admin/financial/'
     | '/admin/integration/'
     | '/admin/transactions/'
+    | '/admin/categories-preview/category-provider/'
     | '/admin/categories-preview/category-type/'
     | '/admin/categories-preview/category/'
     | '/admin/categories-preview/server-category/'
     | '/admin/categories-preview/sub-category/'
-    | '/admin/categories-preview/supplier-category/'
+    | '/admin/categories/category-provider/'
     | '/admin/categories/category-type/'
     | '/admin/categories/category/'
     | '/admin/categories/server-category/'
     | '/admin/categories/sub-category/'
-    | '/admin/categories/supplier-category/'
     | '/admin/transactions/automatic/'
     | '/admin/transactions/manual/'
     | '/admin/categories-preview/category/add/'
+    | '/admin/categories-preview/sub-category/add/'
     | '/admin/transaction-preview/$invoiceNo/edit/'
     | '/admin/categories/category/add/'
+    | '/admin/categories/sub-category/add/'
+    | '/admin/categories-preview/sub-category/$subCategoryId/edit/'
+    | '/admin/categories/sub-category/$subCategoryId/edit/'
     | '/admin/transactions/automatic/$invoiceNo/edit/'
     | '/admin/transactions/manual/$invoiceNo/edit/'
   fileRoutesByTo: FileRoutesByTo
@@ -417,21 +463,25 @@ export interface FileRouteTypes {
     | '/admin/financial'
     | '/admin/integration'
     | '/admin/transactions'
+    | '/admin/categories-preview/category-provider'
     | '/admin/categories-preview/category-type'
     | '/admin/categories-preview/category'
     | '/admin/categories-preview/server-category'
     | '/admin/categories-preview/sub-category'
-    | '/admin/categories-preview/supplier-category'
+    | '/admin/categories/category-provider'
     | '/admin/categories/category-type'
     | '/admin/categories/category'
     | '/admin/categories/server-category'
     | '/admin/categories/sub-category'
-    | '/admin/categories/supplier-category'
     | '/admin/transactions/automatic'
     | '/admin/transactions/manual'
     | '/admin/categories-preview/category/add'
+    | '/admin/categories-preview/sub-category/add'
     | '/admin/transaction-preview/$invoiceNo/edit'
     | '/admin/categories/category/add'
+    | '/admin/categories/sub-category/add'
+    | '/admin/categories-preview/sub-category/$subCategoryId/edit'
+    | '/admin/categories/sub-category/$subCategoryId/edit'
     | '/admin/transactions/automatic/$invoiceNo/edit'
     | '/admin/transactions/manual/$invoiceNo/edit'
   id:
@@ -455,21 +505,25 @@ export interface FileRouteTypes {
     | '/admin/_protected/financial/'
     | '/admin/_protected/integration/'
     | '/admin/_protected/transactions/'
+    | '/admin/_preview/categories-preview/category-provider/'
     | '/admin/_preview/categories-preview/category-type/'
     | '/admin/_preview/categories-preview/category/'
     | '/admin/_preview/categories-preview/server-category/'
     | '/admin/_preview/categories-preview/sub-category/'
-    | '/admin/_preview/categories-preview/supplier-category/'
+    | '/admin/_protected/categories/category-provider/'
     | '/admin/_protected/categories/category-type/'
     | '/admin/_protected/categories/category/'
     | '/admin/_protected/categories/server-category/'
     | '/admin/_protected/categories/sub-category/'
-    | '/admin/_protected/categories/supplier-category/'
     | '/admin/_protected/transactions/automatic/'
     | '/admin/_protected/transactions/manual/'
     | '/admin/_preview/categories-preview/category/add/'
+    | '/admin/_preview/categories-preview/sub-category/add/'
     | '/admin/_preview/transaction-preview/$invoiceNo/edit/'
     | '/admin/_protected/categories/category/add/'
+    | '/admin/_protected/categories/sub-category/add/'
+    | '/admin/_preview/categories-preview/sub-category/$subCategoryId/edit/'
+    | '/admin/_protected/categories/sub-category/$subCategoryId/edit/'
     | '/admin/_protected/transactions/automatic/$invoiceNo/edit/'
     | '/admin/_protected/transactions/manual/$invoiceNo/edit/'
   fileRoutesById: FileRoutesById
@@ -631,13 +685,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedTransactionsAutomaticIndexRouteImport
       parentRoute: typeof AdminProtectedTransactionsRouteRoute
     }
-    '/admin/_protected/categories/supplier-category/': {
-      id: '/admin/_protected/categories/supplier-category/'
-      path: '/supplier-category'
-      fullPath: '/admin/categories/supplier-category/'
-      preLoaderRoute: typeof AdminProtectedCategoriesSupplierCategoryIndexRouteImport
-      parentRoute: typeof AdminProtectedCategoriesRouteRoute
-    }
     '/admin/_protected/categories/sub-category/': {
       id: '/admin/_protected/categories/sub-category/'
       path: '/sub-category'
@@ -666,12 +713,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedCategoriesCategoryTypeIndexRouteImport
       parentRoute: typeof AdminProtectedCategoriesRouteRoute
     }
-    '/admin/_preview/categories-preview/supplier-category/': {
-      id: '/admin/_preview/categories-preview/supplier-category/'
-      path: '/supplier-category'
-      fullPath: '/admin/categories-preview/supplier-category/'
-      preLoaderRoute: typeof AdminPreviewCategoriesPreviewSupplierCategoryIndexRouteImport
-      parentRoute: typeof AdminPreviewCategoriesPreviewRouteRoute
+    '/admin/_protected/categories/category-provider/': {
+      id: '/admin/_protected/categories/category-provider/'
+      path: '/category-provider'
+      fullPath: '/admin/categories/category-provider/'
+      preLoaderRoute: typeof AdminProtectedCategoriesCategoryProviderIndexRouteImport
+      parentRoute: typeof AdminProtectedCategoriesRouteRoute
     }
     '/admin/_preview/categories-preview/sub-category/': {
       id: '/admin/_preview/categories-preview/sub-category/'
@@ -701,6 +748,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPreviewCategoriesPreviewCategoryTypeIndexRouteImport
       parentRoute: typeof AdminPreviewCategoriesPreviewRouteRoute
     }
+    '/admin/_preview/categories-preview/category-provider/': {
+      id: '/admin/_preview/categories-preview/category-provider/'
+      path: '/category-provider'
+      fullPath: '/admin/categories-preview/category-provider/'
+      preLoaderRoute: typeof AdminPreviewCategoriesPreviewCategoryProviderIndexRouteImport
+      parentRoute: typeof AdminPreviewCategoriesPreviewRouteRoute
+    }
+    '/admin/_protected/categories/sub-category/add/': {
+      id: '/admin/_protected/categories/sub-category/add/'
+      path: '/sub-category/add'
+      fullPath: '/admin/categories/sub-category/add/'
+      preLoaderRoute: typeof AdminProtectedCategoriesSubCategoryAddIndexRouteImport
+      parentRoute: typeof AdminProtectedCategoriesRouteRoute
+    }
     '/admin/_protected/categories/category/add/': {
       id: '/admin/_protected/categories/category/add/'
       path: '/category/add'
@@ -714,6 +775,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/transaction-preview/$invoiceNo/edit/'
       preLoaderRoute: typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport
       parentRoute: typeof AdminPreviewRoute
+    }
+    '/admin/_preview/categories-preview/sub-category/add/': {
+      id: '/admin/_preview/categories-preview/sub-category/add/'
+      path: '/sub-category/add'
+      fullPath: '/admin/categories-preview/sub-category/add/'
+      preLoaderRoute: typeof AdminPreviewCategoriesPreviewSubCategoryAddIndexRouteImport
+      parentRoute: typeof AdminPreviewCategoriesPreviewRouteRoute
     }
     '/admin/_preview/categories-preview/category/add/': {
       id: '/admin/_preview/categories-preview/category/add/'
@@ -736,6 +804,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRouteImport
       parentRoute: typeof AdminProtectedTransactionsRouteRoute
     }
+    '/admin/_protected/categories/sub-category/$subCategoryId/edit/': {
+      id: '/admin/_protected/categories/sub-category/$subCategoryId/edit/'
+      path: '/sub-category/$subCategoryId/edit'
+      fullPath: '/admin/categories/sub-category/$subCategoryId/edit/'
+      preLoaderRoute: typeof AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRouteImport
+      parentRoute: typeof AdminProtectedCategoriesRouteRoute
+    }
+    '/admin/_preview/categories-preview/sub-category/$subCategoryId/edit/': {
+      id: '/admin/_preview/categories-preview/sub-category/$subCategoryId/edit/'
+      path: '/sub-category/$subCategoryId/edit'
+      fullPath: '/admin/categories-preview/sub-category/$subCategoryId/edit/'
+      preLoaderRoute: typeof AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRouteImport
+      parentRoute: typeof AdminPreviewCategoriesPreviewRouteRoute
+    }
   }
 }
 
@@ -753,18 +835,22 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface AdminPreviewCategoriesPreviewRouteRouteChildren {
   AdminPreviewCategoriesPreviewIndexRoute: typeof AdminPreviewCategoriesPreviewIndexRoute
+  AdminPreviewCategoriesPreviewCategoryProviderIndexRoute: typeof AdminPreviewCategoriesPreviewCategoryProviderIndexRoute
   AdminPreviewCategoriesPreviewCategoryTypeIndexRoute: typeof AdminPreviewCategoriesPreviewCategoryTypeIndexRoute
   AdminPreviewCategoriesPreviewCategoryIndexRoute: typeof AdminPreviewCategoriesPreviewCategoryIndexRoute
   AdminPreviewCategoriesPreviewServerCategoryIndexRoute: typeof AdminPreviewCategoriesPreviewServerCategoryIndexRoute
   AdminPreviewCategoriesPreviewSubCategoryIndexRoute: typeof AdminPreviewCategoriesPreviewSubCategoryIndexRoute
-  AdminPreviewCategoriesPreviewSupplierCategoryIndexRoute: typeof AdminPreviewCategoriesPreviewSupplierCategoryIndexRoute
   AdminPreviewCategoriesPreviewCategoryAddIndexRoute: typeof AdminPreviewCategoriesPreviewCategoryAddIndexRoute
+  AdminPreviewCategoriesPreviewSubCategoryAddIndexRoute: typeof AdminPreviewCategoriesPreviewSubCategoryAddIndexRoute
+  AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRoute: typeof AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRoute
 }
 
 const AdminPreviewCategoriesPreviewRouteRouteChildren: AdminPreviewCategoriesPreviewRouteRouteChildren =
   {
     AdminPreviewCategoriesPreviewIndexRoute:
       AdminPreviewCategoriesPreviewIndexRoute,
+    AdminPreviewCategoriesPreviewCategoryProviderIndexRoute:
+      AdminPreviewCategoriesPreviewCategoryProviderIndexRoute,
     AdminPreviewCategoriesPreviewCategoryTypeIndexRoute:
       AdminPreviewCategoriesPreviewCategoryTypeIndexRoute,
     AdminPreviewCategoriesPreviewCategoryIndexRoute:
@@ -773,10 +859,12 @@ const AdminPreviewCategoriesPreviewRouteRouteChildren: AdminPreviewCategoriesPre
       AdminPreviewCategoriesPreviewServerCategoryIndexRoute,
     AdminPreviewCategoriesPreviewSubCategoryIndexRoute:
       AdminPreviewCategoriesPreviewSubCategoryIndexRoute,
-    AdminPreviewCategoriesPreviewSupplierCategoryIndexRoute:
-      AdminPreviewCategoriesPreviewSupplierCategoryIndexRoute,
     AdminPreviewCategoriesPreviewCategoryAddIndexRoute:
       AdminPreviewCategoriesPreviewCategoryAddIndexRoute,
+    AdminPreviewCategoriesPreviewSubCategoryAddIndexRoute:
+      AdminPreviewCategoriesPreviewSubCategoryAddIndexRoute,
+    AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRoute:
+      AdminPreviewCategoriesPreviewSubCategorySubCategoryIdEditIndexRoute,
   }
 
 const AdminPreviewCategoriesPreviewRouteRouteWithChildren =
@@ -813,17 +901,21 @@ const AdminPreviewRouteWithChildren = AdminPreviewRoute._addFileChildren(
 
 interface AdminProtectedCategoriesRouteRouteChildren {
   AdminProtectedCategoriesIndexRoute: typeof AdminProtectedCategoriesIndexRoute
+  AdminProtectedCategoriesCategoryProviderIndexRoute: typeof AdminProtectedCategoriesCategoryProviderIndexRoute
   AdminProtectedCategoriesCategoryTypeIndexRoute: typeof AdminProtectedCategoriesCategoryTypeIndexRoute
   AdminProtectedCategoriesCategoryIndexRoute: typeof AdminProtectedCategoriesCategoryIndexRoute
   AdminProtectedCategoriesServerCategoryIndexRoute: typeof AdminProtectedCategoriesServerCategoryIndexRoute
   AdminProtectedCategoriesSubCategoryIndexRoute: typeof AdminProtectedCategoriesSubCategoryIndexRoute
-  AdminProtectedCategoriesSupplierCategoryIndexRoute: typeof AdminProtectedCategoriesSupplierCategoryIndexRoute
   AdminProtectedCategoriesCategoryAddIndexRoute: typeof AdminProtectedCategoriesCategoryAddIndexRoute
+  AdminProtectedCategoriesSubCategoryAddIndexRoute: typeof AdminProtectedCategoriesSubCategoryAddIndexRoute
+  AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRoute: typeof AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRoute
 }
 
 const AdminProtectedCategoriesRouteRouteChildren: AdminProtectedCategoriesRouteRouteChildren =
   {
     AdminProtectedCategoriesIndexRoute: AdminProtectedCategoriesIndexRoute,
+    AdminProtectedCategoriesCategoryProviderIndexRoute:
+      AdminProtectedCategoriesCategoryProviderIndexRoute,
     AdminProtectedCategoriesCategoryTypeIndexRoute:
       AdminProtectedCategoriesCategoryTypeIndexRoute,
     AdminProtectedCategoriesCategoryIndexRoute:
@@ -832,10 +924,12 @@ const AdminProtectedCategoriesRouteRouteChildren: AdminProtectedCategoriesRouteR
       AdminProtectedCategoriesServerCategoryIndexRoute,
     AdminProtectedCategoriesSubCategoryIndexRoute:
       AdminProtectedCategoriesSubCategoryIndexRoute,
-    AdminProtectedCategoriesSupplierCategoryIndexRoute:
-      AdminProtectedCategoriesSupplierCategoryIndexRoute,
     AdminProtectedCategoriesCategoryAddIndexRoute:
       AdminProtectedCategoriesCategoryAddIndexRoute,
+    AdminProtectedCategoriesSubCategoryAddIndexRoute:
+      AdminProtectedCategoriesSubCategoryAddIndexRoute,
+    AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRoute:
+      AdminProtectedCategoriesSubCategorySubCategoryIdEditIndexRoute,
   }
 
 const AdminProtectedCategoriesRouteRouteWithChildren =

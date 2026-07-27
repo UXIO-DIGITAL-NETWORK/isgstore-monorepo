@@ -30,7 +30,7 @@ describe("categories routes", () => {
 
   it("shows all five tab links", async () => {
     await renderRoute("/admin/categories");
-    for (const label of ["Category", "Sub Category", "Category Type", "Server Category", "Supplier Category"]) {
+    for (const label of ["Category", "Sub Category", "Category Type", "Server Category", "Category Provider"]) {
       expect(await screen.findByRole("tab", { name: label })).toBeInTheDocument();
     }
   });

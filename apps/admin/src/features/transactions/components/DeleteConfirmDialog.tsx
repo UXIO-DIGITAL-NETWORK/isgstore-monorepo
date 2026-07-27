@@ -37,8 +37,13 @@ export function DeleteConfirmDialog({ open, onOpenChange, invoiceNo, onConfirm }
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
+          {/* `variant` + an explicit dark override, matching the categories
+              delete dialogs — the bare `bg-destructive` className this used
+              to carry never won, so this button rendered as the default
+              primary. See AlertDialogAction in components/ui/alert-dialog. */}
           <AlertDialogAction
-            className="bg-destructive text-white hover:bg-destructive/90"
+            variant="destructive"
+            className="dark:bg-destructive"
             onClick={() => {
               onConfirm();
               onOpenChange(false);
