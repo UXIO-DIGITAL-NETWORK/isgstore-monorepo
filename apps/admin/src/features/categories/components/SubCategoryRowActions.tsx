@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeleteSubCategories } from "../hooks/useSubCategories";
 import type { SubCategory } from "../types/subCategory.type";
-import { DeleteSubCategoryDialog } from "./DeleteSubCategoryDialog";
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 
 interface SubCategoryRowActionsProps {
   subCategory: SubCategory;
@@ -65,10 +65,11 @@ export function SubCategoryRowActions({ subCategory }: SubCategoryRowActionsProp
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DeleteSubCategoryDialog
+      <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        count={1}
+        title="Delete this sub category?"
+        description="This action cannot be undone. This will permanently delete this sub category and remove it from the storefront."
         onConfirm={() => deleteSubCategories.mutate([subCategory.id])}
       />
     </>

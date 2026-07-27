@@ -47,6 +47,9 @@ interface CategoriesTableProps<TData extends { id: string }> {
   entityLabel?: string;
   /** Absolute row numbering ("No."), as the Sub Category reference shows. */
   showRowNumber?: boolean;
+  /** Row checkboxes. Off for tabs with no bulk action — the Category Type
+   * reference shows no selection column at all (§4.5). */
+  enableSelection?: boolean;
   /** Reports the checkbox selection upward so a toolbar can offer a bulk
    * action. Selection itself stays owned here — it already resets on `data`,
    * which is exactly the post-delete refetch. */
@@ -77,6 +80,7 @@ export function CategoriesTable<TData extends { id: string }>({
   emptyMessage = "No categories found.",
   entityLabel = "categories",
   showRowNumber = false,
+  enableSelection = true,
   onSelectionChange,
   page,
   pageSize,
@@ -140,8 +144,8 @@ export function CategoriesTable<TData extends { id: string }>({
   );
 
   const fullColumns = useMemo<ColumnDef<TData>[]>(
-    () => (showRowNumber ? [selectColumn, rowNumberColumn, ...columns] : [selectColumn, ...columns]),
-    [selectColumn, rowNumberColumn, showRowNumber, columns],
+    () => [...(enableSelection ? [selectColumn] : []), ...(showRowNumber ? [rowNumberColumn] : []), ...columns],
+    [selectColumn, rowNumberColumn, enableSelection, showRowNumber, columns],
   );
 
   const table = useReactTable({

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeleteCategory } from "../hooks/useCategories";
 import type { Category } from "../types/category.type";
-import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 
 interface CategoryRowActionsProps {
   category: Category;
@@ -61,10 +61,13 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DeleteCategoryDialog
+      {/* Wording is unchanged from the bespoke dialog this replaced; only the
+          shell is now shared with the other tabs. */}
+      <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        categoryName={category.name}
+        title={`Delete ${category.name}?`}
+        description="This permanently removes the category and its order-form field definitions. This action cannot be undone."
         onConfirm={() => deleteCategory.mutate(category.id)}
       />
     </>

@@ -4,7 +4,7 @@ import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { CategoriesTable } from "../components/CategoriesTable";
-import { DeleteSubCategoryDialog } from "../components/DeleteSubCategoryDialog";
+import { DeleteConfirmDialog } from "../components/DeleteConfirmDialog";
 import { SubCategoryToolbar } from "../components/SubCategoryToolbar";
 import { subCategoryColumns } from "../components/subCategoryColumns";
 import { useDeleteSubCategories, useSubCategoryList } from "../hooks/useSubCategories";
@@ -92,11 +92,17 @@ export default function SubCategoryPage() {
       </Box>
 
       {/* Same dialog and same mutation as the row menu's Delete — only the
-          set of ids differs (§4.5, line 214). */}
-      <DeleteSubCategoryDialog
+          set of ids differs (§4.5, line 214), so only the wording is
+          count-aware. */}
+      <DeleteConfirmDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
-        count={selectedIds.length}
+        title={selectedIds.length <= 1 ? "Delete this sub category?" : `Delete ${selectedIds.length} sub categories?`}
+        description={
+          selectedIds.length <= 1
+            ? "This action cannot be undone. This will permanently delete this sub category and remove it from the storefront."
+            : `This action cannot be undone. This will permanently delete these ${selectedIds.length} sub categories and remove them from the storefront.`
+        }
         onConfirm={() => deleteSubCategories.mutate(selectedIds)}
       />
     </Box>
