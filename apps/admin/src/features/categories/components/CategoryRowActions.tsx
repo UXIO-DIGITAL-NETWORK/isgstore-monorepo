@@ -39,7 +39,10 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
             <MoreHorizontal className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent
+          align="end"
+          className="rounded-2xl"
+        >
           <Can permission="categories.edit">
             <DropdownMenuItem onSelect={() => toast(`Edit ${category.name} — coming soon`)}>
               <Pencil />

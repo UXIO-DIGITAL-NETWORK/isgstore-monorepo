@@ -40,6 +40,17 @@ interface CategoriesTableProps<TData extends { id: string }> {
   isError?: boolean;
   onRetry?: () => void;
   emptyMessage?: string;
+  /** Plural noun for the footer count and the error state. Kept a prop so
+   * the Sub Category tab reads "sub categories" instead of inheriting the
+   * "of 9999999 transactions" string the reference copied from Transaction
+   * (product_requirements.md §4.5, line 208). */
+  entityLabel?: string;
+  /** Absolute row numbering ("No."), as the Sub Category reference shows. */
+  showRowNumber?: boolean;
+  /** Reports the checkbox selection upward so a toolbar can offer a bulk
+   * action. Selection itself stays owned here — it already resets on `data`,
+   * which is exactly the post-delete refetch. */
+  onSelectionChange?: (ids: string[]) => void;
   page: number;
   pageSize: number;
   total: number;
@@ -64,6 +75,9 @@ export function CategoriesTable<TData extends { id: string }>({
   isError = false,
   onRetry,
   emptyMessage = "No categories found.",
+  entityLabel = "categories",
+  showRowNumber = false,
+  onSelectionChange,
   page,
   pageSize,
   total,
@@ -73,9 +87,18 @@ export function CategoriesTable<TData extends { id: string }>({
 }: CategoriesTableProps<TData>) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
+  // Keyed on the row ids, not the array identity: callers pass
+  // `data?.data ?? []`, so a fresh `[]` arrives on every render while the
+  // query is loading — keying on `data` itself re-fired this effect forever
+  // once a parent re-rendered in response to the selection below.
+  const rowIdsKey = data.map((row) => row.id).join(",");
   useEffect(() => {
     setRowSelection({});
-  }, [data]);
+  }, [rowIdsKey]);
+
+  useEffect(() => {
+    onSelectionChange?.(Object.keys(rowSelection));
+  }, [rowSelection, onSelectionChange]);
 
   const selectColumn = useMemo<ColumnDef<TData>>(
     () => ({
@@ -97,7 +120,29 @@ export function CategoriesTable<TData extends { id: string }>({
     }),
     [],
   );
-  const fullColumns = useMemo<ColumnDef<TData>[]>(() => [selectColumn, ...columns], [selectColumn, columns]);
+  // Absolute (not page-relative) numbering: `row.index` is the index within
+  // the current page's rows, since manual pagination only ever hands us one
+  // page of data.
+  const rowNumberColumn = useMemo<ColumnDef<TData>>(
+    () => ({
+      id: "__row_number",
+      header: "No.",
+      cell: ({ row }) => (
+        <Text
+          as="span"
+          className="tabular-nums"
+        >
+          {(page - 1) * pageSize + row.index + 1}
+        </Text>
+      ),
+    }),
+    [page, pageSize],
+  );
+
+  const fullColumns = useMemo<ColumnDef<TData>[]>(
+    () => (showRowNumber ? [selectColumn, rowNumberColumn, ...columns] : [selectColumn, ...columns]),
+    [selectColumn, rowNumberColumn, showRowNumber, columns],
+  );
 
   const table = useReactTable({
     data,
@@ -117,7 +162,7 @@ export function CategoriesTable<TData extends { id: string }>({
   if (isError) {
     return (
       <Box className="flex flex-col items-center gap-3 rounded-lg border border-border py-10">
-        <Text variant="muted">Something went wrong loading categories.</Text>
+        <Text variant="muted">Something went wrong loading {entityLabel}.</Text>
         {onRetry && (
           <Button
             variant="outline"
@@ -210,7 +255,7 @@ export function CategoriesTable<TData extends { id: string }>({
           variant="small"
           className="tabular-nums"
         >
-          {`${from}-${to} of ${total} categories`}
+          {`${from}-${to} of ${total} ${entityLabel}`}
         </Text>
 
         <Pagination className="mx-0 w-auto">

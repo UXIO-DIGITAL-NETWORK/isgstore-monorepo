@@ -8,8 +8,12 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 // ponytail: categories-local copy of the transactions "Invoice Proof" dropzone
-// (EditTransactionForm). Two uses in this form justify the extraction. Promote
-// to components/common only if a third upload appears — don't refactor transactions now.
+// (EditTransactionForm). Three uses within this feature now justify it staying
+// here; promote to components/common only if another feature needs one —
+// don't refactor transactions now.
+const DEFAULT_ACCEPT = "image/jpeg,image/jpg,image/png";
+const DEFAULT_FORMATS_LABEL = "JPG, JPEG, PNG up to 10mb";
+
 interface CategoryImageUploadProps {
   id: string;
   label: string;
@@ -17,9 +21,22 @@ interface CategoryImageUploadProps {
   value?: File;
   onChange: (file: File) => void;
   error?: string;
+  /** Sub Category's Logo takes one more format than Category's own logo
+   * field (WEBP) — product_requirements.md §4.5, line 210. */
+  accept?: string;
+  formatsLabel?: string;
 }
 
-export function CategoryImageUpload({ id, label, caption, value, onChange, error }: CategoryImageUploadProps) {
+export function CategoryImageUpload({
+  id,
+  label,
+  caption,
+  value,
+  onChange,
+  error,
+  accept = DEFAULT_ACCEPT,
+  formatsLabel = DEFAULT_FORMATS_LABEL,
+}: CategoryImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,12 +66,12 @@ export function CategoryImageUpload({ id, label, caption, value, onChange, error
       >
         <UploadCloud className="size-6 text-muted-foreground" />
         <Text variant="small">Drag & drop files here</Text>
-        <Text variant="small">JPG, JPEG, PNG up to 10mb</Text>
+        <Text variant="small">{formatsLabel}</Text>
         <input
           ref={fileInputRef}
           id={id}
           type="file"
-          accept="image/jpeg,image/jpg,image/png"
+          accept={accept}
           className="hidden"
           onChange={(event) => handleFiles(event.target.files)}
         />

@@ -9,7 +9,7 @@ const TAB_SEGMENTS = [
   { value: "sub-category", label: "Sub Category", segment: "sub-category" },
   { value: "category-type", label: "Category Type", segment: "category-type" },
   { value: "server-category", label: "Server Category", segment: "server-category" },
-  { value: "supplier-category", label: "Supplier Category", segment: "supplier-category" },
+  { value: "category-provider", label: "Category Provider", segment: "category-provider" },
 ];
 
 const PREVIEW_BASE = "/admin/categories-preview";
@@ -18,8 +18,8 @@ const REAL_BASE = "/admin/categories";
 /**
  * Shell for the five Category tabs (product_requirements.md §4.5) — real
  * nested routes, not client-side tab state, so the breadcrumb reflects the
- * actual URL ("Category › Category"). The tab list is hidden on the Add
- * Category sub-route (matches the reference, which shows no tabs there).
+ * actual URL ("Category › Sub Category"). The tab list is hidden on the
+ * add/edit sub-routes (matches the reference, which shows no tabs there).
  *
  * Reused under both the real route (`/admin/categories/*`) and the
  * unauthenticated preview route (`/admin/categories-preview/*`, which mirrors
@@ -34,11 +34,11 @@ export function CategoryTabsLayout() {
   const base = pathname.startsWith(PREVIEW_BASE) ? PREVIEW_BASE : REAL_BASE;
   const activeSegment = pathname.slice(base.length).split("/").filter(Boolean)[0];
   const activeTab = TAB_SEGMENTS.find((tab) => tab.segment === activeSegment)?.value ?? "category";
-  const onAddRoute = pathname.endsWith("/add");
+  const onFormRoute = pathname.endsWith("/add") || pathname.endsWith("/edit");
 
   return (
     <Box className="flex flex-col gap-6">
-      {!onAddRoute && (
+      {!onFormRoute && (
         <Tabs value={activeTab}>
           <TabsList variant="line">
             {TAB_SEGMENTS.map((tab) => (

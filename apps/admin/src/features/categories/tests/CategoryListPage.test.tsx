@@ -54,7 +54,7 @@ describe("CategoryListPage", () => {
   it("shows all five tabs, mirroring the real route, without leaking out of preview", async () => {
     await renderRoute("/admin/categories-preview");
 
-    for (const label of ["Category", "Sub Category", "Category Type", "Server Category", "Supplier Category"]) {
+    for (const label of ["Category", "Sub Category", "Category Type", "Server Category", "Category Provider"]) {
       const tab = await screen.findByRole("tab", { name: label });
       expect(tab).toHaveAttribute("href", expect.stringMatching(/^\/admin\/categories-preview\//));
     }
