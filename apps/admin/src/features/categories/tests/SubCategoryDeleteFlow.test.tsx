@@ -19,7 +19,7 @@ describe("SubCategory delete flow", () => {
     vi.restoreAllMocks();
   });
 
-  it("opens the confirmation with singular copy and does not delete until Continue", async () => {
+  it("opens the confirmation with singular copy and does not delete until confirmed", async () => {
     const removeSpy = vi.spyOn(subCategoriesService, "remove").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
@@ -33,7 +33,7 @@ describe("SubCategory delete flow", () => {
     expect(within(dialog).queryByText(/your account/i)).not.toBeInTheDocument();
     expect(removeSpy).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Continue" }));
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(removeSpy).toHaveBeenCalledTimes(1);
   });
@@ -70,7 +70,7 @@ describe("SubCategory delete flow", () => {
     expect(within(dialog).queryByText(/your account/i)).not.toBeInTheDocument();
     expect(removeSpy).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Continue" }));
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(removeSpy).toHaveBeenCalledTimes(2);
   });
