@@ -30,6 +30,11 @@ class Category extends Model
         return $this->hasMany(SubCategory::class);
     }
 
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
+
     public function serverCategories()
     {
         return $this->hasMany(ServerCategory::class);
