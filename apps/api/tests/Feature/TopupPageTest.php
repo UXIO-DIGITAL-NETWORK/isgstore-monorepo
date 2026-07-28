@@ -85,6 +85,53 @@ class TopupPageTest extends TestCase
             ->assertJsonCount(2, 'fields');
     }
 
+    public function test_products_endpoint_exposes_the_new_schema_shape_and_drops_the_seeded_dropdown(): void
+    {
+        $category = Category::factory()->create([
+            'order_form_fields' => [
+                'customer_no_template' => '{user_id}{zone_id}',
+                'fields' => [
+                    ['key' => 'user_id', 'label' => 'User ID', 'type' => 'number', 'required' => true,
+                        'min_length' => 6, 'max_length' => 12, 'placeholder' => '123456789'],
+                    ['key' => 'zone_id', 'label' => 'Zone ID', 'type' => 'number', 'required' => true,
+                        'min_length' => 3, 'max_length' => 5, 'help' => 'Angka dalam kurung.'],
+                ],
+            ],
+        ]);
+        $this->sellableProduct($category);
+
+        // The fabricated Zone 1-5 dropdown must NOT win over a configured schema.
+        $server = ServerCategory::create(['category_id' => $category->id, 'name' => 'Zone ID']);
+        ServerCategoryOption::create(['server_category_id' => $server->id, 'name' => 'Zone 1', 'value' => '2001']);
+
+        $response = $this->getJson("/topup/games/{$category->id}/products")->assertOk();
+
+        $response->assertJsonPath('fields.1.type', 'number')
+            ->assertJsonPath('fields.1.min_length', 3)
+            ->assertJsonPath('fields.1.max_length', 5)
+            ->assertJsonPath('fields.1.help', 'Angka dalam kurung.')
+            ->assertJsonPath('fields.0.placeholder', '123456789');
+
+        // No select, no fabricated options.
+        $this->assertSame([], $response->json('fields.1.options'));
+
+        // The join template is server-side only — it must never reach the client.
+        $this->assertArrayNotHasKey('customer_no_template', $response->json());
+    }
+
+    public function test_fallback_fields_use_the_same_client_shape(): void
+    {
+        $category = Category::factory()->create(['order_form_fields' => null]);
+        $this->sellableProduct($category);
+
+        $field = $this->getJson("/topup/games/{$category->id}/products")->assertOk()->json('fields.0');
+
+        // Fallback and schema-driven fields must be indistinguishable to the renderer.
+        foreach (['key', 'label', 'type', 'required', 'min_length', 'max_length', 'pattern', 'options', 'placeholder', 'help'] as $key) {
+            $this->assertArrayHasKey($key, $field);
+        }
+    }
+
     public function test_products_endpoint_falls_back_to_server_categories_with_options(): void
     {
         $category = Category::factory()->create(['order_form_fields' => null]);

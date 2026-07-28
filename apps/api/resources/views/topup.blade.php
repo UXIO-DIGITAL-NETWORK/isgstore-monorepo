@@ -98,6 +98,7 @@
 
         label.field { display: block; margin-bottom: 12px; }
         label.field span.lb { display: block; font-size: 13px; margin-bottom: 6px; color: var(--muted); }
+        label.field .help { display: block; font-size: 11px; color: var(--muted); margin-top: 5px; }
         input[type="text"], input[type="tel"], select, textarea {
             width: 100%; background: var(--panel-2); color: var(--text);
             border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px;
@@ -257,6 +258,7 @@
 
     {{-- 5. Bayar --}}
     <section class="card hidden" id="step-submit">
+        <div id="field-error"></div>
         <div id="checkout-error"></div>
         <div class="summary" id="summary"></div>
         <button type="button" class="primary" id="pay" disabled>Lanjutkan Pembayaran</button>
@@ -402,29 +404,67 @@
 
     // ── Step 3: per-game account fields ─────────────────────────────────────
     // Field #1 becomes target_uid and field #2 becomes target_server — the
-    // checkout endpoint accepts no other identity fields.
+    // checkout endpoint accepts no other identity fields. Attributes mirror the
+    // server rules in OrderFormField::validationRules() so the client rejects
+    // the same input the API would.
     function renderAccountFields(fields) {
         var html = '';
 
         fields.forEach(function (f, i) {
             var id = 'f_' + i;
-            html += '<label class="field"><span class="lb">' + esc(f.label) +
+            var req = f.required ? ' required' : '';
+            var maxlen = f.max_length ? ' maxlength="' + f.max_length + '"' : '';
+            var ph = ' placeholder="' + esc(f.placeholder || f.label) + '"';
+
+            html += '<label class="field" for="' + id + '"><span class="lb">' + esc(f.label) +
                 (f.required ? '' : ' <span class="muted">(opsional)</span>') + '</span>';
 
             if (f.type === 'select' && f.options && f.options.length) {
-                html += '<select id="' + id + '" data-idx="' + i + '"><option value="">— pilih —</option>';
+                html += '<select id="' + id + '" data-idx="' + i + '"' + req + '>' +
+                    '<option value="">— pilih —</option>';
                 f.options.forEach(function (o) {
                     html += '<option value="' + esc(o.value) + '">' + esc(o.label) + '</option>';
                 });
                 html += '</select>';
+
+            } else if (f.type === 'number') {
+                // type=text + inputmode=numeric: keeps leading zeros and avoids the
+                // spinner / scroll-wheel edits that type=number allows on IDs.
+                html += '<input type="text" id="' + id + '" data-idx="' + i + '"' + req +
+                    ' inputmode="numeric" pattern="[0-9]*" autocomplete="off"' + maxlen + ph + '>';
+
             } else {
-                html += '<input type="text" id="' + id + '" data-idx="' + i + '" placeholder="' + esc(f.label) + '">';
+                html += '<input type="text" id="' + id + '" data-idx="' + i + '"' + req +
+                    (f.pattern ? ' pattern="' + esc(f.pattern) + '"' : '') +
+                    ' autocomplete="off"' + maxlen + ph + '>';
             }
 
+            if (f.help) html += '<span class="help">' + esc(f.help) + '</span>';
             html += '</label>';
         });
 
         $('account-fields').innerHTML = html;
+    }
+
+    // Client-side mirror of the server rules. Returns null when valid.
+    function fieldError(field, value) {
+        if (value === '') return field.required ? field.label + ' wajib diisi.' : null;
+        if (field.type === 'number' && !/^\d+$/.test(value)) return field.label + ' hanya boleh berisi angka.';
+        if (field.type === 'select') {
+            var allowed = (field.options || []).map(function (o) { return String(o.value); });
+            if (allowed.length && allowed.indexOf(value) === -1) return field.label + ' tidak tersedia.';
+        }
+        if (field.pattern && field.type !== 'number') {
+            try { if (!new RegExp(field.pattern).test(value)) return 'Format ' + field.label + ' tidak valid.'; }
+            catch (e) { /* invalid admin-entered regex — leave it to the server */ }
+        }
+        if (field.min_length && value.length < field.min_length) {
+            return field.label + ' minimal ' + field.min_length + ' karakter.';
+        }
+        if (field.max_length && value.length > field.max_length) {
+            return field.label + ' maksimal ' + field.max_length + ' karakter.';
+        }
+        return null;
     }
 
     // ── Step 4: payment channels ────────────────────────────────────────────
@@ -495,8 +535,18 @@
         if (!$('contact').value.trim()) return false;
 
         return readFieldValues().every(function (v) {
-            return !v.field.required || v.value !== '';
+            return fieldError(v.field, v.value) === null;
         });
+    }
+
+    /** First client-side problem, shown under the Buy button instead of a 422 round-trip. */
+    function firstFieldError() {
+        for (var i = 0; i < state.fields.length; i++) {
+            var el = $('f_' + i);
+            var err = fieldError(state.fields[i], el ? el.value.trim() : '');
+            if (err) return err;
+        }
+        return null;
     }
 
     function refresh() {
@@ -510,6 +560,14 @@
             '<div><span class="k">Harga</span><span>' + rupiah(price) + '</span></div>' +
             '<div><span class="k">Biaya admin</span><span>' + (state.channel ? rupiah(fee) : '—') + '</span></div>' +
             '<div class="total"><span>Total</span><span>' + (state.channel ? rupiah(price + fee) : '—') + '</span></div>';
+
+        // Show the blocking field problem inline, but only once something was typed —
+        // an untouched form shouldn't shout at the customer.
+        var err = firstFieldError();
+        var touched = readFieldValues().some(function (v) { return v.value !== ''; });
+        $('field-error').innerHTML = (err && touched)
+            ? '<div class="alert err">' + esc(err) + '</div>'
+            : '';
 
         $('pay').disabled = !isReady();
     }
