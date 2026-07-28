@@ -32,7 +32,7 @@ const CATEGORY_TAB_LABELS: Record<string, string> = {
   category: "Category",
   "sub-category": "Sub Category",
   "category-type": "Category Type",
-  "server-category": "Server Category",
+  "category-server": "Category Server",
   "category-provider": "Category Provider",
 };
 

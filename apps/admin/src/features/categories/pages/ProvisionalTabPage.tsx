@@ -8,11 +8,11 @@ interface ProvisionalTabPageProps {
 }
 
 /**
- * Shared shell for the Category tabs with no confirmed reference yet
- * (Category Type / Server Category / Category Provider) —
- * product_requirements.md §4.5 gives no design for these, so each is a
- * reduced placeholder, explicitly flagged as provisional. Sub Category
- * graduated off this shell on 2026-07-27 once its reference landed.
+ * Shared shell for Category tabs with no confirmed reference yet — as of
+ * 2026-07-28 that is **only Category Provider**. product_requirements.md
+ * §4.5 gives no design for it, so it stays a reduced placeholder, flagged
+ * as provisional. Sub Category, Category Type and Category Server each
+ * graduated off this shell as their references landed.
  */
 export function ProvisionalTabPage({ title, subcopy }: ProvisionalTabPageProps) {
   return (
