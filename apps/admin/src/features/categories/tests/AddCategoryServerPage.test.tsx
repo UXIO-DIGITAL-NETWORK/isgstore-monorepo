@@ -112,3 +112,89 @@ describe("AddCategoryServerPage", () => {
     expect(await screen.findByText("Wuthering Waves")).toBeInTheDocument();
   });
 });
+
+/**
+ * "+ Add Bulk" — a second button beside "+ Add Option" that reveals a Bulk
+ * textarea for pasting many options at once. The reference's helper text
+ * ("Bulk must be in the correct format.") never shows the format; confirmed
+ * as one `Name,Value` pair per line, appending to whatever rows already exist.
+ */
+describe("AddCategoryServerPage — bulk options", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows '+ Add Bulk' beside '+ Add Option', with the panel hidden until clicked", async () => {
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    const addBulk = await screen.findByRole("button", { name: /Add Bulk/i });
+    expect(screen.getByRole("button", { name: /Add Option/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Bulk")).not.toBeInTheDocument();
+
+    await user.click(addBulk);
+
+    expect(await screen.findByLabelText("Bulk")).toBeInTheDocument();
+    expect(screen.getByText(/Bulk must be in the correct format/i)).toBeInTheDocument();
+  });
+
+  it("turns pasted lines into pre-filled Name/Value rows", async () => {
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    await user.click(await screen.findByRole("button", { name: /Add Bulk/i }));
+    await user.type(await screen.findByLabelText("Bulk"), "ASIA,asia{enter}EUROPE,europe");
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    const names = await screen.findAllByLabelText(/^Name$/);
+    expect(names).toHaveLength(2);
+    expect(names[0]).toHaveValue("ASIA");
+    expect(names[1]).toHaveValue("EUROPE");
+    expect(screen.getAllByLabelText(/^Value$/)[1]).toHaveValue("europe");
+  });
+
+  it("appends to existing rows rather than replacing them", async () => {
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    await user.click(await screen.findByRole("button", { name: /Add Option/i }));
+    await user.type(screen.getByLabelText(/^Name$/), "Handmade");
+
+    await user.click(screen.getByRole("button", { name: /Add Bulk/i }));
+    await user.type(await screen.findByLabelText("Bulk"), "ASIA,asia{enter}EUROPE,europe");
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    const names = await screen.findAllByLabelText(/^Name$/);
+    expect(names).toHaveLength(3);
+    expect(names[0]).toHaveValue("Handmade");
+    expect(names[2]).toHaveValue("EUROPE");
+  });
+
+  it("a malformed line appends nothing and keeps the pasted text for fixing", async () => {
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    await user.click(await screen.findByRole("button", { name: /Add Bulk/i }));
+    await user.type(await screen.findByLabelText("Bulk"), "ASIA,asia{enter}EUROPE");
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(await screen.findByText(/Line 2/)).toBeInTheDocument();
+    // All-or-nothing: the valid first line must not land on its own.
+    expect(screen.queryByLabelText(/^Name$/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Bulk")).toHaveValue("ASIA,asia\nEUROPE");
+  });
+
+  it("Submit does not submit the outer form", async () => {
+    const createSpy = vi.spyOn(categoryServersService, "create");
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    await user.type(await screen.findByLabelText("Category Server Name"), "Wuthering Waves");
+    await user.click(screen.getByRole("button", { name: /Add Bulk/i }));
+    await user.type(await screen.findByLabelText("Bulk"), "ASIA,asia");
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(createSpy).not.toHaveBeenCalled();
+    expect(await screen.findByRole("heading", { name: "Add Category Server" })).toBeInTheDocument();
+  });
+});
