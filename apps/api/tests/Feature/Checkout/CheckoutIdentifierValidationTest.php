@@ -156,6 +156,35 @@ class CheckoutIdentifierValidationTest extends TestCase
         $this->checkout($product, ['target_server' => 'ap'])->assertStatus(201);
     }
 
+    /**
+     * The seeded MLBB schema deliberately carries no length bounds — digit counts
+     * vary by account and region, so only "required" and digits-only are enforced.
+     */
+    public function test_schema_without_length_bounds_accepts_any_digit_count(): void
+    {
+        $product = $this->productFor([
+            'customer_no_template' => '{user_id}{zone_id}',
+            'fields' => [
+                ['key' => 'user_id', 'label' => 'User ID', 'type' => 'number', 'required' => true],
+                ['key' => 'zone_id', 'label' => 'Zone ID', 'type' => 'number', 'required' => true],
+            ],
+        ]);
+
+        // Short zone.
+        $this->checkout($product, ['target_uid' => '63193868', 'target_server' => '20'])
+            ->assertStatus(201);
+
+        // Long uid and long zone — different values so the 15s dedupe guard in
+        // CheckoutAction does not reject the second attempt.
+        $this->checkout($product, ['target_uid' => '631938680000001', 'target_server' => '202712'])
+            ->assertStatus(201);
+
+        // Still digits-only, still required.
+        $this->checkout($product, ['target_uid' => '63193868', 'target_server' => 'zone2027'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('target_server');
+    }
+
     public function test_unconfigured_category_keeps_the_previous_permissive_rules(): void
     {
         $product = $this->productFor(null);

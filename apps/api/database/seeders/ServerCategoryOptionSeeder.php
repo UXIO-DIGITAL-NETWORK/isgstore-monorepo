@@ -3,22 +3,29 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class ServerCategoryOptionSeeder extends Seeder
 {
+    /**
+     * Intentionally seeds nothing.
+     *
+     * This used to insert five fabricated MLBB zone options ("Zone 1".."Zone 5" →
+     * 2001-2005). Those are not real MLBB zones — a player's zone is a per-account
+     * number read from their own profile — so the storefront rendered a dropdown
+     * that made nearly every MLBB order carry a wrong zone, which only failed at
+     * the supplier after payment had already been taken.
+     *
+     * MLBB's zone is now a free-text numeric field driven by
+     * categories.order_form_fields (see OrderFormSchemaSeeder), and that seeder
+     * also deletes any of these rows left over in an existing database.
+     *
+     * The server_category_options table and its admin CRUD
+     * (/v1/server-category-options) remain available for games that genuinely do
+     * have a closed set of servers — such options should be entered by an admin
+     * who knows the real values, not invented here.
+     */
     public function run(): void
     {
-        $now = now();
-        $options = [
-            // MLBB Zone ID options (Asumsi server_category_id untuk MLBB Zone = 2)
-            ['server_category_id' => 2, 'name' => 'Zone 1', 'value' => '2001', 'created_at' => $now, 'updated_at' => $now],
-            ['server_category_id' => 2, 'name' => 'Zone 2', 'value' => '2002', 'created_at' => $now, 'updated_at' => $now],
-            ['server_category_id' => 2, 'name' => 'Zone 3', 'value' => '2003', 'created_at' => $now, 'updated_at' => $now],
-            ['server_category_id' => 2, 'name' => 'Zone 4', 'value' => '2004', 'created_at' => $now, 'updated_at' => $now],
-            ['server_category_id' => 2, 'name' => 'Zone 5', 'value' => '2005', 'created_at' => $now, 'updated_at' => $now],
-        ];
-
-        DB::table('server_category_options')->insert($options);
+        //
     }
 }

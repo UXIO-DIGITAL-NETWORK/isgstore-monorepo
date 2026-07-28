@@ -4,12 +4,15 @@ namespace Tests\Feature\Digiflazz;
 
 use App\Enums\PaymentStatus;
 use App\Enums\TransactionStatus;
+use App\Models\Category;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class WebhookTest extends TestCase
@@ -114,5 +117,87 @@ class WebhookTest extends TestCase
     public function test_ping_event_returns_ok_without_processing(): void
     {
         $this->postWebhook(['hook_id' => 1])->assertOk();
+    }
+
+    /**
+     * The Discord notification must show the identifier exactly as it was sent to
+     * Digiflazz — combined, no parentheses — so it can be pasted straight into a
+     * supplier support ticket.
+     */
+    public function test_discord_notification_shows_the_combined_target(): void
+    {
+        config(['services.discord.webhook_log_url' => 'https://discord.test/hook']);
+        Http::fake();
+
+        $category = Category::factory()->create([
+            'order_form_fields' => [
+                'customer_no_template' => '{user_id}{zone_id}',
+                'fields' => [
+                    ['key' => 'user_id', 'label' => 'User ID', 'type' => 'number', 'required' => true],
+                    ['key' => 'zone_id', 'label' => 'Zone ID', 'type' => 'number', 'required' => true],
+                ],
+            ],
+        ]);
+        $product = Product::factory()->create(['category_id' => $category->id]);
+
+        $transaction = Transaction::factory()->create([
+            'status' => 'PROCESSING',
+            'product_id' => $product->id,
+            'target_uid' => '63193868',
+            'target_server' => '2027',
+        ]);
+
+        $this->postWebhook(['data' => [
+            'ref_id' => $transaction->invoice_number,
+            'status' => 'Sukses',
+            'sn' => 'SN-1',
+        ]])->assertOk();
+
+        Http::assertSent(function ($request) {
+            $target = collect($request['embeds'][0]['fields'] ?? [])
+                ->firstWhere('name', '📱 Target');
+
+            return $request->url() === 'https://discord.test/hook'
+                && $target !== null
+                && $target['value'] === '`631938682027`';   // 63193868 + 2027
+        });
+    }
+
+    public function test_discord_target_falls_back_when_the_schema_cannot_be_satisfied(): void
+    {
+        config(['services.discord.webhook_log_url' => 'https://discord.test/hook']);
+        Http::fake();
+
+        // Required zone, but the transaction has none — the formatter throws, and the
+        // notification must still go out rather than failing the webhook.
+        $category = Category::factory()->create([
+            'order_form_fields' => [
+                'customer_no_template' => '{user_id}{zone_id}',
+                'fields' => [
+                    ['key' => 'user_id', 'label' => 'User ID', 'required' => true],
+                    ['key' => 'zone_id', 'label' => 'Zone ID', 'required' => true],
+                ],
+            ],
+        ]);
+        $product = Product::factory()->create(['category_id' => $category->id]);
+
+        $transaction = Transaction::factory()->create([
+            'status' => 'PROCESSING',
+            'product_id' => $product->id,
+            'target_uid' => '63193868',
+            'target_server' => null,
+        ]);
+
+        $this->postWebhook(['data' => [
+            'ref_id' => $transaction->invoice_number,
+            'status' => 'Sukses',
+        ]])->assertOk();
+
+        Http::assertSent(function ($request) {
+            $target = collect($request['embeds'][0]['fields'] ?? [])
+                ->firstWhere('name', '📱 Target');
+
+            return $target !== null && $target['value'] === '`63193868`';
+        });
     }
 }
