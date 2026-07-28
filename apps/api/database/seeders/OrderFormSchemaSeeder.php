@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\ServerCategory;
+use App\Models\ServerCategoryOption;
 use Illuminate\Database\Seeder;
 
 /**
@@ -25,11 +27,36 @@ class OrderFormSchemaSeeder extends Seeder
         foreach ($this->schemas() as $code => $schema) {
             Category::where('code', $code)->update(['order_form_fields' => $schema]);
         }
+
+        $this->removeFabricatedMlbbZones();
+    }
+
+    /**
+     * The seeded "Zone 1".."Zone 5" (2001-2005) options are not real MLBB zones —
+     * a player's zone is a per-account number read from their own profile. Remove
+     * them so the field can never render as a dropdown again, on any environment.
+     */
+    private function removeFabricatedMlbbZones(): void
+    {
+        $mlbb = Category::where('code', 'mlbb')->first();
+
+        if (! $mlbb) {
+            return;
+        }
+
+        $serverCategoryIds = ServerCategory::where('category_id', $mlbb->id)->pluck('id');
+
+        if ($serverCategoryIds->isNotEmpty()) {
+            ServerCategoryOption::whereIn('server_category_id', $serverCategoryIds)->delete();
+        }
     }
 
     private function schemas(): array
     {
         return [
+            // Game player IDs carry no length bounds on purpose — digit counts vary
+            // between accounts and regions, so only "required" and digits-only are
+            // enforced. Fixed-format fields further down (phone, meter) keep theirs.
             'mlbb' => [
                 'customer_no_template' => '{user_id}{zone_id}',
                 'fields' => [
@@ -38,9 +65,7 @@ class OrderFormSchemaSeeder extends Seeder
                         'label' => 'User ID',
                         'type' => 'number',
                         'required' => true,
-                        'min_length' => 6,
-                        'max_length' => 12,
-                        'placeholder' => '123456789',
+                        'placeholder' => '63193868',
                         'help' => 'Buka profil di game, User ID ada di bawah nama kamu.',
                     ],
                     [
@@ -48,9 +73,7 @@ class OrderFormSchemaSeeder extends Seeder
                         'label' => 'Zone ID',
                         'type' => 'number',
                         'required' => true,
-                        'min_length' => 3,
-                        'max_length' => 5,
-                        'placeholder' => '2001',
+                        'placeholder' => '2027',
                         'help' => 'Angka di dalam kurung setelah User ID.',
                     ],
                 ],
@@ -64,8 +87,6 @@ class OrderFormSchemaSeeder extends Seeder
                         'label' => 'Player ID',
                         'type' => 'number',
                         'required' => true,
-                        'min_length' => 6,
-                        'max_length' => 12,
                         'placeholder' => '123456789',
                         'help' => 'Player ID ada di halaman profil Free Fire kamu.',
                     ],

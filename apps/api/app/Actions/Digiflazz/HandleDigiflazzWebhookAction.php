@@ -7,10 +7,12 @@ use App\Actions\Payment\RefundFailedTransactionAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
+use App\Services\CustomerNumberFormatter;
 use App\Services\DiscordWebhookService;
 use App\Traits\MapsDigiflazzStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class HandleDigiflazzWebhookAction
 {
@@ -20,6 +22,7 @@ class HandleDigiflazzWebhookAction
         private readonly CreateActivityLogAction $logAction,
         private readonly RefundFailedTransactionAction $refundAction,
         private readonly DiscordWebhookService $discord,
+        private readonly CustomerNumberFormatter $customerNumberFormatter,
     ) {}
 
     /**
@@ -110,9 +113,20 @@ class HandleDigiflazzWebhookAction
             default => DiscordWebhookService::COLOR_YELLOW,
         };
 
+        // Show exactly what was sent to Digiflazz, composed by the same formatter the
+        // fulfilment path uses — a second hand-rolled join here would silently drift.
+        // Never let a notification break the webhook: sendToDiscord() runs post-commit
+        // on an already-updated transaction, so a throw here would report failure for
+        // an order that actually succeeded.
+        try {
+            $target = $this->customerNumberFormatter->forTransaction($transaction);
+        } catch (Throwable $e) {
+            $target = $transaction->target_uid.($transaction->target_server ?? '');
+        }
+
         $this->discord->sendEmbed('[DIGIFLAZZ] 🔔 Update Transaksi Digiflazz', [
             ['name' => '🧾 Invoice',       'value' => '`'.$transaction->invoice_number.'`', 'inline' => true],
-            ['name' => '📱 Target',        'value' => '`'.$transaction->target_uid.($transaction->target_server ? " ({$transaction->target_server})" : '').'`', 'inline' => true],
+            ['name' => '📱 Target',        'value' => '`'.$target.'`', 'inline' => true],
             ['name' => '📊 Status',        'value' => "~~{$oldStatus->value}~~ ➔ **{$newStatus->value}**", 'inline' => false],
             ['name' => '🔑 Serial Number', 'value' => $transaction->sn ? '`'.$transaction->sn.'`' : '*Belum ada SN*', 'inline' => false],
         ], $color);
