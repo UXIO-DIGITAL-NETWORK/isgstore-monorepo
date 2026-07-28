@@ -7,4 +7,5 @@ export { default as CategoryTypeFormPage } from "./pages/CategoryTypeFormPage";
 export { default as CategoryServerPage } from "./pages/CategoryServerPage";
 export { default as CategoryServerFormPage } from "./pages/CategoryServerFormPage";
 export { default as CategoryProviderPage } from "./pages/CategoryProviderPage";
+export { default as CategoryProviderFormPage } from "./pages/CategoryProviderFormPage";
 export { CategoryTabsLayout } from "./layouts/CategoryTabsLayout";

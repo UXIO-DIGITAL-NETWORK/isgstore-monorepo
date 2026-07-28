@@ -1,0 +1,101 @@
+import { describe, it, expect } from "vitest";
+import userEvent from "@testing-library/user-event";
+
+import { renderRoute, screen, within } from "@/test/test-utils";
+
+const LIST_PATH = "/admin/categories-preview/category-provider";
+
+/**
+ * Category Provider list (product_requirements.md §4.5, lines 239-246) — the
+ * fifth and last tab. Assertions here guard the two confirmed leftover labels
+ * copy-pasted from the Category Server tab built immediately before it (the
+ * toolbar button reading "+ Add Category Server"), the recurring
+ * "of 9999999 transactions" footer noun, and the absence of a Status column /
+ * deactivate item that this reference genuinely does not have.
+ */
+describe("CategoryProviderListPage", () => {
+  it("shows a breadcrumb reflecting the active tab", async () => {
+    await renderRoute(LIST_PATH);
+
+    const breadcrumb = await screen.findByRole("navigation", { name: "breadcrumb" });
+    expect(breadcrumb).toHaveTextContent(/Category.*Category Provider/);
+  });
+
+  it("shows the header and a real subcopy", async () => {
+    await renderRoute(LIST_PATH);
+
+    expect(await screen.findByRole("heading", { name: "Category Provider" })).toBeInTheDocument();
+    expect(screen.queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Provisional/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the toolbar: search, provider filter, refresh, and the add button", async () => {
+    await renderRoute(LIST_PATH);
+
+    expect(await screen.findByPlaceholderText("Search category provider")).toBeInTheDocument();
+    expect(screen.getByLabelText("Provider")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
+  });
+
+  it("labels the add button 'Add Category Provider', not the leftover 'Add Category Server'", async () => {
+    await renderRoute(LIST_PATH);
+
+    // §4.5 line 243: leftover-label bug #1, copy-pasted from the Category
+    // Server tab. Asserting the wrong label is *absent* is the point — a
+    // present-only check would pass on a page showing both.
+    expect(await screen.findByRole("link", { name: /Add Category Provider/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Add Category Server/i)).not.toBeInTheDocument();
+  });
+
+  it("the add link stays inside the preview route", async () => {
+    await renderRoute(LIST_PATH);
+
+    const addLink = await screen.findByRole("link", { name: /Add Category Provider/i });
+    expect(addLink).toHaveAttribute("href", "/admin/categories-preview/category-provider/add");
+  });
+
+  it("shows the five columns, with no Status column", async () => {
+    await renderRoute(LIST_PATH);
+
+    const table = await screen.findByRole("table");
+    for (const header of ["No.", "Provider", "Category", "Provider Template", "Created At", "Action"]) {
+      expect(within(table).getByRole("columnheader", { name: header })).toBeInTheDocument();
+    }
+    expect(within(table).queryByRole("columnheader", { name: "Status" })).not.toBeInTheDocument();
+  });
+
+  it("shows real supplier names and resolves each row's category to a real Category", async () => {
+    await renderRoute(LIST_PATH);
+
+    // The same supplier names already fixtured in financial/integration
+    // (§4.5 line 239) — not invented ones, and not the shadcn demo dataset.
+    expect(await screen.findByText("Digiflazz Buyer")).toBeInTheDocument();
+    expect(screen.getByText("UxioTopup")).toBeInTheDocument();
+    expect(screen.getByText("Games-Mobile Legends")).toBeInTheDocument();
+    // category_id resolved against the Category tab's own records, so this is
+    // "Mobile Legends" (cat-1), not the reference's "Mobile Legends Indonesia".
+    expect(screen.getAllByText("Mobile Legends").length).toBeGreaterThan(0);
+    for (const banned of ["Cover Page", "Table of Contents", "Jamik Tashpulatov", "Reviewer"]) {
+      expect(screen.queryByText(banned)).not.toBeInTheDocument();
+    }
+  });
+
+  it("counts the footer in category providers, not transactions", async () => {
+    await renderRoute(LIST_PATH);
+
+    expect(await screen.findByText(/of \d+ category providers/)).toBeInTheDocument();
+    expect(screen.queryByText(/transactions/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/9999999/)).not.toBeInTheDocument();
+  });
+
+  it("a row's action menu shows exactly Edit Category Provider and Delete", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await user.click(await screen.findByRole("button", { name: /Actions for Digiflazz Buyer/i }));
+
+    // Exactly two: no deactivate/activate, since this entity has no status.
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual(["Edit Category Provider", "Delete"]);
+  });
+});
