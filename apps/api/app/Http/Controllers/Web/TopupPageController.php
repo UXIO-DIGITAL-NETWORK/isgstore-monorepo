@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\PaymentChannel;
 use App\Models\Transaction;
+use App\Support\OrderForm\OrderFormSchema;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -144,24 +145,10 @@ class TopupPageController extends Controller
      */
     private function resolveFormFields(Category $category): array
     {
-        $configured = $category->order_form_fields ?? [];
-
-        if (! empty($configured)) {
-            $fields = collect($configured)
-                ->filter(fn ($f) => ! empty($f['key']))
-                ->map(fn ($f) => [
-                    'key' => $f['key'],
-                    'label' => $f['label'] ?? Str::headline($f['key']),
-                    'required' => (bool) ($f['required'] ?? false),
-                    'type' => 'text',
-                    'options' => [],
-                ])
-                ->values()
-                ->all();
-
-            if (! empty($fields)) {
-                return array_slice($fields, 0, 2);
-            }
+        // Configured schema wins. This is also what stops a configured game (MLBB)
+        // rendering the fabricated Zone 1-5 dropdown seeded into server_categories.
+        if ($schema = OrderFormSchema::forCategory($category)) {
+            return $schema->toClientArray();
         }
 
         // Fallback: server_categories is what the seed data actually populates
@@ -170,7 +157,7 @@ class TopupPageController extends Controller
             ->with('options:id,server_category_id,name,value')
             ->orderBy('id')
             ->get()
-            ->map(fn ($sc) => [
+            ->map(fn ($sc) => $this->clientField([
                 'key' => Str::slug($sc->name, '_'),
                 'label' => $sc->name,
                 'required' => true,
@@ -179,21 +166,36 @@ class TopupPageController extends Controller
                     ->map(fn ($o) => ['label' => $o->name, 'value' => (string) $o->value])
                     ->values()
                     ->all(),
-            ])
+            ]))
             ->values()
             ->all();
 
         if (! empty($serverFields)) {
-            return array_slice($serverFields, 0, 2);
+            return array_slice($serverFields, 0, OrderFormSchema::MAX_FIELDS);
         }
 
-        return [[
+        return [$this->clientField([
             'key' => 'user_id',
             'label' => 'User ID',
             'required' => true,
             'type' => 'text',
+        ])];
+    }
+
+    /**
+     * Pad a fallback field out to the same shape OrderFormField::toClientArray()
+     * emits, so the page's renderer only ever sees one contract.
+     */
+    private function clientField(array $field): array
+    {
+        return $field + [
+            'min_length' => null,
+            'max_length' => null,
+            'pattern' => null,
             'options' => [],
-        ]];
+            'placeholder' => null,
+            'help' => null,
+        ];
     }
 
     /**

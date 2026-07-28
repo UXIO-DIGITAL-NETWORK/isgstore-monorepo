@@ -4,6 +4,7 @@ namespace App\Actions\Digiflazz;
 
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
+use App\Services\CustomerNumberFormatter;
 use App\Services\DigiflazzService;
 use App\Traits\MapsDigiflazzStatus;
 use Exception;
@@ -12,7 +13,10 @@ class CheckDigiflazzTransactionStatusAction
 {
     use MapsDigiflazzStatus;
 
-    public function __construct(private readonly DigiflazzService $digiflazzService) {}
+    public function __construct(
+        private readonly DigiflazzService $digiflazzService,
+        private readonly CustomerNumberFormatter $customerNumberFormatter
+    ) {}
 
     public function execute(string $invoiceNumber): Transaction
     {
@@ -29,7 +33,9 @@ class CheckDigiflazzTransactionStatusAction
             throw new Exception('Produk tidak memiliki supplier aktif.');
         }
 
-        $customerNo = $transaction->target_uid.($transaction->target_server ?? '');
+        // Must compose identically to the original submission, or Digiflazz will not
+        // match the transaction being polled.
+        $customerNo = $this->customerNumberFormatter->forTransaction($transaction);
 
         $response = $this->digiflazzService->checkTransactionStatus(
             $supplierProduct->buyer_sku_code,

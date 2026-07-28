@@ -3,11 +3,14 @@
 namespace App\Http\Requests\Category;
 
 use App\DTOs\Category\CreateCategoryDTO;
+use App\Http\Requests\Category\Concerns\ValidatesOrderFormFields;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCategoryRequest extends FormRequest
 {
+    use ValidatesOrderFormFields;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -23,7 +26,7 @@ class StoreCategoryRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        return $this->orderFormFieldRules() + [
             'type_id' => ['required', 'exists:category_types,id'],
             'name' => ['required', 'string', 'max:255'],
             'sub_name' => ['nullable', 'string', 'max:255'],
@@ -35,10 +38,6 @@ class StoreCategoryRequest extends FormRequest
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'boolean'],
-            'order_form_fields' => ['nullable', 'array'],
-            'order_form_fields.*.key' => ['required_with:order_form_fields', 'string', 'max:255'],
-            'order_form_fields.*.label' => ['nullable', 'string', 'max:255'],
-            'order_form_fields.*.required' => ['nullable', 'boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:280'],
             'og_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],

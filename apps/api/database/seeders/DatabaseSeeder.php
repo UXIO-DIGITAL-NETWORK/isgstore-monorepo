@@ -36,6 +36,9 @@ class DatabaseSeeder extends Seeder
             SubCategorySeeder::class,
             ServerCategorySeeder::class,
             ServerCategoryOptionSeeder::class,
+            // Per-game identifier schema + customer_no template. Must run after
+            // CategorySeeder; it updates categories in place, keyed on `code`.
+            OrderFormSchemaSeeder::class,
 
             // === 4. Products & Supplier Mapping ===
             ProductSeeder::class,

@@ -5,6 +5,7 @@ namespace App\Actions\Digiflazz;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Transaction;
+use App\Services\CustomerNumberFormatter;
 use App\Services\DigiflazzService;
 use App\Traits\MapsDigiflazzStatus;
 use Exception;
@@ -15,7 +16,8 @@ class ProcessDigiflazzTransactionAction
 
     public function __construct(
         private readonly DigiflazzService $digiflazzService,
-        private readonly CreateActivityLogAction $logAction
+        private readonly CreateActivityLogAction $logAction,
+        private readonly CustomerNumberFormatter $customerNumberFormatter
     ) {}
 
     public function execute(Transaction $transaction): Transaction
@@ -30,8 +32,9 @@ class ProcessDigiflazzTransactionAction
             throw new Exception('Produk ini belum dipetakan ke supplier aktif.');
         }
 
-        // Digiflazz customer_no = UID + Server (e.g. "123456789" + "2001" for ML)
-        $customerNo = $transaction->target_uid.($transaction->target_server ?? '');
+        // customer_no shape is data-driven per category (categories.order_form_fields).
+        // Unconfigured categories still get the legacy UID+Server concatenation.
+        $customerNo = $this->customerNumberFormatter->forTransaction($transaction);
 
         $response = $this->digiflazzService->createTransaction(
             $supplierProduct->buyer_sku_code,
