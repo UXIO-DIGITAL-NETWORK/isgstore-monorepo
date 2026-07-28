@@ -3,9 +3,9 @@ import { useCallback, useMemo, useState } from "react";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
-import { CategoriesTable } from "../components/CategoriesTable";
+import { DataTable } from "@/components/common/DataTable";
 import { CategoryProviderToolbar } from "../components/CategoryProviderToolbar";
-import { DeleteConfirmDialog } from "../components/DeleteConfirmDialog";
+import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { categoryProviderColumns } from "../components/categoryProviderColumns";
 import { useCategoryList } from "../hooks/useCategories";
 import { useCategoryProviderList, useDeleteCategoryProviders } from "../hooks/useCategoryProviders";
@@ -60,7 +60,7 @@ export default function CategoryProviderPage() {
     setPage(1);
   };
 
-  // Stable identity: CategoriesTable reports selection from an effect, so an
+  // Stable identity: DataTable reports selection from an effect, so an
   // inline arrow here would re-run it on every render.
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
@@ -91,7 +91,7 @@ export default function CategoryProviderPage() {
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
-        <CategoriesTable
+        <DataTable
           columns={columns}
           data={data?.data ?? []}
           isLoading={isLoading}

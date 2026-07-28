@@ -14,7 +14,7 @@ import type { CategoryProvider } from "../types/categoryProvider.type";
  * Unlike every sibling tab this is a factory, not a const array: the Category
  * column holds a `category_id` that has to be resolved against the Category
  * tab's own records, so the page passes the lookup in. `No.` and the selection
- * checkbox are injected by `CategoriesTable`, not declared here.
+ * checkbox are injected by the shared `DataTable`, not declared here.
  */
 export const categoryProviderColumns = (categoryNameById: Map<string, string>): ColumnDef<CategoryProvider>[] => [
   {

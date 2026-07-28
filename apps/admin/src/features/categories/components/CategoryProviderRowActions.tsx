@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeleteCategoryProviders } from "../hooks/useCategoryProviders";
 import type { CategoryProvider } from "../types/categoryProvider.type";
-import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 
 interface CategoryProviderRowActionsProps {
   categoryProvider: CategoryProvider;

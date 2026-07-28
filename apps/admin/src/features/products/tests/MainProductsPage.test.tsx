@@ -1,0 +1,139 @@
+import { describe, it, expect } from "vitest";
+import userEvent from "@testing-library/user-event";
+
+import { renderRoute, screen, within } from "@/test/test-utils";
+
+const LIST_PATH = "/admin/products-preview/main";
+
+/**
+ * Reachability + content for the Main Products list (product_requirements.md
+ * §4.6). Rendered through the unauthenticated preview twin, like every other
+ * feature's page tests.
+ *
+ * Several cases exist specifically to pin corrections to the reference — the
+ * lorem-ipsum subcopy, the "of 9999999 transactions" footer, and the column
+ * headed "Price" that actually holds game names. All four defect classes were
+ * confirmed across five Category references before this one.
+ */
+describe("MainProductsPage", () => {
+  it("shows a breadcrumb reflecting the active tab", async () => {
+    await renderRoute(LIST_PATH);
+    const breadcrumb = await screen.findByRole("navigation", { name: "breadcrumb" });
+    expect(breadcrumb).toHaveTextContent(/Product.*Main Products/);
+  });
+
+  it("shows the header and a real subcopy, not the reference's placeholder", async () => {
+    await renderRoute(LIST_PATH);
+    expect(await screen.findByRole("heading", { name: "Main Products" })).toBeInTheDocument();
+    expect(screen.queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
+  });
+
+  it("shows both tabs, with the Provider link staying inside the preview route", async () => {
+    await renderRoute(LIST_PATH);
+
+    expect(await screen.findByRole("tab", { name: "Main Products" })).toBeInTheDocument();
+    const providerTab = await screen.findByRole("tab", { name: "Product Provider" });
+    expect(providerTab).toBeInTheDocument();
+    expect(providerTab).toHaveAttribute("href", "/admin/products-preview/provider");
+  });
+
+  it("shows the toolbar: search, category filter, price filter, refresh and Add", async () => {
+    await renderRoute(LIST_PATH);
+
+    expect(await screen.findByPlaceholderText("Search product name")).toBeInTheDocument();
+    expect(screen.getByLabelText("Category")).toBeInTheDocument();
+    expect(screen.getByLabelText("Price")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Add Main Products/i })).toBeInTheDocument();
+  });
+
+  it("the '+ Add Main Products' link stays inside the preview route", async () => {
+    await renderRoute(LIST_PATH);
+    const addLink = await screen.findByRole("link", { name: /Add Main Products/i });
+    expect(addLink).toHaveAttribute("href", "/admin/products-preview/main/add");
+  });
+
+  it("shows the column headers, with the mislabeled 'Price' column named for its content", async () => {
+    await renderRoute(LIST_PATH);
+    const table = await screen.findByRole("table");
+
+    for (const header of ["No.", "Product", "Variant", "Game", "Created At", "Status", "Action"]) {
+      expect(within(table).getByRole("columnheader", { name: header })).toBeInTheDocument();
+    }
+    // The reference heads this column "Price" while filling it with game
+    // names. The price lives in the Variant cell instead.
+    expect(within(table).queryByRole("columnheader", { name: "Price" })).not.toBeInTheDocument();
+  });
+
+  it("shows real top-up rows, not the shadcn demo dataset", async () => {
+    await renderRoute(LIST_PATH);
+
+    expect(await screen.findByText("Weekly Diamond Pass (One Week)")).toBeInTheDocument();
+    expect(screen.getByText("MLBB-WDP-01")).toBeInTheDocument();
+    expect(screen.getAllByText("Mobile Legends: Bang Bang").length).toBeGreaterThan(0);
+
+    for (const term of ["Cover Page", "Executive Summary", "Jamik Tashpulatov"]) {
+      expect(screen.queryByText(term)).not.toBeInTheDocument();
+    }
+  });
+
+  it("renders the variant price as currency, since the Price column does not", async () => {
+    await renderRoute(LIST_PATH);
+    expect(await screen.findByText("Rp 27.788")).toBeInTheDocument();
+  });
+
+  it("stacks both status axes as separate badges", async () => {
+    await renderRoute(LIST_PATH);
+    const table = await screen.findByRole("table");
+
+    expect(await within(table).findAllByText("Active")).not.toHaveLength(0);
+    expect(within(table).getAllByText("Available").length).toBeGreaterThan(0);
+    expect(within(table).getAllByText("Unavailable").length).toBeGreaterThan(0);
+    expect(within(table).getAllByText("Inactive").length).toBeGreaterThan(0);
+  });
+
+  it("counts the footer in products, not transactions", async () => {
+    await renderRoute(LIST_PATH);
+    expect(await screen.findByText(/of \d+ products/)).toBeInTheDocument();
+    expect(screen.queryByText(/transactions/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/9999999/)).not.toBeInTheDocument();
+  });
+
+  it("labels the page-size trigger the way the reference does", async () => {
+    await renderRoute(LIST_PATH);
+    expect(await screen.findByRole("combobox", { name: "Rows per page" })).toHaveTextContent("10 Row");
+  });
+
+  it("paginates: 12 fixtures over a default page size of 10 means a second page", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    expect(await screen.findByText("Weekly Diamond Pass (One Week)")).toBeInTheDocument();
+    expect(screen.queryByText("Oneiric Shard 60")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("link", { name: "2" }));
+
+    expect(await screen.findByText("Oneiric Shard 60")).toBeInTheDocument();
+    expect(screen.queryByText("Weekly Diamond Pass (One Week)")).not.toBeInTheDocument();
+  });
+
+  it("narrows the table when a search term is typed", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    expect(await screen.findByText("Weekly Diamond Pass (One Week)")).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText("Search product name"), "valorant");
+
+    expect(await screen.findByText("Valorant Point 475")).toBeInTheDocument();
+    expect(screen.queryByText("Weekly Diamond Pass (One Week)")).not.toBeInTheDocument();
+  });
+
+  it("a row's action menu shows Edit Product and Delete", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await user.click(await screen.findByRole("button", { name: /Actions for Weekly Diamond Pass \(One Week\)/i }));
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual(["Edit Product", "Delete"]);
+  });
+});

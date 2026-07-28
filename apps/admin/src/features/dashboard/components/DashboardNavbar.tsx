@@ -83,6 +83,31 @@ function getTransactionBreadcrumb(pathname: string): string[] | null {
   return trail;
 }
 
+// Tab segment -> breadcrumb label, mirrors ProductTabsLayout's TAB_SEGMENTS.
+const PRODUCT_TAB_LABELS: Record<string, string> = {
+  main: "Main Products",
+  provider: "Product Provider",
+};
+
+function getProductBreadcrumb(pathname: string): string[] | null {
+  // "/admin/products-preview" also starts with "/admin/products", so the
+  // preview base must be tested first — the same trap as getCategoryBreadcrumb.
+  const base = pathname.startsWith("/admin/products-preview")
+    ? "/admin/products-preview"
+    : pathname.startsWith("/admin/products")
+      ? "/admin/products"
+      : null;
+  if (!base) return null;
+
+  const segments = pathname.slice(base.length).split("/").filter(Boolean);
+  const tabLabel = PRODUCT_TAB_LABELS[segments[0] ?? "main"] ?? "Main Products";
+  const trail = ["Product", tabLabel];
+  const leaf = segments[segments.length - 1];
+  if (leaf === "add") trail.push(`Add ${tabLabel}`);
+  else if (leaf === "edit") trail.push(`Edit ${tabLabel}`);
+  return trail;
+}
+
 const getInitials = (name: string) =>
   name
     .split(" ")
@@ -114,7 +139,7 @@ export function DashboardNavbar() {
     navigate({ to: "/login" });
   };
 
-  const trail = getCategoryBreadcrumb(pathname) ?? getTransactionBreadcrumb(pathname);
+  const trail = getCategoryBreadcrumb(pathname) ?? getTransactionBreadcrumb(pathname) ?? getProductBreadcrumb(pathname);
 
   return (
     <Box
