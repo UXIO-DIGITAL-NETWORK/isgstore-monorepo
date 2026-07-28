@@ -75,7 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Products & Services",
     items: [
       { label: "Category", href: "/admin/categories", icon: Tag },
-      { label: "Product", href: "/admin/dashboard", icon: Package, disabled: true },
+      { label: "Product", href: "/admin/products", icon: Package },
       { label: "Payment", href: "/admin/dashboard", icon: CreditCard, disabled: true },
       { label: "Membership", href: "/admin/dashboard", icon: Users, disabled: true },
     ],

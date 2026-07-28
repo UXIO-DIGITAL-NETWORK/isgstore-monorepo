@@ -4,7 +4,7 @@ import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { categoryColumns } from "../components/categoryColumns";
-import { CategoriesTable } from "../components/CategoriesTable";
+import { DataTable } from "@/components/common/DataTable";
 import { CategoryToolbar } from "../components/CategoryToolbar";
 import { useCategoryList } from "../hooks/useCategories";
 
@@ -55,12 +55,13 @@ export default function CategoryListPage() {
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
-        <CategoriesTable
+        <DataTable
           columns={categoryColumns}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
+          entityLabel="categories"
           page={data?.meta.current_page ?? page}
           pageSize={data?.meta.per_page ?? pageSize}
           total={data?.meta.total ?? 0}

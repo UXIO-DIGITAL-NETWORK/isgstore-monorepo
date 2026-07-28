@@ -2,6 +2,8 @@
 
 > **Source of truth for the _look_.** Agents MUST read this before building any UI.
 > **Pixel source of truth:** Figma file `UDN-Admin-Dashboard` (key `l7izBcDr0PtS2FUdMdHFk3`). Pull exact values from the referenced node IDs via the Figma MCP before finalizing a screen. Reference node: Dashboard `22011-2008`; component sheet `22078-1614`.
+>
+> **⚠️ The Figma MCP cannot read this file (confirmed 2026-07-28).** It authenticates fine — `whoami` returns the account and its teams — but every call on this file key returns *"Looks like you don't have edit access to this file."* The account holds a **View** seat on the owning team, and the Figma MCP requires **edit** access. This supersedes the "token expired" diagnosis in the two prior feature logs: **re-authenticating does not fix it; only a seat change will.** Until then, screens are reconciled against supplied screenshots only — say "attempted and blocked" in the log, never "reconciled". Verify with `mcp__figma__whoami` plus one `get_metadata` call before promising a design cross-check.
 
 ---
 
@@ -283,3 +285,7 @@ Region → component → data → Figma node (fill exact node IDs from the file 
 | 11.6 | Performance table (tabbed) | `Tabs` + `DataTable` | per-tab rows: entity (avatar+name+sub), totalTransaction, revenue | `22011-2008` |
 
 > The same `StatCard`, `TrendPill`, `PerformanceChartCard`, and `DataTable` are reused across Financial and Transaction screens — build them generically in `features/dashboard/components` or promote shared ones to `components/common`/a shared location if used cross-feature (respecting feature isolation).
+
+**No per-feature node IDs were ever recorded.** §11 covers Dashboard only; Financial, Transaction, Integration, Categories and Product all reused `22011-2008` as a nominal "reference node" without a real frame of their own. Since the MCP is now blocked by seat level (see the warning at the top of this document), a screen's Figma reconciliation cannot be performed at all — record it as *attempted and blocked*, and treat supplied screenshots as the working reference.
+
+**Shared table, promoted 2026-07-28.** `src/components/common/DataTable.tsx` is the server-mode workhorse (TanStack manual mode; checkbox select, `No.` column, skeleton/empty/error, page-size select, windowed pagination). It came out of `features/categories` when `products` became its second consumer. `entityLabel` is a **required** prop precisely because every reference frame ships the footer as "of 9999999 transactions" whatever the table lists — the type system now forces each caller to name its own noun. Note the name collision with `features/dashboard/components/DataTable.tsx`, a different client-mode component; merging the two is an open follow-up.

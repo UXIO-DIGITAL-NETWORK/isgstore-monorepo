@@ -33,23 +33,26 @@ function pageWindow(page: number, lastPage: number): number[] {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
-interface CategoriesTableProps<TData extends { id: string }> {
+interface DataTableProps<TData extends { id: string }> {
   columns: ColumnDef<TData>[];
   data: TData[];
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
   emptyMessage?: string;
-  /** Plural noun for the footer count and the error state. Kept a prop so
-   * the Sub Category tab reads "sub categories" instead of inheriting the
-   * "of 9999999 transactions" string the reference copied from Transaction
+  /** Plural noun for the footer count and the error state. Kept a prop
+   * because every reference frame ships the "of 9999999 transactions" string
+   * copy-pasted from Transaction, whatever the table actually lists
    * (product_requirements.md §4.5, line 208). */
-  entityLabel?: string;
-  /** Absolute row numbering ("No."), as the Sub Category reference shows. */
+  entityLabel: string;
+  /** Absolute row numbering ("No."). */
   showRowNumber?: boolean;
-  /** Row checkboxes. Off for tabs with no bulk action — the Category Type
+  /** Row checkboxes. Off for lists with no bulk action — the Category Type
    * reference shows no selection column at all (§4.5). */
   enableSelection?: boolean;
+  /** Label rendered in the page-size trigger, e.g. `10 Row`. Defaults to the
+   * bare number. */
+  formatPageSizeLabel?: (pageSize: number) => string;
   /** Reports the checkbox selection upward so a toolbar can offer a bulk
    * action. Selection itself stays owned here — it already resets on `data`,
    * which is exactly the post-delete refetch. */
@@ -63,24 +66,31 @@ interface CategoriesTableProps<TData extends { id: string }> {
 }
 
 /**
- * Server-mode table for Categories (TanStack Table manual mode —
+ * Shared server-mode table (TanStack Table manual mode —
  * system_architecture.md §4.8). Trimmed from `TransactionsTable`: keeps the
  * checkbox-select column and pagination footer (the reference's
  * interaction pattern), drops sortable headers and dnd-kit drag-to-reorder
- * — neither the reference nor a category taxonomy calls for them.
- * // ponytail: no client sort/reorder for a short taxonomy list; add
- * server-backed sorting if a column ever needs it.
+ * — neither the category taxonomy nor the product list calls for them.
+ * // ponytail: no client sort/reorder here; add server-backed sorting if a
+ * column ever needs it.
+ *
+ * Promoted out of `features/categories` on 2026-07-28 when `products` became
+ * the second feature to need this exact shape (feature isolation forbids
+ * importing it across features). `features/dashboard/components/DataTable`
+ * is a *different*, client-mode component that happens to share the name —
+ * a follow-up merge candidate, deliberately untouched here.
  */
-export function CategoriesTable<TData extends { id: string }>({
+export function DataTable<TData extends { id: string }>({
   columns,
   data,
   isLoading = false,
   isError = false,
   onRetry,
-  emptyMessage = "No categories found.",
-  entityLabel = "categories",
+  emptyMessage,
+  entityLabel,
   showRowNumber = false,
   enableSelection = true,
+  formatPageSizeLabel,
   onSelectionChange,
   page,
   pageSize,
@@ -88,7 +98,7 @@ export function CategoriesTable<TData extends { id: string }>({
   lastPage,
   onPageChange,
   onPageSizeChange,
-}: CategoriesTableProps<TData>) {
+}: DataTableProps<TData>) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // Keyed on the row ids, not the array identity: callers pass
@@ -211,7 +221,7 @@ export function CategoriesTable<TData extends { id: string }>({
                 colSpan={columnCount}
                 className="py-8 text-center text-muted-foreground"
               >
-                {emptyMessage}
+                {emptyMessage ?? `No ${entityLabel} found.`}
               </TableCell>
             </TableRow>
           ) : (
@@ -237,10 +247,13 @@ export function CategoriesTable<TData extends { id: string }>({
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
             <SelectTrigger
-              className="w-20"
+              className={formatPageSizeLabel ? "w-28" : "w-20"}
               aria-label="Rows per page"
             >
-              <SelectValue />
+              {/* A child overrides Radix's own value rendering, which is how
+                  the Product reference gets "10 Row" in the trigger while the
+                  open list still reads as plain numbers. */}
+              <SelectValue>{formatPageSizeLabel ? formatPageSizeLabel(pageSize) : pageSize}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {PAGE_SIZE_OPTIONS.map((size) => (
@@ -248,7 +261,7 @@ export function CategoriesTable<TData extends { id: string }>({
                   key={size}
                   value={String(size)}
                 >
-                  {size}
+                  {formatPageSizeLabel ? formatPageSizeLabel(size) : size}
                 </SelectItem>
               ))}
             </SelectContent>

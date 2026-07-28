@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeleteCategoryServer } from "../hooks/useCategoryServers";
 import type { CategoryServer } from "../types/categoryServer.type";
-import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 
 interface CategoryServerRowActionsProps {
   categoryServer: CategoryServer;

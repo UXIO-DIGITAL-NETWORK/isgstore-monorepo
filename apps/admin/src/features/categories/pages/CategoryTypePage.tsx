@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
-import { CategoriesTable } from "../components/CategoriesTable";
+import { DataTable } from "@/components/common/DataTable";
 import { CategoryTypeToolbar } from "../components/CategoryTypeToolbar";
 import { categoryTypeColumns } from "../components/categoryTypeColumns";
 import { useCategoryTypeList } from "../hooks/useCategoryTypes";
@@ -54,7 +54,7 @@ export default function CategoryTypePage() {
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
-        <CategoriesTable
+        <DataTable
           columns={categoryTypeColumns}
           data={data?.data ?? []}
           isLoading={isLoading}

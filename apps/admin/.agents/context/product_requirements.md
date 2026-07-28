@@ -11,7 +11,7 @@
 - **Relationship to the consumer platform:** This admin app runs against a **separate backend/service** from the public "UDN Top Up Website". It does **not** share the consumer frontend, and the two apps are decoupled. Do **not** assume a shared database or import consumer code.
 - **Backend status:** The admin API is **not built yet**. This phase is **UI-first** — we build fully typed screens backed by local, typed mock fixtures behind a stable service interface, so the swap to real HTTP calls later is a one-file change per service (see `system_architecture.md §6`).
 - **Language:** English-only for MVP. No i18n layer is installed (`react-i18next` is intentionally absent). This may be revisited post-MVP.
-- **Non-goals this phase:** Real API integration, 2FA, multi-role RBAC UIs, S3/cloud uploads, websockets/real-time push, content/promo/product CRUD.
+- **Non-goals this phase:** Real API integration, 2FA, multi-role RBAC UIs, S3/cloud uploads, websockets/real-time push, content/promo CRUD. (Product CRUD was a non-goal until 2026-07-28, when the Main Products list was promoted to active scope — see §4.6. Product **create/update** remains out of scope pending a reference frame.)
 
 ---
 
@@ -67,7 +67,7 @@ The left sidebar is grouped. The full IA below is the target structure; **only t
 | **Orders**              | Transaction     | `/transactions`    | **MVP**                                 |
 |                         | Activity        | `/activity`        | Near-term                               |
 | **Products & Services** | Category        | `/categories`      | **Active** (added 2026-07-11, see §4.5) |
-|                         | Product         | `/products`        | Roadmap                                 |
+|                         | Product         | `/products`        | **Active** (added 2026-07-28, see §4.6) |
 |                         | Payment         | `/payments`        | Roadmap                                 |
 |                         | Membership      | `/memberships`     | Roadmap                                 |
 | **Marketing & Content** | Promo           | `/promos`          | Roadmap                                 |
@@ -250,13 +250,41 @@ List header "Category Provider" + real subcopy (still placeholder in the referen
 
 **Delete confirmation** — the same text, confirmed a **fifth** time. Reuse the shared component again, worded for a category provider.
 
+### 4.6 Product (`/products`)
+
+> **Revision (2026-07-28):** promoted from Roadmap (§5) to active scope, the same documented pattern as Integration (§4.4) and Category (§4.5) — a deliberate addition at the user's direction, not a silent one. §0's non-goals line is amended to match, and the Product bullet in §5 is struck.
+
+Two tabs, reflected as nested routes: `Main Products` (confirmed) and `Product Provider` (**label only** — the tab exists in the reference's tab bar and nothing else does; the screen has no frame). Only the Main Products **list** has a reference; there is no Add/Edit form frame, so that route ships as an explicit placeholder rather than an invented form.
+
+**Reference availability:** the Figma file could not be read. The MCP server authenticates, but every call on `l7izBcDr0PtS2FUdMdHFk3` returns *"you don't have edit access to this file"* — the account holds a **View** seat and the Figma MCP requires edit. This is a harder blocker than the expired token recorded in the two prior logs: re-authenticating will not fix it, only a seat change will. The spec below is read off a supplied screenshot.
+
+**Main Products list.** Header "Main Products" with a real subcopy you write (the reference repeats the same "lorem ipsum dolor sit amet" placeholder as all five Category tabs). Toolbar left to right: a "Search product name" input, a "Type to search category" select, an "All Price" select, a refresh icon-button, and a primary "+ Add Main Products" button.
+
+Table columns: selection checkbox, `No.`, `Product`, `Variant`, `Game`, `Created At`, `Status`, `Action`.
+
+- **Product** — thumbnail, product name, then muted meta lines (category and product code). No product art exists yet, so the thumbnail falls back to a squared initials tile; real URLs drop in later with no code change.
+- **Variant** — one block per variant: variant name, its price, and its own status badge. This is where the money actually lives.
+- **`Game` is a correction.** The reference heads this column **"Price"** but fills it with game names ("Garena Mobile Leg…", "Free Fire Indonesia"), while the price sits in the Variant cell. A column cannot be named for data it does not contain — the same class of mistake as Sub Category's two columns both labelled "Name". Confirmed with the user, not inferred. Named `Game` for its content.
+- **Status — two axes, not one repeated state.** The reference stacks two badges per row (three on one row). Modelled as `status` (`active | inactive`, the Category precedent) plus `is_available` (`Available | Unavailable`, the §6 entity field). The extra badge on the second row is a **per-variant** badge inside the Variant cell, not a third product-level field.
+- **Action** — a row menu with `Edit Product` and `Delete`. Edit is a stub this round, since the form has no reference.
+
+**Row selection and bulk delete** follow the pattern already established for Sub Category and Category Provider: checking rows surfaces a `Delete (N)` toolbar button that opens the same confirmation as the row menu's Delete, worded for the count. Reuse the shared delete dialog — this reference is the sixth to ship shadcn's "permanently delete **your account** from our servers" boilerplate.
+
+**Footer — the same recurring bug, sixth confirmation:** the count reads "of 9999999 **transactions**", copy-pasted from Transaction. Say "products", and report the real total rather than the 9999999 placeholder. The page-size trigger reads "10 Row" (keep that label); the pagination is drawn as a static `1 2 3 4`, which is a mock, not a behaviour — keep the real sliding window.
+
+**Inferred, not confirmed** (revise when a reference or the API lands):
+
+- The **"All Price" filter's options are never shown** — the reference only ever renders its closed trigger. Modelled as price-range buckets, with "All Price" as the clear value.
+- **`game_name` is denormalized** onto the product because no Game service exists; the real API will join.
+- The Variant cell's **"Fix" prefix** reads like a price *type*, but only one value is observable, so it is not modelled as a field yet.
+
 ---
 
 ## 5. Roadmap (Post-MVP Modules)
 
 Documented so architecture and navigation accommodate them; **not built this phase.**
 
-- **Product management** — `Game → hasMany Product (nominal)`. Each product stores **cost price + selling price** (admin sees margin), an upstream **provider/SKU mapping**, and an **availability toggle**. (Category, which groups games/products, moved to `§4.5` — no longer roadmap; Product itself is still roadmap.)
+- **Product management** — `Game → hasMany Product (nominal)`. (Moved to `§4.6` on 2026-07-28 — **no longer roadmap**, same documented promotion as Category `§4.5`. What remains roadmap is the part with no reference frame: the Add/Edit **form** — including **cost price** alongside selling price so the admin sees margin, and the upstream **provider/SKU mapping** — plus the whole **Product Provider** tab. The list, the availability toggle's data model, and delete are built.)
 - **Promo management** — promo **types** (percentage / fixed amount / special price); **scope** (global / per-game / per-product / per-payment-method); **quota** (total + per-user); **validity window**; **minimum purchase**; optional tie-in to a consumer homepage promo banner. Flash Sale is a time-boxed variant.
 - **Content / Website Content** — manage consumer homepage content: hero/CTA banners, articles/blog, "Game Populer", testimonials, payment-method logos, footer. **Pages** for static content.
 - **Payment methods** — enable/disable channels, configure fees (gateway is backend-proxied on the consumer side).
@@ -275,7 +303,7 @@ Backend is not built; these are **FE-facing entity briefs** to shape typed model
 - **Transaction** — `id`, `invoice_no`, `invoice_ref?` (the sub-code shown under the invoice number), `payment_status` and `invoice_status` (confirmed as **two separate fields**, not one — `pending | processing | success | failed | partial_refund | partial_success | …`), `customer` (user ref or guest snapshot, `user_id: number | null`), `game` ref, `product` ref (nominal), `cost`, `profit?`, `admin_fee?`, `target_ref?` (provider/destination account reference), `payment_method`, `serial_number?`, `proof_url?` (from the edit-modal upload), `created_at`, `resolved_at?`, `status_history[]`, `activity_log: ActivityLogEntry[]` (§4.3's Activity Log modal — `{ id, actor: { name, phone? } | "system", action: string, description: string, created_at }`), `updated_at`.
 - **BalanceMovement (ledger)** — `id`, `type` (`credit | debit`), `amount`, `running_balance`, `source`/`reference`, `status`, `created_at`.
 - **Game** — `id`, `name`, `publisher`, `image_url`, `is_active` (referenced by transactions/dashboard).
-- **Product (nominal)** — `id`, `game_id`, `name`, `cost_price`, `selling_price`, `provider_sku?`, `is_available` (referenced; full CRUD is roadmap).
+- **Product (nominal)** (§4.6) — feature-local to `features/products/types/`, snake_case: `id`, `name`, `image_url?`, `game_id`, `game_name` (denormalized — no Game service exists; the real API will join), `category_name`, `code` (this brief's original `provider_sku`), `status` (`active | inactive`), `is_available`, `variants: { id; name; price; status }[]`, `created_at`, `updated_at`. **`cost_price`/`selling_price` are not modelled yet** — the reference's list shows one price per variant and no margin, and the Add/Edit form that would capture cost is still roadmap (§5). Add them with that form, not before.
 - **DashboardSummary** — aggregate view-model for the dashboard stat cards and chart (not a raw table): totals, trend deltas, time-series points.
 - **PaymentGatewayBalance / SupplierBalance** (§4.2) — feature-local to `features/financial/types/` for now, not global: `{ id, name, logoUrl }` plus `activeBalance`/`heldBalance` (gateway) or a single `balance` (supplier). Promote to `src/types/models/` only if another feature (e.g. Transaction, referencing which supplier fulfilled an order) needs them too.
 - **IntegrationChannel** (§4.4) — feature-local to `features/integration/types/`, a deliberately separate concern from the two entries above (connectivity, not money): `id`, `type` (`supplier | payment_gateway | whatsapp_gateway | email_gateway`), `name`, `logo_url?`, `currency_config?`, `connection_status` (`connected | disconnected`), `balance?`, `last_ping_at?`, `created_at`, `updated_at`.

@@ -3,8 +3,8 @@ import { useCallback, useMemo, useState } from "react";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
-import { CategoriesTable } from "../components/CategoriesTable";
-import { DeleteConfirmDialog } from "../components/DeleteConfirmDialog";
+import { DataTable } from "@/components/common/DataTable";
+import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { SubCategoryToolbar } from "../components/SubCategoryToolbar";
 import { subCategoryColumns } from "../components/subCategoryColumns";
 import { useDeleteSubCategories, useSubCategoryList } from "../hooks/useSubCategories";
@@ -41,7 +41,7 @@ export default function SubCategoryPage() {
     setPage(1);
   };
 
-  // Stable identity: CategoriesTable reports selection from an effect, so an
+  // Stable identity: DataTable reports selection from an effect, so an
   // inline arrow here would re-run it on every render.
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
@@ -72,7 +72,7 @@ export default function SubCategoryPage() {
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
-        <CategoriesTable
+        <DataTable
           columns={subCategoryColumns}
           data={data?.data ?? []}
           isLoading={isLoading}
