@@ -1,0 +1,73 @@
+import { useLocation } from "@tanstack/react-router";
+import { Plus, RefreshCw, Search } from "lucide-react";
+
+import { Box } from "@/components/common/Box";
+import { Label } from "@/components/ui/label";
+import { Link } from "@/components/common/Link";
+import { Text } from "@/components/common/Text";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+interface CategoryServerToolbarProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  onRefresh: () => void;
+}
+
+/**
+ * Toolbar (product_requirements.md §4.5, line 231) — search, refresh, and
+ * "+ Add Category Server". No parent-category filter (this tab has no
+ * parent) and no bulk button (no row selection).
+ *
+ * "Search Category Server" is one of the few deliberately-written strings in
+ * this feature's references and is used as-is. The add link derives its
+ * target from the current pathname, so it stays inside the preview route.
+ */
+export function CategoryServerToolbar({ search, onSearchChange, onRefresh }: CategoryServerToolbarProps) {
+  const { pathname } = useLocation();
+  const addHref = `${pathname.replace(/\/$/, "")}/add`;
+
+  return (
+    <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <Box className="flex flex-col gap-1.5">
+        <Label htmlFor="category-server-search">Search</Label>
+        <Box className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="category-server-search"
+            className="w-64 rounded-xl pl-8"
+            placeholder="Search Category Server"
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+          />
+        </Box>
+      </Box>
+
+      <Box className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-xl"
+          onClick={onRefresh}
+        >
+          <RefreshCw className="size-4" />
+          <Text
+            as="span"
+            className="sr-only"
+          >
+            Refresh
+          </Text>
+        </Button>
+        <Button
+          asChild
+          className="rounded-xl"
+        >
+          <Link href={addHref}>
+            <Plus className="size-4" />
+            Add Category Server
+          </Link>
+        </Button>
+      </Box>
+    </Box>
+  );
+}

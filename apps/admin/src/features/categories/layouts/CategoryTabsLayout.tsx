@@ -8,7 +8,7 @@ const TAB_SEGMENTS = [
   { value: "category", label: "Category", segment: "category" },
   { value: "sub-category", label: "Sub Category", segment: "sub-category" },
   { value: "category-type", label: "Category Type", segment: "category-type" },
-  { value: "server-category", label: "Server Category", segment: "server-category" },
+  { value: "category-server", label: "Category Server", segment: "category-server" },
   { value: "category-provider", label: "Category Provider", segment: "category-provider" },
 ];
 
