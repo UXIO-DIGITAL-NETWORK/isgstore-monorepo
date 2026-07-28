@@ -185,7 +185,7 @@ Connection/health management for every external channel the platform depends on 
 
 > **Revision (2026-07-11):** promoted from Roadmap (§5) to active scope, same pattern as Integration (§4.4) — a deliberate addition at the user's direction, not a silent one.
 
-Product taxonomy management — how games/products are grouped for the storefront. **Five tabs**, reflected as nested routes: `Category` (confirmed), `Sub Category` (confirmed, 2026-07-14), `Category Type` (confirmed, 2026-07-14), `Category Server` (**renamed from "Server Category"**, confirmed 2026-07-14 — see below), `Category Provider` (**corrected from "Supplier Category"** — the clearer reference in the Sub Category round shows the real tab label). `Category Provider` is the only one still without a reference — build it with the same list+add pattern and a reduced/sensible field set, flagged as provisional.
+Product taxonomy management — how games/products are grouped for the storefront. **Five tabs**, reflected as nested routes: `Category` (confirmed), `Sub Category` (confirmed, 2026-07-14), `Category Type` (confirmed, 2026-07-14), `Category Server` (**renamed from "Server Category"**, confirmed 2026-07-14), `Category Provider` (**corrected from "Supplier Category"**, confirmed 2026-07-14 — see below). **All five tabs are now confirmed**, none remain provisional.
 
 **A recurring problem across every tab's reference so far, confirmed again on Sub Category:** breadcrumbs, lorem-ipsum copy, mismatched character counters, and unfilled placeholder dimensions keep appearing verbatim from what looks like a single shadcn-template source duplicated across frames. Don't trust any given reference's copy/labels at face value — cross-check against what the page actually does, the same way each fix below was reasoned out.
 
@@ -236,6 +236,20 @@ Simpler than the two tabs before it — **no status/active-inactive concept at a
 
 **Delete confirmation** — the exact same "This action cannot be undone. This will permanently delete your account from our servers." text, confirmed a **fourth** time. Reuse the already-fixed shared delete-confirmation component (built for Sub Category, reused for Category Type) with wording for a category server; don't re-solve this again.
 
+**Category Provider tab** (confirmed 2026-07-14 — **the fifth and last tab, this completes the whole feature**). Maps which upstream supplier fulfills which category, via which integration template — genuinely connects to entities already established elsewhere: the `Provider` column's values ("Digiflazz Buyer", "Uxiotopup") are the same supplier names already used in Financial (`§4.2`) and Integration (`§4.4`); `Category` links to this same feature's own `Category` tab.
+
+List header "Category Provider" + real subcopy (still placeholder in the reference). Table columns: Provider, Category, Provider Template, Created At, Action — no Status column visible in this reference, same as Category Server. Same recurring footer-noun bug, fix to "category providers".
+
+**Two confirmed leftover-label bugs, both from copy-pasting the just-built Category Server tab:** the toolbar's add button reads "+ Add Category Server" (should be "+ Add Category Provider") and the add-page's own header reads "Add Category Server" (should be "Add Category Provider") — both need correcting, this is the same class of mistake as "Category Type Name" on the previous tab, just landing in two places instead of one this time.
+
+**Row menu:** `Edit Category Provider`, `Delete` — two items, correctly labeled in this reference (unlike the button/header above). One of the reference screenshots shows checkboxes selected but the bulk-action area renders garbled/overlapping and isn't clearly legible — if this tab supports row selection at all, give it the same bulk-delete treatment already established for Sub Category (a `Delete (N)` toolbar button when rows are checked); don't leave checkboxes with no resulting action.
+
+**Add Category Provider form:** three select fields — `Provider`, `Category`, `Provider Template` — all still lorem-ipsum-placeholder'd in the reference, write real hints (e.g. "Select a provider", "Select a category", "Select a template").
+
+**On deactivation, called out in the request but not visible here:** unlike Category Type, none of these five images show a Status column or a Deactivate/Activate menu item for Category Provider — the request asked for a deactivation confirmation too, which may just be carried over phrasing from the Category Type round rather than something this specific design actually has. Check the Figma frame directly for a Status column that might sit outside this crop; if it genuinely isn't there, don't force a deactivate feature onto a table structure that doesn't have a status field to begin with.
+
+**Delete confirmation** — the same text, confirmed a **fifth** time. Reuse the shared component again, worded for a category provider.
+
 ---
 
 ## 5. Roadmap (Post-MVP Modules)
@@ -268,7 +282,8 @@ Backend is not built; these are **FE-facing entity briefs** to shape typed model
 - **Category** (§4.5) — feature-local to `features/categories/types/`: `id`, `type`, `uid_parser`, `name`, `sub_name?`, `account_nickname_validation?`, `region?`, `code`, `slug`, `status` (`active | inactive`), `order_form_fields: { key: string; label?: string; required?: boolean }[]` (the buyer-facing dynamic field definitions), `logo_url?`, `description?`, `meta_title?`, `meta_description?`, `og_image_url?`, `meta_keywords?: string[]`, `meta_robots?`, `created_at`, `updated_at`. Global entity references (`Game`, `Product`) may link to a category later; keep this feature-local until that link is actually built.
 - **SubCategory** (§4.5) — feature-local to `features/categories/types/`: `id`, `category_id` (parent `Category` reference), `name`, `currency_name` (the reference's mislabeled second "Name" column — e.g. "Diamonds"), `logo_url?`, `description?`, `status` (`active | inactive`), `created_at`, `updated_at`.
 - **CategoryType** (§4.5) — feature-local to `features/categories/types/`: `id`, `name`, `is_voucher: boolean` (the add-form's checkbox, drives the list's "Voucher" column), `status` (`active | inactive`), `created_at`, `updated_at`.
-- **CategoryServer** (new, §4.5) — feature-local to `features/categories/types/`: `id`, `name`, `options: { name: string; value: string }[]` (the "+ Add Option" repeatable pair list), `created_at`, `updated_at`. No status field — this entity has no active/inactive concept.
+- **CategoryServer** (§4.5) — feature-local to `features/categories/types/`: `id`, `name`, `options: { name: string; value: string }[]` (the "+ Add Option" repeatable pair list), `created_at`, `updated_at`. No status field — this entity has no active/inactive concept.
+- **CategoryProvider** (new, §4.5 — completes the categories feature's five tabs) — feature-local to `features/categories/types/`: `id`, `provider_name` (references the same supplier names used in `§4.2`/`§4.4`), `category_id` (parent `Category` reference), `provider_template`, `created_at`, `updated_at`. No status field confirmed in the reference — add one only if the Figma frame turns out to show a Status column not visible in the crop.
 
 Shared API envelopes (single vs. list) are defined in `system_architecture.md §1`.
 
