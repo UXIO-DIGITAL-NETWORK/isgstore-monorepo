@@ -66,14 +66,11 @@ export default function AutomaticTransactionsPage() {
         onToggle={handleTogglePill}
       />
 
-      <Box className="rounded-2xl border border-border bg-card p-4">
+      <Box className="flex flex-col gap-9 rounded-2xl border border-border bg-card p-4">
         <TransactionFilterBar
           filters={filters}
           onChange={handleFilterChange}
         />
-      </Box>
-
-      <Box className="rounded-2xl border border-border bg-card p-4">
         <TransactionsTable
           columns={automaticColumns}
           data={data?.data ?? []}

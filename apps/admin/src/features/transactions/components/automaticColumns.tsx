@@ -22,7 +22,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
       <Box className="flex flex-col">
         <Text
           as="span"
-          className="font-medium tabular-nums"
+          className="text-sm font-medium tabular-nums"
         >
           {row.original.invoice_no}
         </Text>
