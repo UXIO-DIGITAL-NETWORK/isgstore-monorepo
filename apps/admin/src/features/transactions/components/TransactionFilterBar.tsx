@@ -85,7 +85,7 @@ function FilterSelect({
   onChange: (value: string | undefined) => void;
 }) {
   return (
-    <Box className="flex flex-col gap-1.5">
+    <Box className="flex flex-col gap-2.5">
       <Label htmlFor={id}>{label}</Label>
       <Select
         value={value ?? CLEAR_VALUE}
@@ -127,7 +127,7 @@ function FilterDate({
   const date = value ? new Date(value) : undefined;
 
   return (
-    <Box className="flex flex-col gap-1.5">
+    <Box className="flex flex-col gap-2.5">
       <Label htmlFor={id}>{label}</Label>
       <Popover>
         <PopoverTrigger asChild>
@@ -166,10 +166,10 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
     <Box
       as="section"
       aria-label="Transaction Filters"
-      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
+      className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5"
     >
       {has("search") && (
-        <Box className="flex flex-col gap-1.5">
+        <Box className="flex flex-col gap-2.5">
           <Label htmlFor={`${uid}-search`}>Search</Label>
           <Input
             id={`${uid}-search`}
