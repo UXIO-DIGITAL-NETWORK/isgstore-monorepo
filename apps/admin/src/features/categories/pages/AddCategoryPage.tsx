@@ -176,265 +176,267 @@ export default function AddCategoryPage() {
         <Text variant="muted">Define a new taxonomy entry games and products can be grouped under.</Text>
       </Box>
 
-      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
-        <Box>
-          <Heading
-            as="h2"
-            level={5}
-          >
-            Basic information
-          </Heading>
-          <Text variant="muted">Type, validation, and category identity on the storefront.</Text>
+      <Box className="divide-y divide-border rounded-2xl border border-border bg-card">
+        <Box className="flex flex-col gap-4 p-6">
+          <Box>
+            <Heading
+              as="h2"
+              level={5}
+            >
+              Basic information
+            </Heading>
+            <Text variant="muted">Type, validation, and category identity on the storefront.</Text>
+          </Box>
+
+          <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Controller
+              control={control}
+              name="categoryType"
+              render={({ field }) => (
+                <SelectField
+                  id="category-type"
+                  label="Category Type"
+                  options={CATEGORY_TYPE_OPTIONS}
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.categoryType?.message}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="accountNicknameValidation"
+              render={({ field }) => (
+                <SelectField
+                  id="account-nickname-validation"
+                  label="Account Nickname Validation"
+                  options={ACCOUNT_NICKNAME_VALIDATION_OPTIONS}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="uidParser"
+              render={({ field }) => (
+                <SelectField
+                  id="category-uid-parser"
+                  label="Category UID Parser"
+                  options={CATEGORY_UID_PARSER_OPTIONS}
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.uidParser?.message}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="region"
+              render={({ field }) => (
+                <SelectField
+                  id="category-region"
+                  label="Region"
+                  options={REGION_OPTIONS}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="category-name">Category Name</Label>
+              <Input
+                id="category-name"
+                className="rounded-xl"
+                {...register("name", { onBlur: handleNameBlur })}
+              />
+              {errors.name && (
+                <Text
+                  variant="small"
+                  className="text-destructive"
+                >
+                  {errors.name.message}
+                </Text>
+              )}
+            </Box>
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="category-code">Category Code</Label>
+              <Input
+                id="category-code"
+                className="rounded-xl"
+                {...register("code")}
+              />
+              {errors.code && (
+                <Text
+                  variant="small"
+                  className="text-destructive"
+                >
+                  {errors.code.message}
+                </Text>
+              )}
+            </Box>
+
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="category-sub-name">Category Sub Name</Label>
+              <Input
+                id="category-sub-name"
+                className="rounded-xl"
+                {...register("subName")}
+              />
+            </Box>
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="category-slug">Category Slug</Label>
+              <Input
+                id="category-slug"
+                className="rounded-xl"
+                {...register("slug")}
+              />
+              {errors.slug && (
+                <Text
+                  variant="small"
+                  className="text-destructive"
+                >
+                  {errors.slug.message}
+                </Text>
+              )}
+            </Box>
+          </Box>
         </Box>
 
-        <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Box className="flex flex-col gap-4 p-6">
+          <Box>
+            <Heading
+              as="h2"
+              level={5}
+            >
+              Category form
+            </Heading>
+            <Text variant="muted">Input fields shown to buyers when ordering.</Text>
+          </Box>
+
+          <CategoryFormFieldsBuilder
+            control={control}
+            register={register}
+            errors={errors}
+          />
+        </Box>
+
+        <Box className="flex flex-col gap-4 p-6">
+          <Box>
+            <Heading
+              as="h2"
+              level={5}
+            >
+              Media & description
+            </Heading>
+            <Text variant="muted">Category logo and description content for the product page.</Text>
+          </Box>
+
           <Controller
             control={control}
-            name="categoryType"
+            name="logo"
             render={({ field }) => (
-              <SelectField
-                id="category-type"
-                label="Category Type"
-                options={CATEGORY_TYPE_OPTIONS}
+              <CategoryImageUpload
+                id="category-logo"
+                label="Category Logo"
+                caption="3:4 ratio recommended · max display 800×600 px"
                 value={field.value}
                 onChange={field.onChange}
-                error={errors.categoryType?.message}
+                error={errors.logo?.message}
               />
             )}
           />
+
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="category-description">Description</Label>
+            <Textarea
+              id="category-description"
+              className="rounded-xl"
+              {...register("description")}
+            />
+          </Box>
+        </Box>
+
+        <Box className="flex flex-col gap-4 p-6">
+          <Box>
+            <Heading
+              as="h2"
+              level={5}
+            >
+              SEO
+            </Heading>
+            <Text variant="muted">Meta tags for the category page on search engines.</Text>
+          </Box>
+
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="meta-title">Meta Title</Label>
+            <Input
+              id="meta-title"
+              className="rounded-xl"
+              placeholder="Title for search results & the browser tab"
+              {...register("metaTitle")}
+            />
+          </Box>
+
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="meta-description">Meta Description</Label>
+            <Textarea
+              id="meta-description"
+              className="rounded-xl"
+              placeholder="Short summary for search results"
+              maxLength={META_DESCRIPTION_MAX}
+              {...register("metaDescription")}
+            />
+            <Box className="flex justify-between">
+              <Text variant="small">
+                {metaDescriptionLength}/{META_DESCRIPTION_MAX} characters
+              </Text>
+              <Text variant="small">{metaDescriptionPercent}% used</Text>
+            </Box>
+          </Box>
+
           <Controller
             control={control}
-            name="accountNicknameValidation"
+            name="ogImage"
+            render={({ field }) => (
+              <CategoryImageUpload
+                id="og-image"
+                label="OG Image"
+                caption="1.91:1 ratio recommended · max display 1200×630 px"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.ogImage?.message}
+              />
+            )}
+          />
+
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="meta-keyword">Meta Keyword</Label>
+            <Input
+              id="meta-keyword"
+              className="rounded-xl"
+              placeholder="Separate with commas, e.g. top up ml, diamond ml"
+              {...register("metaKeywords")}
+            />
+          </Box>
+
+          <Controller
+            control={control}
+            name="metaRobots"
             render={({ field }) => (
               <SelectField
-                id="account-nickname-validation"
-                label="Account Nickname Validation"
-                options={ACCOUNT_NICKNAME_VALIDATION_OPTIONS}
+                id="meta-robot"
+                label="Meta Robot"
+                placeholder="Select"
+                options={META_ROBOTS_OPTIONS}
                 value={field.value ?? ""}
                 onChange={field.onChange}
               />
             )}
           />
-
-          <Controller
-            control={control}
-            name="uidParser"
-            render={({ field }) => (
-              <SelectField
-                id="category-uid-parser"
-                label="Category UID Parser"
-                options={CATEGORY_UID_PARSER_OPTIONS}
-                value={field.value}
-                onChange={field.onChange}
-                error={errors.uidParser?.message}
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="region"
-            render={({ field }) => (
-              <SelectField
-                id="category-region"
-                label="Region"
-                options={REGION_OPTIONS}
-                value={field.value ?? ""}
-                onChange={field.onChange}
-              />
-            )}
-          />
-
-          <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="category-name">Category Name</Label>
-            <Input
-              id="category-name"
-              className="rounded-xl"
-              {...register("name", { onBlur: handleNameBlur })}
-            />
-            {errors.name && (
-              <Text
-                variant="small"
-                className="text-destructive"
-              >
-                {errors.name.message}
-              </Text>
-            )}
-          </Box>
-          <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="category-code">Category Code</Label>
-            <Input
-              id="category-code"
-              className="rounded-xl"
-              {...register("code")}
-            />
-            {errors.code && (
-              <Text
-                variant="small"
-                className="text-destructive"
-              >
-                {errors.code.message}
-              </Text>
-            )}
-          </Box>
-
-          <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="category-sub-name">Category Sub Name</Label>
-            <Input
-              id="category-sub-name"
-              className="rounded-xl"
-              {...register("subName")}
-            />
-          </Box>
-          <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="category-slug">Category Slug</Label>
-            <Input
-              id="category-slug"
-              className="rounded-xl"
-              {...register("slug")}
-            />
-            {errors.slug && (
-              <Text
-                variant="small"
-                className="text-destructive"
-              >
-                {errors.slug.message}
-              </Text>
-            )}
-          </Box>
         </Box>
-      </Box>
-
-      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
-        <Box>
-          <Heading
-            as="h2"
-            level={5}
-          >
-            Category form
-          </Heading>
-          <Text variant="muted">Input fields shown to buyers when ordering.</Text>
-        </Box>
-
-        <CategoryFormFieldsBuilder
-          control={control}
-          register={register}
-          errors={errors}
-        />
-      </Box>
-
-      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
-        <Box>
-          <Heading
-            as="h2"
-            level={5}
-          >
-            Media & description
-          </Heading>
-          <Text variant="muted">Category logo and description content for the product page.</Text>
-        </Box>
-
-        <Controller
-          control={control}
-          name="logo"
-          render={({ field }) => (
-            <CategoryImageUpload
-              id="category-logo"
-              label="Category Logo"
-              caption="3:4 ratio recommended · max display 800×600 px"
-              value={field.value}
-              onChange={field.onChange}
-              error={errors.logo?.message}
-            />
-          )}
-        />
-
-        <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="category-description">Description</Label>
-          <Textarea
-            id="category-description"
-            className="rounded-xl"
-            {...register("description")}
-          />
-        </Box>
-      </Box>
-
-      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
-        <Box>
-          <Heading
-            as="h2"
-            level={5}
-          >
-            SEO
-          </Heading>
-          <Text variant="muted">Meta tags for the category page on search engines.</Text>
-        </Box>
-
-        <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="meta-title">Meta Title</Label>
-          <Input
-            id="meta-title"
-            className="rounded-xl"
-            placeholder="Title for search results & the browser tab"
-            {...register("metaTitle")}
-          />
-        </Box>
-
-        <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="meta-description">Meta Description</Label>
-          <Textarea
-            id="meta-description"
-            className="rounded-xl"
-            placeholder="Short summary for search results"
-            maxLength={META_DESCRIPTION_MAX}
-            {...register("metaDescription")}
-          />
-          <Box className="flex justify-between">
-            <Text variant="small">
-              {metaDescriptionLength}/{META_DESCRIPTION_MAX} characters
-            </Text>
-            <Text variant="small">{metaDescriptionPercent}% used</Text>
-          </Box>
-        </Box>
-
-        <Controller
-          control={control}
-          name="ogImage"
-          render={({ field }) => (
-            <CategoryImageUpload
-              id="og-image"
-              label="OG Image"
-              caption="1.91:1 ratio recommended · max display 1200×630 px"
-              value={field.value}
-              onChange={field.onChange}
-              error={errors.ogImage?.message}
-            />
-          )}
-        />
-
-        <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="meta-keyword">Meta Keyword</Label>
-          <Input
-            id="meta-keyword"
-            className="rounded-xl"
-            placeholder="Separate with commas, e.g. top up ml, diamond ml"
-            {...register("metaKeywords")}
-          />
-        </Box>
-
-        <Controller
-          control={control}
-          name="metaRobots"
-          render={({ field }) => (
-            <SelectField
-              id="meta-robot"
-              label="Meta Robot"
-              placeholder="Select"
-              options={META_ROBOTS_OPTIONS}
-              value={field.value ?? ""}
-              onChange={field.onChange}
-            />
-          )}
-        />
       </Box>
 
       <Box className="flex justify-end gap-3">
