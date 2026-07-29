@@ -117,7 +117,7 @@ describe("AddCategoryServerPage", () => {
  * "+ Add Bulk" — a second button beside "+ Add Option" that reveals a Bulk
  * textarea for pasting many options at once. The reference's helper text
  * ("Bulk must be in the correct format.") never shows the format; confirmed
- * as one `Name,Value` pair per line, appending to whatever rows already exist.
+ * as one `Name=Value` pair per line, appending to whatever rows already exist.
  */
 describe("AddCategoryServerPage — bulk options", () => {
   afterEach(() => {
@@ -143,7 +143,7 @@ describe("AddCategoryServerPage — bulk options", () => {
     await renderRoute(ADD_PATH);
 
     await user.click(await screen.findByRole("button", { name: /Add Bulk/i }));
-    await user.type(await screen.findByLabelText("Bulk"), "ASIA,asia{enter}EUROPE,europe");
+    await user.type(await screen.findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE=europe");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     const names = await screen.findAllByLabelText(/^Name$/);
@@ -161,7 +161,7 @@ describe("AddCategoryServerPage — bulk options", () => {
     await user.type(screen.getByLabelText(/^Name$/), "Handmade");
 
     await user.click(screen.getByRole("button", { name: /Add Bulk/i }));
-    await user.type(await screen.findByLabelText("Bulk"), "ASIA,asia{enter}EUROPE,europe");
+    await user.type(await screen.findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE=europe");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     const names = await screen.findAllByLabelText(/^Name$/);
@@ -175,13 +175,13 @@ describe("AddCategoryServerPage — bulk options", () => {
     await renderRoute(ADD_PATH);
 
     await user.click(await screen.findByRole("button", { name: /Add Bulk/i }));
-    await user.type(await screen.findByLabelText("Bulk"), "ASIA,asia{enter}EUROPE");
+    await user.type(await screen.findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     expect(await screen.findByText(/Line 2/)).toBeInTheDocument();
     // All-or-nothing: the valid first line must not land on its own.
     expect(screen.queryByLabelText(/^Name$/)).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Bulk")).toHaveValue("ASIA,asia\nEUROPE");
+    expect(screen.getByLabelText("Bulk")).toHaveValue("ASIA=asia\nEUROPE");
   });
 
   it("Submit does not submit the outer form", async () => {
@@ -191,7 +191,7 @@ describe("AddCategoryServerPage — bulk options", () => {
 
     await user.type(await screen.findByLabelText("Category Server Name"), "Wuthering Waves");
     await user.click(screen.getByRole("button", { name: /Add Bulk/i }));
-    await user.type(await screen.findByLabelText("Bulk"), "ASIA,asia");
+    await user.type(await screen.findByLabelText("Bulk"), "ASIA=asia");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     expect(createSpy).not.toHaveBeenCalled();

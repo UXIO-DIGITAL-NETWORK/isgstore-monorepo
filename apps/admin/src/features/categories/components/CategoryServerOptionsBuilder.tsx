@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { CategoryServerFormValues } from "../schemas/categoryServerForm.schema";
 import { parseBulkOptions } from "../utils/parseBulkOptions";
 
-const BULK_HINT = "Bulk must be in the correct format. One option per line, as Name,Value.";
+const BULK_HINT = "Bulk must be in the correct format. One option per line, as Name=Value.";
 
 interface CategoryServerOptionsBuilderProps {
   control: Control<CategoryServerFormValues>;
@@ -41,7 +41,7 @@ export function CategoryServerOptionsBuilder({ control, register, errors }: Cate
     const { options, errorLine } = parseBulkOptions(bulkText);
 
     if (errorLine !== null) {
-      setBulkError(`Line ${errorLine} is not in the Name,Value format.`);
+      setBulkError(`Line ${errorLine} is not in the Name=Value format.`);
       return;
     }
     if (options.length === 0) {
@@ -153,7 +153,7 @@ export function CategoryServerOptionsBuilder({ control, register, errors }: Cate
                 id="category-server-bulk"
                 className="rounded-xl"
                 rows={4}
-                placeholder={"ASIA,asia\nEUROPE,europe"}
+                placeholder={"ASIA=asia\nEUROPE=europe"}
                 value={bulkText}
                 onChange={(event) => setBulkText(event.target.value)}
               />

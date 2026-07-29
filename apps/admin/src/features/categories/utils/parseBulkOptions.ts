@@ -8,7 +8,7 @@ export interface ParsedBulkOptions {
 
 /**
  * Parses the "+ Add Bulk" textarea into Name/Value option rows — one option
- * per line, `Name,Value` (product_requirements.md §4.5, line 235).
+ * per line, `Name=Value` (product_requirements.md §4.5, line 235).
  *
  * The reference's helper text asserts "Bulk must be in the correct format"
  * but never shows the format; its placeholder is lorem ipsum, like every
@@ -29,9 +29,9 @@ export function parseBulkOptions(text: string): ParsedBulkOptions {
     // matches what the operator sees in the textarea.
     if (!line) continue;
 
-    // The LAST comma, not the first: values are slugs that never contain one,
-    // but names legitimately do — the Genshin fixture has "TW, HK, MO".
-    const separator = line.lastIndexOf(",");
+    // "=" separates, so a name may contain commas — the Genshin fixture has
+    // "TW, HK, MO". The FIRST one wins; values are slugs and never contain it.
+    const separator = line.indexOf("=");
     const name = separator === -1 ? "" : line.slice(0, separator).trim();
     const value = separator === -1 ? "" : line.slice(separator + 1).trim();
 
