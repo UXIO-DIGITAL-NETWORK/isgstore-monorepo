@@ -68,6 +68,38 @@ describe("AutomaticTransactionsPage", () => {
     expect(within(partialSuccess).getByText("8")).toBeInTheDocument();
   });
 
+  it("clicking a status card filters the list by that status, and clicking it again clears it", async () => {
+    // Jul 5 — the one fixture row carrying `partial_refund`, so the assertion
+    // is on real filtered content and not just the outgoing params.
+    vi.setSystemTime(new Date("2026-07-05T12:00:00.000Z"));
+    const listSpy = vi.spyOn(transactionsService, "list");
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    await screen.findByRole("table");
+    listSpy.mockClear();
+
+    // Held onto: once the filter applies, the Invoice Status select trigger
+    // is a second button reading "Partial Refund", so re-querying by name
+    // would be ambiguous on the toggle-off click below.
+    const card = await screen.findByRole("button", { name: /Partial Refund/ });
+    await user.click(card);
+
+    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ invoiceStatus: "partial_refund" }));
+    // The card and the Invoice Status select drive the same filter state, so
+    // the select must show the card's status rather than "All statuses".
+    const filterBar = await screen.findByRole("region", { name: "Transaction Filters" });
+    expect(await within(filterBar).findByText("Partial Refund")).toBeInTheDocument();
+    const rows = within(await screen.findByRole("table"))
+      .getAllByRole("row")
+      .slice(1);
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) expect(within(row).getByText("Partial Refund")).toBeInTheDocument();
+
+    await user.click(card);
+    expect(listSpy).toHaveBeenLastCalledWith(expect.objectContaining({ invoiceStatus: undefined }));
+  });
+
   it("shows all 10 filter bar field labels", async () => {
     await renderRoute("/admin/transaction-preview");
 
