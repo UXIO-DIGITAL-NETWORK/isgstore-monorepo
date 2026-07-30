@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 
 import {
@@ -18,6 +19,10 @@ interface DeleteConfirmDialogProps {
   title: string;
   description: string;
   onConfirm: () => void;
+  /** Names the action on the confirm button. Defaults to "Delete". */
+  confirmLabel?: string;
+  /** Header glyph. Defaults to the trash icon. */
+  icon?: ReactNode;
 }
 
 /**
@@ -36,10 +41,20 @@ interface DeleteConfirmDialogProps {
  *
  * Confirm label is **"Delete"** — standardised 2026-07-27. The Sub Category
  * reference said "Continue" for the same button; "Delete" names the action.
+ * `confirmLabel`/`icon` let the other irreversible-enough action that needs
+ * this same structure name itself (Main Products' bulk "Deactivate").
  *
  * `onConfirm` only fires on explicit confirmation.
  */
-export function DeleteConfirmDialog({ open, onOpenChange, title, description, onConfirm }: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  onConfirm,
+  confirmLabel = "Delete",
+  icon = <Trash2 />,
+}: DeleteConfirmDialogProps) {
   return (
     <AlertDialog
       open={open}
@@ -50,9 +65,7 @@ export function DeleteConfirmDialog({ open, onOpenChange, title, description, on
           {/* The header grid re-lays itself out when a media slot is present
               (`has-data-[slot=alert-dialog-media]`), so the icon spans both
               rows on the left with the text in column 2. */}
-          <AlertDialogMedia className="rounded-xl bg-destructive/10 text-destructive">
-            <Trash2 />
-          </AlertDialogMedia>
+          <AlertDialogMedia className="rounded-xl bg-destructive/10 text-destructive">{icon}</AlertDialogMedia>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
@@ -68,7 +81,7 @@ export function DeleteConfirmDialog({ open, onOpenChange, title, description, on
               onOpenChange(false);
             }}
           >
-            Delete
+            {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

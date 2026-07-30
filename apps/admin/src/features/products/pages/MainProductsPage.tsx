@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { Power } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { DataTable } from "@/components/common/DataTable";
@@ -7,7 +8,7 @@ import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { mainProductColumns } from "../components/mainProductColumns";
 import { MainProductToolbar } from "../components/MainProductToolbar";
-import { useDeleteProducts, useProductList } from "../hooks/useProducts";
+import { useDeactivateProducts, useDeleteProducts, useProductList } from "../hooks/useProducts";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -28,6 +29,7 @@ export default function MainProductsPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeactivateOpen, setBulkDeactivateOpen] = useState(false);
 
   const params = useMemo(
     () => ({ search: search || undefined, category, price, page, per_page: pageSize }),
@@ -35,6 +37,7 @@ export default function MainProductsPage() {
   );
   const { data, isLoading, isError, refetch } = useProductList(params);
   const deleteProducts = useDeleteProducts();
+  const deactivateProducts = useDeactivateProducts();
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -79,6 +82,7 @@ export default function MainProductsPage() {
           onPriceChange={handlePriceChange}
           onRefresh={() => refetch()}
           selectedCount={selectedIds.length}
+          onBulkDeactivate={() => setBulkDeactivateOpen(true)}
           onBulkDelete={() => setBulkDeleteOpen(true)}
         />
       </Box>
@@ -115,6 +119,23 @@ export default function MainProductsPage() {
             : `This action cannot be undone. This will permanently delete these ${selectedIds.length} products and remove all of their variants from the storefront.`
         }
         onConfirm={() => deleteProducts.mutate(selectedIds)}
+      />
+
+      {/* Deactivating is reversible, so the copy says what changes rather than
+          warning it cannot be undone — but it is still a status override, so it
+          goes through the same confirmation (`.claude/rules/rbac-security.md`). */}
+      <DeleteConfirmDialog
+        open={bulkDeactivateOpen}
+        onOpenChange={setBulkDeactivateOpen}
+        icon={<Power />}
+        confirmLabel="Deactivate"
+        title={selectedIds.length <= 1 ? "Deactivate this product?" : `Deactivate ${selectedIds.length} products?`}
+        description={
+          selectedIds.length <= 1
+            ? "This product will be marked inactive and hidden from the storefront. You can activate it again at any time."
+            : `These ${selectedIds.length} products will be marked inactive and hidden from the storefront. You can activate them again at any time.`
+        }
+        onConfirm={() => deactivateProducts.mutate(selectedIds)}
       />
     </Box>
   );

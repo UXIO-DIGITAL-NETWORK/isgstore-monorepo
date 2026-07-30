@@ -77,6 +77,13 @@ export const productsService = {
 
   getById: async (id: string): Promise<Product> => products[indexOfOrThrow(id)],
 
+  /** The selection bar's "Deactive" — lifecycle only, so a deactivated product
+   * keeps its `is_available` value and reactivating restores the old state. */
+  deactivate: async (id: string): Promise<void> => {
+    const index = indexOfOrThrow(id);
+    products[index] = { ...products[index], status: "inactive" };
+  },
+
   remove: async (id: string): Promise<void> => {
     products.splice(indexOfOrThrow(id), 1);
   },

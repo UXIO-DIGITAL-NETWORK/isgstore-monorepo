@@ -16,6 +16,22 @@ export const useProduct = (id?: string) =>
     enabled: Boolean(id),
   });
 
+/** The selection bar's "Deactive (N)" — same bulk shape as the delete path. */
+export const useDeactivateProducts = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => Promise.all(ids.map((id) => productsService.deactivate(id))),
+    onSuccess: (_result, ids) => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success(ids.length === 1 ? "Product deactivated" : `${ids.length} products deactivated`);
+    },
+    onError: (_error, ids) => {
+      toast.error(ids.length === 1 ? "Failed to deactivate product" : "Failed to deactivate products");
+    },
+  });
+};
+
 /** One mutation for both delete paths — the row menu passes a single id, the
  * toolbar's "Delete (N)" passes the selection. Same shape as
  * `useDeleteCategoryProviders`, the other list with row selection. */
