@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { productsService } from "../services/products.service";
 import { PRODUCTS } from "../data/products.data";
 import { CATEGORY_OPTIONS, PRICE_RANGE_OPTIONS } from "../data/select-options.data";
-import type { ProductStatus } from "../types/product.type";
+import { PRICE_TIERS, type ProductStatus } from "../types/product.type";
 
 const STATUSES: ProductStatus[] = ["active", "inactive"];
 
@@ -83,7 +83,8 @@ describe("productsService.list", () => {
     expect(result.data.length).toBeGreaterThan(0);
     for (const row of result.data) {
       const inBucket = row.variants.some(
-        (variant) => variant.price >= bucket!.min && (bucket!.max === undefined || variant.price < bucket!.max),
+        (variant) =>
+          variant.prices.public >= bucket!.min && (bucket!.max === undefined || variant.prices.public < bucket!.max),
       );
       expect(inBucket).toBe(true);
     }
@@ -124,8 +125,26 @@ describe("products fixtures", () => {
       expect(row.variants.length).toBeGreaterThan(0);
       for (const variant of row.variants) {
         expect(variant.name.trim()).not.toBe("");
-        expect(variant.price).toBeGreaterThan(0);
         expect(STATUSES).toContain(variant.status);
+      }
+    }
+  });
+
+  it("price every variant per tier above its cost, so the card's margin is never negative", async () => {
+    const result = await productsService.list({ per_page: 50 });
+
+    for (const row of result.data) {
+      for (const variant of row.variants) {
+        expect(variant.cost_price).toBeGreaterThan(0);
+        for (const tier of PRICE_TIERS) {
+          expect(variant.prices[tier]).toBeGreaterThan(variant.cost_price);
+        }
+      }
+      // Public is the retail tier: no reseller price sits above it.
+      for (const variant of row.variants) {
+        for (const tier of PRICE_TIERS) {
+          expect(variant.prices[tier]).toBeLessThanOrEqual(variant.prices.public);
+        }
       }
     }
   });

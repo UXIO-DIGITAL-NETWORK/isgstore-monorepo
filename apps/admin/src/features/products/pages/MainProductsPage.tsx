@@ -15,11 +15,10 @@ const DEFAULT_PAGE_SIZE = 10;
  * Main Products list (product_requirements.md §4.6) — the first of the two
  * Product tabs, and the only one with a reference frame.
  *
- * Three corrections to that reference, all of them the same defect classes
- * confirmed across five Category references: the header subcopy is real copy
- * rather than "lorem ipsum dolor sit amet", the footer counts products rather
- * than the copy-pasted "9999999 transactions", and the column the reference
- * heads "Price" is named `Game` for what it actually contains.
+ * Two corrections to that reference, both the same defect classes confirmed
+ * across five Category references: the header subcopy is real copy rather than
+ * "lorem ipsum dolor sit amet", and the footer counts products rather than the
+ * copy-pasted "9999999 transactions".
  */
 export default function MainProductsPage() {
   const [search, setSearch] = useState("");

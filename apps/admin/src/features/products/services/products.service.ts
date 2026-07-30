@@ -19,8 +19,11 @@ function matchesFilters(row: Product, params: ProductListParams): boolean {
     // An unknown bucket narrows to nothing rather than silently passing
     // everything through — a filter that no-ops is worse than an empty table.
     if (!bucket) return false;
+    // Bucketed on the retail (`public`) price — the number the toolbar's
+    // ranges are worded in and the one the Variant cell shows.
     const inBucket = row.variants.some(
-      (variant) => variant.price >= bucket.min && (bucket.max === undefined || variant.price < bucket.max),
+      (variant) =>
+        variant.prices.public >= bucket.min && (bucket.max === undefined || variant.prices.public < bucket.max),
     );
     if (!inBucket) return false;
   }

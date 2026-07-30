@@ -10,12 +10,21 @@
 
 export type ProductStatus = "active" | "inactive";
 
+/**
+ * Customer tiers a variant is priced for, in the reference card's order:
+ * retail first, then the discounted trade tiers.
+ */
+export const PRICE_TIERS = ["public", "vip", "reseller", "agent"] as const;
+export type PriceTier = (typeof PRICE_TIERS)[number];
+
 /** One purchasable nominal under a product, e.g. a diamond pack tier. */
 export interface ProductVariant {
   id: string;
   name: string;
-  /** Selling price in IDR. Rendered via `formatCurrency`. */
-  price: number;
+  /** §6's `cost_price` — upstream cost in IDR, the price card's `Cost` row. */
+  cost_price: number;
+  /** §6's `selling_price`, per tier. `public` is the retail price. */
+  prices: Record<PriceTier, number>;
   status: ProductStatus;
 }
 
@@ -28,7 +37,8 @@ export interface Product {
   /** §6's FK. Kept for the API swap even though nothing resolves it yet. */
   game_id: string;
   /** Denormalized for display: no Game service exists, and the real API will
-   * join. This is the column the reference mislabels as "Price". */
+   * join. Searchable, but no longer a column of its own — the list shows the
+   * price breakdown in that slot. */
   game_name: string;
   category_name: string;
   /** §6's `provider_sku`. */

@@ -1,4 +1,4 @@
-import type { Product } from "../types/product.type";
+import type { Product, ProductVariant } from "../types/product.type";
 
 /**
  * Typed mock fixtures for the UI-first phase (system_architecture.md §6).
@@ -13,6 +13,28 @@ import type { Product } from "../types/product.type";
  * this repo, and a broken <img> reads worse than the initials tile the cell
  * falls back to. Real URLs drop in with no code change.
  */
+
+/**
+ * Derives a variant's cost and its four tier prices from the retail price, so
+ * the fixtures carry plausible margins without 80 hand-typed numbers. The
+ * markups reproduce the reference card (cost 58.745 -> public 62.857, VIP
+ * 60.801, reseller 60.214, agent 59.332).
+ *
+ * ponytail: fixture-only pricing math — the real API returns cost and the four
+ * prices per variant, so nothing in the UI derives them.
+ */
+function priced(publicPrice: number): Pick<ProductVariant, "cost_price" | "prices"> {
+  const cost = Math.round(publicPrice / 1.07);
+  return {
+    cost_price: cost,
+    prices: {
+      public: publicPrice,
+      vip: Math.round(cost * 1.035),
+      reseller: Math.round(cost * 1.025),
+      agent: Math.round(cost * 1.01),
+    },
+  };
+}
 export const PRODUCTS: Product[] = [
   {
     id: "prod-1",
@@ -24,8 +46,8 @@ export const PRODUCTS: Product[] = [
     status: "active",
     is_available: true,
     variants: [
-      { id: "prod-1-var-1", name: "Weekly Diamond Pass", price: 27788, status: "active" },
-      { id: "prod-1-var-2", name: "Twilight Pass", price: 149000, status: "active" },
+      { id: "prod-1-var-1", name: "Weekly Diamond Pass", ...priced(27788), status: "active" },
+      { id: "prod-1-var-2", name: "Twilight Pass", ...priced(149000), status: "active" },
     ],
     created_at: "2026-03-08T17:52:00.000Z",
     updated_at: "2026-03-08T17:52:00.000Z",
@@ -39,7 +61,7 @@ export const PRODUCTS: Product[] = [
     code: "MLBB-DM-086",
     status: "active",
     is_available: true,
-    variants: [{ id: "prod-2-var-1", name: "86 Diamonds", price: 21500, status: "active" }],
+    variants: [{ id: "prod-2-var-1", name: "86 Diamonds", ...priced(21500), status: "active" }],
     created_at: "2026-03-10T21:59:00.000Z",
     updated_at: "2026-03-10T21:59:00.000Z",
   },
@@ -52,7 +74,7 @@ export const PRODUCTS: Product[] = [
     code: "MLBB-DM-172",
     status: "active",
     is_available: false,
-    variants: [{ id: "prod-3-var-1", name: "172 Diamonds", price: 42800, status: "active" }],
+    variants: [{ id: "prod-3-var-1", name: "172 Diamonds", ...priced(42800), status: "active" }],
     created_at: "2026-03-11T09:14:00.000Z",
     updated_at: "2026-03-12T08:02:00.000Z",
   },
@@ -66,8 +88,8 @@ export const PRODUCTS: Product[] = [
     status: "active",
     is_available: true,
     variants: [
-      { id: "prod-4-var-1", name: "Membership Mingguan", price: 29000, status: "active" },
-      { id: "prod-4-var-2", name: "Membership Bulanan", price: 89000, status: "active" },
+      { id: "prod-4-var-1", name: "Membership Mingguan", ...priced(29000), status: "active" },
+      { id: "prod-4-var-2", name: "Membership Bulanan", ...priced(89000), status: "active" },
     ],
     created_at: "2026-03-12T11:07:00.000Z",
     updated_at: "2026-03-12T11:07:00.000Z",
@@ -81,7 +103,7 @@ export const PRODUCTS: Product[] = [
     code: "FF-DM-070",
     status: "active",
     is_available: true,
-    variants: [{ id: "prod-5-var-1", name: "70 Diamonds", price: 9500, status: "active" }],
+    variants: [{ id: "prod-5-var-1", name: "70 Diamonds", ...priced(9500), status: "active" }],
     created_at: "2026-03-13T15:31:00.000Z",
     updated_at: "2026-03-13T15:31:00.000Z",
   },
@@ -94,7 +116,7 @@ export const PRODUCTS: Product[] = [
     code: "FF-DM-355",
     status: "inactive",
     is_available: false,
-    variants: [{ id: "prod-6-var-1", name: "355 Diamonds", price: 48000, status: "inactive" }],
+    variants: [{ id: "prod-6-var-1", name: "355 Diamonds", ...priced(48000), status: "inactive" }],
     created_at: "2026-03-14T10:22:00.000Z",
     updated_at: "2026-03-20T14:45:00.000Z",
   },
@@ -107,7 +129,7 @@ export const PRODUCTS: Product[] = [
     code: "GI-GC-060",
     status: "active",
     is_available: true,
-    variants: [{ id: "prod-7-var-1", name: "60 Genesis Crystals", price: 16000, status: "active" }],
+    variants: [{ id: "prod-7-var-1", name: "60 Genesis Crystals", ...priced(16000), status: "active" }],
     created_at: "2026-03-15T08:45:00.000Z",
     updated_at: "2026-03-15T08:45:00.000Z",
   },
@@ -120,7 +142,7 @@ export const PRODUCTS: Product[] = [
     code: "GI-WELKIN-01",
     status: "active",
     is_available: true,
-    variants: [{ id: "prod-8-var-1", name: "Welkin Moon 30 Hari", price: 79000, status: "active" }],
+    variants: [{ id: "prod-8-var-1", name: "Welkin Moon 30 Hari", ...priced(79000), status: "active" }],
     created_at: "2026-03-16T19:03:00.000Z",
     updated_at: "2026-03-16T19:03:00.000Z",
   },
@@ -133,7 +155,7 @@ export const PRODUCTS: Product[] = [
     code: "PUBGM-UC-060",
     status: "active",
     is_available: true,
-    variants: [{ id: "prod-9-var-1", name: "60 UC", price: 14500, status: "active" }],
+    variants: [{ id: "prod-9-var-1", name: "60 UC", ...priced(14500), status: "active" }],
     created_at: "2026-03-17T13:18:00.000Z",
     updated_at: "2026-03-17T13:18:00.000Z",
   },
@@ -147,8 +169,8 @@ export const PRODUCTS: Product[] = [
     status: "inactive",
     is_available: false,
     variants: [
-      { id: "prod-10-var-1", name: "Royale Pass Elite", price: 155000, status: "inactive" },
-      { id: "prod-10-var-2", name: "Royale Pass Elite Plus", price: 385000, status: "inactive" },
+      { id: "prod-10-var-1", name: "Royale Pass Elite", ...priced(155000), status: "inactive" },
+      { id: "prod-10-var-2", name: "Royale Pass Elite Plus", ...priced(385000), status: "inactive" },
     ],
     created_at: "2026-03-18T07:56:00.000Z",
     updated_at: "2026-03-21T16:30:00.000Z",
@@ -162,7 +184,7 @@ export const PRODUCTS: Product[] = [
     code: "VAL-VP-475",
     status: "active",
     is_available: true,
-    variants: [{ id: "prod-11-var-1", name: "475 Valorant Points", price: 55000, status: "active" }],
+    variants: [{ id: "prod-11-var-1", name: "475 Valorant Points", ...priced(55000), status: "active" }],
     created_at: "2026-03-19T20:40:00.000Z",
     updated_at: "2026-03-19T20:40:00.000Z",
   },
@@ -175,7 +197,7 @@ export const PRODUCTS: Product[] = [
     code: "HSR-OS-060",
     status: "active",
     is_available: true,
-    variants: [{ id: "prod-12-var-1", name: "60 Oneiric Shards", price: 16000, status: "active" }],
+    variants: [{ id: "prod-12-var-1", name: "60 Oneiric Shards", ...priced(16000), status: "active" }],
     created_at: "2026-03-20T12:11:00.000Z",
     updated_at: "2026-03-20T12:11:00.000Z",
   },

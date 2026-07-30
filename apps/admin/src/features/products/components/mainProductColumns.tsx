@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatCurrency } from "@/utils/currency";
 import { initials } from "@/utils/initials";
 import type { Product } from "../types/product.type";
+import { ProductPriceCell } from "./ProductPriceCell";
 import { ProductAvailabilityBadge, ProductStatusBadge } from "./ProductStatusBadge";
 import { ProductRowActions } from "./ProductRowActions";
 
@@ -15,11 +16,8 @@ import { ProductRowActions } from "./ProductRowActions";
  * `No.` column and the select checkbox are injected by the shared `DataTable`,
  * not declared here.
  *
- * **The `Game` column is a correction.** The reference heads it "Price" but
- * fills it with game names ("Garena Mobile Leg…", "Free Fire Indonesia") —
- * the same class of header/content mismatch as Sub Category's two columns
- * both labelled "Name". The actual price is in the Variant cell, so the
- * column is named for what it holds. Confirmed with the user, not inferred.
+ * `Price` holds the per-variant cost/tier breakdown (`ProductPriceCell`) —
+ * the game name it used to show is still searchable but no longer a column.
  */
 export const mainProductColumns: ColumnDef<Product>[] = [
   {
@@ -81,7 +79,7 @@ export const mainProductColumns: ColumnDef<Product>[] = [
                 as="span"
                 className="text-muted-foreground tabular-nums"
               >
-                {formatCurrency(variant.price, { fractionDigits: 0 })}
+                {formatCurrency(variant.prices.public, { fractionDigits: 0 })}
               </Text>
               <ProductStatusBadge status={variant.status} />
             </Box>
@@ -91,9 +89,9 @@ export const mainProductColumns: ColumnDef<Product>[] = [
     ),
   },
   {
-    accessorKey: "game_name",
-    header: "Game",
-    cell: ({ row }) => <Text as="span">{row.original.game_name}</Text>,
+    id: "price",
+    header: "Price",
+    cell: ({ row }) => <ProductPriceCell variants={row.original.variants} />,
   },
   {
     accessorKey: "created_at",

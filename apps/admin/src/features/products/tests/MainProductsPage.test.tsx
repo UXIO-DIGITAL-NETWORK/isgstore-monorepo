@@ -11,9 +11,8 @@ const LIST_PATH = "/admin/products-preview/main";
  * feature's page tests.
  *
  * Several cases exist specifically to pin corrections to the reference — the
- * lorem-ipsum subcopy, the "of 9999999 transactions" footer, and the column
- * headed "Price" that actually holds game names. All four defect classes were
- * confirmed across five Category references before this one.
+ * lorem-ipsum subcopy and the "of 9999999 transactions" footer. Both defect
+ * classes were confirmed across five Category references before this one.
  */
 describe("MainProductsPage", () => {
   it("shows a breadcrumb reflecting the active tab", async () => {
@@ -53,16 +52,15 @@ describe("MainProductsPage", () => {
     expect(addLink).toHaveAttribute("href", "/admin/products-preview/main/add");
   });
 
-  it("shows the column headers, with the mislabeled 'Price' column named for its content", async () => {
+  it("shows the column headers", async () => {
     await renderRoute(LIST_PATH);
     const table = await screen.findByRole("table");
 
-    for (const header of ["No.", "Product", "Variant", "Game", "Created At", "Status", "Action"]) {
+    for (const header of ["No.", "Product", "Variant", "Price", "Created At", "Status", "Action"]) {
       expect(within(table).getByRole("columnheader", { name: header })).toBeInTheDocument();
     }
-    // The reference heads this column "Price" while filling it with game
-    // names. The price lives in the Variant cell instead.
-    expect(within(table).queryByRole("columnheader", { name: "Price" })).not.toBeInTheDocument();
+    // The column holds the price breakdown now, not the game name.
+    expect(within(table).queryByRole("columnheader", { name: "Game" })).not.toBeInTheDocument();
   });
 
   it("shows real top-up rows, not the shadcn demo dataset", async () => {
@@ -70,16 +68,29 @@ describe("MainProductsPage", () => {
 
     expect(await screen.findByText("Weekly Diamond Pass (One Week)")).toBeInTheDocument();
     expect(screen.getByText("MLBB-WDP-01")).toBeInTheDocument();
-    expect(screen.getAllByText("Mobile Legends: Bang Bang").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Mobile Legends: Indonesia").length).toBeGreaterThan(0);
 
     for (const term of ["Cover Page", "Executive Summary", "Jamik Tashpulatov"]) {
       expect(screen.queryByText(term)).not.toBeInTheDocument();
     }
   });
 
-  it("renders the variant price as currency, since the Price column does not", async () => {
+  it("renders the variant price as currency", async () => {
     await renderRoute(LIST_PATH);
-    expect(await screen.findByText("Rp 27.788")).toBeInTheDocument();
+    expect((await screen.findAllByText("Rp 27.788")).length).toBeGreaterThan(0);
+  });
+
+  it("breaks each variant's price down by tier, with margin and margin percent", async () => {
+    await renderRoute(LIST_PATH);
+    const table = await screen.findByRole("table");
+
+    for (const label of ["Cost", "Public", "VIP", "Reseller", "Agent"]) {
+      expect((await within(table).findAllByText(label)).length).toBeGreaterThan(0);
+    }
+    // prod-1-var-1: cost Rp 25.970 -> public Rp 27.788, so Rp 1.818 at 6.5%.
+    expect(within(table).getAllByText("Rp 25.970").length).toBeGreaterThan(0);
+    expect(within(table).getAllByText("Rp 1.818").length).toBeGreaterThan(0);
+    expect(within(table).getAllByText("6.5%").length).toBeGreaterThan(0);
   });
 
   it("stacks both status axes as separate badges", async () => {
