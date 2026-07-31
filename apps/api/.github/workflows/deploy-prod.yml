@@ -79,6 +79,11 @@ jobs:
           key: ${{ secrets.PROD_SSH_KEY }}
           port: ${{ secrets.PROD_PORT }}
           envs: ENV_FILE_CONTENT
+          # Tanpa ini, seluruh script dijalankan dalam satu shell dan exit code
+          # step diambil dari perintah TERAKHIR saja — sehingga `git pull` atau
+          # `migrate` yang gagal di tengah tetap menghasilkan job hijau. Itulah
+          # yang membuat deploy "sukses" padahal kode di server tidak berubah.
+          script_stop: true
           script: |
             # 0. Bootstrap: clone repo on first deploy if prod dir isn't a git repo yet
             # Updated to uxioserver1 path
@@ -93,8 +98,18 @@ jobs:
             # 1. Masuk ke direktori production yang tepat
             cd /home/uxioserver1/web-topup/api/prod
 
-            # 2. Tarik kode terbaru dari branch main
-            git pull origin main
+            # 2. Samakan working tree dengan origin/main.
+            #    `git pull` melakukan merge, yang bisa batal karena perubahan
+            #    lokal — dan deploy ini membuatnya sendiri: `chmod -R 775` di
+            #    langkah 8 menyalakan exec-bit pada 11 file .gitignore yang
+            #    ter-track di storage/ dan bootstrap/cache/. reset --hard
+            #    menghilangkan seluruh kelas kegagalan itu; direktori prod adalah
+            #    artefak deploy, bukan workspace.
+            #    Sengaja TANPA `git clean`: storage/app/public berisi logo dan
+            #    banner yang hanya ada di server.
+            git fetch --prune origin main
+            git reset --hard origin/main
+            echo "Deployed commit: $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
 
             # 3. Tulis ulang file .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
@@ -110,6 +125,23 @@ jobs:
             php artisan config:cache
             php artisan route:cache
 
+            # 6b. Reload php-fpm agar opcache membaca bytecode yang baru.
+            #     Ini akar masalah 404 pada route baru: `route:cache` menulis
+            #     bootstrap/cache/routes-v7.php — sebuah file PHP — sehingga ikut
+            #     di-cache opcache. Dengan opcache.validate_timestamps=0 (lazim di
+            #     production) php-fpm terus menjalankan salinan lama, jadi route
+            #     lama tetap hidup sementara route baru tidak dikenal. CLI artisan
+            #     punya opcache sendiri, itu sebabnya migrate & cache build tampak
+            #     berhasil. Restart supervisor di langkah 14 hanya menyentuh queue
+            #     worker, bukan proses yang melayani HTTP.
+            FPM_SERVICE=$(systemctl list-units --type=service --state=running --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}' | head -n1 || true)
+            if [ -n "$FPM_SERVICE" ]; then
+              echo "Reloading $FPM_SERVICE to clear opcache..."
+              sudo systemctl reload "$FPM_SERVICE"
+            else
+              echo "WARNING: no running php*-fpm service found — opcache may still serve stale bytecode."
+            fi
+
             # 7. Pastikan symlink storage publik ada (logo kategori, banner)
             php artisan storage:link || true
 
@@ -122,9 +154,16 @@ jobs:
             # 9. Pasang cron Laravel scheduler (idempotent, spesifik per environment).
             # Updated cron path to uxioserver1
             CRON_ENTRY="* * * * * cd /home/uxioserver1/web-topup/api/prod && php artisan schedule:run >> /dev/null 2>&1"
-            ( crontab -l 2>/dev/null | grep -vF "web-topup/api/prod && php artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
+            # `|| true` pada grep itu KRITIS di bawah script_stop: bila crontab
+            # hanya berisi baris schedule:run, grep -vF tidak menghasilkan output
+            # dan keluar dengan kode 1 — subshell akan berhenti sebelum `echo`,
+            # sehingga `crontab -` menerima input kosong dan MENGHAPUS crontab.
+            ( crontab -l 2>/dev/null | grep -vF "web-topup/api/prod && php artisan schedule:run" || true ; echo "$CRON_ENTRY" ) | crontab -
             echo "Scheduler cron installed:"
-            crontab -l | grep "schedule:run"
+            # `|| true` wajib: dengan script_stop, grep yang tidak menemukan apa
+            # pun keluar dengan kode 1 dan akan menggagalkan seluruh deploy —
+            # padahal baris ini hanya verifikasi informatif.
+            crontab -l | grep "schedule:run" || true
 
             # 10. Install supervisor jika belum ada
             if ! command -v supervisorctl &> /dev/null; then
@@ -166,6 +205,29 @@ jobs:
 
             # 14. Restart queue worker agar muat kode yang baru di-deploy
             sudo supervisorctl restart laravel-queue-prod:*
+
+      # Sampai langkah ini ada, "job hijau" hanya berarti script SSH selesai —
+      # bukan berarti kode benar-benar dilayani. Endpoint di bawah sengaja
+      # dipilih: satu request menguji routing, koneksi DB, dan query Catalog
+      # sekaligus. 404 = kode belum aktif, 500 = migrasi belum jalan.
+      - name: Smoke check — verify the deployed code is actually being served
+        run: |
+          URL="https://api-topup.uxio-dev.web.id/api/v1/games?per_page=1"
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -s -o /tmp/smoke.json -w "%{http_code}" --max-time 20 \
+              -H "Accept: application/json" "$URL" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "Smoke check passed (HTTP 200)."
+              exit 0
+            fi
+            echo "Attempt $attempt/5: HTTP $code — retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::Smoke check FAILED — GET /api/v1/games returned $code."
+          echo "404 means the new code is not being served (check the fpm reload)."
+          echo "500 means migrations did not apply. Response body:"
+          head -c 800 /tmp/smoke.json || true
+          exit 1
 
       - name: Notify Discord — deploy succeeded
         if: success()
