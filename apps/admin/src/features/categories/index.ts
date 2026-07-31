@@ -1,5 +1,5 @@
 export { default as CategoryListPage } from "./pages/CategoryListPage";
-export { default as AddCategoryPage } from "./pages/AddCategoryPage";
+export { default as CategoryFormPage } from "./pages/CategoryFormPage";
 export { default as SubCategoryPage } from "./pages/SubCategoryPage";
 export { default as SubCategoryFormPage } from "./pages/SubCategoryFormPage";
 export { default as CategoryTypePage } from "./pages/CategoryTypePage";

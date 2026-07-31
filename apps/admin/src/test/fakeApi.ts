@@ -1,0 +1,641 @@
+import { vi } from "vitest";
+
+import { ACTIVITY_LOG } from "@/features/dashboard/data/activity-log.data";
+import { CHART_SERIES } from "@/features/dashboard/data/chart-series.data";
+import { PENDING_ORDERS } from "@/features/dashboard/data/pending-orders.data";
+import { PERFORMANCE_ROWS } from "@/features/dashboard/data/performance-rows.data";
+import { STAT_CARDS } from "@/features/dashboard/data/stat-cards.data";
+import { CHANNELS } from "@/features/integration/data/channels.data";
+import { PAYMENT_GATEWAYS } from "@/features/financial/data/payment-gateways.data";
+import { SUMMARY_CARDS } from "@/features/financial/data/summary-cards.data";
+import { SUPPLIERS } from "@/features/financial/data/suppliers.data";
+import { CATEGORIES } from "./fixtures/categories.data";
+import { CATEGORY_PROVIDERS } from "./fixtures/category-providers.data";
+import { CATEGORY_SERVERS } from "./fixtures/category-servers.data";
+import { CATEGORY_TYPES } from "./fixtures/category-types.data";
+import { PRODUCTS } from "./fixtures/products.data";
+import { TRANSACTIONS } from "@/features/transactions/data/transactions.data";
+import { SUB_CATEGORIES } from "./fixtures/sub-categories.data";
+
+/**
+ * A fake backend for **page** tests.
+ *
+ * Service tests mock `api` per case and assert on the exact request. Page tests
+ * are about rendered behaviour — a row menu, a confirm dialog, a pagination
+ * footer — and still need plausible rows to render. Before the API swap that
+ * came from the services' own in-memory fixtures; now the services are real,
+ * so the seam moved down to axios and this stands in for the server.
+ *
+ * Rows are stored in the API's snake_case shape and served through the same
+ * envelope the real endpoints use, so the services' mappers run for real in
+ * page tests too — a mapper regression fails here rather than silently
+ * rendering blanks.
+ */
+
+type Row = Record<string, unknown>;
+
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+/** Fixtures are written in the admin's view shape; invert them to API rows. */
+const toApiCategory = (row: (typeof CATEGORIES)[number], index: number): Row => ({
+  id: Number(index + 1),
+  type_id: 1,
+  name: row.name,
+  sub_name: row.sub_name ?? null,
+  code: row.code,
+  slug: row.slug,
+  uid_parser: row.uid_parser,
+  validasi_nickname: row.account_nickname_validation ?? null,
+  region: row.region ?? null,
+  logo_url: row.logo_url ?? null,
+  thumbnail_url: null,
+  banner_url: null,
+  description: row.description ?? null,
+  status: row.status === "active",
+  order_form_fields: { fields: row.order_form_fields ?? [], customer_no_template: "{user_id}" },
+  meta_title: row.meta_title ?? null,
+  meta_description: row.meta_description ?? null,
+  og_image_url: row.og_image_url ?? null,
+  meta_keywords: row.meta_keywords ?? [],
+  meta_robots: row.meta_robots ?? null,
+  type: { id: 1, name: row.type },
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+const toApiSubCategory = (row: (typeof SUB_CATEGORIES)[number], index: number): Row => ({
+  id: index + 1,
+  category_id: Number(row.category_id.replace(/\D/g, "")) || 1,
+  name: row.name,
+  currency_name: row.currency_name,
+  description: row.description ?? null,
+  logo: null,
+  logo_url: row.logo_url ?? null,
+  status: row.status === "active",
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+const toApiCategoryType = (row: (typeof CATEGORY_TYPES)[number], index: number): Row => ({
+  id: index + 1,
+  name: row.name,
+  is_voucher: row.is_voucher,
+  status: row.status === "active",
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+const toApiServerCategory = (row: (typeof CATEGORY_SERVERS)[number], index: number): Row => ({
+  id: index + 1,
+  category_id: 1,
+  name: row.name,
+  options: row.options.map((option, optionIndex) => ({
+    id: index * 100 + optionIndex,
+    server_category_id: index + 1,
+    name: option.name,
+    value: option.value,
+  })),
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+const toApiSupplierCategory = (row: (typeof CATEGORY_PROVIDERS)[number], index: number): Row => ({
+  id: index + 1,
+  category_id: Number(row.category_id.replace(/\D/g, "")) || 1,
+  supplier_id: index + 1,
+  template_code: row.provider_template,
+  supplier: { id: index + 1, name: row.provider_name },
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
+  const variant = row.variants[0];
+  return {
+    id: index + 1,
+    category_id: 1,
+    sub_category_id: 1,
+    name: row.name,
+    sub_name: row.sub_name ?? null,
+    code: row.code,
+    logo_url: row.image_url ?? null,
+    description: row.description ?? null,
+    validasi_nickname: row.nickname_validation ?? null,
+    access: row.access ?? null,
+    tag: row.tag ?? null,
+    price_modal: variant?.cost_price ?? 0,
+    price_member: variant?.prices.public ?? 0,
+    price_vip: variant?.prices.vip ?? 0,
+    price_reseller: variant?.prices.reseller ?? 0,
+    price_agent: variant?.prices.agent ?? 0,
+    status: row.status === "active",
+    is_available: row.is_available,
+    category: { id: 1, name: row.game_name },
+    sub_category: { id: 1, name: row.category_name },
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+};
+
+/**
+ * Endpoints that are a fixed document rather than a CRUD collection. Matched
+ * by exact URL before the collection router runs, and served in the API's
+ * shape so the services' mappers do their real work here too.
+ */
+const CARD_KEYS = ["credit", "debit", "profit"] as const;
+const DASHBOARD_CARD_KEYS = ["credit", "debit", "todays_sales"] as const;
+
+const DOCUMENTS: Record<string, unknown> = {
+  "/v1/financial/summary": SUMMARY_CARDS.map((card, index) => ({
+    key: CARD_KEYS[index] ?? card.id,
+    value: card.value,
+    delta_pct: card.deltaPct ?? null,
+    direction: card.direction ?? null,
+    caption: card.caption,
+  })),
+  "/v1/financial/payment-gateways": PAYMENT_GATEWAYS.map((row) => ({
+    id: row.id,
+    name: row.name,
+    active_balance: row.activeBalance,
+    held_balance: row.heldBalance,
+  })),
+  "/v1/financial/suppliers": SUPPLIERS.map((row, index) => ({
+    id: index + 1,
+    name: row.name,
+    balance: row.balance,
+  })),
+  "/v1/dashboard/stats": {
+    totals: { users: 190, transactions: TRANSACTIONS.length },
+    stat_cards: STAT_CARDS.map((card, index) => ({
+      key: DASHBOARD_CARD_KEYS[index] ?? card.id,
+      value: card.value,
+      delta_pct: card.deltaPct ?? null,
+      direction: card.direction ?? null,
+      caption: card.caption,
+    })),
+    pending_orders: {
+      manual_orders: PENDING_ORDERS.manualOrders,
+      pending_payment: PENDING_ORDERS.pendingPayment,
+      processing: PENDING_ORDERS.processing,
+      failed_transaction: PENDING_ORDERS.failedTransaction,
+    },
+    chart: CHART_SERIES.january.map((point) => ({
+      date: point.date,
+      transactions: 0,
+      revenue: point.revenue,
+      net_income: point.netIncome,
+    })),
+  },
+  "/v1/settings": [
+    { id: 1, group: "general", key: "site_name", value: "TopUpGame.ID", type: "string", label: "Site Name", is_public: true },
+    { id: 2, group: "contact", key: "contact_whatsapp", value: "6281234567890", type: "string", label: "WhatsApp", is_public: true },
+    { id: 3, group: "general", key: "maintenance_mode", value: "0", type: "boolean", label: "Maintenance Mode", is_public: true },
+  ],
+  "/v1/transactions/status-counts": { pending: 12, processing: 32, failed_provider: 8 },
+  "/v1/integration/channels": CHANNELS.map((row) => ({
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    connection_status: row.connection_status,
+    balance: row.balance ?? null,
+    last_ping_at: row.last_ping_at,
+  })),
+};
+
+const TO_API_INVOICE_STATUS: Record<string, string> = {
+  pending: "PENDING",
+  processing: "PROCESSING",
+  success: "COMPLETED",
+  failed: "FAILED_PROVIDER",
+  partial_refund: "REFUNDED",
+  partial_success: "PROCESSING",
+};
+
+const TO_API_PAYMENT_STATUS: Record<string, string> = {
+  pending: "1",
+  failed: "2",
+  success: "3",
+  partial_refund: "4",
+  processing: "1",
+  partial_success: "1",
+};
+
+const toApiTransaction = (row: (typeof TRANSACTIONS)[number], index: number): Row => ({
+  id: index + 1,
+  invoice_number: row.invoice_no,
+  user_id: row.customer.user_id,
+  guest_contact: row.customer.user_id === null ? row.customer.phone : null,
+  target_uid: row.target_ref ?? null,
+  target_server: null,
+  amount_fee: row.admin_fee ?? 0,
+  amount_total: row.cost,
+  margin: row.profit ?? 0,
+  status: TO_API_INVOICE_STATUS[row.invoice_status] ?? "PENDING",
+  sn: row.serial_number ?? null,
+  proof_url: row.proof_url ?? null,
+  user: row.customer.user_id
+    ? { id: row.customer.user_id, name: row.customer.name, phone: row.customer.phone, avatar_url: null }
+    : null,
+  product: { id: index + 1, name: row.product.name, category: { id: index + 1, name: row.game.name } },
+  payment: { status: TO_API_PAYMENT_STATUS[row.payment_status] ?? "1" },
+  payment_channel: { id: index + 1, name: row.payment_method },
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+/** Suppliers back the provider select, which submits a real supplier_id. */
+const SUPPLIER_NAMES = ["Digiflazz Buyer", "Digiflazz Seller", "UxioTopup", "Zelpoint", "Topupkuy"];
+
+const SEEDS: Record<string, () => Row[]> = {
+  "suppliers": () => SUPPLIER_NAMES.map((name, index) => ({ id: index + 1, name, status: true })),
+  "categories": () => CATEGORIES.map(toApiCategory),
+  "sub-categories": () => SUB_CATEGORIES.map(toApiSubCategory),
+  "category-types": () => CATEGORY_TYPES.map(toApiCategoryType),
+  "server-categories": () => CATEGORY_SERVERS.map(toApiServerCategory),
+  "server-category-options": () => [],
+  "supplier-categories": () => CATEGORY_PROVIDERS.map(toApiSupplierCategory),
+  "products": () => PRODUCTS.map(toApiProduct),
+  "transactions": () => TRANSACTIONS.map(toApiTransaction),
+  "article-categories": () =>
+    ["promo", "mobile-legend", "free-fire"].map((key, index) => ({
+      id: index + 1,
+      name: key.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      key,
+      sort_order: index,
+      status: true,
+      created_at: "2026-07-01",
+      updated_at: "2026-07-01",
+    })),
+  "articles": () =>
+    [
+      ["Cara Top Up Diamond Lebih Hemat", "article"],
+      ["Promo Spesial Hari Raya", "news"],
+      ["Panduan Top Up UC Aman", "article"],
+    ].map(([title, type], index) => ({
+      id: index + 1,
+      article_category_id: (index % 3) + 1,
+      category_label: null,
+      type,
+      locale: "id",
+      title,
+      slug: String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      excerpt: "Ringkasan singkat.",
+      author_name: "Admin_Topupgame",
+      body_sections: [{ heading: "Bagian", paragraphs: ["Paragraf."] }],
+      image_url: null,
+      is_published: true,
+      is_featured: index === 0,
+      published_at: "2026-05-01T09:00:00Z",
+      view_count: 0,
+      meta_title: null,
+      meta_description: null,
+      meta_keywords: [],
+      meta_robots: "index,follow",
+      category: { id: (index % 3) + 1, name: "Mobile Legend", key: "mobile-legend", sort_order: 0, status: true, created_at: "", updated_at: "" },
+      created_at: "2026-05-01",
+      updated_at: "2026-05-01",
+    })),
+  "faqs": () =>
+    ["Bagaimana cara melakukan top up?", "Berapa lama proses top up?"].map((question, index) => ({
+      id: index + 1,
+      question,
+      answer: "Jawaban lengkap.",
+      group: null,
+      locale: "id",
+      sort_order: index,
+      is_active: true,
+      created_at: "2026-07-01",
+      updated_at: "2026-07-01",
+    })),
+  "pages": () =>
+    [["kebijakan-privasi", "Kebijakan Privasi"], ["syarat-ketentuan", "Syarat & Ketentuan"]].map(
+      ([slug, title], index) => ({
+        id: index + 1,
+        slug,
+        locale: "id",
+        title,
+        intro: ["Pembuka."],
+        sections: [{ heading: "Cookies", paragraphs: ["Isi."] }],
+        is_published: true,
+        meta_title: title,
+        meta_description: null,
+        meta_robots: "noindex,follow",
+        created_at: "2026-07-01",
+        updated_at: "2026-07-01",
+      }),
+    ),
+  "promos": () =>
+    [["HEMAT10", "percentage", 10, true], ["GAJIAN20", "percentage", 20, false]].map(
+      ([code, type, value, isPublic], index) => ({
+        id: index + 1,
+        code,
+        name: `Diskon ${value}%`,
+        description: null,
+        type,
+        value,
+        max_discount: 10000,
+        min_purchase: 20000,
+        scope: "global",
+        scope_id: null,
+        quota_total: 1000,
+        quota_per_user: 3,
+        used_count: index * 5,
+        starts_at: "2026-07-24T00:00:00Z",
+        ends_at: "2026-08-30T00:00:00Z",
+        is_public: isPublic,
+        is_active: true,
+        created_at: "2026-07-24",
+        updated_at: "2026-07-24",
+      }),
+    ),
+  "flash-sales": () => [
+    {
+      id: 1,
+      name: "Flash Sale Mingguan",
+      starts_at: "2026-07-31T00:00:00Z",
+      ends_at: "2026-08-02T00:00:00Z",
+      is_active: true,
+      is_running: true,
+      items: [
+        {
+          id: 1,
+          product_id: 18,
+          product_name: "Indosat 30.000",
+          sale_price: 31187,
+          original_price: 36690,
+          stock_total: 100,
+          stock_sold: 20,
+          stock_available: 80,
+          sort_order: 0,
+        },
+      ],
+      created_at: "2026-07-31",
+      updated_at: "2026-07-31",
+    },
+  ],
+  "payment-channels": () =>
+    [["BCA Virtual Account", "bca_va", "virtual_account"], ["QRIS All Payment", "qris", "qris"]].map(
+      ([name, code, type], index) => ({
+        id: index + 1,
+        payment_type: type,
+        channel_code: code,
+        name,
+        logo_path: null,
+        logo_url: null,
+        description: null,
+        min_amount: 10000,
+        fee_flat: 4000,
+        fee_percent: 0,
+        sort_order: index,
+        is_active: true,
+        is_single_use: false,
+        created_at: "2026-07-31",
+        updated_at: "2026-07-31",
+      }),
+    ),
+  "users": () =>
+    [["Randy Galang", "randy@example.com"], ["Sinta Dewi", "sinta@example.com"]].map(([name, email], index) => ({
+      id: index + 1,
+      role_id: 2,
+      role: "member",
+      name,
+      username: null,
+      avatar_url: null,
+      email,
+      phone: "6281234567890",
+      balance: 15000,
+      point: 120,
+      locale: "id",
+      email_verified_at: "2026-07-01T00:00:00Z",
+      created_at: "2026-07-01",
+      updated_at: "2026-07-01",
+    })),
+  "banners": () =>
+    ["Promo Ramadan 2026", "Flash Sale Weekend"].map((name, index) => ({
+      id: index + 1,
+      category_id: null,
+      name,
+      image_path: "/banners/x.jpg",
+      image_url: "http://localhost/storage/banners/x.jpg",
+      link: "https://uxio.id/promo",
+      scope: "global",
+      category: null,
+      created_at: "2026-07-31",
+      updated_at: "2026-07-31",
+    })),
+  "announcements": () =>
+    ["Server maintenance terjadwal pada hari Minggu."].map((content, index) => ({
+      id: index + 1,
+      category_id: null,
+      content,
+      image_path: null,
+      image_url: null,
+      is_active: true,
+      scope: "global",
+      category: null,
+      created_at: "2026-07-31",
+      updated_at: "2026-07-31",
+    })),
+  "testimonials": () =>
+    ["Rizky Pratama", "Siti Nurhaliza"].map((name, index) => ({
+      id: index + 1,
+      author_name: name,
+      author_title: "Mobile Legends Player",
+      avatar_url: null,
+      content: "Top up selalu cepat.",
+      rating: 5,
+      game_name: "Mobile Legends",
+      is_featured: index === 0,
+      sort_order: index,
+      is_active: true,
+      created_at: "2026-07-01",
+      updated_at: "2026-07-01",
+    })),
+  // Two entries per transaction, so the per-order modal has a real trail to
+  // render and the global dashboard feed still has rows of its own.
+  // Account-level entries first: the dashboard's Recent Activity card reads
+  // the unfiltered feed with per_page 10, and the per-order entries below are
+  // reached through the transaction_id filter rather than by being recent.
+  "activity-logs": () => [
+    ...ACTIVITY_LOG.map((row, index) => ({
+      id: index + 1,
+      transaction_id: null,
+      actor: row.actor,
+      role: row.role,
+      message: row.action,
+      created_at: row.timestamp,
+    })),
+    ...TRANSACTIONS.flatMap((row, index) =>
+      row.activity_log.map((entry, entryIndex) => ({
+        id: (index + 1) * 100 + entryIndex,
+        transaction_id: index + 1,
+        actor: entry.actor === "system" ? "System" : entry.actor.name,
+        role: "admin",
+        message: entry.description,
+        created_at: entry.created_at,
+      })),
+    ),
+  ],
+};
+
+/** Free-text fields per collection, so `?search=` narrows the way the API does. */
+const SEARCHABLE: Record<string, string[]> = {
+  "suppliers": ["name"],
+  "categories": ["name", "code"],
+  "sub-categories": ["name", "currency_name"],
+  "category-types": ["name"],
+  "server-categories": ["name"],
+  "supplier-categories": ["template_code"],
+  "products": ["name", "code"],
+  "transactions": ["invoice_number"],
+  "articles": ["title"],
+  "article-categories": ["name"],
+  "faqs": ["question"],
+  "pages": ["title", "slug"],
+  "testimonials": ["author_name"],
+  "promos": ["code", "name"],
+  "flash-sales": ["name"],
+  "payment-channels": ["name", "channel_code"],
+  "users": ["name", "email"],
+  "banners": ["name"],
+  "announcements": ["content"],
+  "activity-logs": ["message"],
+};
+
+const envelope = <T>(data: T) => ({ status: "success", code: 200, message: "ok", data });
+
+const paginate = (rows: Row[], params: Record<string, unknown> = {}) => {
+  const page = Number(params.page ?? 1);
+  const perPage = Number(params.per_page ?? 10);
+  const start = (page - 1) * perPage;
+  const pageRows = rows.slice(start, start + perPage);
+  const lastPage = Math.max(1, Math.ceil(rows.length / perPage));
+
+  return envelope({
+    data: pageRows,
+    links: {
+      first: "?page=1",
+      last: `?page=${lastPage}`,
+      prev: page > 1 ? `?page=${page - 1}` : null,
+      next: page < lastPage ? `?page=${page + 1}` : null,
+    },
+    meta: {
+      current_page: page,
+      from: pageRows.length ? start + 1 : null,
+      last_page: lastPage,
+      path: "/",
+      per_page: perPage,
+      to: pageRows.length ? start + pageRows.length : null,
+      total: rows.length,
+    },
+  });
+};
+
+/** Documents whose payload varies with the query string. */
+const PARAMETERIZED: Record<string, (params: Record<string, unknown>) => unknown> = {
+  "/v1/dashboard/performance": (params) => {
+    const tab = (params.tab as keyof typeof PERFORMANCE_ROWS) ?? "category";
+    return (PERFORMANCE_ROWS[tab] ?? []).map((row, index) => ({
+      id: index + 1,
+      name: row.name,
+      sub_label: row.subLabel,
+      total_transaction: row.totalTransaction,
+      revenue: row.revenue,
+    }));
+  },
+};
+
+/** `/v1/sub-categories/3` → `["sub-categories", "3"]` */
+const parsePath = (url: string): [string, string | undefined] => {
+  const [, collection, id] = url.replace(/^\/v1\//, "/").split("/");
+  return [collection, id];
+};
+
+const readForm = (body: unknown): Row => {
+  if (!(body instanceof FormData)) return (body as Row) ?? {};
+  const out: Row = {};
+  body.forEach((value, key) => {
+    if (key === "_method") return;
+    out[key] = value;
+  });
+  return out;
+};
+
+export function createFakeApi() {
+  const store: Record<string, Row[]> = Object.fromEntries(
+    Object.entries(SEEDS).map(([key, seed]) => [key, clone(seed())]),
+  );
+  let nextId = 1000;
+
+  const matches = (collection: string, row: Row, params: Record<string, unknown>) => {
+    const search = params.search as string | undefined;
+    if (search) {
+      const fields = SEARCHABLE[collection] ?? ["name"];
+      const haystack = fields.map((field) => String(row[field] ?? "")).join(" ").toLowerCase();
+      if (!haystack.includes(search.toLowerCase())) return false;
+    }
+    if (params.category_id && String(row.category_id) !== String(params.category_id)) return false;
+    if (params.transaction_id && String(row.transaction_id) !== String(params.transaction_id)) return false;
+    if (params.type && String(row.type) !== String(params.type)) return false;
+    if (params.article_category_id && String(row.article_category_id) !== String(params.article_category_id)) {
+      return false;
+    }
+    if (params.server_category_id && String(row.server_category_id) !== String(params.server_category_id)) return false;
+    return true;
+  };
+
+  return {
+    get: vi.fn(async (url: string, config?: { params?: Record<string, unknown> }) => {
+      if (url in DOCUMENTS) return envelope(DOCUMENTS[url]);
+      if (url in PARAMETERIZED) return envelope(PARAMETERIZED[url](config?.params ?? {}));
+
+      const [collection, id] = parsePath(url);
+      const rows = store[collection] ?? [];
+      if (id) {
+        const found = rows.find((row) => String(row.id) === id);
+        if (!found) throw new Error(`No ${collection} found for id: ${id}`);
+        return envelope(found);
+      }
+      const params = config?.params ?? {};
+      return paginate(rows.filter((row) => matches(collection, row, params)), params);
+    }),
+
+    post: vi.fn(async (url: string, body?: unknown) => {
+      const [collection, id] = parsePath(url);
+      const rows = store[collection] ?? (store[collection] = []);
+      const payload = readForm(body);
+
+      // A POST carrying _method=PUT is an update spoof, not a create.
+      if (id) {
+        const index = rows.findIndex((row) => String(row.id) === id);
+        if (index === -1) throw new Error(`No ${collection} found for id: ${id}`);
+        rows[index] = { ...rows[index], ...payload };
+        return envelope(rows[index]);
+      }
+
+      const created = { ...payload, id: (nextId += 1), created_at: "2026-07-01", updated_at: "2026-07-01" };
+      rows.unshift(created);
+      return envelope(created);
+    }),
+
+    put: vi.fn(async (url: string, body?: unknown) => {
+      const [collection, id] = parsePath(url);
+      const rows = store[collection] ?? [];
+      const index = rows.findIndex((row) => String(row.id) === id);
+      if (index === -1) throw new Error(`No ${collection} found for id: ${id}`);
+      rows[index] = { ...rows[index], ...readForm(body) };
+      return envelope(rows[index]);
+    }),
+
+    delete: vi.fn(async (url: string) => {
+      const [collection, id] = parsePath(url);
+      const rows = store[collection] ?? [];
+      const index = rows.findIndex((row) => String(row.id) === id);
+      if (index === -1) throw new Error(`No ${collection} found for id: ${id}`);
+      rows.splice(index, 1);
+      return envelope(null);
+    }),
+
+    __store: store,
+  };
+}

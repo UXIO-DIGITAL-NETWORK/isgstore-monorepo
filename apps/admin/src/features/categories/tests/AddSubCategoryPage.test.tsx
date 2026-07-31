@@ -92,7 +92,9 @@ describe("AddSubCategoryPage", () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        category_id: "cat-1",
+        // The select is fed by the API now, so the id is whatever the
+        // first category row carries rather than a fixture literal.
+        category_id: expect.stringMatching(/^\d+$/),
         name: "Mobile Legends: Philippines",
         currency_name: "Diamonds",
         status: "active",

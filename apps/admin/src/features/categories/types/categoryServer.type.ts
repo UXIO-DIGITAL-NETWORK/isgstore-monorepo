@@ -14,6 +14,8 @@ export interface CategoryServerOption {
 
 export interface CategoryServer {
   id: string;
+  /** Parent Category. Required by the API — a server always belongs to a game. */
+  category_id: string;
   name: string;
   /** The add form's "+ Add Option" repeatable Name/Value pair list. */
   options: CategoryServerOption[];
@@ -23,6 +25,7 @@ export interface CategoryServer {
 
 export interface CategoryServerListParams {
   search?: string;
+  category_id?: string;
   page?: number;
   per_page?: number;
 }

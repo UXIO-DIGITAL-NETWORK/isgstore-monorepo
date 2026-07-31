@@ -18,6 +18,10 @@ describe("useStatCards", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(result.current.data).toEqual(STAT_CARDS);
+    // Ids now come from the API's stable card keys (`todays_sales`), not the
+    // fixture's slug (`todays-sales`) — the labels and figures are what the
+    // cards render and what this hook is responsible for.
+    expect(result.current.data?.map((card) => card.label)).toEqual(STAT_CARDS.map((card) => card.label));
+    expect(result.current.data?.map((card) => card.value)).toEqual(STAT_CARDS.map((card) => card.value));
   });
 });

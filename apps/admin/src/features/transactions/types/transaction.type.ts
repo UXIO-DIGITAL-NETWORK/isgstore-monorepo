@@ -92,11 +92,19 @@ export interface TransactionListParams {
   sortDir?: "asc" | "desc";
 }
 
-/** Matches the three clickable status pills above the table. */
+/**
+ * The three clickable status pills above the table.
+ *
+ * These were originally `pending / partial_refund / partial_success`, but
+ * neither partial state exists in the backend's transaction status enum —
+ * there is no data behind them and never was. The pills now surface the three
+ * statuses an operator actually acts on, which is what the API's
+ * `/transactions/status-counts` reports.
+ */
 export interface StatusCounts {
   pending: number;
-  partial_refund: number;
-  partial_success: number;
+  processing: number;
+  failed: number;
 }
 
 /** Small typed option shape for the filter-bar selects. */

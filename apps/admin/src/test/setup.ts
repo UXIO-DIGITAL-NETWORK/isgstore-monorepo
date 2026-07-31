@@ -8,6 +8,19 @@ import "@testing-library/jest-dom/vitest";
 // the jsdom document across tests in the same file.
 afterEach(cleanup);
 
+// The feature services call a real API now, so page tests need something on
+// the other end of axios. `fakeApi` serves the same envelope and paginator the
+// backend does, which means the services' mappers still run for real — a
+// mapper regression fails a page test instead of quietly rendering blanks.
+//
+// Files that assert on the *request* (the service contract tests) re-mock
+// `@/lib/axios` themselves, which takes precedence over this. `axios.test.ts`,
+// which exercises the real interceptors, calls `vi.unmock` instead.
+vi.mock("@/lib/axios", async () => {
+  const { createFakeApi } = await import("./fakeApi");
+  return { api: createFakeApi() };
+});
+
 // RootLayout mounts TanStackRouterDevtools unconditionally; it's dev-only
 // tooling with no bearing on any test assertion, and something in its jsdom
 // behavior is pathologically slow (tests otherwise finishing in ~150ms take

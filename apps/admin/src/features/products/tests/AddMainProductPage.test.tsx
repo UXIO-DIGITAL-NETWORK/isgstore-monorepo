@@ -10,7 +10,7 @@ async function fillRequiredFields(user: ReturnType<typeof userEvent.setup>, name
   await user.type(await screen.findByLabelText("Product Name"), name);
   await user.type(screen.getByLabelText("Product Code"), "MLBB-DM-500");
   await user.click(screen.getByRole("combobox", { name: "Category" }));
-  await user.click(await screen.findByRole("option", { name: "Mobile Legends: Indonesia" }));
+  await user.click(await screen.findByRole("option", { name: "Mobile Legends" }));
 }
 
 /**
@@ -81,25 +81,17 @@ describe("AddMainProductPage", () => {
     expect(createSpy).not.toHaveBeenCalled();
   });
 
-  it("lists only the selected category's sub categories, and clears them when it changes", async () => {
+  // Sub categories are fetched per category now, so the list is whatever the
+  // API returns for the chosen one rather than a static map.
+  it("loads sub categories for the selected category", async () => {
     const user = userEvent.setup();
     await renderRoute(ADD_PATH);
 
     await user.click(await screen.findByRole("combobox", { name: "Category" }));
-    await user.click(await screen.findByRole("option", { name: "Mobile Legends: Indonesia" }));
+    await user.click(await screen.findByRole("option", { name: "Mobile Legends" }));
 
     await user.click(screen.getByRole("combobox", { name: "Sub Category" }));
-    expect(await screen.findByRole("option", { name: "Starlight" })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "Genesis Crystals" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("option", { name: "Starlight" }));
-    expect(screen.getByRole("combobox", { name: "Sub Category" })).toHaveTextContent("Starlight");
-
-    await user.click(screen.getByRole("combobox", { name: "Category" }));
-    await user.click(await screen.findByRole("option", { name: "Genshin Impact" }));
-
-    expect(screen.getByRole("combobox", { name: "Sub Category" })).not.toHaveTextContent("Starlight");
-    await user.click(screen.getByRole("combobox", { name: "Sub Category" }));
-    expect(await screen.findByRole("option", { name: "Genesis Crystals" })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Mobile Legends: Global" })).toBeInTheDocument();
   });
 
   it("keeps the Description character count and percentage in sync", async () => {
@@ -132,16 +124,15 @@ describe("AddMainProductPage", () => {
       expect.objectContaining({
         name: "Diamond Top Up 500",
         code: "MLBB-DM-500",
-        category_name: "Mobile Legends: Indonesia",
         sub_name: "500 Diamonds",
         access: "reseller",
         tag: "popular",
         description: "Instant top up.",
         // No pricing fields in this frame, so the product starts with none.
         variants: [],
-        // Denormalized off the chosen category, since the form has no Game field.
-        game_id: "game-mlbb",
-        game_name: "Mobile Legends: Bang Bang",
+        // The select submits a real category id — the API's foreign key needs
+        // one, and the old hardcoded list carried names.
+        category_id: expect.stringMatching(/^\d+$/),
       }),
     );
 

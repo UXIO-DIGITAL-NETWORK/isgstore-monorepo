@@ -13,7 +13,10 @@
  */
 export interface CategoryProvider {
   id: string;
+  /** Display name of the supplier, for the list. */
   provider_name: string;
+  /** The API's foreign key — what the form's Provider select actually submits. */
+  supplier_id: string;
   category_id: string;
   provider_template: string;
   created_at: string;

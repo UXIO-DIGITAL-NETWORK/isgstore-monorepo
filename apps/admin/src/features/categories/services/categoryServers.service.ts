@@ -1,85 +1,105 @@
-import type { PaginatedResponse } from "@/types/api.type";
-import { CATEGORY_SERVERS } from "../data/category-servers.data";
-import type { CategoryServer, CategoryServerListParams } from "../types/categoryServer.type";
+import { api } from "@/lib/axios";
+import { API_VERSION } from "@/config/env";
+import { toFk, toRowId, unwrapPaginated } from "@/lib/apiMappers";
+import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
+import type { CategoryServer, CategoryServerListParams, CategoryServerOption } from "../types/categoryServer.type";
 
-const DEFAULT_PER_PAGE = 10;
+const BASE = `${API_VERSION}/server-categories`;
+const OPTIONS_BASE = `${API_VERSION}/server-category-options`;
 
-// In-memory mutable copy so create/update/remove are visible across calls
-// within a session (mock-backed only — resets on reload).
-const categoryServers: CategoryServer[] = [...CATEGORY_SERVERS];
-
-function matchesFilters(row: CategoryServer, params: CategoryServerListParams): boolean {
-  if (params.search && !row.name.toLowerCase().includes(params.search.toLowerCase())) return false;
-  return true;
+interface ServerCategoryOptionApiRow {
+  id: number;
+  server_category_id: number;
+  name: string;
+  value: string;
 }
 
-function indexOfOrThrow(id: string): number {
-  const index = categoryServers.findIndex((row) => row.id === id);
-  if (index === -1) throw new Error(`No category server found for id: ${id}`);
-  return index;
+interface ServerCategoryApiRow {
+  id: number;
+  category_id: number;
+  name: string;
+  options?: ServerCategoryOptionApiRow[];
+  created_at: string;
+  updated_at: string;
 }
 
-// Mock-backed for now (backend not built yet). Swap each method body to a
-// real `api.get/post/put/delete(...)` call once the backend ships — hooks/UI
-// stay unchanged. See system_architecture.md §6.
-//
-// No `setStatus` here, unlike categoryTypes.service: this entity has no
-// active/inactive concept (§6).
+const toCategoryServer = (row: ServerCategoryApiRow): CategoryServer => ({
+  id: toRowId(row.id),
+  category_id: toRowId(row.category_id),
+  name: row.name,
+  options: (row.options ?? []).map((option) => ({ name: option.name, value: option.value })),
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+type CategoryServerInput = Omit<CategoryServer, "id" | "created_at" | "updated_at">;
+
+/**
+ * Options are a nested list in this feature's model but a separate resource in
+ * the API, so a write has to fan out. Existing options are deleted and the
+ * submitted set recreated rather than diffed: nothing references an option's
+ * id, so churning them is harmless, and a diff would be materially more code
+ * for no observable difference.
+ */
+const replaceOptions = async (serverCategoryId: string, options: CategoryServerOption[]): Promise<void> => {
+  const existing: ApiResponse<PaginatedResponse<ServerCategoryOptionApiRow>> = await api.get(OPTIONS_BASE, {
+    params: { server_category_id: serverCategoryId, per_page: 100 },
+  });
+
+  await Promise.all(existing.data.data.map((option) => api.delete(`${OPTIONS_BASE}/${option.id}`)));
+
+  await Promise.all(
+    options.map((option) =>
+      api.post(OPTIONS_BASE, {
+        server_category_id: toFk(serverCategoryId),
+        name: option.name,
+        value: option.value,
+      }),
+    ),
+  );
+};
+
 export const categoryServersService = {
   list: async (params: CategoryServerListParams = {}): Promise<PaginatedResponse<CategoryServer>> => {
-    const page = params.page ?? 1;
-    const perPage = params.per_page ?? DEFAULT_PER_PAGE;
-    const filtered = categoryServers.filter((row) => matchesFilters(row, params));
-
-    const start = (page - 1) * perPage;
-    const pageRows = filtered.slice(start, start + perPage);
-    const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
-
-    return {
-      data: pageRows,
-      links: {
-        first: "/category-servers?page=1",
-        last: `/category-servers?page=${lastPage}`,
-        prev: page > 1 ? `/category-servers?page=${page - 1}` : null,
-        next: page < lastPage ? `/category-servers?page=${page + 1}` : null,
-      },
-      meta: {
-        current_page: page,
-        from: pageRows.length ? start + 1 : null,
-        last_page: lastPage,
-        path: "/category-servers",
-        per_page: perPage,
-        to: pageRows.length ? start + pageRows.length : null,
-        total: filtered.length,
-      },
-    };
+    const response: ApiResponse<PaginatedResponse<ServerCategoryApiRow>> = await api.get(BASE, { params });
+    return unwrapPaginated(response, toCategoryServer);
   },
 
-  getById: async (id: string): Promise<CategoryServer> => categoryServers[indexOfOrThrow(id)],
-
-  create: async (input: Omit<CategoryServer, "id" | "created_at" | "updated_at">): Promise<CategoryServer> => {
-    const now = new Date().toISOString();
-    const created: CategoryServer = {
-      ...input,
-      id: `cserver-${categoryServers.length + 1}-${Date.now()}`,
-      created_at: now,
-      updated_at: now,
-    };
-    categoryServers.push(created);
-    return created;
+  getById: async (id: string): Promise<CategoryServer> => {
+    const response: ApiResponse<ServerCategoryApiRow> = await api.get(`${BASE}/${id}`);
+    return toCategoryServer(response.data);
   },
 
-  update: async (
-    id: string,
-    input: Partial<Omit<CategoryServer, "id" | "created_at" | "updated_at">>,
-  ): Promise<CategoryServer> => {
-    const index = indexOfOrThrow(id);
-    const updated: CategoryServer = { ...categoryServers[index], ...input, updated_at: new Date().toISOString() };
-    categoryServers[index] = updated;
-    return updated;
+  create: async (input: CategoryServerInput): Promise<CategoryServer> => {
+    const response: ApiResponse<ServerCategoryApiRow> = await api.post(BASE, {
+      category_id: toFk(input.category_id),
+      name: input.name,
+    });
+
+    const created = toCategoryServer(response.data);
+    if (input.options.length) await replaceOptions(created.id, input.options);
+
+    return { ...created, options: input.options };
+  },
+
+  update: async (id: string, input: Partial<CategoryServerInput>): Promise<CategoryServer> => {
+    const current = await categoryServersService.getById(id);
+
+    const response: ApiResponse<ServerCategoryApiRow> = await api.put(`${BASE}/${id}`, {
+      category_id: toFk(input.category_id ?? current.category_id),
+      name: input.name ?? current.name,
+    });
+
+    const updated = toCategoryServer(response.data);
+    if (input.options) {
+      await replaceOptions(id, input.options);
+      return { ...updated, options: input.options };
+    }
+
+    return { ...updated, options: current.options };
   },
 
   remove: async (id: string): Promise<void> => {
-    categoryServers.splice(indexOfOrThrow(id), 1);
+    await api.delete(`${BASE}/${id}`);
   },
 };

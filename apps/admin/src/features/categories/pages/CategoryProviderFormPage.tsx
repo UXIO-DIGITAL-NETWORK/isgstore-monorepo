@@ -9,7 +9,8 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PROVIDER_OPTIONS, PROVIDER_TEMPLATE_OPTIONS } from "../data/select-options.data";
+import { PROVIDER_TEMPLATE_OPTIONS } from "../data/select-options.data";
+import { useSupplierOptions } from "../hooks/useSupplierOptions";
 import { useCategoryList } from "../hooks/useCategories";
 import {
   useCategoryProvider,
@@ -19,7 +20,7 @@ import {
 import { categoryProviderFormSchema, type CategoryProviderFormValues } from "../schemas/categoryProviderForm.schema";
 
 const CATEGORY_OPTIONS_PAGE_SIZE = 100;
-const EMPTY_VALUES: CategoryProviderFormValues = { providerName: "", categoryId: "", providerTemplate: "" };
+const EMPTY_VALUES: CategoryProviderFormValues = { supplierId: "", categoryId: "", providerTemplate: "" };
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -57,6 +58,7 @@ export default function CategoryProviderFormPage() {
   const { data: categories } = useCategoryList({ per_page: CATEGORY_OPTIONS_PAGE_SIZE });
   const { data: existing } = useCategoryProvider(categoryProviderId);
 
+  const { options: supplierOptions } = useSupplierOptions();
   const createCategoryProvider = useCreateCategoryProvider();
   const updateCategoryProvider = useUpdateCategoryProvider();
   const isPending = createCategoryProvider.isPending || updateCategoryProvider.isPending;
@@ -72,7 +74,7 @@ export default function CategoryProviderFormPage() {
     // resolves — on edit it is undefined for the first render.
     values: existing
       ? {
-          providerName: existing.provider_name,
+          supplierId: existing.supplier_id ?? "",
           categoryId: existing.category_id,
           providerTemplate: existing.provider_template,
         }
@@ -81,7 +83,7 @@ export default function CategoryProviderFormPage() {
 
   const onSubmit = (values: CategoryProviderFormValues) => {
     const payload = {
-      provider_name: values.providerName,
+      supplier_id: values.supplierId,
       category_id: values.categoryId,
       provider_template: values.providerTemplate,
     };
@@ -117,7 +119,7 @@ export default function CategoryProviderFormPage() {
       <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
         <Controller
           control={control}
-          name="providerName"
+          name="supplierId"
           render={({ field }) => (
             <Box className="flex flex-col gap-1.5">
               <Label htmlFor="category-provider-provider">Provider</Label>
@@ -132,7 +134,7 @@ export default function CategoryProviderFormPage() {
                   <SelectValue placeholder="Select a provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PROVIDER_OPTIONS.map((option) => (
+                  {supplierOptions.map((option) => (
                     <SelectItem
                       key={option.value}
                       value={option.value}
@@ -142,7 +144,7 @@ export default function CategoryProviderFormPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <FieldError message={errors.providerName?.message} />
+              <FieldError message={errors.supplierId?.message} />
             </Box>
           )}
         />

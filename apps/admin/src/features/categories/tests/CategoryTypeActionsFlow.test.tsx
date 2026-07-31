@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 
 import { renderRoute, screen, within } from "@/test/test-utils";
 import { categoryTypesService } from "../services/categoryTypes.service";
-import { CATEGORY_TYPES } from "../data/category-types.data";
+import { CATEGORY_TYPES } from "@/test/fixtures/category-types.data";
 
 const LIST_PATH = "/admin/categories-preview/category-type";
 

@@ -1,89 +1,79 @@
-import type { PaginatedResponse } from "@/types/api.type";
-import { CATEGORY_PROVIDERS } from "../data/category-providers.data";
+import { api } from "@/lib/axios";
+import { API_VERSION } from "@/config/env";
+import { toFk, toRowId, unwrapPaginated } from "@/lib/apiMappers";
+import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type { CategoryProvider, CategoryProviderListParams } from "../types/categoryProvider.type";
 
-const DEFAULT_PER_PAGE = 10;
+/**
+ * "Category Provider" is this feature's user-facing name for what the API
+ * calls a **supplier category** — the mapping of which upstream supplier
+ * fulfils which category, and under which integration template. Only the URL
+ * and field names differ; the entity is the same. The translation is confined
+ * to this file so neither side has to be renamed.
+ */
+const BASE = `${API_VERSION}/supplier-categories`;
 
-// In-memory mutable copy so create/update/remove are visible across calls
-// within a session (mock-backed only — resets on reload). Swap each method to
-// a real `api.*` call when the backend lands (system_architecture.md §6).
-const categoryProviders: CategoryProvider[] = [...CATEGORY_PROVIDERS];
-
-function matchesFilters(row: CategoryProvider, params: CategoryProviderListParams): boolean {
-  if (params.provider_name && row.provider_name !== params.provider_name) return false;
-  if (params.search) {
-    // Searches the template too — a "Search category provider" box that
-    // ignored a visible column would read as broken.
-    const haystack = `${row.provider_name} ${row.provider_template}`.toLowerCase();
-    if (!haystack.includes(params.search.toLowerCase())) return false;
-  }
-  return true;
+interface SupplierCategoryApiRow {
+  id: number;
+  category_id: number;
+  supplier_id: number;
+  template_code: string;
+  supplier?: { id: number; name: string } | null;
+  created_at: string;
+  updated_at: string;
 }
 
-function indexOfOrThrow(id: string): number {
-  const index = categoryProviders.findIndex((row) => row.id === id);
-  if (index === -1) throw new Error(`No category provider found for id: ${id}`);
-  return index;
-}
+const toCategoryProvider = (row: SupplierCategoryApiRow): CategoryProvider => ({
+  id: toRowId(row.id),
+  // The list renders the supplier's name; fall back to the id so a row with an
+  // un-eager-loaded relation still identifies itself rather than rendering blank.
+  provider_name: row.supplier?.name ?? String(row.supplier_id),
+  supplier_id: toRowId(row.supplier_id),
+  category_id: toRowId(row.category_id),
+  provider_template: row.template_code,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+export type CategoryProviderInput = Omit<CategoryProvider, "id" | "created_at" | "updated_at" | "provider_name"> & {
+  /** Display-only on reads; never submitted. */
+  provider_name?: string;
+};
+
+const toPayload = (input: Partial<CategoryProviderInput>) => ({
+  ...(input.category_id !== undefined && { category_id: toFk(input.category_id) }),
+  ...(input.supplier_id !== undefined && { supplier_id: toFk(input.supplier_id) }),
+  ...(input.provider_template !== undefined && { template_code: input.provider_template }),
+});
 
 export const categoryProvidersService = {
   list: async (params: CategoryProviderListParams = {}): Promise<PaginatedResponse<CategoryProvider>> => {
-    const page = params.page ?? 1;
-    const perPage = params.per_page ?? DEFAULT_PER_PAGE;
-    const filtered = categoryProviders.filter((row) => matchesFilters(row, params));
-    const start = (page - 1) * perPage;
-    const pageRows = filtered.slice(start, start + perPage);
-    const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
-
-    return {
-      data: pageRows,
-      links: {
-        first: "/category-providers?page=1",
-        last: `/category-providers?page=${lastPage}`,
-        prev: page > 1 ? `/category-providers?page=${page - 1}` : null,
-        next: page < lastPage ? `/category-providers?page=${page + 1}` : null,
-      },
-      meta: {
-        current_page: page,
-        from: pageRows.length ? start + 1 : null,
-        last_page: lastPage,
-        path: "/category-providers",
-        per_page: perPage,
-        to: pageRows.length ? start + pageRows.length : null,
-        total: filtered.length,
-      },
-    };
+    // The toolbar filters by provider *name*; the API filters by supplier id.
+    // Passing the name through as `search` matches on the supplier join, which
+    // is the closest honest translation until the filter becomes an id select.
+    const { provider_name, ...rest } = params;
+    const response: ApiResponse<PaginatedResponse<SupplierCategoryApiRow>> = await api.get(BASE, {
+      params: { ...rest, ...(provider_name ? { search: provider_name } : {}) },
+    });
+    return unwrapPaginated(response, toCategoryProvider);
   },
 
-  getById: async (id: string): Promise<CategoryProvider> => categoryProviders[indexOfOrThrow(id)],
-
-  create: async (input: Omit<CategoryProvider, "id" | "created_at" | "updated_at">): Promise<CategoryProvider> => {
-    const now = new Date().toISOString();
-    const created: CategoryProvider = {
-      ...input,
-      id: `cprov-${categoryProviders.length + 1}-${Date.now()}`,
-      created_at: now,
-      updated_at: now,
-    };
-    categoryProviders.push(created);
-    return created;
+  getById: async (id: string): Promise<CategoryProvider> => {
+    const response: ApiResponse<SupplierCategoryApiRow> = await api.get(`${BASE}/${id}`);
+    return toCategoryProvider(response.data);
   },
 
-  update: async (
-    id: string,
-    input: Partial<Omit<CategoryProvider, "id" | "created_at" | "updated_at">>,
-  ): Promise<CategoryProvider> => {
-    const index = indexOfOrThrow(id);
-    const updated: CategoryProvider = {
-      ...categoryProviders[index],
-      ...input,
-      updated_at: new Date().toISOString(),
-    };
-    categoryProviders[index] = updated;
-    return updated;
+  create: async (input: CategoryProviderInput): Promise<CategoryProvider> => {
+    const response: ApiResponse<SupplierCategoryApiRow> = await api.post(BASE, toPayload(input));
+    return toCategoryProvider(response.data);
+  },
+
+  update: async (id: string, input: Partial<CategoryProviderInput>): Promise<CategoryProvider> => {
+    const response: ApiResponse<SupplierCategoryApiRow> = await api.put(`${BASE}/${id}`, toPayload(input));
+    return toCategoryProvider(response.data);
   },
 
   remove: async (id: string): Promise<void> => {
-    categoryProviders.splice(indexOfOrThrow(id), 1);
+    await api.delete(`${BASE}/${id}`);
   },
 };

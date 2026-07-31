@@ -3,9 +3,13 @@ import userEvent from "@testing-library/user-event";
 
 import { renderRoute, screen } from "@/test/test-utils";
 import { subCategoriesService } from "../services/subCategories.service";
-import { SUB_CATEGORIES } from "../data/sub-categories.data";
+import { SUB_CATEGORIES } from "@/test/fixtures/sub-categories.data";
 
-const EDIT_PATH = `/admin/categories-preview/sub-category/${SUB_CATEGORIES[0].id}/edit`;
+// Rows come from the API now, which assigns numeric ids — the fixture's own
+// `id` string is no longer what the service will be asked for. The fixtures
+// are seeded in order, so the first row is id 1.
+const FIRST_ID = "1";
+const EDIT_PATH = `/admin/categories-preview/sub-category/${FIRST_ID}/edit`;
 
 /**
  * Edit Sub Category (product_requirements.md §4.5, line 210) — the same form
@@ -44,7 +48,7 @@ describe("EditSubCategoryPage", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(updateSpy).toHaveBeenCalledWith(
-      SUB_CATEGORIES[0].id,
+      FIRST_ID,
       expect.objectContaining({ name: "Mobile Legends: SEA" }),
     );
     expect(createSpy).not.toHaveBeenCalled();

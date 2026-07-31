@@ -1,19 +1,21 @@
 import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Link } from "@/components/common/Link";
+import { SelectField } from "@/components/common/SelectField";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CategoryServerOptionsBuilder } from "../components/CategoryServerOptionsBuilder";
+import { useCategoryOptions } from "../hooks/useCategoryOptions";
 import { useCategoryServer, useCreateCategoryServer, useUpdateCategoryServer } from "../hooks/useCategoryServers";
 import { categoryServerFormSchema, type CategoryServerFormValues } from "../schemas/categoryServerForm.schema";
 
-const EMPTY_VALUES: CategoryServerFormValues = { name: "", options: [] };
+const EMPTY_VALUES: CategoryServerFormValues = { category_id: "", name: "", options: [] };
 
 /**
  * Add / Edit Category Server (product_requirements.md §4.5, line 235) — one
@@ -35,6 +37,7 @@ export default function CategoryServerFormPage() {
   const listHref = isEdit ? pathname.replace(/\/[^/]+\/edit\/?$/, "") : pathname.replace(/\/add\/?$/, "");
 
   const { data: existing } = useCategoryServer(categoryServerId);
+  const { options: categoryOptions, isLoading: categoriesLoading } = useCategoryOptions();
   const createCategoryServer = useCreateCategoryServer();
   const updateCategoryServer = useUpdateCategoryServer();
   const isPending = createCategoryServer.isPending || updateCategoryServer.isPending;
@@ -49,11 +52,13 @@ export default function CategoryServerFormPage() {
     defaultValues: EMPTY_VALUES,
     // `values` (not `defaultValues`) so the form re-syncs once the record
     // resolves — on edit it is undefined for the first render.
-    values: existing ? { name: existing.name, options: existing.options } : undefined,
+    values: existing
+      ? { category_id: existing.category_id, name: existing.name, options: existing.options }
+      : undefined,
   });
 
   const onSubmit = (values: CategoryServerFormValues) => {
-    const payload = { name: values.name, options: values.options };
+    const payload = { category_id: values.category_id, name: values.name, options: values.options };
     const onSuccess = () => navigate({ to: listHref as unknown as string });
 
     if (categoryServerId) {
@@ -84,6 +89,23 @@ export default function CategoryServerFormPage() {
       </Box>
 
       <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+        <Controller
+          control={control}
+          name="category_id"
+          render={({ field }) => (
+            <SelectField
+              id="category-server-category"
+              label="Category"
+              options={categoryOptions}
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.category_id?.message}
+              disabled={categoriesLoading}
+              emptyLabel={categoriesLoading ? "Loading categories..." : "No categories available"}
+            />
+          )}
+        />
+
         <Box className="flex flex-col gap-1.5">
           <Label htmlFor="category-server-name">Category Server Name</Label>
           <Input

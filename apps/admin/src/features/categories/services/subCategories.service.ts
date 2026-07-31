@@ -1,92 +1,78 @@
-import type { PaginatedResponse } from "@/types/api.type";
-import { SUB_CATEGORIES } from "../data/sub-categories.data";
+import { api } from "@/lib/axios";
+import { API_VERSION } from "@/config/env";
+import { fromStatusUnion, toFk, toRowId, toStatusUnion, unwrapPaginated } from "@/lib/apiMappers";
+import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type { SubCategory, SubCategoryListParams } from "../types/subCategory.type";
 
-const DEFAULT_PER_PAGE = 10;
+const BASE = `${API_VERSION}/sub-categories`;
 
-// In-memory mutable copy so create/update/remove are visible across calls
-// within a session (mock-backed only — resets on reload).
-const subCategories: SubCategory[] = [...SUB_CATEGORIES];
-
-function matchesFilters(row: SubCategory, params: SubCategoryListParams): boolean {
-  if (params.search) {
-    const needle = params.search.toLowerCase();
-    const haystack = `${row.name} ${row.currency_name}`.toLowerCase();
-    if (!haystack.includes(needle)) return false;
-  }
-  if (params.category_id && row.category_id !== params.category_id) return false;
-  return true;
+interface SubCategoryApiRow {
+  id: number;
+  category_id: number;
+  name: string;
+  currency_name: string | null;
+  description: string | null;
+  logo: string | null;
+  logo_url: string | null;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-// Mock-backed for now (backend not built yet). Swap each method body to a
-// real `api.get/post/put/delete(...)` call once the backend ships — hooks/UI
-// stay unchanged. See system_architecture.md §6.
-//
-// ponytail: no bulk-delete method — `useDeleteSubCategories` maps ids over
-// `remove`, so the row menu and the toolbar's "Delete (N)" share one path.
-// Add a real batch endpoint here if the API ever exposes one.
+const toSubCategory = (row: SubCategoryApiRow): SubCategory => ({
+  id: toRowId(row.id),
+  category_id: toRowId(row.category_id),
+  name: row.name,
+  currency_name: row.currency_name ?? "",
+  description: row.description ?? undefined,
+  logo_url: row.logo_url ?? undefined,
+  status: toStatusUnion(row.status),
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+export type SubCategoryInput = Omit<SubCategory, "id" | "created_at" | "updated_at"> & { logo?: File | null };
+
+/**
+ * The logo is a real file upload, so writes go as multipart rather than JSON.
+ * PHP does not populate `$_POST`/`$_FILES` from a multipart body on PUT, so
+ * updates POST with a `_method: PUT` override — the same spoof the storefront
+ * uses for its profile-with-avatar update.
+ */
+const toFormData = (input: Partial<SubCategoryInput>, method?: "PUT"): FormData => {
+  const form = new FormData();
+  if (method) form.append("_method", method);
+  if (input.category_id !== undefined) form.append("category_id", String(toFk(input.category_id)));
+  if (input.name !== undefined) form.append("name", input.name);
+  if (input.currency_name !== undefined) form.append("currency_name", input.currency_name);
+  if (input.description !== undefined) form.append("description", input.description ?? "");
+  if (input.status !== undefined) form.append("status", fromStatusUnion(input.status) ? "1" : "0");
+  if (input.logo instanceof File) form.append("logo", input.logo);
+  return form;
+};
+
 export const subCategoriesService = {
   list: async (params: SubCategoryListParams = {}): Promise<PaginatedResponse<SubCategory>> => {
-    const page = params.page ?? 1;
-    const perPage = params.per_page ?? DEFAULT_PER_PAGE;
-    const filtered = subCategories.filter((row) => matchesFilters(row, params));
-
-    const start = (page - 1) * perPage;
-    const pageRows = filtered.slice(start, start + perPage);
-    const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
-
-    return {
-      data: pageRows,
-      links: {
-        first: "/sub-categories?page=1",
-        last: `/sub-categories?page=${lastPage}`,
-        prev: page > 1 ? `/sub-categories?page=${page - 1}` : null,
-        next: page < lastPage ? `/sub-categories?page=${page + 1}` : null,
-      },
-      meta: {
-        current_page: page,
-        from: pageRows.length ? start + 1 : null,
-        last_page: lastPage,
-        path: "/sub-categories",
-        per_page: perPage,
-        to: pageRows.length ? start + pageRows.length : null,
-        total: filtered.length,
-      },
-    };
+    const response: ApiResponse<PaginatedResponse<SubCategoryApiRow>> = await api.get(BASE, { params });
+    return unwrapPaginated(response, toSubCategory);
   },
 
   getById: async (id: string): Promise<SubCategory> => {
-    const found = subCategories.find((row) => row.id === id);
-    if (!found) throw new Error(`No sub category found for id: ${id}`);
-    return found;
+    const response: ApiResponse<SubCategoryApiRow> = await api.get(`${BASE}/${id}`);
+    return toSubCategory(response.data);
   },
 
-  create: async (input: Omit<SubCategory, "id" | "created_at" | "updated_at">): Promise<SubCategory> => {
-    const now = new Date().toISOString();
-    const created: SubCategory = {
-      ...input,
-      id: `sub-${subCategories.length + 1}-${Date.now()}`,
-      created_at: now,
-      updated_at: now,
-    };
-    subCategories.push(created);
-    return created;
+  create: async (input: SubCategoryInput): Promise<SubCategory> => {
+    const response: ApiResponse<SubCategoryApiRow> = await api.post(BASE, toFormData(input));
+    return toSubCategory(response.data);
   },
 
-  update: async (
-    id: string,
-    input: Partial<Omit<SubCategory, "id" | "created_at" | "updated_at">>,
-  ): Promise<SubCategory> => {
-    const index = subCategories.findIndex((row) => row.id === id);
-    if (index === -1) throw new Error(`No sub category found for id: ${id}`);
-    const updated: SubCategory = { ...subCategories[index], ...input, updated_at: new Date().toISOString() };
-    subCategories[index] = updated;
-    return updated;
+  update: async (id: string, input: Partial<SubCategoryInput>): Promise<SubCategory> => {
+    const response: ApiResponse<SubCategoryApiRow> = await api.post(`${BASE}/${id}`, toFormData(input, "PUT"));
+    return toSubCategory(response.data);
   },
 
   remove: async (id: string): Promise<void> => {
-    const index = subCategories.findIndex((row) => row.id === id);
-    if (index === -1) throw new Error(`No sub category found for id: ${id}`);
-    subCategories.splice(index, 1);
+    await api.delete(`${BASE}/${id}`);
   },
 };
