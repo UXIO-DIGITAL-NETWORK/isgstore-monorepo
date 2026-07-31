@@ -1,277 +1,134 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import { api } from "@/lib/axios";
+import { envelope, paginated } from "@/test/apiEnvelope";
 import { productsService } from "../services/products.service";
-import { PRODUCTS } from "../data/products.data";
-import { CATEGORY_OPTIONS, PRICE_RANGE_OPTIONS } from "../data/select-options.data";
-import { PRICE_TIERS, type ProductStatus } from "../types/product.type";
 
-const STATUSES: ProductStatus[] = ["active", "inactive"];
+vi.mock("@/lib/axios", () => ({
+  api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+}));
 
-/**
- * Contract test — pins the typed shape and the params mapping before any UI
- * consumes the service (system_architecture.md §4.11).
- *
- * Product has no §4.x PRD spec; §6 gives the entity brief
- * (`id, game_id, name, cost_price, selling_price, provider_sku?, is_available`)
- * and the rest is read off the supplied reference. The inferences that test
- * below are deliberate and flagged in §4.6: `game_name` is denormalized (no
- * Game service exists), and the reference's "All Price" filter has no visible
- * options, so it is modelled as price-range buckets.
- */
+const apiRow = (over: Record<string, unknown> = {}) => ({
+  id: 21,
+  category_id: 1,
+  sub_category_id: 3,
+  name: "MOBILELEGEND - 100 Diamond",
+  sub_name: "Bonus",
+  code: "ML100",
+  logo_url: null,
+  description: "desc",
+  validasi_nickname: "mlbb",
+  access: "public",
+  tag: "HOT",
+  price_modal: 20000,
+  price_member: 24000,
+  price_vip: 23000,
+  price_reseller: 22000,
+  price_agent: 21000,
+  status: true,
+  is_available: true,
+  category: { id: 1, name: "Mobile Legends" },
+  sub_category: { id: 3, name: "Diamond" },
+  created_at: "2026-07-01T00:00:00.000000Z",
+  updated_at: "2026-07-01T00:00:00.000000Z",
+  ...over,
+});
+
+beforeEach(() => vi.clearAllMocks());
+
 describe("productsService.list", () => {
-  it("returns a PaginatedResponse<Product> shape with no params", async () => {
+  /**
+   * The API is flat — one row per denomination — while this feature models a
+   * product as a container of variants. Each row becomes a single-variant
+   * product so the price cell renders unchanged.
+   */
+  it("maps a flat API row into a single-variant product", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow()]));
+
     const result = await productsService.list();
 
-    expect(Array.isArray(result.data)).toBe(true);
-    expect(result.meta).toMatchObject({ current_page: 1, per_page: 10 });
-    expect(result.meta.total).toBe(PRODUCTS.length);
-    expect(result.meta.from).toBe(1);
-    expect(result.meta.to).toBe(result.data.length);
-    expect(result.links).toHaveProperty("first");
-    expect(result.links).toHaveProperty("last");
+    expect(result.data[0]).toMatchObject({
+      id: "21",
+      name: "MOBILELEGEND - 100 Diamond",
+      game_name: "Mobile Legends",
+      category_name: "Diamond",
+      status: "active",
+      is_available: true,
+    });
+    expect(result.data[0].variants).toHaveLength(1);
+    expect(result.data[0].variants[0]).toMatchObject({
+      cost_price: 20000,
+      prices: { public: 24000, vip: 23000, reseller: 22000, agent: 21000 },
+    });
   });
 
-  it("reports a real total, not the reference's 9999999 placeholder", async () => {
-    // The reference footer reads "1-10 of 9999999 transactions" — the same
-    // copy-pasted string every Category tab shipped. The count is real here.
+  it("keeps status and is_available independent — they are different axes", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow({ status: true, is_available: false })]));
+
     const result = await productsService.list();
-    expect(result.meta.total).not.toBe(9999999);
-    expect(result.meta.total).toBeGreaterThan(0);
+
+    expect(result.data[0]).toMatchObject({ status: "active", is_available: false });
   });
 
-  it("paginates: page 2 continues where page 1 stopped", async () => {
-    const first = await productsService.list({ page: 1, per_page: 10 });
-    const second = await productsService.list({ page: 2, per_page: 10 });
+  it("translates a named price bucket into the API's min/max params", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
 
-    expect(first.data).toHaveLength(10);
-    expect(second.data.length).toBeGreaterThan(0);
-    expect(second.meta.current_page).toBe(2);
-    expect(second.meta.from).toBe(11);
-    expect(first.meta.last_page).toBeGreaterThan(1);
+    await productsService.list({ search: "diamond", per_page: 20, price: "under-50k" });
 
-    const firstIds = first.data.map((row) => row.id);
-    for (const row of second.data) expect(firstIds).not.toContain(row.id);
+    const [, config] = vi.mocked(api.get).mock.calls[0];
+    expect(config?.params).toMatchObject({ search: "diamond", per_page: 20 });
+    expect(config?.params).toHaveProperty("min_price");
   });
 
-  it("caps returned rows to per_page", async () => {
-    const result = await productsService.list({ per_page: 3 });
-    expect(result.data).toHaveLength(3);
-  });
+  // A bucket the options list does not know must narrow to nothing, never
+  // silently widen back to every product.
+  it("narrows to nothing for an unknown price bucket", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
 
-  it("narrows by search over the product name, code and game", async () => {
-    const result = await productsService.list({ search: "diamond", per_page: 50 });
+    await productsService.list({ price: "not-a-bucket" });
 
-    expect(result.data.length).toBeGreaterThan(0);
-    for (const row of result.data) {
-      expect(`${row.name} ${row.code} ${row.game_name}`.toLowerCase()).toContain("diamond");
-    }
-  });
-
-  it("narrows by the category filter behind the toolbar's category select", async () => {
-    const category = CATEGORY_OPTIONS[0].value;
-    const result = await productsService.list({ category, per_page: 50 });
-
-    expect(result.data.length).toBeGreaterThan(0);
-    for (const row of result.data) expect(row.category_name).toBe(category);
-  });
-
-  it("narrows by a price bucket, matching on any variant's price", async () => {
-    const bucket = PRICE_RANGE_OPTIONS.find((option) => option.value === "10k-50k");
-    expect(bucket).toBeDefined();
-
-    const result = await productsService.list({ price: bucket!.value, per_page: 50 });
-
-    expect(result.data.length).toBeGreaterThan(0);
-    for (const row of result.data) {
-      const inBucket = row.variants.some(
-        (variant) =>
-          variant.prices.public >= bucket!.min && (bucket!.max === undefined || variant.prices.public < bucket!.max),
-      );
-      expect(inBucket).toBe(true);
-    }
-  });
-
-  it("combines filters rather than letting the last one win", async () => {
-    const category = CATEGORY_OPTIONS[0].value;
-    const result = await productsService.list({ category, search: "zzz-no-such-product", per_page: 50 });
-    expect(result.data).toHaveLength(0);
-    expect(result.meta.total).toBe(0);
-    expect(result.meta.from).toBeNull();
-    expect(result.meta.to).toBeNull();
+    expect(vi.mocked(api.get).mock.calls[0][1]?.params).toMatchObject({ min_price: Number.MAX_SAFE_INTEGER });
   });
 });
 
-describe("products fixtures", () => {
-  it("match the Product type, including both status axes", async () => {
-    const result = await productsService.list({ per_page: 50 });
+describe("productsService.update", () => {
+  // The API marks category_id, name, code and all five prices required, so a
+  // partial patch would 422 — the service merges onto the current row first.
+  it("merges onto the fetched row so a partial edit still satisfies the API", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow()));
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow({ tag: "NEW" })));
 
-    for (const row of result.data) {
-      expect(typeof row.id).toBe("string");
-      expect(row.name.trim()).not.toBe("");
-      expect(row.code.trim()).not.toBe("");
-      expect(row.game_id.trim()).not.toBe("");
-      expect(row.game_name.trim()).not.toBe("");
-      expect(row.category_name.trim()).not.toBe("");
-      expect(STATUSES).toContain(row.status);
-      // The reference stacks two badges per row. §4.6 models them as two
-      // separate axes: lifecycle status and storefront availability.
-      expect(typeof row.is_available).toBe("boolean");
-    }
-  });
+    await productsService.update("21", { tag: "NEW" });
 
-  it("carry at least one priced variant, each with its own status", async () => {
-    const result = await productsService.list({ per_page: 50 });
-
-    for (const row of result.data) {
-      expect(row.variants.length).toBeGreaterThan(0);
-      for (const variant of row.variants) {
-        expect(variant.name.trim()).not.toBe("");
-        expect(STATUSES).toContain(variant.status);
-      }
-    }
-  });
-
-  it("price every variant per tier above its cost, so the card's margin is never negative", async () => {
-    const result = await productsService.list({ per_page: 50 });
-
-    for (const row of result.data) {
-      for (const variant of row.variants) {
-        expect(variant.cost_price).toBeGreaterThan(0);
-        for (const tier of PRICE_TIERS) {
-          expect(variant.prices[tier]).toBeGreaterThan(variant.cost_price);
-        }
-      }
-      // Public is the retail tier: no reseller price sits above it.
-      for (const variant of row.variants) {
-        for (const tier of PRICE_TIERS) {
-          expect(variant.prices[tier]).toBeLessThanOrEqual(variant.prices.public);
-        }
-      }
-    }
-  });
-
-  it("exercise both values of each status axis, so neither badge is untested", async () => {
-    const result = await productsService.list({ per_page: 50 });
-
-    expect(result.data.some((row) => row.status === "active")).toBe(true);
-    expect(result.data.some((row) => row.status === "inactive")).toBe(true);
-    expect(result.data.some((row) => row.is_available)).toBe(true);
-    expect(result.data.some((row) => !row.is_available)).toBe(true);
-  });
-
-  it("store raw ISO timestamps, never pre-baked display strings", async () => {
-    const result = await productsService.list({ per_page: 50 });
-
-    for (const row of result.data) {
-      expect(row.created_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-      expect(Number.isNaN(Date.parse(row.created_at))).toBe(false);
-      expect(Number.isNaN(Date.parse(row.updated_at))).toBe(false);
-    }
-  });
-
-  it("carry no shadcn demo-dataset leakage", async () => {
-    // The same stock data-table example bled into all five Category
-    // references; this is the check that caught it there.
-    const banned = ["Cover Page", "Table of Contents", "Executive Summary", "Jamik Tashpulatov", "Eddie Lake"];
-    const serialized = JSON.stringify(PRODUCTS);
-
-    for (const term of banned) expect(serialized).not.toContain(term);
-  });
-
-  it("keep every category_name and price bucket reachable from the toolbar selects", async () => {
-    const optionValues = CATEGORY_OPTIONS.map((option) => option.value);
-    for (const row of PRODUCTS) expect(optionValues).toContain(row.category_name);
-
-    // A bucket nothing can match would render as a dead filter.
-    for (const bucket of PRICE_RANGE_OPTIONS) {
-      const matched = await productsService.list({ price: bucket.value, per_page: 50 });
-      expect(matched.data.length).toBeGreaterThan(0);
-    }
+    const [url, body] = vi.mocked(api.post).mock.calls[0];
+    const form = body as FormData;
+    expect(url).toBe("/v1/products/21");
+    expect(form.get("_method")).toBe("PUT");
+    expect(form.get("tag")).toBe("NEW");
+    // Carried across from the fetched row rather than dropped.
+    expect(form.get("name")).toBe("MOBILELEGEND - 100 Diamond");
+    expect(form.get("price_member")).toBe("24000");
   });
 });
 
-describe("productsService.getById", () => {
-  it("resolves the typed product for a known id", async () => {
-    await expect(productsService.getById(PRODUCTS[0].id)).resolves.toMatchObject({ id: PRODUCTS[0].id });
-  });
+describe("productsService.deactivate", () => {
+  it("changes lifecycle status only, leaving storefront visibility alone", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow({ is_available: true })));
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow({ status: false, is_available: true })));
 
-  it("throws for an unknown id", async () => {
-    await expect(productsService.getById("does-not-exist")).rejects.toThrow();
-  });
-});
+    await productsService.deactivate("21");
 
-describe("productsService.create", () => {
-  it("returns the typed product with a generated id and ISO timestamps", async () => {
-    const created = await productsService.create({
-      name: "Genesis Crystal 300",
-      game_id: "game-genshin",
-      game_name: "Genshin Impact",
-      category_name: "Genshin Impact",
-      code: "GI-GC-300",
-      status: "active",
-      is_available: true,
-      variants: [],
-    });
-
-    expect(created.id).toEqual(expect.any(String));
-    expect(created.id.trim()).not.toBe("");
-    expect(Number.isNaN(Date.parse(created.created_at))).toBe(false);
-    expect(created.created_at).toBe(created.updated_at);
-    expect(created).toMatchObject({ name: "Genesis Crystal 300", code: "GI-GC-300" });
-  });
-
-  it("puts the new product on page 1, where the form redirects back to", async () => {
-    // 12+ fixtures over a page size of 10: appending would land the row on
-    // page 2, so the admin would be sent back to a list that looks unchanged.
-    await productsService.create({
-      name: "Oneiric Shard 300",
-      game_id: "game-hsr",
-      game_name: "Honkai: Star Rail",
-      category_name: "Honkai: Star Rail",
-      code: "HSR-OS-300",
-      status: "active",
-      is_available: true,
-      variants: [],
-    });
-
-    const firstPage = await productsService.list();
-    expect(firstPage.data[0]).toMatchObject({ name: "Oneiric Shard 300" });
-  });
-
-  it("keeps the optional form fields it is given", async () => {
-    const created = await productsService.create({
-      name: "Weekly Pass",
-      game_id: "game-mlbb",
-      game_name: "Mobile Legends: Bang Bang",
-      category_name: "Mobile Legends: Indonesia",
-      sub_category_name: "Diamonds",
-      sub_name: "Weekly",
-      nickname_validation: "Moonton API",
-      access: "public",
-      tag: "popular",
-      description: "Weekly diamond pass.",
-      code: "MLBB-WP-01",
-      status: "active",
-      is_available: true,
-      variants: [],
-    });
-
-    expect(created).toMatchObject({
-      sub_name: "Weekly",
-      sub_category_name: "Diamonds",
-      nickname_validation: "Moonton API",
-      access: "public",
-      tag: "popular",
-      description: "Weekly diamond pass.",
-    });
+    const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
+    expect(form.get("status")).toBe("0");
+    expect(form.get("is_available")).toBe("1");
   });
 });
 
 describe("productsService.remove", () => {
-  it("deletes a known product and throws for an unknown id", async () => {
-    const target = PRODUCTS[PRODUCTS.length - 1].id;
+  it("deletes by id", async () => {
+    vi.mocked(api.delete).mockResolvedValue(envelope(null));
 
-    await expect(productsService.remove(target)).resolves.toBeUndefined();
-    await expect(productsService.getById(target)).rejects.toThrow();
-    await expect(productsService.remove("does-not-exist")).rejects.toThrow();
+    await expect(productsService.remove("21")).resolves.toBeUndefined();
+    expect(api.delete).toHaveBeenCalledWith("/v1/products/21");
   });
 });

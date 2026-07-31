@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { productsService } from "../services/products.service";
+import { productsService, type ProductInput } from "../services/products.service";
 import type { Product, ProductListParams } from "../types/product.type";
 
 export const useProductList = (params: ProductListParams) =>
@@ -33,6 +33,21 @@ export const useCreateProduct = () => {
 };
 
 /** The selection bar's "Deactive (N)" — same bulk shape as the delete path. */
+export const useUpdateProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<ProductInput> }) => productsService.update(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product updated");
+    },
+    onError: () => {
+      toast.error("Failed to update product");
+    },
+  });
+};
+
 export const useDeactivateProducts = () => {
   const queryClient = useQueryClient();
 

@@ -72,8 +72,9 @@ describe("AddCategoryProviderPage", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(createSpy).toHaveBeenCalledWith({
-      provider_name: "Zelpoint",
-      category_id: "cat-3",
+      // The select submits the API's supplier_id, not the display name.
+      supplier_id: expect.stringMatching(/^\d+$/),
+      category_id: expect.stringMatching(/^\d+$/),
       provider_template: "Games-Mobile Legends",
     });
   });

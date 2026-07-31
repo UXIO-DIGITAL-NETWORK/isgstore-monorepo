@@ -1,149 +1,248 @@
-import type { PaginatedResponse } from "@/types/api.type";
-import { TRANSACTIONS } from "../data/transactions.data";
-import type { ActivityLogEntry, StatusCounts, Transaction, TransactionListParams } from "../types/transaction.type";
+import { api } from "@/lib/axios";
+import { API_VERSION } from "@/config/env";
+import { toRowId, unwrapPaginated } from "@/lib/apiMappers";
+import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
+import type {
+  ActivityLogEntry,
+  StatusCounts,
+  Transaction,
+  TransactionListParams,
+  TransactionStatus,
+} from "../types/transaction.type";
 
-const DEFAULT_PER_PAGE = 10;
-/** Deliberate mock placeholder matching the reference footer
- * ("1-10 of 9999999 transactions") — not a real dataset count. */
-const MOCK_TOTAL_PLACEHOLDER = 9999999;
+const BASE = `${API_VERSION}/transactions`;
 
 /**
- * Maps a table column id (see automaticColumns.tsx/manualColumns.tsx) to a
- * sortable value accessor. Extend this map, not the columns, when a new
- * sortable column is added — the header sort UI in TransactionsTable is
- * generic and works for any column with `enableSorting !== false`.
+ * The API's transaction status enum, mapped onto this feature's vocabulary.
+ *
+ * `PAID` collapses into `pending`: the customer has paid but the supplier has
+ * not started, which is exactly what the Pending pill means to an operator.
+ * `EXPIRED` and `FAILED_PROVIDER` both read as `failed` — the distinction
+ * (never paid vs paid-then-failed) is carried by the payment status column.
  */
-const SORTERS: Record<string, (t: Transaction) => string | number> = {
-  invoice_no: (t) => t.invoice_no,
-  user: (t) => t.customer.name,
-  product: (t) => t.product.name,
-  cost: (t) => t.cost,
-  target_ref: (t) => t.target_ref ?? "",
-  status: (t) => t.invoice_status,
-  method: (t) => t.payment_method,
-  payment_method: (t) => t.payment_method,
-  time: (t) => t.created_at,
+const INVOICE_STATUS: Record<string, TransactionStatus> = {
+  PENDING: "pending",
+  PAID: "pending",
+  PROCESSING: "processing",
+  COMPLETED: "success",
+  FAILED_PROVIDER: "failed",
+  EXPIRED: "failed",
+  REFUNDED: "partial_refund",
 };
 
-function sortRows(rows: Transaction[], params: TransactionListParams): Transaction[] {
-  const sorter = params.sortBy ? SORTERS[params.sortBy] : undefined;
-  if (!sorter) return rows;
+/** `payments.status` is stored as a numeric string — see App\Enums\PaymentStatus. */
+const PAYMENT_STATUS: Record<string, TransactionStatus> = {
+  "1": "pending",
+  "2": "failed",
+  "3": "success",
+  "4": "partial_refund",
+};
 
-  const direction = params.sortDir === "desc" ? -1 : 1;
-  return [...rows].sort((a, b) => {
-    const aValue = sorter(a);
-    const bValue = sorter(b);
-    if (aValue < bValue) return -1 * direction;
-    if (aValue > bValue) return 1 * direction;
-    return 0;
-  });
+/** The reverse direction, for writes. */
+const TO_API_STATUS: Partial<Record<TransactionStatus, string>> = {
+  pending: "PENDING",
+  processing: "PROCESSING",
+  success: "COMPLETED",
+  failed: "FAILED_PROVIDER",
+  partial_refund: "REFUNDED",
+};
+
+/**
+ * Columns the API will sort by. `user`, `product` and `target_ref` live across
+ * a join and are not in the backend's whitelist, so they are dropped rather
+ * than silently sorting by something else.
+ */
+const SORTABLE: Record<string, string> = {
+  invoice_no: "invoice_number",
+  cost: "amount_total",
+  status: "status",
+  time: "created_at",
+};
+
+interface TransactionApiRow {
+  id: number;
+  invoice_number: string;
+  user_id: number | null;
+  guest_contact: string | null;
+  target_uid: string | null;
+  target_server: string | null;
+  amount_fee: number;
+  amount_total: number;
+  margin: number;
+  status: string;
+  sn: string | null;
+  proof_url: string | null;
+  user?: { id: number; name: string; phone: string; avatar_url: string | null } | null;
+  product?: { id: number; name: string; category?: { id: number; name: string } | null } | null;
+  payment?: { status: string } | null;
+  payment_channel?: { id: number; name: string } | null;
+  created_at: string;
+  updated_at: string;
 }
 
-function matchesFilters(row: Transaction, params: TransactionListParams): boolean {
-  if (params.search) {
-    const needle = params.search.toLowerCase();
-    const haystack = `${row.invoice_no} ${row.customer.name}`.toLowerCase();
-    if (!haystack.includes(needle)) return false;
-  }
-  if (params.userId && String(row.customer.user_id) !== params.userId) return false;
-  if (params.productId && row.product.id !== params.productId) return false;
-  if (params.invoiceStatus && row.invoice_status !== params.invoiceStatus) return false;
-  if (params.paymentStatus && row.payment_status !== params.paymentStatus) return false;
-  if (params.paymentMethod && row.payment_method !== params.paymentMethod) return false;
-  if (params.startDate && row.created_at < params.startDate) return false;
-  if (params.endDate && row.created_at > params.endDate) return false;
-  return true;
-}
+const toTransaction = (row: TransactionApiRow): Transaction => {
+  const invoiceStatus = INVOICE_STATUS[row.status] ?? "pending";
+  const isTerminal = invoiceStatus === "success" || invoiceStatus === "failed" || invoiceStatus === "partial_refund";
 
-// Mock-backed for now (backend not built yet). Swap each method body to a
-// real `api.get/post(...)` call once the backend ships — hooks/UI stay
-// unchanged. See system_architecture.md §6.
+  return {
+    id: toRowId(row.id),
+    invoice_no: row.invoice_number,
+    payment_status: PAYMENT_STATUS[row.payment?.status ?? ""] ?? "pending",
+    invoice_status: invoiceStatus,
+    customer: {
+      user_id: row.user_id,
+      // Guests have no user row; their contact lives on the transaction.
+      name: row.user?.name ?? "Guest",
+      phone: row.user?.phone ?? row.guest_contact ?? "",
+      avatar_url: row.user?.avatar_url ?? undefined,
+    },
+    game: {
+      id: toRowId(row.product?.category?.id ?? 0),
+      name: row.product?.category?.name ?? "",
+    },
+    product: { id: toRowId(row.product?.id ?? 0), name: row.product?.name ?? "" },
+    // `cost` is the customer's total, not the upstream cost — the column
+    // header reads "Cost" but the reference's figures are the amount billed.
+    cost: row.amount_total,
+    profit: row.margin,
+    admin_fee: row.amount_fee,
+    target_ref: [row.target_uid, row.target_server].filter(Boolean).join(" / ") || undefined,
+    payment_method: row.payment_channel?.name ?? "",
+    serial_number: row.sn ?? undefined,
+    proof_url: row.proof_url ?? undefined,
+    created_at: row.created_at,
+    // The API has no resolved_at column; once a transaction reaches a terminal
+    // state its last write *is* the resolution, so updated_at stands in.
+    resolved_at: isTerminal ? row.updated_at : undefined,
+    elapsed_seconds: isTerminal
+      ? Math.max(0, Math.round((Date.parse(row.updated_at) - Date.parse(row.created_at)) / 1000))
+      : undefined,
+    activity_log: [],
+    updated_at: row.updated_at,
+  };
+};
+
+const toListParams = (params: TransactionListParams) => ({
+  ...(params.search && { search: params.search }),
+  ...(params.userId && { user_id: params.userId }),
+  ...(params.productId && { product_id: params.productId }),
+  ...(params.paymentMethod && { payment_channel_id: params.paymentMethod }),
+  ...(params.invoiceStatus && { status: TO_API_STATUS[params.invoiceStatus] }),
+  ...(params.startDate && { start_date: params.startDate }),
+  ...(params.endDate && { end_date: params.endDate }),
+  ...(params.page && { page: params.page }),
+  ...(params.per_page && { per_page: params.per_page }),
+  ...(params.sortBy && SORTABLE[params.sortBy] ? { sort_by: SORTABLE[params.sortBy] } : {}),
+  ...(params.sortDir && { sort_dir: params.sortDir }),
+});
+
 export const transactionsService = {
   list: async (params: TransactionListParams): Promise<PaginatedResponse<Transaction>> => {
-    const page = params.page ?? 1;
-    const perPage = params.per_page ?? DEFAULT_PER_PAGE;
-    const filtered = sortRows(
-      TRANSACTIONS.filter((row) => matchesFilters(row, params)),
-      params,
+    const response: ApiResponse<PaginatedResponse<TransactionApiRow>> = await api.get(BASE, {
+      params: toListParams(params),
+    });
+    return unwrapPaginated(response, toTransaction);
+  },
+
+  /**
+   * `ref` is whatever the route carries, and the edit route is keyed on the
+   * invoice number — the identifier an operator can actually read off a
+   * receipt. The API binds `{transaction}` to the numeric id, so a non-numeric
+   * ref is resolved through a search instead of 404ing.
+   */
+  getById: async (ref: string): Promise<Transaction> => {
+    if (/^\d+$/.test(ref)) {
+      const response: ApiResponse<TransactionApiRow> = await api.get(`${BASE}/${ref}`);
+      return toTransaction(response.data);
+    }
+
+    const response: ApiResponse<PaginatedResponse<TransactionApiRow>> = await api.get(BASE, {
+      params: { search: ref, per_page: 1 },
+    });
+
+    const found = response.data.data[0];
+    if (!found) throw new Error(`No transaction found for: ${ref}`);
+    return toTransaction(found);
+  },
+
+  /**
+   * Scoped by `activity_logs.transaction_id`. The admin's row id is the
+   * transaction's own id, so an invoice-number ref is resolved first.
+   */
+  getActivityLog: async (id: string): Promise<ActivityLogEntry[]> => {
+    const transactionId = /^\d+$/.test(id) ? id : (await transactionsService.getById(id)).id;
+
+    const response: ApiResponse<
+      PaginatedResponse<{ id: number; actor: string; message: string; created_at: string }>
+    > = await api.get(`${API_VERSION}/activity-logs`, {
+      params: { transaction_id: transactionId, per_page: 50 },
+    });
+
+    return response.data.data.map((row) => ({
+      id: toRowId(row.id),
+      actor: row.actor === "System" ? "system" : { name: row.actor },
+      // The table stores one human-readable sentence; there is no separate
+      // short label to split off, so the sentence is the description and the
+      // action column carries a constant.
+      action: "Activity",
+      description: row.message,
+      created_at: row.created_at,
+    }));
+  },
+
+  getStatusCounts: async (): Promise<StatusCounts> => {
+    const response: ApiResponse<{ pending: number; processing: number; failed_provider: number }> = await api.get(
+      `${BASE}/status-counts`,
     );
-
-    const start = (page - 1) * perPage;
-    const pageRows = filtered.slice(start, start + perPage);
-    const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
-
     return {
-      data: pageRows,
-      links: {
-        first: "/transactions?page=1",
-        last: `/transactions?page=${lastPage}`,
-        prev: page > 1 ? `/transactions?page=${page - 1}` : null,
-        next: page < lastPage ? `/transactions?page=${page + 1}` : null,
-      },
-      meta: {
-        current_page: page,
-        from: pageRows.length ? start + 1 : null,
-        last_page: lastPage,
-        path: "/transactions",
-        per_page: perPage,
-        to: pageRows.length ? start + pageRows.length : null,
-        total: MOCK_TOTAL_PLACEHOLDER,
-      },
+      pending: response.data.pending,
+      processing: response.data.processing,
+      failed: response.data.failed_provider,
     };
   },
-
-  // ponytail: accepts either key so the edit route can be invoice-addressable
-  // (/transactions/automatic/{invoice_no}/edit, product_requirements.md §4.3)
-  // without a second lookup method; the real GET /transactions/{ref} decides.
-  getById: async (ref: string): Promise<Transaction> => {
-    const found = TRANSACTIONS.find((row) => row.id === ref || row.invoice_no === ref);
-    if (!found) throw new Error(`No transaction found for id: ${ref}`);
-    return found;
-  },
-
-  /** Scoped to one transaction — mirrors the eventual GET /transactions/{id}/activity-log. */
-  getActivityLog: async (id: string): Promise<ActivityLogEntry[]> => {
-    const found = TRANSACTIONS.find((row) => row.id === id);
-    if (!found) throw new Error(`No transaction found for id: ${id}`);
-    return found.activity_log;
-  },
-
-  getStatusCounts: async (): Promise<StatusCounts> => ({
-    pending: 12,
-    partial_refund: 32,
-    partial_success: 8,
-  }),
 
   edit: async (id: string, formData: FormData): Promise<Transaction> => {
-    const found = TRANSACTIONS.find((row) => row.id === id);
-    if (!found) throw new Error(`No transaction found for id: ${id}`);
-
-    const paymentStatus = formData.get("paymentStatus");
-    const invoiceStatus = formData.get("invoiceStatus");
+    // The API marks amount_base and status required on update, so the edit
+    // form's three fields have to be merged onto the current row first.
+    const current = await transactionsService.getById(id);
+    const invoiceStatus = (formData.get("invoiceStatus") as TransactionStatus | null) ?? current.invoice_status;
     const serialNumber = formData.get("serialNumber");
+    const proof = formData.get("proof");
 
-    return {
-      ...found,
-      payment_status: (paymentStatus as Transaction["payment_status"] | null) ?? found.payment_status,
-      invoice_status: (invoiceStatus as Transaction["invoice_status"] | null) ?? found.invoice_status,
-      serial_number: (serialNumber as string | null) ?? found.serial_number,
-      updated_at: new Date().toISOString(),
-    };
+    // A proof upload goes through manual-review — the only endpoint that
+    // accepts a file.
+    if (proof instanceof File) {
+      const reviewForm = new FormData();
+      reviewForm.append("proof", proof);
+      reviewForm.append("status", TO_API_STATUS[invoiceStatus] ?? "PENDING");
+      await api.post(`${BASE}/${id}/manual-review`, reviewForm);
+    }
+
+    const response: ApiResponse<TransactionApiRow> = await api.put(`${BASE}/${id}`, {
+      amount_base: current.cost - (current.admin_fee ?? 0),
+      amount_fee: current.admin_fee ?? 0,
+      amount_total: current.cost,
+      status: TO_API_STATUS[invoiceStatus] ?? "PENDING",
+      ...(serialNumber !== null && { sn: String(serialNumber) }),
+    });
+
+    return toTransaction(response.data);
   },
 
   refund: async (id: string, reason: string): Promise<void> => {
-    if (!TRANSACTIONS.some((row) => row.id === id)) throw new Error(`No transaction found for id: ${id}`);
     if (!reason.trim()) throw new Error("A refund reason is required");
+    await api.post(`${BASE}/${id}/refund`, { reason });
   },
 
   resendCallback: async (id: string): Promise<void> => {
-    if (!TRANSACTIONS.some((row) => row.id === id)) throw new Error(`No transaction found for id: ${id}`);
+    await api.post(`${BASE}/${id}/resend-callback`);
   },
 
   retryInvoice: async (id: string): Promise<void> => {
-    if (!TRANSACTIONS.some((row) => row.id === id)) throw new Error(`No transaction found for id: ${id}`);
+    await api.post(`${BASE}/${id}/retry`);
   },
 
   remove: async (id: string): Promise<void> => {
-    if (!TRANSACTIONS.some((row) => row.id === id)) throw new Error(`No transaction found for id: ${id}`);
+    await api.delete(`${BASE}/${id}`);
   },
 };

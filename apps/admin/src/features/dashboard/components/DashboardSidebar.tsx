@@ -13,6 +13,8 @@ import {
   Plug,
   Receipt,
   Search,
+  Settings,
+  Users2,
   Tag,
   Users,
   Wallet,
@@ -76,17 +78,24 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Category", href: "/admin/categories", icon: Tag },
       { label: "Product", href: "/admin/products", icon: Package },
-      { label: "Payment", href: "/admin/dashboard", icon: CreditCard, disabled: true },
+      { label: "Payment", href: "/admin/payments", icon: CreditCard },
       { label: "Membership", href: "/admin/dashboard", icon: Users, disabled: true },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      { label: "Users", href: "/admin/users", icon: Users2 },
+      { label: "Settings", href: "/admin/settings", icon: Settings },
     ],
   },
   {
     label: "Marketing & Content Management",
     items: [
-      { label: "Promo", href: "/admin/dashboard", icon: Megaphone, disabled: true },
-      { label: "Flash Sale", href: "/admin/dashboard", icon: Zap, disabled: true },
-      { label: "Website Content", href: "/admin/dashboard", icon: Globe, disabled: true },
-      { label: "Pages", href: "/admin/dashboard", icon: FileStack, disabled: true },
+      { label: "Promo", href: "/admin/promos", icon: Megaphone },
+      { label: "Flash Sale", href: "/admin/flash-sales", icon: Zap },
+      { label: "Website Content", href: "/admin/content", icon: Globe },
+      { label: "Pages", href: "/admin/content/pages", icon: FileStack },
     ],
   },
 ];

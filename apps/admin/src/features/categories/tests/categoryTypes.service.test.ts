@@ -1,108 +1,111 @@
-import { describe, it, expect } from "vitest";
-import { categoryTypesService } from "../services/categoryTypes.service";
-import { CATEGORY_TYPES } from "../data/category-types.data";
-import type { CategoryType } from "../types/categoryType.type";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-/** Contract test — asserts the typed shape/params-mapping before any UI
- * consumes the service (system_architecture.md §4.11). Mirrors
- * subCategories.service.test.ts; §6 adds CategoryType as a feature-local
- * entity. */
+import { api } from "@/lib/axios";
+import { categoryTypesService } from "../services/categoryTypes.service";
+
+vi.mock("@/lib/axios", () => ({
+  api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+}));
+
+const apiRow = (over: Record<string, unknown> = {}) => ({
+  id: 7,
+  name: "Voucher",
+  is_voucher: true,
+  status: true,
+  created_at: "2026-07-01T00:00:00.000000Z",
+  updated_at: "2026-07-01T00:00:00.000000Z",
+  ...over,
+});
+
+const envelope = <T>(data: T) => ({ status: "success", code: 200, message: "ok", data });
+
+const paginated = <T>(rows: T[]) =>
+  envelope({
+    data: rows,
+    links: { first: "/x?page=1", last: "/x?page=1", prev: null, next: null },
+    meta: { current_page: 1, from: 1, last_page: 1, path: "/x", per_page: 10, to: rows.length, total: rows.length },
+  });
+
+beforeEach(() => vi.clearAllMocks());
+
+/**
+ * Contract test — asserts the request the service makes and the shape it maps
+ * back onto `CategoryType`. This used to run against in-memory fixtures; the
+ * service is real now, so the axios instance is the seam.
+ */
 describe("categoryTypesService.list", () => {
-  it("returns a PaginatedResponse<CategoryType> shape with no params", async () => {
+  it("calls the versioned endpoint, forwarding list params as query params", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow()]));
+
+    await categoryTypesService.list({ search: "voucher", page: 2, per_page: 25 });
+
+    expect(api.get).toHaveBeenCalledWith("/v1/category-types", {
+      params: { search: "voucher", page: 2, per_page: 25 },
+    });
+  });
+
+  it("reaches through the envelope and maps rows onto the view type", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow(), apiRow({ id: 8, status: false, is_voucher: false })]));
+
     const result = await categoryTypesService.list();
 
-    expect(Array.isArray(result.data)).toBe(true);
-    expect(result.meta).toMatchObject({ current_page: 1, per_page: 10 });
-    expect(result.meta.total).toBe(CATEGORY_TYPES.length);
-    expect(result.links).toHaveProperty("first");
-    expect(result.links).toHaveProperty("last");
-  });
-
-  it("caps returned rows to per_page", async () => {
-    const result = await categoryTypesService.list({ per_page: 2 });
-    expect(result.data.length).toBeLessThanOrEqual(2);
-  });
-
-  it("narrows by search over the name", async () => {
-    const result = await categoryTypesService.list({ search: "voucher" });
-    expect(result.data.length).toBeGreaterThan(0);
-    for (const row of result.data) expect(row.name.toLowerCase()).toContain("voucher");
-  });
-
-  it("covers both voucher states in the fixtures", async () => {
-    const result = await categoryTypesService.list({ per_page: 50 });
-    expect(result.data.some((row) => row.is_voucher)).toBe(true);
-    expect(result.data.some((row) => !row.is_voucher)).toBe(true);
-  });
-
-  it("covers both statuses in the fixtures", async () => {
-    const result = await categoryTypesService.list({ per_page: 50 });
-    expect(result.data.some((row) => row.status === "active")).toBe(true);
-    expect(result.data.some((row) => row.status === "inactive")).toBe(true);
-  });
-
-  it("never carries the shadcn demo dataset's status vocabulary or content", async () => {
-    const result = await categoryTypesService.list({ per_page: 50 });
-    const banned = ["In Process", "Done", "Cover Page", "Table of Contents", "Jamik Tashpulatov", "Eddie Lake"];
-    for (const row of result.data) {
-      for (const word of banned) expect(row.name).not.toContain(word);
-      // The only two statuses that exist — "In Process" leaked into the
-      // reference's own screenshots (product_requirements.md §4.5).
-      expect(["active", "inactive"]).toContain(row.status);
-    }
+    // Numeric API ids become strings — DataTable is generic over {id: string}.
+    expect(result.data[0]).toMatchObject({ id: "7", name: "Voucher", is_voucher: true, status: "active" });
+    expect(result.data[1]).toMatchObject({ id: "8", is_voucher: false, status: "inactive" });
+    expect(result.meta.total).toBe(2);
   });
 });
 
 describe("categoryTypesService.getById", () => {
-  it("resolves the typed category type for a known id", async () => {
-    await expect(categoryTypesService.getById(CATEGORY_TYPES[0].id)).resolves.toMatchObject({
-      id: CATEGORY_TYPES[0].id,
-    });
-  });
+  it("maps a single row from the envelope", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow()));
 
-  it("throws for an unknown id", async () => {
-    await expect(categoryTypesService.getById("does-not-exist")).rejects.toThrow();
+    await expect(categoryTypesService.getById("7")).resolves.toMatchObject({ id: "7", name: "Voucher" });
+    expect(api.get).toHaveBeenCalledWith("/v1/category-types/7");
   });
 });
 
 describe("categoryTypesService mutations", () => {
-  it("create adds a category type and returns it with an id/timestamps", async () => {
-    const input: Omit<CategoryType, "id" | "created_at" | "updated_at"> = {
+  it("create posts the API's boolean status, not the view union", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow({ name: "Game Pass" })));
+
+    await categoryTypesService.create({ name: "Game Pass", is_voucher: true, status: "active" });
+
+    expect(api.post).toHaveBeenCalledWith("/v1/category-types", {
       name: "Game Pass",
       is_voucher: true,
-      status: "active",
-    };
-    const created = await categoryTypesService.create(input);
-
-    expect(created.id).toBeTruthy();
-    expect(created.created_at).toBeTruthy();
-    expect(created.is_voucher).toBe(true);
-    await expect(categoryTypesService.getById(created.id)).resolves.toMatchObject({ name: "Game Pass" });
-  });
-
-  it("update patches a known category type", async () => {
-    const created = await categoryTypesService.create({ name: "Bundle", is_voucher: false, status: "active" });
-    const updated = await categoryTypesService.update(created.id, { name: "Bundle Pack" });
-
-    expect(updated.name).toBe("Bundle Pack");
-    await expect(categoryTypesService.update("does-not-exist", { name: "x" })).rejects.toThrow();
-  });
-
-  it("setStatus flips the status and rejects an unknown id", async () => {
-    const created = await categoryTypesService.create({ name: "Toggleable", is_voucher: false, status: "active" });
-
-    await expect(categoryTypesService.setStatus(created.id, "inactive")).resolves.toMatchObject({
-      status: "inactive",
+      status: true,
     });
-    await expect(categoryTypesService.setStatus(created.id, "active")).resolves.toMatchObject({ status: "active" });
-    await expect(categoryTypesService.setStatus("does-not-exist", "inactive")).rejects.toThrow();
   });
 
-  it("remove deletes a known category type and throws for an unknown id", async () => {
-    const created = await categoryTypesService.create({ name: "Removable", is_voucher: false, status: "active" });
+  it("update sends only the fields it was given", async () => {
+    vi.mocked(api.put).mockResolvedValue(envelope(apiRow({ name: "Bundle Pack" })));
 
-    await expect(categoryTypesService.remove(created.id)).resolves.toBeUndefined();
-    await expect(categoryTypesService.getById(created.id)).rejects.toThrow();
-    await expect(categoryTypesService.remove("does-not-exist")).rejects.toThrow();
+    await categoryTypesService.update("7", { name: "Bundle Pack" });
+
+    expect(api.put).toHaveBeenCalledWith("/v1/category-types/7", { name: "Bundle Pack" });
+  });
+
+  // The API's update rule marks `name` required, so a status-only PUT would
+  // 422. setStatus reads the row first and resends it alongside the new status.
+  it("setStatus re-sends the existing name so the required-field rule passes", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow({ name: "Voucher", is_voucher: true })));
+    vi.mocked(api.put).mockResolvedValue(envelope(apiRow({ status: false })));
+
+    const result = await categoryTypesService.setStatus("7", "inactive");
+
+    expect(api.put).toHaveBeenCalledWith("/v1/category-types/7", {
+      name: "Voucher",
+      is_voucher: true,
+      status: false,
+    });
+    expect(result.status).toBe("inactive");
+  });
+
+  it("remove deletes by id", async () => {
+    vi.mocked(api.delete).mockResolvedValue(envelope(null));
+
+    await expect(categoryTypesService.remove("7")).resolves.toBeUndefined();
+    expect(api.delete).toHaveBeenCalledWith("/v1/category-types/7");
   });
 });

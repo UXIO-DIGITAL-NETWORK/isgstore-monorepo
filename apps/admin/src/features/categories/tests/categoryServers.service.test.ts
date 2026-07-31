@@ -1,104 +1,122 @@
-import { describe, it, expect } from "vitest";
-import { categoryServersService } from "../services/categoryServers.service";
-import { CATEGORY_SERVERS } from "../data/category-servers.data";
-import type { CategoryServer } from "../types/categoryServer.type";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-/** Contract test — asserts the typed shape/params-mapping before any UI
- * consumes the service (system_architecture.md §4.11). Mirrors
- * categoryTypes.service.test.ts; §6 adds CategoryServer as a feature-local
- * entity, notably the only one in this feature with no `status`. */
+import { api } from "@/lib/axios";
+import { envelope, paginated } from "@/test/apiEnvelope";
+import { categoryServersService } from "../services/categoryServers.service";
+
+vi.mock("@/lib/axios", () => ({
+  api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+}));
+
+const apiRow = (over: Record<string, unknown> = {}) => ({
+  id: 5,
+  category_id: 1,
+  name: "Zone ID",
+  options: [
+    { id: 11, server_category_id: 5, name: "Asia", value: "2001" },
+    { id: 12, server_category_id: 5, name: "Europe", value: "2002" },
+  ],
+  created_at: "2026-07-01T00:00:00.000000Z",
+  updated_at: "2026-07-01T00:00:00.000000Z",
+  ...over,
+});
+
+beforeEach(() => vi.clearAllMocks());
+
 describe("categoryServersService.list", () => {
-  it("returns a PaginatedResponse<CategoryServer> shape with no params", async () => {
+  it("maps the eager-loaded options down to the name/value pairs the form edits", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow()]));
+
+    const result = await categoryServersService.list({ search: "zone" });
+
+    expect(api.get).toHaveBeenCalledWith("/v1/server-categories", { params: { search: "zone" } });
+    expect(result.data[0]).toMatchObject({ id: "5", category_id: "1", name: "Zone ID" });
+    expect(result.data[0].options).toEqual([
+      { name: "Asia", value: "2001" },
+      { name: "Europe", value: "2002" },
+    ]);
+  });
+
+  it("treats a row with no options relation as having none", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow({ options: undefined })]));
+
     const result = await categoryServersService.list();
 
-    expect(Array.isArray(result.data)).toBe(true);
-    expect(result.meta).toMatchObject({ current_page: 1, per_page: 10 });
-    expect(result.meta.total).toBe(CATEGORY_SERVERS.length);
-    expect(result.links).toHaveProperty("first");
-    expect(result.links).toHaveProperty("last");
-  });
-
-  it("caps returned rows to per_page", async () => {
-    const result = await categoryServersService.list({ per_page: 1 });
-    expect(result.data.length).toBeLessThanOrEqual(1);
-  });
-
-  it("narrows by search over the name", async () => {
-    const result = await categoryServersService.list({ search: "genshin" });
-    expect(result.data.length).toBeGreaterThan(0);
-    for (const row of result.data) expect(row.name.toLowerCase()).toContain("genshin");
-  });
-
-  it("exposes options as an array of non-blank name/value pairs", async () => {
-    const result = await categoryServersService.list({ per_page: 50 });
-
-    for (const row of result.data) {
-      expect(Array.isArray(row.options)).toBe(true);
-      for (const option of row.options) {
-        expect(typeof option.name).toBe("string");
-        expect(option.name.trim()).not.toBe("");
-        expect(typeof option.value).toBe("string");
-        expect(option.value.trim()).not.toBe("");
-      }
-    }
-    expect(result.data.some((row) => row.options.length > 0)).toBe(true);
-  });
-
-  it("has no status field — this entity has no active/inactive concept", async () => {
-    const result = await categoryServersService.list({ per_page: 50 });
-    for (const row of result.data) expect(row).not.toHaveProperty("status");
+    expect(result.data[0].options).toEqual([]);
   });
 });
 
-describe("categoryServersService.getById", () => {
-  it("resolves the typed category server for a known id", async () => {
-    await expect(categoryServersService.getById(CATEGORY_SERVERS[0].id)).resolves.toMatchObject({
-      id: CATEGORY_SERVERS[0].id,
+describe("categoryServersService.create", () => {
+  /**
+   * Options are nested here but a separate resource in the API, so a write has
+   * to fan out to /server-category-options once the parent exists.
+   */
+  it("creates the server, then posts each option against the new id", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(envelope(apiRow({ options: [] })));
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
+    vi.mocked(api.post).mockResolvedValue(envelope({}));
+
+    await categoryServersService.create({
+      category_id: "1",
+      name: "Zone ID",
+      options: [{ name: "Asia", value: "2001" }],
     });
+
+    expect(vi.mocked(api.post).mock.calls[0]).toEqual(["/v1/server-categories", { category_id: 1, name: "Zone ID" }]);
+    expect(vi.mocked(api.post).mock.calls[1]).toEqual([
+      "/v1/server-category-options",
+      { server_category_id: 5, name: "Asia", value: "2001" },
+    ]);
   });
 
-  it("throws for an unknown id", async () => {
-    await expect(categoryServersService.getById("does-not-exist")).rejects.toThrow();
+  it("sends category_id as a number, since a string FK misbehaves in the DTO casts", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow({ options: [] })));
+
+    await categoryServersService.create({ category_id: "1", name: "Zone ID", options: [] });
+
+    expect(vi.mocked(api.post).mock.calls[0][1]).toMatchObject({ category_id: 1 });
   });
 });
 
-describe("categoryServersService mutations", () => {
-  it("create adds a category server and preserves its options", async () => {
-    const input: Omit<CategoryServer, "id" | "created_at" | "updated_at"> = {
-      name: "Honkai: Star Rail",
-      options: [
-        { name: "Asia", value: "prod_official_asia" },
-        { name: "Europe", value: "prod_official_eur" },
-      ],
-    };
-    const created = await categoryServersService.create(input);
+describe("categoryServersService.update", () => {
+  it("replaces the option set, deleting the ones the API already had", async () => {
+    vi.mocked(api.get)
+      // getById, to carry category_id/name across a partial write
+      .mockResolvedValueOnce(envelope(apiRow()))
+      // the existing options to clear
+      .mockResolvedValueOnce(paginated([{ id: 11, server_category_id: 5, name: "Asia", value: "2001" }]));
+    vi.mocked(api.put).mockResolvedValue(envelope(apiRow({ options: [] })));
+    vi.mocked(api.delete).mockResolvedValue(envelope(null));
+    vi.mocked(api.post).mockResolvedValue(envelope({}));
 
-    expect(created.id).toBeTruthy();
-    expect(created.created_at).toBeTruthy();
-    expect(created.options).toHaveLength(2);
-    await expect(categoryServersService.getById(created.id)).resolves.toMatchObject({
-      name: "Honkai: Star Rail",
-      options: input.options,
+    const result = await categoryServersService.update("5", { options: [{ name: "Asia Pacific", value: "2003" }] });
+
+    expect(api.delete).toHaveBeenCalledWith("/v1/server-category-options/11");
+    expect(api.post).toHaveBeenCalledWith("/v1/server-category-options", {
+      server_category_id: 5,
+      name: "Asia Pacific",
+      value: "2003",
     });
+    expect(result.options).toEqual([{ name: "Asia Pacific", value: "2003" }]);
   });
 
-  it("update patches a known category server", async () => {
-    const created = await categoryServersService.create({ name: "Patchable", options: [] });
-    const updated = await categoryServersService.update(created.id, {
-      name: "Patched",
-      options: [{ name: "Global", value: "global" }],
-    });
+  // The API marks name and category_id required, so an options-only edit would
+  // 422 without resending what the row already has.
+  it("resends the existing name and category on a partial write", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope(apiRow())).mockResolvedValueOnce(paginated([]));
+    vi.mocked(api.put).mockResolvedValue(envelope(apiRow()));
 
-    expect(updated.name).toBe("Patched");
-    expect(updated.options).toHaveLength(1);
-    await expect(categoryServersService.update("does-not-exist", { name: "x" })).rejects.toThrow();
+    await categoryServersService.update("5", { options: [] });
+
+    expect(api.put).toHaveBeenCalledWith("/v1/server-categories/5", { category_id: 1, name: "Zone ID" });
   });
+});
 
-  it("remove deletes a known category server and throws for an unknown id", async () => {
-    const created = await categoryServersService.create({ name: "Removable", options: [] });
+describe("categoryServersService.remove", () => {
+  it("deletes by id", async () => {
+    vi.mocked(api.delete).mockResolvedValue(envelope(null));
 
-    await expect(categoryServersService.remove(created.id)).resolves.toBeUndefined();
-    await expect(categoryServersService.getById(created.id)).rejects.toThrow();
-    await expect(categoryServersService.remove("does-not-exist")).rejects.toThrow();
+    await expect(categoryServersService.remove("5")).resolves.toBeUndefined();
+    expect(api.delete).toHaveBeenCalledWith("/v1/server-categories/5");
   });
 });
