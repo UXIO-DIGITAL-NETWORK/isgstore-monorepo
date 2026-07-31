@@ -16,5 +16,8 @@ readonly class CheckoutDTO
         // Nickname yang ditampilkan saat konfirmasi order. Nullable: tidak semua
         // game punya provider validasi, dan checkout tidak boleh bergantung padanya.
         public ?string $targetNickname = null,
+        // Optional discount code, re-validated server-side at checkout — the
+        // client's quoted discount is never trusted.
+        public ?string $promoCode = null,
     ) {}
 }

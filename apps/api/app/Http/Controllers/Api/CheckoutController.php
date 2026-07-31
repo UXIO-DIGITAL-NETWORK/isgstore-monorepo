@@ -27,6 +27,7 @@ class CheckoutController extends Controller
                 targetServer: ($s = trim($request->string('target_server')->toString())) !== '' ? $s : null,
                 guestContact: $request->string('guest_contact')->toString() ?: null,
                 targetNickname: ($n = trim($request->string('target_nickname')->toString())) !== '' ? $n : null,
+                promoCode: ($p = trim($request->string('promo_code')->toString())) !== '' ? $p : null,
             );
 
             $result = $action->execute($dto);

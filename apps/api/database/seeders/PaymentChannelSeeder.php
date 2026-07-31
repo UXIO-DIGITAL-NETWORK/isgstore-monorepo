@@ -16,6 +16,24 @@ class PaymentChannelSeeder extends Seeder
 
         $channels = [
             [
+                // The internal wallet. CheckoutAction, RefundFailedTransactionAction
+                // and ListPaymentChannelsAction all branch on this exact
+                // channel_code, so without the row the wallet can never be used
+                // to pay — the code paths existed with nothing to trigger them.
+                'name' => 'Saldo (Wallet)',
+                'payment_type' => 'balance',
+                'channel_code' => 'balance',
+                'min_amount' => 0,
+                'is_active' => true,
+                'is_single_use' => false,
+                // fee_flat / fee_percent are omitted deliberately: this is a
+                // bulk upsert, so every row must carry the same column list,
+                // and the wallet's zero fees are the table defaults anyway.
+                'extra_config' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
                 'name' => 'BCA Virtual Account',
                 'payment_type' => 'virtual_account',
                 'channel_code' => 'bca_va',

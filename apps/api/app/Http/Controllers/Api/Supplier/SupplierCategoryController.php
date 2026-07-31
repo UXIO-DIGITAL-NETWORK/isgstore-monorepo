@@ -26,7 +26,8 @@ class SupplierCategoryController extends Controller
         $categories = $action->execute(
             $perPage,
             $categoryId !== null ? (int) $categoryId : null,
-            $supplierId !== null ? (int) $supplierId : null
+            $supplierId !== null ? (int) $supplierId : null,
+            $request->query('search'),
         );
 
         return $this->paginatedResponse(SupplierCategoryResource::collection($categories), 'Supplier Categories retrieved successfully');

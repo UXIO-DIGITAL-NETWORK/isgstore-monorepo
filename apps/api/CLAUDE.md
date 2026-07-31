@@ -16,6 +16,12 @@ composer run dev
 # Run all tests (uses in-memory SQLite — no DB setup needed)
 composer run test
 
+# Fallback when the sqlite PDO driver is unavailable (`could not find driver`).
+# Requires php8.4-sqlite3 normally; this runs the same suite against MySQL
+# instead, which also matches production's driver more closely.
+#   mysql -e "CREATE DATABASE IF NOT EXISTS web_topup_api_test;"
+DB_CONNECTION=mysql DB_DATABASE=web_topup_api_test php artisan test
+
 # Run a single test file or filter
 php artisan test tests/Feature/ExampleTest.php
 php artisan test --filter=CheckoutTest

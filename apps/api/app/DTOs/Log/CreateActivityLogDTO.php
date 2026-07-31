@@ -13,5 +13,7 @@ readonly class CreateActivityLogDTO
         public string $message,
         /** Left null by legacy call sites; those rows stay in the "all" bucket. */
         public ?ActivityType $type = null,
+        /** Set for order-scoped events so the admin can show one order's trail. */
+        public ?int $transactionId = null,
     ) {}
 }

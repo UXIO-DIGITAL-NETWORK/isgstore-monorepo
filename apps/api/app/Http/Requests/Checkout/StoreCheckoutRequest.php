@@ -28,6 +28,7 @@ class StoreCheckoutRequest extends FormRequest
             // Display-only echo of what validate-id returned. Never trusted for
             // fulfilment — Digiflazz is sent target_uid/target_server only.
             'target_nickname' => ['nullable', 'string', 'max:100'],
+            'promo_code' => ['nullable', 'string', 'max:64'],
         ];
 
         $schema = $this->orderFormSchema();

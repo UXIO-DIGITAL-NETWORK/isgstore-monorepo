@@ -19,7 +19,12 @@ use Carbon\CarbonInterface;
  */
 class GetDashboardStatsAction
 {
-    public function execute(): array
+    /**
+     * @param  int|null  $month  1-12, to scope the chart to a specific month of
+     *                           the current year. Null keeps the rolling
+     *                           30-day window the dashboard opens on.
+     */
+    public function execute(?int $month = null): array
     {
         $todayStart = now()->startOfDay();
         $monthStart = now()->startOfMonth();
@@ -67,7 +72,7 @@ class GetDashboardStatsAction
                 'processing' => Transaction::where('status', TransactionStatus::PROCESSING->value)->count(),
                 'failed_transaction' => Transaction::where('status', TransactionStatus::FAILED_PROVIDER->value)->count(),
             ],
-            'chart' => $this->chartSeries(),
+            'chart' => $this->chartSeries($month),
             'recent_transactions' => TransactionResource::collection(
                 Transaction::with(['user', 'product', 'supplier', 'payment', 'paymentChannel'])
                     ->latest()
@@ -132,12 +137,24 @@ class GetDashboardStatsAction
     /**
      * @return array<int,array{date:string, transactions:int, revenue:int}>
      */
-    private function chartSeries(): array
+    private function chartSeries(?int $month = null): array
     {
         $completed = TransactionStatus::COMPLETED->value;
 
-        return Transaction::where('created_at', '>=', now()->subDays(29)->startOfDay())
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as transactions, COALESCE(SUM(CASE WHEN status = ? THEN amount_total ELSE 0 END),0) as revenue', [$completed])
+        [$from, $to] = $month !== null
+            ? [now()->setMonth($month)->startOfMonth(), now()->setMonth($month)->endOfMonth()]
+            : [now()->subDays(29)->startOfDay(), now()->endOfDay()];
+
+        return Transaction::whereBetween('created_at', [$from, $to])
+            // net_income is margin, not revenue: the dashboard chart plots the
+            // two against each other, and revenue alone says nothing about
+            // whether the volume was profitable.
+            ->selectRaw(
+                'DATE(created_at) as date, COUNT(*) as transactions, '.
+                'COALESCE(SUM(CASE WHEN status = ? THEN amount_total ELSE 0 END),0) as revenue, '.
+                'COALESCE(SUM(CASE WHEN status = ? THEN margin ELSE 0 END),0) as net_income',
+                [$completed, $completed]
+            )
             ->groupBy('date')
             ->orderBy('date')
             ->toBase()
@@ -146,6 +163,7 @@ class GetDashboardStatsAction
                 'date' => (string) $row->date,
                 'transactions' => (int) $row->transactions,
                 'revenue' => (int) $row->revenue,
+                'net_income' => (int) $row->net_income,
             ])
             ->all();
     }

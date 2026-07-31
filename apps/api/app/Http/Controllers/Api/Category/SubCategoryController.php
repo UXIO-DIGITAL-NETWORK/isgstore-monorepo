@@ -22,7 +22,11 @@ class SubCategoryController extends Controller
     {
         $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
         $categoryId = $request->query('category_id');
-        $subCategories = $action->execute($perPage, $categoryId !== null ? (int) $categoryId : null);
+        $subCategories = $action->execute(
+            $perPage,
+            $categoryId !== null ? (int) $categoryId : null,
+            $request->query('search'),
+        );
 
         return $this->paginatedResponse(SubCategoryResource::collection($subCategories), 'Sub Categories retrieved successfully');
     }

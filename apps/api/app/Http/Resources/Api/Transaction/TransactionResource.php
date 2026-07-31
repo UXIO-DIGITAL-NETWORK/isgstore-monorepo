@@ -27,6 +27,8 @@ class TransactionResource extends JsonResource
             'target_nickname' => $this->target_nickname,
             'amount_base' => $this->amount_base,
             'amount_fee' => $this->amount_fee,
+            'promo_id' => $this->promo_id,
+            'discount_amount' => (int) $this->discount_amount,
             'amount_total' => $this->amount_total,
             'total_price' => $this->total_price,
             'margin' => $this->margin,

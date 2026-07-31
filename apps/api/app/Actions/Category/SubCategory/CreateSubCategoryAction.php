@@ -27,6 +27,8 @@ class CreateSubCategoryAction
         $subCategory = SubCategory::create([
             'category_id' => $dto->categoryId,
             'name' => $dto->name,
+            'currency_name' => $dto->currencyName,
+            'description' => $dto->description,
             'logo' => $logoPath, // Simpan path ke database
             'status' => $dto->status,
         ]);
