@@ -172,6 +172,14 @@ jobs:
             sudo cp /home/uxioserver1/web-topup/api/staging/supervisor/laravel-queue-staging.conf \
                     /etc/supervisor/conf.d/laravel-queue-staging.conf
 
+            # Validate supervisor config before start.
+            # Dijalankan SETELAH cp di langkah 12, jadi yang divalidasi adalah config
+            # yang baru saja turun. Sengaja tanpa `|| true`: dengan script_stop, config
+            # yang rusak menghentikan deploy di sini — jauh lebih baik daripada
+            # merestart supervisord dan membuat seluruh daemon gagal start.
+            # supervisord mencetak sendiri error parse-nya, jadi abort ini informatif.
+            sudo supervisord -n -c /etc/supervisor/supervisord.conf -t
+
             # Pastikan daemon supervisord benar-benar berjalan (idempotent — no-op jika sudah up).
             # Binary bisa saja sudah terpasang tapi daemonnya mati/belum pernah dijalankan.
             if ! sudo systemctl is-active --quiet supervisor; then
@@ -180,8 +188,28 @@ jobs:
               sleep 2
             fi
 
+            # Fallback: start daemon directly if service still fails (keeps deploy resilient).
+            #
+            # PERHATIAN: ini menjalankan supervisord DI LUAR systemd. Deploy tetap jalan,
+            # tapi host jadi tidak konsisten: `systemctl status supervisor` melaporkan
+            # inactive padahal daemonnya hidup, unit tidak ikut naik saat reboot, dan
+            # `systemctl restart supervisor` berikutnya bisa gagal karena pidfile/socket
+            # dipegang proses yang tidak dikelola systemd — sehingga deploy berikutnya
+            # jatuh ke fallback ini lagi.
+            # Perlakukan baris ini sebagai SINYAL untuk memperbaiki unit di host,
+            # bukan kondisi normal. Kalau muncul di log deploy yang sehat, tindak lanjuti.
             if [ ! -S /var/run/supervisor.sock ]; then
-              echo "ERROR: supervisor.sock still missing after start attempt — check 'systemctl status supervisor' / 'journalctl -u supervisor' on the host."
+              echo "supervisor.sock missing after systemctl restart, trying direct supervisord start..."
+              sudo supervisord -c /etc/supervisor/supervisord.conf
+              sleep 2
+            fi
+
+            if [ ! -S /var/run/supervisor.sock ]; then
+              echo "ERROR: supervisor.sock still missing. Dumping diagnostics..."
+              # `|| true` di dua baris ini wajib: dengan script_stop, diagnostik yang
+              # keluar non-zero akan menutupi error sebenarnya dan melewati `exit 1`.
+              sudo systemctl status supervisor --no-pager || true
+              sudo journalctl -u supervisor -n 80 --no-pager || true
               exit 1
             fi
 
