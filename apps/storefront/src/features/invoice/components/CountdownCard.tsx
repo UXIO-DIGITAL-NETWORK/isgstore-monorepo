@@ -2,10 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
-import { useCountdown } from "@/hooks/useCountdown";
-
-// 24 hours in seconds
-const PAYMENT_DURATION_SECONDS = 24 * 3600;
+import { useCountdownTo } from "@/hooks/useCountdown";
 
 function DigitCell({ value }: { value: string }) {
   return (
@@ -34,9 +31,22 @@ function Separator() {
   );
 }
 
-export default function CountdownCard(): React.JSX.Element {
+interface Props {
+  /**
+   * Server-issued payment deadline. Counting to an absolute instant rather
+   * than from a fixed duration means a page refresh cannot hand the customer
+   * a fresh 24 hours the backend never granted.
+   */
+  expiresAt: string | null;
+}
+
+export default function CountdownCard({ expiresAt }: Props): React.JSX.Element | null {
   const { t } = useTranslation("invoice");
-  const { hours, minutes, seconds } = useCountdown(PAYMENT_DURATION_SECONDS);
+  const { hours, minutes, seconds } = useCountdownTo(expiresAt);
+
+  // Channels with no configured expiry window get no timer at all, rather than
+  // an invented one.
+  if (!expiresAt) return null;
 
   return (
     <Box className="flex justify-center">

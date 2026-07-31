@@ -2,14 +2,18 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Star } from "lucide-react";
+import { toast } from "sonner";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { useSubmitReviewMutation } from "@/features/invoice/hooks/useSubmitReviewMutation";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  /** Identifies the order being reviewed; omit to keep the modal read-only. */
+  invoiceNumber?: string;
 }
 
 const CHIP_KEYS = [
@@ -22,8 +26,13 @@ const CHIP_KEYS = [
 
 type ChipKey = (typeof CHIP_KEYS)[number];
 
-export default function TransactionReviewModal({ isOpen, onClose }: Props): React.ReactPortal | null {
+export default function TransactionReviewModal({
+  isOpen,
+  onClose,
+  invoiceNumber,
+}: Props): React.ReactPortal | null {
   const { t } = useTranslation("invoice");
+  const submitReview = useSubmitReviewMutation();
   const [rating, setRating] = useState(5);
   const [hovered, setHovered] = useState(0);
   const [selected, setSelected] = useState<Set<ChipKey>>(new Set());
@@ -62,8 +71,33 @@ export default function TransactionReviewModal({ isOpen, onClose }: Props): Reac
   };
 
   const handleSubmit = () => {
-    // Placeholder: submission will be wired to the backend later
-    onClose();
+    // Guests have no account to attach a rating to; the modal still closes so
+    // the flow is never stuck behind a login they didn't ask for.
+    if (!invoiceNumber) {
+      onClose();
+      return;
+    }
+
+    // Selected chips are prepended to the free text so the quick-review choice
+    // survives into the single `comment` column the API stores.
+    const chips = [...selected].map((key) => t(`review.chips.${key}`));
+    const body = [chips.join(", "), comment.trim()].filter(Boolean).join(" — ");
+
+    submitReview.mutate(
+      { invoiceNumber, rating, comment: body || undefined },
+      {
+        onSuccess: () => {
+          toast.success(t("review.thanks", { defaultValue: "Terima kasih atas ulasan Anda" }));
+          onClose();
+        },
+        onError: (error: unknown) => {
+          const message =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+            t("review.failed", { defaultValue: "Ulasan gagal dikirim." });
+          toast.error(message);
+        },
+      },
+    );
   };
 
   const activeStars = hovered || rating;

@@ -10,25 +10,34 @@ import OrderConfirmModal from "./OrderConfirmModal";
 
 interface Props {
   selectedPackage: DiamondPackage | null;
+  /** Package price only — the admin fee is added for the modal's total. */
   totalPrice: number;
+  /** Channel fee resolved from the selected payment method. */
+  adminFee: number;
   gameThumbnail: string;
   gameName: string;
   selectedPaymentName?: string;
   userId: string;
   serverId: string;
   whatsapp: string;
+  /** Validated in-game nickname, or null when the game has no lookup provider. */
+  nickname?: string | null;
+  isSubmitting?: boolean;
   onSubmit: () => void;
 }
 
 export default function OrderSummary({
   selectedPackage,
   totalPrice,
+  adminFee,
   gameThumbnail,
   gameName,
   selectedPaymentName,
   userId,
   serverId,
   whatsapp,
+  nickname,
+  isSubmitting = false,
   onSubmit,
 }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("checkout");
@@ -84,10 +93,10 @@ export default function OrderSummary({
         <Button
           type="button"
           onClick={() => setConfirmOpen(true)}
-          disabled={!selectedPackage || whatsapp.trim() === ""}
+          disabled={!selectedPackage || !selectedPaymentName || whatsapp.trim() === "" || isSubmitting}
           className="w-full py-3 text-[15px]"
         >
-          {t("summary.buyNow")}
+          {isSubmitting ? t("summary.processing") : t("summary.buyNow")}
         </Button>
       </Box>
 
@@ -101,16 +110,19 @@ export default function OrderSummary({
         }}
         userId={userId}
         serverId={serverId}
-        username="Ramonezz"
+        username={nickname ?? undefined}
         itemLabel={
           selectedPackage
-            ? `${selectedPackage.amount} ${t("packages.unit")}`
+            ? selectedPackage.amount > 0
+              ? `${selectedPackage.amount} ${t("packages.unit")}`
+              : selectedPackage.name
             : ""
         }
         productName={gameName}
         price={selectedPackage?.price ?? 0}
         paymentName={selectedPaymentName}
-        total={totalPrice}
+        // What the customer will actually be charged, package + channel fee.
+        total={totalPrice + adminFee}
       />
     </Box>
   );

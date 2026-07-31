@@ -5,9 +5,15 @@ import { Text } from "@/components/common/Text";
 import SectionCard from "@/features/checkout/components/SectionCard";
 import RatingSummary from "./fragments/RatingSummary";
 import ReviewItem from "./fragments/ReviewItem";
-import { REVIEW_SUMMARY_MOCK, REVIEWS_MOCK } from "@/features/checkout/data/reviews.mock";
+import type { Review, ReviewSummary } from "@/features/checkout/types/checkout.type";
 
 const INITIAL_VISIBLE = 5;
+
+const EMPTY_SUMMARY: ReviewSummary = {
+  average: 0,
+  total: 0,
+  breakdown: [5, 4, 3, 2, 1].map((stars) => ({ stars, count: 0, percentage: 0 })),
+};
 
 function StarHeaderIcon(): React.JSX.Element {
   return (
@@ -19,11 +25,19 @@ function StarHeaderIcon(): React.JSX.Element {
   );
 }
 
-export default function CustomerReviews(): React.JSX.Element {
+interface Props {
+  reviews?: Review[];
+  summary?: ReviewSummary;
+}
+
+export default function CustomerReviews({ reviews, summary }: Props): React.JSX.Element {
   const { t } = useTranslation("checkout");
   const [showAll, setShowAll] = useState(false);
 
-  const visibleReviews = showAll ? REVIEWS_MOCK : REVIEWS_MOCK.slice(0, INITIAL_VISIBLE);
+  // A game with no reviews yet renders the same card with a zeroed summary,
+  // rather than disappearing and shifting the whole column.
+  const allReviews = reviews ?? [];
+  const visibleReviews = showAll ? allReviews : allReviews.slice(0, INITIAL_VISIBLE);
 
   return (
     <SectionCard
@@ -33,7 +47,7 @@ export default function CustomerReviews(): React.JSX.Element {
     >
       <Box className="flex flex-col gap-4">
         {/* Rating summary */}
-        <RatingSummary summary={REVIEW_SUMMARY_MOCK} />
+        <RatingSummary summary={summary ?? EMPTY_SUMMARY} />
 
         {/* Divider */}
         <Box className="h-px bg-white/6" />

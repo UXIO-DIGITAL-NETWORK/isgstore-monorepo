@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
@@ -6,7 +6,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Link } from "@/components/common/Link";
-import { GAME_CATEGORIES, TOP_UP_GAMES } from "@/features/home/data/topUpGames.data";
+import { deriveCategoryTabs, useGamesQuery } from "@/hooks/useGamesQuery";
 import type { GameCategory } from "@/features/home/types/topUpGames.type";
 import CategoryTabs from "./fragments/CategoryTabs";
 import TopUpGameCard from "./fragments/TopUpGameCard";
@@ -16,10 +16,18 @@ export default function TopUpGame(): React.JSX.Element {
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   const [activeTab, setActiveTab] = useState<GameCategory>("semua");
 
+  const { data: games } = useGamesQuery();
+  const allGames = useMemo(() => games ?? [], [games]);
+
+  // Tabs come from the categories present in the catalog, so selecting one can
+  // never land on an empty grid.
+  const tabs = useMemo(
+    () => [{ key: "semua" as GameCategory, label: "Semua" }, ...deriveCategoryTabs(allGames)],
+    [allGames],
+  );
+
   const visibleGames =
-    activeTab === "semua"
-      ? TOP_UP_GAMES
-      : TOP_UP_GAMES.filter((g) => g.category === activeTab);
+    activeTab === "semua" ? allGames : allGames.filter((g) => g.category === activeTab);
 
   return (
     <Box as="section" className="w-full pt-6 pb-8 md:pt-8 md:pb-12">
@@ -45,7 +53,7 @@ export default function TopUpGame(): React.JSX.Element {
         {/* Category tabs */}
         <Box className="mb-8">
           <CategoryTabs
-            tabs={GAME_CATEGORIES}
+            tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />

@@ -10,7 +10,7 @@ import type { SearchFormValues } from "@/features/track-order/schemas/trackOrder
 
 interface Props {
   form: UseFormReturn<SearchFormValues>;
-  /** Called when the search form is submitted (filtering is already live via useWatch). */
+  /** Runs the lookup. Search is explicit — see useTrackOrderSearch. */
   onSubmit: () => void;
 }
 

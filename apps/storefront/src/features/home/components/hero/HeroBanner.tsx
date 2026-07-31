@@ -5,10 +5,11 @@ import { GAP_PX, SIDE_VISIBLE } from "@/features/home/constants/heroBanner";
 import { useHeroCarousel } from "@/features/home/hooks/useHeroCarousel";
 import BannerNavArrow from "./fragments/BannerNavArrow";
 import CarouselDots from "./fragments/CarouselDots";
-import { BANNERS } from "@/features/home/data/heroBanner.data";
+import { useHeroBanners } from "@/features/home/hooks/useHeroBanners";
 
 export default function HeroBanner(): React.JSX.Element {
-  const { current, containerWidth, trackRef, hasPeek, slideWidth, goTo } = useHeroCarousel(BANNERS.length);
+  const banners = useHeroBanners();
+  const { current, containerWidth, trackRef, hasPeek, slideWidth, goTo } = useHeroCarousel(banners.length);
   const isMobile = containerWidth > 0 && containerWidth < 768;
 
   return (
@@ -32,7 +33,7 @@ export default function HeroBanner(): React.JSX.Element {
                 willChange: "transform",
               }}
             >
-              {BANNERS.map((banner, idx) => {
+              {banners.map((banner, idx) => {
                 const isActive = idx === current;
                 const slideStyle = {
                   width: `${slideWidth}px`,
@@ -86,7 +87,7 @@ export default function HeroBanner(): React.JSX.Element {
             <Box
               className="relative w-full aspect-video md:aspect-13/4"
             >
-              {BANNERS.map((banner, idx) => (
+              {banners.map((banner, idx) => (
                 <Box
                   key={idx}
                   className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
@@ -107,17 +108,17 @@ export default function HeroBanner(): React.JSX.Element {
           <BannerNavArrow
             direction="prev"
             hasPeek={hasPeek}
-            onClick={() => goTo((current - 1 + BANNERS.length) % BANNERS.length)}
+            onClick={() => goTo((current - 1 + banners.length) % banners.length)}
           />
           <BannerNavArrow
             direction="next"
             hasPeek={hasPeek}
-            onClick={() => goTo((current + 1) % BANNERS.length)}
+            onClick={() => goTo((current + 1) % banners.length)}
           />
         </Box>
 
         <CarouselDots
-          count={BANNERS.length}
+          count={banners.length}
           current={current}
           onDotClick={goTo}
         />

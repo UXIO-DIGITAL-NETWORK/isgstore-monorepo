@@ -13,8 +13,9 @@ import OrderDetailCard from "@/features/invoice/components/OrderDetailCard";
 import PaymentFailedCard from "@/features/invoice/components/PaymentFailedCard";
 import NeedHelpBanner from "@/features/invoice/components/NeedHelpBanner";
 import TransactionReviewModal from "@/features/invoice/components/TransactionReviewModal";
-import { buildMockOrder } from "@/features/invoice/data/buildMockOrder";
 import { useDelayedModal } from "@/features/invoice/hooks/useDelayedModal";
+import { useInvoiceQuery } from "@/features/invoice/hooks/useInvoiceQuery";
+import { toOrder } from "@/features/invoice/lib/toOrder";
 
 export default function PaymentFailedPage(): React.JSX.Element {
   const { invoiceNumber, locale } = useParams({ strict: false }) as {
@@ -26,14 +27,36 @@ export default function PaymentFailedPage(): React.JSX.Element {
   const { t } = useTranslation("invoice");
   const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(5000);
 
-  const order = pendingOrder ?? buildMockOrder(invoiceNumber ?? "TOPUP-22052026-8F3A2B6C");
+  // Shares the invoice page's query key, so arriving here from the poll costs
+  // no extra request.
+  const { data: invoice } = useInvoiceQuery(invoiceNumber);
+
+  const order = invoice
+    ? toOrder(invoice)
+    : pendingOrder?.invoiceNumber === invoiceNumber
+      ? pendingOrder
+      : null;
 
   const handleRetry = () => {
+    // A failed order cannot be paid again — the customer starts a new one for
+    // the same game rather than returning to a dead invoice.
     void navigate({
-      to: "/$locale/invoice/$invoiceNumber",
-      params: { locale, invoiceNumber: order.invoiceNumber },
+      to: invoice?.game?.slug ? "/$locale/checkout/$gameSlug" : "/$locale",
+      params: { locale, gameSlug: invoice?.game?.slug ?? "" },
     });
   };
+
+  if (!order) {
+    return (
+      <Box className="min-h-dvh bg-[#0A0A0C]">
+        <Navbar />
+        <Box className="flex flex-col items-center gap-6 px-4 py-20">
+          <PaymentFailedHero />
+        </Box>
+        <Footer />
+      </Box>
+    );
+  }
 
   return (
     <Box className="min-h-dvh bg-[#0A0A0C]">
@@ -99,7 +122,11 @@ export default function PaymentFailedPage(): React.JSX.Element {
       <Footer />
 
       {/* Transaction review modal — auto-opens 15s after mount */}
-      <TransactionReviewModal isOpen={reviewOpen} onClose={closeReview} />
+      <TransactionReviewModal
+        isOpen={reviewOpen}
+        onClose={closeReview}
+        invoiceNumber={order.invoiceNumber}
+      />
     </Box>
   );
 }

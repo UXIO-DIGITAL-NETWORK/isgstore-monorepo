@@ -13,7 +13,8 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: authService.login,
     onSuccess: (response: AuthApiResponse, variables: LoginFormValues) => {
-      setAuth(response.data.token, response.data.user, variables.remember);
+      const { access_token, refresh_token, user } = response.data;
+      setAuth(access_token, refresh_token, user, variables.remember);
       navigate({ to: "/$locale", params: { locale: locale ?? "id" } });
     },
   });

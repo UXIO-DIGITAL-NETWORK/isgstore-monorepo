@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { GAMES } from "@/data/games.data";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useGamesQuery } from "@/hooks/useGamesQuery";
 import type { Game } from "@/types/game.type";
 
 const SEARCH_DEBOUNCE_MS = 300;
+/** The dropdown only has room for a handful of rows. */
+const SEARCH_RESULT_LIMIT = 8;
 
 interface UseGameSearchReturn {
   open: boolean;
@@ -38,13 +40,15 @@ export function useGameSearch(): UseGameSearchReturn {
   // panel stays visible while the user is mid-keystroke.
   const isSearching = debouncedQuery.trim().length > 0;
 
-  const results = useMemo<Game[]>(() => {
-    if (!isSearching) return [];
-    const needle = debouncedQuery.trim().toLowerCase();
-    return GAMES.filter((g) =>
-      `${g.title} ${g.region}`.toLowerCase().includes(needle)
-    );
-  }, [debouncedQuery, isSearching]);
+  // Filtering happens server-side: the catalog is not bounded by what fits in
+  // the bundle, so a client-side filter would only ever search the first page.
+  const { data } = useGamesQuery({
+    search: debouncedQuery.trim(),
+    perPage: SEARCH_RESULT_LIMIT,
+    enabled: isSearching,
+  });
+
+  const results = useMemo<Game[]>(() => (isSearching ? (data ?? []) : []), [data, isSearching]);
 
   // Close on click-outside and Escape key
   useEffect(() => {

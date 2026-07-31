@@ -1,15 +1,26 @@
 import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   priceListSearchSchema,
   type PriceListSearchValues,
 } from "@/features/price-list/schemas/priceList.schema";
-import { mockPriceList } from "@/features/price-list/data/mockPriceList";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { storefrontService } from "@/services/storefront.service";
 import type { PriceListItem, SortOption } from "@/features/price-list/types/priceList.type";
 
 const PER_PAGE = 10;
+const SEARCH_DEBOUNCE_MS = 350;
 
+/**
+ * The public price list.
+ *
+ * Filtering, sorting and pagination all run server-side — the catalog is
+ * unbounded, so slicing a client-side array would silently only ever search
+ * whatever happened to be loaded. The hook's return shape is unchanged, so the
+ * table, toolbar and pagination components did not have to be touched.
+ */
 export function usePriceList() {
   const form = useForm<PriceListSearchValues>({
     resolver: zodResolver(priceListSearchSchema),
@@ -18,10 +29,47 @@ export function usePriceList() {
 
   // useWatch is memoization-safe (React Compiler compatible) unlike form.watch()
   const queryValue = useWatch({ control: form.control, name: "query" }) ?? "";
+  const debouncedQuery = useDebouncedValue(queryValue.trim(), SEARCH_DEBOUNCE_MS);
 
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<SortOption>("default");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const { data } = useQuery({
+    queryKey: ["price-list", debouncedQuery, activeGameId, sortOption, currentPage],
+    queryFn: async () => {
+      const response = await storefrontService.priceList({
+        search: debouncedQuery || undefined,
+        // A slug, not an id: the selector and the checkout route both address
+        // games that way, and the API resolves all three forms.
+        game: activeGameId ?? undefined,
+        sort: sortOption,
+        per_page: PER_PAGE,
+        page: currentPage,
+      });
+      return response.data;
+    },
+    // Keeps the previous page on screen while the next one loads, so paging
+    // doesn't blank the table.
+    placeholderData: keepPreviousData,
+  });
+
+  const pagedRows = useMemo<PriceListItem[]>(
+    () =>
+      (data?.data ?? []).map((row) => ({
+        id: row.id,
+        serviceName: row.service_name,
+        gameId: row.game_slug ?? String(row.game_id),
+        gameName: row.game_name ?? "",
+        gameLogo: row.game_logo_url ?? "",
+        gameRegion: row.game_region ?? "",
+        normalPrice: row.normal_price,
+        memberPrice: row.member_price,
+        goldPrice: row.gold_price,
+        status: row.status,
+      })),
+    [data],
+  );
 
   // Reset to page 1 whenever filters change
   const handleSetActiveGameId = (id: string | null) => {
@@ -38,58 +86,17 @@ export function usePriceList() {
     setCurrentPage(1);
   };
 
-  // 1. Filter by game category
-  const byGame = useMemo((): PriceListItem[] => {
-    if (!activeGameId) return mockPriceList;
-    return mockPriceList.filter((item) => item.gameId === activeGameId);
-  }, [activeGameId]);
-
-  // 2. Filter by search query (matches service name)
-  const bySearch = useMemo((): PriceListItem[] => {
-    const q = queryValue.trim().toLowerCase();
-    if (!q) return byGame;
-    return byGame.filter((item) =>
-      item.serviceName.toLowerCase().includes(q) ||
-      item.gameName.toLowerCase().includes(q),
-    );
-  }, [byGame, queryValue]);
-
-  // 3. Sort
-  const sorted = useMemo((): PriceListItem[] => {
-    const arr = [...bySearch];
-    switch (sortOption) {
-      case "name-asc":
-        return arr.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
-      case "price-asc":
-        return arr.sort((a, b) => a.normalPrice - b.normalPrice);
-      case "price-desc":
-        return arr.sort((a, b) => b.normalPrice - a.normalPrice);
-      default:
-        return arr.sort((a, b) => a.id - b.id);
-    }
-  }, [bySearch, sortOption]);
-
-  // 4. Pagination
-  const totalResults = sorted.length;
-  const totalPages = Math.max(1, Math.ceil(totalResults / PER_PAGE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-
-  const pagedRows = useMemo((): PriceListItem[] => {
-    const start = (safeCurrentPage - 1) * PER_PAGE;
-    return sorted.slice(start, start + PER_PAGE);
-  }, [sorted, safeCurrentPage]);
-
   return {
     form,
     pagedRows,
-    totalResults,
+    totalResults: data?.meta.total ?? 0,
     activeGameId,
     setActiveGameId: handleSetActiveGameId,
     sortOption,
     setSortOption: handleSetSortOption,
-    currentPage: safeCurrentPage,
+    currentPage: data?.meta.current_page ?? currentPage,
     setCurrentPage,
-    totalPages,
+    totalPages: Math.max(1, data?.meta.last_page ?? 1),
     /** Called when the search field value changes, to reset pagination */
     onQueryChange: handleSetQuery,
   };

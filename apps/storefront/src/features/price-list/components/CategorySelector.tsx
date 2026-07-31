@@ -5,15 +5,11 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
 import { cn } from "@/lib/utils";
-import { GAMES } from "@/data/games.data";
+import { useGamesQuery } from "@/hooks/useGamesQuery";
 import type { Game } from "@/types/game.type";
 
-/** Maps a Game.id (e.g. "ml-id-1", "genshin-2") to the mock data's gameId prefix ("ml", "genshin"). */
-function getBaseGameId(game: Game): string {
-  return game.id.split("-")[0];
-}
-
 interface Props {
+  /** Game slug, or null for "all games". */
   activeGameId: string | null;
   onSelect: (id: string | null) => void;
 }
@@ -22,14 +18,17 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
   const { t } = useTranslation("priceList");
   const [categorySearch, setCategorySearch] = useState("");
 
-  const filteredGames: Game[] = GAMES.filter((g) =>
-    g.title.toLowerCase().includes(categorySearch.toLowerCase()) ||
-    g.region.toLowerCase().includes(categorySearch.toLowerCase()),
+  const { data: games } = useGamesQuery();
+
+  // This search only narrows the row of cards already on screen, so it filters
+  // client-side rather than issuing a request per keystroke.
+  const needle = categorySearch.toLowerCase();
+  const filteredGames: Game[] = (games ?? []).filter(
+    (g) => g.title.toLowerCase().includes(needle) || g.region.toLowerCase().includes(needle),
   );
 
   const handleCardClick = (game: Game) => {
-    const baseId = getBaseGameId(game);
-    onSelect(activeGameId === baseId ? null : baseId);
+    onSelect(activeGameId === game.id ? null : game.id);
   };
 
   return (
@@ -64,8 +63,7 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
       {/* ── Game cards row — same style as Top Up Game section on homepage ── */}
       <Box className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
         {filteredGames.map((game) => {
-          const baseId = getBaseGameId(game);
-          const isActive = activeGameId === baseId;
+          const isActive = activeGameId === game.id;
 
           return (
             <Box

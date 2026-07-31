@@ -36,7 +36,9 @@ export default function CategoryTabs({ tabs, activeTab, onTabChange }: Props): R
           onClick={() => onTabChange(tab.key)}
           className={cn(tabVariants({ active: activeTab === tab.key }))}
         >
-          {t(`topUpGame.categories.${tab.key}`)}
+          {/* Categories that already have a translation keep it; anything the
+              admin adds later falls back to the label derived from the API. */}
+          {t(`topUpGame.categories.${tab.key}`, { defaultValue: tab.label })}
         </Box>
       ))}
     </Box>

@@ -67,7 +67,7 @@ npm run lint      # ESLint
 npm run preview   # Preview the production build locally
 ```
 
-There are no test scripts configured. Environment variable `VITE_API_BASE_URL` sets the backend URL (default: `http://localhost:8000/api`).
+There are no test scripts configured. Environment variable `VITE_API_BASE_URL` sets the backend URL, **including the `/api` prefix but not `/v1`** (default: `http://localhost:8000/api`). Copy `.env.example` to `.env` for local work; production injects it from the repository secret of the same name in `.github/workflows/production.yml`.
 
 ## Architecture Overview
 
@@ -212,7 +212,30 @@ Export the feature's public API through `features/<name>/index.ts`.
 
 ## HTTP Client (Axios)
 
-The `api` instance automatically attaches the Bearer token from `useAuthStore` on every request. On a `401` response (outside of `/login`), it clears auth and redirects to the locale-prefixed `/login`.
+`src/config/axios.ts`. The `api` instance attaches the Bearer token from `useAuthStore` on every request, and the response interceptor unwraps to the response body — callers work with the API envelope (`{status, code, message, data}`) directly rather than reaching through `response.data`.
+
+On a `401` outside `/v1/auth/*` it attempts **one** token refresh, replays the original request, and only clears auth + redirects if that fails. The in-flight refresh is shared: without that, a page firing several queries at once would send one refresh per query, the first would rotate the token, and the rest would fail against a token that no longer exists.
+
+A guest whose request happens to 401 is **not** bounced to `/login` — only someone who actually had a session.
+
+## API Contract (as-built)
+
+Base URL is `VITE_API_BASE_URL` (stops at `/api`); services add the `/v1` prefix from `API_VERSION` in `src/config/env.ts`. See `.agents/context/system_architecture.md` for the full endpoint table.
+
+Things that bite if you assume otherwise:
+
+- Login/register return an **`access_token` + `refresh_token` pair**, not `token`.
+- List endpoints nest the paginator: rows are at `response.data.data`, page info at `response.data.meta`.
+- Transaction statuses are the API's **uppercase** enum (`PENDING`, `PAID`, `PROCESSING`, `COMPLETED`, `FAILED_PROVIDER`, `EXPIRED`, `REFUNDED`). Invoice polling stops on the `is_terminal` flag the API returns — don't re-derive it.
+- Prices come **pre-resolved for the caller**. There is no tier to pick on the client; queries that return prices are keyed on the user id so login/logout refetches.
+- `GET /v1/games/{slug}` returns `order_form_fields`. The checkout account step renders those — it does not hardcode "User ID / Server ID". **A zone is always a free-text numeric input, never a dropdown** (the API deletes seeded zone options on purpose: a picker produced wrong ids that only failed at the supplier, after payment).
+- Nickname validation degrades to `null`. Hide the line; never block checkout on it.
+
+### Where API code lives
+
+The `auth` feature established `services/` for raw axios calls and `hooks/` for the TanStack Query wrappers, and the newer features follow it (`features/checkout/services` + `hooks`, `features/invoice/services` + `hooks`). This differs from the `api/` folder named in the "Features" section below — follow the code, and if you move one, move them all.
+
+Endpoints used by more than one feature live outside `features/` so the golden rule holds: `src/services/storefront.service.ts` and `src/hooks/useGamesQuery.ts` back the homepage grid, the navbar search and the price-list selector alike.
 
 ## Auth Store (`src/store/useAuthStore.ts`)
 

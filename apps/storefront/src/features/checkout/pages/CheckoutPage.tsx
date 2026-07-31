@@ -1,5 +1,7 @@
 import React, { useMemo } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
@@ -15,27 +17,39 @@ import {
   OrderSummary,
 } from "@/features/checkout/components";
 import { useCheckoutSelection } from "@/features/checkout/hooks/useCheckoutSelection";
-import { GAME_INFO_MOCK } from "@/features/checkout/data/gameInfo.mock";
-import { PAYMENT_GROUPS_MOCK, MEMBER_CREDITS_MOCK } from "@/features/checkout/data/paymentMethods.mock";
+import {
+  useCheckoutMutation,
+  useGameProductsQuery,
+  useGameQuery,
+  useGameReviewsQuery,
+  usePaymentChannelsQuery,
+  useValidateGameIdQuery,
+} from "@/features/checkout/hooks/useCheckoutQueries";
+import { calculateAdminFee } from "@/features/checkout/lib/mappers";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
+import type { GameInfo, PaymentOption } from "@/features/checkout/types/checkout.type";
 
-/** Generates a mock invoice number in the format TOPUP-DDMMYYYY-XXXXXXXX */
-function generateInvoiceNumber(): string {
-  const now = new Date();
-  const dd = String(now.getDate()).padStart(2, "0");
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const yyyy = String(now.getFullYear());
-  const hex = Math.floor(Math.random() * 0xffffffff)
-    .toString(16)
-    .toUpperCase()
-    .padStart(8, "0");
-  return `TOPUP-${dd}${mm}${yyyy}-${hex}`;
-}
+/** Shown while the game loads, so the header doesn't collapse mid-render. */
+const EMPTY_GAME: GameInfo = { name: "", publisher: "", region: "", slug: "", logo: "", thumbnail: "" };
 
 export default function CheckoutPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const { locale } = useParams({ strict: false }) as { locale: string };
+  const { t } = useTranslation("checkout");
+  const { locale, gameSlug } = useParams({ strict: false }) as { locale: string; gameSlug: string };
   const setPendingOrder = useCheckoutStore((s) => s.setPendingOrder);
+
+  const gameQuery = useGameQuery(gameSlug);
+  const productsQuery = useGameProductsQuery(gameSlug);
+  const channelsQuery = usePaymentChannelsQuery();
+  const reviewsQuery = useGameReviewsQuery(gameSlug);
+  const checkoutMutation = useCheckoutMutation();
+
+  const game = gameQuery.data?.info ?? EMPTY_GAME;
+  const orderFormFields = gameQuery.data?.detail.order_form_fields ?? [];
+  const packages = useMemo(() => productsQuery.data?.packages ?? [], [productsQuery.data]);
+  const categories = useMemo(() => productsQuery.data?.categories ?? [], [productsQuery.data]);
+  const paymentGroups = useMemo(() => channelsQuery.data?.groups ?? [], [channelsQuery.data]);
+  const memberCredits = channelsQuery.data?.memberCredits ?? null;
 
   const {
     selectedPackageId,
@@ -45,53 +59,99 @@ export default function CheckoutPage(): React.JSX.Element {
     serverId,
     whatsapp,
     filteredPackages,
+    visibleCategories,
     selectedPackage,
     totalPrice,
     setActiveCategory,
-    setUserId,
-    setServerId,
+    setFieldValue,
     setWhatsapp,
     handleSelectPackage,
     handleSelectPayment,
-  } = useCheckoutSelection();
+  } = useCheckoutSelection({ packages, categories });
 
-  const selectedPaymentName = useMemo(() => {
-    if (!selectedPaymentId) return undefined;
-    if (selectedPaymentId === MEMBER_CREDITS_MOCK.id) return "Credits";
-    for (const group of PAYMENT_GROUPS_MOCK) {
-      const found = group.options.find((o) => o.id === selectedPaymentId);
-      if (found) return found.name;
+  const validation = useValidateGameIdQuery(gameSlug, userId, serverId);
+  const nickname = validation.data?.nickname ?? null;
+
+  /** The wallet, or the chip the customer picked out of a group. */
+  const selectedPayment = useMemo((): PaymentOption | null => {
+    if (!selectedPaymentId) return null;
+
+    if (memberCredits && selectedPaymentId === memberCredits.id) {
+      return {
+        id: memberCredits.id,
+        channelId: memberCredits.channelId,
+        name: t("payment.credits"),
+        logo: memberCredits.logo,
+        minAmount: 0,
+        feeFlat: 0,
+        feePercent: 0,
+      };
     }
-    return undefined;
-  }, [selectedPaymentId]);
+
+    for (const group of paymentGroups) {
+      const found = group.options.find((option) => option.id === selectedPaymentId);
+      if (found) return found;
+    }
+
+    return null;
+  }, [selectedPaymentId, memberCredits, paymentGroups, t]);
+
+  // Mirrors CheckoutAction's fee maths so the confirmation modal shows the
+  // number the customer is about to be charged, not the package price alone.
+  const adminFee = selectedPayment ? calculateAdminFee(selectedPayment, totalPrice) : 0;
 
   const handleConfirmCheckout = () => {
-    if (!selectedPackage) return;
+    if (!selectedPackage || !selectedPayment) return;
 
-    const invoiceNumber = generateInvoiceNumber();
-    // TODO: replace adminFee with backend-provided value
-    const adminFee = Math.round(totalPrice * 0.04);
+    checkoutMutation.mutate(
+      {
+        product_id: selectedPackage.productId,
+        payment_channel_id: selectedPayment.channelId,
+        target_uid: userId.trim(),
+        target_server: serverId.trim() || undefined,
+        // Display-only echo of what validate-id returned; the API stores it so
+        // the receipt keeps showing the name that was confirmed here.
+        target_nickname: nickname ?? undefined,
+        guest_contact: whatsapp.trim() || undefined,
+      },
+      {
+        onSuccess: (response) => {
+          const result = response.data;
 
-    setPendingOrder({
-      invoiceNumber,
-      gameName: GAME_INFO_MOCK.name,
-      gameRegion: GAME_INFO_MOCK.region,
-      gameThumbnail: GAME_INFO_MOCK.thumbnail,
-      packageLabel: selectedPackage.name,
-      userId,
-      serverId,
-      username: "Ramonezz", // TODO: replace with validated nickname from game server
-      paymentName: selectedPaymentName ?? "QRIS",
-      price: totalPrice,
-      adminFee,
-      total: totalPrice + adminFee,
-      createdAt: Date.now(),
-    });
+          // Seeds the invoice page's first paint. The server stays the source
+          // of truth — the invoice query overwrites this once it resolves.
+          setPendingOrder({
+            invoiceNumber: result.invoice_number,
+            gameName: game.name,
+            gameRegion: game.region,
+            gameThumbnail: game.thumbnail,
+            packageLabel: selectedPackage.name,
+            userId: userId.trim(),
+            serverId: serverId.trim(),
+            username: nickname ?? "",
+            paymentName: result.payment.channel,
+            price: result.product.price,
+            adminFee: result.payment.admin_fee,
+            total: result.payment.amount,
+            createdAt: Date.now(),
+          });
 
-    navigate({
-      to: "/$locale/invoice/$invoiceNumber",
-      params: { locale: locale ?? "id", invoiceNumber },
-    });
+          navigate({
+            to: "/$locale/invoice/$invoiceNumber",
+            params: { locale: locale ?? "id", invoiceNumber: result.invoice_number },
+          });
+        },
+        onError: (error: unknown) => {
+          // The API returns a human-readable reason for every business-rule
+          // rejection (insufficient balance, product unavailable, duplicate
+          // submit) — surface that instead of a generic failure.
+          const message =
+            (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+            t("errors:generic", { defaultValue: "Terjadi kesalahan. Silakan coba lagi." });
+          toast.error(message);
+        },
+      },
+    );
   };
 
   return (
@@ -101,7 +161,7 @@ export default function CheckoutPage(): React.JSX.Element {
       {/* Header banner unit — full-width background, content stays at max-w-6xl */}
       <Box className="w-full">
         <ProductBanner />
-        <GameInfoBar game={GAME_INFO_MOCK} />
+        <GameInfoBar game={game} />
       </Box>
 
       {/* Two-column layout */}
@@ -114,14 +174,18 @@ export default function CheckoutPage(): React.JSX.Element {
                grid items so CSS `order` can place Reviews after the right column. ── */}
           <Box className="contents lg:flex lg:flex-col lg:gap-5">
             <AccountDetailForm
-              userId={userId}
-              serverId={serverId}
-              onUserIdChange={setUserId}
-              onServerIdChange={setServerId}
+              fields={orderFormFields}
+              values={[userId, serverId]}
+              onValueChange={setFieldValue}
+              nickname={nickname}
+              isValidatingNickname={validation.isFetching}
             />
             {/* Reviews: order-last on mobile (after right col), natural position on desktop */}
             <Box className="order-last lg:order-0">
-              <CustomerReviews />
+              <CustomerReviews
+                reviews={reviewsQuery.data?.reviews}
+                summary={reviewsQuery.data?.summary}
+              />
             </Box>
           </Box>
 
@@ -129,6 +193,7 @@ export default function CheckoutPage(): React.JSX.Element {
           <Box className="flex flex-col gap-5 order-2 lg:order-0">
             <DiamondPackages
               packages={filteredPackages}
+              categories={visibleCategories}
               selectedPackageId={selectedPackageId}
               activeCategory={activeCategory}
               onSelectPackage={handleSelectPackage}
@@ -136,8 +201,8 @@ export default function CheckoutPage(): React.JSX.Element {
             />
 
             <PaymentMethods
-              groups={PAYMENT_GROUPS_MOCK}
-              memberCredits={MEMBER_CREDITS_MOCK}
+              groups={paymentGroups}
+              memberCredits={memberCredits}
               selectedPaymentId={selectedPaymentId}
               onSelectPayment={handleSelectPayment}
             />
@@ -152,12 +217,15 @@ export default function CheckoutPage(): React.JSX.Element {
             <OrderSummary
               selectedPackage={selectedPackage}
               totalPrice={totalPrice}
-              gameThumbnail={GAME_INFO_MOCK.thumbnail}
-              gameName={GAME_INFO_MOCK.name}
-              selectedPaymentName={selectedPaymentName}
+              adminFee={adminFee}
+              gameThumbnail={game.thumbnail}
+              gameName={game.name}
+              selectedPaymentName={selectedPayment?.name}
               userId={userId}
               serverId={serverId}
               whatsapp={whatsapp}
+              nickname={nickname}
+              isSubmitting={checkoutMutation.isPending}
               onSubmit={handleConfirmCheckout}
             />
           </Box>

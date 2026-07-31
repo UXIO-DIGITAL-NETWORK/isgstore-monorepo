@@ -9,11 +9,7 @@ import TransactionTable from "@/features/track-order/components/TransactionTable
 import { useTrackOrderSearch } from "@/features/track-order/hooks/useTrackOrderSearch";
 
 export default function TrackOrderPage(): React.JSX.Element {
-  const { form, filteredRows } = useTrackOrderSearch();
-
-  // Live filtering is driven by form.watch() in useTrackOrderSearch.
-  // The submit button provides explicit UX affordance but filtering is already live.
-  const handleSearch = () => { /* no-op: live filtering via useWatch */ };
+  const { form, filteredRows, onSubmit } = useTrackOrderSearch();
 
   return (
     <Box className="min-h-dvh bg-[#0A0A0C]">
@@ -26,7 +22,7 @@ export default function TrackOrderPage(): React.JSX.Element {
 
       {/* ── Search card + help banner ── */}
       <Box className="max-w-3xl mx-auto px-4 md:px-8 pb-8 flex flex-col gap-4">
-        <TrackOrderSearchCard form={form} onSubmit={handleSearch} />
+        <TrackOrderSearchCard form={form} onSubmit={onSubmit} />
         <TrackOrderHelpBanner />
       </Box>
 
