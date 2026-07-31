@@ -1,5 +1,5 @@
 import { useLocation } from "@tanstack/react-router";
-import { CloudUpload, ImageIcon, Plus, Power, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ChevronDown, CloudUpload, ImageIcon, Plus, Power, RefreshCw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Box } from "@/components/common/Box";
@@ -7,6 +7,12 @@ import { Can } from "@/components/common/Can";
 import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -150,15 +156,30 @@ export function MainProductToolbar({
               Refresh
             </Text>
           </Button>
-          <Button
-            asChild
-            className="rounded-xl"
-          >
-            <Link href={addHref}>
-              <Plus className="size-4" />
-              Add Main Products
-            </Link>
-          </Button>
+          {/* Two ways in, per the reference: one product at a time, or a bulk
+              import. The reference's menu reads "Menual" — a misspelling, not
+              a term, so it is corrected the same way the lorem-ipsum subcopy
+              and the "9999999" footer were. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="rounded-xl">
+                <Plus className="size-4" />
+                Add Main Products
+                <ChevronDown className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="rounded-2xl"
+            >
+              <DropdownMenuItem asChild>
+                <Link href={addHref}>Manual</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={announceDeferred("Bulk product import lands with the Add Product form")}>
+                Bulk
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </Box>
       </Box>
 

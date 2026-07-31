@@ -185,8 +185,8 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
             handleFiles(event.dataTransfer.files);
           }}
           className={cn(
-            "flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-6 text-center",
-            dragActive && "border-foreground bg-accent",
+            "flex flex-col items-center gap-2 rounded-xl border border-dashed border-input p-6 text-center",
+            dragActive ? "border-foreground bg-accent" : "bg-transparent dark:bg-input/30",
           )}
         >
           <UploadCloud className="size-6 text-muted-foreground" />

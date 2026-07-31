@@ -1,16 +1,86 @@
-import type { PriceRangeOption, SelectOption } from "../types/product.type";
+import type { CategoryOption, PriceRangeOption, SelectOption } from "../types/product.type";
 
-/** Sources the toolbar's "Type to search category" select. Values are the
- * `category_name` stored on each product — a contract test pins that every
- * fixture's category is reachable here, so a typo can't produce a filter that
- * silently matches nothing. */
-export const CATEGORY_OPTIONS: SelectOption[] = [
-  { value: "Mobile Legends: Indonesia", label: "Mobile Legends: Indonesia" },
-  { value: "Free Fire Indonesia", label: "Free Fire Indonesia" },
-  { value: "Genshin Impact", label: "Genshin Impact" },
-  { value: "PUBG Mobile", label: "PUBG Mobile" },
-  { value: "Valorant", label: "Valorant" },
-  { value: "Honkai: Star Rail", label: "Honkai: Star Rail" },
+/** Sources the toolbar's "Type to search category" select and the Add form's
+ * Category field. Values are the `category_name` stored on each product — a
+ * contract test pins that every fixture's category is reachable here, so a
+ * typo can't produce a filter that silently matches nothing. Each entry also
+ * carries its game, which is what a product created from the form inherits. */
+export const CATEGORY_OPTIONS: CategoryOption[] = [
+  {
+    value: "Mobile Legends: Indonesia",
+    label: "Mobile Legends: Indonesia",
+    game_id: "game-mlbb",
+    game_name: "Mobile Legends: Bang Bang",
+  },
+  { value: "Free Fire Indonesia", label: "Free Fire Indonesia", game_id: "game-ff", game_name: "Free Fire" },
+  { value: "Genshin Impact", label: "Genshin Impact", game_id: "game-genshin", game_name: "Genshin Impact" },
+  { value: "PUBG Mobile", label: "PUBG Mobile", game_id: "game-pubgm", game_name: "PUBG Mobile" },
+  { value: "Valorant", label: "Valorant", game_id: "game-valorant", game_name: "Valorant" },
+  { value: "Honkai: Star Rail", label: "Honkai: Star Rail", game_id: "game-hsr", game_name: "Honkai: Star Rail" },
+];
+
+/**
+ * Sub Category options per category — the Add form's Sub Category select lists
+ * only the chosen category's entries, matching `SubCategory.category_id` in §6.
+ *
+ * **Inferred, not confirmed** (§4.6): the reference never opens this select.
+ * These are the currencies/passes each game actually sells; revise when the
+ * API (or a Sub Category service) lands.
+ */
+export const SUB_CATEGORY_OPTIONS: Record<string, SelectOption[]> = {
+  "Mobile Legends: Indonesia": [
+    { value: "Diamonds", label: "Diamonds" },
+    { value: "Weekly Pass", label: "Weekly Pass" },
+    { value: "Starlight", label: "Starlight" },
+  ],
+  "Free Fire Indonesia": [
+    { value: "Diamonds", label: "Diamonds" },
+    { value: "Membership", label: "Membership" },
+  ],
+  "Genshin Impact": [
+    { value: "Genesis Crystals", label: "Genesis Crystals" },
+    { value: "Welkin Moon", label: "Welkin Moon" },
+  ],
+  "PUBG Mobile": [
+    { value: "Unknown Cash", label: "Unknown Cash" },
+    { value: "Royale Pass", label: "Royale Pass" },
+  ],
+  Valorant: [{ value: "Valorant Points", label: "Valorant Points" }],
+  "Honkai: Star Rail": [
+    { value: "Oneiric Shards", label: "Oneiric Shards" },
+    { value: "Express Supply Pass", label: "Express Supply Pass" },
+  ],
+};
+
+/**
+ * The Add form's three remaining selects. **Inferred, not confirmed** (§4.6):
+ * the reference shows only their placeholders, never their lists.
+ *
+ * Access mirrors `PRICE_TIERS` — the same four customer tiers the price card
+ * is broken down by, which is the only tier vocabulary this domain has.
+ */
+export const PRODUCT_ACCESS_OPTIONS: SelectOption[] = [
+  { value: "public", label: "Public" },
+  { value: "vip", label: "VIP" },
+  { value: "reseller", label: "Reseller" },
+  { value: "agent", label: "Agent" },
+];
+
+export const PRODUCT_TAG_OPTIONS: SelectOption[] = [
+  { value: "popular", label: "Popular" },
+  { value: "new", label: "New" },
+  { value: "promo", label: "Promo" },
+  { value: "best-seller", label: "Best Seller" },
+];
+
+/** Same upstream validators the Category form offers (§4.5) — one product's
+ * nickname check is the same integration its category uses. */
+export const NICKNAME_VALIDATION_OPTIONS: SelectOption[] = [
+  { value: "Moonton API", label: "Moonton API" },
+  { value: "Garena API", label: "Garena API" },
+  { value: "miHoYo API", label: "miHoYo API" },
+  { value: "Riot API", label: "Riot API" },
+  { value: "None", label: "None" },
 ];
 
 /**

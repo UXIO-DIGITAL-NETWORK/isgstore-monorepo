@@ -4,15 +4,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
+import { ImageDropzone } from "@/components/common/ImageDropzone";
 import { Link } from "@/components/common/Link";
+import { SelectField } from "@/components/common/SelectField";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryFormFieldsBuilder } from "../components/CategoryFormFieldsBuilder";
-import { CategoryImageUpload } from "../components/CategoryImageUpload";
 import {
   ACCOUNT_NICKNAME_VALIDATION_OPTIONS,
   CATEGORY_TYPE_OPTIONS,
@@ -22,7 +22,6 @@ import {
 } from "../data/select-options.data";
 import { useCreateCategory } from "../hooks/useCategories";
 import { categoryFormSchema, META_DESCRIPTION_MAX, type CategoryFormValues } from "../schemas/categoryForm.schema";
-import type { SelectOption } from "../types/category.type";
 
 function slugify(value: string): string {
   return value
@@ -30,59 +29,6 @@ function slugify(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-}
-
-function SelectField({
-  id,
-  label,
-  options,
-  value,
-  onChange,
-  error,
-  placeholder = "Type to search...",
-}: {
-  id: string;
-  label: string;
-  options: SelectOption[];
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-  placeholder?: string;
-}) {
-  return (
-    <Box className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <Select
-        value={value}
-        onValueChange={onChange}
-      >
-        <SelectTrigger
-          id={id}
-          className="w-full rounded-xl"
-        >
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-            >
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {error && (
-        <Text
-          variant="small"
-          className="text-destructive"
-        >
-          {error}
-        </Text>
-      )}
-    </Box>
-  );
 }
 
 export default function AddCategoryPage() {
@@ -338,7 +284,7 @@ export default function AddCategoryPage() {
             control={control}
             name="logo"
             render={({ field }) => (
-              <CategoryImageUpload
+              <ImageDropzone
                 id="category-logo"
                 label="Category Logo"
                 caption="3:4 ratio recommended · max display 800×600 px"
@@ -401,7 +347,7 @@ export default function AddCategoryPage() {
             control={control}
             name="ogImage"
             render={({ field }) => (
-              <CategoryImageUpload
+              <ImageDropzone
                 id="og-image"
                 label="OG Image"
                 caption="1.91:1 ratio recommended · max display 1200×630 px"

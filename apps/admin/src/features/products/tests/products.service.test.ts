@@ -199,6 +199,73 @@ describe("productsService.getById", () => {
   });
 });
 
+describe("productsService.create", () => {
+  it("returns the typed product with a generated id and ISO timestamps", async () => {
+    const created = await productsService.create({
+      name: "Genesis Crystal 300",
+      game_id: "game-genshin",
+      game_name: "Genshin Impact",
+      category_name: "Genshin Impact",
+      code: "GI-GC-300",
+      status: "active",
+      is_available: true,
+      variants: [],
+    });
+
+    expect(created.id).toEqual(expect.any(String));
+    expect(created.id.trim()).not.toBe("");
+    expect(Number.isNaN(Date.parse(created.created_at))).toBe(false);
+    expect(created.created_at).toBe(created.updated_at);
+    expect(created).toMatchObject({ name: "Genesis Crystal 300", code: "GI-GC-300" });
+  });
+
+  it("puts the new product on page 1, where the form redirects back to", async () => {
+    // 12+ fixtures over a page size of 10: appending would land the row on
+    // page 2, so the admin would be sent back to a list that looks unchanged.
+    await productsService.create({
+      name: "Oneiric Shard 300",
+      game_id: "game-hsr",
+      game_name: "Honkai: Star Rail",
+      category_name: "Honkai: Star Rail",
+      code: "HSR-OS-300",
+      status: "active",
+      is_available: true,
+      variants: [],
+    });
+
+    const firstPage = await productsService.list();
+    expect(firstPage.data[0]).toMatchObject({ name: "Oneiric Shard 300" });
+  });
+
+  it("keeps the optional form fields it is given", async () => {
+    const created = await productsService.create({
+      name: "Weekly Pass",
+      game_id: "game-mlbb",
+      game_name: "Mobile Legends: Bang Bang",
+      category_name: "Mobile Legends: Indonesia",
+      sub_category_name: "Diamonds",
+      sub_name: "Weekly",
+      nickname_validation: "Moonton API",
+      access: "public",
+      tag: "popular",
+      description: "Weekly diamond pass.",
+      code: "MLBB-WP-01",
+      status: "active",
+      is_available: true,
+      variants: [],
+    });
+
+    expect(created).toMatchObject({
+      sub_name: "Weekly",
+      sub_category_name: "Diamonds",
+      nickname_validation: "Moonton API",
+      access: "public",
+      tag: "popular",
+      description: "Weekly diamond pass.",
+    });
+  });
+});
+
 describe("productsService.remove", () => {
   it("deletes a known product and throws for an unknown id", async () => {
     const target = PRODUCTS[PRODUCTS.length - 1].id;

@@ -77,6 +77,20 @@ export const productsService = {
 
   getById: async (id: string): Promise<Product> => products[indexOfOrThrow(id)],
 
+  create: async (input: Omit<Product, "id" | "created_at" | "updated_at">): Promise<Product> => {
+    const now = new Date().toISOString();
+    const created: Product = {
+      ...input,
+      id: `prod-${products.length + 1}-${Date.now()}`,
+      created_at: now,
+      updated_at: now,
+    };
+    // Newest first: 12+ fixtures over a page size of 10 means an appended row
+    // lands on page 2, and the Add form redirects to page 1.
+    products.unshift(created);
+    return created;
+  },
+
   /** The selection bar's "Deactive" — lifecycle only, so a deactivated product
    * keeps its `is_available` value and reactivating restores the old state. */
   deactivate: async (id: string): Promise<void> => {

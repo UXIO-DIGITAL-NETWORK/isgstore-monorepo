@@ -1,0 +1,89 @@
+import { Box } from "@/components/common/Box";
+import { Text } from "@/components/common/Text";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface SelectFieldOption {
+  value: string;
+  label: string;
+}
+
+interface SelectFieldProps {
+  id: string;
+  label: string;
+  options: SelectFieldOption[];
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  /** Shown in place of the list when `options` is empty. */
+  emptyLabel?: string;
+}
+
+/**
+ * A labelled shadcn `Select` with its error line — the shape every form page
+ * repeats. Written for Add Category, promoted here when Products' Add form
+ * became the second caller.
+ *
+ * `Select` is used rather than a raw control so the trigger keeps its
+ * `combobox` role and the label association tests query by.
+ */
+export function SelectField({
+  id,
+  label,
+  options,
+  value,
+  onChange,
+  error,
+  placeholder = "Type to search...",
+  disabled = false,
+  emptyLabel = "No options available",
+}: SelectFieldProps) {
+  return (
+    <Box className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Select
+        value={value}
+        onValueChange={onChange}
+        disabled={disabled}
+      >
+        <SelectTrigger
+          id={id}
+          className="w-full rounded-xl"
+        >
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.length === 0 ? (
+            <Box className="px-2 py-1.5">
+              <Text
+                variant="small"
+                className="text-muted-foreground"
+              >
+                {emptyLabel}
+              </Text>
+            </Box>
+          ) : (
+            options.map((option) => (
+              <SelectItem
+                key={option.value}
+                value={option.value}
+              >
+                {option.label}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+      {error && (
+        <Text
+          variant="small"
+          className="text-destructive"
+        >
+          {error}
+        </Text>
+      )}
+    </Box>
+  );
+}
