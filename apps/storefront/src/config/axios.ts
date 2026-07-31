@@ -37,10 +37,18 @@ type RetriableConfig = AxiosRequestConfig & { _retried?: boolean };
 let refreshInFlight: Promise<string | null> | null = null;
 
 function refreshAccessToken(): Promise<string | null> {
-  refreshInFlight ??= (async () => {
-    const { refreshToken, setToken, clearAuth } = useAuthStore.getState();
+  const { refreshToken } = useAuthStore.getState();
 
-    if (!refreshToken) return null;
+  // Checked before the memoized promise is built, never inside it. A body that
+  // returns without ever awaiting runs its `finally` synchronously — i.e.
+  // *before* `??=` finishes assigning — so `refreshInFlight` would be left
+  // holding a resolved-null promise forever. One 401 while signed out (a guest
+  // hitting a members-only read) then disabled refresh for the whole session:
+  // after logging in, the first expired token would log the user straight out.
+  if (!refreshToken) return Promise.resolve(null);
+
+  refreshInFlight ??= (async () => {
+    const { setToken, clearAuth } = useAuthStore.getState();
 
     try {
       // Bare axios, not `api`: our request interceptor would attach the

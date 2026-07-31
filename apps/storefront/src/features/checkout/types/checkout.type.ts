@@ -123,6 +123,8 @@ export interface CheckoutPayload {
   target_server?: string;
   target_nickname?: string;
   guest_contact?: string;
+  /** Re-validated server-side — the client's quoted discount is never trusted. */
+  promo_code?: string;
 }
 
 export interface CheckoutResult {

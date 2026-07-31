@@ -3,20 +3,30 @@ import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Zap } from "lucide-react";
-import { FLASH_SALE_ITEMS, FLASH_SALE_DURATION_SECONDS } from "@/features/home/data/flashSale.data";
+import { useFlashSaleQuery } from "@/hooks/useFlashSaleQuery";
+import type { FlashSaleItem } from "@/features/home/types/flashSale.type";
 import TimerBox from "./fragments/TimerBox";
 import FlashSaleCard from "./fragments/FlashSaleCard";
 
-function useCountdown(durationSeconds: number) {
-  const [endTime] = useState(() => Date.now() + durationSeconds * 1000);
-  const [remaining, setRemaining] = useState<number>(durationSeconds);
+/**
+ * Counts down to the sale's real end time rather than a fixed duration from
+ * page load — the old version restarted the clock on every refresh, so the
+ * timer never agreed with when the sale actually ended.
+ */
+function useCountdown(endsAt: string | undefined) {
+  // Derived from `endsAt` rather than reset inside the effect: with no end
+  // time there is nothing to count, and writing state in an effect just to
+  // express that is both a lint error and an extra render.
+  const endTime = endsAt ? Date.parse(endsAt) : null;
+  const [remaining, setRemaining] = useState<number>(() =>
+    endTime ? Math.max(0, Math.round((endTime - Date.now()) / 1000)) : 0,
+  );
 
   useEffect(() => {
-    const tick = () => {
-      const left = Math.max(0, Math.round((endTime - Date.now()) / 1000));
-      setRemaining(left);
-    };
-    tick();
+    if (endTime === null) return;
+
+    const tick = () => setRemaining(Math.max(0, Math.round((endTime - Date.now()) / 1000)));
+
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [endTime]);
@@ -30,7 +40,25 @@ function useCountdown(durationSeconds: number) {
 
 export default function FlashSale(): React.JSX.Element {
   const { t } = useTranslation("home");
-  const { hours, minutes, seconds } = useCountdown(FLASH_SALE_DURATION_SECONDS);
+  const { data } = useFlashSaleQuery();
+  const sale = data?.data ?? null;
+  const { hours, minutes, seconds } = useCountdown(sale?.ends_at);
+
+  const items: FlashSaleItem[] = (sale?.items ?? []).map((item) => ({
+    id: String(item.id),
+    name: item.name,
+    game: item.game ?? "",
+    image: item.image_url ?? "",
+    salePrice: item.sale_price,
+    originalPrice: item.original_price,
+    discount: item.discount,
+    stockAvailable: item.stock_available,
+    stockTotal: item.stock_total,
+  }));
+
+  // Nothing running means no block at all, rather than an empty card grid
+  // under a zeroed timer.
+  if (!sale || items.length === 0) return <></>;
 
   return (
     <Box className="w-fulls pt-6 pb-8 md:pt-8 md:pb-12">
@@ -81,7 +109,7 @@ export default function FlashSale(): React.JSX.Element {
           {/* Card body */}
           <Box className="p-5">
             <Box className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-              {FLASH_SALE_ITEMS.map((item, idx) => (
+              {items.map((item, idx) => (
                 <FlashSaleCard key={item.id} item={item} isActive={idx === 0} />
               ))}
             </Box>

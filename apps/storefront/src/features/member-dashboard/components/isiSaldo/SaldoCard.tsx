@@ -5,11 +5,12 @@ import { Wallet, ShieldCheck } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { formatCurrency } from "@/lib/format";
-import { CURRENT_BALANCE } from "@/features/member-dashboard/data/isiSaldo.mock";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function SaldoCard(): React.JSX.Element {
   const { t } = useTranslation("dashboard");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+  const balance = useAuthStore((state) => state.user?.balance ?? 0);
 
   return (
     <Box className="p-[1px] rounded-2xl bg-linear-to-br from-[#3B82F6] to-[#9234EA]">
@@ -29,7 +30,7 @@ export default function SaldoCard(): React.JSX.Element {
         <Box
           className="bg-linear-to-r from-white to-[#E9D5FF] bg-clip-text text-transparent font-plex font-bold text-[32px] leading-none"
         >
-          {formatCurrency(CURRENT_BALANCE, locale)}
+          {formatCurrency(balance, locale)}
         </Box>
 
         {/* Secure note */}

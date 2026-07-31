@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
+import { useParams } from "@tanstack/react-router";
+
+import { useArticlesQuery } from "@/hooks/useArticlesQuery";
+import { toBeritaArticle } from "@/lib/articles";
 import type { Article, BeritaCategoryKey } from "@/features/berita/types/article.type";
-import { ALL_ARTICLES } from "@/features/berita/data/articles.data";
 
 const PER_PAGE = 9;
 
@@ -14,25 +17,30 @@ export interface UseBeritaReturn {
   totalResults: number;
 }
 
+/**
+ * Filtering and pagination moved server-side — the page no longer downloads
+ * every article in order to show nine. The return interface is unchanged, so
+ * `BeritaPage` and `BeritaPagination` render exactly as before.
+ */
 export function useBerita(): UseBeritaReturn {
+  const { locale } = useParams({ strict: false }) as { locale?: string };
   const [activeCategory, setActiveCategoryState] = useState<BeritaCategoryKey>("semua");
   const [currentPage, setCurrentPageState] = useState(1);
 
-  const filtered = useMemo<Article[]>(() => {
-    if (activeCategory === "semua") return ALL_ARTICLES;
-    return ALL_ARTICLES.filter((a) => a.categoryKey === activeCategory);
-  }, [activeCategory]);
+  const { data } = useArticlesQuery({
+    category: activeCategory,
+    page: currentPage,
+    perPage: PER_PAGE,
+    locale,
+  });
 
-  const totalResults = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalResults / PER_PAGE));
+  const pagedArticles = useMemo<Article[]>(
+    () => (data?.data.data ?? []).map((model) => toBeritaArticle(model, locale ?? "id")),
+    [data, locale],
+  );
 
-  // Clamp currentPage in case filtered results shrank under a previous page
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-
-  const pagedArticles = useMemo<Article[]>(() => {
-    const start = (safeCurrentPage - 1) * PER_PAGE;
-    return filtered.slice(start, start + PER_PAGE);
-  }, [filtered, safeCurrentPage]);
+  const totalResults = data?.data.meta.total ?? 0;
+  const totalPages = Math.max(1, data?.data.meta.last_page ?? 1);
 
   function setActiveCategory(category: BeritaCategoryKey) {
     setActiveCategoryState(category);
@@ -47,7 +55,9 @@ export function useBerita(): UseBeritaReturn {
     pagedArticles,
     activeCategory,
     setActiveCategory,
-    currentPage: safeCurrentPage,
+    // Clamped so a category switch that shrinks the result set cannot leave
+    // the pager pointing past the last page.
+    currentPage: Math.min(currentPage, totalPages),
     setCurrentPage,
     totalPages,
     totalResults,

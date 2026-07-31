@@ -16,11 +16,7 @@ import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
-
-/** Mock balance shown in the dropdown — in a real app this comes from the wallet API. */
-const MOCK_BALANCE = "Rp 3.400";
-/** Mock phone — not stored in the User model; shown as placeholder. */
-const MOCK_PHONE = "+62 8737 1735 834";
+import { formatCurrency } from "@/lib/format";
 
 export function UserMenu(): React.JSX.Element {
   const { t } = useTranslation("common");
@@ -116,7 +112,7 @@ export function UserMenu(): React.JSX.Element {
               <Box className="flex items-center gap-2">
                 <Phone className="w-3 h-3 text-white/30 shrink-0" />
                 <Text as="span" className="text-[12px] font-inter text-white/50 leading-none">
-                  {MOCK_PHONE}
+                  {user?.phone ?? ""}
                 </Text>
               </Box>
             </Box>
@@ -148,7 +144,7 @@ export function UserMenu(): React.JSX.Element {
               </Box>
               <Box className="px-2.5 py-0.5 rounded-full bg-white/8 border border-white/10">
                 <Text as="span" className="text-[11px] font-plex font-bold text-white/70 leading-none">
-                  {MOCK_BALANCE}
+                  {formatCurrency(user?.balance ?? 0, locale)}
                 </Text>
               </Box>
             </Box>

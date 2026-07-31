@@ -6,12 +6,18 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Link } from "@/components/common/Link";
-import { ARTIKEL_TERBARU } from "@/features/home/data/artikel.data";
+import { useLatestArticlesQuery } from "@/hooks/useArticlesQuery";
+import { toHomeArticle } from "@/lib/articles";
 import ArticleCard from "./fragments/ArticleCard";
+
+const LATEST_COUNT = 3;
 
 export default function ArtikelTerbaru(): React.JSX.Element {
   const { t } = useTranslation("home");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+  const { data } = useLatestArticlesQuery(LATEST_COUNT, locale);
+  const articles = (data?.data.data ?? []).map((model) => toHomeArticle(model, locale));
+
   return (
     <Box as="section" className="w-full py-16 md:py-20">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
@@ -36,7 +42,7 @@ export default function ArtikelTerbaru(): React.JSX.Element {
 
         {/* 3-card flex row */}
         <Box className="flex flex-col md:flex-row gap-6">
-          {ARTIKEL_TERBARU.map((article, index) => (
+          {articles.map((article, index) => (
             <ArticleCard
               key={article.id}
               article={article}

@@ -7,7 +7,6 @@ import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
-import { NOMINAL_PRESETS } from "@/features/member-dashboard/data/isiSaldo.mock";
 import SectionCard from "./SectionCard";
 
 const chipVariants = cva(
@@ -24,12 +23,15 @@ const chipVariants = cva(
 );
 
 interface Props {
+  /** Configurable via site settings rather than bundled. */
+  presets: number[];
   selectedNominal: number;
   onSelectPreset: (value: number) => void;
   onCustomChange: (raw: string) => void;
 }
 
 export default function NominalSelector({
+  presets,
   selectedNominal,
   onSelectPreset,
   onCustomChange,
@@ -80,7 +82,7 @@ export default function NominalSelector({
 
         {/* Preset chips */}
         <Box className="flex flex-wrap gap-2">
-          {NOMINAL_PRESETS.map((preset) => (
+          {presets.map((preset) => (
             <Box
               key={preset}
               as="button"

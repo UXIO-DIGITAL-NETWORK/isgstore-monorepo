@@ -55,7 +55,7 @@ export default function PlanCard({ plan, isSelected, onSelect }: Props): React.J
               isSelected ? "text-white" : "text-white/80",
             )}
           >
-            {t(plan.nameKey)}
+            {plan.name}
           </Text>
 
           {/* Radio / check indicator */}
@@ -78,8 +78,8 @@ export default function PlanCard({ plan, isSelected, onSelect }: Props): React.J
 
         {/* Benefit bullets */}
         <Box className="flex flex-col gap-2">
-          {plan.benefitKeys.map((key) => (
-            <Box key={key} className="flex items-start gap-2">
+          {plan.benefits.map((benefit) => (
+            <Box key={benefit} className="flex items-start gap-2">
               {/* Green check circle */}
               <Box className="w-4 h-4 rounded-full bg-[#0EA42E]/20 flex items-center justify-center shrink-0 mt-[1px]">
                 <Check className="w-2.5 h-2.5 text-[#0EA42E]" strokeWidth={3} />
@@ -88,7 +88,7 @@ export default function PlanCard({ plan, isSelected, onSelect }: Props): React.J
                 as="span"
                 className="font-inter text-[11px] text-white/75 leading-snug text-left"
               >
-                {t(key)}
+                {benefit}
               </Text>
             </Box>
           ))}

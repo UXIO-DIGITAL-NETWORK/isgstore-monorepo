@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/format";
 
 interface Props {
-  planNameKey: string | undefined;
+  planName: string | undefined;
+  isSubmitting?: boolean;
+  /** Server-side failure (e.g. insufficient balance), shown above the button. */
+  errorMessage?: string | null;
   adminFee: number;
   total: number;
   selectedPaymentName: string | undefined;
@@ -15,7 +18,9 @@ interface Props {
 }
 
 export default function SummaryCard({
-  planNameKey,
+  planName,
+  isSubmitting,
+  errorMessage,
   adminFee,
   total,
   selectedPaymentName,
@@ -24,8 +29,7 @@ export default function SummaryCard({
   const { t, i18n } = useTranslation("dashboard");
   const locale = i18n.language;
 
-  const planName = planNameKey ? t(planNameKey) : undefined;
-  const isDisabled = !planNameKey || !selectedPaymentName;
+  const isDisabled = !planName || !selectedPaymentName || Boolean(isSubmitting);
 
   return (
     <Box className="rounded-2xl border border-dotted border-[rgba(147,51,234,0.5)] bg-[#0D1117] overflow-hidden">
@@ -70,7 +74,12 @@ export default function SummaryCard({
       <Box className="h-px bg-white/8" />
 
       {/* CTA */}
-      <Box className="px-5 py-4">
+      <Box className="px-5 py-4 flex flex-col gap-2">
+        {errorMessage && (
+          <Text as="span" className="font-inter text-[12px] text-[#EF4444] leading-relaxed">
+            {errorMessage}
+          </Text>
+        )}
         <Button
           type="button"
           onClick={onSubmit}

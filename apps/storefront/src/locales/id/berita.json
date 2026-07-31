@@ -22,7 +22,8 @@
   "detail": {
     "related": "ARTIKEL TERKAIT LAINNYA",
     "share": "Bagikan:",
-    "notFound": "Artikel tidak ditemukan."
+    "notFound": "Artikel tidak ditemukan.",
+    "loading": "Memuat artikel..."
   },
   "shareLabels": {
     "facebook": "Bagikan ke Facebook",

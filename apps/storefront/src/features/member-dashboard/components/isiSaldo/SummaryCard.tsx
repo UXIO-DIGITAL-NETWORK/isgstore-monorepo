@@ -8,6 +8,9 @@ import { formatCurrency } from "@/lib/format";
 import type { VoucherInfo } from "@/features/member-dashboard/types/isiSaldo.type";
 
 interface Props {
+  isSubmitting?: boolean;
+  /** Server-side failure (invalid promo, channel minimum), shown above the button. */
+  errorMessage?: string | null;
   nominal: number;
   discount: number;
   total: number;
@@ -22,6 +25,8 @@ export default function SummaryCard({
   appliedVoucher,
   selectedPaymentName,
   onSubmit,
+  isSubmitting,
+  errorMessage,
 }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("dashboard");
   const locale = i18n.language;
@@ -70,10 +75,15 @@ export default function SummaryCard({
 
       {/* CTA */}
       <Box className="px-5 py-4">
+        {errorMessage && (
+          <Text as="span" className="font-inter text-[12px] text-[#EF4444] leading-relaxed mb-2 block">
+            {errorMessage}
+          </Text>
+        )}
         <Button
           type="button"
           onClick={onSubmit}
-          disabled={total <= 0}
+          disabled={total <= 0 || !selectedPaymentName || Boolean(isSubmitting)}
           className="w-full py-3 text-[15px] flex items-center justify-center gap-2"
         >
           {t("isiSaldo.summary.submitButton")}

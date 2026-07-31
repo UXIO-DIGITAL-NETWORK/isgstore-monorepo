@@ -24,9 +24,15 @@ export const checkoutService = {
     return await api.get(`${API_VERSION}/games/${slug}/products`);
   },
 
-  /** Active channels; `balance` is only included for a signed-in member. */
+  /**
+   * Active channels; `balance` is only included for a signed-in member.
+   *
+   * Moved under `/storefront` when the admin gained CRUD on
+   * `/v1/payment-channels` — the two cannot share a URI, and the admin route
+   * is auth-gated, so the old path would 401 every anonymous checkout.
+   */
   paymentChannels: async (): Promise<ApiResponse<PaymentChannelModel[]>> => {
-    return await api.get(`${API_VERSION}/payment-channels`);
+    return await api.get(`${API_VERSION}/storefront/payment-channels`);
   },
 
   reviews: async (slug: string): Promise<ApiResponse<GameReviewsResponse>> => {

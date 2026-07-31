@@ -5,18 +5,55 @@ import { Gift, X } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
+import { formatCurrency } from "@/lib/format";
+import { usePublicPromosQuery, useValidatePromoMutation } from "@/hooks/usePromoQuery";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  /** Priced against the selected package so percentage codes resolve correctly. */
+  productId?: number;
+  amount?: number;
+  onApplied?: (result: { code: string; discountAmount: number }) => void;
 }
 
-// ponytail: no voucher API exists yet — code input + apply are stubs, and the
-// "available vouchers" list always renders empty. Wire real validation + a
-// public-voucher list endpoint once the backend supports it.
-export default function VoucherModal({ isOpen, onClose }: Props): React.ReactPortal | null {
+export default function VoucherModal({
+  isOpen,
+  onClose,
+  productId,
+  amount,
+  onApplied,
+}: Props): React.ReactPortal | null {
   const { t } = useTranslation("checkout");
   const [code, setCode] = useState("");
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const { data: promosResponse } = usePublicPromosQuery();
+  const validatePromo = useValidatePromoMutation();
+  const promos = promosResponse?.data ?? [];
+
+  const handleApply = (candidate: string) => {
+    const trimmed = candidate.trim().toUpperCase();
+    if (!trimmed) return;
+
+    validatePromo.mutate(
+      { code: trimmed, product_id: productId, amount },
+      {
+        onSuccess: (response) => {
+          const result = response.data;
+          // The API answers 200 either way and carries the reason in the
+          // message — invalid is a normal outcome, not a request failure.
+          setMessage({ ok: result.valid, text: response.message });
+
+          if (result.valid) {
+            onApplied?.({ code: result.code ?? trimmed, discountAmount: result.discount_amount });
+            onClose();
+          }
+        },
+        onError: () => setMessage({ ok: false, text: t("promo.modal.error") }),
+      },
+    );
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -91,12 +128,22 @@ export default function VoucherModal({ isOpen, onClose }: Props): React.ReactPor
             />
             <button
               type="button"
-              disabled={code.trim() === ""}
+              disabled={code.trim() === "" || validatePromo.isPending}
+              onClick={() => handleApply(code)}
               className="shrink-0 rounded-full bg-[#3B82F6] hover:bg-[#3B82F6]/90 disabled:opacity-50 px-5 py-2.5 font-outfit font-semibold text-[13px] text-white transition-colors cursor-pointer"
             >
               {t("promo.modal.apply")}
             </button>
           </Box>
+
+          {message && (
+            <Text
+              as="span"
+              className={`font-inter text-[12px] leading-relaxed ${message.ok ? "text-[#0EA42E]" : "text-[#EF4444]"}`}
+            >
+              {message.text}
+            </Text>
+          )}
 
           <Box className="h-px bg-white/10" />
 
@@ -105,11 +152,45 @@ export default function VoucherModal({ isOpen, onClose }: Props): React.ReactPor
             <Text as="span" className="font-outfit font-bold text-[11px] tracking-[1px] text-white/40 uppercase leading-none">
               {t("promo.modal.availableTitle")}
             </Text>
-            <Box className="rounded-2xl border border-dashed border-white/15 px-4 py-6 flex items-center justify-center text-center">
-              <Text as="span" className="font-inter text-[13px] text-white/40">
-                {t("promo.modal.empty")}
-              </Text>
-            </Box>
+            {promos.length === 0 ? (
+              <Box className="rounded-2xl border border-dashed border-white/15 px-4 py-6 flex items-center justify-center text-center">
+                <Text as="span" className="font-inter text-[13px] text-white/40">
+                  {t("promo.modal.empty")}
+                </Text>
+              </Box>
+            ) : (
+              promos.map((promo) => (
+                <Box
+                  key={promo.id}
+                  as="button"
+                  type="button"
+                  onClick={() => {
+                    setCode(promo.code);
+                    handleApply(promo.code);
+                  }}
+                  className="w-full rounded-2xl border border-white/15 hover:border-[#3B82F6]/60 px-4 py-3 flex flex-col gap-1 text-left transition-colors cursor-pointer"
+                >
+                  <Box className="flex items-center justify-between gap-3">
+                    <Text as="span" className="font-outfit font-bold text-[13px] text-white tracking-wider">
+                      {promo.code}
+                    </Text>
+                    <Text as="span" className="font-plex font-bold text-[13px] text-[#0EA42E]">
+                      {promo.type === "percentage"
+                        ? `-${promo.value}%`
+                        : `-${formatCurrency(promo.value)}`}
+                    </Text>
+                  </Box>
+                  <Text as="span" className="font-inter text-[12px] text-white/50 leading-relaxed">
+                    {promo.description ?? promo.name}
+                  </Text>
+                  {promo.min_purchase > 0 && (
+                    <Text as="span" className="font-inter text-[11px] text-white/35">
+                      {t("promo.modal.minPurchase", { amount: formatCurrency(promo.min_purchase) })}
+                    </Text>
+                  )}
+                </Box>
+              ))
+            )}
           </Box>
         </Box>
       </Box>

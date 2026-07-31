@@ -1,50 +1,93 @@
 import { useState } from "react";
-import {
-  MOCK_API_KEY,
-  INITIAL_WHITELIST_IPS,
-  generateMockApiKey,
-} from "@/features/member-dashboard/data/integrasi.mock";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { integrasiService } from "@/features/member-dashboard/services/integrasi.service";
 import type { UseIntegrasiReturn } from "@/features/member-dashboard/types/integrasi.type";
 
+const QUERY_KEY = ["api-credentials"];
+
+/**
+ * The API stores only a hash of each key, so a key can be displayed exactly
+ * once — at creation or regeneration. There is no endpoint that can return it
+ * again, and `apiKey` therefore holds the masked form except in the moment
+ * right after it was issued.
+ *
+ * That is a deliberate trade: a key the server can re-display is a key the
+ * server is storing in plaintext. `isKeyVisible` now reveals the freshly
+ * issued secret rather than un-masking a stored one.
+ */
 export function useIntegrasi(): UseIntegrasiReturn {
-  const [apiKey, setApiKey] = useState<string>(MOCK_API_KEY);
+  const queryClient = useQueryClient();
+
+  const { data } = useQuery({ queryKey: QUERY_KEY, queryFn: integrasiService.list });
+
+  const credential = data?.data.credentials[0];
+  const [issuedSecret, setIssuedSecret] = useState<string | null>(null);
   const [isKeyVisible, setIsKeyVisible] = useState<boolean>(false);
-  const [callbackUrl, setCallbackUrl] = useState<string>("");
-  const [whitelistIps, setWhitelistIps] = useState<string[]>(INITIAL_WHITELIST_IPS);
+  // `null` means "not edited yet", so the saved value shows through until the
+  // member types. Deriving it beats seeding state from an effect, which would
+  // add a render and fight the query cache on every refetch.
+  const [callbackDraft, setCallbackDraft] = useState<string | null>(null);
   const [ipDraft, setIpDraft] = useState<string>("");
 
-  const toggleKeyVisibility = () => setIsKeyVisible((v) => !v);
+  const callbackUrl = callbackDraft ?? credential?.callback_url ?? "";
 
-  const regenerateKey = () => setApiKey(generateMockApiKey());
+  const whitelistIps = data?.data.whitelist_ips ?? [];
 
-  const submitCallback = () => {
-    // TODO: wire to backend when API integration is ready
-    window.alert(`URL Callback "${callbackUrl}" berhasil disimpan!`);
-  };
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
-  const addIp = () => {
-    const trimmed = ipDraft.trim();
-    if (!trimmed || whitelistIps.includes(trimmed)) return;
-    setWhitelistIps((prev) => [...prev, trimmed]);
-    setIpDraft("");
-  };
+  const createCredential = useMutation({
+    mutationFn: () => integrasiService.create(),
+    onSuccess: (response) => {
+      setIssuedSecret(response.data.secret);
+      setIsKeyVisible(true);
+      invalidate();
+    },
+  });
 
-  const removeIp = (ip: string) => {
-    setWhitelistIps((prev) => prev.filter((existing) => existing !== ip));
-  };
+  const regenerate = useMutation({
+    mutationFn: (id: number) => integrasiService.regenerate(id),
+    onSuccess: (response) => {
+      setIssuedSecret(response.data.secret);
+      setIsKeyVisible(true);
+      invalidate();
+    },
+  });
+
+  const updateCredential = useMutation({
+    mutationFn: (input: { callback_url?: string | null; whitelist_ips?: string[] }) =>
+      integrasiService.update(credential!.id, input),
+    onSuccess: invalidate,
+  });
 
   return {
-    apiKey,
+    // The freshly issued secret while it is still in memory, otherwise the
+    // masked form the API is willing to return.
+    apiKey: issuedSecret ?? credential?.masked_key ?? "",
     isKeyVisible,
-    toggleKeyVisibility,
-    regenerateKey,
+    toggleKeyVisibility: () => setIsKeyVisible((visible) => !visible),
+    regenerateKey: () => {
+      if (credential) regenerate.mutate(credential.id);
+      else createCredential.mutate();
+    },
     callbackUrl,
-    setCallbackUrl,
-    submitCallback,
+    setCallbackUrl: setCallbackDraft,
+    submitCallback: () => {
+      if (!credential) return;
+      updateCredential.mutate({ callback_url: callbackUrl || null });
+    },
     whitelistIps,
     ipDraft,
     setIpDraft,
-    addIp,
-    removeIp,
+    addIp: () => {
+      const trimmed = ipDraft.trim();
+      if (!trimmed || !credential || whitelistIps.includes(trimmed)) return;
+      updateCredential.mutate({ whitelist_ips: [...whitelistIps, trimmed] });
+      setIpDraft("");
+    },
+    removeIp: (ip: string) => {
+      if (!credential) return;
+      updateCredential.mutate({ whitelist_ips: whitelistIps.filter((existing) => existing !== ip) });
+    },
   };
 }
