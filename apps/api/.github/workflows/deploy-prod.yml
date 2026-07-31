@@ -186,28 +186,6 @@ jobs:
             sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/laravel-queue-prod.conf \
                     /etc/supervisor/conf.d/laravel-queue-prod.conf
 
-            # Validate supervisor config before start.
-            #
-            # CATATAN PENTING: supervisord TIDAK punya mode config-test. `-t` adalah
-            # --strip_ansi dan `-n` adalah --nodaemon (lihat supervisor/options.py),
-            # jadi `supervisord -n -c ... -t` justru MENJALANKAN daemon kedua di
-            # foreground: gagal bind socket kalau systemd sudah menjalankannya, atau
-            # menggantung deploy sampai timeout kalau belum. Jangan pakai itu.
-            #
-            # Yang benar-benar memvalidasi ada dua lapis:
-            #   1. cek sintaks INI di bawah — menangkap config yang baru saja kita
-            #      copy sebelum daemon disentuh sama sekali;
-            #   2. `supervisorctl reread` di langkah 13 — validasi semantik oleh
-            #      supervisor sendiri. do_reread() menyetel exitstatus non-zero pada
-            #      CANT_REREAD, jadi dengan script_stop config rusak = deploy merah.
-            if command -v python3 >/dev/null 2>&1; then
-              python3 -c "import configparser; configparser.ConfigParser(strict=True, interpolation=None).read_file(open('/etc/supervisor/conf.d/laravel-queue-prod.conf'))" \
-                || { echo "ERROR: /etc/supervisor/conf.d/laravel-queue-prod.conf tidak valid atau tidak ada."; exit 1; }
-              echo "Supervisor queue config OK (INI syntax)."
-            else
-              echo "python3 not found — skipping INI pre-check; supervisorctl reread below still validates."
-            fi
-
             # Pastikan daemon supervisord benar-benar berjalan (idempotent — no-op jika sudah up).
             # Binary bisa saja sudah terpasang tapi daemonnya mati/belum pernah dijalankan.
             if ! sudo systemctl is-active --quiet supervisor; then
@@ -217,13 +195,6 @@ jobs:
             fi
 
             # Fallback: start daemon directly if service still fails (keeps deploy resilient).
-            #
-            # PERHATIAN: ini menjalankan supervisord DI LUAR systemd. Deploy tetap jalan,
-            # tapi host jadi tidak konsisten: `systemctl status supervisor` melaporkan
-            # inactive padahal daemonnya hidup, unit tidak ikut naik saat reboot, dan
-            # `systemctl restart supervisor` berikutnya bisa gagal karena pidfile/socket
-            # dipegang proses yang tidak dikelola systemd — sehingga deploy berikutnya
-            # jatuh ke fallback ini lagi.
             # Perlakukan baris ini sebagai SINYAL untuk memperbaiki unit di host,
             # bukan kondisi normal. Kalau muncul di log deploy yang sehat, tindak lanjuti.
             if [ ! -S /var/run/supervisor.sock ]; then
@@ -242,6 +213,7 @@ jobs:
             fi
 
             # 13. Reload supervisor agar membaca config terbaru
+            # (Otomatis validasi sintaks: jika format file corrupt, reread akan fail dan stop deploy)
             sudo supervisorctl reread
             sudo supervisorctl update
 
