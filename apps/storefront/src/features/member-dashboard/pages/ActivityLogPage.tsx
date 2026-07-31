@@ -4,7 +4,7 @@ import { Download } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { useActivityLog } from "@/features/member-dashboard/hooks/useActivityLog";
-import { MOCK_ACTIVITY_STATS } from "@/features/member-dashboard/data/activity-log.mock";
+import { useActivityStats } from "@/features/member-dashboard/hooks/useActivityStats";
 import ActivityLogFilterBar from "@/features/member-dashboard/components/ActivityLogFilterBar";
 import ActivityStatCard from "@/features/member-dashboard/components/ActivityStatCard";
 import ActivityLogTable from "@/features/member-dashboard/components/ActivityLogTable";
@@ -23,6 +23,7 @@ const EMPTY_FILTERS: ActivityLogFilterValues = {
 export default function ActivityLogPage(): React.JSX.Element {
   const { t } = useTranslation("dashboard");
   const allRows = useActivityLog();
+  const activityStats = useActivityStats(allRows);
 
   // Applied filter values (set on "Terapkan Filter")
   const [appliedFilters, setAppliedFilters] = useState<ActivityLogFilterValues>(EMPTY_FILTERS);
@@ -97,7 +98,7 @@ export default function ActivityLogPage(): React.JSX.Element {
 
       {/* ── 4 stat cards ── */}
       <Box className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {MOCK_ACTIVITY_STATS.map((stat) => (
+        {activityStats.map((stat) => (
           <ActivityStatCard key={stat.key} stat={stat} />
         ))}
       </Box>

@@ -76,9 +76,11 @@ This flow lives in a **single SPA route** (`/{locale}/checkout/$gameSlug`). All 
 - **Real-time Nickname Validation:** Uses **TanStack Query** to call the ID validation API asynchronously (with a _debounce_ of ~500ms to avoid spamming the game server).
 - **Live Invoice Tracker:** Payment status checking via TanStack Query polling. **Interval: 5000ms (5 seconds)**. Polling auto-stops when the transaction status becomes terminal (`success` or `failed`). Implemented via `refetchInterval` callback that returns `false` for terminal states.
 - **Payment Gateway:** **Monetapay**. The frontend never calls Monetapay directly; the backend acts as a proxy/middleman:
-  - `GET /api/payment-methods` → returns the list of Monetapay-supported methods for the current order.
-  - `POST /api/transactions` → backend creates a transaction and initializes the Monetapay session, returning payment instructions (VA number, QRIS code, or e-wallet deeplink) to the frontend.
-  - Monetapay webhook → backend updates `transactions.status`. The frontend learns about this via its 5-second polling.
+  - `GET /v1/payment-channels` → active methods for the caller (`balance` is member-only).
+  - `POST /v1/checkout` → backend creates the transaction, initializes the Monetapay session, and returns payment instructions (VA number, QRIS payload, or checkout link).
+  - Monetapay webhook → backend updates `transactions.status`. The frontend learns about this via its 5-second polling on `GET /v1/invoices/{invoice_number}`.
+
+> **As-built note.** The endpoint names above were corrected to match the Laravel API actually in this repo; see `system_architecture.md` for the full table. Real-time nickname validation exists as `POST /v1/games/{slug}/validate-id`, but it **degrades gracefully**: most games have no lookup provider configured, and it returns `nickname: null` rather than blocking the purchase.
 
 **Module 2: Authentication & Security**
 

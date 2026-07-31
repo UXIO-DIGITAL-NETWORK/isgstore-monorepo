@@ -12,7 +12,8 @@ interface Props {
   onConfirm: () => void;
   userId: string;
   serverId: string;
-  username: string;
+  /** Undefined when the game has no nickname lookup — the row shows "-". */
+  username?: string;
   itemLabel: string;
   productName: string;
   price: number;
@@ -155,7 +156,7 @@ export default function OrderConfirmModal({
         <InfoCard title={t("confirmModal.dataPlayer")}>
           <Field label={t("confirmModal.userId")} value={userId || "-"} numeric />
           <Field label={t("confirmModal.serverId")} value={serverId || "-"} numeric />
-          <Field label={t("confirmModal.username")} value={username} />
+          <Field label={t("confirmModal.username")} value={username || "-"} />
         </InfoCard>
 
         {/* Ringkasan Pesanan card */}

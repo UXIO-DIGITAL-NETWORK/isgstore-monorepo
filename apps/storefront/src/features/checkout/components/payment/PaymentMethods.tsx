@@ -10,7 +10,8 @@ import type { PaymentGroup, MemberCredits, PaymentGroupType } from "@/features/c
 
 interface Props {
   groups: PaymentGroup[];
-  memberCredits: MemberCredits;
+  /** Null for guests — the API only offers the wallet to a signed-in member. */
+  memberCredits: MemberCredits | null;
   selectedPaymentId: string | null;
   onSelectPayment: (id: string) => void;
 }
@@ -23,30 +24,31 @@ export default function PaymentMethods({
 }: Props): React.JSX.Element {
   const { t } = useTranslation("checkout");
 
-  // All groups open by default; each toggles independently
-  const [expandedGroups, setExpandedGroups] = useState<Record<PaymentGroupType, boolean>>({
-    ewallet: true,
-    va: true,
-    qris: true,
-  });
+  // Collapsed state is tracked as the exception rather than the rule: groups
+  // are open by default, and which ones exist now comes from the API, so
+  // seeding a fixed record of keys would miss any new payment type.
+  const [collapsedGroups, setCollapsedGroups] = useState<Partial<Record<PaymentGroupType, boolean>>>({});
 
   const toggleGroup = (type: PaymentGroupType) => {
-    setExpandedGroups((prev) => ({ ...prev, [type]: !prev[type] }));
+    setCollapsedGroups((prev) => ({ ...prev, [type]: !prev[type] }));
   };
 
   return (
     <SectionCard stepNumber={3} title={t("payment.title")} gradientBorder>
       <Box className="flex flex-col gap-2">
-        {/* Member Credits block */}
-        <MemberCreditsCard
-          credits={memberCredits}
-          isSelected={selectedPaymentId === memberCredits.id}
-          onSelect={onSelectPayment}
-        />
+        {/* Member Credits block — hidden for guests, who cannot pay from a
+            wallet they don't have. */}
+        {memberCredits && (
+          <MemberCreditsCard
+            credits={memberCredits}
+            isSelected={selectedPaymentId === memberCredits.id}
+            onSelect={onSelectPayment}
+          />
+        )}
 
         {/* Payment method groups */}
         {groups.map((group) => {
-          const isExpanded = expandedGroups[group.type];
+          const isExpanded = !collapsedGroups[group.type];
           const hasSelected = group.options.some((o) => o.id === selectedPaymentId);
 
           return (
@@ -75,7 +77,9 @@ export default function PaymentMethods({
                       hasSelected ? "text-[#C084FC]" : "text-white/80",
                     )}
                   >
-                    {t(`payment.groups.${group.type}`)}
+                    {/* Known groups keep their translation; a new payment type
+                        added server-side falls back to the API's own label. */}
+                    {t(`payment.groups.${group.type}`, { defaultValue: group.label })}
                   </Text>
                 </Box>
 

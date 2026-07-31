@@ -1,4 +1,17 @@
-export type PackageCategory = "all" | "weekly" | "firstTopUp" | "diamonds" | "special";
+import type { PaymentInstructions, TransactionStatus } from "@/types/models/transaction.model";
+
+/**
+ * A package group.
+ *
+ * Was a fixed union of four hardcoded groups; it is now the sub-category name
+ * the API returns, because which groups exist is a per-game data decision
+ * (a voucher game has no "Weekly Diamonds Pass"). `"all"` stays reserved for
+ * the leading tab. Known keys still resolve their existing translations —
+ * see `PackageCategoryTabs` — so nothing that was translated stops being so.
+ */
+export type PackageCategory = string;
+
+export const ALL_CATEGORY: PackageCategory = "all";
 
 export interface DiamondPackage {
   id: string;
@@ -10,21 +23,34 @@ export interface DiamondPackage {
   isBonus?: boolean;
   bonus?: number;
   bonusVariant?: 1 | 2 | 3;
+  /** Numeric product id sent to the checkout endpoint. */
+  productId: number;
+}
+
+export interface CategoryTab {
+  key: PackageCategory;
+  label: string;
 }
 
 export interface PaymentOption {
   id: string;
   name: string;
   logo: string;
+  /** Numeric payment_channel_id sent to the checkout endpoint. */
+  channelId: number;
+  minAmount: number;
+  feeFlat: number;
+  feePercent: number;
 }
 
 export interface MemberCredits {
   id: string;
   balance: number;
   logo: string;
+  channelId: number;
 }
 
-export type PaymentGroupType = "ewallet" | "qris" | "va";
+export type PaymentGroupType = "ewallet" | "qris" | "va" | "retail" | "link";
 
 export interface PaymentGroup {
   type: PaymentGroupType;
@@ -64,4 +90,51 @@ export interface CheckoutSelectionState {
   userId: string;
   serverId: string;
   whatsapp: string;
+}
+
+// ── API payloads ───────────────────────────────────────────────────────────
+
+export interface ValidateGameIdResult {
+  nickname: string | null;
+  validated: boolean;
+  /** False when the game has no lookup provider configured at all. */
+  supported: boolean;
+}
+
+export interface GameReviewsResponse {
+  summary: ReviewSummary;
+  reviews: {
+    data: {
+      id: number;
+      author: string;
+      rating: number;
+      comment: string | null;
+      masked_user_id: string | null;
+      product: string | null;
+      created_at: string;
+    }[];
+  };
+}
+
+export interface CheckoutPayload {
+  product_id: number;
+  payment_channel_id: number;
+  target_uid: string;
+  target_server?: string;
+  target_nickname?: string;
+  guest_contact?: string;
+}
+
+export interface CheckoutResult {
+  invoice_number: string;
+  reference_id: string;
+  product: { name: string; price: number };
+  payment: {
+    channel: string;
+    type: string;
+    amount: number;
+    admin_fee: number;
+    status: TransactionStatus;
+    instructions: PaymentInstructions | null;
+  };
 }

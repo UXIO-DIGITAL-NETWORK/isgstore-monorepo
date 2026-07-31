@@ -12,8 +12,9 @@ import OrderDetailCard from "@/features/invoice/components/OrderDetailCard";
 import PaymentSuccessCard from "@/features/invoice/components/PaymentSuccessCard";
 import TopUpAgainBanner from "@/features/invoice/components/TopUpAgainBanner";
 import TransactionReviewModal from "@/features/invoice/components/TransactionReviewModal";
-import { buildMockOrder } from "@/features/invoice/data/buildMockOrder";
 import { useDelayedModal } from "@/features/invoice/hooks/useDelayedModal";
+import { useInvoiceQuery } from "@/features/invoice/hooks/useInvoiceQuery";
+import { toOrder } from "@/features/invoice/lib/toOrder";
 
 export default function PaymentSuccessPage(): React.JSX.Element {
   const { invoiceNumber } = useParams({ strict: false }) as { invoiceNumber: string };
@@ -21,7 +22,27 @@ export default function PaymentSuccessPage(): React.JSX.Element {
   const { t } = useTranslation("invoice");
   const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(5000);
 
-  const order = pendingOrder ?? buildMockOrder(invoiceNumber ?? "TOPUP-22052026-8F3A2B6C");
+  // Same query key as the invoice page, so arriving here from the poll is a
+  // cache hit and the card renders without a second round trip.
+  const { data: invoice } = useInvoiceQuery(invoiceNumber);
+
+  const order = invoice
+    ? toOrder(invoice)
+    : pendingOrder?.invoiceNumber === invoiceNumber
+      ? pendingOrder
+      : null;
+
+  if (!order) {
+    return (
+      <Box className="min-h-dvh bg-[#0A0A0C]">
+        <Navbar />
+        <Box className="flex flex-col items-center gap-6 px-4 py-20">
+          <PaymentSuccessHero />
+        </Box>
+        <Footer />
+      </Box>
+    );
+  }
 
   return (
     <Box className="min-h-dvh bg-[#0A0A0C]">
@@ -76,7 +97,11 @@ export default function PaymentSuccessPage(): React.JSX.Element {
       <Footer />
 
       {/* Transaction review modal — auto-opens 15s after mount */}
-      <TransactionReviewModal isOpen={reviewOpen} onClose={closeReview} />
+      <TransactionReviewModal
+        isOpen={reviewOpen}
+        onClose={closeReview}
+        invoiceNumber={order.invoiceNumber}
+      />
     </Box>
   );
 }

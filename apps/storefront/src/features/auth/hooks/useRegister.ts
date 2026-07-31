@@ -12,7 +12,10 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: authService.register,
     onSuccess: (response: AuthApiResponse) => {
-      setAuth(response.data.token, response.data.user);
+      const { access_token, refresh_token, user } = response.data;
+      // A fresh signup is remembered: the customer just created the account,
+      // so bouncing them back to the login form on the next visit is hostile.
+      setAuth(access_token, refresh_token, user, true);
       navigate({ to: "/$locale", params: { locale: locale ?? "id" } });
     },
   });

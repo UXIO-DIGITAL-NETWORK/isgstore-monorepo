@@ -21,9 +21,29 @@ Frontend  →  Backend (our API)  →  Monetapay
                 └─── webhook ──────────┘
 ```
 
-- `GET /api/payment-methods?product_id={id}` → backend returns the list of Monetapay-supported methods.
-- `POST /api/transactions` → backend creates the local transaction record, calls Monetapay to initialize the payment session, and returns payment instructions (VA, QRIS payload, e-wallet deeplink) to the frontend.
-- Monetapay webhook → backend updates `transactions.status`. The frontend learns about state changes via **5-second polling** on `GET /api/invoices/{invoice_number}`.
+**As-built endpoints.** Every path is prefixed `${VITE_API_BASE_URL}/v1`, and every response uses the Laravel `ApiResponse` envelope `{status, code, message, data}`; list endpoints nest the paginator as `data: {data, links, meta}`.
+
+| Purpose | Endpoint |
+| --- | --- |
+| Game catalog / search | `GET /v1/games?search=&sort=name\|popular` |
+| Game detail + order-form schema | `GET /v1/games/{slug}` |
+| Denominations (role-priced) | `GET /v1/games/{slug}/products` |
+| Payment methods | `GET /v1/payment-channels` — omits `balance` for guests |
+| Nickname lookup | `POST /v1/games/{slug}/validate-id` |
+| Create the order | `POST /v1/checkout` |
+| Live invoice status | `GET /v1/invoices/{invoice_number}` |
+| Order lookup without login | `GET /v1/orders/track?query=` |
+| Price list / leaderboard / banners | `GET /v1/price-list`, `GET /v1/storefront/leaderboard`, `GET /v1/storefront/banners` |
+| Auth | `POST /v1/auth/{login,register,refresh,logout,forgot-password,reset-password}` |
+| Member self-service | `GET|PUT /v1/me`, `PUT /v1/me/password`, `GET /v1/me/{dashboard,transactions,activity-logs}` |
+
+Notes that differ from the original sketch above:
+
+- There is no `GET /api/payment-methods` or `POST /api/transactions`. Payment methods come from `/v1/payment-channels`; the order is created by `POST /v1/checkout`.
+- Login returns an **`access_token` + `refresh_token` pair**, not a single `token`. The axios interceptor refreshes once on a 401 before clearing the session.
+- Transaction statuses are the API's uppercase enum (`PENDING`, `PAID`, `PROCESSING`, `COMPLETED`, `FAILED_PROVIDER`, `EXPIRED`, `REFUNDED`). Polling stops on the `is_terminal` flag the invoice endpoint returns — do not re-derive it client-side.
+- Monetapay webhook → backend updates `transactions.status`. The frontend learns about state changes via **5-second polling** on `GET /v1/invoices/{invoice_number}`.
+- Identity fields on the checkout page are **not hardcoded**: they are rendered from the game's `order_form_fields`. A zone is always a free-text numeric input — never a dropdown (see `OrderFormSchemaSeeder` in the API: a picker produced wrong ids that only failed at the supplier, after payment).
 
 ## 2. The Golden Rule of Frontend Architecture
 

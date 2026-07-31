@@ -6,9 +6,12 @@ import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { cn } from "@/lib/utils";
 import { useGameSearch } from "@/hooks/useGameSearch";
-import { POPULAR_SEARCH_GAMES } from "@/data/games.data";
+import { useGamesQuery } from "@/hooks/useGamesQuery";
 import { SearchPopularCard } from "@/components/shared/search/SearchPopularCard";
 import { SearchResultRow } from "@/components/shared/search/SearchResultRow";
+
+/** Cards that fit the popular row without wrapping. */
+const POPULAR_SUGGESTION_COUNT = 5;
 
 type Props = {
   /** Allows the Navbar to control sizing/visibility per breakpoint. */
@@ -35,6 +38,10 @@ export function SearchBar({ className }: Props): React.JSX.Element {
     setQuery,
     close,
   } = useGameSearch();
+
+  // "Pencarian Populer" — the same best-sellers the homepage rail shows, so an
+  // empty search suggests what people actually buy rather than a fixed list.
+  const { data: popularGames } = useGamesQuery({ sort: "popular", perPage: POPULAR_SUGGESTION_COUNT });
 
   return (
     <Box
@@ -75,7 +82,7 @@ export function SearchBar({ className }: Props): React.JSX.Element {
                 {t("search.popular")}
               </Heading>
               <Box className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-                {POPULAR_SEARCH_GAMES.map((game) => (
+                {(popularGames ?? []).map((game) => (
                   <SearchPopularCard key={game.id} game={game} onClose={close} />
                 ))}
               </Box>
