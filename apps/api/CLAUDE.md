@@ -193,7 +193,47 @@ users (nullable) ──── transactions ──── payments ──── pa
 
 ## Public vs Protected Routes
 
-`POST /v1/checkout`, `POST /v1/payment/callback`, and `POST /v1/digiflazz/callback` are intentionally **public** (no `auth:sanctum`). All other management endpoints require authentication.
+Three tiers, all under `/api/v1`:
+
+1. **Public** — the customer-facing storefront plus the gateway callbacks. `POST /v1/checkout`, `POST /v1/payment/callback` and `POST /v1/digiflazz/callback` were always public; the storefront read endpoints below joined them.
+2. **`auth:sanctum`** — `GET /v1/user`, `PATCH /v1/users/sync-timezone` and the whole `/v1/me/*` group. Any authenticated user.
+3. **`auth:sanctum` + `admin`** — everything else (the back-office CRUD).
+
+### Storefront API (public)
+
+Consumed by the React client in `web-topup-fe`. Handlers resolve the caller with `$request->user('sanctum')` so a signed-in member gets their tier price, while guests still work.
+
+| Endpoint | Notes |
+|---|---|
+| `GET /v1/games` | Sellable games only. `search`, `type_id`, `sort=name\|popular`, `per_page` |
+| `GET /v1/games/{game}` | `{game}` binds via `Catalog::resolveGame` — slug, code **or** id. Includes `order_form_fields` |
+| `GET /v1/games/{game}/products` | Denominations priced through `RolePrice` — the same ladder `CheckoutAction` charges |
+| `GET /v1/games/{game}/reviews` | Paginated ratings + star breakdown; author + game id masked |
+| `POST /v1/games/{game}/validate-id` | Nickname lookup. **Always 200** — see below |
+| `GET /v1/payment-channels` | `balance` excluded for guests (checkout rejects it for them anyway) |
+| `GET /v1/price-list` | `game` accepts a slug/code, not an id |
+| `GET /v1/invoices/{invoiceNumber}` | Public receipt, polled every 5s. Narrow projection |
+| `GET /v1/orders/track?query=` | Invoice number or exact phone. `throttle:checkout` |
+| `GET /v1/storefront/{banners,announcements,leaderboard}` | **Prefixed on purpose** — `/v1/banners`, `/v1/announcements` and `/v1/leaderboard` are already admin routes, and Laravel's route collection is keyed on method+uri, so a same-path public route would silently replace the admin one |
+
+Key invariants:
+
+- **Never widen the public projections.** `ShowInvoiceAction`, `TrackOrdersAction` and `ListMemberTransactionsAction` build their arrays field-by-field rather than serializing a model, so `guest_contact`, `margin`, `price_modal` and supplier ids cannot leak by accident. Tests assert this.
+- **`validate-id` must never fail a purchase.** Unconfigured game, unrecognised provider, provider timeout and provider 500 all resolve to `{nickname: null}` with a 200. A 4xx here would read on the client as a broken order form.
+- **`Catalog` is the single definition of "sellable"** (active product + active supplier mapping). `TopupPageController` and every storefront endpoint go through it, so the catalog can never advertise an order checkout would reject.
+- **`PaymentExpiry`** holds the per-channel expiry windows, shared by `payments:sync-expired` and the invoice endpoint's `expires_at`. Splitting them would let the customer's countdown disagree with the job that reaps the payment.
+- **`CheckoutAction` persists the gateway instructions** into `payments.payment_data`. Without it the QR/VA exists only in the checkout response and a page refresh leaves the customer with nothing to pay against.
+- **`POST /v1/checkout` has no auth middleware**, so `$request->user()` consults the `web` guard and cannot see a bearer token. `StoreCheckoutRequest::checkoutUser()` resolves through the `sanctum` guard instead — without it a signed-in member is booked as a guest and locked out of balance payment. `Sanctum::actingAs()` masks this in tests; the regression test in `StorefrontOrderTest` uses a real bearer header on purpose.
+
+### Member self-service (`/v1/me`)
+
+`GET|PUT /v1/me`, `PUT /v1/me/password`, `GET /v1/me/dashboard`, `GET /v1/me/transactions`, `GET /v1/me/activity-logs`, `POST /v1/me/transactions/{invoiceNumber}/rating`.
+
+Every query is scoped to `user_id` **before** any filter is applied, so no filter combination can widen it to another customer's rows. The rating route is keyed on `invoice_number` — the only order identifier the storefront holds — and resolves inside the caller's own transactions, so someone else's invoice is indistinguishable from one that does not exist.
+
+### Auth
+
+`POST /v1/auth/register` always assigns the MEMBER role; role is never settable from the request body. `forgot-password` returns the same message whether or not the email exists (no `exists` rule, no differing response) so it cannot be used to enumerate accounts. `reset-password` revokes all existing tokens — a reset is the recovery path after a compromise.
 
 ## Required `.env` Keys Beyond Laravel Defaults
 

@@ -254,15 +254,15 @@ class MonetapayController extends Controller
     public function disbursementCreate(Request $request)
     {
         $request->validate([
-            'mch_order_no'      => ['required', 'string'],
-            'amount'            => ['required', 'numeric'],
+            'mch_order_no' => ['required', 'string'],
+            'amount' => ['required', 'numeric'],
             'account_bank_code' => ['required', 'string'],
-            'account_name'      => ['required', 'string'],
-            'account_number'    => ['required', 'string'],
-            'account_phone'     => ['required', 'string'],
-            'sub_mch_id'        => ['sometimes', 'string'],
-            'custom_extra'      => ['sometimes', 'string'],
-            'notes'             => ['sometimes', 'string'],
+            'account_name' => ['required', 'string'],
+            'account_number' => ['required', 'string'],
+            'account_phone' => ['required', 'string'],
+            'sub_mch_id' => ['sometimes', 'string'],
+            'custom_extra' => ['sometimes', 'string'],
+            'notes' => ['sometimes', 'string'],
         ]);
 
         return $this->run('disbursement_create', $this->withDisbursementAppId($request->except(['sign', 'app_id'])));
@@ -271,15 +271,15 @@ class MonetapayController extends Controller
     public function largePayoutCreate(Request $request)
     {
         $request->validate([
-            'mch_order_no'      => ['required', 'string'],
-            'amount'            => ['required', 'numeric'],
+            'mch_order_no' => ['required', 'string'],
+            'amount' => ['required', 'numeric'],
             'account_bank_code' => ['required', 'string'],
-            'account_name'      => ['required', 'string'],
-            'account_number'    => ['required', 'string'],
-            'account_phone'     => ['required', 'string'],
-            'sub_mch_id'        => ['sometimes', 'string'],
-            'custom_extra'      => ['sometimes', 'string'],
-            'notes'             => ['sometimes', 'string'],
+            'account_name' => ['required', 'string'],
+            'account_number' => ['required', 'string'],
+            'account_phone' => ['required', 'string'],
+            'sub_mch_id' => ['sometimes', 'string'],
+            'custom_extra' => ['sometimes', 'string'],
+            'notes' => ['sometimes', 'string'],
         ]);
 
         return $this->run('large_payout_create', $this->withDisbursementAppId($request->except(['sign', 'app_id'])));
@@ -288,13 +288,13 @@ class MonetapayController extends Controller
     public function ewalletPayoutCreate(Request $request)
     {
         $request->validate([
-            'mch_order_no'      => ['required', 'string'],
-            'amount'            => ['required', 'numeric'],
+            'mch_order_no' => ['required', 'string'],
+            'amount' => ['required', 'numeric'],
             'account_bank_code' => ['required', 'string'],
-            'account_phone'     => ['required', 'string'],
-            'sub_mch_id'        => ['sometimes', 'string'],
-            'custom_extra'      => ['sometimes', 'string'],
-            'notes'             => ['sometimes', 'string'],
+            'account_phone' => ['required', 'string'],
+            'sub_mch_id' => ['sometimes', 'string'],
+            'custom_extra' => ['sometimes', 'string'],
+            'notes' => ['sometimes', 'string'],
         ]);
 
         return $this->run('ewallet_payout_create', $this->withDisbursementAppId($request->except(['sign', 'app_id'])));

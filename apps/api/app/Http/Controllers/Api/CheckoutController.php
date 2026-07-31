@@ -17,12 +17,16 @@ class CheckoutController extends Controller
     {
         try {
             $dto = new CheckoutDTO(
-                userId: $request->user()?->id,
+                // Resolved through the sanctum guard — see checkoutUser(). Using
+                // $request->user() here would book a signed-in member's order as
+                // a guest order and lock them out of paying from their balance.
+                userId: $request->checkoutUser()?->id,
                 productId: $request->integer('product_id'),
                 paymentChannelId: $request->integer('payment_channel_id'),
                 targetUid: trim($request->string('target_uid')->toString()),
                 targetServer: ($s = trim($request->string('target_server')->toString())) !== '' ? $s : null,
                 guestContact: $request->string('guest_contact')->toString() ?: null,
+                targetNickname: ($n = trim($request->string('target_nickname')->toString())) !== '' ? $n : null,
             );
 
             $result = $action->execute($dto);

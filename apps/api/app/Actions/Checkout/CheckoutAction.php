@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
+use App\Support\Pricing\RolePrice;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -75,13 +76,9 @@ class CheckoutAction
             }
 
             // ── 3. Role-based price ──────────────────────────────────────────
-            $roleName = $user ? strtolower($user->role->name) : 'guest';
-            $sellingPrice = match ($roleName) {
-                'vip' => $product->price_vip,
-                'reseller' => $product->price_reseller,
-                'agent' => $product->price_agent,
-                default => $product->price_member,
-            };
+            // Shared with the public catalog so the quoted price and the billed
+            // price come from one implementation.
+            $sellingPrice = RolePrice::for($product, $user);
 
             // ── 4. Supplier & margin guard ───────────────────────────────────
             $activeSupplier = $product->supplierProducts->first();
@@ -119,6 +116,7 @@ class CheckoutAction
                 'supplier_id' => $activeSupplier->supplier_id,
                 'target_uid' => $dto->targetUid,
                 'target_server' => $dto->targetServer,
+                'target_nickname' => $dto->targetNickname,
                 'amount_base' => $sellingPrice,
                 'amount_fee' => $adminFee,
                 'amount_total' => $grossAmount,
@@ -192,10 +190,16 @@ class CheckoutAction
                 }
 
                 $plData = $plResponse['data'] ?? [];
-                $payment->update(['pg_transaction_id' => (string) ($plData['id'] ?? null)]);
                 $paymentInstructions = array_filter([
                     'order_no' => $plData['order_no'] ?? null,
                     'checkout_url' => $plData['checkout_url'] ?? null,
+                ]);
+                $payment->update([
+                    'pg_transaction_id' => (string) ($plData['id'] ?? null),
+                    // Persisted so the invoice page can re-render the checkout
+                    // link after a refresh — these used to exist only in the
+                    // checkout response body.
+                    'payment_data' => $paymentInstructions ?: null,
                 ]);
 
             } else {
@@ -219,9 +223,6 @@ class CheckoutAction
 
                 $pgData = $monetapayResponse['data'] ?? [];
 
-                // Persist Monetapay's own transaction reference
-                $payment->update(['pg_transaction_id' => $pgData['order_no'] ?? null]);
-
                 // Build structured payment instructions for the client
                 $paymentInstructions = array_filter([
                     'order_no' => $pgData['order_no'] ?? null,
@@ -231,6 +232,15 @@ class CheckoutAction
                     'is_single_use' => $channel->payment_type === 'virtual_account'
                                             ? (bool) $channel->is_single_use
                                             : null,
+                ], fn ($value) => $value !== null);
+
+                // Persist Monetapay's own transaction reference, and the
+                // instructions alongside it: without this the QR / VA number
+                // exists only in the checkout response and a page refresh
+                // leaves the customer with nothing to pay against.
+                $payment->update([
+                    'pg_transaction_id' => $pgData['order_no'] ?? null,
+                    'payment_data' => $paymentInstructions ?: null,
                 ]);
             }
 

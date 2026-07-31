@@ -24,6 +24,7 @@ class TransactionResource extends JsonResource
             'supplier_id' => $this->supplier_id,
             'target_uid' => $this->target_uid,
             'target_server' => $this->target_server,
+            'target_nickname' => $this->target_nickname,
             'amount_base' => $this->amount_base,
             'amount_fee' => $this->amount_fee,
             'amount_total' => $this->amount_total,

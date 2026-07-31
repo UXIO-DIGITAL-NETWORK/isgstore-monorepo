@@ -8,6 +8,7 @@ use App\Jobs\ProcessDigiflazzBillPayment;
 use App\Jobs\ProcessDigiflazzTopup;
 use App\Models\Payment;
 use App\Services\Payment\MonetapayService;
+use App\Support\Payment\PaymentExpiry;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -19,18 +20,6 @@ class SyncExpiredPaymentsCommand extends Command
         {--dry-run : Show what would be updated without writing to the database}';
 
     protected $description = 'Query Monetapay for stale PENDING payments and sync their real status into the database.';
-
-    /**
-     * Seconds after creation before a payment is considered eligible for sync.
-     * = Monetapay expire_seconds + 5-minute grace so their own callback can arrive first.
-     */
-    private const EXPIRE_WINDOWS = [
-        'virtual_account' => 600 + 300,   // 15 min
-        'qris' => 900 + 300,   // 20 min
-        'ewallet' => 7200 + 300,   // 2 hr 5 min
-        'payment_link' => 36000 + 300,   // 10 hr 5 min
-        'convenience_store' => 86400 + 300,   // 24 hr 5 min
-    ];
 
     /** Monetapay status strings that indicate the customer successfully paid. */
     private const SUCCESS_STATUSES = ['1', '3', 'success', 'paid', 'settlement'];
@@ -55,12 +44,8 @@ class SyncExpiredPaymentsCommand extends Command
             ->where('status', PaymentStatus::PENDING->value)
             ->whereHas('transaction', fn ($q) => $q->where('status', TransactionStatus::PENDING->value))
             ->get()
-            ->filter(function (Payment $payment) {
-                $type = $payment->paymentChannel->payment_type ?? null;
-                $window = self::EXPIRE_WINDOWS[$type] ?? null;
-
-                return $window && $payment->created_at->addSeconds($window)->isPast();
-            });
+            // Shared window definition — see App\Support\Payment\PaymentExpiry.
+            ->filter(fn (Payment $payment) => PaymentExpiry::isExpired($payment));
 
         if ($payments->isEmpty()) {
             $this->info('No stale pending payments found.');

@@ -23,6 +23,9 @@ use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
 use App\Http\Controllers\Api\FinancialController;
 use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
+use App\Http\Controllers\Api\Member\MemberActivityLogController;
+use App\Http\Controllers\Api\Member\MemberTransactionController;
+use App\Http\Controllers\Api\Member\ProfileController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController;
@@ -32,6 +35,15 @@ use App\Http\Controllers\Api\Pricing\PricingRuleController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Product\SupplierProductController;
 use App\Http\Controllers\Api\RatingController;
+use App\Http\Controllers\Api\Storefront\ContentController;
+use App\Http\Controllers\Api\Storefront\GameController as StorefrontGameController;
+use App\Http\Controllers\Api\Storefront\GameReviewController;
+use App\Http\Controllers\Api\Storefront\InvoiceController;
+use App\Http\Controllers\Api\Storefront\LeaderboardController as StorefrontLeaderboardController;
+use App\Http\Controllers\Api\Storefront\OrderTrackController;
+use App\Http\Controllers\Api\Storefront\PaymentChannelController as StorefrontPaymentChannelController;
+use App\Http\Controllers\Api\Storefront\PriceListController;
+use App\Http\Controllers\Api\Storefront\ValidateGameIdController;
 use App\Http\Controllers\Api\Supplier\SupplierCategoryController;
 use App\Http\Controllers\Api\Supplier\SupplierController;
 use App\Http\Controllers\Api\TransactionController;
@@ -71,8 +83,41 @@ Route::prefix('v1')->group(function () {
         Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
     });
 
+    // ── Public storefront ────────────────────────────────────────────────
+    // Read-only catalog consumed by the customer-facing SPA. Anonymous, but
+    // each handler reads the bearer token when one is present so a signed-in
+    // member is quoted their own tier price.
+    Route::get('/games', [StorefrontGameController::class, 'index']);
+    Route::get('/games/{game}', [StorefrontGameController::class, 'show']);
+    Route::get('/games/{game}/products', [StorefrontGameController::class, 'products']);
+    Route::get('/games/{game}/reviews', [GameReviewController::class, 'index']);
+    Route::post('/games/{game}/validate-id', ValidateGameIdController::class);
+
+    Route::get('/payment-channels', [StorefrontPaymentChannelController::class, 'index']);
+    Route::get('/price-list', [PriceListController::class, 'index']);
+
+    // These three resources already exist as admin endpoints at /v1/banners,
+    // /v1/announcements and /v1/leaderboard. Laravel's route collection is keyed
+    // on method+uri, so registering a public route on the same path would
+    // silently replace the admin one (or be replaced by it, depending on order)
+    // and break the admin dashboard. The public reads therefore live under their
+    // own prefix — different audience, different projection, different route.
+    Route::prefix('storefront')->group(function () {
+        Route::get('/banners', [ContentController::class, 'banners']);
+        Route::get('/announcements', [ContentController::class, 'announcements']);
+        Route::get('/leaderboard', [StorefrontLeaderboardController::class, 'index']);
+    });
+
+    // Receipt lookup. Invoice numbers carry six random characters, so they are
+    // not enumerable; the projection is narrow regardless — see InvoiceController.
+    Route::get('/invoices/{invoiceNumber}', InvoiceController::class);
+
     Route::middleware('throttle:checkout')->group(function () {
         Route::post('/checkout', [CheckoutController::class, 'store']);
+
+        // Takes a phone number as input, so it is throttled like checkout
+        // rather than left on the global limiter.
+        Route::get('/orders/track', OrderTrackController::class);
 
         // Postpaid — public (guests can inquire/pay bills)
         Route::post('/digiflazz/check-bill', [DigiflazzPostpaidController::class, 'checkBill']);
@@ -83,6 +128,13 @@ Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
         Route::post('/refresh', [AuthController::class, 'refreshToken']);
+
+        // Self-service signup and password recovery. Both are throttled per IP
+        // like login: they take an email address and would otherwise be a free
+        // account-enumeration and mail-flood surface.
+        Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:login');
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:login');
+        Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:login');
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
@@ -99,11 +151,30 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
             'status' => 'success',
             'code' => 200,
             'message' => 'Success',
-            'data' => new UserResource($request->user()),
+            // Role eager-loaded so UserResource emits it — the storefront routes
+            // its member/admin guards off that value.
+            'data' => new UserResource($request->user()->load('role')),
         ]);
     });
 
     Route::patch('/users/sync-timezone', SyncTimezoneController::class);
+
+    // ── Member self-service ──────────────────────────────────────────────
+    // Everything the signed-in customer can see or change about themselves.
+    // Scoped to the caller inside each action — never admin-wide.
+    Route::prefix('me')->group(function () {
+        Route::get('/', [ProfileController::class, 'show']);
+        Route::put('/', [ProfileController::class, 'update']);
+        Route::put('/password', [ProfileController::class, 'updatePassword']);
+
+        Route::get('/dashboard', [MemberTransactionController::class, 'dashboard']);
+        Route::get('/transactions', [MemberTransactionController::class, 'index']);
+        // Keyed on invoice_number — the only order identifier the storefront
+        // ever holds — and resolved inside the caller's own transactions.
+        Route::post('/transactions/{invoiceNumber}/rating', [MemberTransactionController::class, 'rate']);
+
+        Route::get('/activity-logs', [MemberActivityLogController::class, 'index']);
+    });
 });
 
 // Admin-only management API (requires auth:sanctum + role_id 1 — see EnsureUserIsAdmin)
