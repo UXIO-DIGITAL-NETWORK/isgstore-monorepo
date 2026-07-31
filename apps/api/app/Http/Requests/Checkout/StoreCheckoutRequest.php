@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Checkout;
 
 use App\Models\Product;
+use App\Models\User;
 use App\Support\OrderForm\OrderFormSchema;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -23,7 +24,10 @@ class StoreCheckoutRequest extends FormRequest
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'payment_channel_id' => ['required', 'integer', 'exists:payment_channels,id'],
             // Required for guests; optional for authenticated members
-            'guest_contact' => $this->user() ? ['nullable', 'string', 'max:20'] : ['required', 'string', 'max:20'],
+            'guest_contact' => $this->checkoutUser() ? ['nullable', 'string', 'max:20'] : ['required', 'string', 'max:20'],
+            // Display-only echo of what validate-id returned. Never trusted for
+            // fulfilment — Digiflazz is sent target_uid/target_server only.
+            'target_nickname' => ['nullable', 'string', 'max:100'],
         ];
 
         $schema = $this->orderFormSchema();
@@ -83,6 +87,20 @@ class StoreCheckoutRequest extends FormRequest
             'target_uid.in' => ':attribute yang dipilih tidak tersedia.',
             'target_server.in' => ':attribute yang dipilih tidak tersedia.',
         ];
+    }
+
+    /**
+     * The authenticated customer, if any.
+     *
+     * `POST /v1/checkout` is a public route with no `auth:sanctum` middleware,
+     * so the default (`web`) guard is what `$this->user()` consults — and it
+     * never sees the bearer token. Resolving through the `sanctum` guard
+     * explicitly is what makes a signed-in member's checkout behave like one
+     * instead of silently degrading to a guest order.
+     */
+    public function checkoutUser(): ?User
+    {
+        return $this->user() ?? $this->user('sanctum');
     }
 
     /**

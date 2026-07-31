@@ -376,13 +376,13 @@ class MonetapayService
 
         if ($forDisbursement) {
             Log::channel('monetapay')->debug('[Disbursement] postSigned pre-flight', [
-                'endpoint'        => $endpointSuffix,
-                'app_id'          => $businessParams['app_id'] ?? '(missing)',
+                'endpoint' => $endpointSuffix,
+                'app_id' => $businessParams['app_id'] ?? '(missing)',
                 'partner_key_set' => $partnerKey !== '',
-                'token_set'       => $token !== '',
-                'aes_key_set'     => ($aesKey ?? '') !== '',
-                'aes_iv_set'      => ($aesIv ?? '') !== '',
-                'strMap'          => $strMap,
+                'token_set' => $token !== '',
+                'aes_key_set' => ($aesKey ?? '') !== '',
+                'aes_iv_set' => ($aesIv ?? '') !== '',
+                'strMap' => $strMap,
             ]);
         }
 

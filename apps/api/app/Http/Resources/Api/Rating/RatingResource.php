@@ -15,6 +15,7 @@ class RatingResource extends JsonResource
             'transaction_id' => $this->transaction_id,
             'user_id' => $this->user_id,
             'rating' => $this->rating,
+            'comment' => $this->comment,
             'user' => $this->whenLoaded('user'),
             'transaction' => new TransactionResource($this->whenLoaded('transaction')),
             'created_at' => $this->created_at,

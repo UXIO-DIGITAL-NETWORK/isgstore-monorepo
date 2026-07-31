@@ -55,7 +55,9 @@ class LoginAction
         return [
             'access_token' => $accessToken,
             'refresh_token' => $refreshToken,
-            'user' => $user,
+            // Role is eager-loaded so UserResource can emit it — the storefront
+            // routes its member/admin guards off that value.
+            'user' => $user->load('role'),
         ];
     }
 }

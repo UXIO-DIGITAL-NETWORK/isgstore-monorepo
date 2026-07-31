@@ -12,6 +12,9 @@ readonly class CheckoutDTO
         public string $targetUid,
         public ?string $targetServer = null,
         // Tambahkan parameter untuk menyimpan kontak guest
-        public ?string $guestContact = null
+        public ?string $guestContact = null,
+        // Nickname yang ditampilkan saat konfirmasi order. Nullable: tidak semua
+        // game punya provider validasi, dan checkout tidak boleh bergantung padanya.
+        public ?string $targetNickname = null,
     ) {}
 }

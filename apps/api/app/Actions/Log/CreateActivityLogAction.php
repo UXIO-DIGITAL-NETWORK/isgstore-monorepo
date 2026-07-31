@@ -20,6 +20,7 @@ class CreateActivityLogAction
             'ip_address' => $dto->ipAddress,
             'user_agent' => $dto->userAgent,
             'message' => $dto->message,
+            'type' => $dto->type?->value,
         ]);
     }
 }

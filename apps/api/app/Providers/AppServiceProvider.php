@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Support\Storefront\Catalog;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +25,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiting();
+        $this->configureRouteBindings();
+    }
+
+    /**
+     * Storefront URLs address a game by slug, but `categories.slug` is nullable
+     * on rows created before it existed and the admin panel links by `code`.
+     * Binding through Catalog::resolveGame accepts slug, code or id so no game
+     * is unreachable, and it filters inactive games out at the routing layer.
+     */
+    private function configureRouteBindings(): void
+    {
+        Route::bind('game', function (string $value) {
+            return Catalog::resolveGame($value) ?? abort(404, 'Game tidak ditemukan.');
+        });
     }
 
     private function configureRateLimiting(): void
