@@ -12,14 +12,22 @@ use App\Http\Requests\Category\ServerCategoryOption\UpdateServerCategoryOptionRe
 use App\Http\Resources\Api\Category\ServerCategoryOption\ServerCategoryOptionResource;
 use App\Models\ServerCategoryOption;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class ServerCategoryOptionController extends Controller
 {
     use ApiResponse;
 
-    public function index(GetServerCategoryOptionsAction $action)
+    public function index(Request $request, GetServerCategoryOptionsAction $action)
     {
-        $options = $action->execute(15);
+        $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
+        $serverCategoryId = $request->query('server_category_id');
+
+        $options = $action->execute(
+            $perPage,
+            $serverCategoryId !== null ? (int) $serverCategoryId : null,
+            $request->query('search'),
+        );
 
         return $this->paginatedResponse(ServerCategoryOptionResource::collection($options), 'Server Category Options retrieved successfully');
     }

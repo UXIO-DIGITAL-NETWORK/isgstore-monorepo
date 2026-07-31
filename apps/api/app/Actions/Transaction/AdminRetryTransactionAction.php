@@ -28,7 +28,8 @@ class AdminRetryTransactionAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Admin retried Transaction: {$transaction->invoice_number}"
+            message: "Admin retried Transaction: {$transaction->invoice_number}",
+            transactionId: $transaction->id
         ));
 
         return $updated->fresh();

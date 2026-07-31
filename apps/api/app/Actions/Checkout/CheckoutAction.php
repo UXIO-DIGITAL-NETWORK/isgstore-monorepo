@@ -11,10 +11,13 @@ use App\Enums\TransactionStatus;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\Product;
+use App\Models\Promo;
+use App\Models\PromoRedemption;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
 use App\Support\Pricing\RolePrice;
+use App\Support\Promo\PromoResolver;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -90,7 +93,41 @@ class CheckoutAction
                 throw new Exception('Transaksi dibatalkan otomatis: harga modal supplier sedang naik.');
             }
 
+            // ── 4b. Promo ────────────────────────────────────────────────────
+            // Re-resolved here rather than trusting whatever the client was
+            // quoted; the row is locked so two concurrent redemptions cannot
+            // both slip past a quota of one.
+            $promo = null;
+            $discount = 0;
+
+            if ($dto->promoCode) {
+                $locked = Promo::whereRaw('UPPER(code) = ?', [strtoupper(trim($dto->promoCode))])
+                    ->lockForUpdate()
+                    ->first();
+
+                $result = PromoResolver::resolve($dto->promoCode, $sellingPrice, $user);
+
+                if (! $result->valid) {
+                    throw new Exception($result->message);
+                }
+
+                // The discount comes out of margin, so a code worth more than
+                // the margin would sell below cost. Refuse rather than quietly
+                // honour less than the customer was promised — either outcome
+                // is wrong, but only one of them loses money silently.
+                if ($result->discount > $margin) {
+                    throw new Exception('Kode promo tidak dapat digunakan untuk produk ini.');
+                }
+
+                $promo = $locked;
+                $discount = $result->discount;
+                $sellingPrice -= $discount;
+                $margin -= $discount;
+            }
+
             // ── 5. Fee & total ───────────────────────────────────────────────
+            // Computed on the discounted price: the customer pays a gateway fee
+            // on what they are actually charged.
             $feePercent = max(0, min(100, (float) $channel->fee_percent));
             $adminFee = $channel->fee_flat + (int) round($sellingPrice * ($feePercent / 100));
             $grossAmount = $sellingPrice + $adminFee;
@@ -117,12 +154,28 @@ class CheckoutAction
                 'target_uid' => $dto->targetUid,
                 'target_server' => $dto->targetServer,
                 'target_nickname' => $dto->targetNickname,
+                'promo_id' => $promo?->id,
                 'amount_base' => $sellingPrice,
                 'amount_fee' => $adminFee,
+                'discount_amount' => $discount,
                 'amount_total' => $grossAmount,
                 'margin' => $margin,
                 'status' => TransactionStatus::PENDING,
             ]);
+
+            if ($promo) {
+                PromoRedemption::create([
+                    'promo_id' => $promo->id,
+                    'user_id' => $user?->id,
+                    'transaction_id' => $transaction->id,
+                    'code_used' => $promo->code,
+                    'discount_amount' => $discount,
+                ]);
+
+                // The redemption rows are the source of truth for quota; this
+                // counter is the denormalised copy the admin list reads.
+                $promo->increment('used_count');
+            }
 
             $payment = Payment::create([
                 'transaction_id' => $transaction->id,

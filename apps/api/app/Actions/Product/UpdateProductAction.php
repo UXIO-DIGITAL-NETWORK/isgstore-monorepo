@@ -6,7 +6,9 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Product\UpdateProductDTO;
 use App\Models\Product;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UpdateProductAction
 {
@@ -14,11 +16,30 @@ class UpdateProductAction
 
     public function execute(Product $product, UpdateProductDTO $dto): Product
     {
+        // Keep the existing artwork when no new file is uploaded — an edit that
+        // only changes the price must not blank the image. Mirrors
+        // UpdateSubCategoryAction.
+        $logoPath = $product->logo;
+
+        if ($dto->logo instanceof UploadedFile) {
+            if ($logoPath) {
+                Storage::disk('public')->delete($logoPath);
+            }
+            $logoPath = $dto->logo->store('products/logos', 'public');
+        }
+
         $product->update([
             'category_id' => $dto->categoryId,
             'sub_category_id' => $dto->subCategoryId,
             'name' => $dto->name,
+            'sub_name' => $dto->subName,
             'code' => $dto->code,
+            'logo' => $logoPath,
+            'description' => $dto->description,
+            'validasi_nickname' => $dto->validasiNickname,
+            'access' => $dto->access,
+            'tag' => $dto->tag,
+            'is_available' => $dto->isAvailable,
             'price_modal' => $dto->priceModal,
             'price_member' => $dto->priceMember,
             'price_vip' => $dto->priceVip,

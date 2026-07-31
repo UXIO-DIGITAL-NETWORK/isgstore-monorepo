@@ -14,7 +14,12 @@ class ActivityLogController extends Controller
 
     public function index(Request $request)
     {
+        $transactionId = $request->query('transaction_id');
+        $search = $request->query('search');
+
         $logs = ActivityLog::with('user.role')
+            ->when($transactionId, fn ($q) => $q->where('transaction_id', (int) $transactionId))
+            ->when($search, fn ($q) => $q->where('message', 'like', "%{$search}%"))
             ->latest()
             ->paginate(min(100, max(1, (int) $request->query('per_page', 15))));
 

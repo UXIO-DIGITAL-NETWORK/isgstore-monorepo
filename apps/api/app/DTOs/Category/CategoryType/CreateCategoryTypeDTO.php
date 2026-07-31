@@ -6,6 +6,7 @@ readonly class CreateCategoryTypeDTO
 {
     public function __construct(
         public string $name,
+        public bool $isVoucher,
         public bool $status
     ) {}
 }

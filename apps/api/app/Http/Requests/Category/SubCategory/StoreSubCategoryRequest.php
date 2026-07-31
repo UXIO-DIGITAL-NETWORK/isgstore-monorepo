@@ -17,6 +17,8 @@ class StoreSubCategoryRequest extends FormRequest
         return [
             'category_id' => ['required', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:255'],
+            'currency_name' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
             // FIX: Ubah validasi string menjadi validasi file gambar (maksimal 2MB)
             'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'status' => ['required', 'boolean'],
@@ -28,6 +30,8 @@ class StoreSubCategoryRequest extends FormRequest
         return new CreateSubCategoryDTO(
             categoryId: $this->validated('category_id'),
             name: $this->validated('name'),
+            currencyName: $this->validated('currency_name'),
+            description: $this->validated('description'),
             // Gunakan $this->file() khusus untuk mengambil file fisik
             logo: $this->file('logo'),
             status: $this->validated('status')

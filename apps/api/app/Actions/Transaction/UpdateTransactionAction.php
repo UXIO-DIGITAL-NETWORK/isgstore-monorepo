@@ -39,7 +39,8 @@ class UpdateTransactionAction
                 userId: Auth::id(),
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                message: "Admin updated Transaction: {$transaction->invoice_number} → status: {$dto->status}"
+                message: "Admin updated Transaction: {$transaction->invoice_number} → status: {$dto->status}",
+                transactionId: $transaction->id
             ));
 
             return $transaction->fresh();

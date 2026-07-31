@@ -28,7 +28,17 @@ class GetTransactionsAction
         return Transaction::query()
             ->with(['user', 'product', 'supplier', 'payment', 'paymentChannel'])
             ->when($status, fn ($q) => $q->where('status', $status))
-            ->when($search, fn ($q) => $q->where('invoice_number', 'like', "%{$search}%"))
+            // The admin table's search box sits above both the invoice and the
+            // customer column, so matching only the invoice number made a
+            // name search look like "no results" rather than "not supported".
+            // Guests have no user row — their contact is on the transaction.
+            ->when($search, fn ($q) => $q->where(
+                fn ($q) => $q->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhere('guest_contact', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%"))
+            ))
             ->when($userId, fn ($q) => $q->where('user_id', $userId))
             ->when($productId, fn ($q) => $q->where('product_id', $productId))
             ->when($paymentChannelId, fn ($q) => $q->where('payment_channel_id', $paymentChannelId))

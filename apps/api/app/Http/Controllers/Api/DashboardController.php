@@ -13,10 +13,14 @@ class DashboardController extends Controller
 {
     use ApiResponse;
 
-    public function stats(GetDashboardStatsAction $action)
+    public function stats(Request $request, GetDashboardStatsAction $action)
     {
+        $validated = $request->validate([
+            'month' => ['nullable', 'integer', 'between:1,12'],
+        ]);
+
         return $this->successResponse(
-            $action->execute(),
+            $action->execute($validated['month'] ?? null),
             'Dashboard stats retrieved successfully'
         );
     }

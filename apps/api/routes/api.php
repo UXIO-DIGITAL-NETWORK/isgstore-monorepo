@@ -10,6 +10,12 @@ use App\Http\Controllers\Api\Category\ServerCategoryController;
 use App\Http\Controllers\Api\Category\ServerCategoryOptionController;
 use App\Http\Controllers\Api\Category\SubCategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\Content\ArticleCategoryController;
+use App\Http\Controllers\Api\Content\ArticleController;
+use App\Http\Controllers\Api\Content\FaqController;
+use App\Http\Controllers\Api\Content\PageController;
+use App\Http\Controllers\Api\Content\SettingController;
+use App\Http\Controllers\Api\Content\TestimonialController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzBalanceController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzPostpaidController;
@@ -23,23 +29,32 @@ use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
 use App\Http\Controllers\Api\FinancialController;
 use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
+use App\Http\Controllers\Api\Marketing\FlashSaleController;
+use App\Http\Controllers\Api\Marketing\PromoController;
+use App\Http\Controllers\Api\Member\ApiCredentialController;
+use App\Http\Controllers\Api\Member\BalanceTopupController;
 use App\Http\Controllers\Api\Member\MemberActivityLogController;
+use App\Http\Controllers\Api\Member\MembershipController;
 use App\Http\Controllers\Api\Member\MemberTransactionController;
 use App\Http\Controllers\Api\Member\ProfileController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController;
+use App\Http\Controllers\Api\Payment\PaymentChannelController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PointHistoryController;
 use App\Http\Controllers\Api\Pricing\PricingRuleController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Product\SupplierProductController;
 use App\Http\Controllers\Api\RatingController;
+use App\Http\Controllers\Api\Storefront\ArticleController as StorefrontArticleController;
 use App\Http\Controllers\Api\Storefront\ContentController;
+use App\Http\Controllers\Api\Storefront\ContentPageController;
 use App\Http\Controllers\Api\Storefront\GameController as StorefrontGameController;
 use App\Http\Controllers\Api\Storefront\GameReviewController;
 use App\Http\Controllers\Api\Storefront\InvoiceController;
 use App\Http\Controllers\Api\Storefront\LeaderboardController as StorefrontLeaderboardController;
+use App\Http\Controllers\Api\Storefront\MarketingController;
 use App\Http\Controllers\Api\Storefront\OrderTrackController;
 use App\Http\Controllers\Api\Storefront\PaymentChannelController as StorefrontPaymentChannelController;
 use App\Http\Controllers\Api\Storefront\PriceListController;
@@ -93,7 +108,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/games/{game}/reviews', [GameReviewController::class, 'index']);
     Route::post('/games/{game}/validate-id', ValidateGameIdController::class);
 
-    Route::get('/payment-channels', [StorefrontPaymentChannelController::class, 'index']);
     Route::get('/price-list', [PriceListController::class, 'index']);
 
     // These three resources already exist as admin endpoints at /v1/banners,
@@ -106,6 +120,33 @@ Route::prefix('v1')->group(function () {
         Route::get('/banners', [ContentController::class, 'banners']);
         Route::get('/announcements', [ContentController::class, 'announcements']);
         Route::get('/leaderboard', [StorefrontLeaderboardController::class, 'index']);
+
+        // CMS reads. Prefixed for the same reason as the three above: the
+        // admin group already owns /v1/articles, /v1/faqs and /v1/pages, and
+        // Laravel keys the route collection on method+uri — a same-path public
+        // route would silently replace the admin one.
+        Route::get('/articles', [StorefrontArticleController::class, 'index']);
+        Route::get('/article-categories', [StorefrontArticleController::class, 'categories']);
+        Route::get('/articles/{slug}', [StorefrontArticleController::class, 'show']);
+        Route::get('/faqs', [ContentPageController::class, 'faqs']);
+        Route::get('/testimonials', [ContentPageController::class, 'testimonials']);
+        Route::get('/settings', [ContentPageController::class, 'settings']);
+        Route::get('/pages/{slug}', [ContentPageController::class, 'page']);
+
+        // Relocated from /v1/payment-channels so the admin group can own that
+        // URI: Laravel keys routes on method+uri, and the admin group is
+        // registered last, so it would have silently swallowed the public read.
+        Route::get('/payment-channels', [StorefrontPaymentChannelController::class, 'index']);
+
+        Route::get('/flash-sale', [MarketingController::class, 'flashSale']);
+        Route::get('/promos', [MarketingController::class, 'promos']);
+        Route::get('/membership-plans', [MembershipController::class, 'plans']);
+    });
+
+    // Takes a guessable code, so it is throttled like checkout rather than
+    // left on the global limiter — otherwise codes are brute-forceable.
+    Route::middleware('throttle:checkout')->group(function () {
+        Route::post('/storefront/promos/validate', [MarketingController::class, 'validatePromo']);
     });
 
     // Receipt lookup. Invoice numbers carry six random characters, so they are
@@ -174,6 +215,26 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::post('/transactions/{invoiceNumber}/rating', [MemberTransactionController::class, 'rate']);
 
         Route::get('/activity-logs', [MemberActivityLogController::class, 'index']);
+
+        // ── Wallet ───────────────────────────────────────────────────────
+        // Creating a top-up opens a real payment, so it is throttled like
+        // checkout rather than left on the global limiter.
+        Route::get('/topups', [BalanceTopupController::class, 'index']);
+        Route::post('/topups', [BalanceTopupController::class, 'store'])->middleware('throttle:checkout');
+        Route::get('/topups/{reference}', [BalanceTopupController::class, 'show']);
+        Route::get('/balance-mutations', [BalanceTopupController::class, 'mutations']);
+
+        // ── Membership ───────────────────────────────────────────────────
+        Route::get('/membership', [MembershipController::class, 'current']);
+        Route::post('/membership/subscribe', [MembershipController::class, 'subscribe'])
+            ->middleware('throttle:checkout');
+
+        // ── Integration credentials ──────────────────────────────────────
+        Route::get('/api-credentials', [ApiCredentialController::class, 'index']);
+        Route::post('/api-credentials', [ApiCredentialController::class, 'store']);
+        Route::put('/api-credentials/{apiCredential}', [ApiCredentialController::class, 'update']);
+        Route::post('/api-credentials/{apiCredential}/regenerate', [ApiCredentialController::class, 'regenerate']);
+        Route::delete('/api-credentials/{apiCredential}', [ApiCredentialController::class, 'destroy']);
     });
 });
 
@@ -283,6 +344,24 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
 
     // Pricing Rules (markup config used by the daily Digiflazz price sync)
     Route::apiResource('pricing-rules', PricingRuleController::class);
+
+    // ── Content & marketing ──────────────────────────────────────────────
+    // article-categories is registered before articles so neither shadows the
+    // other, and both keep their own {id} binding.
+    Route::apiResource('article-categories', ArticleCategoryController::class);
+    Route::apiResource('articles', ArticleController::class);
+    Route::apiResource('faqs', FaqController::class);
+    Route::apiResource('pages', PageController::class);
+    Route::apiResource('testimonials', TestimonialController::class);
+    Route::apiResource('payment-channels', PaymentChannelController::class);
+    Route::apiResource('flash-sales', FlashSaleController::class);
+    Route::get('/promos/{promo}/redemptions', [PromoController::class, 'redemptions']);
+    Route::apiResource('promos', PromoController::class);
+
+    // Settings are one grouped form, not a table: a flat read plus a bulk write.
+    Route::get('/settings', [SettingController::class, 'index']);
+    Route::put('/settings', [SettingController::class, 'update']);
+    Route::post('/settings/upload', [SettingController::class, 'upload']);
 
     // Digiflazz Admin Tools
     Route::get('/digiflazz/balance', [DigiflazzBalanceController::class, 'index']);

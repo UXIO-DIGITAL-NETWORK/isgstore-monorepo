@@ -9,11 +9,15 @@ class SubCategory extends Model
 {
     use HasFactory;
 
-    // PASTIKAN 'logo' ADA DI SINI!
+    // This is the one model in the app with an explicit $fillable rather than
+    // $guarded = ['id'], so every new column has to be listed here or mass
+    // assignment drops it silently.
     protected $fillable = [
         'category_id',
         'name',
-        'logo', // <--- Tambahkan ini
+        'currency_name',
+        'logo',
+        'description',
         'status',
     ];
 

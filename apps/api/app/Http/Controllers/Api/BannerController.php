@@ -20,7 +20,14 @@ class BannerController extends Controller
 
     public function index(Request $request, GetBannersAction $action)
     {
-        $banners = $action->execute((int) $request->query('per_page', 15));
+        $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
+        $categoryId = $request->query('category_id');
+
+        $banners = $action->execute(
+            $perPage,
+            $request->query('search'),
+            $categoryId !== null ? (int) $categoryId : null,
+        );
 
         return $this->paginatedResponse(BannerResource::collection($banners), 'Banners retrieved successfully');
     }

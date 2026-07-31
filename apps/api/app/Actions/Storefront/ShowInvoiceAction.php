@@ -74,8 +74,11 @@ class ShowInvoiceAction
             ],
 
             'amount' => [
+                // `base` is already net of any discount — the figure the
+                // customer was actually charged for the product.
                 'base' => (int) $transaction->amount_base,
                 'fee' => (int) $transaction->amount_fee,
+                'discount' => (int) $transaction->discount_amount,
                 'total' => (int) $transaction->amount_total,
             ],
 

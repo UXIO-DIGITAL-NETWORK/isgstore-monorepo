@@ -22,3 +22,12 @@ Schedule::command('digiflazz:check-prices --type=all')
     ->withoutOverlapping()
     ->runInBackground()
     ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: digiflazz:check-prices'));
+
+// Membership expiry: reverts a lapsed member's role so RolePrice stops quoting
+// them a tier they no longer pay for. Daily is enough — a plan's granularity is
+// days, and running it more often would just re-scan the same empty set.
+Schedule::command('memberships:expire')
+    ->dailyAt('00:15')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: memberships:expire'));

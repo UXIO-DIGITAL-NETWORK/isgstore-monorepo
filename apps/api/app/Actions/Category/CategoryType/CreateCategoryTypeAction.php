@@ -16,6 +16,7 @@ class CreateCategoryTypeAction
     {
         $categoryType = CategoryType::create([
             'name' => $dto->name,
+            'is_voucher' => $dto->isVoucher,
             'status' => $dto->status,
         ]);
 
