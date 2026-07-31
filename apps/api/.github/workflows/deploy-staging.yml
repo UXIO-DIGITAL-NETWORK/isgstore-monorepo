@@ -165,42 +165,7 @@ jobs:
             # 11. Pastikan direktori conf.d ada
             sudo mkdir -p /etc/supervisor/conf.d
 
-            # 12. Deploy supervisor config untuk queue worker
-            sudo cp /home/uxioserver1/web-topup/api/staging/supervisor/laravel-queue-staging.conf \
-                    /etc/supervisor/conf.d/laravel-queue-staging.conf
 
-            # Pastikan daemon supervisord benar-benar berjalan (idempotent — no-op jika sudah up).
-            if ! sudo systemctl is-active --quiet supervisor; then
-              echo "supervisord not running — starting..."
-              sudo systemctl restart supervisor
-              sleep 2
-            fi
-
-            # Fallback: start daemon directly if service still fails (keeps deploy resilient).
-            # Perlakukan baris ini sebagai SINYAL untuk memperbaiki unit di host,
-            # bukan kondisi normal. Kalau muncul di log deploy yang sehat, tindak lanjuti.
-            if [ ! -S /var/run/supervisor.sock ]; then
-              echo "supervisor.sock missing after systemctl restart, trying direct supervisord start..."
-              sudo supervisord -c /etc/supervisor/supervisord.conf
-              sleep 2
-            fi
-
-            if [ ! -S /var/run/supervisor.sock ]; then
-              echo "ERROR: supervisor.sock still missing. Dumping diagnostics..."
-              # `|| true` di dua baris ini wajib: dengan script_stop, diagnostik yang
-              # keluar non-zero akan menutupi error sebenarnya dan melewati `exit 1`.
-              sudo systemctl status supervisor --no-pager || true
-              sudo journalctl -u supervisor -n 80 --no-pager || true
-              exit 1
-            fi
-
-            # 13. Reload supervisor agar membaca config terbaru (akan fail otomatis jika syntax conf salah)
-            sudo supervisorctl reread
-            sudo supervisorctl update
-
-            # 14. Restart queue worker agar muat kode yang baru di-deploy
-            # (queue:work meng-cache kode — harus restart setiap deploy)
-            sudo supervisorctl restart laravel-queue-staging:*
 
       # Tanpa langkah ini, "job hijau" hanya berarti script SSH selesai — bukan
       # berarti kode benar-benar dilayani. Satu request ini menguji routing,
