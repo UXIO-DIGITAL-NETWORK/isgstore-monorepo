@@ -24,7 +24,7 @@ class OrderFormSchemaSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach ($this->schemas() as $code => $schema) {
+        foreach (self::schemas() as $code => $schema) {
             Category::where('code', $code)->update(['order_form_fields' => $schema]);
         }
 
@@ -51,7 +51,15 @@ class OrderFormSchemaSeeder extends Seeder
         }
     }
 
-    private function schemas(): array
+    /**
+     * Public and static so the backfill migration can reuse the exact same
+     * definitions instead of duplicating them — two copies of these schemas
+     * would drift, and a drifted order form fails only at the supplier, after
+     * the customer has paid.
+     *
+     * @return array<string, array<string, mixed>> keyed by categories.code
+     */
+    public static function schemas(): array
     {
         return [
             // Game player IDs carry no length bounds on purpose — digit counts vary
@@ -111,10 +119,10 @@ class OrderFormSchemaSeeder extends Seeder
                 ],
             ],
 
-            'pulsa' => $this->phoneSchema('Nomor HP', 'Nomor tujuan pengisian pulsa.'),
-            'data' => $this->phoneSchema('Nomor HP', 'Nomor tujuan paket data.'),
-            'telkomsel' => $this->phoneSchema('Nomor HP', 'Nomor Telkomsel tujuan.'),
-            'emoney' => $this->phoneSchema('Nomor HP / Akun', 'Nomor terdaftar di aplikasi e-wallet.'),
+            'pulsa' => self::phoneSchema('Nomor HP', 'Nomor tujuan pengisian pulsa.'),
+            'data' => self::phoneSchema('Nomor HP', 'Nomor tujuan paket data.'),
+            'telkomsel' => self::phoneSchema('Nomor HP', 'Nomor Telkomsel tujuan.'),
+            'emoney' => self::phoneSchema('Nomor HP / Akun', 'Nomor terdaftar di aplikasi e-wallet.'),
 
             'ppob' => [
                 'customer_no_template' => '{meter_no}',
@@ -134,7 +142,7 @@ class OrderFormSchemaSeeder extends Seeder
         ];
     }
 
-    private function phoneSchema(string $label, string $help): array
+    private static function phoneSchema(string $label, string $help): array
     {
         return [
             'customer_no_template' => '{phone}',
