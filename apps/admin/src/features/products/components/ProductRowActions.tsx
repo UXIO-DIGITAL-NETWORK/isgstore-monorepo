@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Eye, Lock, MoreHorizontal, Pencil, Power, RefreshCcw, SlidersHorizontal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Can } from "@/components/common/Can";
@@ -9,9 +9,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDeleteProducts } from "../hooks/useProducts";
+import { useDeactivateProducts, useDeleteProducts } from "../hooks/useProducts";
 import type { Product } from "../types/product.type";
 
 interface ProductRowActionsProps {
@@ -19,16 +20,24 @@ interface ProductRowActionsProps {
 }
 
 /**
- * Row menu for the Main Products list. Two items, matching the reference.
+ * Row menu for the Main Products list, in the reference's order.
  *
- * Edit is a toast stub: this round ships the list only, and the Add/Edit form
- * has no reference frame yet (§4.6). It stays `<Can>`-gated and correctly
- * labelled so wiring it later is a one-line change, rather than being hidden
- * and needing to be rediscovered.
+ * Only Deactive and Delete mutate: Edit has no form frame yet (§4.6), and
+ * nothing specifies what a per-row Digiflazz push, a price reveal, a price
+ * lock or a price limit actually change — the fields behind the last three
+ * (the `Public` padlock, "Price limits: No limit") aren't modelled either.
+ * They stay listed, `<Can>`-gated and labelled, announcing what they wait on
+ * rather than guessing a mutation; wiring each is a one-line change.
  */
 export function ProductRowActions({ product }: ProductRowActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
   const deleteProducts = useDeleteProducts();
+  const deactivateProducts = useDeactivateProducts();
+
+  // ponytail: one stub for the five unspecced entries — a distinct handler per
+  // action would be five copies of the same toast.
+  const announceDeferred = (message: string) => () => toast.info(message);
 
   return (
     <>
@@ -47,12 +56,35 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
           className="rounded-2xl"
         >
           <Can permission="products.edit">
+            <DropdownMenuItem
+              onSelect={announceDeferred(`Digiflazz update for ${product.name} lands with the Product Provider tab`)}
+            >
+              <RefreshCcw />
+              Digiflazz Update
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={announceDeferred("Showing a locked price needs the price-visibility field")}>
+              <Eye />
+              Show Price
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={announceDeferred("Locking a price needs the price-lock field")}>
+              <Lock />
+              Lock Price
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={announceDeferred("Price limits land with the Add/Edit Product form")}>
+              <SlidersHorizontal />
+              Set Price Limit
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setDeactivateOpen(true)}>
+              <Power />
+              Deactive
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => toast(`Edit ${product.name} — coming soon`)}>
               <Pencil />
               Edit Product
             </DropdownMenuItem>
           </Can>
           <Can permission="products.delete">
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
@@ -74,6 +106,16 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
         title="Delete this product?"
         description="This action cannot be undone. This will permanently delete this product and remove all of its variants from the storefront."
         onConfirm={() => deleteProducts.mutate([product.id])}
+      />
+
+      <DeleteConfirmDialog
+        open={deactivateOpen}
+        onOpenChange={setDeactivateOpen}
+        icon={<Power />}
+        confirmLabel="Deactivate"
+        title="Deactivate this product?"
+        description="This product will be marked inactive and hidden from the storefront. You can activate it again at any time."
+        onConfirm={() => deactivateProducts.mutate([product.id])}
       />
     </>
   );

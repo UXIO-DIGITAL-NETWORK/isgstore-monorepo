@@ -43,13 +43,27 @@ describe("MainProductsPage", () => {
     expect(screen.getByLabelText("Category")).toBeInTheDocument();
     expect(screen.getByLabelText("Price")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Add Main Products/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Add Main Products/i })).toBeInTheDocument();
   });
 
-  it("the '+ Add Main Products' link stays inside the preview route", async () => {
+  it("'+ Add Main Products' opens a menu offering Manual and Bulk", async () => {
+    const user = userEvent.setup();
     await renderRoute(LIST_PATH);
-    const addLink = await screen.findByRole("link", { name: /Add Main Products/i });
-    expect(addLink).toHaveAttribute("href", "/admin/products-preview/main/add");
+
+    await user.click(await screen.findByRole("button", { name: /Add Main Products/i }));
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual(["Manual", "Bulk"]);
+  });
+
+  it("the Add menu's Manual entry stays inside the preview route", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await user.click(await screen.findByRole("button", { name: /Add Main Products/i }));
+    expect(await screen.findByRole("menuitem", { name: "Manual" })).toHaveAttribute(
+      "href",
+      "/admin/products-preview/main/add",
+    );
   });
 
   it("shows the column headers", async () => {
@@ -139,12 +153,20 @@ describe("MainProductsPage", () => {
     expect(screen.queryByText("Weekly Diamond Pass (One Week)")).not.toBeInTheDocument();
   });
 
-  it("a row's action menu shows Edit Product and Delete", async () => {
+  it("a row's action menu lists every action in the reference's order", async () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await user.click(await screen.findByRole("button", { name: /Actions for Weekly Diamond Pass \(One Week\)/i }));
     const items = await screen.findAllByRole("menuitem");
-    expect(items.map((item) => item.textContent)).toEqual(["Edit Product", "Delete"]);
+    expect(items.map((item) => item.textContent)).toEqual([
+      "Digiflazz Update",
+      "Show Price",
+      "Lock Price",
+      "Set Price Limit",
+      "Deactive",
+      "Edit Product",
+      "Delete",
+    ]);
   });
 });
