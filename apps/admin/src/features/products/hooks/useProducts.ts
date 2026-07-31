@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { productsService } from "../services/products.service";
-import type { ProductListParams } from "../types/product.type";
+import type { Product, ProductListParams } from "../types/product.type";
 
 export const useProductList = (params: ProductListParams) =>
   useQuery({
@@ -15,6 +15,22 @@ export const useProduct = (id?: string) =>
     queryFn: () => productsService.getById(id as string),
     enabled: Boolean(id),
   });
+
+/** Add Main Products (§4.6). Same shape as `useCreateCategory`. */
+export const useCreateProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: Omit<Product, "id" | "created_at" | "updated_at">) => productsService.create(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product created");
+    },
+    onError: () => {
+      toast.error("Failed to create product");
+    },
+  });
+};
 
 /** The selection bar's "Deactive (N)" — same bulk shape as the delete path. */
 export const useDeactivateProducts = () => {

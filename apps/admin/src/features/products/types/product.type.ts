@@ -43,6 +43,21 @@ export interface Product {
   category_name: string;
   /** §6's `provider_sku`. */
   code: string;
+
+  /* Captured by the Add form (§4.6). All optional — every fixture predates
+     them, and the reference marks only name, code and category as required. */
+  /** Secondary display name, the form's "Sub Name". */
+  sub_name?: string;
+  /** Parent `SubCategory`'s name, denormalized like `category_name`. */
+  sub_category_name?: string;
+  /** Which upstream API validates the buyer's account nickname. */
+  nickname_validation?: string;
+  /** A `PRODUCT_ACCESS_OPTIONS` value — which customer tier may buy this. */
+  access?: string;
+  /** A `PRODUCT_TAG_OPTIONS` value — storefront merchandising label. */
+  tag?: string;
+  /** Storefront copy shown on the product page. */
+  description?: string;
   /** Lifecycle. First of the two stacked badges the reference shows. */
   status: ProductStatus;
   /** §6's `is_available` — storefront visibility. The second badge. */
@@ -65,6 +80,14 @@ export interface ProductListParams {
 export interface SelectOption {
   value: string;
   label: string;
+}
+
+/** A category the toolbar filters by and the Add form assigns. It carries the
+ * game so a product created from the form still gets the denormalized
+ * `game_id`/`game_name` the entity needs — the real API will join instead. */
+export interface CategoryOption extends SelectOption {
+  game_id: string;
+  game_name: string;
 }
 
 /** A price bucket. `max` is exclusive; omitting it means "and above". */

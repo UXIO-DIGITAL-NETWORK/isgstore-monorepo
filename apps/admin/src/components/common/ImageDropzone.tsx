@@ -7,27 +7,28 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-// ponytail: categories-local copy of the transactions "Invoice Proof" dropzone
-// (EditTransactionForm). Three uses within this feature now justify it staying
-// here; promote to components/common only if another feature needs one —
-// don't refactor transactions now.
+// Started as a categories-local copy of the transactions "Invoice Proof"
+// dropzone (EditTransactionForm) and was promoted here when Products' Add form
+// became the second feature to need one, exactly as that note prescribed.
+// ponytail: transactions still has its own inline copy — fold it in the next
+// time that form is touched, not as drive-by churn now.
 const DEFAULT_ACCEPT = "image/jpeg,image/jpg,image/png";
 const DEFAULT_FORMATS_LABEL = "JPG, JPEG, PNG up to 10mb";
 
-interface CategoryImageUploadProps {
+interface ImageDropzoneProps {
   id: string;
   label: string;
   caption: string;
   value?: File;
   onChange: (file: File) => void;
   error?: string;
-  /** Sub Category's Logo takes one more format than Category's own logo
-   * field (WEBP) — product_requirements.md §4.5, line 210. */
+  /** Some fields take one more format than the JPG/JPEG/PNG default (WEBP) —
+   * Sub Category's Logo (§4.5) and the product logo (§4.6). */
   accept?: string;
   formatsLabel?: string;
 }
 
-export function CategoryImageUpload({
+export function ImageDropzone({
   id,
   label,
   caption,
@@ -36,7 +37,7 @@ export function CategoryImageUpload({
   error,
   accept = DEFAULT_ACCEPT,
   formatsLabel = DEFAULT_FORMATS_LABEL,
-}: CategoryImageUploadProps) {
+}: ImageDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

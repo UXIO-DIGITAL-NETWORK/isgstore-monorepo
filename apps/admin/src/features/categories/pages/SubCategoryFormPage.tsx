@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
+import { ImageDropzone } from "@/components/common/ImageDropzone";
 import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CategoryImageUpload } from "../components/CategoryImageUpload";
 import { useCategoryList } from "../hooks/useCategories";
 import { useCreateSubCategory, useSubCategory, useUpdateSubCategory } from "../hooks/useSubCategories";
 import { DESCRIPTION_MAX, subCategoryFormSchema, type SubCategoryFormValues } from "../schemas/subCategoryForm.schema";
@@ -179,7 +179,7 @@ export default function SubCategoryFormPage() {
           control={control}
           name="logo"
           render={({ field }) => (
-            <CategoryImageUpload
+            <ImageDropzone
               id="sub-category-logo"
               label="Logo"
               accept="image/jpeg,image/jpg,image/png,image/webp"
