@@ -61,8 +61,11 @@ export function ImageDropzone({
           handleFiles(event.dataTransfer.files);
         }}
         className={cn(
-          "flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-6 text-center",
-          dragActive && "border-foreground bg-accent",
+          "flex flex-col items-center gap-2 rounded-xl border border-dashed border-input p-6 text-center",
+          // ponytail: ternary, not append — twMerge keeps both `bg-accent` and
+          // `dark:bg-input/30` (different modifiers), and the dark: rule wins on
+          // specificity, so appending would kill the drag highlight in dark mode.
+          dragActive ? "border-foreground bg-accent" : "bg-transparent dark:bg-input/30",
         )}
       >
         <UploadCloud className="size-6 text-muted-foreground" />
