@@ -13,7 +13,6 @@ import ArticleBody from "@/features/berita/components/ArticleBody";
 import ShareBar from "@/features/berita/components/ShareBar";
 import RelatedArticles from "@/features/berita/components/RelatedArticles";
 import { useArticleDetail } from "@/features/berita/hooks/useArticleDetail";
-import { ARTICLE_BODY } from "@/features/berita/data/articleContent";
 
 export default function ArticleDetailPage(): React.JSX.Element {
   const { slug = "", locale = "id" } = useParams({ strict: false }) as {
@@ -21,7 +20,23 @@ export default function ArticleDetailPage(): React.JSX.Element {
     locale?: string;
   };
   const { t } = useTranslation("berita");
-  const { article, related } = useArticleDetail(slug);
+  const { article, related, sections, isLoading } = useArticleDetail(slug);
+
+  // The article now arrives asynchronously, so "not found" must wait for the
+  // request to settle — otherwise every visit flashes it before the content.
+  if (!article && isLoading) {
+    return (
+      <Box className="min-h-dvh bg-[#0A0A0C]">
+        <Navbar />
+        <Box className="max-w-3xl mx-auto px-4 md:px-8 py-24 flex items-center justify-center">
+          <Text as="p" className="font-inter text-[15px] text-white/40">
+            {t("detail.loading")}
+          </Text>
+        </Box>
+        <Footer />
+      </Box>
+    );
+  }
 
   if (!article) {
     return (
@@ -69,7 +84,7 @@ export default function ArticleDetailPage(): React.JSX.Element {
         </Box>
 
         {/* Article body sections */}
-        <ArticleBody sections={ARTICLE_BODY} />
+        <ArticleBody sections={sections} />
 
         {/* Divider */}
         <Box className="border-t border-white/10" />

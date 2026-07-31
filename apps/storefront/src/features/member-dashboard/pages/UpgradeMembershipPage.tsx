@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { useUpgradeMembership } from "@/features/member-dashboard/hooks/useUpgradeMembership";
-import { MEMBERSHIP_PLANS, PAYMENT_GROUPS } from "@/features/member-dashboard/data/upgradeMembership.mock";
 import PlanSelector from "@/features/member-dashboard/components/upgradeMembership/PlanSelector";
 import PaymentSelector from "@/features/member-dashboard/components/upgradeMembership/PaymentSelector";
 import SummaryCard from "@/features/member-dashboard/components/upgradeMembership/SummaryCard";
@@ -15,18 +14,18 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
     selectedPlanId,
     selectedPaymentId,
     selectedPlan,
+    plans,
+    paymentGroups,
     adminFee,
     total,
     selectedPaymentName,
     creditsBalance,
+    isSubmitting,
+    submitError,
     handleSelectPlan,
     handleSelectPayment,
+    handleSubmit,
   } = useUpgradeMembership();
-
-  const handleSubmit = () => {
-    // TODO: wire to backend when Monetapay integration is ready
-    window.alert(t("upgradeMembership.submitSuccess", { plan: selectedPlan ? t(selectedPlan.nameKey) : "" }));
-  };
 
   return (
     <Box className="flex flex-col gap-6">
@@ -49,24 +48,26 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
       {/* Single-column content */}
       <Box className="flex flex-col gap-5">
         <PlanSelector
-          plans={MEMBERSHIP_PLANS}
+          plans={plans}
           selectedPlanId={selectedPlanId}
           onSelectPlan={handleSelectPlan}
         />
 
         <PaymentSelector
-          groups={PAYMENT_GROUPS}
+          groups={paymentGroups}
           creditsBalance={creditsBalance}
           selectedPaymentId={selectedPaymentId}
           onSelectPayment={handleSelectPayment}
         />
 
         <SummaryCard
-          planNameKey={selectedPlan?.nameKey}
+          planName={selectedPlan?.name}
           adminFee={adminFee}
           total={total}
           selectedPaymentName={selectedPaymentName}
           onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          errorMessage={submitError}
         />
       </Box>
     </Box>

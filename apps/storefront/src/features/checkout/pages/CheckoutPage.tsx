@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -100,6 +100,11 @@ export default function CheckoutPage(): React.JSX.Element {
   // number the customer is about to be charged, not the package price alone.
   const adminFee = selectedPayment ? calculateAdminFee(selectedPayment, totalPrice) : 0;
 
+  // Held here rather than inside PromoCode so the code reaches checkout and
+  // the summary can show what it is worth. The server re-resolves it, so this
+  // figure is display-only.
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountAmount: number } | null>(null);
+
   const handleConfirmCheckout = () => {
     if (!selectedPackage || !selectedPayment) return;
 
@@ -113,6 +118,7 @@ export default function CheckoutPage(): React.JSX.Element {
         // the receipt keeps showing the name that was confirmed here.
         target_nickname: nickname ?? undefined,
         guest_contact: whatsapp.trim() || undefined,
+        promo_code: appliedPromo?.code,
       },
       {
         onSuccess: (response) => {
@@ -212,7 +218,13 @@ export default function CheckoutPage(): React.JSX.Element {
               onWhatsappChange={setWhatsapp}
             />
 
-            <PromoCode />
+            <PromoCode
+              productId={selectedPackage?.productId}
+              amount={selectedPackage?.price}
+              applied={appliedPromo}
+              onApplied={setAppliedPromo}
+              onCleared={() => setAppliedPromo(null)}
+            />
 
             <OrderSummary
               selectedPackage={selectedPackage}

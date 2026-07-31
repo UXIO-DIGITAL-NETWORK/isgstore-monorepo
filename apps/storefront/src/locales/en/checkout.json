@@ -9,7 +9,6 @@
   "totalPrice": "Total Price",
   "submit": "Pay Now",
   "loading": "Processing...",
-
   "gameInfo": {
     "badges": {
       "fastProcess": "Fast Process",
@@ -17,7 +16,6 @@
       "official": "Official"
     }
   },
-
   "accountDetail": {
     "title": "Insert Account Detail",
     "userId": "User ID",
@@ -31,7 +29,6 @@
     "nicknameError": "ID not found",
     "viewGuide": "View Account Guide"
   },
-
   "packages": {
     "title": "Select Diamond Package",
     "categories": {
@@ -52,7 +49,6 @@
     "bonus": "Bonus",
     "instantDelivery": "Instant\nDelivery"
   },
-
   "payment": {
     "title": "Payment Method",
     "selectOption": "Select payment method",
@@ -64,7 +60,6 @@
       "va": "Virtual Account"
     }
   },
-
   "contact": {
     "title": "Contact Details",
     "whatsapp": "WhatsApp No.",
@@ -73,13 +68,15 @@
     "whatsappRequired": "WhatsApp number is required",
     "receiptNote": "We will send the transaction receipt to the WhatsApp number you entered above."
   },
-
   "promo": {
     "title": "Promo Code",
     "trigger": {
       "title": "Use voucher",
       "subtitle": "Promo code & public voucher — for all users",
-      "cta": "Select"
+      "cta": "Select",
+      "applied": "Save {{amount}}",
+      "change": "Change",
+      "remove": "Remove promo code"
     },
     "modal": {
       "close": "Close",
@@ -89,10 +86,11 @@
       "inputPlaceholder": "Enter voucher code",
       "apply": "Apply code",
       "availableTitle": "Vouchers available for everyone",
-      "empty": "No public vouchers available right now."
+      "empty": "No public vouchers available right now.",
+      "error": "Could not check that promo code. Please try again.",
+      "minPurchase": "Min. purchase {{amount}}"
     }
   },
-
   "reviews": {
     "title": "Customer Reviews",
     "basedOn": "Based on {{count}} reviews",
@@ -103,7 +101,6 @@
     "ratingLabel": "Rating",
     "anonymous": "Anonymous User"
   },
-
   "summary": {
     "selectedPackage": "Selected package",
     "noPackageSelected": "No package selected",
@@ -113,7 +110,6 @@
     "processing": "Processing...",
     "instantProcess": "Instant processing time"
   },
-
   "confirmModal": {
     "title": "PURCHASE CONFIRMATION",
     "subtitle": "Make sure your account data and selected product are valid and correct.",

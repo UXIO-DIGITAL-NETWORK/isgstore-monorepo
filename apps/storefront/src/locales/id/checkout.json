@@ -9,7 +9,6 @@
   "totalPrice": "Total Harga",
   "submit": "Bayar Sekarang",
   "loading": "Memproses...",
-
   "gameInfo": {
     "badges": {
       "fastProcess": "Proses Cepat",
@@ -17,7 +16,6 @@
       "official": "Resmi"
     }
   },
-
   "accountDetail": {
     "title": "Masukan Detail Akun",
     "userId": "User ID",
@@ -31,7 +29,6 @@
     "nicknameError": "ID tidak ditemukan",
     "viewGuide": "Lihat Panduan Pengisian"
   },
-
   "packages": {
     "title": "Pilih Paket Diamond",
     "categories": {
@@ -52,7 +49,6 @@
     "bonus": "Bonus",
     "instantDelivery": "Pengiriman\nInstan"
   },
-
   "payment": {
     "title": "Metode Pembayaran",
     "selectOption": "Pilih metode pembayaran",
@@ -64,7 +60,6 @@
       "va": "Virtual Account"
     }
   },
-
   "contact": {
     "title": "Detail Kontak",
     "whatsapp": "No. WhatsApp",
@@ -73,13 +68,15 @@
     "whatsappRequired": "Nomor WhatsApp wajib diisi",
     "receiptNote": "Bukti transaksi akan kami kirim ke whatsapp yang kamu isi di atas."
   },
-
   "promo": {
     "title": "Kode Promo",
     "trigger": {
       "title": "Pakai voucher",
       "subtitle": "Kode promo & voucher publik — untuk semua pengguna",
-      "cta": "Pilih"
+      "cta": "Pilih",
+      "applied": "Hemat {{amount}}",
+      "change": "Ubah",
+      "remove": "Hapus kode promo"
     },
     "modal": {
       "close": "Tutup",
@@ -89,10 +86,11 @@
       "inputPlaceholder": "Masukkan kode voucher",
       "apply": "Pakai kode",
       "availableTitle": "Voucher tersedia untuk semua",
-      "empty": "Belum ada voucher publik yang bisa dipakai saat ini."
+      "empty": "Belum ada voucher publik yang bisa dipakai saat ini.",
+      "error": "Gagal memeriksa kode promo. Coba lagi.",
+      "minPurchase": "Min. pembelian {{amount}}"
     }
   },
-
   "reviews": {
     "title": "Ulasan Pelanggan",
     "basedOn": "Berdasarkan {{count}} ulasan",
@@ -103,7 +101,6 @@
     "ratingLabel": "Rating",
     "anonymous": "Pengguna Anonim"
   },
-
   "summary": {
     "selectedPackage": "Paket yang dipilih",
     "noPackageSelected": "Belum ada paket yang dipilih",
@@ -113,7 +110,6 @@
     "processing": "Memproses...",
     "instantProcess": "Waktu proses instan"
   },
-
   "confirmModal": {
     "title": "KONFIRMASI PEMBELIAN",
     "subtitle": "Pastikan data akun dan produk yang anda pilih valid dan sesuai.",

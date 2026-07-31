@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { useIsiSaldo } from "@/features/member-dashboard/hooks/useIsiSaldo";
-import { PAYMENT_GROUPS } from "@/features/member-dashboard/data/isiSaldo.mock";
 import NominalSelector from "@/features/member-dashboard/components/isiSaldo/NominalSelector";
 import VoucherCard from "@/features/member-dashboard/components/isiSaldo/VoucherCard";
 import PaymentSelector from "@/features/member-dashboard/components/isiSaldo/PaymentSelector";
@@ -14,6 +13,11 @@ export default function IsiSaldoPage(): React.JSX.Element {
   const { t } = useTranslation("dashboard");
 
   const {
+    presets,
+    paymentGroups,
+    isSubmitting,
+    submitError,
+    handleSubmit,
     selectedNominal,
     appliedVoucher,
     selectedPaymentId,
@@ -27,11 +31,6 @@ export default function IsiSaldoPage(): React.JSX.Element {
     applyVoucher,
     clearVoucher,
   } = useIsiSaldo();
-
-  const handleSubmit = () => {
-    // TODO: wire to backend when Monetapay integration is ready
-    window.alert(`Isi saldo Rp ${nominal.toLocaleString("id")} berhasil dikirim!`);
-  };
 
   return (
     <Box className="flex flex-col gap-6">
@@ -57,6 +56,7 @@ export default function IsiSaldoPage(): React.JSX.Element {
         {/* ── Left column: sections 1 → summary ── */}
         <Box className="flex flex-col gap-5">
           <NominalSelector
+            presets={presets}
             selectedNominal={selectedNominal}
             onSelectPreset={handleSelectPreset}
             onCustomChange={handleCustomChange}
@@ -69,7 +69,7 @@ export default function IsiSaldoPage(): React.JSX.Element {
           />
 
           <PaymentSelector
-            groups={PAYMENT_GROUPS}
+            groups={paymentGroups}
             selectedPaymentId={selectedPaymentId}
             onSelectPayment={handleSelectPayment}
           />
@@ -81,6 +81,8 @@ export default function IsiSaldoPage(): React.JSX.Element {
             appliedVoucher={appliedVoucher}
             selectedPaymentName={selectedPaymentName}
             onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            errorMessage={submitError}
           />
         </Box>
 

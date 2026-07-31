@@ -1,31 +1,43 @@
-import type { Article } from "@/features/berita/types/article.type";
-import { ALL_ARTICLES } from "@/features/berita/data/articles.data";
+import { useMemo } from "react";
+import { useParams } from "@tanstack/react-router";
 
-const RELATED_COUNT = 3;
+import { useArticleDetailQuery } from "@/hooks/useArticlesQuery";
+import { toBeritaArticle } from "@/lib/articles";
+import type { Article, ArticleSection } from "@/features/berita/types/article.type";
 
 export interface UseArticleDetailReturn {
   article: Article | undefined;
   related: Article[];
+  /** This article's own body, replacing the shared placeholder constant. */
+  sections: ArticleSection[];
+  isLoading: boolean;
 }
 
+/**
+ * Related articles are resolved by the API rather than computed here — finding
+ * three neighbours by downloading the whole archive would not scale past a
+ * page of results.
+ */
 export function useArticleDetail(slug: string): UseArticleDetailReturn {
-  const article = ALL_ARTICLES.find((a) => a.slug === slug);
+  const { locale } = useParams({ strict: false }) as { locale?: string };
+  const { data, isLoading } = useArticleDetailQuery(slug, locale);
 
-  if (!article) {
-    return { article: undefined, related: [] };
-  }
+  const detail = data?.data;
 
-  // Prefer articles from the same category, excluding self
-  const sameCategory = ALL_ARTICLES.filter(
-    (a) => a.slug !== slug && a.categoryKey === article.categoryKey,
+  const article = useMemo(
+    () => (detail ? toBeritaArticle(detail.article, locale ?? "id") : undefined),
+    [detail, locale],
   );
 
-  // Fill to RELATED_COUNT with other articles if same-category is insufficient
-  const otherArticles = ALL_ARTICLES.filter(
-    (a) => a.slug !== slug && a.categoryKey !== article.categoryKey,
+  const related = useMemo(
+    () => (detail?.related ?? []).map((model) => toBeritaArticle(model, locale ?? "id")),
+    [detail, locale],
   );
 
-  const related = [...sameCategory, ...otherArticles].slice(0, RELATED_COUNT);
-
-  return { article, related };
+  return {
+    article,
+    related,
+    sections: detail?.article.body_sections ?? [],
+    isLoading,
+  };
 }

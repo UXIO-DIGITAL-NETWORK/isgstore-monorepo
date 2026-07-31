@@ -23,7 +23,7 @@ export interface GameProductsResponse {
   products: ProductModel[];
 }
 
-/** One row of `GET /v1/payment-channels`. */
+/** One row of `GET /v1/storefront/payment-channels`. */
 export interface PaymentChannelModel {
   id: number;
   name: string;

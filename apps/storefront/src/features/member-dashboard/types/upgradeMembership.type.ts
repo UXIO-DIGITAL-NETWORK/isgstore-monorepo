@@ -1,8 +1,11 @@
 export interface MembershipPlan {
   id: string;
-  nameKey: string;
+  /** Plain text, localised by the API — plan copy is admin-editable data, not
+   * a translation key baked into the bundle. */
+  name: string;
   price: number;
-  benefitKeys: string[];
+  benefits: string[];
+  durationDays: number;
   popular?: boolean;
 }
 
