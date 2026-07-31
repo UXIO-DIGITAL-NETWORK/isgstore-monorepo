@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\Banner;
 
+use App\Support\Storefront\MediaUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,6 +20,7 @@ class BannerResource extends JsonResource
             'category_id' => $this->category_id,
             'name' => $this->name,
             'image_path' => $this->image_path,
+            'image_url' => MediaUrl::for($this->image_path),
             'link' => $this->link,
             'scope' => $this->category_id ? 'targeted' : 'global',
             'category' => $this->whenLoaded('category'),

@@ -17,6 +17,7 @@ class CreateActivityLogAction
     {
         return ActivityLog::create([
             'user_id' => $dto->userId,
+            'transaction_id' => $dto->transactionId,
             'ip_address' => $dto->ipAddress,
             'user_agent' => $dto->userAgent,
             'message' => $dto->message,

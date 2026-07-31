@@ -6,6 +6,7 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Product\CreateProductDTO;
 use App\Models\Product;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 
 class CreateProductAction
@@ -14,11 +15,24 @@ class CreateProductAction
 
     public function execute(CreateProductDTO $dto): Product
     {
+        $logoPath = null;
+
+        if ($dto->logo instanceof UploadedFile) {
+            $logoPath = $dto->logo->store('products/logos', 'public');
+        }
+
         $product = Product::create([
             'category_id' => $dto->categoryId,
             'sub_category_id' => $dto->subCategoryId,
             'name' => $dto->name,
+            'sub_name' => $dto->subName,
             'code' => $dto->code,
+            'logo' => $logoPath,
+            'description' => $dto->description,
+            'validasi_nickname' => $dto->validasiNickname,
+            'access' => $dto->access,
+            'tag' => $dto->tag,
+            'is_available' => $dto->isAvailable,
             'price_modal' => $dto->priceModal,
             'price_member' => $dto->priceMember,
             'price_vip' => $dto->priceVip,

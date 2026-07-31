@@ -12,4 +12,9 @@ class PaymentChannel extends Model
     protected $guarded = ['id'];
 
     protected $casts = ['extra_config' => 'array'];
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }

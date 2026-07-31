@@ -33,7 +33,8 @@ class AdminRefundTransactionAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: $message
+            message: $message,
+            transactionId: $transaction->id
         ));
 
         return $transaction->fresh(['payment']);

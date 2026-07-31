@@ -25,6 +25,7 @@ class UpdateCategoryTypeRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'is_voucher' => ['sometimes', 'boolean'],
             'status' => ['required', 'boolean'],
         ];
     }
@@ -33,6 +34,7 @@ class UpdateCategoryTypeRequest extends FormRequest
     {
         return new UpdateCategoryTypeDTO(
             name: $this->validated('name'),
+            isVoucher: $this->boolean('is_voucher'),
             status: $this->validated('status')
         );
     }

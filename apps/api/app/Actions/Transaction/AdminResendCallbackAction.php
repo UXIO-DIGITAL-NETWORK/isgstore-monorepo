@@ -35,7 +35,8 @@ class AdminResendCallbackAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Admin resent callback check for Transaction: {$transaction->invoice_number}"
+            message: "Admin resent callback check for Transaction: {$transaction->invoice_number}",
+            transactionId: $transaction->id
         ));
 
         return $updated;

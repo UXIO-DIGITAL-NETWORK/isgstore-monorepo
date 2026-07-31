@@ -16,6 +16,7 @@ class UpdateCategoryTypeAction
     {
         $categoryType->update([
             'name' => $dto->name,
+            'is_voucher' => $dto->isVoucher,
             'status' => $dto->status,
         ]);
 

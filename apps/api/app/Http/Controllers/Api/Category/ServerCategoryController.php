@@ -22,7 +22,11 @@ class ServerCategoryController extends Controller
     {
         $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
         $categoryId = $request->query('category_id');
-        $serverCategories = $action->execute($perPage, $categoryId !== null ? (int) $categoryId : null);
+        $serverCategories = $action->execute(
+            $perPage,
+            $categoryId !== null ? (int) $categoryId : null,
+            $request->query('search'),
+        );
 
         return $this->paginatedResponse(ServerCategoryResource::collection($serverCategories), 'Server Categories retrieved successfully');
     }

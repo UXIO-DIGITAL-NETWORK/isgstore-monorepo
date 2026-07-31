@@ -61,6 +61,17 @@ class DatabaseSeeder extends Seeder
             // === 7. CMS Content ===
             BannerSeeder::class,
             AnnouncementSeeder::class,
+
+            // § Content & marketing. Ordered after the catalogue because the
+            // flash sale references real products.
+            ArticleSeeder::class,
+            FaqSeeder::class,
+            PageSeeder::class,
+            TestimonialSeeder::class,
+            SettingSeeder::class,
+            PromoSeeder::class,
+            FlashSaleSeeder::class,
+            MembershipPlanSeeder::class,
         ]);
     }
 }

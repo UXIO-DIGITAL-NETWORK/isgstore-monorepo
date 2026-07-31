@@ -40,7 +40,8 @@ class ManualReviewTransactionAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Admin manually reviewed Transaction: {$transaction->invoice_number} → status: {$dto->status}"
+            message: "Admin manually reviewed Transaction: {$transaction->invoice_number} → status: {$dto->status}",
+            transactionId: $transaction->id
         ));
 
         return $transaction->fresh();

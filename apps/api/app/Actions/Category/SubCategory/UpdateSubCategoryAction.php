@@ -31,6 +31,8 @@ class UpdateSubCategoryAction
         $subCategory->update([
             'category_id' => $dto->categoryId,
             'name' => $dto->name,
+            'currency_name' => $dto->currencyName,
+            'description' => $dto->description,
             'logo' => $logoPath, // Update dengan path baru (atau tetap yang lama)
             'status' => $dto->status,
         ]);

@@ -12,14 +12,30 @@ use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Resources\Api\Product\ProductResource;
 use App\Models\Product;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
     use ApiResponse;
 
-    public function index(GetProductsAction $action)
+    public function index(Request $request, GetProductsAction $action)
     {
-        $products = $action->execute(15);
+        $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
+        $categoryId = $request->query('category_id');
+        $subCategoryId = $request->query('sub_category_id');
+        $status = $request->query('status');
+        $minPrice = $request->query('min_price');
+        $maxPrice = $request->query('max_price');
+
+        $products = $action->execute(
+            $perPage,
+            $request->query('search'),
+            $categoryId !== null ? (int) $categoryId : null,
+            $subCategoryId !== null ? (int) $subCategoryId : null,
+            $status !== null ? filter_var($status, FILTER_VALIDATE_BOOLEAN) : null,
+            $minPrice !== null ? (int) $minPrice : null,
+            $maxPrice !== null ? (int) $maxPrice : null,
+        );
 
         return $this->paginatedResponse(ProductResource::collection($products), 'Products retrieved successfully');
     }
