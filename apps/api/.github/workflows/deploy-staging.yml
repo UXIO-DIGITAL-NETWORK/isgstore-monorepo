@@ -79,10 +79,6 @@ jobs:
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_PORT }}
           envs: ENV_FILE_CONTENT
-          # Tanpa ini, seluruh script dijalankan dalam satu shell dan exit code
-          # step diambil dari perintah TERAKHIR saja — sehingga `git pull` atau
-          # `migrate` yang gagal di tengah tetap menghasilkan job hijau.
-          script_stop: true
           script: |
             # 0. Bootstrap: clone repo on first deploy if staging dir isn't a git repo yet
             STAGING_DIR="/home/uxioserver1/web-topup/api/staging"
@@ -96,14 +92,8 @@ jobs:
             # 1. Masuk ke direktori staging yang tepat
             cd /home/uxioserver1/web-topup/api/staging
 
-            # 2. Samakan working tree dengan origin/staging.
-            #    `git pull` melakukan merge yang bisa batal karena perubahan
-            #    lokal — dan deploy ini membuatnya sendiri lewat `chmod -R 775`
-            #    di langkah 8 (exec-bit pada file .gitignore yang ter-track).
-            #    Sengaja TANPA `git clean`: storage/app/public berisi aset upload.
-            git fetch --prune origin staging
-            git reset --hard origin/staging
-            echo "Deployed commit: $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
+            # 2. Tarik kode terbaru dari branch staging
+            git pull origin staging
 
             # 3. Tulis ulang file .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
@@ -119,20 +109,6 @@ jobs:
             php artisan config:cache
             php artisan route:cache
 
-            # 6b. Reload php-fpm agar opcache membaca bytecode yang baru.
-            #     `route:cache` menulis bootstrap/cache/routes-v7.php — sebuah
-            #     file PHP — sehingga ikut di-cache opcache. Dengan
-            #     opcache.validate_timestamps=0 php-fpm terus menjalankan salinan
-            #     lama: route lama tetap hidup, route baru 404. Restart supervisor
-            #     hanya menyentuh queue worker, bukan proses yang melayani HTTP.
-            FPM_SERVICE=$(systemctl list-units --type=service --state=running --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}' | head -n1 || true)
-            if [ -n "$FPM_SERVICE" ]; then
-              echo "Reloading $FPM_SERVICE to clear opcache..."
-              sudo systemctl reload "$FPM_SERVICE"
-            else
-              echo "WARNING: no running php*-fpm service found — opcache may still serve stale bytecode."
-            fi
-
             # 7. Pastikan symlink storage publik ada (logo kategori, banner)
             php artisan storage:link || true
 
@@ -144,13 +120,9 @@ jobs:
             # 9. Pasang cron Laravel scheduler (idempotent, spesifik per environment).
             # Tanpa ini payments:sync-expired & digiflazz:sync-products tidak pernah jalan.
             CRON_ENTRY="* * * * * cd /home/uxioserver1/web-topup/api/staging && php artisan schedule:run >> /dev/null 2>&1"
-            # `|| true` KRITIS di bawah script_stop: bila crontab hanya berisi
-            # baris schedule:run, grep -vF keluar dengan kode 1, subshell berhenti
-            # sebelum `echo`, dan `crontab -` menerima input kosong — crontab
-            # terhapus diam-diam (pipeline tetap exit 0).
-            ( crontab -l 2>/dev/null | grep -vF "web-topup/api/staging && php artisan schedule:run" || true ; echo "$CRON_ENTRY" ) | crontab -
+            ( crontab -l 2>/dev/null | grep -vF "web-topup/api/staging && php artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
             echo "Scheduler cron installed:"
-            crontab -l | grep "schedule:run" || true
+            crontab -l | grep "schedule:run"
 
             # 10. Install supervisor jika belum ada
             if ! command -v supervisorctl &> /dev/null; then
@@ -166,63 +138,32 @@ jobs:
             sudo mkdir -p /etc/supervisor/conf.d
 
             # 12. Deploy supervisor config untuk queue worker
+            # (dilakukan sebelum daemon start/health-check di bawah — config yang salah
+            # di conf.d bisa membuat seluruh supervisord gagal start, jadi config terbaru
+            # harus sudah ter-copy sebelum kita mencoba (re)start daemonnya)
             sudo cp /home/uxioserver1/web-topup/api/staging/supervisor/laravel-queue-staging.conf \
                     /etc/supervisor/conf.d/laravel-queue-staging.conf
 
             # Pastikan daemon supervisord benar-benar berjalan (idempotent — no-op jika sudah up).
+            # Binary bisa saja sudah terpasang tapi daemonnya mati/belum pernah dijalankan.
             if ! sudo systemctl is-active --quiet supervisor; then
               echo "supervisord not running — starting..."
               sudo systemctl restart supervisor
               sleep 2
             fi
 
-            # Fallback: start daemon directly if service still fails (keeps deploy resilient).
-            # Perlakukan baris ini sebagai SINYAL untuk memperbaiki unit di host,
-            # bukan kondisi normal. Kalau muncul di log deploy yang sehat, tindak lanjuti.
             if [ ! -S /var/run/supervisor.sock ]; then
-              echo "supervisor.sock missing after systemctl restart, trying direct supervisord start..."
-              sudo supervisord -c /etc/supervisor/supervisord.conf
-              sleep 2
-            fi
-
-            if [ ! -S /var/run/supervisor.sock ]; then
-              echo "ERROR: supervisor.sock still missing. Dumping diagnostics..."
-              # `|| true` di dua baris ini wajib: dengan script_stop, diagnostik yang
-              # keluar non-zero akan menutupi error sebenarnya dan melewati `exit 1`.
-              sudo systemctl status supervisor --no-pager || true
-              sudo journalctl -u supervisor -n 80 --no-pager || true
+              echo "ERROR: supervisor.sock still missing after start attempt — check 'systemctl status supervisor' / 'journalctl -u supervisor' on the host."
               exit 1
             fi
 
-            # 13. Reload supervisor agar membaca config terbaru (akan fail otomatis jika syntax conf salah)
+            # 13. Reload supervisor agar membaca config terbaru
             sudo supervisorctl reread
             sudo supervisorctl update
 
             # 14. Restart queue worker agar muat kode yang baru di-deploy
             # (queue:work meng-cache kode — harus restart setiap deploy)
             sudo supervisorctl restart laravel-queue-staging:*
-
-      # Tanpa langkah ini, "job hijau" hanya berarti script SSH selesai — bukan
-      # berarti kode benar-benar dilayani. Satu request ini menguji routing,
-      # koneksi DB, dan query Catalog sekaligus.
-      - name: Smoke check — verify the deployed code is actually being served
-        run: |
-          URL="https://api-staging-topup.uxio-dev.web.id/api/v1/games?per_page=1"
-          for attempt in 1 2 3 4 5; do
-            code=$(curl -s -o /tmp/smoke.json -w "%{http_code}" --max-time 20 \
-              -H "Accept: application/json" "$URL" || echo "000")
-            if [ "$code" = "200" ]; then
-              echo "Smoke check passed (HTTP 200)."
-              exit 0
-            fi
-            echo "Attempt $attempt/5: HTTP $code — retrying in 10s..."
-            sleep 10
-          done
-          echo "::error::Smoke check FAILED — GET /api/v1/games returned $code."
-          echo "404 means the new code is not being served (check the fpm reload)."
-          echo "500 means migrations did not apply. Response body:"
-          head -c 800 /tmp/smoke.json || true
-          exit 1
 
       - name: Notify Discord — deploy succeeded
         if: success()
