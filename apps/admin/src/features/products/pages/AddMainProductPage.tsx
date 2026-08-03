@@ -11,8 +11,10 @@ import { SelectField } from "@/components/common/SelectField";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ProductMixBuilder } from "../components/ProductMixBuilder";
 import {
   CATEGORY_OPTIONS,
   NICKNAME_VALIDATION_OPTIONS,
@@ -32,10 +34,22 @@ import { DESCRIPTION_MAX, productFormSchema, type ProductFormValues } from "../s
  * and "Product Acces" is missing an `s`. The counters are one number too — the
  * frame shows "0/280 characters" beside "52% used", which cannot both be true.
  *
- * **No pricing here.** The frame has no cost/price field, so a product created
- * from it starts with no variants; the Add/Edit variant frame is still to come
- * (§5). Nothing is invented to fill that gap.
+ * **Pricing & Margin and Product Mix are captured but not saved.** `Product`
+ * (§6) has nowhere to put points, a discount, or a bundle, and `ProductVariant`
+ * exists but nothing in the frame says a single price row is a variant — so the
+ * form validates these and the payload still leaves `variants` empty. Mapping
+ * lands with the API contract, not before.
  */
+/** The five plain-money fields of Pricing & Margin, in the frame's order.
+ *  Cost first, then one selling price per tier (`PRICE_TIERS`). */
+const PRICE_FIELDS = [
+  { name: "costPrice", id: "product-cost-price", label: "Cost Price" },
+  { name: "publicPrice", id: "product-public-price", label: "Public Price" },
+  { name: "vipPrice", id: "product-vip-price", label: "VIP Price" },
+  { name: "resellerPrice", id: "product-reseller-price", label: "Reseller Price" },
+  { name: "agentPrice", id: "product-agent-price", label: "Agent Price" },
+] as const satisfies readonly { name: keyof ProductFormValues; id: string; label: string }[];
+
 export default function AddMainProductPage() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -60,6 +74,14 @@ export default function AddMainProductPage() {
       category: "",
       subCategory: "",
       description: "",
+      points: "",
+      discount: "",
+      costPrice: "",
+      publicPrice: "",
+      vipPrice: "",
+      resellerPrice: "",
+      agentPrice: "",
+      productMix: [],
     },
   });
 
@@ -96,6 +118,10 @@ export default function AddMainProductPage() {
         // ponytail: file name stands in for the uploaded URL (UI-first, no
         // backend); swap to the URL the §4.9 upload helper returns once it ships.
         image_url: values.logo?.name,
+        // ponytail: the Pricing & Margin and Product Mix values are validated
+        // and dropped here on purpose — `Product` has no field for points, a
+        // discount, or a bundle, and inventing one now would be a guess. Map
+        // them when the API contract says what they are.
         variants: [],
       },
       { onSuccess: () => navigate({ to: listHref as unknown as string }) },
@@ -306,6 +332,109 @@ export default function AddMainProductPage() {
             </Box>
           </Box>
         </Box>
+      </Box>
+
+      {/* Its own card, with a gap — that's how the frame draws the two
+          sections below Media & description. */}
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+        <Box>
+          <Heading
+            as="h2"
+            level={5}
+          >
+            Pricing &amp; Margin
+          </Heading>
+          <Text variant="muted">Cost price and selling price per user segment.</Text>
+        </Box>
+
+        {/* One grid, seven cells: the frame's Points/Discount/Cost, then the
+            three trade tiers, then Agent alone on the last row. */}
+        <Box className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="product-points">Points</Label>
+            <InputGroup className="rounded-xl">
+              <InputGroupInput
+                id="product-points"
+                inputMode="numeric"
+                {...register("points")}
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupText>%</InputGroupText>
+              </InputGroupAddon>
+            </InputGroup>
+            {errors.points && (
+              <Text
+                variant="small"
+                className="text-destructive"
+              >
+                {errors.points.message}
+              </Text>
+            )}
+          </Box>
+
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="product-discount">Discount</Label>
+            <InputGroup className="rounded-xl">
+              <InputGroupInput
+                id="product-discount"
+                inputMode="numeric"
+                {...register("discount")}
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupText>%</InputGroupText>
+              </InputGroupAddon>
+            </InputGroup>
+            {errors.discount && (
+              <Text
+                variant="small"
+                className="text-destructive"
+              >
+                {errors.discount.message}
+              </Text>
+            )}
+          </Box>
+
+          {PRICE_FIELDS.map(({ name, id, label }) => (
+            <Box
+              key={id}
+              className="flex flex-col gap-1.5"
+            >
+              <Label htmlFor={id}>{label}</Label>
+              <Input
+                id={id}
+                className="rounded-xl tabular-nums"
+                inputMode="numeric"
+                {...register(name)}
+              />
+              {errors[name] && (
+                <Text
+                  variant="small"
+                  className="text-destructive"
+                >
+                  {errors[name]?.message}
+                </Text>
+              )}
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+        <Box>
+          <Heading
+            as="h2"
+            level={5}
+          >
+            Product Mix
+          </Heading>
+          <Text variant="muted">Combine supplier products into one bundled price.</Text>
+        </Box>
+
+        <ProductMixBuilder
+          control={control}
+          register={register}
+          errors={errors}
+        />
       </Box>
 
       <Box className="flex justify-end gap-3">

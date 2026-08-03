@@ -84,6 +84,23 @@ export const NICKNAME_VALIDATION_OPTIONS: SelectOption[] = [
 ];
 
 /**
+ * Sources the Add form's Product Mix rows — the upstream SKUs a bundled
+ * product is assembled from.
+ *
+ * **Inferred, not confirmed** (§4.6): the frame shows the section's empty
+ * state only, and no supplier fixture exists yet — the Product Provider tab is
+ * still a placeholder. Labelled `supplier — SKU` so a row reads on its own.
+ * Replace wholesale once a Product Provider service lands.
+ */
+export const SUPPLIER_PRODUCT_OPTIONS: SelectOption[] = [
+  { value: "digiflazz-ml-86", label: "Digiflazz — ML 86 Diamond" },
+  { value: "digiflazz-ml-172", label: "Digiflazz — ML 172 Diamond" },
+  { value: "unipin-ff-70", label: "UniPin — FF 70 Diamond" },
+  { value: "unipin-genshin-60", label: "UniPin — Genesis Crystal 60" },
+  { value: "codashop-pubgm-60", label: "Codashop — PUBGM 60 UC" },
+];
+
+/**
  * Sources the toolbar's "All Price" select.
  *
  * **Inferred, not confirmed** (§4.6): the reference shows only the trigger's

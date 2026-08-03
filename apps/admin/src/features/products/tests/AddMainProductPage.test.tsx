@@ -35,7 +35,7 @@ describe("AddMainProductPage", () => {
     expect(screen.queryByRole("heading", { name: "Add Category" })).not.toBeInTheDocument();
   });
 
-  it("shows both section headings with their subcopies", async () => {
+  it("shows every section heading with its subcopy", async () => {
     await renderRoute(ADD_PATH);
 
     expect(await screen.findByRole("heading", { name: "Basic information" })).toBeInTheDocument();
@@ -43,6 +43,12 @@ describe("AddMainProductPage", () => {
 
     expect(screen.getByRole("heading", { name: "Media & description" })).toBeInTheDocument();
     expect(screen.getByText("Product logo and description shown on the storefront.")).toBeInTheDocument();
+
+    expect(screen.getByRole("heading", { name: "Pricing & Margin" })).toBeInTheDocument();
+    expect(screen.getByText("Cost price and selling price per user segment.")).toBeInTheDocument();
+
+    expect(screen.getByRole("heading", { name: "Product Mix" })).toBeInTheDocument();
+    expect(screen.getByText("Combine supplier products into one bundled price.")).toBeInTheDocument();
   });
 
   it("shows every field by label, with the reference's mislabels corrected", async () => {
@@ -59,6 +65,13 @@ describe("AddMainProductPage", () => {
       "Sub Category",
       "Product Logo",
       "Description",
+      "Points",
+      "Discount",
+      "Cost Price",
+      "Public Price",
+      "VIP Price",
+      "Reseller Price",
+      "Agent Price",
     ]) {
       expect(await screen.findByLabelText(label)).toBeInTheDocument();
     }
@@ -111,6 +124,94 @@ describe("AddMainProductPage", () => {
 
     expect(screen.getByText("14/280 characters")).toBeInTheDocument();
     expect(screen.getByText("5% used")).toBeInTheDocument();
+  });
+
+  it("rejects a price that is not a number", async () => {
+    const createSpy = vi.spyOn(productsService, "create");
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Cost Price"), "12k");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Cost Price must be a number")).toBeInTheDocument();
+    expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  it("caps the percentage fields at 100", async () => {
+    const createSpy = vi.spyOn(productsService, "create");
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    await fillRequiredFields(user);
+    await user.type(screen.getByLabelText("Discount"), "120");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Discount cannot exceed 100")).toBeInTheDocument();
+    expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  it("adds and removes Product Mix rows, falling back to the empty state", async () => {
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    expect(await screen.findByText("No product mix yet.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Add Mix/i }));
+
+    expect(screen.queryByText("No product mix yet.")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Supplier Product" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Add Mix/i }));
+    expect(screen.getAllByLabelText("Quantity")).toHaveLength(2);
+
+    await user.click(screen.getByRole("button", { name: "Remove mix 2" }));
+    await user.click(screen.getByRole("button", { name: "Remove mix 1" }));
+
+    expect(screen.getByText("No product mix yet.")).toBeInTheDocument();
+  });
+
+  it("requires a supplier product and a quantity once a mix row exists", async () => {
+    const createSpy = vi.spyOn(productsService, "create");
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    await fillRequiredFields(user);
+    await user.click(screen.getByRole("button", { name: /Add Mix/i }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Supplier Product is required")).toBeInTheDocument();
+    expect(screen.getByText("Quantity must be at least 1")).toBeInTheDocument();
+    expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  it("captures pricing and mix without putting them in the payload yet", async () => {
+    const createSpy = vi.spyOn(productsService, "create");
+    const user = userEvent.setup();
+    await renderRoute(ADD_PATH);
+
+    // Its own name: `productsService` keeps one in-memory list across tests,
+    // and the created row shows up in the list this navigates back to.
+    await fillRequiredFields(user, "Diamond Bundle 900");
+    await user.type(screen.getByLabelText("Points"), "10");
+    await user.type(screen.getByLabelText("Cost Price"), "12000");
+    await user.type(screen.getByLabelText("Public Price"), "15000");
+    await user.click(screen.getByRole("button", { name: /Add Mix/i }));
+    await user.click(screen.getByRole("combobox", { name: "Supplier Product" }));
+    await user.click(await screen.findByRole("option", { name: "Digiflazz — ML 86 Diamond" }));
+    await user.type(screen.getByLabelText("Quantity"), "2");
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    // The entity has nowhere to put these yet (§6 has no points/discount and no
+    // mix), so the form captures them and the payload stays as it was.
+    const payload = createSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toBeDefined();
+    expect(payload.variants).toEqual([]);
+    expect(Object.keys(payload)).not.toContain("points");
+    expect(Object.keys(payload)).not.toContain("product_mix");
   });
 
   it("creates the product with the mapped payload and returns to the list", async () => {
