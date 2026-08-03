@@ -6,6 +6,8 @@ import { z } from "zod";
  * copy-paste leftover from the Category Type form built immediately before
  * it, so the message here names the right entity. */
 export const categoryServerFormSchema = z.object({
+  // A server always belongs to a game; the API rejects a write without it.
+  category_id: z.string().min(1, "Category is required"),
   name: z.string().min(1, "Category Server Name is required"),
   options: z.array(
     z.object({

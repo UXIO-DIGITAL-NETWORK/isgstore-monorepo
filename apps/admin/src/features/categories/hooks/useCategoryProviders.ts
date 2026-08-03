@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { categoryProvidersService } from "../services/categoryProviders.service";
-import type { CategoryProvider, CategoryProviderListParams } from "../types/categoryProvider.type";
+import { categoryProvidersService, type CategoryProviderInput } from "../services/categoryProviders.service";
+import type { CategoryProviderListParams } from "../types/categoryProvider.type";
 
 export const useCategoryProviderList = (params: CategoryProviderListParams) =>
   useQuery({
@@ -20,7 +20,7 @@ export const useCreateCategoryProvider = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: Omit<CategoryProvider, "id" | "created_at" | "updated_at">) =>
+    mutationFn: (input: CategoryProviderInput) =>
       categoryProvidersService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-providers"] });
@@ -41,7 +41,7 @@ export const useUpdateCategoryProvider = () => {
       input,
     }: {
       id: string;
-      input: Partial<Omit<CategoryProvider, "id" | "created_at" | "updated_at">>;
+      input: Partial<CategoryProviderInput>;
     }) => categoryProvidersService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-providers"] });

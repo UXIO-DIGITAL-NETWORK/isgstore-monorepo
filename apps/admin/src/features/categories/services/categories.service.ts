@@ -1,85 +1,161 @@
-import type { PaginatedResponse } from "@/types/api.type";
-import { CATEGORIES } from "../data/categories.data";
-import type { Category, CategoryListParams } from "../types/category.type";
+import { api } from "@/lib/axios";
+import { API_VERSION } from "@/config/env";
+import { fromStatusUnion, toFk, toRowId, toStatusUnion, unwrapPaginated } from "@/lib/apiMappers";
+import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
+import type { Category, CategoryListParams, CategoryOrderFormField } from "../types/category.type";
 
-const DEFAULT_PER_PAGE = 10;
+const BASE = `${API_VERSION}/categories`;
 
-// In-memory mutable copy so create/update/remove are visible across calls
-// within a session (mock-backed only — resets on reload).
-const categories: Category[] = [...CATEGORIES];
-
-function matchesFilters(row: Category, params: CategoryListParams): boolean {
-  if (params.search) {
-    const needle = params.search.toLowerCase();
-    const haystack = `${row.name} ${row.code} ${row.slug}`.toLowerCase();
-    if (!haystack.includes(needle)) return false;
-  }
-  if (params.type && row.type !== params.type) return false;
-  return true;
+/**
+ * The API stores the order form as `{fields, customer_no_template}`, while this
+ * feature models just the field list. `customer_no_template` is what builds the
+ * identifier sent to the upstream supplier, so it must survive an edit — losing
+ * it makes paid orders fail at fulfilment, long after the customer has been
+ * charged. It is therefore read back and resent verbatim on every write.
+ */
+interface OrderFormSchema {
+  fields?: CategoryOrderFormField[];
+  customer_no_template?: string;
 }
 
-// Mock-backed for now (backend not built yet). Swap each method body to a
-// real `api.get/post/put/delete(...)` call once the backend ships — hooks/UI
-// stay unchanged. See system_architecture.md §6.
+interface CategoryApiRow {
+  id: number;
+  type_id: number;
+  name: string;
+  sub_name: string | null;
+  code: string;
+  slug: string | null;
+  uid_parser: string | null;
+  validasi_nickname: string | null;
+  region: string | null;
+  logo_url: string | null;
+  thumbnail_url: string | null;
+  banner_url: string | null;
+  description: string | null;
+  status: boolean;
+  order_form_fields: OrderFormSchema | CategoryOrderFormField[] | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  og_image_url: string | null;
+  meta_keywords: string[] | null;
+  meta_robots: string | null;
+  type?: { id: number; name: string } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Tolerates both the wrapped schema and a bare array, since older rows predate the wrapper. */
+const readFields = (raw: CategoryApiRow["order_form_fields"]): CategoryOrderFormField[] =>
+  Array.isArray(raw) ? raw : (raw?.fields ?? []);
+
+const readTemplate = (raw: CategoryApiRow["order_form_fields"]): string | undefined =>
+  Array.isArray(raw) ? undefined : raw?.customer_no_template;
+
+const toCategory = (row: CategoryApiRow): Category => ({
+  id: toRowId(row.id),
+  type: row.type?.name ?? String(row.type_id),
+  uid_parser: row.uid_parser ?? "",
+  name: row.name,
+  sub_name: row.sub_name ?? undefined,
+  account_nickname_validation: row.validasi_nickname ?? undefined,
+  region: row.region ?? undefined,
+  code: row.code,
+  slug: row.slug ?? "",
+  status: toStatusUnion(row.status),
+  order_form_fields: readFields(row.order_form_fields),
+  logo_url: row.logo_url ?? undefined,
+  description: row.description ?? undefined,
+  meta_title: row.meta_title ?? undefined,
+  meta_description: row.meta_description ?? undefined,
+  og_image_url: row.og_image_url ?? undefined,
+  meta_keywords: row.meta_keywords ?? undefined,
+  meta_robots: row.meta_robots ?? undefined,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+export type CategoryInput = Omit<Category, "id" | "created_at" | "updated_at"> & {
+  /** The form's Category Type select. `type` is the display name only. */
+  type_id?: string;
+  logo?: File | null;
+  og_image?: File | null;
+  thumbnail?: File | null;
+  banner?: File | null;
+};
+
+const appendIf = (form: FormData, key: string, value: string | undefined | null) => {
+  if (value !== undefined && value !== null) form.append(key, value);
+};
+
+const toFormData = (
+  input: Partial<CategoryInput>,
+  opts: { method?: "PUT"; preservedTemplate?: string } = {},
+): FormData => {
+  const form = new FormData();
+  if (opts.method) form.append("_method", opts.method);
+
+  if (input.type_id !== undefined) form.append("type_id", String(toFk(input.type_id)));
+  appendIf(form, "name", input.name);
+  appendIf(form, "sub_name", input.sub_name);
+  appendIf(form, "code", input.code);
+  appendIf(form, "slug", input.slug);
+  appendIf(form, "uid_parser", input.uid_parser);
+  appendIf(form, "validasi_nickname", input.account_nickname_validation);
+  appendIf(form, "region", input.region);
+  appendIf(form, "description", input.description);
+  appendIf(form, "meta_title", input.meta_title);
+  appendIf(form, "meta_description", input.meta_description);
+  appendIf(form, "meta_robots", input.meta_robots);
+  if (input.status !== undefined) form.append("status", fromStatusUnion(input.status) ? "1" : "0");
+
+  input.meta_keywords?.forEach((keyword) => form.append("meta_keywords[]", keyword));
+
+  if (input.order_form_fields !== undefined) {
+    form.append(
+      "order_form_fields",
+      JSON.stringify({
+        fields: input.order_form_fields,
+        ...(opts.preservedTemplate ? { customer_no_template: opts.preservedTemplate } : {}),
+      }),
+    );
+  }
+
+  for (const key of ["logo", "og_image", "thumbnail", "banner"] as const) {
+    const file = input[key];
+    if (file instanceof File) form.append(key, file);
+  }
+
+  return form;
+};
+
 export const categoriesService = {
   list: async (params: CategoryListParams = {}): Promise<PaginatedResponse<Category>> => {
-    const page = params.page ?? 1;
-    const perPage = params.per_page ?? DEFAULT_PER_PAGE;
-    const filtered = categories.filter((row) => matchesFilters(row, params));
-
-    const start = (page - 1) * perPage;
-    const pageRows = filtered.slice(start, start + perPage);
-    const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
-
-    return {
-      data: pageRows,
-      links: {
-        first: "/categories?page=1",
-        last: `/categories?page=${lastPage}`,
-        prev: page > 1 ? `/categories?page=${page - 1}` : null,
-        next: page < lastPage ? `/categories?page=${page + 1}` : null,
-      },
-      meta: {
-        current_page: page,
-        from: pageRows.length ? start + 1 : null,
-        last_page: lastPage,
-        path: "/categories",
-        per_page: perPage,
-        to: pageRows.length ? start + pageRows.length : null,
-        total: filtered.length,
-      },
-    };
+    const response: ApiResponse<PaginatedResponse<CategoryApiRow>> = await api.get(BASE, { params });
+    return unwrapPaginated(response, toCategory);
   },
 
   getById: async (id: string): Promise<Category> => {
-    const found = categories.find((row) => row.id === id);
-    if (!found) throw new Error(`No category found for id: ${id}`);
-    return found;
+    const response: ApiResponse<CategoryApiRow> = await api.get(`${BASE}/${id}`);
+    return toCategory(response.data);
   },
 
-  create: async (input: Omit<Category, "id" | "created_at" | "updated_at">): Promise<Category> => {
-    const now = new Date().toISOString();
-    const created: Category = {
-      ...input,
-      id: `cat-${categories.length + 1}-${Date.now()}`,
-      created_at: now,
-      updated_at: now,
-    };
-    categories.push(created);
-    return created;
+  create: async (input: CategoryInput): Promise<Category> => {
+    const response: ApiResponse<CategoryApiRow> = await api.post(BASE, toFormData(input));
+    return toCategory(response.data);
   },
 
-  update: async (id: string, input: Partial<Omit<Category, "id" | "created_at" | "updated_at">>): Promise<Category> => {
-    const index = categories.findIndex((row) => row.id === id);
-    if (index === -1) throw new Error(`No category found for id: ${id}`);
-    const updated: Category = { ...categories[index], ...input, updated_at: new Date().toISOString() };
-    categories[index] = updated;
-    return updated;
+  update: async (id: string, input: Partial<CategoryInput>): Promise<Category> => {
+    // Read first purely to carry `customer_no_template` across the write.
+    const existing: ApiResponse<CategoryApiRow> = await api.get(`${BASE}/${id}`);
+
+    const response: ApiResponse<CategoryApiRow> = await api.post(
+      `${BASE}/${id}`,
+      toFormData(input, { method: "PUT", preservedTemplate: readTemplate(existing.data.order_form_fields) }),
+    );
+    return toCategory(response.data);
   },
 
   remove: async (id: string): Promise<void> => {
-    const index = categories.findIndex((row) => row.id === id);
-    if (index === -1) throw new Error(`No category found for id: ${id}`);
-    categories.splice(index, 1);
+    await api.delete(`${BASE}/${id}`);
   },
 };

@@ -1,118 +1,98 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import { api } from "@/lib/axios";
+import { envelope, paginated } from "@/test/apiEnvelope";
 import { subCategoriesService } from "../services/subCategories.service";
-import { SUB_CATEGORIES } from "../data/sub-categories.data";
-import { CATEGORIES } from "../data/categories.data";
-import type { SubCategory } from "../types/subCategory.type";
 
-/** Contract test — asserts the typed shape/params-mapping before any UI
- * consumes the service (system_architecture.md §4.11). Mirrors
- * categories.service.test.ts; §6 adds SubCategory as a feature-local entity. */
-describe("subCategoriesService.list", () => {
-  it("returns a PaginatedResponse<SubCategory> shape with no params", async () => {
-    const result = await subCategoriesService.list();
+vi.mock("@/lib/axios", () => ({
+  api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+}));
 
-    expect(Array.isArray(result.data)).toBe(true);
-    expect(result.meta).toMatchObject({ current_page: 1, per_page: 10 });
-    expect(result.meta.total).toBe(SUB_CATEGORIES.length);
-    expect(result.links).toHaveProperty("first");
-    expect(result.links).toHaveProperty("last");
-  });
-
-  it("caps returned rows to per_page", async () => {
-    const result = await subCategoriesService.list({ per_page: 2 });
-    expect(result.data.length).toBeLessThanOrEqual(2);
-  });
-
-  it("narrows by search across name/currency_name", async () => {
-    const byName = await subCategoriesService.list({ search: "mobile legends" });
-    expect(byName.data.length).toBeGreaterThan(0);
-    for (const row of byName.data) expect(row.name.toLowerCase()).toContain("mobile legends");
-
-    const byCurrency = await subCategoriesService.list({ search: "genesis" });
-    expect(byCurrency.data.length).toBeGreaterThan(0);
-    for (const row of byCurrency.data) expect(row.currency_name.toLowerCase()).toContain("genesis");
-  });
-
-  it("narrows by parent category_id exactly", async () => {
-    const result = await subCategoriesService.list({ category_id: "cat-1" });
-    expect(result.data.length).toBeGreaterThan(0);
-    for (const row of result.data) expect(row.category_id).toBe("cat-1");
-  });
-
-  it("every fixture row points at a real parent Category", () => {
-    const categoryIds = new Set(CATEGORIES.map((row) => row.id));
-    for (const row of SUB_CATEGORIES) {
-      expect(categoryIds.has(row.category_id)).toBe(true);
-    }
-  });
-
-  it("includes both active and inactive rows in the fixtures", async () => {
-    const result = await subCategoriesService.list({ per_page: 50 });
-    expect(result.data.some((row) => row.status === "active")).toBe(true);
-    expect(result.data.some((row) => row.status === "inactive")).toBe(true);
-  });
-
-  it("uses varied fixture content, never the shadcn demo dataset", async () => {
-    const result = await subCategoriesService.list({ per_page: 50 });
-    const banned = ["Cover Page", "Table of Contents", "Jamik Tashpulatov", "Eddie Lake"];
-    for (const row of result.data) {
-      for (const word of banned) expect(row.name).not.toContain(word);
-    }
-    expect(new Set(result.data.map((row) => row.name)).size).toBe(result.data.length);
-  });
+const apiRow = (over: Record<string, unknown> = {}) => ({
+  id: 3,
+  category_id: 1,
+  name: "Diamond",
+  currency_name: "Diamonds",
+  description: "In-game currency",
+  logo: "subcategories/logos/a.png",
+  logo_url: "http://localhost:8000/storage/subcategories/logos/a.png",
+  status: true,
+  created_at: "2026-07-01T00:00:00.000000Z",
+  updated_at: "2026-07-01T00:00:00.000000Z",
+  ...over,
 });
 
-describe("subCategoriesService.getById", () => {
-  it("resolves the typed sub category for a known id", async () => {
-    await expect(subCategoriesService.getById(SUB_CATEGORIES[0].id)).resolves.toMatchObject({
-      id: SUB_CATEGORIES[0].id,
+beforeEach(() => vi.clearAllMocks());
+
+describe("subCategoriesService.list", () => {
+  it("calls the versioned endpoint and maps rows onto the view type", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow(), apiRow({ id: 4, status: false })]));
+
+    const result = await subCategoriesService.list({ search: "diamond", category_id: "1" });
+
+    expect(api.get).toHaveBeenCalledWith("/v1/sub-categories", {
+      params: { search: "diamond", category_id: "1" },
     });
+    expect(result.data[0]).toMatchObject({
+      id: "3",
+      category_id: "1",
+      name: "Diamond",
+      currency_name: "Diamonds",
+      status: "active",
+    });
+    expect(result.data[1].status).toBe("inactive");
   });
 
-  it("throws for an unknown id", async () => {
-    await expect(subCategoriesService.getById("does-not-exist")).rejects.toThrow();
+  it("falls back to an empty currency name rather than surfacing null to the table", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow({ currency_name: null })]));
+
+    const result = await subCategoriesService.list();
+
+    expect(result.data[0].currency_name).toBe("");
   });
 });
 
 describe("subCategoriesService mutations", () => {
-  it("create adds a sub category and returns it with an id/timestamps", async () => {
-    const input: Omit<SubCategory, "id" | "created_at" | "updated_at"> = {
-      category_id: "cat-2",
-      name: "Free Fire: Brazil",
+  // The logo is a file upload, so writes must be multipart — a JSON body would
+  // drop the file silently.
+  it("create posts multipart with the mapped field names", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow()));
+
+    await subCategoriesService.create({
+      category_id: "1",
+      name: "Diamond",
       currency_name: "Diamonds",
       status: "active",
-    };
-    const created = await subCategoriesService.create(input);
+    });
 
-    expect(created.id).toBeTruthy();
-    expect(created.created_at).toBeTruthy();
-    expect(created.updated_at).toBeTruthy();
-    await expect(subCategoriesService.getById(created.id)).resolves.toMatchObject({ name: "Free Fire: Brazil" });
+    const [url, body] = vi.mocked(api.post).mock.calls[0];
+    expect(url).toBe("/v1/sub-categories");
+    expect(body).toBeInstanceOf(FormData);
+    const form = body as FormData;
+    expect(form.get("category_id")).toBe("1");
+    expect(form.get("name")).toBe("Diamond");
+    expect(form.get("currency_name")).toBe("Diamonds");
+    // The API takes a boolean; the view type carries a union.
+    expect(form.get("status")).toBe("1");
   });
 
-  it("update patches a known sub category", async () => {
-    const created = await subCategoriesService.create({
-      category_id: "cat-3",
-      name: "Genshin Impact: Europe",
-      currency_name: "Genesis Crystals",
-      status: "active",
-    });
-    const updated = await subCategoriesService.update(created.id, { status: "inactive" });
+  // PHP does not populate $_FILES from a multipart PUT body, so the update has
+  // to POST with a method override or the logo never arrives.
+  it("update POSTs with a _method=PUT override", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow({ name: "Diamond Pack" })));
 
-    expect(updated.status).toBe("inactive");
-    expect(updated.name).toBe("Genshin Impact: Europe");
-    await expect(subCategoriesService.update("does-not-exist", { status: "active" })).rejects.toThrow();
+    await subCategoriesService.update("3", { name: "Diamond Pack" });
+
+    const [url, body] = vi.mocked(api.post).mock.calls[0];
+    expect(url).toBe("/v1/sub-categories/3");
+    expect((body as FormData).get("_method")).toBe("PUT");
+    expect((body as FormData).get("name")).toBe("Diamond Pack");
   });
 
-  it("remove deletes a known sub category and throws for an unknown id", async () => {
-    const created = await subCategoriesService.create({
-      category_id: "cat-5",
-      name: "Valorant: Removable",
-      currency_name: "Valorant Points",
-      status: "active",
-    });
-    await expect(subCategoriesService.remove(created.id)).resolves.toBeUndefined();
-    await expect(subCategoriesService.getById(created.id)).rejects.toThrow();
-    await expect(subCategoriesService.remove("does-not-exist")).rejects.toThrow();
+  it("remove deletes by id", async () => {
+    vi.mocked(api.delete).mockResolvedValue(envelope(null));
+
+    await expect(subCategoriesService.remove("3")).resolves.toBeUndefined();
+    expect(api.delete).toHaveBeenCalledWith("/v1/sub-categories/3");
   });
 });

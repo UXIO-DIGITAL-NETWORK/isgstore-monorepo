@@ -96,6 +96,10 @@ describe("AddCategoryServerPage", () => {
     const user = userEvent.setup();
     await renderRoute(ADD_PATH);
 
+    // A server belongs to a game; the API rejects a write without it.
+    await user.click(await screen.findByLabelText("Category"));
+    await user.click(await screen.findByRole("option", { name: "Mobile Legends" }));
+
     await user.type(await screen.findByLabelText("Category Server Name"), "Wuthering Waves");
     await user.click(screen.getByRole("button", { name: /Add Option/i }));
     await user.type(screen.getByLabelText(/^Name$/), "Asia");

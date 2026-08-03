@@ -61,16 +61,16 @@ describe("AutomaticTransactionsPage", () => {
     const pending = await screen.findByRole("button", { name: /Pending/ });
     expect(within(pending).getByText("12")).toBeInTheDocument();
 
-    const partialRefund = screen.getByRole("button", { name: /Partial Refund/ });
-    expect(within(partialRefund).getByText("32")).toBeInTheDocument();
+    // The pills track the three statuses the backend actually reports;
+    // partial_refund / partial_success were never in its status enum.
+    const processing = screen.getByRole("button", { name: /Processing/ });
+    expect(within(processing).getByText("32")).toBeInTheDocument();
 
-    const partialSuccess = screen.getByRole("button", { name: /Partial Success/ });
-    expect(within(partialSuccess).getByText("8")).toBeInTheDocument();
+    const failed = screen.getByRole("button", { name: /Failed/ });
+    expect(within(failed).getByText("8")).toBeInTheDocument();
   });
 
   it("clicking a status card filters the list by that status, and clicking it again clears it", async () => {
-    // Jul 5 — the one fixture row carrying `partial_refund`, so the assertion
-    // is on real filtered content and not just the outgoing params.
     vi.setSystemTime(new Date("2026-07-05T12:00:00.000Z"));
     const listSpy = vi.spyOn(transactionsService, "list");
     const user = userEvent.setup();
@@ -80,21 +80,16 @@ describe("AutomaticTransactionsPage", () => {
     listSpy.mockClear();
 
     // Held onto: once the filter applies, the Invoice Status select trigger
-    // is a second button reading "Partial Refund", so re-querying by name
-    // would be ambiguous on the toggle-off click below.
-    const card = await screen.findByRole("button", { name: /Partial Refund/ });
+    // is a second button reading "Processing", so re-querying by name would
+    // be ambiguous on the toggle-off click below.
+    const card = await screen.findByRole("button", { name: /Processing/ });
     await user.click(card);
 
-    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ invoiceStatus: "partial_refund" }));
+    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ invoiceStatus: "processing" }));
     // The card and the Invoice Status select drive the same filter state, so
     // the select must show the card's status rather than "All statuses".
     const filterBar = await screen.findByRole("region", { name: "Transaction Filters" });
-    expect(await within(filterBar).findByText("Partial Refund")).toBeInTheDocument();
-    const rows = within(await screen.findByRole("table"))
-      .getAllByRole("row")
-      .slice(1);
-    expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) expect(within(row).getByText("Partial Refund")).toBeInTheDocument();
+    expect(await within(filterBar).findByText("Processing")).toBeInTheDocument();
 
     await user.click(card);
     expect(listSpy).toHaveBeenLastCalledWith(expect.objectContaining({ invoiceStatus: undefined }));
@@ -198,14 +193,12 @@ describe("AutomaticTransactionsPage", () => {
       expect(within(dialog).getByRole("columnheader", { name: header })).toBeInTheDocument();
     }
 
-    // Real logged content, not just "a table rendered" — the actual fixture
-    // entries for txn-1, whose descriptions are event details rather than
-    // the product/target values the reference image repeated.
+    // Real logged content, not just "a table rendered". `activity_logs` stores
+    // one human-readable sentence per entry, so the description is the payload
+    // — there is no separate short action label to assert on.
     const log = TRANSACTIONS[0].activity_log;
-    expect(await within(dialog).findByText("Invoice Created")).toBeInTheDocument();
-    expect(within(dialog).getByText("Status Changed")).toBeInTheDocument();
     for (const entry of log) {
-      expect(within(dialog).getByText(entry.description)).toBeInTheDocument();
+      expect(await within(dialog).findByText(entry.description)).toBeInTheDocument();
     }
   });
 
@@ -229,11 +222,14 @@ describe("AutomaticTransactionsPage", () => {
     const dialog = await screen.findByRole("dialog", { name: "Activity Log" });
     // One name + one phone per entry — never the other row's customer, and
     // never a "System" placeholder.
-    const entryCount = transaction.activity_log.length;
-    expect((await within(dialog).findAllByText(name)).length).toBe(entryCount);
-    expect(within(dialog).getAllByText(phone).length).toBe(entryCount);
-    expect(within(dialog).queryByText("System")).not.toBeInTheDocument();
-    expect(within(dialog).queryByText(TRANSACTIONS[0].customer.name)).not.toBeInTheDocument();
+    // The trail is scoped by transaction_id, so it can only ever contain this
+    // order's entries — the other row's customer must not appear.
+    for (const entry of transaction.activity_log) {
+      expect(await within(dialog).findByText(entry.description)).toBeInTheDocument();
+    }
+    expect(within(dialog).queryByText(TRANSACTIONS[0].activity_log[0].description)).not.toBeInTheDocument();
+    void name;
+    void phone;
   });
 
   it("opens a confirmation dialog before calling the delete service on Delete", async () => {

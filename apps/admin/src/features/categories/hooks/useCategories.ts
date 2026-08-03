@@ -9,10 +9,13 @@ export const useCategoryList = (params: CategoryListParams) =>
     queryFn: () => categoriesService.list(params),
   });
 
-export const useCategory = (id: string) =>
+export const useCategory = (id?: string) =>
   useQuery({
     queryKey: ["categories", "detail", id],
-    queryFn: () => categoriesService.getById(id),
+    queryFn: () => categoriesService.getById(id as string),
+    // Guarded: the shared add/edit form calls this with no id on the add
+    // route, and an unguarded query would request `/categories/` and throw.
+    enabled: Boolean(id),
   });
 
 export const useCreateCategory = () => {

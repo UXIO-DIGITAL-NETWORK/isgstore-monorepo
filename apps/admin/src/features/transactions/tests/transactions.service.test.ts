@@ -1,153 +1,201 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import { api } from "@/lib/axios";
+import { envelope, paginated } from "@/test/apiEnvelope";
 import { transactionsService } from "../services/transactions.service";
-import { TRANSACTIONS } from "../data/transactions.data";
+
+vi.mock("@/lib/axios", () => ({
+  api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+}));
+
+const apiRow = (over: Record<string, unknown> = {}) => ({
+  id: 1,
+  invoice_number: "ZP2607016UJFJVSHCJ",
+  user_id: 1001,
+  guest_contact: null,
+  target_uid: "1453734692",
+  target_server: "16057",
+  amount_fee: 0,
+  amount_total: 4752,
+  margin: 47,
+  status: "COMPLETED",
+  sn: "SN-123",
+  proof_url: null,
+  user: { id: 1001, name: "Randy Galang", phone: "+629876543210", avatar_url: null },
+  product: { id: 9, name: "19 Diamond", category: { id: 4, name: "Mobile Legends" } },
+  payment: { status: "3" },
+  payment_channel: { id: 2, name: "Credits" },
+  created_at: "2026-07-01T14:56:37.000Z",
+  updated_at: "2026-07-01T14:58:00.000Z",
+  ...over,
+});
+
+beforeEach(() => vi.clearAllMocks());
 
 describe("transactionsService.list", () => {
-  it("returns a PaginatedResponse<Transaction> shape with no params", async () => {
+  it("maps the API row onto the feature's transaction shape", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow()]));
+
     const result = await transactionsService.list({});
 
-    expect(Array.isArray(result.data)).toBe(true);
-    expect(result.meta).toMatchObject({
-      current_page: 1,
-      per_page: 10,
+    expect(result.data[0]).toMatchObject({
+      id: "1",
+      invoice_no: "ZP2607016UJFJVSHCJ",
+      invoice_status: "success",
+      payment_status: "success",
+      cost: 4752,
+      profit: 47,
+      payment_method: "Credits",
+      target_ref: "1453734692 / 16057",
     });
-    expect(typeof result.meta.from).toBe("number");
-    expect(typeof result.meta.to).toBe("number");
-    expect(result.links).toHaveProperty("first");
-    expect(result.links).toHaveProperty("last");
-    expect(result.links).toHaveProperty("prev");
-    expect(result.links).toHaveProperty("next");
+    expect(result.data[0].customer).toMatchObject({ name: "Randy Galang", user_id: 1001 });
+    expect(result.data[0].game.name).toBe("Mobile Legends");
   });
 
-  it("uses the literal placeholder total 9999999, not fixtures.length", async () => {
+  // PAID means the customer has paid but the supplier has not started, which
+  // is exactly what the Pending pill means to an operator.
+  it("folds PAID into pending and EXPIRED into failed", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow({ status: "PAID" }), apiRow({ id: 2, status: "EXPIRED" })]));
+
     const result = await transactionsService.list({});
-    expect(result.meta.total).toBe(9999999);
+
+    expect(result.data[0].invoice_status).toBe("pending");
+    expect(result.data[1].invoice_status).toBe("failed");
   });
 
-  it("caps returned rows to per_page", async () => {
-    const result = await transactionsService.list({ per_page: 5 });
-    expect(result.data.length).toBeLessThanOrEqual(5);
+  it("names a guest from the transaction's own contact, since there is no user row", async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      paginated([apiRow({ user: null, user_id: null, guest_contact: "+628111222333" })]),
+    );
+
+    const result = await transactionsService.list({});
+
+    expect(result.data[0].customer).toMatchObject({ user_id: null, name: "Guest", phone: "+628111222333" });
   });
 
-  it("narrows by search across invoice_no/customer name", async () => {
-    const result = await transactionsService.list({ search: "Randy" });
-    expect(result.data.length).toBeGreaterThan(0);
-    for (const row of result.data) {
-      expect(row.customer.name.toLowerCase().includes("randy") || row.invoice_no.toLowerCase().includes("randy")).toBe(
-        true,
-      );
-    }
+  it("translates the filter bar's camelCase params into the API's snake_case", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
+
+    await transactionsService.list({ userId: "5", invoiceStatus: "success", startDate: "2026-07-01", page: 2 });
+
+    expect(vi.mocked(api.get).mock.calls[0][1]?.params).toMatchObject({
+      user_id: "5",
+      status: "COMPLETED",
+      start_date: "2026-07-01",
+      page: 2,
+    });
   });
 
-  it("narrows by invoiceStatus exactly", async () => {
-    const result = await transactionsService.list({ invoiceStatus: "failed" });
-    expect(result.data.length).toBeGreaterThan(0);
-    for (const row of result.data) {
-      expect(row.invoice_status).toBe("failed");
-    }
+  /**
+   * The backend only sorts by columns it has whitelisted. Passing a joined
+   * column through would silently sort by created_at instead, which reads as
+   * a broken header rather than an unsupported one.
+   */
+  it("drops a sort on a column the API cannot sort by", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
+
+    await transactionsService.list({ sortBy: "user", sortDir: "asc" });
+
+    expect(vi.mocked(api.get).mock.calls[0][1]?.params).not.toHaveProperty("sort_by");
   });
 
-  it("sorts by cost ascending/descending when sortBy/sortDir are given", async () => {
-    const asc = await transactionsService.list({ per_page: 50, sortBy: "cost", sortDir: "asc" });
-    const costs = asc.data.map((row) => row.cost);
-    expect(costs).toEqual([...costs].sort((a, b) => a - b));
+  it("maps a sortable column onto its API column name", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
 
-    const desc = await transactionsService.list({ per_page: 50, sortBy: "cost", sortDir: "desc" });
-    const descCosts = desc.data.map((row) => row.cost);
-    expect(descCosts).toEqual([...descCosts].sort((a, b) => b - a));
-  });
+    await transactionsService.list({ sortBy: "cost", sortDir: "desc" });
 
-  it("leaves row order unchanged when sortBy is omitted", async () => {
-    const result = await transactionsService.list({ per_page: 50 });
-    expect(result.data.map((row) => row.id)).toEqual(TRANSACTIONS.slice(0, 50).map((row) => row.id));
+    expect(vi.mocked(api.get).mock.calls[0][1]?.params).toMatchObject({ sort_by: "amount_total", sort_dir: "desc" });
   });
 });
 
 describe("transactionsService.getById", () => {
-  it("resolves the typed transaction for a known id", async () => {
-    const known = TRANSACTIONS[0];
-    await expect(transactionsService.getById(known.id)).resolves.toEqual(known);
+  it("fetches by id directly when the ref is numeric", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow()));
+
+    await transactionsService.getById("1");
+
+    expect(api.get).toHaveBeenCalledWith("/v1/transactions/1");
   });
 
-  it("throws for an unknown id", async () => {
-    await expect(transactionsService.getById("does-not-exist")).rejects.toThrow();
-  });
-});
+  // The edit route is keyed on the invoice number, but the API binds the
+  // numeric id — so a non-numeric ref has to be resolved through search.
+  it("resolves an invoice number through a search instead of 404ing", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow()]));
 
-describe("transactionsService.getActivityLog", () => {
-  it("resolves the typed entries for a known id", async () => {
-    const known = TRANSACTIONS[0];
-    const entries = await transactionsService.getActivityLog(known.id);
+    const result = await transactionsService.getById("ZP2607016UJFJVSHCJ");
 
-    expect(entries).toEqual(known.activity_log);
-    expect(entries.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("throws for an unknown id", async () => {
-    await expect(transactionsService.getActivityLog("does-not-exist")).rejects.toThrow();
-  });
-});
-
-/**
- * Contract test — asserts the activity_log fixture shape before any UI
- * consumes it (system_architecture.md §4.11). The timestamp assertions are
- * the guard against a Date.now()-relative fixture: entries must be derived
- * from the row's own created_at/resolved_at so the suite is deterministic.
- */
-describe("transaction activity_log fixtures", () => {
-  it("gives every row (synthetic included) at least 2 entries anchored to its own timestamps", () => {
-    for (const row of TRANSACTIONS) {
-      expect(row.activity_log.length).toBeGreaterThanOrEqual(2);
-      expect(row.activity_log[0].created_at).toBe(row.created_at);
-
-      if (row.resolved_at) {
-        expect(row.activity_log[row.activity_log.length - 1].created_at).toBe(row.resolved_at);
-      }
-
-      const times = row.activity_log.map((entry) => new Date(entry.created_at).getTime());
-      expect(times).toEqual([...times].sort((a, b) => a - b));
-
-      const ids = row.activity_log.map((entry) => entry.id);
-      expect(new Set(ids).size).toBe(ids.length);
-    }
+    expect(api.get).toHaveBeenCalledWith("/v1/transactions", {
+      params: { search: "ZP2607016UJFJVSHCJ", per_page: 1 },
+    });
+    expect(result.invoice_no).toBe("ZP2607016UJFJVSHCJ");
   });
 
-  it("carries a full typed entry — never a blank action or description", () => {
-    for (const entry of TRANSACTIONS.flatMap((row) => row.activity_log)) {
-      expect(entry.action.trim().length).toBeGreaterThan(0);
-      expect(entry.description.trim().length).toBeGreaterThan(0);
-    }
-  });
+  it("throws when an invoice number matches nothing", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
 
-  it("varies the log across rows rather than repeating one canned sequence", () => {
-    const signatures = TRANSACTIONS.map((row) => row.activity_log.map((entry) => entry.action).join("|"));
-    expect(new Set(signatures).size).toBeGreaterThanOrEqual(4);
-
-    const descriptions = TRANSACTIONS.flatMap((row) => row.activity_log).map((entry) => entry.description);
-    expect(new Set(descriptions).size).toBeGreaterThanOrEqual(10);
-  });
-
-  it("attributes every entry to that transaction's own customer", () => {
-    for (const row of TRANSACTIONS) {
-      for (const entry of row.activity_log) {
-        expect(entry.actor).toEqual({ name: row.customer.name, phone: row.customer.phone });
-      }
-    }
+    await expect(transactionsService.getById("NOPE")).rejects.toThrow();
   });
 });
 
 describe("transactionsService.getStatusCounts", () => {
-  it("resolves the exact reference pill counts", async () => {
+  it("renames the API's failed_provider onto the pill's key", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope({ pending: 12, processing: 32, failed_provider: 8 }));
+
     await expect(transactionsService.getStatusCounts()).resolves.toEqual({
       pending: 12,
-      partial_refund: 32,
-      partial_success: 8,
+      processing: 32,
+      failed: 8,
     });
   });
 });
 
-describe("transactionsService mutations", () => {
-  it("remove resolves without throwing", async () => {
-    await expect(transactionsService.remove(TRANSACTIONS[0].id)).resolves.toBeUndefined();
+describe("transactionsService actions", () => {
+  it("refund requires a reason and posts it", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope(null));
+
+    await expect(transactionsService.refund("1", "   ")).rejects.toThrow("A refund reason is required");
+
+    await transactionsService.refund("1", "duplicate order");
+    expect(api.post).toHaveBeenCalledWith("/v1/transactions/1/refund", { reason: "duplicate order" });
+  });
+
+  it("resendCallback and retryInvoice hit their own endpoints", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope(null));
+
+    await transactionsService.resendCallback("1");
+    await transactionsService.retryInvoice("1");
+
+    expect(api.post).toHaveBeenCalledWith("/v1/transactions/1/resend-callback");
+    expect(api.post).toHaveBeenCalledWith("/v1/transactions/1/retry");
+  });
+
+  it("remove deletes by id", async () => {
+    vi.mocked(api.delete).mockResolvedValue(envelope(null));
+
+    await expect(transactionsService.remove("1")).resolves.toBeUndefined();
+    expect(api.delete).toHaveBeenCalledWith("/v1/transactions/1");
+  });
+});
+
+describe("transactionsService.edit", () => {
+  // The API marks amount_base and status required on update, so the edit
+  // form's three fields alone would 422.
+  it("merges the form's fields onto the current row before writing", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow()));
+    vi.mocked(api.put).mockResolvedValue(envelope(apiRow({ status: "PROCESSING" })));
+
+    const form = new FormData();
+    form.append("invoiceStatus", "processing");
+    form.append("serialNumber", "SN-999");
+
+    await transactionsService.edit("1", form);
+
+    expect(api.put).toHaveBeenCalledWith("/v1/transactions/1", {
+      amount_base: 4752,
+      amount_fee: 0,
+      amount_total: 4752,
+      status: "PROCESSING",
+      sn: "SN-999",
+    });
   });
 });

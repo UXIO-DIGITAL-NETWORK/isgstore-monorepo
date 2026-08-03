@@ -22,7 +22,7 @@
 
 ## Files touched
 
-- `src/features/products/pages/AddMainProductPage.tsx`
+- `src/features/products/pages/MainProductFormPage.tsx` (was `AddMainProductPage.tsx` — renamed on `main` by the API-integration PR; the sections were re-applied onto the merged Add/Edit page)
 - `src/features/products/components/ProductMixBuilder.tsx` (new)
 - `src/features/products/schemas/productForm.schema.ts`
 - `src/features/products/data/select-options.data.ts`
@@ -40,6 +40,6 @@
 
 ## Notes / follow-ups
 
-- Wire the pricing fields and mix rows into the payload once §6 gains fields for them — the `ponytail:` comment on `variants: []` marks the seam.
+- **The contract arrived while this branch was open.** Merging `main` (PR #13, real-API swap) brought `products.service`'s `toFormData`, which writes `price_modal`/`price_member`/`price_vip`/`price_reseller`/`price_agent` off `variants[0]` — a one-for-one match with Cost/Public/VIP/Reseller/Agent. So the "captured but not saved" decision is now a live gap, not a neutral deferral: a filled-in price is written as **zero** on create, and ignored on edit (update merges the fetched row, so existing prices survive). Wiring it is ~6 lines in `onSubmit`. Points, Discount and the mix rows still have no column anywhere.
 - Replace `SUPPLIER_PRODUCT_OPTIONS` with real data when a Product Provider service lands.
 - The frame titles the section "Pricing & Margin"; the request said "Price & Margin". The frame won.

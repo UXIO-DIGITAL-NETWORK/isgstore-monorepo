@@ -37,7 +37,8 @@ describe("Main Products row actions", () => {
 
     await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
-    expect(deactivateSpy).toHaveBeenCalledWith("prod-1");
+    // Ids come from the API now, not a hand-written fixture string.
+    expect(deactivateSpy).toHaveBeenCalledWith(expect.stringMatching(/^\d+$/));
   });
 
   it("cancelling deactivates nothing", async () => {

@@ -10,7 +10,7 @@ vi.mock("@/lib/axios", () => ({
 }));
 
 describe("authService.login", () => {
-  it("posts to /auth/login with the form values plus a timezone string", async () => {
+  it("posts to /v1/auth/login with the form values plus a timezone string", async () => {
     await authService.login({
       email: "admin@example.com",
       password: "secret123",
@@ -18,11 +18,22 @@ describe("authService.login", () => {
       timezone: "Asia/Jakarta",
     });
 
-    expect(api.post).toHaveBeenCalledWith("/auth/login", {
+    expect(api.post).toHaveBeenCalledWith("/v1/auth/login", {
       email: "admin@example.com",
       password: "secret123",
       remember: false,
       timezone: "Asia/Jakarta",
     });
+  });
+});
+
+describe("authService.logout", () => {
+  // The endpoint lives under the auth group. A bare "/logout" resolved to
+  // /api/logout, which does not exist — the session was only ever cleared
+  // client-side and the token stayed valid server-side until it expired.
+  it("posts to /v1/auth/logout", async () => {
+    await authService.logout();
+
+    expect(api.post).toHaveBeenCalledWith("/v1/auth/logout");
   });
 });

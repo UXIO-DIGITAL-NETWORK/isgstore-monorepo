@@ -1,0 +1,303 @@
+import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Trash2 } from "lucide-react";
+
+import { Box } from "@/components/common/Box";
+import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
+import { SelectField } from "@/components/common/SelectField";
+import { Text } from "@/components/common/Text";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { formatCurrency } from "@/utils/currency";
+import { useCreateFlashSale, useFlashSale, useUpdateFlashSale } from "../hooks/useFlashSales";
+import { useProductOptions } from "../hooks/useProductOptions";
+import { flashSaleFormSchema, type FlashSaleFormValues } from "../schemas/flashSaleForm.schema";
+
+/** `2026-08-02T07:34:13.000000Z` → `2026-08-02T07:34`, which datetime-local takes. */
+const toInput = (value?: string) => (value ? value.slice(0, 16) : "");
+
+export function FlashSaleFormPage() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { flashSaleId } = useParams({ strict: false }) as { flashSaleId?: string };
+  const isEdit = Boolean(flashSaleId);
+
+  const listHref = isEdit ? pathname.replace(/\/[^/]+\/edit\/?$/, "") : pathname.replace(/\/add\/?$/, "");
+
+  const { data: existing } = useFlashSale(flashSaleId);
+  const { options: productOptions, isLoading: productsLoading } = useProductOptions();
+  const createFlashSale = useCreateFlashSale();
+  const updateFlashSale = useUpdateFlashSale();
+  const isPending = createFlashSale.isPending || updateFlashSale.isPending;
+
+  const {
+    control,
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<FlashSaleFormValues>({
+    resolver: zodResolver(flashSaleFormSchema),
+    defaultValues: { name: "", startsAt: "", endsAt: "", isActive: true, items: [] },
+    values: existing
+      ? {
+          name: existing.name,
+          startsAt: toInput(existing.starts_at),
+          endsAt: toInput(existing.ends_at),
+          isActive: existing.is_active,
+          items: existing.items.map((item) => ({
+            productId: item.product_id,
+            salePrice: item.sale_price,
+            stockTotal: item.stock_total,
+          })),
+        }
+      : undefined,
+  });
+
+  const { fields, append, remove } = useFieldArray({ control, name: "items" });
+  const items = watch("items");
+
+  const onSubmit = (values: FlashSaleFormValues) => {
+    const payload = {
+      name: values.name,
+      starts_at: values.startsAt,
+      ends_at: values.endsAt,
+      is_active: values.isActive,
+      items: values.items.map((item, index) => ({
+        product_id: item.productId,
+        sale_price: item.salePrice,
+        stock_total: item.stockTotal,
+        sort_order: index,
+      })),
+    };
+    const onSuccess = () => navigate({ to: listHref as unknown as string });
+
+    if (flashSaleId) {
+      updateFlashSale.mutate({ id: flashSaleId, input: payload }, { onSuccess });
+      return;
+    }
+    createFlashSale.mutate(payload, { onSuccess });
+  };
+
+  return (
+    <Box
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col gap-6"
+    >
+      <Box className="rounded-2xl border border-border bg-card p-6">
+        <Heading
+          level={1}
+          variant="section"
+        >
+          {isEdit ? "Edit Flash Sale" : "Add Flash Sale"}
+        </Heading>
+        <Text variant="muted">
+          Time-boxed pricing on specific products. Only a sale that is active and inside its window appears on the
+          storefront.
+        </Text>
+      </Box>
+
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="flash-sale-name">Name</Label>
+          <Input
+            id="flash-sale-name"
+            className="rounded-xl"
+            placeholder="e.g. Flash Sale Mingguan"
+            {...register("name")}
+          />
+          {errors.name && (
+            <Text
+              variant="small"
+              className="text-destructive"
+            >
+              {errors.name.message}
+            </Text>
+          )}
+        </Box>
+
+        <Box className="grid gap-4 sm:grid-cols-2">
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="flash-sale-starts">Starts</Label>
+            <Input
+              id="flash-sale-starts"
+              type="datetime-local"
+              className="rounded-xl"
+              {...register("startsAt")}
+            />
+            {errors.startsAt && (
+              <Text
+                variant="small"
+                className="text-destructive"
+              >
+                {errors.startsAt.message}
+              </Text>
+            )}
+          </Box>
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="flash-sale-ends">Ends</Label>
+            <Input
+              id="flash-sale-ends"
+              type="datetime-local"
+              className="rounded-xl"
+              {...register("endsAt")}
+            />
+            {errors.endsAt && (
+              <Text
+                variant="small"
+                className="text-destructive"
+              >
+                {errors.endsAt.message}
+              </Text>
+            )}
+          </Box>
+        </Box>
+
+        <Controller
+          control={control}
+          name="isActive"
+          render={({ field }) => (
+            <Box className="flex items-center gap-3">
+              <Switch
+                id="flash-sale-active"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+              <Label htmlFor="flash-sale-active">Active</Label>
+            </Box>
+          )}
+        />
+      </Box>
+
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+        <Box className="flex items-center justify-between">
+          <Box className="flex flex-col gap-0.5">
+            <Heading
+              level={2}
+              variant="subtitle"
+            >
+              Products
+            </Heading>
+            <Text variant="muted">
+              The discount shown to customers is derived from each product's current price, so a repriced product never
+              leaves a stale strikethrough.
+            </Text>
+          </Box>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => append({ productId: "", salePrice: 0, stockTotal: 0 })}
+          >
+            <Plus className="size-4" />
+            Add Product
+          </Button>
+        </Box>
+
+        {fields.length === 0 ? (
+          <Box className="rounded-xl border border-dashed border-border p-6">
+            <Text variant="muted">No products yet. A sale with no products does not render on the storefront.</Text>
+          </Box>
+        ) : (
+          fields.map((field, index) => {
+            const selected = productOptions.find((option) => option.value === items?.[index]?.productId);
+            const salePrice = items?.[index]?.salePrice ?? 0;
+            const discount =
+              selected && selected.price > 0 && salePrice < selected.price
+                ? Math.round(((selected.price - salePrice) / selected.price) * 100)
+                : 0;
+
+            return (
+              <Box
+                key={field.id}
+                className="flex flex-col gap-3 rounded-xl border border-border p-4"
+              >
+                <Box className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end">
+                  <Controller
+                    control={control}
+                    name={`items.${index}.productId`}
+                    render={({ field: productField }) => (
+                      <SelectField
+                        id={`flash-sale-product-${index}`}
+                        label="Product"
+                        options={productOptions}
+                        value={productField.value}
+                        onChange={productField.onChange}
+                        error={errors.items?.[index]?.productId?.message}
+                        disabled={productsLoading}
+                        emptyLabel={productsLoading ? "Loading products..." : "No products available"}
+                      />
+                    )}
+                  />
+
+                  <Box className="flex flex-col gap-1.5">
+                    <Label htmlFor={`flash-sale-price-${index}`}>Sale Price</Label>
+                    <Input
+                      id={`flash-sale-price-${index}`}
+                      type="number"
+                      min={0}
+                      className="rounded-xl tabular-nums"
+                      {...register(`items.${index}.salePrice`, { valueAsNumber: true })}
+                    />
+                  </Box>
+
+                  <Box className="flex flex-col gap-1.5">
+                    <Label htmlFor={`flash-sale-stock-${index}`}>Stock</Label>
+                    <Input
+                      id={`flash-sale-stock-${index}`}
+                      type="number"
+                      min={0}
+                      className="rounded-xl tabular-nums"
+                      {...register(`items.${index}.stockTotal`, { valueAsNumber: true })}
+                    />
+                  </Box>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Remove product ${index + 1}`}
+                    onClick={() => remove(index)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </Box>
+
+                {selected && (
+                  <Text variant="muted">
+                    Normally {formatCurrency(selected.price, { fractionDigits: 0 })}
+                    {discount > 0 ? ` — ${discount}% off` : " — no discount at this price"}
+                  </Text>
+                )}
+              </Box>
+            );
+          })
+        )}
+      </Box>
+
+      <Box className="flex justify-end gap-3">
+        <Button
+          asChild
+          variant="outline"
+          className="rounded-xl"
+        >
+          <Link href={listHref}>Cancel</Link>
+        </Button>
+        <Button
+          type="submit"
+          className="rounded-xl"
+          disabled={isPending}
+        >
+          {isPending ? "Saving..." : "Save"}
+        </Button>
+      </Box>
+    </Box>
+  );
+}
+
+export default FlashSaleFormPage;
