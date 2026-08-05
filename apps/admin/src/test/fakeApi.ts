@@ -504,6 +504,70 @@ const SEARCHABLE: Record<string, string[]> = {
 
 const envelope = <T>(data: T) => ({ status: "success", code: 200, message: "ok", data });
 
+/**
+ * Digiflazz price list (Product Provider tab). Served in the backend's row shape
+ * so the provider service's mapper runs for real; `X100` is pre-mapped so the
+ * "Add" action's disabled/"Mapped" states have something to assert against.
+ */
+const DIGIFLAZZ_PRICE_LIST: Row[] = [
+  {
+    buyer_sku_code: "X100",
+    name: "Xl 100.000",
+    brand: "XL",
+    category: "Pulsa",
+    seller_name: "PT. ABC",
+    desc: "Pulsa Xl Rp 100.000",
+    type: "prepaid",
+    cost: 98000,
+    available: true,
+    already_mapped: true,
+    buyer_product_status: true,
+    seller_product_status: true,
+    product_type: "Umum",
+    price: 98000,
+    unlimited_stock: true,
+    stock: 0,
+    multi: true,
+    start_cut_off: "23:45",
+    end_cut_off: "00:15",
+  },
+  {
+    buyer_sku_code: "S5",
+    name: "Telkomsel Pulsa 5.000",
+    brand: "TELKOMSEL",
+    category: "Pulsa",
+    seller_name: "PT. BCA",
+    desc: "Pulsa Telkomsel Rp 5.000",
+    type: "prepaid",
+    cost: 5100,
+    available: true,
+    already_mapped: false,
+    buyer_product_status: true,
+    seller_product_status: true,
+    product_type: "Umum",
+    price: 5100,
+    unlimited_stock: false,
+    stock: 1200,
+    multi: false,
+    start_cut_off: "00:00",
+    end_cut_off: "00:00",
+  },
+];
+
+const digiflazzPriceList = (params: Record<string, unknown>): Row[] => {
+  const search = (params.search as string | undefined)?.toLowerCase();
+  return DIGIFLAZZ_PRICE_LIST.filter((row) => {
+    if (params.only_unmapped && row.already_mapped) return false;
+    if (search) {
+      const haystack = [row.name, row.buyer_sku_code, row.brand, row.category]
+        .map((value) => String(value ?? "").toLowerCase())
+        .join(" ");
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+};
+
 const paginate = (rows: Row[], params: Record<string, unknown> = {}) => {
   const page = Number(params.page ?? 1);
   const perPage = Number(params.per_page ?? 10);
@@ -588,6 +652,29 @@ export function createFakeApi() {
     get: vi.fn(async (url: string, config?: { params?: Record<string, unknown> }) => {
       if (url in DOCUMENTS) return envelope(DOCUMENTS[url]);
       if (url in PARAMETERIZED) return envelope(PARAMETERIZED[url](config?.params ?? {}));
+
+      // Digiflazz endpoints are documents, not CRUD collections.
+      if (url === "/v1/digiflazz/price-list") {
+        return paginate(digiflazzPriceList(config?.params ?? {}), config?.params ?? {});
+      }
+      if (url === "/v1/digiflazz/sku-preview") {
+        const sku = String(config?.params?.buyer_sku_code ?? "");
+        const found = DIGIFLAZZ_PRICE_LIST.find((row) => row.buyer_sku_code === sku);
+        const cost = Number(found?.cost ?? 0);
+        return envelope({
+          buyer_sku_code: sku,
+          name: found?.name ?? "",
+          cost,
+          already_mapped: Boolean(found?.already_mapped),
+          suggested_prices: {
+            price_modal: cost,
+            price_member: Math.ceil(cost * 1.2),
+            price_vip: Math.ceil(cost * 1.15),
+            price_reseller: Math.ceil(cost * 1.1),
+            price_agent: Math.ceil(cost * 1.05),
+          },
+        });
+      }
 
       const [collection, id] = parsePath(url);
       const rows = store[collection] ?? [];
