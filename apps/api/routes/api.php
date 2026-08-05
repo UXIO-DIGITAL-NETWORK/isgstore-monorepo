@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\Content\TestimonialController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzBalanceController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzPostpaidController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzPriceListController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzProductController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzProductImportController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzSkuLookupController;
@@ -369,8 +370,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::post('/digiflazz/sync-products', [DigiflazzSyncController::class, 'sync']);
 
     // Digiflazz Manual Product Management (products are never auto-created)
+    // Browse the whole Digiflazz price list (Product Provider tab) — reads the
+    // shared 5-min cache, so paging/searching never hits Digiflazz upstream.
+    Route::get('/digiflazz/price-list', [DigiflazzPriceListController::class, 'index']);
     Route::get('/digiflazz/sku-preview', [DigiflazzSkuLookupController::class, 'show']);
     Route::post('/digiflazz/products', [DigiflazzProductController::class, 'store']);
+    Route::post('/digiflazz/products/bulk', [DigiflazzProductController::class, 'bulkStore']);
     Route::get('/digiflazz/products/import-template', [DigiflazzProductImportController::class, 'template']);
     Route::post('/digiflazz/products/import', [DigiflazzProductImportController::class, 'import']);
 
