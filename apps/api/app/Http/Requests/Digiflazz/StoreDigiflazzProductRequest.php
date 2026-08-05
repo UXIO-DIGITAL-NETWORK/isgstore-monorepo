@@ -22,11 +22,13 @@ class StoreDigiflazzProductRequest extends FormRequest
             // Defaults: Digiflazz product_name / the SKU code itself
             'name' => ['nullable', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:255', 'unique:products,code'],
-            // Manual add: the admin explicitly sets all 4 selling prices
-            'price_member' => ['required', 'integer', 'min:0'],
-            'price_vip' => ['required', 'integer', 'min:0'],
-            'price_reseller' => ['required', 'integer', 'min:0'],
-            'price_agent' => ['required', 'integer', 'min:0'],
+            // Manual add: the admin normally sets all 4 selling prices, but they
+            // are nullable so a quick/bulk add can omit them and let
+            // PricingService derive defaults from the Digiflazz cost + category.
+            'price_member' => ['nullable', 'integer', 'min:0'],
+            'price_vip' => ['nullable', 'integer', 'min:0'],
+            'price_reseller' => ['nullable', 'integer', 'min:0'],
+            'price_agent' => ['nullable', 'integer', 'min:0'],
             'status' => ['required', 'boolean'],
         ];
     }
@@ -40,10 +42,12 @@ class StoreDigiflazzProductRequest extends FormRequest
             subCategoryId: $this->validated('sub_category_id') ? (int) $this->validated('sub_category_id') : null,
             name: $this->validated('name') ?: null,
             code: $this->validated('code') ?: null,
-            priceMember: (int) $this->validated('price_member'),
-            priceVip: (int) $this->validated('price_vip'),
-            priceReseller: (int) $this->validated('price_reseller'),
-            priceAgent: (int) $this->validated('price_agent'),
+            // Preserve null (not 0) when a price is omitted so CreateDigiflazzProductAction
+            // falls back to PricingService instead of persisting a zero selling price.
+            priceMember: $this->filled('price_member') ? (int) $this->validated('price_member') : null,
+            priceVip: $this->filled('price_vip') ? (int) $this->validated('price_vip') : null,
+            priceReseller: $this->filled('price_reseller') ? (int) $this->validated('price_reseller') : null,
+            priceAgent: $this->filled('price_agent') ? (int) $this->validated('price_agent') : null,
             status: (bool) $this->validated('status'),
         );
     }
