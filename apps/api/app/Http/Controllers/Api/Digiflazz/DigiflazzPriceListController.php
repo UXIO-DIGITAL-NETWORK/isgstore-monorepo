@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Digiflazz\PriceListQueryRequest;
 use App\Http\Resources\Api\Digiflazz\DigiflazzPriceListItemResource;
 use App\Traits\ApiResponse;
-use Exception;
+use Throwable;
 
 class DigiflazzPriceListController extends Controller
 {
@@ -23,7 +23,10 @@ class DigiflazzPriceListController extends Controller
                 min(100, max(1, (int) $request->query('per_page', 15))),
                 max(1, (int) $request->query('page', 1)),
             );
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            // Catch Throwable, not just Exception: a malformed upstream payload
+            // can surface as a TypeError (an Error), which must degrade to a
+            // clean 502 rather than an uncaught 500.
             return $this->errorResponse('Gagal mengambil price list Digiflazz: '.$e->getMessage(), 502);
         }
 
