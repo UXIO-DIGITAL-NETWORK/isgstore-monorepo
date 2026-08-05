@@ -95,3 +95,97 @@ export interface PriceRangeOption extends SelectOption {
   min: number;
   max?: number;
 }
+
+/* ── Product Provider tab — Digiflazz price list ──────────────────────────── */
+
+/** Digiflazz command: prepaid (pulsa/games/etc.) or postpaid bill (pasca). */
+export type DigiflazzType = "prepaid" | "pasca";
+
+/**
+ * One row of the Digiflazz price list (`GET /v1/digiflazz/price-list`), mirroring
+ * the documented Digiflazz fields. `id` is the `buyer_sku_code` — the SKU is the
+ * natural key, and `DataTable<TData extends {id: string}>` needs a string id.
+ * The prepaid-only and pasca-only groups are optional because a pasca item never
+ * carries stock/cut-off and a prepaid item never carries an admin fee.
+ */
+export interface DigiflazzPriceListItem {
+  id: string;
+  buyer_sku_code: string;
+  name: string;
+  brand: string;
+  category: string;
+  seller_name: string;
+  desc: string;
+  type: DigiflazzType;
+  /** Supplier cost in IDR — prepaid `price`, or pasca `admin`. */
+  cost: number;
+  available: boolean;
+  /** Already mapped to one of our products (SupplierProduct exists). */
+  already_mapped: boolean;
+  buyer_product_status: boolean;
+  seller_product_status: boolean;
+  /** Prepaid-only: Digiflazz product type label (e.g. "Umum"). */
+  product_type?: string;
+  price?: number;
+  unlimited_stock?: boolean;
+  stock?: number;
+  multi?: boolean;
+  start_cut_off?: string;
+  end_cut_off?: string;
+  /** Pasca-only. */
+  admin_fee?: number;
+  commission?: number;
+}
+
+export interface DigiflazzPriceListParams {
+  type?: DigiflazzType;
+  search?: string;
+  only_unmapped?: boolean;
+  page?: number;
+  per_page?: number;
+}
+
+/** Suggested selling prices from the backend's SKU preview (pricing rules). */
+export interface DigiflazzSuggestedPrices {
+  price_modal: number;
+  price_member: number;
+  price_vip: number;
+  price_reseller: number;
+  price_agent: number;
+}
+
+export interface DigiflazzSkuPreview {
+  buyer_sku_code: string;
+  name: string;
+  cost: number;
+  already_mapped: boolean;
+  suggested_prices: DigiflazzSuggestedPrices;
+}
+
+/** Single add: the admin picks a category and confirms the four tier prices. */
+export interface AddDigiflazzProductInput {
+  buyer_sku_code: string;
+  type: DigiflazzType;
+  category_id: string;
+  sub_category_id?: string | null;
+  name?: string;
+  price_member: number;
+  price_vip: number;
+  price_reseller: number;
+  price_agent: number;
+  status: boolean;
+}
+
+/** Bulk add: one shared category, prices derived server-side per SKU. */
+export interface BulkAddDigiflazzInput {
+  type: DigiflazzType;
+  category_id: string;
+  sub_category_id?: string | null;
+  status: boolean;
+  buyer_sku_codes: string[];
+}
+
+export interface BulkAddDigiflazzResult {
+  created: number;
+  skipped: { buyer_sku_code: string; reason: string }[];
+}

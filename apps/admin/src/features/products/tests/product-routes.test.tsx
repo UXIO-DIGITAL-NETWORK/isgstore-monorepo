@@ -35,10 +35,13 @@ describe("products routes", () => {
     }
   });
 
-  it("serves the Product Provider tab as an explicit placeholder, not a broken screen", async () => {
+  it("serves the Product Provider tab with the real Digiflazz price list, not a placeholder", async () => {
     await renderRoute("/admin/products/provider");
     expect(await screen.findByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
-    expect(screen.getByText(/reference/i)).toBeInTheDocument();
+    // The provisional "waiting on a reference frame" notice is gone now that the
+    // screen is built against the documented Digiflazz price-list contract.
+    expect(screen.queryByText(/waiting on a reference/i)).not.toBeInTheDocument();
+    expect(await screen.findByPlaceholderText("Search product, SKU or brand")).toBeInTheDocument();
   });
 
   it("serves the Add route so the toolbar's primary button is never a dead link", async () => {
