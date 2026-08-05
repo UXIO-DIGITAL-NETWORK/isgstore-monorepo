@@ -38,6 +38,9 @@ class ListDigiflazzPriceListAction
             : collect();
 
         $rows = collect($items)
+            // Defense-in-depth: the service already rejects a non-list payload,
+            // but never let a stray non-array row reach the array-typed closure.
+            ->filter(fn ($item) => is_array($item))
             ->map(fn (array $item) => $this->normalise($item, $type, isset($mapped[$item['buyer_sku_code'] ?? ''])))
             ->when($search !== null && $search !== '', fn ($rows) => $rows->filter(
                 fn (array $row) => $this->matchesSearch($row, $search)

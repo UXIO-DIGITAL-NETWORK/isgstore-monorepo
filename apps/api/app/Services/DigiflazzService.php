@@ -59,7 +59,26 @@ class DigiflazzService
                 throw new Exception('Digiflazz API Error: '.$response->body());
             }
 
-            $data = $response->json('data') ?? [];
+            $data = $response->json('data');
+
+            // Digiflazz reports auth/permission failures with HTTP 200 and an
+            // OBJECT under `data` (e.g. {"rc":"41","message":"Signature tidak
+            // valid"}) rather than a list. Returning that as-is makes every
+            // caller that iterates the list crash with a TypeError (an Error,
+            // not an Exception, so it escapes their catch and 500s). Reject any
+            // non-list shape here with a described exception every caller already
+            // maps to a clean 502. An empty list stays valid.
+            if (! is_array($data) || ! array_is_list($data)) {
+                $message = is_array($data)
+                    ? ($data['message'] ?? $data['rc'] ?? 'Unexpected price-list response')
+                    : 'Unexpected price-list response';
+
+                Log::channel('digiflazz')->error('Digiflazz getPriceList Error Envelope', [
+                    'data' => $data,
+                ]);
+
+                throw new Exception('Digiflazz price-list error: '.$message);
+            }
 
             // [CHECKPOINT 2] Post-response — summary of what Digiflazz returned
             Log::channel('digiflazz')->info('Digiflazz getPriceList Response', [

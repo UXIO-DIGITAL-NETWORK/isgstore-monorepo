@@ -188,4 +188,29 @@ class ListDigiflazzPriceListTest extends TestCase
         $this->getJson('/api/v1/digiflazz/price-list?type=prepaid')
             ->assertStatus(502);
     }
+
+    // Digiflazz returns HTTP 200 with an error OBJECT under `data` (not a list)
+    // when auth/permission fails (e.g. rc 41 "Signature tidak valid", server IP
+    // not whitelisted). This must be a clean 502, not an uncaught TypeError → 500.
+    public function test_returns_502_when_digiflazz_returns_an_error_envelope(): void
+    {
+        $this->actingAsAdmin();
+        Http::fake(['*/price-list' => Http::response([
+            'data' => ['rc' => '41', 'message' => 'Signature tidak valid'],
+        ])]);
+
+        $this->getJson('/api/v1/digiflazz/price-list?type=prepaid')
+            ->assertStatus(502)
+            ->assertJsonPath('status', 'error')
+            ->assertJson(fn ($json) => $json->where('message', fn ($m) => str_contains($m, 'Signature tidak valid'))->etc());
+    }
+
+    public function test_returns_502_when_price_list_data_is_missing(): void
+    {
+        $this->actingAsAdmin();
+        Http::fake(['*/price-list' => Http::response(['message' => 'no data key'])]);
+
+        $this->getJson('/api/v1/digiflazz/price-list?type=prepaid')
+            ->assertStatus(502);
+    }
 }
