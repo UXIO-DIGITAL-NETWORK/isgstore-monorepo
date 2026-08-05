@@ -139,10 +139,25 @@ class ListDigiflazzPriceListTest extends TestCase
         SupplierProduct::factory()->for($product)->for($this->digiflazz)->create(['buyer_sku_code' => 'X100']);
         $this->fakePrepaidList();
 
-        $this->getJson('/api/v1/digiflazz/price-list?type=prepaid&only_unmapped=1')
+        // Send the real axios shape: a JS boolean serializes to the string
+        // "true", which the plain `boolean` rule would reject (422) without the
+        // request's prepareForValidation coercion.
+        $this->getJson('/api/v1/digiflazz/price-list?type=prepaid&only_unmapped=true')
             ->assertOk()
             ->assertJsonPath('data.meta.total', 1)
             ->assertJsonPath('data.data.0.buyer_sku_code', 'S5');
+    }
+
+    public function test_only_unmapped_false_returns_all_rows(): void
+    {
+        $this->actingAsAdmin();
+        $product = Product::factory()->create(['code' => 'X100']);
+        SupplierProduct::factory()->for($product)->for($this->digiflazz)->create(['buyer_sku_code' => 'X100']);
+        $this->fakePrepaidList();
+
+        $this->getJson('/api/v1/digiflazz/price-list?type=prepaid&only_unmapped=false')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 2);
     }
 
     public function test_pasca_type_uses_admin_as_cost_and_exposes_admin_fee_commission(): void
