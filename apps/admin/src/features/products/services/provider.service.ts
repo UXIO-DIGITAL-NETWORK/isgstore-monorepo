@@ -24,7 +24,11 @@ type PriceListApiRow = Omit<DigiflazzPriceListItem, "id">;
 
 export const providerService = {
   priceList: async (params: DigiflazzPriceListParams = {}): Promise<PaginatedResponse<DigiflazzPriceListItem>> => {
-    const response: ApiResponse<PaginatedResponse<PriceListApiRow>> = await api.get(`${BASE}/price-list`, { params });
+    const { only_unmapped, ...rest } = params;
+    // The API's `boolean` rule rejects the string "true" (what axios sends for a JS boolean)
+    // but accepts "1"/"0". Send 1 (omit when false) so it validates on any API version.
+    const query = { ...rest, ...(only_unmapped ? { only_unmapped: 1 } : {}) };
+    const response: ApiResponse<PaginatedResponse<PriceListApiRow>> = await api.get(`${BASE}/price-list`, { params: query });
     return unwrapPaginated(response, (row) => ({ ...row, id: row.buyer_sku_code }));
   },
 
