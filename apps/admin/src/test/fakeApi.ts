@@ -484,6 +484,33 @@ const SEEDS: Record<string, () => Row[]> = {
       })),
     ),
   ],
+  // Customer feedback (ratings) — shaped like RatingResource. One member row and
+  // one guest row (user_id null + generated guest_name) so the admin Feedback
+  // page can assert both the named-reviewer and Guest-badge paths.
+  "ratings": () => [
+    {
+      id: 1,
+      transaction_id: 1,
+      user_id: 12,
+      guest_name: null,
+      rating: 5,
+      comment: "Prosesnya cepat, mantap!",
+      user: { id: 12, name: "Budi Santoso", username: "budi88" },
+      transaction: { id: 1, invoice_number: "INV-20260807-ABC123", product: { name: "Mobile Legends 100 Diamond" } },
+      created_at: "2026-08-07T10:00:00.000Z",
+    },
+    {
+      id: 2,
+      transaction_id: 2,
+      user_id: null,
+      guest_name: "Guest K48213",
+      rating: 4,
+      comment: null,
+      user: null,
+      transaction: { id: 2, invoice_number: "INV-20260807-XYZ999", product: { name: "Free Fire 70 Diamond" } },
+      created_at: "2026-08-07T11:00:00.000Z",
+    },
+  ],
 };
 
 /** Free-text fields per collection, so `?search=` narrows the way the API does. */
