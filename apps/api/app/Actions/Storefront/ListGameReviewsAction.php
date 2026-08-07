@@ -39,7 +39,11 @@ class ListGameReviewsAction
             ->paginate($perPage)
             ->through(fn (Rating $rating) => [
                 'id' => $rating->id,
-                'author' => Mask::name($rating->user?->username ?: $rating->user?->name),
+                // Guest reviews carry a generated pseudonym shown as-is; only real
+                // member names are masked (the pseudonym is already anonymous).
+                'author' => $rating->user_id
+                    ? Mask::name($rating->user?->username ?: $rating->user?->name)
+                    : ($rating->guest_name ?? 'Guest'),
                 'rating' => (int) $rating->rating,
                 'comment' => $rating->comment,
                 'masked_user_id' => Mask::gameId($rating->transaction?->target_uid),

@@ -53,6 +53,7 @@ use App\Http\Controllers\Api\Storefront\ContentController;
 use App\Http\Controllers\Api\Storefront\ContentPageController;
 use App\Http\Controllers\Api\Storefront\GameController as StorefrontGameController;
 use App\Http\Controllers\Api\Storefront\GameReviewController;
+use App\Http\Controllers\Api\Storefront\GuestRatingController;
 use App\Http\Controllers\Api\Storefront\InvoiceController;
 use App\Http\Controllers\Api\Storefront\LeaderboardController as StorefrontLeaderboardController;
 use App\Http\Controllers\Api\Storefront\MarketingController;
@@ -164,6 +165,11 @@ Route::prefix('v1')->group(function () {
         // Postpaid — public (guests can inquire/pay bills)
         Route::post('/digiflazz/check-bill', [DigiflazzPostpaidController::class, 'checkBill']);
         Route::post('/digiflazz/pay-bill', [DigiflazzPostpaidController::class, 'payBill']);
+
+        // Guest feedback: reviews a guest's own completed order by invoice number
+        // (the member equivalent is POST /v1/me/transactions/{invoiceNumber}/rating).
+        // Throttled like checkout since the invoice number is the only credential.
+        Route::post('/transactions/{invoiceNumber}/rating', [GuestRatingController::class, 'store']);
     });
 
     // Authentication Routes
