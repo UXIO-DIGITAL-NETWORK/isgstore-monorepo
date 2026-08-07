@@ -9,6 +9,9 @@ class GetRatingsAction
 {
     public function execute(int $perPage = 15): LengthAwarePaginator
     {
-        return Rating::with(['order', 'user'])->latest()->paginate($perPage);
+        // `transaction.product` is pulled so the admin list can show which game
+        // each review is about; `user` is null for guest reviews (guest_name is
+        // shown instead). Note: the relation is `transaction`, not `order`.
+        return Rating::with(['user', 'transaction.product'])->latest()->paginate($perPage);
     }
 }
