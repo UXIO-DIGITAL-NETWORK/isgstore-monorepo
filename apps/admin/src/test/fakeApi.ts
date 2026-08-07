@@ -459,18 +459,26 @@ const SEEDS: Record<string, () => Row[]> = {
   "activity-logs": () => [
     ...ACTIVITY_LOG.map((row, index) => ({
       id: index + 1,
+      user_id: index + 1,
       transaction_id: null,
+      type: "security",
       actor: row.actor,
       role: row.role,
+      ip_address: "192.168.1.10",
+      user_agent: "Mozilla/5.0",
       message: row.action,
       created_at: row.timestamp,
     })),
     ...TRANSACTIONS.flatMap((row, index) =>
       row.activity_log.map((entry, entryIndex) => ({
         id: (index + 1) * 100 + entryIndex,
+        user_id: entry.actor === "system" ? null : index + 1,
         transaction_id: index + 1,
+        type: "transaction",
         actor: entry.actor === "system" ? "System" : entry.actor.name,
-        role: "admin",
+        role: entry.actor === "system" ? null : "admin",
+        ip_address: entry.actor === "system" ? null : "192.168.1.11",
+        user_agent: "Mozilla/5.0",
         message: entry.description,
         created_at: entry.created_at,
       })),

@@ -33,6 +33,7 @@ import { Route as AdminProtectedFinancialIndexRouteImport } from './routes/admin
 import { Route as AdminProtectedDashboardIndexRouteImport } from './routes/admin/_protected/dashboard/index'
 import { Route as AdminProtectedContentIndexRouteImport } from './routes/admin/_protected/content/index'
 import { Route as AdminProtectedCategoriesIndexRouteImport } from './routes/admin/_protected/categories/index'
+import { Route as AdminProtectedActivityIndexRouteImport } from './routes/admin/_protected/activity/index'
 import { Route as AdminPreviewTransactionPreviewIndexRouteImport } from './routes/admin/_preview/transaction-preview/index'
 import { Route as AdminPreviewProductsPreviewIndexRouteImport } from './routes/admin/_preview/products-preview/index'
 import { Route as AdminPreviewIntegrationPreviewIndexRouteImport } from './routes/admin/_preview/integration-preview/index'
@@ -247,6 +248,12 @@ const AdminProtectedCategoriesIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AdminProtectedCategoriesRouteRoute,
+  } as any)
+const AdminProtectedActivityIndexRoute =
+  AdminProtectedActivityIndexRouteImport.update({
+    id: '/activity/',
+    path: '/activity/',
+    getParentRoute: () => AdminProtectedRoute,
   } as any)
 const AdminPreviewTransactionPreviewIndexRoute =
   AdminPreviewTransactionPreviewIndexRouteImport.update({
@@ -742,6 +749,7 @@ export interface FileRoutesByFullPath {
   '/admin/integration-preview/': typeof AdminPreviewIntegrationPreviewIndexRoute
   '/admin/products-preview/': typeof AdminPreviewProductsPreviewIndexRoute
   '/admin/transaction-preview/': typeof AdminPreviewTransactionPreviewIndexRoute
+  '/admin/activity/': typeof AdminProtectedActivityIndexRoute
   '/admin/categories/': typeof AdminProtectedCategoriesIndexRoute
   '/admin/content/': typeof AdminProtectedContentIndexRoute
   '/admin/dashboard/': typeof AdminProtectedDashboardIndexRoute
@@ -837,6 +845,7 @@ export interface FileRoutesByTo {
   '/admin/integration-preview': typeof AdminPreviewIntegrationPreviewIndexRoute
   '/admin/products-preview': typeof AdminPreviewProductsPreviewIndexRoute
   '/admin/transaction-preview': typeof AdminPreviewTransactionPreviewIndexRoute
+  '/admin/activity': typeof AdminProtectedActivityIndexRoute
   '/admin/categories': typeof AdminProtectedCategoriesIndexRoute
   '/admin/content': typeof AdminProtectedContentIndexRoute
   '/admin/dashboard': typeof AdminProtectedDashboardIndexRoute
@@ -941,6 +950,7 @@ export interface FileRoutesById {
   '/admin/_preview/integration-preview/': typeof AdminPreviewIntegrationPreviewIndexRoute
   '/admin/_preview/products-preview/': typeof AdminPreviewProductsPreviewIndexRoute
   '/admin/_preview/transaction-preview/': typeof AdminPreviewTransactionPreviewIndexRoute
+  '/admin/_protected/activity/': typeof AdminProtectedActivityIndexRoute
   '/admin/_protected/categories/': typeof AdminProtectedCategoriesIndexRoute
   '/admin/_protected/content/': typeof AdminProtectedContentIndexRoute
   '/admin/_protected/dashboard/': typeof AdminProtectedDashboardIndexRoute
@@ -1044,6 +1054,7 @@ export interface FileRouteTypes {
     | '/admin/integration-preview/'
     | '/admin/products-preview/'
     | '/admin/transaction-preview/'
+    | '/admin/activity/'
     | '/admin/categories/'
     | '/admin/content/'
     | '/admin/dashboard/'
@@ -1139,6 +1150,7 @@ export interface FileRouteTypes {
     | '/admin/integration-preview'
     | '/admin/products-preview'
     | '/admin/transaction-preview'
+    | '/admin/activity'
     | '/admin/categories'
     | '/admin/content'
     | '/admin/dashboard'
@@ -1242,6 +1254,7 @@ export interface FileRouteTypes {
     | '/admin/_preview/integration-preview/'
     | '/admin/_preview/products-preview/'
     | '/admin/_preview/transaction-preview/'
+    | '/admin/_protected/activity/'
     | '/admin/_protected/categories/'
     | '/admin/_protected/content/'
     | '/admin/_protected/dashboard/'
@@ -1504,6 +1517,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/categories/'
       preLoaderRoute: typeof AdminProtectedCategoriesIndexRouteImport
       parentRoute: typeof AdminProtectedCategoriesRouteRoute
+    }
+    '/admin/_protected/activity/': {
+      id: '/admin/_protected/activity/'
+      path: '/activity'
+      fullPath: '/admin/activity/'
+      preLoaderRoute: typeof AdminProtectedActivityIndexRouteImport
+      parentRoute: typeof AdminProtectedRoute
     }
     '/admin/_preview/transaction-preview/': {
       id: '/admin/_preview/transaction-preview/'
@@ -2374,6 +2394,7 @@ interface AdminProtectedRouteChildren {
   AdminProtectedContentRouteRoute: typeof AdminProtectedContentRouteRouteWithChildren
   AdminProtectedProductsRouteRoute: typeof AdminProtectedProductsRouteRouteWithChildren
   AdminProtectedTransactionsRouteRoute: typeof AdminProtectedTransactionsRouteRouteWithChildren
+  AdminProtectedActivityIndexRoute: typeof AdminProtectedActivityIndexRoute
   AdminProtectedDashboardIndexRoute: typeof AdminProtectedDashboardIndexRoute
   AdminProtectedFinancialIndexRoute: typeof AdminProtectedFinancialIndexRoute
   AdminProtectedFlashSalesIndexRoute: typeof AdminProtectedFlashSalesIndexRoute
@@ -2396,6 +2417,7 @@ const AdminProtectedRouteChildren: AdminProtectedRouteChildren = {
     AdminProtectedProductsRouteRouteWithChildren,
   AdminProtectedTransactionsRouteRoute:
     AdminProtectedTransactionsRouteRouteWithChildren,
+  AdminProtectedActivityIndexRoute: AdminProtectedActivityIndexRoute,
   AdminProtectedDashboardIndexRoute: AdminProtectedDashboardIndexRoute,
   AdminProtectedFinancialIndexRoute: AdminProtectedFinancialIndexRoute,
   AdminProtectedFlashSalesIndexRoute: AdminProtectedFlashSalesIndexRoute,
