@@ -44,14 +44,22 @@ describe("providerService.priceList", () => {
     expect(result.data[0]).toMatchObject({ name: "Xl 100.000", cost: 98000, already_mapped: false });
   });
 
-  it("forwards search and only_unmapped params", async () => {
+  it("sends only_unmapped as 1 so the API's boolean rule accepts it", async () => {
     vi.mocked(api.get).mockResolvedValue(paginated([]));
 
     await providerService.priceList({ type: "pasca", search: "pln", only_unmapped: true, page: 2, per_page: 20 });
 
     expect(api.get).toHaveBeenCalledWith("/v1/digiflazz/price-list", {
-      params: { type: "pasca", search: "pln", only_unmapped: true, page: 2, per_page: 20 },
+      params: { type: "pasca", search: "pln", only_unmapped: 1, page: 2, per_page: 20 },
     });
+  });
+
+  it("omits only_unmapped entirely when false", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
+
+    await providerService.priceList({ type: "prepaid", only_unmapped: false });
+
+    expect(api.get).toHaveBeenLastCalledWith("/v1/digiflazz/price-list", { params: { type: "prepaid" } });
   });
 });
 
