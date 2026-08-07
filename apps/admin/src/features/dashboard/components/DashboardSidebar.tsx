@@ -70,7 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Orders",
     items: [
       { label: "Transaction", href: "/admin/transactions", icon: Receipt },
-      { label: "Activity", href: "/admin/dashboard", icon: Activity, disabled: true },
+      { label: "Activity", href: "/admin/activity", icon: Activity },
     ],
   },
   {
