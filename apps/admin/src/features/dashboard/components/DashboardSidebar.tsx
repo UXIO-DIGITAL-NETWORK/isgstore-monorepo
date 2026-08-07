@@ -14,6 +14,7 @@ import {
   Receipt,
   Search,
   Settings,
+  Star,
   Users2,
   Tag,
   Users,
@@ -71,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Transaction", href: "/admin/transactions", icon: Receipt },
       { label: "Activity", href: "/admin/activity", icon: Activity },
+      { label: "Feedback", href: "/admin/feedback", icon: Star },
     ],
   },
   {

@@ -30,6 +30,7 @@ import { Route as AdminProtectedPaymentsIndexRouteImport } from './routes/admin/
 import { Route as AdminProtectedIntegrationIndexRouteImport } from './routes/admin/_protected/integration/index'
 import { Route as AdminProtectedFlashSalesIndexRouteImport } from './routes/admin/_protected/flash-sales/index'
 import { Route as AdminProtectedFinancialIndexRouteImport } from './routes/admin/_protected/financial/index'
+import { Route as AdminProtectedFeedbackIndexRouteImport } from './routes/admin/_protected/feedback/index'
 import { Route as AdminProtectedDashboardIndexRouteImport } from './routes/admin/_protected/dashboard/index'
 import { Route as AdminProtectedContentIndexRouteImport } from './routes/admin/_protected/content/index'
 import { Route as AdminProtectedCategoriesIndexRouteImport } from './routes/admin/_protected/categories/index'
@@ -229,6 +230,12 @@ const AdminProtectedFinancialIndexRoute =
   AdminProtectedFinancialIndexRouteImport.update({
     id: '/financial/',
     path: '/financial/',
+    getParentRoute: () => AdminProtectedRoute,
+  } as any)
+const AdminProtectedFeedbackIndexRoute =
+  AdminProtectedFeedbackIndexRouteImport.update({
+    id: '/feedback/',
+    path: '/feedback/',
     getParentRoute: () => AdminProtectedRoute,
   } as any)
 const AdminProtectedDashboardIndexRoute =
@@ -753,6 +760,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories/': typeof AdminProtectedCategoriesIndexRoute
   '/admin/content/': typeof AdminProtectedContentIndexRoute
   '/admin/dashboard/': typeof AdminProtectedDashboardIndexRoute
+  '/admin/feedback/': typeof AdminProtectedFeedbackIndexRoute
   '/admin/financial/': typeof AdminProtectedFinancialIndexRoute
   '/admin/flash-sales/': typeof AdminProtectedFlashSalesIndexRoute
   '/admin/integration/': typeof AdminProtectedIntegrationIndexRoute
@@ -849,6 +857,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminProtectedCategoriesIndexRoute
   '/admin/content': typeof AdminProtectedContentIndexRoute
   '/admin/dashboard': typeof AdminProtectedDashboardIndexRoute
+  '/admin/feedback': typeof AdminProtectedFeedbackIndexRoute
   '/admin/financial': typeof AdminProtectedFinancialIndexRoute
   '/admin/flash-sales': typeof AdminProtectedFlashSalesIndexRoute
   '/admin/integration': typeof AdminProtectedIntegrationIndexRoute
@@ -954,6 +963,7 @@ export interface FileRoutesById {
   '/admin/_protected/categories/': typeof AdminProtectedCategoriesIndexRoute
   '/admin/_protected/content/': typeof AdminProtectedContentIndexRoute
   '/admin/_protected/dashboard/': typeof AdminProtectedDashboardIndexRoute
+  '/admin/_protected/feedback/': typeof AdminProtectedFeedbackIndexRoute
   '/admin/_protected/financial/': typeof AdminProtectedFinancialIndexRoute
   '/admin/_protected/flash-sales/': typeof AdminProtectedFlashSalesIndexRoute
   '/admin/_protected/integration/': typeof AdminProtectedIntegrationIndexRoute
@@ -1058,6 +1068,7 @@ export interface FileRouteTypes {
     | '/admin/categories/'
     | '/admin/content/'
     | '/admin/dashboard/'
+    | '/admin/feedback/'
     | '/admin/financial/'
     | '/admin/flash-sales/'
     | '/admin/integration/'
@@ -1154,6 +1165,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/content'
     | '/admin/dashboard'
+    | '/admin/feedback'
     | '/admin/financial'
     | '/admin/flash-sales'
     | '/admin/integration'
@@ -1258,6 +1270,7 @@ export interface FileRouteTypes {
     | '/admin/_protected/categories/'
     | '/admin/_protected/content/'
     | '/admin/_protected/dashboard/'
+    | '/admin/_protected/feedback/'
     | '/admin/_protected/financial/'
     | '/admin/_protected/flash-sales/'
     | '/admin/_protected/integration/'
@@ -1495,6 +1508,13 @@ declare module '@tanstack/react-router' {
       path: '/financial'
       fullPath: '/admin/financial/'
       preLoaderRoute: typeof AdminProtectedFinancialIndexRouteImport
+      parentRoute: typeof AdminProtectedRoute
+    }
+    '/admin/_protected/feedback/': {
+      id: '/admin/_protected/feedback/'
+      path: '/feedback'
+      fullPath: '/admin/feedback/'
+      preLoaderRoute: typeof AdminProtectedFeedbackIndexRouteImport
       parentRoute: typeof AdminProtectedRoute
     }
     '/admin/_protected/dashboard/': {
@@ -2396,6 +2416,7 @@ interface AdminProtectedRouteChildren {
   AdminProtectedTransactionsRouteRoute: typeof AdminProtectedTransactionsRouteRouteWithChildren
   AdminProtectedActivityIndexRoute: typeof AdminProtectedActivityIndexRoute
   AdminProtectedDashboardIndexRoute: typeof AdminProtectedDashboardIndexRoute
+  AdminProtectedFeedbackIndexRoute: typeof AdminProtectedFeedbackIndexRoute
   AdminProtectedFinancialIndexRoute: typeof AdminProtectedFinancialIndexRoute
   AdminProtectedFlashSalesIndexRoute: typeof AdminProtectedFlashSalesIndexRoute
   AdminProtectedIntegrationIndexRoute: typeof AdminProtectedIntegrationIndexRoute
@@ -2419,6 +2440,7 @@ const AdminProtectedRouteChildren: AdminProtectedRouteChildren = {
     AdminProtectedTransactionsRouteRouteWithChildren,
   AdminProtectedActivityIndexRoute: AdminProtectedActivityIndexRoute,
   AdminProtectedDashboardIndexRoute: AdminProtectedDashboardIndexRoute,
+  AdminProtectedFeedbackIndexRoute: AdminProtectedFeedbackIndexRoute,
   AdminProtectedFinancialIndexRoute: AdminProtectedFinancialIndexRoute,
   AdminProtectedFlashSalesIndexRoute: AdminProtectedFlashSalesIndexRoute,
   AdminProtectedIntegrationIndexRoute: AdminProtectedIntegrationIndexRoute,
