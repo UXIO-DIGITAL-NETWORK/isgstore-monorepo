@@ -17,6 +17,8 @@ export interface PaymentChannel {
   updated_at: string;
 }
 
+export type UserStatus = "active" | "suspended" | "banned";
+
 export interface AdminUser {
   id: string;
   role_id: string;
@@ -29,8 +31,17 @@ export interface AdminUser {
   balance: number;
   point: number;
   locale: string;
+  /** Account standing — drives the Suspend/Ban row actions. Defaults to active. */
+  status: UserStatus;
   email_verified_at?: string;
   created_at: string;
+}
+
+/** A manual wallet credit/debit — always carries a reason for the audit trail. */
+export interface BalanceAdjustmentInput {
+  amount: number;
+  direction: "credit" | "debit";
+  reason: string;
 }
 
 export interface Setting {

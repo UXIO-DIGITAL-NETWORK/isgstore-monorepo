@@ -7,7 +7,7 @@ import {
   usersService,
   type PaymentChannelInput,
 } from "../services/administration.service";
-import type { AdministrationListParams } from "../types/administration.type";
+import type { AdministrationListParams, BalanceAdjustmentInput, UserStatus } from "../types/administration.type";
 
 export const usePaymentChannelList = (params: AdministrationListParams) =>
   useQuery({ queryKey: ["payment-channels", "list", params], queryFn: () => paymentChannelsService.list(params) });
@@ -50,6 +50,33 @@ export const useDeletePaymentChannels = () => {
 
 export const useUserList = (params: AdministrationListParams) =>
   useQuery({ queryKey: ["users", "list", params], queryFn: () => usersService.list(params) });
+
+export const useAdjustBalance = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: BalanceAdjustmentInput }) =>
+      usersService.adjustBalance(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Balance adjusted");
+    },
+    onError: () => toast.error("Failed to adjust balance"),
+  });
+};
+
+export const useSetUserStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: UserStatus }) => usersService.setStatus(id, status),
+    onSuccess: (_result, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success(status === "active" ? "User reactivated" : `User ${status}`);
+    },
+    onError: () => toast.error("Failed to update user status"),
+  });
+};
 
 export const useDeleteUsers = () => {
   const queryClient = useQueryClient();

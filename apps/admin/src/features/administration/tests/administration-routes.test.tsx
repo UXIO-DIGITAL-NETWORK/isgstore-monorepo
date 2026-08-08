@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 
-import { makeUser, renderRoute, screen } from "@/test/test-utils";
+import { makeUser, renderRoute, screen, within } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { paymentChannelsService, usersService } from "../services/administration.service";
 
 // Guarded routes with no preview twin — the store is seeded so requireAuth and
 // requirePermission run for real rather than being bypassed.
@@ -22,12 +24,66 @@ describe("administration routes", () => {
     expect(await screen.findByText("bca_va")).toBeInTheDocument();
   });
 
+  it("Payment row menu deactivates an active channel through the update service", async () => {
+    const updateSpy = vi.spyOn(paymentChannelsService, "update").mockResolvedValue({
+      id: "1",
+      payment_type: "virtual_account",
+      channel_code: "bca_va",
+      name: "BCA Virtual Account",
+      min_amount: 10000,
+      fee_flat: 4000,
+      fee_percent: 0,
+      sort_order: 0,
+      is_active: false,
+      is_single_use: false,
+      created_at: "2026-07-31",
+      updated_at: "2026-07-31",
+    });
+    const user = userEvent.setup();
+    await renderRoute("/admin/payments");
+
+    await user.click(await screen.findByRole("button", { name: "Actions for BCA Virtual Account" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Deactivate" }));
+
+    expect(updateSpy).toHaveBeenCalledWith("1", { is_active: false });
+  });
+
   it("Users lists members with their balance", async () => {
     await renderRoute("/admin/users");
 
     expect(await screen.findByRole("heading", { name: "Users" })).toBeInTheDocument();
     expect(await screen.findByText("Randy Galang")).toBeInTheDocument();
     expect(await screen.findByText("randy@example.com")).toBeInTheDocument();
+  });
+
+  it("Users row menu adjusts balance through the audited dialog, requiring a reason", async () => {
+    const adjustSpy = vi.spyOn(usersService, "adjustBalance").mockResolvedValue({
+      id: "1",
+      role_id: "2",
+      name: "Randy Galang",
+      email: "randy@example.com",
+      phone: "628",
+      balance: 65000,
+      point: 120,
+      locale: "id",
+      status: "active",
+      created_at: "2026-07-01",
+    });
+    const user = userEvent.setup();
+    await renderRoute("/admin/users");
+
+    await user.click(await screen.findByRole("button", { name: "Actions for Randy Galang" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Adjust Balance" }));
+
+    const dialog = await screen.findByRole("dialog", { name: /Adjust balance/ });
+    await user.type(within(dialog).getByLabelText("Amount"), "50000");
+    await user.click(within(dialog).getByRole("button", { name: "Adjust Balance" }));
+    expect(await within(dialog).findByText("A reason is required")).toBeInTheDocument();
+    expect(adjustSpy).not.toHaveBeenCalled();
+
+    await user.type(within(dialog).getByLabelText("Reason"), "compensation");
+    await user.click(within(dialog).getByRole("button", { name: "Adjust Balance" }));
+    expect(adjustSpy).toHaveBeenCalledWith("1", { amount: 50000, direction: "credit", reason: "compensation" });
   });
 
   it("Settings groups values and marks the public ones", async () => {
