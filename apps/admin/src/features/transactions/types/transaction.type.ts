@@ -112,3 +112,21 @@ export interface SelectOption {
   value: string;
   label: string;
 }
+
+/** Recap report granularity (product_requirements.md §4.3). */
+export type RecapPeriod = "daily" | "monthly";
+
+/** One breakdown line of the recap — per game/product/payment channel. */
+export interface RecapRow {
+  label: string;
+  count: number;
+  revenue: number;
+}
+
+/** Downloadable daily/monthly transaction recap with a totals footer. */
+export interface TransactionRecap {
+  period: RecapPeriod;
+  generated_at: string;
+  rows: RecapRow[];
+  totals: { count: number; revenue: number };
+}

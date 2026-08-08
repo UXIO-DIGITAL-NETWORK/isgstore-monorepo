@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { transactionsService } from "../services/transactions.service";
-import type { TransactionListParams } from "../types/transaction.type";
+import { downloadBlob } from "../lib/downloadBlob";
+import type { RecapPeriod, TransactionListParams } from "../types/transaction.type";
 
 export const useTransactionList = (params: TransactionListParams) =>
   useQuery({
@@ -107,3 +108,37 @@ export const useRetryInvoice = () => {
     },
   });
 };
+
+export const useResendReceipt = () =>
+  useMutation({
+    mutationFn: (id: string) => transactionsService.resendReceipt(id),
+    onSuccess: () => {
+      toast.success("Receipt resent");
+    },
+    onError: () => {
+      toast.error("Failed to resend receipt");
+    },
+  });
+
+/**
+ * `enabled` is the Recap dialog's open state — the query only runs while the
+ * dialog is mounted-and-open, and re-runs when the operator flips the period.
+ */
+export const useRecap = (period: RecapPeriod, enabled: boolean) =>
+  useQuery({
+    queryKey: ["transactions", "recap", period],
+    queryFn: () => transactionsService.getRecap(period),
+    enabled,
+  });
+
+export const useExportTransactions = () =>
+  useMutation({
+    mutationFn: (params: TransactionListParams) => transactionsService.exportTransactions(params),
+    onSuccess: (blob) => {
+      downloadBlob(blob, "transactions.csv");
+      toast.success("Export ready");
+    },
+    onError: () => {
+      toast.error("Failed to export transactions");
+    },
+  });

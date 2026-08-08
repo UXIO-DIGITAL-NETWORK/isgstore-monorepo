@@ -159,14 +159,49 @@ describe("transactionsService actions", () => {
     expect(api.post).toHaveBeenCalledWith("/v1/transactions/1/refund", { reason: "duplicate order" });
   });
 
-  it("resendCallback and retryInvoice hit their own endpoints", async () => {
+  it("resendCallback, retryInvoice and resendReceipt hit their own endpoints", async () => {
     vi.mocked(api.post).mockResolvedValue(envelope(null));
 
     await transactionsService.resendCallback("1");
     await transactionsService.retryInvoice("1");
+    await transactionsService.resendReceipt("1");
 
     expect(api.post).toHaveBeenCalledWith("/v1/transactions/1/resend-callback");
     expect(api.post).toHaveBeenCalledWith("/v1/transactions/1/retry");
+    expect(api.post).toHaveBeenCalledWith("/v1/transactions/1/resend-receipt");
+  });
+
+  it("exportTransactions requests a CSV blob for the filtered set, without pagination", async () => {
+    vi.mocked(api.get).mockResolvedValue(new Blob(["a,b"], { type: "text/csv" }));
+
+    await transactionsService.exportTransactions({ search: "foo", invoiceStatus: "pending", page: 2, per_page: 10 });
+
+    const call = vi.mocked(api.get).mock.calls.at(-1);
+    expect(call?.[0]).toBe("/v1/transactions/export");
+    expect(call?.[1]?.responseType).toBe("blob");
+    expect(call?.[1]?.params).toMatchObject({ format: "csv", search: "foo", status: "PENDING" });
+    expect(call?.[1]?.params).not.toHaveProperty("page");
+    expect(call?.[1]?.params).not.toHaveProperty("per_page");
+  });
+
+  it("getRecap maps the breakdown and derives totals when the API omits them", async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      envelope({
+        generated_at: "2026-07-01T00:00:00.000Z",
+        breakdown: [
+          { label: "ML", count: 2, revenue: 1000 },
+          { label: "FF", count: 3, revenue: 2000 },
+        ],
+      }),
+    );
+
+    const recap = await transactionsService.getRecap("monthly");
+
+    const call = vi.mocked(api.get).mock.calls.at(-1);
+    expect(call?.[0]).toBe("/v1/transactions/recap");
+    expect(call?.[1]?.params).toMatchObject({ period: "monthly" });
+    expect(recap.rows).toHaveLength(2);
+    expect(recap.totals).toEqual({ count: 5, revenue: 3000 });
   });
 
   it("remove deletes by id", async () => {

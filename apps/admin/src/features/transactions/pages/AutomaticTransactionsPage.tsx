@@ -6,6 +6,8 @@ import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { automaticColumns } from "../components/automaticColumns";
+import { ExportButton } from "../components/ExportButton";
+import { RecapButton } from "../components/RecapButton";
 import { StatusPills } from "../components/StatusPills";
 import { TransactionFilterBar, type TransactionFilters } from "../components/TransactionFilterBar";
 import { TransactionsTable } from "../components/TransactionsTable";
@@ -49,16 +51,22 @@ export default function AutomaticTransactionsPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Box className="rounded-2xl border border-border bg-card p-6">
-        <Heading
-          level={1}
-          variant="section"
-        >
-          Automatic Transaction History
-        </Heading>
-        <Text variant="muted">
-          Monitor all automated transactions that have been processed along with their status and details.
-        </Text>
+      <Box className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-6">
+        <Box>
+          <Heading
+            level={1}
+            variant="section"
+          >
+            Automatic Transaction History
+          </Heading>
+          <Text variant="muted">
+            Monitor all automated transactions that have been processed along with their status and details.
+          </Text>
+        </Box>
+        <Box className="flex shrink-0 gap-3">
+          <RecapButton />
+          <ExportButton params={params} />
+        </Box>
       </Box>
 
       <StatusPills
