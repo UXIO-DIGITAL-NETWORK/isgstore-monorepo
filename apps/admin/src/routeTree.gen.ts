@@ -24,9 +24,11 @@ import { Route as AdminPreviewCategoriesPreviewRouteRouteImport } from './routes
 import { Route as AdminProtectedUsersIndexRouteImport } from './routes/admin/_protected/users/index'
 import { Route as AdminProtectedTransactionsIndexRouteImport } from './routes/admin/_protected/transactions/index'
 import { Route as AdminProtectedSettingsIndexRouteImport } from './routes/admin/_protected/settings/index'
+import { Route as AdminProtectedReportsIndexRouteImport } from './routes/admin/_protected/reports/index'
 import { Route as AdminProtectedPromosIndexRouteImport } from './routes/admin/_protected/promos/index'
 import { Route as AdminProtectedProductsIndexRouteImport } from './routes/admin/_protected/products/index'
 import { Route as AdminProtectedPaymentsIndexRouteImport } from './routes/admin/_protected/payments/index'
+import { Route as AdminProtectedMembershipsIndexRouteImport } from './routes/admin/_protected/memberships/index'
 import { Route as AdminProtectedIntegrationIndexRouteImport } from './routes/admin/_protected/integration/index'
 import { Route as AdminProtectedFlashSalesIndexRouteImport } from './routes/admin/_protected/flash-sales/index'
 import { Route as AdminProtectedFinancialIndexRouteImport } from './routes/admin/_protected/financial/index'
@@ -196,6 +198,12 @@ const AdminProtectedSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AdminProtectedRoute,
   } as any)
+const AdminProtectedReportsIndexRoute =
+  AdminProtectedReportsIndexRouteImport.update({
+    id: '/reports/',
+    path: '/reports/',
+    getParentRoute: () => AdminProtectedRoute,
+  } as any)
 const AdminProtectedPromosIndexRoute =
   AdminProtectedPromosIndexRouteImport.update({
     id: '/promos/',
@@ -212,6 +220,12 @@ const AdminProtectedPaymentsIndexRoute =
   AdminProtectedPaymentsIndexRouteImport.update({
     id: '/payments/',
     path: '/payments/',
+    getParentRoute: () => AdminProtectedRoute,
+  } as any)
+const AdminProtectedMembershipsIndexRoute =
+  AdminProtectedMembershipsIndexRouteImport.update({
+    id: '/memberships/',
+    path: '/memberships/',
     getParentRoute: () => AdminProtectedRoute,
   } as any)
 const AdminProtectedIntegrationIndexRoute =
@@ -764,9 +778,11 @@ export interface FileRoutesByFullPath {
   '/admin/financial/': typeof AdminProtectedFinancialIndexRoute
   '/admin/flash-sales/': typeof AdminProtectedFlashSalesIndexRoute
   '/admin/integration/': typeof AdminProtectedIntegrationIndexRoute
+  '/admin/memberships/': typeof AdminProtectedMembershipsIndexRoute
   '/admin/payments/': typeof AdminProtectedPaymentsIndexRoute
   '/admin/products/': typeof AdminProtectedProductsIndexRoute
   '/admin/promos/': typeof AdminProtectedPromosIndexRoute
+  '/admin/reports/': typeof AdminProtectedReportsIndexRoute
   '/admin/settings/': typeof AdminProtectedSettingsIndexRoute
   '/admin/transactions/': typeof AdminProtectedTransactionsIndexRoute
   '/admin/users/': typeof AdminProtectedUsersIndexRoute
@@ -861,9 +877,11 @@ export interface FileRoutesByTo {
   '/admin/financial': typeof AdminProtectedFinancialIndexRoute
   '/admin/flash-sales': typeof AdminProtectedFlashSalesIndexRoute
   '/admin/integration': typeof AdminProtectedIntegrationIndexRoute
+  '/admin/memberships': typeof AdminProtectedMembershipsIndexRoute
   '/admin/payments': typeof AdminProtectedPaymentsIndexRoute
   '/admin/products': typeof AdminProtectedProductsIndexRoute
   '/admin/promos': typeof AdminProtectedPromosIndexRoute
+  '/admin/reports': typeof AdminProtectedReportsIndexRoute
   '/admin/settings': typeof AdminProtectedSettingsIndexRoute
   '/admin/transactions': typeof AdminProtectedTransactionsIndexRoute
   '/admin/users': typeof AdminProtectedUsersIndexRoute
@@ -967,9 +985,11 @@ export interface FileRoutesById {
   '/admin/_protected/financial/': typeof AdminProtectedFinancialIndexRoute
   '/admin/_protected/flash-sales/': typeof AdminProtectedFlashSalesIndexRoute
   '/admin/_protected/integration/': typeof AdminProtectedIntegrationIndexRoute
+  '/admin/_protected/memberships/': typeof AdminProtectedMembershipsIndexRoute
   '/admin/_protected/payments/': typeof AdminProtectedPaymentsIndexRoute
   '/admin/_protected/products/': typeof AdminProtectedProductsIndexRoute
   '/admin/_protected/promos/': typeof AdminProtectedPromosIndexRoute
+  '/admin/_protected/reports/': typeof AdminProtectedReportsIndexRoute
   '/admin/_protected/settings/': typeof AdminProtectedSettingsIndexRoute
   '/admin/_protected/transactions/': typeof AdminProtectedTransactionsIndexRoute
   '/admin/_protected/users/': typeof AdminProtectedUsersIndexRoute
@@ -1072,9 +1092,11 @@ export interface FileRouteTypes {
     | '/admin/financial/'
     | '/admin/flash-sales/'
     | '/admin/integration/'
+    | '/admin/memberships/'
     | '/admin/payments/'
     | '/admin/products/'
     | '/admin/promos/'
+    | '/admin/reports/'
     | '/admin/settings/'
     | '/admin/transactions/'
     | '/admin/users/'
@@ -1169,9 +1191,11 @@ export interface FileRouteTypes {
     | '/admin/financial'
     | '/admin/flash-sales'
     | '/admin/integration'
+    | '/admin/memberships'
     | '/admin/payments'
     | '/admin/products'
     | '/admin/promos'
+    | '/admin/reports'
     | '/admin/settings'
     | '/admin/transactions'
     | '/admin/users'
@@ -1274,9 +1298,11 @@ export interface FileRouteTypes {
     | '/admin/_protected/financial/'
     | '/admin/_protected/flash-sales/'
     | '/admin/_protected/integration/'
+    | '/admin/_protected/memberships/'
     | '/admin/_protected/payments/'
     | '/admin/_protected/products/'
     | '/admin/_protected/promos/'
+    | '/admin/_protected/reports/'
     | '/admin/_protected/settings/'
     | '/admin/_protected/transactions/'
     | '/admin/_protected/users/'
@@ -1468,6 +1494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedSettingsIndexRouteImport
       parentRoute: typeof AdminProtectedRoute
     }
+    '/admin/_protected/reports/': {
+      id: '/admin/_protected/reports/'
+      path: '/reports'
+      fullPath: '/admin/reports/'
+      preLoaderRoute: typeof AdminProtectedReportsIndexRouteImport
+      parentRoute: typeof AdminProtectedRoute
+    }
     '/admin/_protected/promos/': {
       id: '/admin/_protected/promos/'
       path: '/promos'
@@ -1487,6 +1520,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/admin/payments/'
       preLoaderRoute: typeof AdminProtectedPaymentsIndexRouteImport
+      parentRoute: typeof AdminProtectedRoute
+    }
+    '/admin/_protected/memberships/': {
+      id: '/admin/_protected/memberships/'
+      path: '/memberships'
+      fullPath: '/admin/memberships/'
+      preLoaderRoute: typeof AdminProtectedMembershipsIndexRouteImport
       parentRoute: typeof AdminProtectedRoute
     }
     '/admin/_protected/integration/': {
@@ -2420,8 +2460,10 @@ interface AdminProtectedRouteChildren {
   AdminProtectedFinancialIndexRoute: typeof AdminProtectedFinancialIndexRoute
   AdminProtectedFlashSalesIndexRoute: typeof AdminProtectedFlashSalesIndexRoute
   AdminProtectedIntegrationIndexRoute: typeof AdminProtectedIntegrationIndexRoute
+  AdminProtectedMembershipsIndexRoute: typeof AdminProtectedMembershipsIndexRoute
   AdminProtectedPaymentsIndexRoute: typeof AdminProtectedPaymentsIndexRoute
   AdminProtectedPromosIndexRoute: typeof AdminProtectedPromosIndexRoute
+  AdminProtectedReportsIndexRoute: typeof AdminProtectedReportsIndexRoute
   AdminProtectedSettingsIndexRoute: typeof AdminProtectedSettingsIndexRoute
   AdminProtectedUsersIndexRoute: typeof AdminProtectedUsersIndexRoute
   AdminProtectedFlashSalesAddIndexRoute: typeof AdminProtectedFlashSalesAddIndexRoute
@@ -2444,8 +2486,10 @@ const AdminProtectedRouteChildren: AdminProtectedRouteChildren = {
   AdminProtectedFinancialIndexRoute: AdminProtectedFinancialIndexRoute,
   AdminProtectedFlashSalesIndexRoute: AdminProtectedFlashSalesIndexRoute,
   AdminProtectedIntegrationIndexRoute: AdminProtectedIntegrationIndexRoute,
+  AdminProtectedMembershipsIndexRoute: AdminProtectedMembershipsIndexRoute,
   AdminProtectedPaymentsIndexRoute: AdminProtectedPaymentsIndexRoute,
   AdminProtectedPromosIndexRoute: AdminProtectedPromosIndexRoute,
+  AdminProtectedReportsIndexRoute: AdminProtectedReportsIndexRoute,
   AdminProtectedSettingsIndexRoute: AdminProtectedSettingsIndexRoute,
   AdminProtectedUsersIndexRoute: AdminProtectedUsersIndexRoute,
   AdminProtectedFlashSalesAddIndexRoute: AdminProtectedFlashSalesAddIndexRoute,

@@ -2,7 +2,14 @@ import { api } from "@/lib/axios";
 import { API_VERSION } from "@/config/env";
 import { toRowId, unwrapPaginated } from "@/lib/apiMappers";
 import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
-import type { AdminUser, AdministrationListParams, PaymentChannel, Setting } from "../types/administration.type";
+import type {
+  AdminUser,
+  AdministrationListParams,
+  BalanceAdjustmentInput,
+  PaymentChannel,
+  Setting,
+  UserStatus,
+} from "../types/administration.type";
 
 interface PaymentChannelApiRow {
   id: number;
@@ -33,6 +40,7 @@ interface UserApiRow {
   balance: number;
   point: number;
   locale: string;
+  status?: string | null;
   email_verified_at: string | null;
   created_at: string;
 }
@@ -78,6 +86,9 @@ const toUser = (row: UserApiRow): AdminUser => ({
   balance: row.balance,
   point: row.point,
   locale: row.locale,
+  // The API omits `status` on projections that predate the field; an existing
+  // member with no explicit standing is active.
+  status: (row.status as UserStatus | undefined) ?? "active",
   email_verified_at: row.email_verified_at ?? undefined,
   created_at: row.created_at,
 });
@@ -135,6 +146,23 @@ export const usersService = {
   },
   getById: async (id: string): Promise<AdminUser> => {
     const response: ApiResponse<UserApiRow> = await api.get(`${API_VERSION}/users/${id}`);
+    return toUser(response.data);
+  },
+  /**
+   * Manual wallet credit/debit — a money-moving action, so a reason is required
+   * and the write goes to a dedicated audited endpoint rather than a plain PUT.
+   */
+  adjustBalance: async (id: string, input: BalanceAdjustmentInput): Promise<AdminUser> => {
+    if (!input.reason.trim()) throw new Error("A reason is required");
+    const response: ApiResponse<UserApiRow> = await api.post(`${API_VERSION}/users/${id}/balance-adjustments`, {
+      amount: input.amount,
+      direction: input.direction,
+      reason: input.reason,
+    });
+    return toUser(response.data);
+  },
+  setStatus: async (id: string, status: UserStatus): Promise<AdminUser> => {
+    const response: ApiResponse<UserApiRow> = await api.post(`${API_VERSION}/users/${id}/status`, { status });
     return toUser(response.data);
   },
   remove: async (id: string): Promise<void> => {

@@ -62,7 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "General",
     items: [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutGrid },
-      { label: "Reports", href: "/admin/dashboard", icon: FileText, disabled: true },
+      { label: "Reports", href: "/admin/reports", icon: FileText },
       { label: "Financial", href: "/admin/financial", icon: Wallet },
       { label: "Integration", href: "/admin/integration", icon: Plug },
     ],
@@ -81,7 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Category", href: "/admin/categories", icon: Tag },
       { label: "Product", href: "/admin/products", icon: Package },
       { label: "Payment", href: "/admin/payments", icon: CreditCard },
-      { label: "Membership", href: "/admin/dashboard", icon: Users, disabled: true },
+      { label: "Membership", href: "/admin/memberships", icon: Users },
     ],
   },
   {

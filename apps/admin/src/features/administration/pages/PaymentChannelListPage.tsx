@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
+import { PaymentChannelRowActions } from "../components/PaymentChannelRowActions";
 import { useDeletePaymentChannels, usePaymentChannelList } from "../hooks/useAdministration";
 import type { PaymentChannel } from "../types/administration.type";
 
@@ -99,6 +100,11 @@ export function PaymentChannelListPage() {
             {row.original.is_active ? "Active" : "Inactive"}
           </Badge>
         ),
+      },
+      {
+        id: "actions",
+        header: "Action",
+        cell: ({ row }) => <PaymentChannelRowActions channel={row.original} />,
       },
     ],
     [],

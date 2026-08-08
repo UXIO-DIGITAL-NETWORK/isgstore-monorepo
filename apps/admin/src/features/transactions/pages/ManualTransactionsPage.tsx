@@ -5,6 +5,7 @@ import { endOfDay, startOfDay } from "date-fns";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
+import { ExportButton } from "../components/ExportButton";
 import { manualColumns } from "../components/manualColumns";
 import { TransactionFilterBar, type TransactionFilters, type FilterField } from "../components/TransactionFilterBar";
 import { TransactionsTable } from "../components/TransactionsTable";
@@ -54,14 +55,17 @@ export default function ManualTransactionsPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Box className="rounded-2xl border border-border bg-card p-6">
-        <Heading
-          level={1}
-          variant="section"
-        >
-          Manual Transaction History
-        </Heading>
-        <Text variant="muted">Review transactions entered or overridden manually by an operator.</Text>
+      <Box className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-6">
+        <Box>
+          <Heading
+            level={1}
+            variant="section"
+          >
+            Manual Transaction History
+          </Heading>
+          <Text variant="muted">Review transactions entered or overridden manually by an operator.</Text>
+        </Box>
+        <ExportButton params={params} />
       </Box>
 
       <Box className="flex flex-col gap-9 rounded-2xl border border-border bg-card p-4">

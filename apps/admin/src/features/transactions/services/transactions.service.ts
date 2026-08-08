@@ -4,9 +4,11 @@ import { toRowId, unwrapPaginated } from "@/lib/apiMappers";
 import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type {
   ActivityLogEntry,
+  RecapPeriod,
   StatusCounts,
   Transaction,
   TransactionListParams,
+  TransactionRecap,
   TransactionStatus,
 } from "../types/transaction.type";
 
@@ -78,6 +80,13 @@ interface TransactionApiRow {
   payment_channel?: { id: number; name: string } | null;
   created_at: string;
   updated_at: string;
+}
+
+interface RecapApiShape {
+  generated_at: string;
+  breakdown?: { label: string; count: number; revenue: number }[];
+  total_count?: number;
+  total_revenue?: number;
 }
 
 const toTransaction = (row: TransactionApiRow): Transaction => {
@@ -240,6 +249,52 @@ export const transactionsService = {
 
   retryInvoice: async (id: string): Promise<void> => {
     await api.post(`${BASE}/${id}/retry`);
+  },
+
+  /** Re-sends the transaction receipt to the customer (product_requirements.md §4.3). */
+  resendReceipt: async (id: string): Promise<void> => {
+    await api.post(`${BASE}/${id}/resend-receipt`);
+  },
+
+  /**
+   * Downloads the current filtered set (product_requirements.md §4.3). Pagination
+   * is dropped so the export covers every matching row, not just the page. The
+   * axios interceptor unwraps `response.data`, so the blob is returned directly.
+   */
+  exportTransactions: async (params: TransactionListParams, format: "csv" = "csv"): Promise<Blob> => {
+    const { page: _page, per_page: _perPage, ...rest } = params;
+    void _page;
+    void _perPage;
+    const blob: Blob = await api.get(`${BASE}/export`, {
+      params: { ...toListParams(rest), format },
+      responseType: "blob",
+    });
+    return blob;
+  },
+
+  /**
+   * Daily/monthly recap with a per-group breakdown (product_requirements.md
+   * §4.3). The API is assumed to return the aggregation already grouped; the
+   * mapper just normalises the field names and derives the totals footer when
+   * the backend omits it.
+   */
+  getRecap: async (period: RecapPeriod = "daily"): Promise<TransactionRecap> => {
+    const response: ApiResponse<RecapApiShape> = await api.get(`${BASE}/recap`, { params: { period } });
+    const data = response.data;
+    const rows = (data.breakdown ?? []).map((row) => ({
+      label: row.label,
+      count: row.count,
+      revenue: row.revenue,
+    }));
+    return {
+      period,
+      generated_at: data.generated_at,
+      rows,
+      totals: {
+        count: data.total_count ?? rows.reduce((sum, row) => sum + row.count, 0),
+        revenue: data.total_revenue ?? rows.reduce((sum, row) => sum + row.revenue, 0),
+      },
+    };
   },
 
   remove: async (id: string): Promise<void> => {

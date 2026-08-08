@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Eye, History, MoreHorizontal, Pencil, Receipt, RotateCw, Trash2, Upload } from "lucide-react";
+import { Eye, History, MoreHorizontal, Pencil, Receipt, RotateCcw, RotateCw, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { Can } from "@/components/common/Can";
@@ -12,10 +12,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDeleteTransaction, useResendCallback, useRetryInvoice } from "../hooks/useTransactions";
+import {
+  useDeleteTransaction,
+  useRefund,
+  useResendCallback,
+  useResendReceipt,
+  useRetryInvoice,
+} from "../hooks/useTransactions";
 import type { Transaction } from "../types/transaction.type";
 import { ActivityLogDialog } from "./ActivityLogDialog";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { RefundDialog } from "./RefundDialog";
 
 interface RowActionMenuProps {
   transaction: Transaction;
@@ -36,9 +43,12 @@ interface RowActionMenuProps {
 export function RowActionMenu({ transaction, showCallbackActions = true }: RowActionMenuProps) {
   const [activityOpen, setActivityOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
   const resendCallback = useResendCallback();
   const retryInvoice = useRetryInvoice();
+  const resendReceipt = useResendReceipt();
   const deleteTransaction = useDeleteTransaction();
+  const refund = useRefund();
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
@@ -83,6 +93,10 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
             <Receipt />
             View Invoice
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => resendReceipt.mutate(transaction.id)}>
+            <Send />
+            Resend Receipt
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => toast("Transaction Detail — coming soon")}>
             <Eye />
             Transaction Detail
@@ -94,6 +108,12 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
             </DropdownMenuItem>
           </Can>
           <DropdownMenuSeparator />
+          <Can permission="transactions.refund">
+            <DropdownMenuItem onSelect={() => setRefundOpen(true)}>
+              <RotateCcw />
+              Refund
+            </DropdownMenuItem>
+          </Can>
           <Can permission="transactions.delete">
             <DropdownMenuItem
               variant="destructive"
@@ -116,6 +136,13 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
         onOpenChange={setDeleteOpen}
         invoiceNo={transaction.invoice_no}
         onConfirm={() => deleteTransaction.mutate(transaction.id)}
+      />
+      <RefundDialog
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
+        invoiceNo={transaction.invoice_no}
+        isPending={refund.isPending}
+        onConfirm={(reason) => refund.mutate({ id: transaction.id, reason })}
       />
     </>
   );

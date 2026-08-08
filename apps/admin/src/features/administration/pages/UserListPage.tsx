@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/utils/currency";
+import { UserRowActions } from "../components/UserRowActions";
 import { useUserList } from "../hooks/useAdministration";
 import type { AdminUser } from "../types/administration.type";
 
@@ -93,6 +94,23 @@ export function UserListPage() {
           </Text>
         ),
       },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge
+            variant={row.original.status === "active" ? "outline" : "destructive"}
+            className="capitalize"
+          >
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Action",
+        cell: ({ row }) => <UserRowActions user={row.original} />,
+      },
     ],
     [],
   );
@@ -107,8 +125,8 @@ export function UserListPage() {
           Users
         </Heading>
         <Text variant="muted">
-          Registered customers, their wallet balance and role. Read-only for now — editing a member's balance moves
-          money and belongs behind its own audited flow.
+          Registered customers, their wallet balance and account standing. Balance adjustments are audited and require a
+          reason; suspend or ban blocks an account from transacting.
         </Text>
       </Box>
 

@@ -15,7 +15,11 @@ import { transactionsService } from "../services/transactions.service";
  * - The table's 9 column headers are present.
  * - The exact-fidelity fixture row's key content renders (invoice no,
  *   customer name, product, game, formatted cost).
- * - Opening a row's action menu shows all 7 items, in order.
+ * - Opening a row's action menu shows all 9 items, in order.
+ * - "Refund" opens a confirmation dialog that requires a reason before the
+ *   refund service fires (product_requirements.md §4.3).
+ * - "Resend Receipt" is a distinct action from "View Invoice" and calls its
+ *   own service (product_requirements.md §4.3).
  * - "Edit Invoice" NAVIGATES to the Edit Transaction page with its 4 fields
  *   (product_requirements.md §4.3, revised 2026-07-13 — was a modal).
  * - "Delete" opens a confirmation dialog BEFORE any delete mutation fires.
@@ -136,7 +140,7 @@ describe("AutomaticTransactionsPage", () => {
     expect(screen.getByText("Rp 4.752")).toBeInTheDocument();
   });
 
-  it("opens a row's action menu with all 7 items, in order", async () => {
+  it("opens a row's action menu with all 9 items, in order", async () => {
     const user = userEvent.setup();
     await renderRoute("/admin/transaction-preview");
 
@@ -149,10 +153,74 @@ describe("AutomaticTransactionsPage", () => {
       "Resend Callback",
       "Retry Invoice",
       "View Invoice",
+      "Resend Receipt",
       "Transaction Detail",
       "Edit Invoice",
+      "Refund",
       "Delete",
     ]);
+  });
+
+  it("calls the resend-receipt service from the Resend Receipt menu item", async () => {
+    const receiptSpy = vi.spyOn(transactionsService, "resendReceipt").mockResolvedValue();
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    const menuButton = await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i });
+    await user.click(menuButton);
+    await user.click(await screen.findByRole("menuitem", { name: "Resend Receipt" }));
+
+    expect(receiptSpy).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("exports the current filtered set from the Export button", async () => {
+    const exportSpy = vi.spyOn(transactionsService, "exportTransactions").mockResolvedValue(new Blob());
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    await user.click(await screen.findByRole("button", { name: "Export" }));
+
+    expect(exportSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the Recap dialog and shows the breakdown from the recap service", async () => {
+    vi.spyOn(transactionsService, "getRecap").mockResolvedValue({
+      period: "daily",
+      generated_at: "2026-07-01T00:00:00.000Z",
+      rows: [{ label: "Mobile Legends", count: 3, revenue: 15000 }],
+      totals: { count: 3, revenue: 15000 },
+    });
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    await user.click(await screen.findByRole("button", { name: "Recap" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Transaction Recap" });
+    expect(await within(dialog).findByText("Mobile Legends")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: /Download CSV/ })).toBeEnabled();
+  });
+
+  it("opens a confirmation dialog before calling the refund service on Refund", async () => {
+    const refundSpy = vi.spyOn(transactionsService, "refund");
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    const menuButton = await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i });
+    await user.click(menuButton);
+    await user.click(await screen.findByRole("menuitem", { name: "Refund" }));
+
+    // The reason is mandatory, so submitting empty must surface the Zod error
+    // and never reach the service.
+    const dialog = await screen.findByRole("dialog", { name: /Refund transaction ZP2607016UJFJVSHCJ/ });
+    await user.click(within(dialog).getByRole("button", { name: "Refund" }));
+    expect(await within(dialog).findByText("A refund reason is required")).toBeInTheDocument();
+    expect(refundSpy).not.toHaveBeenCalled();
+
+    // With a reason, the service is called with the (mapped) row id and that
+    // reason — the id here is the service's mapped id, not the raw fixture id.
+    await user.type(within(dialog).getByLabelText("Reason"), "Item out of stock");
+    await user.click(within(dialog).getByRole("button", { name: "Refund" }));
+    expect(refundSpy).toHaveBeenCalledWith(expect.any(String), "Item out of stock");
   });
 
   it("navigates to the Edit Transaction page with its 4 fields on Edit Invoice", async () => {
