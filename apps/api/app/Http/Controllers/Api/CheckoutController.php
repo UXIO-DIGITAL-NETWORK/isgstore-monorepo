@@ -28,6 +28,8 @@ class CheckoutController extends Controller
                 guestContact: $request->string('guest_contact')->toString() ?: null,
                 targetNickname: ($n = trim($request->string('target_nickname')->toString())) !== '' ? $n : null,
                 promoCode: ($p = trim($request->string('promo_code')->toString())) !== '' ? $p : null,
+                email: trim($request->string('email')->toString()) ?: null,
+                locale: ($l = trim($request->string('locale')->toString())) !== '' ? $l : null,
             );
 
             $result = $action->execute($dto);

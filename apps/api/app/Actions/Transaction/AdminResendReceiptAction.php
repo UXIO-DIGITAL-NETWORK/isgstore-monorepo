@@ -8,19 +8,21 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * "Resend Receipt" — re-issues the transaction receipt to the customer and
- * records the action on the order's trail.
- *
- * NOTE: the actual delivery channel (email / WhatsApp) is not wired in this
- * codebase yet, so this currently records the intent and returns success so the
- * admin action is auditable. Hook the real notifier here once it exists.
+ * "Resend Receipt" — re-issues the purchase receipt email to the buyer and
+ * records the action on the order's trail. Uses force, so it re-sends even if a
+ * receipt was already delivered automatically on completion.
  */
 class AdminResendReceiptAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private SendTransactionReceiptAction $sendReceiptAction,
+    ) {}
 
     public function execute(Transaction $transaction): Transaction
     {
+        $this->sendReceiptAction->execute($transaction, force: true);
+
         $this->activityLogAction->execute(new CreateActivityLogDTO(
             userId: Auth::id(),
             ipAddress: request()->ip(),

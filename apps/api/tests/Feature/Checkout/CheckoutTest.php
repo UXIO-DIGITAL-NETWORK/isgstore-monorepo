@@ -57,6 +57,7 @@ class CheckoutTest extends TestCase
             'product_id' => $this->product->id,
             'payment_channel_id' => $this->balanceChannel->id,
             'target_uid' => '12345678',
+            'email' => 'buyer@example.com',
         ]);
 
         $response->assertCreated()
@@ -81,6 +82,7 @@ class CheckoutTest extends TestCase
             'product_id' => $this->product->id,
             'payment_channel_id' => $this->balanceChannel->id,
             'target_uid' => '12345678',
+            'email' => 'buyer@example.com',
         ]);
 
         $response->assertStatus(400);
@@ -96,6 +98,7 @@ class CheckoutTest extends TestCase
             'product_id' => $this->product->id,
             'payment_channel_id' => $this->balanceChannel->id,
             'target_uid' => '12345678',
+            'email' => 'buyer@example.com',
         ]);
 
         $response->assertStatus(400)
@@ -114,6 +117,7 @@ class CheckoutTest extends TestCase
             'product_id' => $this->product->id,
             'payment_channel_id' => $this->balanceChannel->id,
             'target_uid' => '12345678',
+            'email' => 'buyer@example.com',
         ];
 
         $this->postJson('/api/v1/checkout', $payload)->assertCreated();
@@ -137,6 +141,7 @@ class CheckoutTest extends TestCase
             'product_id' => $this->product->id,
             'payment_channel_id' => $this->balanceChannel->id,
             'target_uid' => '12345678',
+            'email' => 'buyer@example.com',
         ];
 
         $this->postJson('/api/v1/checkout', $payload)->assertStatus(400);
@@ -153,5 +158,37 @@ class CheckoutTest extends TestCase
         }
 
         $this->postJson('/api/v1/checkout', [])->assertStatus(429);
+    }
+
+    public function test_checkout_requires_an_email(): void
+    {
+        $this->actingAsMember();
+
+        $this->postJson('/api/v1/checkout', [
+            'product_id' => $this->product->id,
+            'payment_channel_id' => $this->balanceChannel->id,
+            'target_uid' => '12345678',
+            // no email
+        ])->assertStatus(422)->assertJsonValidationErrors('email');
+    }
+
+    public function test_checkout_stores_contact_email_and_locale(): void
+    {
+        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']])]);
+        $this->actingAsMember();
+
+        $this->postJson('/api/v1/checkout', [
+            'product_id' => $this->product->id,
+            'payment_channel_id' => $this->balanceChannel->id,
+            'target_uid' => '12345678',
+            'email' => 'Buyer@Example.com',
+            'locale' => 'en',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('transactions', [
+            'product_id' => $this->product->id,
+            'contact_email' => 'Buyer@Example.com',
+            'locale' => 'en',
+        ]);
     }
 }

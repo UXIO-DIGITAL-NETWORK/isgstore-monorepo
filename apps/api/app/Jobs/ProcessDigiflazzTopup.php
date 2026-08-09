@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Payment\RefundFailedTransactionAction;
+use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use Illuminate\Bus\Queueable;
@@ -29,7 +30,12 @@ class ProcessDigiflazzTopup implements ShouldQueue
         $this->transaction->update(['status' => TransactionStatus::PROCESSING]);
 
         try {
-            $digiflazzAction->execute($this->transaction);
+            $updated = $digiflazzAction->execute($this->transaction);
+
+            // Fulfilled by the supplier — email the receipt (idempotent).
+            if ($updated->status === TransactionStatus::COMPLETED) {
+                app(SendTransactionReceiptAction::class)->execute($updated);
+            }
         } catch (Throwable $e) {
             Log::channel('digiflazz')->error('ProcessDigiflazzTopup: attempt failed', [
                 'transaction_id' => $this->transaction->id,

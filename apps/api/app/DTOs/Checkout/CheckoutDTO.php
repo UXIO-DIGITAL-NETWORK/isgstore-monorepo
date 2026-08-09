@@ -19,5 +19,8 @@ readonly class CheckoutDTO
         // Optional discount code, re-validated server-side at checkout — the
         // client's quoted discount is never trusted.
         public ?string $promoCode = null,
+        // Email tujuan bukti pembelian (wajib untuk semua) + bahasa email (id|en).
+        public ?string $email = null,
+        public ?string $locale = null,
     ) {}
 }
