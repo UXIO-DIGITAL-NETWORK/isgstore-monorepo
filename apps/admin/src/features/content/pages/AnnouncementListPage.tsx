@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { AnnouncementFormDialog } from "../components/AnnouncementFormDialog";
 import { ContentListShell } from "../components/ContentListShell";
 import { ContentToolbar } from "../components/ContentToolbar";
 import { announcementColumns } from "../components/contentColumns";
@@ -15,13 +16,18 @@ export function AnnouncementListPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editId, setEditId] = useState<string | undefined>(undefined);
 
   const params = useMemo(() => ({ search: search || undefined, page, per_page: pageSize }), [search, page, pageSize]);
   const { data, isLoading, isError, refetch } = useAnnouncementList(params);
   const deleteRows = useDeleteAnnouncements();
 
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
-  const columns = useMemo(() => announcementColumns((ids) => deleteRows.mutate(ids)), [deleteRows]);
+  const columns = useMemo(
+    () => announcementColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
+    [deleteRows],
+  );
 
   return (
     <>
@@ -39,6 +45,7 @@ export function AnnouncementListPage() {
             onRefresh={() => refetch()}
             selectedCount={selectedIds.length}
             onBulkDelete={() => setBulkDeleteOpen(true)}
+            onAdd={() => setAddOpen(true)}
             searchPlaceholder="Search announcements"
             addLabel="Add Announcement"
           />
@@ -74,6 +81,19 @@ export function AnnouncementListPage() {
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
         description="This action cannot be undone. The selected rows will be removed from the storefront."
         onConfirm={() => deleteRows.mutate(selectedIds)}
+      />
+
+      <AnnouncementFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+      />
+
+      <AnnouncementFormDialog
+        open={editId !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setEditId(undefined);
+        }}
+        announcementId={editId}
       />
     </>
   );

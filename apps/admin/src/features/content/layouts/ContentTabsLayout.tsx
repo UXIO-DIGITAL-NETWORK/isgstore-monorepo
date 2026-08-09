@@ -32,25 +32,22 @@ export function ContentTabsLayout() {
   const base = pathname.startsWith(PREVIEW_BASE) ? PREVIEW_BASE : REAL_BASE;
   const activeSegment = pathname.slice(base.length).split("/").filter(Boolean)[0];
   const activeTab = TAB_SEGMENTS.find((tab) => tab.segment === activeSegment)?.value ?? "articles";
-  const onFormRoute = pathname.endsWith("/add") || pathname.endsWith("/edit");
 
   return (
     <Box className="flex flex-col gap-6">
-      {!onFormRoute && (
-        <Tabs value={activeTab}>
-          <TabsList variant="line">
-            {TAB_SEGMENTS.map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                asChild
-              >
-                <Link href={`${base}/${tab.segment}`}>{tab.label}</Link>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      )}
+      <Tabs value={activeTab}>
+        <TabsList variant="line">
+          {TAB_SEGMENTS.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              asChild
+            >
+              <Link href={`${base}/${tab.segment}`}>{tab.label}</Link>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       <Outlet />
     </Box>
   );

@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
@@ -18,23 +17,20 @@ interface ContentRowActionsProps {
   label: string;
   entityLabel: string;
   onDelete: (ids: string[]) => void;
+  /** Opens the edit modal owned by the list page, for this row's id. */
+  onEdit: (id: string) => void;
   extraItems?: ReactNode;
 }
 
 /**
  * Row menu shared by every content table.
  *
- * The five content entities have identical row actions, so one component
- * serves them all rather than five copies that would drift. The edit target is
- * derived from the current pathname so a preview route can never navigate into
- * the guarded one — the same rule the categories feature follows.
+ * The content entities have identical row actions, so one component serves
+ * them all rather than copies that would drift. Edit opens the edit modal
+ * owned by the list page — the same rule the categories feature follows.
  */
-export function ContentRowActions({ id, label, entityLabel, onDelete, extraItems }: ContentRowActionsProps) {
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
+export function ContentRowActions({ id, label, entityLabel, onDelete, onEdit, extraItems }: ContentRowActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
-
-  const editHref = `${pathname.replace(/\/$/, "")}/${id}/edit`;
 
   return (
     <>
@@ -53,7 +49,7 @@ export function ContentRowActions({ id, label, entityLabel, onDelete, extraItems
           className="rounded-2xl"
         >
           <Can permission="content.edit">
-            <DropdownMenuItem onSelect={() => navigate({ to: editHref as unknown as string })}>
+            <DropdownMenuItem onSelect={() => onEdit(id)}>
               <Pencil />
               Edit {entityLabel}
             </DropdownMenuItem>

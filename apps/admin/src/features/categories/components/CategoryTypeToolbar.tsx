@@ -1,9 +1,7 @@
-import { useLocation } from "@tanstack/react-router";
 import { Plus, RefreshCw, Search } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Label } from "@/components/ui/label";
-import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +10,7 @@ interface CategoryTypeToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
   onRefresh: () => void;
+  onAdd: () => void;
 }
 
 /**
@@ -20,13 +19,9 @@ interface CategoryTypeToolbarProps {
  * category type has no parent to filter by. No bulk-delete button either —
  * this tab has no row selection.
  *
- * The add link derives its target from the current pathname rather than a
- * hardcoded absolute path, so it stays inside the preview route.
+ * The add button opens the Add Category Type modal owned by the list page.
  */
-export function CategoryTypeToolbar({ search, onSearchChange, onRefresh }: CategoryTypeToolbarProps) {
-  const { pathname } = useLocation();
-  const addHref = `${pathname.replace(/\/$/, "")}/add`;
-
+export function CategoryTypeToolbar({ search, onSearchChange, onRefresh, onAdd }: CategoryTypeToolbarProps) {
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-col gap-1.5">
@@ -59,13 +54,11 @@ export function CategoryTypeToolbar({ search, onSearchChange, onRefresh }: Categ
           </Text>
         </Button>
         <Button
-          asChild
           className="rounded-xl"
+          onClick={onAdd}
         >
-          <Link href={addHref}>
-            <Plus className="size-4" />
-            Add Category Type
-          </Link>
+          <Plus className="size-4" />
+          Add Category Type
         </Button>
       </Box>
     </Box>

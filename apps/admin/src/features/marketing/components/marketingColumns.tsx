@@ -18,7 +18,10 @@ const dateCell = (value?: string) => (
   </Text>
 );
 
-export const promoColumns = (onDelete: (ids: string[]) => void): ColumnDef<Promo>[] => [
+export const promoColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<Promo>[] => [
   {
     accessorKey: "code",
     header: "Code",
@@ -112,12 +115,16 @@ export const promoColumns = (onDelete: (ids: string[]) => void): ColumnDef<Promo
         label={row.original.code}
         entityLabel="Promo"
         onDelete={onDelete}
+        onEdit={onEdit}
       />
     ),
   },
 ];
 
-export const flashSaleColumns = (onDelete: (ids: string[]) => void): ColumnDef<FlashSale>[] => [
+export const flashSaleColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<FlashSale>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -194,6 +201,7 @@ export const flashSaleColumns = (onDelete: (ids: string[]) => void): ColumnDef<F
         label={row.original.name}
         entityLabel="Flash Sale"
         onDelete={onDelete}
+        onEdit={onEdit}
       />
     ),
   },

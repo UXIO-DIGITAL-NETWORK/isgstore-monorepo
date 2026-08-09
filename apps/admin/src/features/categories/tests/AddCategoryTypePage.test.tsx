@@ -1,76 +1,82 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { waitForElementToBeRemoved } from "@testing-library/react";
 
-import { renderRoute, screen } from "@/test/test-utils";
+import { renderRoute, screen, within } from "@/test/test-utils";
 import { categoryTypesService } from "../services/categoryTypes.service";
 
-const ADD_PATH = "/admin/categories-preview/category-type/add";
+const LIST_PATH = "/admin/categories-preview/category-type";
+
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Opens the Add Category Type modal from the list and returns the dialog element. */
+async function openAdd(user: User): Promise<HTMLElement> {
+  await renderRoute(LIST_PATH);
+  await user.click(await screen.findByRole("button", { name: /Add Category Type/i }));
+  return screen.findByRole("dialog", { name: "Add Category Type" });
+}
 
 /**
- * Add Category Type form (product_requirements.md §4.5). Two fields only.
- * Every placeholder in the reference is lorem ipsum except the voucher
- * checkbox label and its helper text, which read as deliberately written and
- * are used verbatim.
+ * Add Category Type form (product_requirements.md §4.5) — a modal now, opened
+ * from the list's "+ Add Category Type". Two fields only. Every placeholder in
+ * the reference is lorem ipsum except the voucher checkbox label and its
+ * helper text, used verbatim.
  */
-describe("AddCategoryTypePage", () => {
+describe("AddCategoryTypeDialog", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("shows the breadcrumb trail for the active tab", async () => {
-    await renderRoute(ADD_PATH);
+  it("opens with a real subcopy, never lorem ipsum", async () => {
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
-    const breadcrumb = await screen.findByRole("navigation", { name: "breadcrumb" });
-    expect(breadcrumb).toHaveTextContent(/Category.*Category Type.*Add Category Type/);
-  });
-
-  it("shows the header with a real subcopy, never lorem ipsum", async () => {
-    await renderRoute(ADD_PATH);
-
-    expect(await screen.findByRole("heading", { name: "Add Category Type" })).toBeInTheDocument();
-    expect(screen.queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Add Category Type" })).toBeInTheDocument();
+    expect(within(dialog).queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
   });
 
   it("shows both fields by label, with a real placeholder hint", async () => {
-    await renderRoute(ADD_PATH);
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
-    expect(await screen.findByLabelText("Category Type Name")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("e.g. Voucher, Direct Top Up")).toBeInTheDocument();
-    expect(screen.getByLabelText("This category type is for vouchers")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Category Type Name")).toBeInTheDocument();
+    expect(within(dialog).getByPlaceholderText("e.g. Voucher, Direct Top Up")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("This category type is for vouchers")).toBeInTheDocument();
   });
 
   it("keeps the deliberately-written checkbox helper text verbatim", async () => {
-    await renderRoute(ADD_PATH);
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
     expect(
-      await screen.findByText("Enable if this category type is used for selling vouchers or digital codes."),
+      within(dialog).getByText("Enable if this category type is used for selling vouchers or digital codes."),
     ).toBeInTheDocument();
   });
 
   it("blocks submit and never calls create when the name is empty", async () => {
     const createSpy = vi.spyOn(categoryTypesService, "create");
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.click(await screen.findByRole("button", { name: "Save" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Category Type Name is required")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Category Type Name is required")).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
-  it("creates the category type with the voucher flag and returns to the list", async () => {
+  it("creates the category type with the voucher flag and closes the modal", async () => {
     const createSpy = vi.spyOn(categoryTypesService, "create");
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.type(await screen.findByLabelText("Category Type Name"), "Game Voucher");
-    await user.click(screen.getByLabelText("This category type is for vouchers"));
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.type(within(dialog).getByLabelText("Category Type Name"), "Game Voucher");
+    await user.click(within(dialog).getByLabelText("This category type is for vouchers"));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({ name: "Game Voucher", is_voucher: true, status: "active" }),
     );
-    expect(await screen.findByRole("heading", { name: "Category Type" })).toBeInTheDocument();
+    if (screen.queryByRole("dialog", { name: "Add Category Type" })) await waitForElementToBeRemoved(dialog);
     expect(await screen.findByText("Game Voucher")).toBeInTheDocument();
   });
 });

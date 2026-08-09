@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDeactivateProducts, useDeleteProducts } from "../hooks/useProducts";
 import type { Product } from "../types/product.type";
+import { MainProductFormDialog } from "./MainProductFormDialog";
 
 interface ProductRowActionsProps {
   product: Product;
@@ -32,6 +33,7 @@ interface ProductRowActionsProps {
 export function ProductRowActions({ product }: ProductRowActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const deleteProducts = useDeleteProducts();
   const deactivateProducts = useDeactivateProducts();
 
@@ -78,7 +80,7 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
               <Power />
               Deactive
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => toast(`Edit ${product.name} — coming soon`)}>
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               <Pencil />
               Edit Product
             </DropdownMenuItem>
@@ -116,6 +118,12 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
         title="Deactivate this product?"
         description="This product will be marked inactive and hidden from the storefront. You can activate it again at any time."
         onConfirm={() => deactivateProducts.mutate([product.id])}
+      />
+
+      <MainProductFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        productId={product.id}
       />
     </>
   );

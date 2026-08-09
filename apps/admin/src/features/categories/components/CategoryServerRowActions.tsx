@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
@@ -13,6 +12,7 @@ import {
 import { useDeleteCategoryServer } from "../hooks/useCategoryServers";
 import type { CategoryServer } from "../types/categoryServer.type";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { CategoryServerFormDialog } from "./CategoryServerFormDialog";
 
 interface CategoryServerRowActionsProps {
   categoryServer: CategoryServer;
@@ -22,14 +22,9 @@ interface CategoryServerRowActionsProps {
  * only. No deactivate/activate: this entity has no status concept, unlike
  * Category Type. Delete reuses the feature's shared confirmation. */
 export function CategoryServerRowActions({ categoryServer }: CategoryServerRowActionsProps) {
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const deleteCategoryServer = useDeleteCategoryServer();
-
-  // Derived from the current pathname, not hardcoded, so the unauthenticated
-  // preview route can never navigate into the real, guarded one.
-  const editHref = `${pathname.replace(/\/$/, "")}/${categoryServer.id}/edit`;
 
   return (
     <>
@@ -48,7 +43,7 @@ export function CategoryServerRowActions({ categoryServer }: CategoryServerRowAc
           className="rounded-2xl"
         >
           <Can permission="categories.edit">
-            <DropdownMenuItem onSelect={() => navigate({ to: editHref as unknown as string })}>
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               <Pencil />
               Edit Category Server
             </DropdownMenuItem>
@@ -71,6 +66,12 @@ export function CategoryServerRowActions({ categoryServer }: CategoryServerRowAc
         title="Delete this category server?"
         description="This action cannot be undone. This will permanently delete this category server and its options."
         onConfirm={() => deleteCategoryServer.mutate(categoryServer.id)}
+      />
+
+      <CategoryServerFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        categoryServerId={categoryServer.id}
       />
     </>
   );

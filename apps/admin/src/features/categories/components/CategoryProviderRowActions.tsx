@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
@@ -13,6 +12,7 @@ import {
 import { useDeleteCategoryProviders } from "../hooks/useCategoryProviders";
 import type { CategoryProvider } from "../types/categoryProvider.type";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { CategoryProviderFormDialog } from "./CategoryProviderFormDialog";
 
 interface CategoryProviderRowActionsProps {
   categoryProvider: CategoryProvider;
@@ -24,14 +24,9 @@ interface CategoryProviderRowActionsProps {
  * the feature's shared confirmation and the same mutation as the toolbar's
  * bulk "Delete (N)", passing a single id. */
 export function CategoryProviderRowActions({ categoryProvider }: CategoryProviderRowActionsProps) {
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const deleteCategoryProviders = useDeleteCategoryProviders();
-
-  // Derived from the current pathname, not hardcoded, so the unauthenticated
-  // preview route can never navigate into the real, guarded one.
-  const editHref = `${pathname.replace(/\/$/, "")}/${categoryProvider.id}/edit`;
 
   return (
     <>
@@ -50,7 +45,7 @@ export function CategoryProviderRowActions({ categoryProvider }: CategoryProvide
           className="rounded-2xl"
         >
           <Can permission="categories.edit">
-            <DropdownMenuItem onSelect={() => navigate({ to: editHref as unknown as string })}>
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               <Pencil />
               Edit Category Provider
             </DropdownMenuItem>
@@ -73,6 +68,12 @@ export function CategoryProviderRowActions({ categoryProvider }: CategoryProvide
         title="Delete this category provider?"
         description="This action cannot be undone. This will permanently delete this category provider and unlink the supplier from this category."
         onConfirm={() => deleteCategoryProviders.mutate([categoryProvider.id])}
+      />
+
+      <CategoryProviderFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        categoryProviderId={categoryProvider.id}
       />
     </>
   );

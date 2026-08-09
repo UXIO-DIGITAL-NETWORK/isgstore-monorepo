@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 
-import { makeUser, renderRoute, screen } from "@/test/test-utils";
+import { makeUser, renderRoute, screen, within } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
 
 // These routes are guarded, and unlike the older features there is no
@@ -78,30 +79,47 @@ describe("content routes", () => {
   });
 });
 
-describe("content form routes", () => {
+// The Add/Edit forms are modals now, opened from the list rather than their own
+// route — so each test opens the dialog from the toolbar or the row menu, and
+// scopes to `within(dialog)` where labels collide with the list behind it.
+describe("content form modals", () => {
   it("the Add Article form renders its fields", async () => {
-    await renderRoute("/admin/content/articles/add");
+    const user = userEvent.setup();
+    await renderRoute("/admin/content/articles");
 
-    expect(await screen.findByRole("heading", { name: "Add Article" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Title")).toBeInTheDocument();
-    expect(screen.getByLabelText("Category")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /Add Article/i }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Add Article" });
+    expect(within(dialog).getByRole("heading", { name: "Add Article" })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Title")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Category")).toBeInTheDocument();
     // The body is a section repeater, not a rich-text field — the API stores
     // structured sections so the storefront renderer stays unchanged.
-    expect(screen.getByRole("button", { name: /Add Section/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: /Add Section/i })).toBeInTheDocument();
   });
 
-  it("the Edit Article form pre-fills from the record in the URL", async () => {
-    await renderRoute("/admin/content/articles/1/edit");
+  it("the Edit Article form pre-fills from the selected record", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/content/articles");
 
-    expect(await screen.findByRole("heading", { name: "Edit Article" })).toBeInTheDocument();
-    expect(await screen.findByDisplayValue("Cara Top Up Diamond Lebih Hemat")).toBeInTheDocument();
+    // Open the row menu for the seeded article, then choose Edit.
+    await user.click(await screen.findByRole("button", { name: "Actions for Cara Top Up Diamond Lebih Hemat" }));
+    await user.click(await screen.findByRole("menuitem", { name: /Edit Article/i }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Edit Article" });
+    expect(within(dialog).getByRole("heading", { name: "Edit Article" })).toBeInTheDocument();
+    expect(await within(dialog).findByDisplayValue("Cara Top Up Diamond Lebih Hemat")).toBeInTheDocument();
   });
 
   it("the Add FAQ form renders its fields", async () => {
-    await renderRoute("/admin/content/faqs/add");
+    const user = userEvent.setup();
+    await renderRoute("/admin/content/faqs");
 
-    expect(await screen.findByRole("heading", { name: "Add FAQ" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Question")).toBeInTheDocument();
-    expect(screen.getByLabelText("Answer")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /Add FAQ/i }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Add FAQ" });
+    expect(within(dialog).getByRole("heading", { name: "Add FAQ" })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Question")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Answer")).toBeInTheDocument();
   });
 });

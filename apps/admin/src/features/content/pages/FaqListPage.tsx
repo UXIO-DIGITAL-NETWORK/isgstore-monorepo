@@ -4,6 +4,7 @@ import { DataTable } from "@/components/common/DataTable";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { ContentListShell } from "../components/ContentListShell";
 import { ContentToolbar } from "../components/ContentToolbar";
+import { FaqFormDialog } from "../components/FaqFormDialog";
 import { faqColumns } from "../components/contentColumns";
 import { useFaqList, useDeleteFaqs } from "../hooks/useFaqs";
 
@@ -15,6 +16,8 @@ export function FaqListPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editId, setEditId] = useState<string | undefined>(undefined);
 
   const params = useMemo(
     () => ({ search: search || undefined, page, per_page: pageSize }),
@@ -27,7 +30,10 @@ export function FaqListPage() {
   // Stable identity: DataTable reports selection from an effect.
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
-  const columns = useMemo(() => faqColumns((ids) => deleteRows.mutate(ids)), [deleteRows]);
+  const columns = useMemo(
+    () => faqColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
+    [deleteRows],
+  );
 
   return (
     <>
@@ -45,6 +51,7 @@ export function FaqListPage() {
             onRefresh={() => refetch()}
             selectedCount={selectedIds.length}
             onBulkDelete={() => setBulkDeleteOpen(true)}
+            onAdd={() => setAddOpen(true)}
             searchPlaceholder="Search questions"
             addLabel="Add FAQ"
           />
@@ -80,6 +87,19 @@ export function FaqListPage() {
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
         description="This action cannot be undone. The selected rows will be removed from the storefront."
         onConfirm={() => deleteRows.mutate(selectedIds)}
+      />
+
+      <FaqFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+      />
+
+      <FaqFormDialog
+        open={editId !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setEditId(undefined);
+        }}
+        faqId={editId}
       />
     </>
   );

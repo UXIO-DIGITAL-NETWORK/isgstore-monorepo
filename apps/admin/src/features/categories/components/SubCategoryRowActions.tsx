@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
@@ -13,6 +12,7 @@ import {
 import { useDeleteSubCategories } from "../hooks/useSubCategories";
 import type { SubCategory } from "../types/subCategory.type";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { SubCategoryFormDialog } from "./SubCategoryFormDialog";
 
 interface SubCategoryRowActionsProps {
   subCategory: SubCategory;
@@ -22,14 +22,9 @@ interface SubCategoryRowActionsProps {
  * Category" and "Delete", the only useful information in the reference frame
  * whose table still showed the shadcn demo dataset behind it. */
 export function SubCategoryRowActions({ subCategory }: SubCategoryRowActionsProps) {
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const deleteSubCategories = useDeleteSubCategories();
-
-  // Derived from the current pathname, not hardcoded, so the unauthenticated
-  // preview route can never navigate into the real, guarded one.
-  const editHref = `${pathname.replace(/\/$/, "")}/${subCategory.id}/edit`;
 
   return (
     <>
@@ -48,7 +43,7 @@ export function SubCategoryRowActions({ subCategory }: SubCategoryRowActionsProp
           className="rounded-2xl"
         >
           <Can permission="categories.edit">
-            <DropdownMenuItem onSelect={() => navigate({ to: editHref as unknown as string })}>
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               <Pencil />
               Edit Sub Category
             </DropdownMenuItem>
@@ -71,6 +66,12 @@ export function SubCategoryRowActions({ subCategory }: SubCategoryRowActionsProp
         title="Delete this sub category?"
         description="This action cannot be undone. This will permanently delete this sub category and remove it from the storefront."
         onConfirm={() => deleteSubCategories.mutate([subCategory.id])}
+      />
+
+      <SubCategoryFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        subCategoryId={subCategory.id}
       />
     </>
   );

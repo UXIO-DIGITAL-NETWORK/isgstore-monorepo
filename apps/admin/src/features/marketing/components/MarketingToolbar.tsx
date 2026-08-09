@@ -1,4 +1,3 @@
-import { useLocation } from "@tanstack/react-router";
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -6,7 +5,6 @@ import { Box } from "@/components/common/Box";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "@/components/common/Link";
 
 interface MarketingToolbarProps {
   search: string;
@@ -16,6 +14,8 @@ interface MarketingToolbarProps {
   onBulkDelete: () => void;
   searchPlaceholder: string;
   addLabel: string;
+  /** Opens the add modal owned by the list page. */
+  onAdd: () => void;
   /** Extra filter controls (locale, type) rendered between search and actions. */
   filters?: ReactNode;
   idPrefix: string;
@@ -25,8 +25,7 @@ interface MarketingToolbarProps {
  * Toolbar shared by the content tables — search, optional filters, refresh,
  * add, and a destructive "Delete (N)" once rows are checked.
  *
- * The add link is built from the current pathname rather than hardcoded, so it
- * stays inside whichever route base the table is rendered under.
+ * The add button opens the Add modal owned by the list page.
  */
 export function MarketingToolbar({
   search,
@@ -36,12 +35,10 @@ export function MarketingToolbar({
   onBulkDelete,
   searchPlaceholder,
   addLabel,
+  onAdd,
   filters,
   idPrefix,
 }: MarketingToolbarProps) {
-  const { pathname } = useLocation();
-  const addHref = `${pathname.replace(/\/$/, "")}/add`;
-
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
@@ -84,13 +81,12 @@ export function MarketingToolbar({
           <RefreshCw className="size-4" />
         </Button>
         <Button
-          asChild
+          type="button"
           className="rounded-xl"
+          onClick={onAdd}
         >
-          <Link href={addHref}>
-            <Plus className="size-4" />
-            {addLabel}
-          </Link>
+          <Plus className="size-4" />
+          {addLabel}
         </Button>
       </Box>
     </Box>

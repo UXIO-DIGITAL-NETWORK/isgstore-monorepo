@@ -1,9 +1,7 @@
-import { useLocation } from "@tanstack/react-router";
 import { Plus, RefreshCw, Search } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Label } from "@/components/ui/label";
-import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +10,7 @@ interface CategoryServerToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
   onRefresh: () => void;
+  onAdd: () => void;
 }
 
 /**
@@ -20,13 +19,10 @@ interface CategoryServerToolbarProps {
  * parent) and no bulk button (no row selection).
  *
  * "Search Category Server" is one of the few deliberately-written strings in
- * this feature's references and is used as-is. The add link derives its
- * target from the current pathname, so it stays inside the preview route.
+ * this feature's references and is used as-is. The add button opens the
+ * Add Category Server modal owned by the list page.
  */
-export function CategoryServerToolbar({ search, onSearchChange, onRefresh }: CategoryServerToolbarProps) {
-  const { pathname } = useLocation();
-  const addHref = `${pathname.replace(/\/$/, "")}/add`;
-
+export function CategoryServerToolbar({ search, onSearchChange, onRefresh, onAdd }: CategoryServerToolbarProps) {
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-col gap-1.5">
@@ -59,13 +55,11 @@ export function CategoryServerToolbar({ search, onSearchChange, onRefresh }: Cat
           </Text>
         </Button>
         <Button
-          asChild
           className="rounded-xl"
+          onClick={onAdd}
         >
-          <Link href={addHref}>
-            <Plus className="size-4" />
-            Add Category Server
-          </Link>
+          <Plus className="size-4" />
+          Add Category Server
         </Button>
       </Box>
     </Box>

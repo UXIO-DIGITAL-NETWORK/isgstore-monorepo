@@ -34,7 +34,10 @@ const publishedBadge = (published: boolean) => (
   </Badge>
 );
 
-export const articleColumns = (onDelete: (ids: string[]) => void): ColumnDef<Article>[] => [
+export const articleColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<Article>[] => [
   {
     accessorKey: "title",
     header: "Title",
@@ -87,12 +90,16 @@ export const articleColumns = (onDelete: (ids: string[]) => void): ColumnDef<Art
         label={row.original.title}
         entityLabel={row.original.type === "news" ? "News" : "Article"}
         onDelete={onDelete}
+      onEdit={onEdit}
       />
     ),
   },
 ];
 
-export const articleCategoryColumns = (onDelete: (ids: string[]) => void): ColumnDef<ArticleCategory>[] => [
+export const articleCategoryColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<ArticleCategory>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -138,12 +145,16 @@ export const articleCategoryColumns = (onDelete: (ids: string[]) => void): Colum
         label={row.original.name}
         entityLabel="Category"
         onDelete={onDelete}
+      onEdit={onEdit}
       />
     ),
   },
 ];
 
-export const faqColumns = (onDelete: (ids: string[]) => void): ColumnDef<Faq>[] => [
+export const faqColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<Faq>[] => [
   {
     accessorKey: "question",
     header: "Question",
@@ -189,12 +200,16 @@ export const faqColumns = (onDelete: (ids: string[]) => void): ColumnDef<Faq>[] 
         label={row.original.question}
         entityLabel="FAQ"
         onDelete={onDelete}
+      onEdit={onEdit}
       />
     ),
   },
 ];
 
-export const pageColumns = (onDelete: (ids: string[]) => void): ColumnDef<ContentPage>[] => [
+export const pageColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<ContentPage>[] => [
   {
     accessorKey: "title",
     header: "Title",
@@ -249,12 +264,16 @@ export const pageColumns = (onDelete: (ids: string[]) => void): ColumnDef<Conten
         label={row.original.title}
         entityLabel="Page"
         onDelete={onDelete}
+      onEdit={onEdit}
       />
     ),
   },
 ];
 
-export const testimonialColumns = (onDelete: (ids: string[]) => void): ColumnDef<Testimonial>[] => [
+export const testimonialColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<Testimonial>[] => [
   {
     accessorKey: "author_name",
     header: "Author",
@@ -324,6 +343,7 @@ export const testimonialColumns = (onDelete: (ids: string[]) => void): ColumnDef
         label={row.original.author_name}
         entityLabel="Testimonial"
         onDelete={onDelete}
+      onEdit={onEdit}
       />
     ),
   },
@@ -338,7 +358,10 @@ const scopeBadge = (scope: "global" | "targeted") => (
   </Badge>
 );
 
-export const bannerColumns = (onDelete: (ids: string[]) => void): ColumnDef<Banner>[] => [
+export const bannerColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<Banner>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -387,12 +410,16 @@ export const bannerColumns = (onDelete: (ids: string[]) => void): ColumnDef<Bann
         label={row.original.name}
         entityLabel="Banner"
         onDelete={onDelete}
+      onEdit={onEdit}
       />
     ),
   },
 ];
 
-export const announcementColumns = (onDelete: (ids: string[]) => void): ColumnDef<Announcement>[] => [
+export const announcementColumns = (
+  onDelete: (ids: string[]) => void,
+  onEdit: (id: string) => void,
+): ColumnDef<Announcement>[] => [
   {
     accessorKey: "content",
     header: "Content",
@@ -428,6 +455,7 @@ export const announcementColumns = (onDelete: (ids: string[]) => void): ColumnDe
         label={row.original.content.slice(0, 40)}
         entityLabel="Announcement"
         onDelete={onDelete}
+      onEdit={onEdit}
       />
     ),
   },

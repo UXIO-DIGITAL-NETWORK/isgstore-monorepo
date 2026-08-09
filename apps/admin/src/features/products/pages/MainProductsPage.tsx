@@ -7,6 +7,7 @@ import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { mainProductColumns } from "../components/mainProductColumns";
+import { MainProductFormDialog } from "../components/MainProductFormDialog";
 import { MainProductToolbar } from "../components/MainProductToolbar";
 import { useDeactivateProducts, useDeleteProducts, useProductList } from "../hooks/useProducts";
 
@@ -30,6 +31,7 @@ export default function MainProductsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeactivateOpen, setBulkDeactivateOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
     () => ({ search: search || undefined, category, price, page, per_page: pageSize }),
@@ -81,6 +83,7 @@ export default function MainProductsPage() {
           price={price}
           onPriceChange={handlePriceChange}
           onRefresh={() => refetch()}
+          onAdd={() => setAddOpen(true)}
           selectedCount={selectedIds.length}
           onBulkDeactivate={() => setBulkDeactivateOpen(true)}
           onBulkDelete={() => setBulkDeleteOpen(true)}
@@ -136,6 +139,11 @@ export default function MainProductsPage() {
             : `These ${selectedIds.length} products will be marked inactive and hidden from the storefront. You can activate them again at any time.`
         }
         onConfirm={() => deactivateProducts.mutate(selectedIds)}
+      />
+
+      <MainProductFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
       />
     </Box>
   );

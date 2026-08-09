@@ -43,15 +43,17 @@ describe("CategoryProviderListPage", () => {
     // §4.5 line 243: leftover-label bug #1, copy-pasted from the Category
     // Server tab. Asserting the wrong label is *absent* is the point — a
     // present-only check would pass on a page showing both.
-    expect(await screen.findByRole("link", { name: /Add Category Provider/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Add Category Provider/i })).toBeInTheDocument();
     expect(screen.queryByText(/Add Category Server/i)).not.toBeInTheDocument();
   });
 
-  it("the add link stays inside the preview route", async () => {
+  it("the add button opens the Add Category Provider modal", async () => {
+    const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
-    const addLink = await screen.findByRole("link", { name: /Add Category Provider/i });
-    expect(addLink).toHaveAttribute("href", "/admin/categories-preview/category-provider/add");
+    await user.click(await screen.findByRole("button", { name: /Add Category Provider/i }));
+
+    expect(await screen.findByRole("dialog", { name: "Add Category Provider" })).toBeInTheDocument();
   });
 
   it("shows the five columns, with no Status column", async () => {

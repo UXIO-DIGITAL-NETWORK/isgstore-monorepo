@@ -33,14 +33,16 @@ describe("SubCategoryListPage", () => {
     expect(await screen.findByPlaceholderText("Search sub categories")).toBeInTheDocument();
     expect(screen.getByLabelText("Category")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Add Sub Category/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Add Sub Category/i })).toBeInTheDocument();
   });
 
-  it("the '+ Add Sub Category' link stays inside the preview route", async () => {
+  it("the '+ Add Sub Category' button opens the Add Sub Category modal", async () => {
+    const user = userEvent.setup();
     await renderRoute("/admin/categories-preview/sub-category");
 
-    const addLink = await screen.findByRole("link", { name: /Add Sub Category/i });
-    expect(addLink).toHaveAttribute("href", "/admin/categories-preview/sub-category/add");
+    await user.click(await screen.findByRole("button", { name: /Add Sub Category/i }));
+
+    expect(await screen.findByRole("dialog", { name: "Add Sub Category" })).toBeInTheDocument();
   });
 
   it("shows the corrected column headers, with only one column named 'Name'", async () => {

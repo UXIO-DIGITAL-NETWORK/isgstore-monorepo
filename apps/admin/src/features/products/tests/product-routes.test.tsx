@@ -43,15 +43,4 @@ describe("products routes", () => {
     expect(screen.queryByText(/waiting on a reference/i)).not.toBeInTheDocument();
     expect(await screen.findByPlaceholderText("Search product, SKU or brand")).toBeInTheDocument();
   });
-
-  it("serves the Add route so the toolbar's primary button is never a dead link", async () => {
-    await renderRoute("/admin/products/main/add");
-    expect(await screen.findByRole("heading", { name: "Add Main Products" })).toBeInTheDocument();
-  });
-
-  it("hides the tab bar on the Add route, as every other form route does", async () => {
-    await renderRoute("/admin/products/main/add");
-    await screen.findByRole("heading", { name: "Add Main Products" });
-    expect(screen.queryByRole("tab", { name: "Main Products" })).not.toBeInTheDocument();
-  });
 });

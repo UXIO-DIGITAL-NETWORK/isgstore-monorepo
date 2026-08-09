@@ -1,9 +1,7 @@
-import { useLocation } from "@tanstack/react-router";
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Label } from "@/components/ui/label";
-import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +17,7 @@ interface SubCategoryToolbarProps {
   categoryId?: string;
   onCategoryChange: (value: string | undefined) => void;
   onRefresh: () => void;
+  onAdd: () => void;
   selectedCount: number;
   onBulkDelete: () => void;
 }
@@ -31,9 +30,8 @@ interface SubCategoryToolbarProps {
  *
  * Field labels are visible, matching the Category tab's toolbar — the
  * reference shows none, but two sibling tabs with differently-labelled
- * toolbars read as inconsistent. The add link derives its target from the
- * current pathname rather than a hardcoded absolute path, so it stays inside
- * the preview route.
+ * toolbars read as inconsistent. The add button opens the Add Sub Category
+ * modal owned by the list page.
  */
 export function SubCategoryToolbar({
   search,
@@ -41,11 +39,10 @@ export function SubCategoryToolbar({
   categoryId,
   onCategoryChange,
   onRefresh,
+  onAdd,
   selectedCount,
   onBulkDelete,
 }: SubCategoryToolbarProps) {
-  const { pathname } = useLocation();
-  const addHref = `${pathname.replace(/\/$/, "")}/add`;
   // ponytail: one page of categories is plenty for a filter dropdown against
   // mock data; swap to a searchable/paged combobox if the real list grows.
   const { data: categories } = useCategoryList({ per_page: CATEGORY_OPTIONS_PAGE_SIZE });
@@ -127,13 +124,11 @@ export function SubCategoryToolbar({
           </Button>
         )}
         <Button
-          asChild
           className="rounded-xl"
+          onClick={onAdd}
         >
-          <Link href={addHref}>
-            <Plus className="size-4" />
-            Add Sub Category
-          </Link>
+          <Plus className="size-4" />
+          Add Sub Category
         </Button>
       </Box>
     </Box>

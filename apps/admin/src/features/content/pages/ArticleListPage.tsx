@@ -4,6 +4,7 @@ import { Box } from "@/components/common/Box";
 import { DataTable } from "@/components/common/DataTable";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { SelectField } from "@/components/common/SelectField";
+import { ArticleFormDialog } from "../components/ArticleFormDialog";
 import { ContentListShell } from "../components/ContentListShell";
 import { ContentToolbar } from "../components/ContentToolbar";
 import { articleColumns } from "../components/contentColumns";
@@ -27,6 +28,8 @@ export function ArticleListPage({ type }: ArticleListPageProps) {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editId, setEditId] = useState<string | undefined>(undefined);
 
   const { options: categoryOptions } = useArticleCategoryOptions();
 
@@ -48,7 +51,10 @@ export function ArticleListPage({ type }: ArticleListPageProps) {
   // arrow would re-run it on every render.
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
-  const columns = useMemo(() => articleColumns((ids) => deleteArticles.mutate(ids)), [deleteArticles]);
+  const columns = useMemo(
+    () => articleColumns((ids) => deleteArticles.mutate(ids), (id) => setEditId(id)),
+    [deleteArticles],
+  );
 
   const isNews = type === "news";
 
@@ -72,6 +78,7 @@ export function ArticleListPage({ type }: ArticleListPageProps) {
             onRefresh={() => refetch()}
             selectedCount={selectedIds.length}
             onBulkDelete={() => setBulkDeleteOpen(true)}
+            onAdd={() => setAddOpen(true)}
             searchPlaceholder={isNews ? "Search news" : "Search articles"}
             addLabel={isNews ? "Add News" : "Add Article"}
             filters={
@@ -121,6 +128,21 @@ export function ArticleListPage({ type }: ArticleListPageProps) {
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
         description="This action cannot be undone. The selected content will be removed from the storefront."
         onConfirm={() => deleteArticles.mutate(selectedIds)}
+      />
+
+      <ArticleFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        type={type}
+      />
+
+      <ArticleFormDialog
+        open={editId !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setEditId(undefined);
+        }}
+        type={type}
+        articleId={editId}
       />
     </>
   );

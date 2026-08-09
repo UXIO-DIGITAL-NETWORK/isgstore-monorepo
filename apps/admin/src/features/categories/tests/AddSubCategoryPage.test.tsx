@@ -1,94 +1,100 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { waitForElementToBeRemoved } from "@testing-library/react";
 
-import { renderRoute, screen } from "@/test/test-utils";
+import { renderRoute, screen, within } from "@/test/test-utils";
 import { subCategoriesService } from "../services/subCategories.service";
 
-const ADD_PATH = "/admin/categories-preview/sub-category/add";
+const LIST_PATH = "/admin/categories-preview/sub-category";
+
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Opens the Add Sub Category modal from the list and returns the dialog element. */
+async function openAdd(user: User): Promise<HTMLElement> {
+  await renderRoute(LIST_PATH);
+  await user.click(await screen.findByRole("button", { name: /Add Sub Category/i }));
+  return screen.findByRole("dialog", { name: "Add Sub Category" });
+}
 
 /**
- * Add Sub Category form (product_requirements.md §4.5, line 210). Guards the
- * reference's leftovers: lorem-ipsum placeholders, the unfilled "~000×000 px"
- * dropzone caption, and the "0/280 characters" counter shown next to a
- * mismatched "52% used" — the same non-functional mock already fixed on the
- * Category form's SEO section.
+ * Add Sub Category form (product_requirements.md §4.5, line 210) — a modal
+ * now, opened from the list's "+ Add Sub Category". Guards the reference's
+ * leftovers: lorem-ipsum placeholders, the unfilled "~000×000 px" dropzone
+ * caption, and the "0/280 characters" counter shown next to a mismatched
+ * "52% used".
  */
-describe("AddSubCategoryPage", () => {
+describe("AddSubCategoryDialog", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("shows the breadcrumb trail for the active tab", async () => {
-    await renderRoute(ADD_PATH);
+  it("opens with a real subcopy, never lorem ipsum", async () => {
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
-    const breadcrumb = await screen.findByRole("navigation", { name: "breadcrumb" });
-    expect(breadcrumb).toHaveTextContent(/Category.*Sub Category.*Add Sub Category/);
-  });
-
-  it("shows the header with a real subcopy, never lorem ipsum", async () => {
-    await renderRoute(ADD_PATH);
-
-    expect(await screen.findByRole("heading", { name: "Add Sub Category" })).toBeInTheDocument();
-    expect(screen.queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Add Sub Category" })).toBeInTheDocument();
+    expect(within(dialog).queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
   });
 
   it("shows every field by label with a real placeholder hint", async () => {
-    await renderRoute(ADD_PATH);
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
-    expect(await screen.findByRole("combobox", { name: "Category" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Sub Category Name")).toBeInTheDocument();
-    expect(screen.getByLabelText("Currency Name")).toBeInTheDocument();
-    expect(screen.getByLabelText("Logo")).toBeInTheDocument();
-    expect(screen.getByLabelText("Description")).toBeInTheDocument();
+    expect(within(dialog).getByRole("combobox", { name: "Category" })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Sub Category Name")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Currency Name")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Logo")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Description")).toBeInTheDocument();
 
-    expect(screen.getByText("Select a category")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("e.g. Mobile Legends: Global")).toBeInTheDocument();
+    expect(within(dialog).getByText("Select a category")).toBeInTheDocument();
+    expect(within(dialog).getByPlaceholderText("e.g. Mobile Legends: Global")).toBeInTheDocument();
   });
 
   it("accepts WEBP alongside JPG/JPEG/PNG and states a real max display size", async () => {
-    await renderRoute(ADD_PATH);
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
-    expect(await screen.findByText(/JPG, JPEG, PNG, WEBP up to 10mb/)).toBeInTheDocument();
-    expect(screen.getByText(/800×600 px/)).toBeInTheDocument();
-    expect(screen.queryByText(/000×000/)).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/JPG, JPEG, PNG, WEBP up to 10mb/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/800×600 px/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/000×000/)).not.toBeInTheDocument();
   });
 
   it("derives the description counter percentage from the actual character count", async () => {
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    expect(await screen.findByText("0/280 characters")).toBeInTheDocument();
-    expect(screen.getByText("0% used")).toBeInTheDocument();
-    expect(screen.queryByText("52% used")).not.toBeInTheDocument();
+    expect(within(dialog).getByText("0/280 characters")).toBeInTheDocument();
+    expect(within(dialog).getByText("0% used")).toBeInTheDocument();
+    expect(within(dialog).queryByText("52% used")).not.toBeInTheDocument();
 
-    await user.type(screen.getByLabelText("Description"), "Fourteen chars");
+    await user.type(within(dialog).getByLabelText("Description"), "Fourteen chars");
 
-    expect(await screen.findByText("14/280 characters")).toBeInTheDocument();
-    expect(screen.getByText("5% used")).toBeInTheDocument();
+    expect(within(dialog).getByText("14/280 characters")).toBeInTheDocument();
+    expect(within(dialog).getByText("5% used")).toBeInTheDocument();
   });
 
   it("blocks submit and never calls create when required fields are empty", async () => {
     const createSpy = vi.spyOn(subCategoriesService, "create");
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.click(await screen.findByRole("button", { name: "Save" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Category is required")).toBeInTheDocument();
-    expect(screen.getByText("Sub Category Name is required")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Category is required")).toBeInTheDocument();
+    expect(within(dialog).getByText("Sub Category Name is required")).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
-  it("creates the sub category and returns to the list on a valid submit", async () => {
+  it("creates the sub category and closes the modal on a valid submit", async () => {
     const createSpy = vi.spyOn(subCategoriesService, "create");
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.click(await screen.findByRole("combobox", { name: "Category" }));
+    await user.click(within(dialog).getByRole("combobox", { name: "Category" }));
     await user.click(await screen.findByRole("option", { name: "Mobile Legends" }));
-    await user.type(screen.getByLabelText("Sub Category Name"), "Mobile Legends: Philippines");
-    await user.type(screen.getByLabelText("Currency Name"), "Diamonds");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.type(within(dialog).getByLabelText("Sub Category Name"), "Mobile Legends: Philippines");
+    await user.type(within(dialog).getByLabelText("Currency Name"), "Diamonds");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -100,7 +106,7 @@ describe("AddSubCategoryPage", () => {
         status: "active",
       }),
     );
-    expect(await screen.findByRole("heading", { name: "Sub Category" })).toBeInTheDocument();
+    if (screen.queryByRole("dialog", { name: "Add Sub Category" })) await waitForElementToBeRemoved(dialog);
     expect(await screen.findByText("Mobile Legends: Philippines")).toBeInTheDocument();
   });
 });
