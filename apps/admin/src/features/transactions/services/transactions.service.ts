@@ -66,6 +66,7 @@ interface TransactionApiRow {
   invoice_number: string;
   user_id: number | null;
   guest_contact: string | null;
+  contact_email: string | null;
   target_uid: string | null;
   target_server: string | null;
   amount_fee: number;
@@ -74,7 +75,7 @@ interface TransactionApiRow {
   status: string;
   sn: string | null;
   proof_url: string | null;
-  user?: { id: number; name: string; phone: string; avatar_url: string | null } | null;
+  user?: { id: number; name: string; phone: string; email?: string | null; avatar_url: string | null } | null;
   product?: { id: number; name: string; category?: { id: number; name: string } | null } | null;
   payment?: { status: string } | null;
   payment_channel?: { id: number; name: string } | null;
@@ -103,6 +104,7 @@ const toTransaction = (row: TransactionApiRow): Transaction => {
       // Guests have no user row; their contact lives on the transaction.
       name: row.user?.name ?? "Guest",
       phone: row.user?.phone ?? row.guest_contact ?? "",
+      email: row.user?.email ?? row.contact_email ?? undefined,
       avatar_url: row.user?.avatar_url ?? undefined,
     },
     game: {

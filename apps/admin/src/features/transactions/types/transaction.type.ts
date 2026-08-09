@@ -9,6 +9,7 @@ export interface TransactionCustomer {
   user_id: number | null;
   name: string;
   phone: string;
+  email?: string;
   avatar_url?: string;
 }
 

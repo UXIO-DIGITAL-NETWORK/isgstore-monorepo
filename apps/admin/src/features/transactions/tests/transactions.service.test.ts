@@ -106,6 +106,18 @@ describe("transactionsService.list", () => {
 
     expect(vi.mocked(api.get).mock.calls[0][1]?.params).toMatchObject({ sort_by: "amount_total", sort_dir: "desc" });
   });
+
+  it("maps the customer email from the user, falling back to the checkout contact_email", async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      paginated([apiRow({ user: { id: 1001, name: "Randy", phone: "p", email: "user@example.com", avatar_url: null } })]),
+    );
+    expect((await transactionsService.list({})).data[0].customer.email).toBe("user@example.com");
+
+    vi.mocked(api.get).mockResolvedValue(
+      paginated([apiRow({ user: null, user_id: null, contact_email: "guest@example.com" })]),
+    );
+    expect((await transactionsService.list({})).data[0].customer.email).toBe("guest@example.com");
+  });
 });
 
 describe("transactionsService.getById", () => {

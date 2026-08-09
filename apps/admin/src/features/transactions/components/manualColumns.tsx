@@ -61,6 +61,15 @@ export const manualColumns: ColumnDef<Transaction>[] = [
             >
               {customer.phone}
             </Text>
+            {customer.email && (
+              <Text
+                variant="muted"
+                as="span"
+                className="text-xs"
+              >
+                {customer.email}
+              </Text>
+            )}
           </Box>
         </Box>
       );
