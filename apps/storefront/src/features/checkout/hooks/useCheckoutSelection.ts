@@ -26,6 +26,7 @@ export function useCheckoutSelection({ packages, categories }: Options) {
   const [activeCategory, setActiveCategory] = useState<PackageCategory>(ALL_CATEGORY);
   const [fieldValues, setFieldValues] = useState<string[]>([]);
   const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
 
   const filteredPackages = useMemo(() => {
     if (activeCategory === ALL_CATEGORY) return packages;
@@ -70,6 +71,7 @@ export function useCheckoutSelection({ packages, categories }: Options) {
     userId: fieldValues[0] ?? "",
     serverId: fieldValues[1] ?? "",
     whatsapp,
+    email,
     // derived
     filteredPackages,
     visibleCategories,
@@ -79,6 +81,7 @@ export function useCheckoutSelection({ packages, categories }: Options) {
     setActiveCategory,
     setFieldValue,
     setWhatsapp,
+    setEmail,
     handleSelectPackage,
     handleSelectPayment,
   };

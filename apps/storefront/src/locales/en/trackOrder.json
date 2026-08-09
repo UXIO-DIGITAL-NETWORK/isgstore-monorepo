@@ -1,12 +1,12 @@
 {
   "hero": {
     "title": "TRACK ORDER",
-    "subtitle": "Enter your invoice number to view real-time transaction status and details."
+    "subtitle": "Enter your invoice number, WhatsApp, or email to view real-time transaction status and details."
   },
 
   "search": {
-    "label": "Invoice Number",
-    "placeholder": "Enter Invoice Number or WhatsApp...",
+    "label": "Invoice Number / WhatsApp / Email",
+    "placeholder": "Enter Invoice, WhatsApp, or Email...",
     "button": "Track Order"
   },
 

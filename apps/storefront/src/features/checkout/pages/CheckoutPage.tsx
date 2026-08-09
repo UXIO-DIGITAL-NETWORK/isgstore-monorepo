@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -27,6 +27,7 @@ import {
 } from "@/features/checkout/hooks/useCheckoutQueries";
 import { calculateAdminFee } from "@/features/checkout/lib/mappers";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { GameInfo, PaymentOption } from "@/features/checkout/types/checkout.type";
 
 /** Shown while the game loads, so the header doesn't collapse mid-render. */
@@ -58,6 +59,7 @@ export default function CheckoutPage(): React.JSX.Element {
     userId,
     serverId,
     whatsapp,
+    email,
     filteredPackages,
     visibleCategories,
     selectedPackage,
@@ -65,9 +67,18 @@ export default function CheckoutPage(): React.JSX.Element {
     setActiveCategory,
     setFieldValue,
     setWhatsapp,
+    setEmail,
     handleSelectPackage,
     handleSelectPayment,
   } = useCheckoutSelection({ packages, categories });
+
+  // Prefill the email for a logged-in member from their account (still editable).
+  const authEmail = useAuthStore((s) => s.user?.email);
+  useEffect(() => {
+    if (authEmail) setEmail(authEmail);
+    // Only when the signed-in member changes; the field stays editable after.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authEmail]);
 
   const validation = useValidateGameIdQuery(gameSlug, userId, serverId);
   const nickname = validation.data?.nickname ?? null;
@@ -118,6 +129,10 @@ export default function CheckoutPage(): React.JSX.Element {
         // the receipt keeps showing the name that was confirmed here.
         target_nickname: nickname ?? undefined,
         guest_contact: whatsapp.trim() || undefined,
+        // Required destination for the purchase-receipt email (and a tracking key).
+        email: email.trim(),
+        // Storefront language, so the receipt email is sent in the buyer's language.
+        locale,
         promo_code: appliedPromo?.code,
       },
       {
@@ -216,6 +231,8 @@ export default function CheckoutPage(): React.JSX.Element {
             <ContactDetail
               whatsapp={whatsapp}
               onWhatsappChange={setWhatsapp}
+              email={email}
+              onEmailChange={setEmail}
             />
 
             <PromoCode

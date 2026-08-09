@@ -66,7 +66,12 @@
     "whatsappPlaceholder": "Phone Number",
     "helperNote": "This number will be contacted if an issue occurs",
     "whatsappRequired": "WhatsApp number is required",
-    "receiptNote": "We will send the transaction receipt to the WhatsApp number you entered above."
+    "email": "Email",
+    "emailPlaceholder": "you@email.com",
+    "emailHelperNote": "Your purchase receipt will be sent to this email",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email format",
+    "receiptNote": "We will send your purchase receipt to the email and WhatsApp number you entered above."
   },
   "promo": {
     "title": "Promo Code",
