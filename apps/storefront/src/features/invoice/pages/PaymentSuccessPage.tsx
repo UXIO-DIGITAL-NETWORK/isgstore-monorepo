@@ -1,15 +1,13 @@
 import React from "react";
 import { useParams } from "@tanstack/react-router";
-import { Download } from "lucide-react";
 import { Box } from "@/components/common/Box";
-import { Text } from "@/components/common/Text";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
-import { useTranslation } from "react-i18next";
 import PaymentSuccessHero from "@/features/invoice/components/PaymentSuccessHero";
 import OrderDetailCard from "@/features/invoice/components/OrderDetailCard";
 import PaymentSuccessCard from "@/features/invoice/components/PaymentSuccessCard";
+import DownloadInvoiceButton from "@/features/invoice/components/DownloadInvoiceButton";
 import TopUpAgainBanner from "@/features/invoice/components/TopUpAgainBanner";
 import TransactionReviewModal from "@/features/invoice/components/TransactionReviewModal";
 import { useDelayedModal } from "@/features/invoice/hooks/useDelayedModal";
@@ -19,7 +17,6 @@ import { toOrder } from "@/features/invoice/lib/toOrder";
 export default function PaymentSuccessPage(): React.JSX.Element {
   const { invoiceNumber } = useParams({ strict: false }) as { invoiceNumber: string };
   const pendingOrder = useCheckoutStore((s) => s.pendingOrder);
-  const { t } = useTranslation("invoice");
   const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(5000);
 
   // Same query key as the invoice page, so arriving here from the poll is a
@@ -71,19 +68,7 @@ export default function PaymentSuccessPage(): React.JSX.Element {
 
             {/* Download Invoice — secondary outlined button */}
             <Box className="flex justify-center">
-              <Box
-                as="button"
-                type="button"
-                onClick={() => {
-                  // Placeholder: download will be wired once backend provides a file URL
-                }}
-                className="flex items-center gap-2 rounded-[50px] border border-white/15 bg-white/5 font-outfit font-semibold text-[13px] text-white/80 py-2.5 px-6 cursor-pointer hover:bg-white/10 transition-colors"
-              >
-                <Download className="w-4 h-4 text-white/60" />
-                <Text as="span" className="font-outfit text-[13px] text-white/80">
-                  {t("success.downloadInvoice")}
-                </Text>
-              </Box>
+              <DownloadInvoiceButton invoiceNumber={order.invoiceNumber} />
             </Box>
           </Box>
         </Box>
