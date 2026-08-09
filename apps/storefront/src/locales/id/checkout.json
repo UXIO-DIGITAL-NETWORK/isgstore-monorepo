@@ -66,7 +66,12 @@
     "whatsappPlaceholder": "Nomor Handphone",
     "helperNote": "Nomor ini akan dihubungi jika terjadi masalah",
     "whatsappRequired": "Nomor WhatsApp wajib diisi",
-    "receiptNote": "Bukti transaksi akan kami kirim ke whatsapp yang kamu isi di atas."
+    "email": "Email",
+    "emailPlaceholder": "nama@email.com",
+    "emailHelperNote": "Bukti pembelian akan kami kirim ke email ini",
+    "emailRequired": "Email wajib diisi",
+    "emailInvalid": "Format email tidak valid",
+    "receiptNote": "Bukti pembelian akan kami kirim ke email dan WhatsApp yang kamu isi di atas."
   },
   "promo": {
     "title": "Kode Promo",

@@ -8,13 +8,21 @@ import SectionCard from "@/features/checkout/components/SectionCard";
 interface Props {
   whatsapp: string;
   onWhatsappChange: (val: string) => void;
+  email: string;
+  onEmailChange: (val: string) => void;
 }
 
-export default function ContactDetail({ whatsapp, onWhatsappChange }: Props): React.JSX.Element {
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export default function ContactDetail({ whatsapp, onWhatsappChange, email, onEmailChange }: Props): React.JSX.Element {
   const { t } = useTranslation("checkout");
   const [touched, setTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
 
   const hasError = touched && whatsapp.trim() === "";
+  const emailEmpty = email.trim() === "";
+  const emailInvalidFormat = !emailEmpty && !EMAIL_PATTERN.test(email.trim());
+  const emailError = emailTouched && (emailEmpty || emailInvalidFormat);
 
   return (
     <SectionCard stepNumber={4} title={t("contact.title")} gradientBorder>
@@ -51,6 +59,34 @@ export default function ContactDetail({ whatsapp, onWhatsappChange }: Props): Re
           {!hasError && (
             <Text as="span" className="font-inter text-[11px] text-white/40 leading-none px-1">
               **{t("contact.helperNote")}
+            </Text>
+          )}
+        </Box>
+
+        {/* Email field */}
+        <Box className="flex flex-col gap-1.5">
+          <Text as="span" className="font-inter font-medium text-[13px] text-[#C9D5E3] leading-none flex items-center gap-0.5">
+            {t("contact.email", "Email")}
+            <Text as="span" className="text-red-500 text-[13px] leading-none">*</Text>
+          </Text>
+          <Input
+            type="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            onBlur={() => setEmailTouched(true)}
+            placeholder={t("contact.emailPlaceholder", "you@email.com")}
+            className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
+          />
+          {emailError ? (
+            <Text as="span" className="font-inter text-[11px] text-red-400 leading-none px-1">
+              {emailEmpty
+                ? t("contact.emailRequired", "Email wajib diisi")
+                : t("contact.emailInvalid", "Format email tidak valid")}
+            </Text>
+          ) : (
+            <Text as="span" className="font-inter text-[11px] text-white/40 leading-none px-1">
+              **{t("contact.emailHelperNote", "Bukti pembelian akan dikirim ke email ini")}
             </Text>
           )}
         </Box>

@@ -90,6 +90,7 @@ export interface CheckoutSelectionState {
   userId: string;
   serverId: string;
   whatsapp: string;
+  email: string;
 }
 
 // ── API payloads ───────────────────────────────────────────────────────────
@@ -123,6 +124,10 @@ export interface CheckoutPayload {
   target_server?: string;
   target_nickname?: string;
   guest_contact?: string;
+  /** Where the purchase receipt is sent; required, and a tracking key later. */
+  email: string;
+  /** Storefront language, used to localise the receipt email (id | en). */
+  locale?: string;
   /** Re-validated server-side — the client's quoted discount is never trusted. */
   promo_code?: string;
 }
