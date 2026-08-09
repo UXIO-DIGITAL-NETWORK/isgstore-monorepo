@@ -129,6 +129,28 @@ class StorefrontOrderTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
+    public function test_track_order_finds_an_order_by_email(): void
+    {
+        $this->order(['contact_email' => 'guest@example.com']);
+
+        // Case-insensitive exact match on the checkout email.
+        $this->getJson('/api/v1/orders/track?query=GUEST@example.com')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.invoice_number', 'INV-20260731-ABC123');
+    }
+
+    public function test_track_order_finds_a_member_order_by_account_email(): void
+    {
+        $role = Role::factory()->create(['name' => 'Member']);
+        $user = User::factory()->create(['role_id' => $role->id, 'email' => 'member@example.com']);
+        $this->order(['user_id' => $user->id, 'guest_contact' => null, 'contact_email' => null]);
+
+        $this->getJson('/api/v1/orders/track?query=member@example.com')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+    }
+
     public function test_validate_id_degrades_gracefully_when_no_provider_is_configured(): void
     {
         $game = Category::factory()->create(['slug' => 'mobile-legends', 'validasi_nickname' => null]);
@@ -202,6 +224,7 @@ class StorefrontOrderTest extends TestCase
                 'product_id' => $product->id,
                 'payment_channel_id' => $channel->id,
                 'target_uid' => '337850017',
+                'email' => 'buyer@example.com',
             ]);
 
         $response->assertCreated();
@@ -235,6 +258,7 @@ class StorefrontOrderTest extends TestCase
             'target_uid' => '337850017',
             'target_server' => '9423',
             'target_nickname' => 'Ramonezz',
+            'email' => 'buyer@example.com',
         ])->assertCreated();
 
         // Display-only: frozen so the receipt keeps showing the name the

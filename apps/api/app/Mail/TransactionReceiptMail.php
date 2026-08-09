@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Mail;
+
+use App\Models\Transaction;
+use App\Support\Storefront\MediaUrl;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+/**
+ * The purchase receipt emailed to the buyer once an order is COMPLETED. Sent
+ * with `Mail::to()->locale($locale)`, so the subject and every `__('receipt.*')`
+ * in the view resolve to the buyer's language (id | en).
+ */
+class TransactionReceiptMail extends Mailable implements ShouldQueue
+{
+    use Queueable, SerializesModels;
+
+    public function __construct(public Transaction $transaction, public string $emailLocale) {}
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: __('receipt.subject', ['invoice' => $this->transaction->invoice_number]),
+        );
+    }
+
+    public function content(): Content
+    {
+        $t = $this->transaction->loadMissing(['product.category', 'paymentChannel']);
+
+        $storeUrl = rtrim((string) config('services.storefront.url'), '/');
+        $trackUrl = $storeUrl.'/'.$this->emailLocale.'/cek-pesanan?query='.urlencode($t->invoice_number);
+
+        $target = trim(($t->target_uid ?? '').($t->target_server ? ' ('.$t->target_server.')' : ''));
+
+        return new Content(
+            view: 'emails.transaction-receipt',
+            with: [
+                'brand' => (string) config('services.storefront.brand', 'TOPUP GAME'),
+                'invoice' => $t->invoice_number,
+                'date' => optional($t->created_at)->translatedFormat('d M Y, H:i'),
+                'gameName' => $t->product?->category?->name,
+                'gameLogo' => MediaUrl::for($t->product?->category?->logo),
+                'productName' => $t->product?->name,
+                'target' => $target !== '' ? $target : null,
+                'serial' => $t->sn,
+                'paymentName' => $t->paymentChannel?->name,
+                'subtotal' => (int) $t->amount_base,
+                'fee' => (int) $t->amount_fee,
+                'discount' => (int) $t->discount_amount,
+                'total' => (int) $t->amount_total,
+                'trackUrl' => $trackUrl,
+            ],
+        );
+    }
+}

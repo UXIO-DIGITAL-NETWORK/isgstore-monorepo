@@ -11,9 +11,10 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * "Cek Pesanan" — look up your own orders without logging in.
  *
- * Matches an exact invoice number, or an exact contact number (the guest's
- * WhatsApp, or a registered user's phone). Exact match only: a LIKE search on
- * phone numbers would let someone walk the table by prefix.
+ * Matches an exact invoice number, an exact contact number (the guest's
+ * WhatsApp, or a registered user's phone), or an exact email (the checkout
+ * `contact_email`, or a registered user's email). Exact match only: a LIKE
+ * search on phone/email would let someone walk the table by prefix.
  */
 class TrackOrdersAction
 {
@@ -29,14 +30,21 @@ class TrackOrdersAction
         }
 
         $contacts = $this->phoneCandidates($query);
+        $email = $this->emailCandidate($query);
 
         return Transaction::query()
-            ->where(function (Builder $q) use ($query, $contacts) {
+            ->where(function (Builder $q) use ($query, $contacts, $email) {
                 $q->where('invoice_number', $query);
 
                 if ($contacts !== []) {
                     $q->orWhereIn('guest_contact', $contacts)
                         ->orWhereHas('user', fn (Builder $u) => $u->whereIn('phone', $contacts));
+                }
+
+                if ($email !== null) {
+                    // Case-insensitive exact match — emails are stored as typed.
+                    $q->orWhereRaw('lower(contact_email) = ?', [$email])
+                        ->orWhereHas('user', fn (Builder $u) => $u->whereRaw('lower(email) = ?', [$email]));
                 }
             })
             ->with([
@@ -93,5 +101,11 @@ class TrackOrdersAction
             $international,
             '+'.$international,
         ]));
+    }
+
+    /** The lowercased email if the query is a valid email address, else null. */
+    private function emailCandidate(string $value): ?string
+    {
+        return filter_var($value, FILTER_VALIDATE_EMAIL) ? strtolower($value) : null;
     }
 }

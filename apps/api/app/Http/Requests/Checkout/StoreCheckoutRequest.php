@@ -25,6 +25,11 @@ class StoreCheckoutRequest extends FormRequest
             'payment_channel_id' => ['required', 'integer', 'exists:payment_channels,id'],
             // Required for guests; optional for authenticated members
             'guest_contact' => $this->checkoutUser() ? ['nullable', 'string', 'max:20'] : ['required', 'string', 'max:20'],
+            // Email is required for everyone: it is where the purchase receipt is
+            // sent and lets the buyer track the order by email later.
+            'email' => ['required', 'email', 'max:255'],
+            // Storefront language, used to localise the receipt email (id|en).
+            'locale' => ['nullable', 'string', 'in:id,en'],
             // Display-only echo of what validate-id returned. Never trusted for
             // fulfilment — Digiflazz is sent target_uid/target_server only.
             'target_nickname' => ['nullable', 'string', 'max:100'],
@@ -76,6 +81,8 @@ class StoreCheckoutRequest extends FormRequest
     {
         return [
             'guest_contact.required' => 'Nomor WhatsApp/Kontak wajib diisi untuk pelanggan tamu.',
+            'email.required' => 'Email wajib diisi untuk mengirim bukti pembelian.',
+            'email.email' => 'Format email tidak valid.',
             // :attribute resolves to the game's own field label via attributes().
             'target_uid.required' => ':attribute wajib diisi.',
             'target_server.required' => ':attribute wajib diisi.',

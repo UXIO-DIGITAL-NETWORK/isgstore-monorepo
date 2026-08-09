@@ -4,6 +4,7 @@ namespace App\Actions\Checkout;
 
 use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\DTOs\Checkout\CheckoutDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\PaymentStatus;
@@ -28,7 +29,8 @@ class CheckoutAction
     public function __construct(
         private readonly ProcessDigiflazzTransactionAction $digiflazzAction,
         private readonly CreateActivityLogAction $logAction,
-        private readonly MonetapayService $monetapayService
+        private readonly MonetapayService $monetapayService,
+        private readonly SendTransactionReceiptAction $sendReceiptAction
     ) {}
 
     public function execute(CheckoutDTO $dto): array
@@ -149,6 +151,10 @@ class CheckoutAction
                 'user_id' => $user?->id,
                 'payment_channel_id' => $channel->id,
                 'guest_contact' => $user ? null : $dto->guestContact,
+                // Stored for everyone (guest + member): the receipt destination and
+                // an order-tracking key. `locale` drives the receipt email language.
+                'contact_email' => $dto->email,
+                'locale' => $dto->locale ?? $user?->locale ?? 'id',
                 'product_id' => $product->id,
                 'supplier_id' => $activeSupplier->supplier_id,
                 'target_uid' => $dto->targetUid,
@@ -207,6 +213,13 @@ class CheckoutAction
 
                 $transaction = $this->digiflazzAction->execute($transaction);
                 $transactionStatus = $transaction->status; // COMPLETED / PROCESSING / FAILED_PROVIDER
+
+                // Fulfilled synchronously from balance — email the receipt now.
+                // Queued mail participates in this DB transaction, so it is only
+                // delivered if the checkout commits.
+                if ($transactionStatus === TransactionStatus::COMPLETED) {
+                    $this->sendReceiptAction->execute($transaction);
+                }
 
             } elseif ($channel->payment_type === 'payment_link') {
                 // ── Payment Link path ────────────────────────────────────────

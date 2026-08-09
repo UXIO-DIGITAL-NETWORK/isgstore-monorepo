@@ -4,6 +4,7 @@ namespace App\Actions\Digiflazz;
 
 use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Payment\RefundFailedTransactionAction;
+use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
@@ -100,6 +101,12 @@ class HandleDigiflazzWebhookAction
 
         if ($notification !== null) {
             [$transaction, $oldStatus, $newStatus] = $notification;
+
+            // Order fulfilled — email the receipt to the buyer (idempotent).
+            if ($newStatus === TransactionStatus::COMPLETED) {
+                app(SendTransactionReceiptAction::class)->execute($transaction);
+            }
+
             $this->sendToDiscord($transaction, $oldStatus, $newStatus);
         }
     }

@@ -71,6 +71,7 @@ class CheckoutIdentifierValidationTest extends TestCase
             'payment_channel_id' => $this->channel->id,
             'target_uid' => '123456789',
             'guest_contact' => '08123456789',
+            'email' => 'buyer@example.com',
         ], $overrides));
     }
 
