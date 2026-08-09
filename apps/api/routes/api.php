@@ -57,6 +57,7 @@ use App\Http\Controllers\Api\Storefront\GameController as StorefrontGameControll
 use App\Http\Controllers\Api\Storefront\GameReviewController;
 use App\Http\Controllers\Api\Storefront\GuestRatingController;
 use App\Http\Controllers\Api\Storefront\InvoiceController;
+use App\Http\Controllers\Api\Storefront\InvoiceDownloadController;
 use App\Http\Controllers\Api\Storefront\LeaderboardController as StorefrontLeaderboardController;
 use App\Http\Controllers\Api\Storefront\MarketingController;
 use App\Http\Controllers\Api\Storefront\OrderTrackController;
@@ -155,6 +156,8 @@ Route::prefix('v1')->group(function () {
 
     // Receipt lookup. Invoice numbers carry six random characters, so they are
     // not enumerable; the projection is narrow regardless — see InvoiceController.
+    // Static `/download` before the `{invoiceNumber}` read so it isn't shadowed.
+    Route::get('/invoices/{invoiceNumber}/download', InvoiceDownloadController::class);
     Route::get('/invoices/{invoiceNumber}', InvoiceController::class);
 
     Route::middleware('throttle:checkout')->group(function () {

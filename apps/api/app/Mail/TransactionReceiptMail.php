@@ -2,11 +2,13 @@
 
 namespace App\Mail;
 
+use App\Actions\Invoice\GenerateInvoicePdfAction;
 use App\Models\Transaction;
 use App\Support\Storefront\MediaUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -57,5 +59,21 @@ class TransactionReceiptMail extends Mailable implements ShouldQueue
                 'trackUrl' => $trackUrl,
             ],
         );
+    }
+
+    /**
+     * Attach the invoice PDF — the same file the storefront's "Download Invoice"
+     * serves — regenerated at send time so no bytes ride along in the job payload.
+     *
+     * @return array<int, Attachment>
+     */
+    public function attachments(): array
+    {
+        return [
+            Attachment::fromData(
+                fn () => app(GenerateInvoicePdfAction::class)->execute($this->transaction, $this->emailLocale),
+                "Invoice-{$this->transaction->invoice_number}.pdf",
+            )->withMime('application/pdf'),
+        ];
     }
 }
