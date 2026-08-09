@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { computeRolePrice, impliedPercent } from "../lib/computeRolePrice";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
 import { useAddDigiflazzProduct, useDigiflazzSkuPreview } from "../hooks/useProviderProducts";
 import { providerAddSchema, type ProviderAddFormValues } from "../schemas/providerAdd.schema";
@@ -44,11 +45,14 @@ const PRICE_FIELDS = [
 export function AddProviderProductDialog({ item, open, onOpenChange }: AddProviderProductDialogProps) {
   const addProduct = useAddDigiflazzProduct();
 
+  const [percentMode, setPercentMode] = useState(false);
+
   const {
     control,
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<ProviderAddFormValues>({
     resolver: zodResolver(providerAddSchema),
@@ -80,7 +84,25 @@ export function AddProviderProductDialog({ item, open, onOpenChange }: AddProvid
     setValue("price_agent", String(suggested.price_agent));
   }, [preview, setValue]);
 
+  const cost = preview?.suggested_prices?.price_modal ?? 0;
+
+  // Live values so percent mode can preview the resulting rupiah price.
+  const watchedPrices = useWatch({ control, name: PRICE_FIELDS.map((p) => p.name) }) as string[];
+
+  // Flip every tier field between absolute rupiah and its implied markup %,
+  // so the numbers stay consistent across the toggle.
+  const togglePercentMode = (on: boolean) => {
+    PRICE_FIELDS.forEach((price) => {
+      const current = Number(getValues(price.name)) || 0;
+      const next = on ? impliedPercent(cost, current) : computeRolePrice(cost, current, 0);
+      setValue(price.name, String(next));
+    });
+    setPercentMode(on);
+  };
+
   if (!item) return null;
+
+  const priceFor = (value: string) => (percentMode ? computeRolePrice(cost, Number(value) || 0, 0) : Number(value));
 
   const onSubmit = (values: ProviderAddFormValues) => {
     addProduct.mutate(
@@ -90,10 +112,10 @@ export function AddProviderProductDialog({ item, open, onOpenChange }: AddProvid
         category_id: values.category_id,
         sub_category_id: values.sub_category_id || null,
         name: values.name || undefined,
-        price_member: Number(values.price_member),
-        price_vip: Number(values.price_vip),
-        price_reseller: Number(values.price_reseller),
-        price_agent: Number(values.price_agent),
+        price_member: priceFor(values.price_member),
+        price_vip: priceFor(values.price_vip),
+        price_reseller: priceFor(values.price_reseller),
+        price_agent: priceFor(values.price_agent),
         status: values.status,
       },
       { onSuccess: () => onOpenChange(false) },
@@ -204,19 +226,43 @@ export function AddProviderProductDialog({ item, open, onOpenChange }: AddProvid
             />
           </Box>
 
+          <Box className="flex items-center justify-between">
+            <Label
+              htmlFor="provider-add-percent-mode"
+              className="text-muted-foreground"
+            >
+              Set price by percentage
+            </Label>
+            <Switch
+              id="provider-add-percent-mode"
+              checked={percentMode}
+              onCheckedChange={togglePercentMode}
+            />
+          </Box>
+
           <Box className="grid grid-cols-2 gap-3">
-            {PRICE_FIELDS.map((price) => (
+            {PRICE_FIELDS.map((price, index) => (
               <Box
                 key={price.name}
                 className="flex flex-col gap-1.5"
               >
-                <Label htmlFor={`provider-add-${price.name}`}>{price.label} price</Label>
+                <Label htmlFor={`provider-add-${price.name}`}>
+                  {price.label} {percentMode ? "markup %" : "price"}
+                </Label>
                 <Input
                   id={`provider-add-${price.name}`}
                   inputMode="numeric"
                   className="rounded-xl tabular-nums"
                   {...register(price.name)}
                 />
+                {percentMode && (
+                  <Text
+                    variant="small"
+                    className="text-muted-foreground tabular-nums"
+                  >
+                    = Rp {priceFor(watchedPrices?.[index] ?? "0").toLocaleString("id-ID")}
+                  </Text>
+                )}
                 {errors[price.name] && (
                   <Text
                     variant="small"
