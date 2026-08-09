@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\Member\MemberActivityLogController;
 use App\Http\Controllers\Api\Member\MembershipController;
 use App\Http\Controllers\Api\Member\MemberTransactionController;
 use App\Http\Controllers\Api\Member\ProfileController;
+use App\Http\Controllers\Api\Membership\MembershipPlanController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController;
@@ -48,6 +49,7 @@ use App\Http\Controllers\Api\Pricing\PricingRuleController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Product\SupplierProductController;
 use App\Http\Controllers\Api\RatingController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\Storefront\ArticleController as StorefrontArticleController;
 use App\Http\Controllers\Api\Storefront\ContentController;
 use App\Http\Controllers\Api\Storefront\ContentPageController;
@@ -255,6 +257,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::get('/{user}', [UserController::class, 'show']);
         Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
+        // Admin moderation + audited wallet adjustment (money-moving, so a
+        // reason is required and the write goes through WalletLedger).
+        Route::post('/{user}/status', [UserController::class, 'setStatus']);
+        Route::post('/{user}/balance-adjustments', [UserController::class, 'adjustBalance']);
     });
 
     // Dashboard (admin overview aggregates)
@@ -265,6 +271,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/financial/summary', [FinancialController::class, 'summary']);
     Route::get('/financial/payment-gateways', [FinancialController::class, 'paymentGateways']);
     Route::get('/financial/suppliers', [FinancialController::class, 'suppliers']);
+
+    // Reporting hub (consolidated revenue/transactions/profit + breakdown)
+    Route::get('/reports/summary', [ReportController::class, 'summary']);
 
     // Integration channel connectivity overview
     Route::get('/integration/channels', [IntegrationController::class, 'channels']);
@@ -352,6 +361,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     // Pricing Rules (markup config used by the daily Digiflazz price sync)
     Route::apiResource('pricing-rules', PricingRuleController::class);
 
+    // Membership plans (loyalty tiers) — admin CRUD; storefront reads its own
+    // GET /v1/storefront/membership-plans.
+    Route::apiResource('membership-plans', MembershipPlanController::class);
+
     // ── Content & marketing ──────────────────────────────────────────────
     // article-categories is registered before articles so neither shadows the
     // other, and both keep their own {id} binding.
@@ -433,10 +446,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     // status-counts must be registered before the apiResource's {transaction}
     // wildcard, or Laravel tries to route-model-bind "status-counts" as an id.
     Route::get('/transactions/status-counts', [TransactionController::class, 'statusCounts']);
+    // Static paths before the apiResource wildcard, or "export"/"recap" would
+    // route-model-bind as a {transaction} id.
+    Route::get('/transactions/export', [TransactionController::class, 'export']);
+    Route::get('/transactions/recap', [TransactionController::class, 'recap']);
     Route::apiResource('transactions', TransactionController::class);
     Route::post('/transactions/{transaction}/manual-review', [TransactionController::class, 'manualReview']);
     Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund']);
     Route::post('/transactions/{transaction}/resend-callback', [TransactionController::class, 'resendCallback']);
+    Route::post('/transactions/{transaction}/resend-receipt', [TransactionController::class, 'resendReceipt']);
     Route::post('/transactions/{transaction}/retry', [TransactionController::class, 'retry']);
 
     // Payment Management

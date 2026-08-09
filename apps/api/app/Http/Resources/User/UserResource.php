@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'balance' => (float) $this->balance,
             'point' => $this->point,
+            'status' => $this->status ?? 'active',
             'locale' => $this->locale,
             'timezone' => $this->timezone,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
