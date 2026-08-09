@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Actions\Transaction\AdminRefundTransactionAction;
 use App\Actions\Transaction\AdminResendCallbackAction;
+use App\Actions\Transaction\AdminResendReceiptAction;
 use App\Actions\Transaction\AdminRetryTransactionAction;
 use App\Actions\Transaction\CreateTransactionAction;
 use App\Actions\Transaction\DeleteTransactionAction;
+use App\Actions\Transaction\ExportTransactionsAction;
+use App\Actions\Transaction\GetTransactionRecapAction;
 use App\Actions\Transaction\GetTransactionsAction;
 use App\Actions\Transaction\GetTransactionStatusCountsAction;
 use App\Actions\Transaction\ManualReviewTransactionAction;
@@ -21,6 +24,7 @@ use App\Models\Transaction;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransactionController extends Controller
 {
@@ -134,5 +138,57 @@ class TransactionController extends Controller
             new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
             'Transaction retried successfully'
         );
+    }
+
+    public function resendReceipt(Transaction $transaction, AdminResendReceiptAction $action)
+    {
+        $transaction = $action->execute($transaction);
+
+        return $this->successResponse(
+            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            'Receipt resent successfully'
+        );
+    }
+
+    public function recap(Request $request, GetTransactionRecapAction $action)
+    {
+        $period = $request->query('period') === 'monthly' ? 'monthly' : 'daily';
+
+        return $this->successResponse($action->execute($period), 'Transaction recap retrieved successfully');
+    }
+
+    /**
+     * CSV of the filtered set (no pagination). Binary/stream response — an
+     * intentional deviation from the ApiResponse envelope, like the Digiflazz
+     * import template.
+     */
+    public function export(Request $request, ExportTransactionsAction $action): StreamedResponse
+    {
+        $transactions = $action->execute(
+            $request->query('status'),
+            $request->query('search'),
+            ($v = $request->query('user_id')) !== null ? (int) $v : null,
+            ($v = $request->query('product_id')) !== null ? (int) $v : null,
+            ($v = $request->query('payment_channel_id')) !== null ? (int) $v : null,
+            $request->query('start_date'),
+            $request->query('end_date'),
+        );
+
+        return response()->streamDownload(function () use ($transactions) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Invoice', 'Customer', 'Product', 'Status', 'Total', 'Margin', 'Created At']);
+            foreach ($transactions as $t) {
+                fputcsv($out, [
+                    $t->invoice_number,
+                    $t->user?->name ?? $t->guest_contact ?? 'Guest',
+                    $t->product?->name ?? '',
+                    $t->status instanceof \BackedEnum ? $t->status->value : $t->status,
+                    $t->amount_total,
+                    $t->margin,
+                    $t->created_at?->toDateTimeString(),
+                ]);
+            }
+            fclose($out);
+        }, 'transactions.csv', ['Content-Type' => 'text/csv']);
     }
 }
