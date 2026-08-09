@@ -122,11 +122,15 @@ describe("marketing routes", () => {
   });
 
   it("the Add Promo form renders its fields", async () => {
-    await renderRoute("/admin/promos/add");
+    const user = userEvent.setup();
+    await renderRoute("/admin/promos");
 
-    expect(await screen.findByRole("heading", { name: "Add Promo" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Code")).toBeInTheDocument();
-    expect(screen.getByLabelText("Type")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Add Promo" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Add Promo" })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Code")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Type")).toBeInTheDocument();
   });
 });
 

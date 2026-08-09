@@ -1,9 +1,7 @@
-import { useLocation } from "@tanstack/react-router";
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Label } from "@/components/ui/label";
-import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +16,7 @@ interface CategoryProviderToolbarProps {
   providerName?: string;
   onProviderChange: (value: string | undefined) => void;
   onRefresh: () => void;
+  onAdd: () => void;
   selectedCount: number;
   onBulkDelete: () => void;
 }
@@ -36,8 +35,8 @@ interface CategoryProviderToolbarProps {
  * garbled, so this follows the pattern already established for Sub Category
  * rather than leaving checkboxes with no resulting action.
  *
- * The add link derives its target from the current pathname rather than a
- * hardcoded absolute path, so it stays inside the preview route.
+ * The add button opens the Add Category Provider modal owned by the list
+ * page.
  */
 export function CategoryProviderToolbar({
   search,
@@ -45,12 +44,10 @@ export function CategoryProviderToolbar({
   providerName,
   onProviderChange,
   onRefresh,
+  onAdd,
   selectedCount,
   onBulkDelete,
 }: CategoryProviderToolbarProps) {
-  const { pathname } = useLocation();
-  const addHref = `${pathname.replace(/\/$/, "")}/add`;
-
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
@@ -126,13 +123,11 @@ export function CategoryProviderToolbar({
           </Button>
         )}
         <Button
-          asChild
           className="rounded-xl"
+          onClick={onAdd}
         >
-          <Link href={addHref}>
-            <Plus className="size-4" />
-            Add Category Provider
-          </Link>
+          <Plus className="size-4" />
+          Add Category Provider
         </Button>
       </Box>
     </Box>

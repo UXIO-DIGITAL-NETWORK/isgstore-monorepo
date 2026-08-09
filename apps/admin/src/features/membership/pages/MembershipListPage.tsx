@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Can } from "@/components/common/Can";
@@ -18,55 +18,82 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
-import { useDeleteMembershipTier, useMembershipTierList } from "../hooks/useMembership";
-import type { MembershipTier } from "../types/membership.type";
+import { MembershipPlanFormDialog } from "../components/MembershipPlanFormDialog";
+import {
+  useCreateMembershipPlan,
+  useDeleteMembershipPlan,
+  useMembershipPlanList,
+  useUpdateMembershipPlan,
+} from "../hooks/useMembership";
+import type { MembershipPlan } from "../types/membership.type";
 
 const DEFAULT_PAGE_SIZE = 10;
 
 export function MembershipListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [deleteTier, setDeleteTier] = useState<MembershipTier | null>(null);
+  const [deletePlan, setDeletePlan] = useState<MembershipPlan | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editPlan, setEditPlan] = useState<MembershipPlan | null>(null);
 
   const params = useMemo(() => ({ page, per_page: pageSize }), [page, pageSize]);
-  const { data, isLoading, isError, refetch } = useMembershipTierList(params);
-  const deleteMutation = useDeleteMembershipTier();
+  const { data, isLoading, isError, refetch } = useMembershipPlanList(params);
+  const createPlan = useCreateMembershipPlan();
+  const updatePlan = useUpdateMembershipPlan();
+  const deletePlanMutation = useDeleteMembershipPlan();
 
-  const columns = useMemo<ColumnDef<MembershipTier>[]>(
+  const openAdd = () => {
+    setEditPlan(null);
+    setFormOpen(true);
+  };
+  const openEdit = (plan: MembershipPlan) => {
+    setEditPlan(plan);
+    setFormOpen(true);
+  };
+
+  const columns = useMemo<ColumnDef<MembershipPlan>[]>(
     () => [
       {
         accessorKey: "name",
-        header: "Tier",
+        header: "Plan",
         cell: ({ row }) => (
-          <Text
-            as="span"
-            className="font-medium"
-          >
-            {row.original.name}
-          </Text>
+          <Box className="flex flex-col">
+            <Text
+              as="span"
+              className="font-medium"
+            >
+              {row.original.name}
+            </Text>
+            <Text
+              as="span"
+              variant="muted"
+            >
+              {row.original.code}
+            </Text>
+          </Box>
         ),
       },
       {
-        id: "min_spend",
-        header: "Min. Spend",
+        id: "price",
+        header: "Price",
         cell: ({ row }) => (
           <Text
             as="span"
             className="tabular-nums"
           >
-            {formatCurrency(row.original.min_spend, { fractionDigits: 0 })}
+            {formatCurrency(row.original.price, { fractionDigits: 0 })}
           </Text>
         ),
       },
       {
-        id: "discount",
-        header: "Discount",
+        id: "duration",
+        header: "Duration",
         cell: ({ row }) => (
           <Text
             as="span"
             className="tabular-nums"
           >
-            {row.original.discount_percent}%
+            {row.original.duration_days} days
           </Text>
         ),
       },
@@ -100,10 +127,16 @@ export function MembershipListPage() {
               align="end"
               className="rounded-2xl"
             >
+              <Can permission="memberships.edit">
+                <DropdownMenuItem onSelect={() => openEdit(row.original)}>
+                  <Pencil />
+                  Edit
+                </DropdownMenuItem>
+              </Can>
               <Can permission="memberships.delete">
                 <DropdownMenuItem
                   variant="destructive"
-                  onSelect={() => setDeleteTier(row.original)}
+                  onSelect={() => setDeletePlan(row.original)}
                 >
                   <Trash2 />
                   Delete
@@ -120,17 +153,25 @@ export function MembershipListPage() {
   return (
     <>
       <Box className="flex flex-col gap-6">
-        <Box className="rounded-2xl border border-border bg-card p-6">
-          <Heading
-            level={1}
-            variant="section"
-          >
-            Membership
-          </Heading>
-          <Text variant="muted">
-            Loyalty tiers, their spend threshold and member discount. Tier configuration is a first slice — the add/edit
-            form follows once the loyalty rules are confirmed.
-          </Text>
+        <Box className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-6">
+          <Box>
+            <Heading
+              level={1}
+              variant="section"
+            >
+              Membership
+            </Heading>
+            <Text variant="muted">Loyalty plans sold to members: their price, duration and availability.</Text>
+          </Box>
+          <Can permission="memberships.create">
+            <Button
+              className="rounded-xl"
+              onClick={openAdd}
+            >
+              <Plus />
+              Add Plan
+            </Button>
+          </Can>
         </Box>
 
         <Box className="rounded-2xl border border-border bg-card p-4">
@@ -140,8 +181,8 @@ export function MembershipListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="tiers"
-            emptyMessage="No membership tiers yet."
+            entityLabel="plans"
+            emptyMessage="No membership plans yet."
             showRowNumber
             enableSelection={false}
             page={page}
@@ -157,12 +198,22 @@ export function MembershipListPage() {
         </Box>
       </Box>
 
+      <MembershipPlanFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        plan={editPlan}
+        isPending={createPlan.isPending || updatePlan.isPending}
+        onSubmit={(values) =>
+          editPlan ? updatePlan.mutate({ id: editPlan.id, input: values }) : createPlan.mutate(values)
+        }
+      />
+
       <DeleteConfirmDialog
-        open={deleteTier !== null}
-        onOpenChange={(open) => !open && setDeleteTier(null)}
-        title={`Delete ${deleteTier?.name ?? "tier"}?`}
-        description="This permanently removes the membership tier. This action cannot be undone."
-        onConfirm={() => deleteTier && deleteMutation.mutate(deleteTier.id)}
+        open={deletePlan !== null}
+        onOpenChange={(open) => !open && setDeletePlan(null)}
+        title={`Delete ${deletePlan?.name ?? "plan"}?`}
+        description="This permanently removes the membership plan. This action cannot be undone."
+        onConfirm={() => deletePlan && deletePlanMutation.mutate(deletePlan.id)}
       />
     </>
   );

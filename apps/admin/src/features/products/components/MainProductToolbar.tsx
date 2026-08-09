@@ -1,10 +1,8 @@
-import { useLocation } from "@tanstack/react-router";
 import { ChevronDown, CloudUpload, ImageIcon, Plus, Power, RefreshCw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Box } from "@/components/common/Box";
 import { Can } from "@/components/common/Can";
-import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +26,7 @@ interface MainProductToolbarProps {
   price?: string;
   onPriceChange: (value: string | undefined) => void;
   onRefresh: () => void;
+  onAdd: () => void;
   selectedCount: number;
   onBulkDeactivate: () => void;
   onBulkDelete: () => void;
@@ -53,13 +52,11 @@ export function MainProductToolbar({
   price,
   onPriceChange,
   onRefresh,
+  onAdd,
   selectedCount,
   onBulkDeactivate,
   onBulkDelete,
 }: MainProductToolbarProps) {
-  const { pathname } = useLocation();
-  const addHref = `${pathname.replace(/\/$/, "")}/add`;
-
   // ponytail: the reference shows these two, but nothing specifies what a bulk
   // Digiflazz push or a bulk logo upload does — the Product Provider tab and
   // the upload endpoint are both roadmap (§5). They say so rather than guess a
@@ -172,9 +169,7 @@ export function MainProductToolbar({
               align="end"
               className="rounded-2xl"
             >
-              <DropdownMenuItem asChild>
-                <Link href={addHref}>Manual</Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onAdd}>Manual</DropdownMenuItem>
               <DropdownMenuItem onSelect={announceDeferred("Bulk product import lands with the Add Product form")}>
                 Bulk
               </DropdownMenuItem>

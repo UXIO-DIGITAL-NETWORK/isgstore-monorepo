@@ -33,16 +33,18 @@ describe("CategoryTypeListPage", () => {
 
     expect(await screen.findByPlaceholderText("Search category type")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Add Category Type/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Add Category Type/i })).toBeInTheDocument();
     // Sub Category filters by parent; this tab has no parent to filter by.
     expect(screen.queryByLabelText("Category")).not.toBeInTheDocument();
   });
 
-  it("the '+ Add Category Type' link stays inside the preview route", async () => {
+  it("the '+ Add Category Type' button opens the Add Category Type modal", async () => {
+    const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
-    const addLink = await screen.findByRole("link", { name: /Add Category Type/i });
-    expect(addLink).toHaveAttribute("href", "/admin/categories-preview/category-type/add");
+    await user.click(await screen.findByRole("button", { name: /Add Category Type/i }));
+
+    expect(await screen.findByRole("dialog", { name: "Add Category Type" })).toBeInTheDocument();
   });
 
   it("shows the four column headers and no selection checkbox", async () => {

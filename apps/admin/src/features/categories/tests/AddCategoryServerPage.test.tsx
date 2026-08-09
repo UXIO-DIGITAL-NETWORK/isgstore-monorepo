@@ -1,110 +1,116 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { waitForElementToBeRemoved } from "@testing-library/react";
 
-import { renderRoute, screen } from "@/test/test-utils";
+import { renderRoute, screen, within } from "@/test/test-utils";
 import { categoryServersService } from "../services/categoryServers.service";
 
-const ADD_PATH = "/admin/categories-preview/category-server/add";
+const LIST_PATH = "/admin/categories-preview/category-server";
+
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Opens the Add Category Server modal from the list and returns the dialog element. */
+async function openAdd(user: User): Promise<HTMLElement> {
+  await renderRoute(LIST_PATH);
+  await user.click(await screen.findByRole("button", { name: /Add Category Server/i }));
+  return screen.findByRole("dialog", { name: "Add Category Server" });
+}
 
 /**
- * Add Category Server form (product_requirements.md §4.5, line 235).
+ * Add Category Server form (product_requirements.md §4.5, line 235) — a modal
+ * now, opened from the list's "+ Add Category Server".
  *
  * The reference labels the main field "Category Type Name" — a leftover from
- * copy-pasting the Add Category Type form built immediately before it, not a
- * second reference to category types. The corrected label is asserted here,
- * and the old one asserted absent.
+ * copy-pasting the Add Category Type form built immediately before it. The
+ * corrected label is asserted here, and the old one asserted absent.
  *
  * The Name/Value option list is this tab's one new pattern: a field array,
  * same mechanism as the Category form's builder but with two plain text
  * fields per row.
  */
-describe("AddCategoryServerPage", () => {
+describe("AddCategoryServerDialog", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("shows the breadcrumb trail for the active tab", async () => {
-    await renderRoute(ADD_PATH);
+  it("opens with a real subcopy, never lorem ipsum", async () => {
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
-    const breadcrumb = await screen.findByRole("navigation", { name: "breadcrumb" });
-    expect(breadcrumb).toHaveTextContent(/Category.*Category Server.*Add Category Server/);
-  });
-
-  it("shows the header with a real subcopy, never lorem ipsum", async () => {
-    await renderRoute(ADD_PATH);
-
-    expect(await screen.findByRole("heading", { name: "Add Category Server" })).toBeInTheDocument();
-    expect(screen.queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Add Category Server" })).toBeInTheDocument();
+    expect(within(dialog).queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
   });
 
   it("labels the main field 'Category Server Name', not the copy-pasted 'Category Type Name'", async () => {
-    await renderRoute(ADD_PATH);
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
-    expect(await screen.findByLabelText("Category Server Name")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Category Type Name")).not.toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Category Server Name")).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("Category Type Name")).not.toBeInTheDocument();
   });
 
   it("shows the empty-options message before any option is added", async () => {
-    await renderRoute(ADD_PATH);
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
 
-    expect(await screen.findByText('No options yet. Click "Add Option" to add one.')).toBeInTheDocument();
-    expect(screen.queryByLabelText(/^Name$/)).not.toBeInTheDocument();
+    expect(within(dialog).getByText('No options yet. Click "Add Option" to add one.')).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText(/^Name$/)).not.toBeInTheDocument();
   });
 
   it("'+ Add Option' appends a Name/Value row each time", async () => {
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    const addOption = await screen.findByRole("button", { name: /Add Option/i });
-
-    await user.click(addOption);
-    expect(await screen.findAllByLabelText(/^Name$/)).toHaveLength(1);
-    expect(screen.getAllByLabelText(/^Value$/)).toHaveLength(1);
-    expect(screen.queryByText('No options yet. Click "Add Option" to add one.')).not.toBeInTheDocument();
+    const addOption = within(dialog).getByRole("button", { name: /Add Option/i });
 
     await user.click(addOption);
-    expect(await screen.findAllByLabelText(/^Name$/)).toHaveLength(2);
+    expect(await within(dialog).findAllByLabelText(/^Name$/)).toHaveLength(1);
+    expect(within(dialog).getAllByLabelText(/^Value$/)).toHaveLength(1);
+    expect(within(dialog).queryByText('No options yet. Click "Add Option" to add one.')).not.toBeInTheDocument();
+
+    await user.click(addOption);
+    expect(await within(dialog).findAllByLabelText(/^Name$/)).toHaveLength(2);
   });
 
   it("each option row can be removed again", async () => {
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    const addOption = await screen.findByRole("button", { name: /Add Option/i });
+    const addOption = within(dialog).getByRole("button", { name: /Add Option/i });
     await user.click(addOption);
     await user.click(addOption);
-    expect(await screen.findAllByLabelText(/^Name$/)).toHaveLength(2);
+    expect(await within(dialog).findAllByLabelText(/^Name$/)).toHaveLength(2);
 
-    await user.click(screen.getByRole("button", { name: "Remove option 1" }));
+    await user.click(within(dialog).getByRole("button", { name: "Remove option 1" }));
 
-    expect(await screen.findAllByLabelText(/^Name$/)).toHaveLength(1);
+    expect(await within(dialog).findAllByLabelText(/^Name$/)).toHaveLength(1);
   });
 
   it("blocks submit and never calls create when the name is empty", async () => {
     const createSpy = vi.spyOn(categoryServersService, "create");
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.click(await screen.findByRole("button", { name: "Save" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Category Server Name is required")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Category Server Name is required")).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
-  it("creates the category server with its options and returns to the list", async () => {
+  it("creates the category server with its options and closes the modal", async () => {
     const createSpy = vi.spyOn(categoryServersService, "create");
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
     // A server belongs to a game; the API rejects a write without it.
-    await user.click(await screen.findByLabelText("Category"));
+    await user.click(within(dialog).getByLabelText("Category"));
     await user.click(await screen.findByRole("option", { name: "Mobile Legends" }));
 
-    await user.type(await screen.findByLabelText("Category Server Name"), "Wuthering Waves");
-    await user.click(screen.getByRole("button", { name: /Add Option/i }));
-    await user.type(screen.getByLabelText(/^Name$/), "Asia");
-    await user.type(screen.getByLabelText(/^Value$/), "asia_01");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.type(within(dialog).getByLabelText("Category Server Name"), "Wuthering Waves");
+    await user.click(within(dialog).getByRole("button", { name: /Add Option/i }));
+    await user.type(within(dialog).getByLabelText(/^Name$/), "Asia");
+    await user.type(within(dialog).getByLabelText(/^Value$/), "asia_01");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -112,7 +118,7 @@ describe("AddCategoryServerPage", () => {
         options: [{ name: "Asia", value: "asia_01" }],
       }),
     );
-    expect(await screen.findByRole("heading", { name: "Category Server" })).toBeInTheDocument();
+    if (screen.queryByRole("dialog", { name: "Add Category Server" })) await waitForElementToBeRemoved(dialog);
     expect(await screen.findByText("Wuthering Waves")).toBeInTheDocument();
   });
 });
@@ -123,52 +129,52 @@ describe("AddCategoryServerPage", () => {
  * ("Bulk must be in the correct format.") never shows the format; confirmed
  * as one `Name=Value` pair per line, appending to whatever rows already exist.
  */
-describe("AddCategoryServerPage — bulk options", () => {
+describe("AddCategoryServerDialog — bulk options", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
   it("shows '+ Add Bulk' beside '+ Add Option', with the panel hidden until clicked", async () => {
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    const addBulk = await screen.findByRole("button", { name: /Add Bulk/i });
-    expect(screen.getByRole("button", { name: /Add Option/i })).toBeInTheDocument();
-    expect(screen.queryByLabelText("Bulk")).not.toBeInTheDocument();
+    const addBulk = within(dialog).getByRole("button", { name: /Add Bulk/i });
+    expect(within(dialog).getByRole("button", { name: /Add Option/i })).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("Bulk")).not.toBeInTheDocument();
 
     await user.click(addBulk);
 
-    expect(await screen.findByLabelText("Bulk")).toBeInTheDocument();
-    expect(screen.getByText(/Bulk must be in the correct format/i)).toBeInTheDocument();
+    expect(await within(dialog).findByLabelText("Bulk")).toBeInTheDocument();
+    expect(within(dialog).getByText(/Bulk must be in the correct format/i)).toBeInTheDocument();
   });
 
   it("turns pasted lines into pre-filled Name/Value rows", async () => {
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.click(await screen.findByRole("button", { name: /Add Bulk/i }));
-    await user.type(await screen.findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE=europe");
-    await user.click(screen.getByRole("button", { name: "Submit" }));
+    await user.click(within(dialog).getByRole("button", { name: /Add Bulk/i }));
+    await user.type(await within(dialog).findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE=europe");
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
 
-    const names = await screen.findAllByLabelText(/^Name$/);
+    const names = await within(dialog).findAllByLabelText(/^Name$/);
     expect(names).toHaveLength(2);
     expect(names[0]).toHaveValue("ASIA");
     expect(names[1]).toHaveValue("EUROPE");
-    expect(screen.getAllByLabelText(/^Value$/)[1]).toHaveValue("europe");
+    expect(within(dialog).getAllByLabelText(/^Value$/)[1]).toHaveValue("europe");
   });
 
   it("appends to existing rows rather than replacing them", async () => {
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.click(await screen.findByRole("button", { name: /Add Option/i }));
-    await user.type(screen.getByLabelText(/^Name$/), "Handmade");
+    await user.click(within(dialog).getByRole("button", { name: /Add Option/i }));
+    await user.type(within(dialog).getByLabelText(/^Name$/), "Handmade");
 
-    await user.click(screen.getByRole("button", { name: /Add Bulk/i }));
-    await user.type(await screen.findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE=europe");
-    await user.click(screen.getByRole("button", { name: "Submit" }));
+    await user.click(within(dialog).getByRole("button", { name: /Add Bulk/i }));
+    await user.type(await within(dialog).findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE=europe");
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
 
-    const names = await screen.findAllByLabelText(/^Name$/);
+    const names = await within(dialog).findAllByLabelText(/^Name$/);
     expect(names).toHaveLength(3);
     expect(names[0]).toHaveValue("Handmade");
     expect(names[2]).toHaveValue("EUROPE");
@@ -176,29 +182,29 @@ describe("AddCategoryServerPage — bulk options", () => {
 
   it("a malformed line appends nothing and keeps the pasted text for fixing", async () => {
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.click(await screen.findByRole("button", { name: /Add Bulk/i }));
-    await user.type(await screen.findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE");
-    await user.click(screen.getByRole("button", { name: "Submit" }));
+    await user.click(within(dialog).getByRole("button", { name: /Add Bulk/i }));
+    await user.type(await within(dialog).findByLabelText("Bulk"), "ASIA=asia{enter}EUROPE");
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
 
-    expect(await screen.findByText(/Line 2/)).toBeInTheDocument();
+    expect(await within(dialog).findByText(/Line 2/)).toBeInTheDocument();
     // All-or-nothing: the valid first line must not land on its own.
-    expect(screen.queryByLabelText(/^Name$/)).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Bulk")).toHaveValue("ASIA=asia\nEUROPE");
+    expect(within(dialog).queryByLabelText(/^Name$/)).not.toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Bulk")).toHaveValue("ASIA=asia\nEUROPE");
   });
 
   it("Submit does not submit the outer form", async () => {
     const createSpy = vi.spyOn(categoryServersService, "create");
     const user = userEvent.setup();
-    await renderRoute(ADD_PATH);
+    const dialog = await openAdd(user);
 
-    await user.type(await screen.findByLabelText("Category Server Name"), "Wuthering Waves");
-    await user.click(screen.getByRole("button", { name: /Add Bulk/i }));
-    await user.type(await screen.findByLabelText("Bulk"), "ASIA=asia");
-    await user.click(screen.getByRole("button", { name: "Submit" }));
+    await user.type(within(dialog).getByLabelText("Category Server Name"), "Wuthering Waves");
+    await user.click(within(dialog).getByRole("button", { name: /Add Bulk/i }));
+    await user.type(await within(dialog).findByLabelText("Bulk"), "ASIA=asia");
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
 
     expect(createSpy).not.toHaveBeenCalled();
-    expect(await screen.findByRole("heading", { name: "Add Category Server" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Add Category Server" })).toBeInTheDocument();
   });
 });

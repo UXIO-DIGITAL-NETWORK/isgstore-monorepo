@@ -4,6 +4,7 @@ import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { DataTable } from "@/components/common/DataTable";
+import { CategoryServerFormDialog } from "../components/CategoryServerFormDialog";
 import { CategoryServerToolbar } from "../components/CategoryServerToolbar";
 import { categoryServerColumns } from "../components/categoryServerColumns";
 import { useCategoryServerList } from "../hooks/useCategoryServers";
@@ -22,6 +23,7 @@ export default function CategoryServerPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(() => ({ search: search || undefined, page, per_page: pageSize }), [search, page, pageSize]);
   const { data, isLoading, isError, refetch } = useCategoryServerList(params);
@@ -50,6 +52,7 @@ export default function CategoryServerPage() {
           search={search}
           onSearchChange={handleSearchChange}
           onRefresh={() => refetch()}
+          onAdd={() => setAddOpen(true)}
         />
       </Box>
 
@@ -72,6 +75,11 @@ export default function CategoryServerPage() {
           onPageSizeChange={setPageSize}
         />
       </Box>
+
+      <CategoryServerFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+      />
     </Box>
   );
 }

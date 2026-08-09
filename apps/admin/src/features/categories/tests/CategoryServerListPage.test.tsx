@@ -44,9 +44,16 @@ describe("CategoryServerListPage", () => {
 
     expect(await screen.findByPlaceholderText("Search Category Server")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Add Category Server/i })).toBeInTheDocument();
+  });
 
-    const addLink = screen.getByRole("link", { name: /Add Category Server/i });
-    expect(addLink).toHaveAttribute("href", "/admin/categories-preview/category-server/add");
+  it("the '+ Add Category Server' button opens the Add Category Server modal", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await user.click(await screen.findByRole("button", { name: /Add Category Server/i }));
+
+    expect(await screen.findByRole("dialog", { name: "Add Category Server" })).toBeInTheDocument();
   });
 
   it("shows exactly three columns, with no Status column and no selection checkbox", async () => {

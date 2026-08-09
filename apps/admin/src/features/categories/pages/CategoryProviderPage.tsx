@@ -4,6 +4,7 @@ import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { DataTable } from "@/components/common/DataTable";
+import { CategoryProviderFormDialog } from "../components/CategoryProviderFormDialog";
 import { CategoryProviderToolbar } from "../components/CategoryProviderToolbar";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { categoryProviderColumns } from "../components/categoryProviderColumns";
@@ -33,6 +34,7 @@ export default function CategoryProviderPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
     () => ({ search: search || undefined, provider_name: providerName, page, per_page: pageSize }),
@@ -85,6 +87,7 @@ export default function CategoryProviderPage() {
           providerName={providerName}
           onProviderChange={handleProviderChange}
           onRefresh={() => refetch()}
+          onAdd={() => setAddOpen(true)}
           selectedCount={selectedIds.length}
           onBulkDelete={() => setBulkDeleteOpen(true)}
         />
@@ -129,6 +132,11 @@ export default function CategoryProviderPage() {
             : `This action cannot be undone. This will permanently delete these ${selectedIds.length} category providers and unlink those suppliers from their categories.`
         }
         onConfirm={() => deleteCategoryProviders.mutate(selectedIds)}
+      />
+
+      <CategoryProviderFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
       />
     </Box>
   );

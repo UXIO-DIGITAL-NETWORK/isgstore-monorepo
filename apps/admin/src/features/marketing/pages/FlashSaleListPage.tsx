@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { FlashSaleFormDialog } from "../components/FlashSaleFormDialog";
 import { MarketingListShell } from "../components/MarketingListShell";
 import { MarketingToolbar } from "../components/MarketingToolbar";
 import { flashSaleColumns } from "../components/marketingColumns";
@@ -15,13 +16,18 @@ export function FlashSaleListPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editId, setEditId] = useState<string | undefined>(undefined);
 
   const params = useMemo(() => ({ search: search || undefined, page, per_page: pageSize }), [search, page, pageSize]);
   const { data, isLoading, isError, refetch } = useFlashSaleList(params);
   const deleteRows = useDeleteFlashSales();
 
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
-  const columns = useMemo(() => flashSaleColumns((ids) => deleteRows.mutate(ids)), [deleteRows]);
+  const columns = useMemo(
+    () => flashSaleColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
+    [deleteRows],
+  );
 
   return (
     <>
@@ -39,6 +45,7 @@ export function FlashSaleListPage() {
             onRefresh={() => refetch()}
             selectedCount={selectedIds.length}
             onBulkDelete={() => setBulkDeleteOpen(true)}
+            onAdd={() => setAddOpen(true)}
             searchPlaceholder="Search flash sales"
             addLabel="Add Flash Sale"
           />
@@ -74,6 +81,19 @@ export function FlashSaleListPage() {
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
         description="This action cannot be undone."
         onConfirm={() => deleteRows.mutate(selectedIds)}
+      />
+
+      <FlashSaleFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+      />
+
+      <FlashSaleFormDialog
+        open={editId !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setEditId(undefined);
+        }}
+        flashSaleId={editId}
       />
     </>
   );

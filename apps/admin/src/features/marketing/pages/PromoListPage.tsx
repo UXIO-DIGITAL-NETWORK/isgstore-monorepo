@@ -4,6 +4,7 @@ import { DataTable } from "@/components/common/DataTable";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { MarketingListShell } from "../components/MarketingListShell";
 import { MarketingToolbar } from "../components/MarketingToolbar";
+import { PromoFormDialog } from "../components/PromoFormDialog";
 import { promoColumns } from "../components/marketingColumns";
 import { usePromoList, useDeletePromos } from "../hooks/usePromos";
 
@@ -15,13 +16,18 @@ export function PromoListPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editId, setEditId] = useState<string | undefined>(undefined);
 
   const params = useMemo(() => ({ search: search || undefined, page, per_page: pageSize }), [search, page, pageSize]);
   const { data, isLoading, isError, refetch } = usePromoList(params);
   const deleteRows = useDeletePromos();
 
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
-  const columns = useMemo(() => promoColumns((ids) => deleteRows.mutate(ids)), [deleteRows]);
+  const columns = useMemo(
+    () => promoColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
+    [deleteRows],
+  );
 
   return (
     <>
@@ -39,6 +45,7 @@ export function PromoListPage() {
             onRefresh={() => refetch()}
             selectedCount={selectedIds.length}
             onBulkDelete={() => setBulkDeleteOpen(true)}
+            onAdd={() => setAddOpen(true)}
             searchPlaceholder="Search codes"
             addLabel="Add Promo"
           />
@@ -74,6 +81,19 @@ export function PromoListPage() {
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
         description="This action cannot be undone."
         onConfirm={() => deleteRows.mutate(selectedIds)}
+      />
+
+      <PromoFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+      />
+
+      <PromoFormDialog
+        open={editId !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setEditId(undefined);
+        }}
+        promoId={editId}
       />
     </>
   );

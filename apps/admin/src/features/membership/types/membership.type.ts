@@ -1,16 +1,33 @@
-/** Membership/loyalty tiers (product_requirements.md §5 — scope TBD, first slice). */
+/** Membership plans (loyalty tiers) — backed by the API's `membership_plans`. */
 
-export interface MembershipTier {
+export interface MembershipPlan {
   id: string;
+  code: string;
   name: string;
-  /** Minimum lifetime spend to reach this tier. */
-  min_spend: number;
-  /** Discount granted to members of this tier. */
-  discount_percent: number;
-  benefits?: string;
+  benefits: string[];
+  /** Plan price in IDR. */
+  price: number;
+  /** How long the plan lasts once subscribed. */
+  duration_days: number;
+  role_id: number | null;
+  is_popular: boolean;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Write payload — `name`/`benefits` are single-locale here; the API folds them into its JSON columns. */
+export interface MembershipPlanInput {
+  code: string;
+  name: string;
+  benefits?: string[];
+  price: number;
+  duration_days: number;
+  role_id?: number | null;
+  is_popular?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
 }
 
 export interface MembershipListParams {

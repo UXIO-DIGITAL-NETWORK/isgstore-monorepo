@@ -4,6 +4,7 @@ import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { DataTable } from "@/components/common/DataTable";
+import { CategoryTypeFormDialog } from "../components/CategoryTypeFormDialog";
 import { CategoryTypeToolbar } from "../components/CategoryTypeToolbar";
 import { categoryTypeColumns } from "../components/categoryTypeColumns";
 import { useCategoryTypeList } from "../hooks/useCategoryTypes";
@@ -22,6 +23,7 @@ export default function CategoryTypePage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(() => ({ search: search || undefined, page, per_page: pageSize }), [search, page, pageSize]);
   const { data, isLoading, isError, refetch } = useCategoryTypeList(params);
@@ -50,6 +52,7 @@ export default function CategoryTypePage() {
           search={search}
           onSearchChange={handleSearchChange}
           onRefresh={() => refetch()}
+          onAdd={() => setAddOpen(true)}
         />
       </Box>
 
@@ -72,6 +75,11 @@ export default function CategoryTypePage() {
           onPageSizeChange={setPageSize}
         />
       </Box>
+
+      <CategoryTypeFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+      />
     </Box>
   );
 }

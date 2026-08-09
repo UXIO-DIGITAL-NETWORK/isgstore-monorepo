@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
 import { MoreHorizontal, Pencil, Power, Trash2 } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
@@ -13,6 +12,7 @@ import {
 import { useDeleteCategoryType, useSetCategoryTypeStatus } from "../hooks/useCategoryTypes";
 import type { CategoryType } from "../types/categoryType.type";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { CategoryTypeFormDialog } from "./CategoryTypeFormDialog";
 import { StatusConfirmDialog } from "./StatusConfirmDialog";
 
 interface CategoryTypeRowActionsProps {
@@ -28,20 +28,15 @@ interface CategoryTypeRowActionsProps {
  * label and the target status are both derived from the row.
  */
 export function CategoryTypeRowActions({ categoryType }: CategoryTypeRowActionsProps) {
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const deleteCategoryType = useDeleteCategoryType();
   const setCategoryTypeStatus = useSetCategoryTypeStatus();
 
   const isActive = categoryType.status === "active";
   const action = isActive ? "deactivate" : "activate";
   const nextStatus = isActive ? "inactive" : "active";
-
-  // Derived from the current pathname, not hardcoded, so the unauthenticated
-  // preview route can never navigate into the real, guarded one.
-  const editHref = `${pathname.replace(/\/$/, "")}/${categoryType.id}/edit`;
 
   return (
     <>
@@ -68,7 +63,7 @@ export function CategoryTypeRowActions({ categoryType }: CategoryTypeRowActionsP
             </DropdownMenuItem>
           </Can>
           <Can permission="categories.edit">
-            <DropdownMenuItem onSelect={() => navigate({ to: editHref as unknown as string })}>
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               <Pencil />
               Edit Category Type
             </DropdownMenuItem>
@@ -98,6 +93,12 @@ export function CategoryTypeRowActions({ categoryType }: CategoryTypeRowActionsP
         title="Delete this category type?"
         description="This action cannot be undone. This will permanently delete this category type."
         onConfirm={() => deleteCategoryType.mutate(categoryType.id)}
+      />
+
+      <CategoryTypeFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        categoryTypeId={categoryType.id}
       />
     </>
   );

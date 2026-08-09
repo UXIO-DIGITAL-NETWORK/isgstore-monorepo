@@ -55,15 +55,14 @@ describe("MainProductsPage", () => {
     expect(items.map((item) => item.textContent)).toEqual(["Manual", "Bulk"]);
   });
 
-  it("the Add menu's Manual entry stays inside the preview route", async () => {
+  it("the Add menu's Manual entry opens the Add Main Products modal", async () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await user.click(await screen.findByRole("button", { name: /Add Main Products/i }));
-    expect(await screen.findByRole("menuitem", { name: "Manual" })).toHaveAttribute(
-      "href",
-      "/admin/products-preview/main/add",
-    );
+    await user.click(await screen.findByRole("menuitem", { name: "Manual" }));
+
+    expect(await screen.findByRole("dialog", { name: "Add Main Products" })).toBeInTheDocument();
   });
 
   it("shows the column headers", async () => {

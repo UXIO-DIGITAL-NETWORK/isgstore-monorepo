@@ -5,6 +5,7 @@ import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { categoryColumns } from "../components/categoryColumns";
 import { DataTable } from "@/components/common/DataTable";
+import { CategoryFormDialog } from "../components/CategoryFormDialog";
 import { CategoryToolbar } from "../components/CategoryToolbar";
 import { useCategoryList } from "../hooks/useCategories";
 
@@ -15,6 +16,7 @@ export default function CategoryListPage() {
   const [type, setType] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
     () => ({ search: search || undefined, type, page, per_page: pageSize }),
@@ -51,6 +53,7 @@ export default function CategoryListPage() {
           type={type}
           onTypeChange={handleTypeChange}
           onRefresh={() => refetch()}
+          onAdd={() => setAddOpen(true)}
         />
       </Box>
 
@@ -70,6 +73,11 @@ export default function CategoryListPage() {
           onPageSizeChange={setPageSize}
         />
       </Box>
+
+      <CategoryFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+      />
     </Box>
   );
 }

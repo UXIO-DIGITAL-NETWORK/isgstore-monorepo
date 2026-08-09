@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Megaphone,
   Package,
+  Percent,
   Plug,
   Receipt,
   Search,
@@ -80,6 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Category", href: "/admin/categories", icon: Tag },
       { label: "Product", href: "/admin/products", icon: Package },
+      { label: "Pricing Rules", href: "/admin/pricing", icon: Percent },
       { label: "Payment", href: "/admin/payments", icon: CreditCard },
       { label: "Membership", href: "/admin/memberships", icon: Users },
     ],

@@ -5,6 +5,7 @@ import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { DataTable } from "@/components/common/DataTable";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { SubCategoryFormDialog } from "../components/SubCategoryFormDialog";
 import { SubCategoryToolbar } from "../components/SubCategoryToolbar";
 import { subCategoryColumns } from "../components/subCategoryColumns";
 import { useDeleteSubCategories, useSubCategoryList } from "../hooks/useSubCategories";
@@ -23,6 +24,7 @@ export default function SubCategoryPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
     () => ({ search: search || undefined, category_id: categoryId, page, per_page: pageSize }),
@@ -66,6 +68,7 @@ export default function SubCategoryPage() {
           categoryId={categoryId}
           onCategoryChange={handleCategoryChange}
           onRefresh={() => refetch()}
+          onAdd={() => setAddOpen(true)}
           selectedCount={selectedIds.length}
           onBulkDelete={() => setBulkDeleteOpen(true)}
         />
@@ -104,6 +107,11 @@ export default function SubCategoryPage() {
             : `This action cannot be undone. This will permanently delete these ${selectedIds.length} sub categories and remove them from the storefront.`
         }
         onConfirm={() => deleteSubCategories.mutate(selectedIds)}
+      />
+
+      <SubCategoryFormDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
       />
     </Box>
   );

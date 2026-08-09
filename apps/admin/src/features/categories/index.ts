@@ -1,11 +1,6 @@
 export { default as CategoryListPage } from "./pages/CategoryListPage";
-export { default as CategoryFormPage } from "./pages/CategoryFormPage";
 export { default as SubCategoryPage } from "./pages/SubCategoryPage";
-export { default as SubCategoryFormPage } from "./pages/SubCategoryFormPage";
 export { default as CategoryTypePage } from "./pages/CategoryTypePage";
-export { default as CategoryTypeFormPage } from "./pages/CategoryTypeFormPage";
 export { default as CategoryServerPage } from "./pages/CategoryServerPage";
-export { default as CategoryServerFormPage } from "./pages/CategoryServerFormPage";
 export { default as CategoryProviderPage } from "./pages/CategoryProviderPage";
-export { default as CategoryProviderFormPage } from "./pages/CategoryProviderFormPage";
 export { CategoryTabsLayout } from "./layouts/CategoryTabsLayout";

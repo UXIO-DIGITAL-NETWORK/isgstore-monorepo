@@ -24,7 +24,7 @@ describe("CategoryListPage", () => {
     expect(await screen.findByRole("textbox", { name: /search/i })).toBeInTheDocument();
     expect(screen.getByLabelText("Type Category")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Add Category/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Add Category/i })).toBeInTheDocument();
   });
 
   it("shows the table column headers", async () => {
@@ -44,11 +44,13 @@ describe("CategoryListPage", () => {
     expect(screen.queryByText("Jamik Tashpulatov")).not.toBeInTheDocument();
   });
 
-  it("the '+ Add Category' link navigates relative to the current tab (stays in preview)", async () => {
+  it("the '+ Add Category' button opens the Add Category modal", async () => {
+    const user = userEvent.setup();
     await renderRoute("/admin/categories-preview");
 
-    const addLink = await screen.findByRole("link", { name: /Add Category/i });
-    expect(addLink).toHaveAttribute("href", "/admin/categories-preview/category/add");
+    await user.click(await screen.findByRole("button", { name: /Add Category/i }));
+
+    expect(await screen.findByRole("dialog", { name: "Add Category" })).toBeInTheDocument();
   });
 
   it("shows all five tabs, mirroring the real route, without leaking out of preview", async () => {

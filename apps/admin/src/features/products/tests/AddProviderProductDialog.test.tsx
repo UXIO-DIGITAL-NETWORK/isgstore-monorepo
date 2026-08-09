@@ -78,6 +78,29 @@ describe("AddProviderProductDialog", () => {
     expect(typeof payload.price_member).toBe("number");
   });
 
+  it("lets the admin set prices by percentage, computing rupiah from cost", async () => {
+    const addSpy = vi.spyOn(providerService, "add").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderDialog();
+
+    await user.click(await screen.findByRole("combobox", { name: "Category" }));
+    const listbox = await screen.findByRole("listbox");
+    await user.click(within(listbox).getAllByRole("option")[0]);
+    await waitFor(() => expect(screen.getByLabelText("Member price")).toHaveValue("6120"));
+
+    // Flip to percentage mode: the member field shows the implied 20% markup
+    // (6120 over cost 5100) and previews the resulting rupiah price.
+    await user.click(screen.getByRole("switch", { name: "Set price by percentage" }));
+    await waitFor(() => expect(screen.getByLabelText("Member markup %")).toHaveValue("20"));
+    expect(screen.getByText(/= Rp\s*6.120/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add product" }));
+
+    await waitFor(() => expect(addSpy).toHaveBeenCalledTimes(1));
+    // The absolute price is recomputed from cost × (1 + %/100) before submit.
+    expect(addSpy.mock.calls[0][0].price_member).toBe(6120);
+  });
+
   it("blocks submit until a category is chosen", async () => {
     const addSpy = vi.spyOn(providerService, "add").mockResolvedValue(undefined);
     const user = userEvent.setup();

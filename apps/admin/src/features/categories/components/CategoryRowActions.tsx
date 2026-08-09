@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Can } from "@/components/common/Can";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import {
 import { useDeleteCategory } from "../hooks/useCategories";
 import type { Category } from "../types/category.type";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { CategoryFormDialog } from "./CategoryFormDialog";
 
 interface CategoryRowActionsProps {
   category: Category;
@@ -21,10 +21,11 @@ interface CategoryRowActionsProps {
 /**
  * Row action menu (product_requirements.md §4.5) — only "Delete" was
  * visually confirmed in the reference; "Edit" is added since there is no
- * other way to reach the edit form.
+ * other way to reach the edit form, and opens it as a modal.
  */
 export function CategoryRowActions({ category }: CategoryRowActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const deleteCategory = useDeleteCategory();
 
   return (
@@ -44,7 +45,7 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
           className="rounded-2xl"
         >
           <Can permission="categories.edit">
-            <DropdownMenuItem onSelect={() => toast(`Edit ${category.name} — coming soon`)}>
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               <Pencil />
               Edit
             </DropdownMenuItem>
@@ -69,6 +70,12 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
         title={`Delete ${category.name}?`}
         description="This permanently removes the category and its order-form field definitions. This action cannot be undone."
         onConfirm={() => deleteCategory.mutate(category.id)}
+      />
+
+      <CategoryFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        categoryId={category.id}
       />
     </>
   );
