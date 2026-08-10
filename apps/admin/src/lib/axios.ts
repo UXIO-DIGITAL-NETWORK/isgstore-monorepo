@@ -4,6 +4,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 
 export const api = axios.create({
   baseURL: ENV.API_BASE_URL,
+  // Give up after 20s instead of holding a request open forever — a stalled
+  // backend should surface as an error the UI can handle, not a hung tab.
+  timeout: 20_000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
