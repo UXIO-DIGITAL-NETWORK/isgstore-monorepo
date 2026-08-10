@@ -11,6 +11,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
 import { useTransactionHistory } from "@/features/member-dashboard/hooks/useTransactionHistory";
+import { useMemberTransactionsRealtime } from "@/features/member-dashboard/hooks/useMemberTransactionsRealtime";
 import InvoiceSearchCard from "@/features/member-dashboard/components/InvoiceSearchCard";
 import TransactionHistoryTable from "@/features/member-dashboard/components/TransactionHistoryTable";
 import HistorySortDropdown from "@/features/member-dashboard/components/HistorySortDropdown";
@@ -67,6 +68,8 @@ const STATUS_FILTERS: {
 export default function TransactionHistoryPage(): React.JSX.Element {
   const { t } = useTranslation("dashboard");
   const allRows = useTransactionHistory();
+  // Live-refresh the history as the member's orders change status.
+  useMemberTransactionsRealtime();
 
   // Search (applied on click)
   const [appliedSearch, setAppliedSearch] = useState("");
