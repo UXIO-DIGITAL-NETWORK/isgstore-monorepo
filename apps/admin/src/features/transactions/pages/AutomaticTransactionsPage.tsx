@@ -12,6 +12,7 @@ import { StatusPills } from "../components/StatusPills";
 import { TransactionFilterBar, type TransactionFilters } from "../components/TransactionFilterBar";
 import { TransactionsTable } from "../components/TransactionsTable";
 import { useTransactionList } from "../hooks/useTransactions";
+import { useTransactionsRealtime } from "../hooks/useTransactionsRealtime";
 import type { TransactionStatus } from "../types/transaction.type";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -39,6 +40,8 @@ export default function AutomaticTransactionsPage() {
     [filters, page, pageSize, sorting],
   );
   const { data, isLoading, isError, refetch } = useTransactionList(params);
+  // Push new/updated transactions into the table live; the poll above is fallback.
+  useTransactionsRealtime();
 
   const handleFilterChange = (patch: Partial<TransactionFilters>) => {
     setFilters((prev) => ({ ...prev, ...patch }));

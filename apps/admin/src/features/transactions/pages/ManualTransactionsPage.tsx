@@ -10,6 +10,7 @@ import { manualColumns } from "../components/manualColumns";
 import { TransactionFilterBar, type TransactionFilters, type FilterField } from "../components/TransactionFilterBar";
 import { TransactionsTable } from "../components/TransactionsTable";
 import { useTransactionList } from "../hooks/useTransactions";
+import { useTransactionsRealtime } from "../hooks/useTransactionsRealtime";
 
 const DEFAULT_PAGE_SIZE = 10;
 // Manual has no provider/callback fields to filter on (no reference design
@@ -47,6 +48,8 @@ export default function ManualTransactionsPage() {
     [filters, page, pageSize, sorting],
   );
   const { data, isLoading, isError, refetch } = useTransactionList(params);
+  // Push new/updated transactions into the table live; the poll above is fallback.
+  useTransactionsRealtime();
 
   const handleFilterChange = (patch: Partial<TransactionFilters>) => {
     setFilters((prev) => ({ ...prev, ...patch }));
