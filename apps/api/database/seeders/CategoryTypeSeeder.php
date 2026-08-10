@@ -10,15 +10,14 @@ class CategoryTypeSeeder extends Seeder
     public function run(): void
     {
         $now = now();
+        // `is_voucher` marks a type whose products are voucher/digital codes
+        // (drives the admin's Category Type "Voucher" column). Game types are false.
+        // This is a game top-up platform, so the taxonomy is game-focused.
         $types = [
-            ['id' => 1, 'name' => 'Mobile Game',  'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 2, 'name' => 'PC Game',      'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 3, 'name' => 'Console',      'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 4, 'name' => 'Voucher',      'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 5, 'name' => 'E-Wallet',     'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            // Tambahan tipe baru untuk mengakomodasi data dari price-list.json Digiflazz
-            ['id' => 6, 'name' => 'Pulsa & Data', 'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 7, 'name' => 'PPOB',         'status' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 1, 'name' => 'Mobile Game', 'is_voucher' => false, 'status' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'name' => 'PC Game',     'is_voucher' => false, 'status' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 3, 'name' => 'Console',     'is_voucher' => false, 'status' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 4, 'name' => 'Voucher',     'is_voucher' => true,  'status' => true, 'created_at' => $now, 'updated_at' => $now],
         ];
 
         DB::table('category_types')->insert($types);

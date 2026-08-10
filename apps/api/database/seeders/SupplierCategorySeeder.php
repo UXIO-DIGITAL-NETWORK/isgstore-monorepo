@@ -12,15 +12,11 @@ class SupplierCategorySeeder extends Seeder
         $now = now();
         $items = [];
 
-        // Semua kategori produk dari price-list.json diarahkan ke Digiflazz (supplier_id = 1)
+        // Game categories mapped to Digiflazz (supplier_id = 1).
         $digiflazzCategories = [
             1 => 'mlbb',
             3 => 'freefire',
             9 => 'valorant',
-            11 => 'pulsa',
-            12 => 'data',
-            13 => 'emoney',
-            14 => 'ppob',
         ];
 
         foreach ($digiflazzCategories as $catId => $code) {
