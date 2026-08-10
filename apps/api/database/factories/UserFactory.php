@@ -33,9 +33,12 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
 
             // Kolom kustom
+            'username' => fake()->unique()->userName(),
+            'avatar' => null,
             'phone' => '628'.fake()->numerify('##########'),
             'balance' => fake()->randomFloat(2, 0, 5000000), // Saldo acak 0 - 5 juta
             'point' => fake()->numberBetween(0, 1000),
+            'status' => 'active',
             'locale' => 'id',
             'timezone' => 'Asia/Jakarta',
         ];

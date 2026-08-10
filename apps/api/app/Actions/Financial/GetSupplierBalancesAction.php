@@ -38,7 +38,9 @@ class GetSupplierBalancesAction
     private function digiflazzBalance(): ?float
     {
         try {
-            $data = $this->digiflazzService->getBalance();
+            // Cached (60s) so the admin panel + integration poll never hit Digiflazz
+            // live on every request — that live call is what hangs the server.
+            $data = $this->digiflazzService->getBalanceCached();
 
             return isset($data['deposit']) && is_numeric($data['deposit']) ? (float) $data['deposit'] : null;
         } catch (Exception $e) {

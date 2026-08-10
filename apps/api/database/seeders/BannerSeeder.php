@@ -27,8 +27,8 @@ class BannerSeeder extends Seeder
 
             ['category_id' => null, 'name' => 'Hari Kemerdekaan Promo', 'image_path' => '/banners/hut-ri.jpg', 'link' => 'https://uxio.id/promo/17agustus', 'created_at' => $now, 'updated_at' => $now],
 
-            // Diarahkan ke Kategori 13 (E-Money / Dompet Digital) yang sudah kita buat
-            ['category_id' => 13, 'name' => 'Cashback 20% All E-Wallet', 'image_path' => '/banners/cashback-ewallet.jpg', 'link' => 'https://uxio.id/promo/cashback', 'created_at' => $now, 'updated_at' => $now],
+            // Promo umum (bukan kategori game) — tanpa tautan kategori.
+            ['category_id' => null, 'name' => 'Cashback 20% All E-Wallet', 'image_path' => '/banners/cashback-ewallet.jpg', 'link' => 'https://uxio.id/promo/cashback', 'created_at' => $now, 'updated_at' => $now],
         ];
 
         DB::table('banners')->insert($banners);

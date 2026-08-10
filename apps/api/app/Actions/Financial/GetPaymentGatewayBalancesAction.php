@@ -26,7 +26,9 @@ class GetPaymentGatewayBalancesAction
     public function execute(): array
     {
         try {
-            $response = $this->monetapayService->inquiryBalance();
+            // Cached (60s) so the admin panel + integration poll never hit Monetapay
+            // live on every request — that live call is what hangs the server.
+            $response = $this->monetapayService->inquiryBalanceCached();
         } catch (Exception $e) {
             Log::warning('GetPaymentGatewayBalancesAction: Monetapay balance inquiry failed', [
                 'message' => $e->getMessage(),

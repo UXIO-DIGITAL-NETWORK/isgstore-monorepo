@@ -75,7 +75,10 @@ class RefundTest extends TestCase
 
         app(RefundFailedTransactionAction::class)->execute($transaction);
 
-        Queue::assertNothingPushed();
+        // No gateway order id → the gateway refund job must not be dispatched.
+        // (A status-change broadcast may still be queued — that is unrelated to
+        // whether the gateway refund was attempted.)
+        Queue::assertNotPushed(RefundGatewayJob::class);
     }
 
     public function test_refund_job_marks_payment_refunded_on_gateway_success(): void
