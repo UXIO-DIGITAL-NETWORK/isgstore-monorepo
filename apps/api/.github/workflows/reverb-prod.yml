@@ -1,0 +1,60 @@
+name: Reverb Production
+
+# Runs automatically AFTER "Deploy API to Production" finishes successfully.
+# It does NOT touch the existing deploy workflow — it only registers/(re)starts
+# the Reverb WebSocket server under Supervisor so it picks up the freshly
+# deployed code, exactly like the queue worker the deploy workflow already
+# restarts.
+on:
+  workflow_run:
+    workflows: ["Deploy API to Production"]
+    types:
+      - completed
+
+jobs:
+  reverb:
+    name: Register & (re)start Reverb (Supervisor)
+    runs-on: ubuntu-latest
+    # Only proceed when the deploy actually succeeded.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Reverb via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USERNAME }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_PORT }}
+          script: |
+            set -e
+
+            # 1. Copy the (new) supervisor program config into place.
+            sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/laravel-reverb-prod.conf \
+                    /etc/supervisor/conf.d/laravel-reverb-prod.conf
+
+            # 2. Make sure supervisord is up (idempotent — no-op if already running).
+            if ! sudo systemctl is-active --quiet supervisor; then
+              sudo systemctl restart supervisor
+              sleep 2
+            fi
+
+            # 3. Register the program, then (re)start it so it loads new code.
+            sudo supervisorctl reread
+            sudo supervisorctl update
+            sudo supervisorctl restart laravel-reverb-prod:* || sudo supervisorctl start laravel-reverb-prod:*
+
+            # 4. Show status for the run log.
+            sudo supervisorctl status laravel-reverb-prod:*
+
+      - name: Notify Discord — Reverb restart failed
+        if: failure()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_REPO: ${{ github.repository }}
+          GH_RUN_ID: ${{ github.run_id }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"❌ Production Reverb Restart Failed\",\"description\":\"Reverb supervisor step failed after a production deploy.\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":15548997,\"footer\":{\"text\":\"Uxio System Auto-Log\"}}]}" || true
