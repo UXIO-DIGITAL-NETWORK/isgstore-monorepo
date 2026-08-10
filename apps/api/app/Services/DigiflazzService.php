@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Exception;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,15 @@ class DigiflazzService
     public const PRICE_LIST_CACHE_KEY = 'digiflazz:price-list:';
 
     public const PRICE_LIST_CACHE_TTL = 300;
+
+    public const BALANCE_CACHE_KEY = 'digiflazz:balance';
+
+    public const BALANCE_CACHE_TTL = 60;
+
+    /** Outbound HTTP bounds — without these a slow/unreachable Digiflazz hangs the request forever. */
+    private const HTTP_TIMEOUT = 15;
+
+    private const HTTP_CONNECT_TIMEOUT = 5;
 
     private string $username;
 
@@ -35,6 +45,12 @@ class DigiflazzService
         return md5($this->username.$this->key.$refId);
     }
 
+    /** A pending HTTP request with sane timeouts, so a stalled upstream fails fast instead of hanging the worker. */
+    private function client(): PendingRequest
+    {
+        return Http::timeout(self::HTTP_TIMEOUT)->connectTimeout(self::HTTP_CONNECT_TIMEOUT);
+    }
+
     public function getPriceList(string $cmd = 'prepaid'): array
     {
         $payload = [
@@ -47,7 +63,7 @@ class DigiflazzService
         Log::channel('digiflazz')->info('Digiflazz getPriceList Request', $payload);
 
         try {
-            $response = Http::post("{$this->baseUrl}/price-list", $payload);
+            $response = $this->client()->post("{$this->baseUrl}/price-list", $payload);
 
             if (! $response->successful()) {
                 // [CHECKPOINT 3] HTTP-level failure (4xx/5xx)
@@ -137,7 +153,7 @@ class DigiflazzService
         Log::channel('digiflazz')->info('Digiflazz getBalance Request', $payload);
 
         try {
-            $response = Http::post("{$this->baseUrl}/cek-saldo", $payload);
+            $response = $this->client()->post("{$this->baseUrl}/cek-saldo", $payload);
 
             if (! $response->successful()) {
                 Log::channel('digiflazz')->error('Digiflazz getBalance Failed', [
@@ -158,6 +174,20 @@ class DigiflazzService
         }
     }
 
+    /**
+     * Balance via a short shared cache. The admin's financial/integration
+     * screens (and the 30s integration poll) read this, so without a cache each
+     * request would hit Digiflazz live — the same call that hangs the server
+     * when the upstream is slow. Cached for a minute so the panel stays fresh
+     * enough without hammering the API.
+     *
+     * @return array<string,mixed>
+     */
+    public function getBalanceCached(): array
+    {
+        return Cache::remember(self::BALANCE_CACHE_KEY, self::BALANCE_CACHE_TTL, fn () => $this->getBalance());
+    }
+
     public function checkBill(string $buyerSkuCode, string $customerNo, string $refId): array
     {
         $payload = [
@@ -171,7 +201,7 @@ class DigiflazzService
         Log::channel('digiflazz')->info('Digiflazz checkBill Request', $payload);
 
         try {
-            $response = Http::post("{$this->baseUrl}/cek-tagihan", $payload);
+            $response = $this->client()->post("{$this->baseUrl}/cek-tagihan", $payload);
 
             if (! $response->successful()) {
                 Log::channel('digiflazz')->error('Digiflazz checkBill Failed', [
@@ -210,7 +240,7 @@ class DigiflazzService
         Log::channel('digiflazz')->info('Digiflazz payBill Request', $payload);
 
         try {
-            $response = Http::post("{$this->baseUrl}/pay-pasca", $payload);
+            $response = $this->client()->post("{$this->baseUrl}/pay-pasca", $payload);
 
             if (! $response->successful()) {
                 Log::channel('digiflazz')->error('Digiflazz payBill Failed', [
@@ -257,7 +287,7 @@ class DigiflazzService
         Log::channel('digiflazz')->info('Digiflazz createTransaction Request', $payload);
 
         try {
-            $response = Http::post("{$this->baseUrl}/transaction", $payload);
+            $response = $this->client()->post("{$this->baseUrl}/transaction", $payload);
 
             if (! $response->successful()) {
                 // [CHECKPOINT 3] HTTP-level failure before we even get a data envelope

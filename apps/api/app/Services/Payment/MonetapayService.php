@@ -3,12 +3,23 @@
 namespace App\Services\Payment;
 
 use Exception;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class MonetapayService
 {
+    public const BALANCE_CACHE_KEY = 'monetapay:balance';
+
+    public const BALANCE_CACHE_TTL = 60;
+
+    /** Outbound HTTP bounds — a stalled Monetapay must not hang the request/worker indefinitely. */
+    private const HTTP_TIMEOUT = 15;
+
+    private const HTTP_CONNECT_TIMEOUT = 5;
+
     private string $collectionAppId;
 
     private string $disbursementAppId;
@@ -40,6 +51,12 @@ class MonetapayService
         $this->baseUrl = config('services.monetapay.is_production')
             ? 'https://api.monetapay.net'
             : 'https://sandbox-api.monetapay.net';
+    }
+
+    /** A pending HTTP request with sane timeouts, so a stalled upstream fails fast instead of hanging the worker. */
+    private function client(): PendingRequest
+    {
+        return Http::timeout(self::HTTP_TIMEOUT)->connectTimeout(self::HTTP_CONNECT_TIMEOUT);
     }
 
     /**
@@ -249,7 +266,7 @@ class MonetapayService
 
         try {
             // Hapus Query Parameters sepenuhnya, cukup kirim JSON Body
-            $response = Http::post($endpoint, $requestBody);
+            $response = $this->client()->post($endpoint, $requestBody);
 
             if ($response->failed()) {
                 $errorData = $response->json();
@@ -386,7 +403,7 @@ class MonetapayService
             ]);
         }
 
-        $response = Http::post($this->baseUrl.$endpointSuffix, array_merge([
+        $response = $this->client()->post($this->baseUrl.$endpointSuffix, array_merge([
             'data' => [
                 'partner_key' => $partnerKey,
                 'en_data' => $enData,
@@ -406,7 +423,7 @@ class MonetapayService
     {
         $body = array_filter($body, static fn ($value) => $value !== null && $value !== '');
 
-        $response = Http::post($this->baseUrl.$endpointSuffix, $body);
+        $response = $this->client()->post($this->baseUrl.$endpointSuffix, $body);
 
         return $this->parseResponse($endpointSuffix, $response);
     }
@@ -452,6 +469,23 @@ class MonetapayService
             'sub_mch_id' => $subMchId,
             'currency' => $currency,
         ]);
+    }
+
+    /**
+     * Balance via a short shared cache. The admin's financial/integration panels
+     * (and the 30s integration poll) read this; caching keeps them from hitting
+     * Monetapay live on every request — the call that otherwise hangs the server
+     * when the gateway is slow.
+     *
+     * @return array<string,mixed>
+     */
+    public function inquiryBalanceCached(?string $subMchId = null, ?string $currency = null): array
+    {
+        return Cache::remember(
+            self::BALANCE_CACHE_KEY,
+            self::BALANCE_CACHE_TTL,
+            fn () => $this->inquiryBalance($subMchId, $currency),
+        );
     }
 
     /* =====================================================================
