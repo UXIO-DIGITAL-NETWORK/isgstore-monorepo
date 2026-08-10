@@ -4,6 +4,7 @@ import { Eye, History, MoreHorizontal, Pencil, Receipt, RotateCcw, RotateCw, Sen
 import { toast } from "sonner";
 
 import { Can } from "@/components/common/Can";
+import { ENV, API_VERSION } from "@/config/env";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -89,7 +90,15 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
               </DropdownMenuItem>
             </>
           )}
-          <DropdownMenuItem onSelect={() => toast("View Invoice — coming soon")}>
+          <DropdownMenuItem
+            onSelect={() =>
+              window.open(
+                `${ENV.API_BASE_URL}${API_VERSION}/invoices/${transaction.invoice_no}/download`,
+                "_blank",
+                "noopener",
+              )
+            }
+          >
             <Receipt />
             View Invoice
           </DropdownMenuItem>
