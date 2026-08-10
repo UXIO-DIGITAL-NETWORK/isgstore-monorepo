@@ -2,16 +2,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { transactionsService } from "../services/transactions.service";
 import { downloadBlob } from "../lib/downloadBlob";
+import { useEchoConnected } from "@/hooks/useEchoConnected";
 import type { RecapPeriod, TransactionListParams } from "../types/transaction.type";
 
-export const useTransactionList = (params: TransactionListParams) =>
-  useQuery({
+export const useTransactionList = (params: TransactionListParams) => {
+  // Realtime (useTransactionsRealtime) is the primary refresh path. Poll only as
+  // a safety net: a very slow self-heal while the socket is healthy, faster when
+  // it has dropped. Avoids a constant background refetch on every admin tab.
+  const connected = useEchoConnected();
+
+  return useQuery({
     queryKey: ["transactions", "list", params],
     queryFn: () => transactionsService.list(params),
-    // Realtime (useTransactionsRealtime) is the primary refresh path; this slow
-    // poll is the fallback for when the WebSocket is unavailable.
-    refetchInterval: 60_000,
+    refetchInterval: connected ? 120_000 : 30_000,
   });
+};
 
 export const useTransaction = (id: string) =>
   useQuery({
