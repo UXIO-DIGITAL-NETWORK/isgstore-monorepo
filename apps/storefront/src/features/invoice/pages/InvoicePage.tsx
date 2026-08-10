@@ -10,6 +10,7 @@ import OrderDetailCard from "@/features/invoice/components/OrderDetailCard";
 import PaymentInstructionsCard from "@/features/invoice/components/PaymentInstructionsCard";
 import PaymentMethodCard from "@/features/invoice/components/PaymentMethodCard";
 import { useInvoiceQuery } from "@/features/invoice/hooks/useInvoiceQuery";
+import { useInvoiceRealtime } from "@/features/invoice/hooks/useInvoiceRealtime";
 import { toOrder } from "@/features/invoice/lib/toOrder";
 
 export default function InvoicePage(): React.JSX.Element {
@@ -21,6 +22,8 @@ export default function InvoicePage(): React.JSX.Element {
   const pendingOrder = useCheckoutStore((s) => s.pendingOrder);
 
   const { data: invoice } = useInvoiceQuery(invoiceNumber);
+  // Push updates over the public invoice channel; the poll above is the fallback.
+  useInvoiceRealtime(invoiceNumber);
 
   // Payment is confirmed by a gateway webhook the browser cannot observe, so
   // the poll is what moves the customer on. Redirect once nothing more will

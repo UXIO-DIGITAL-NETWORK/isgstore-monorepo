@@ -7,6 +7,14 @@
  */
 export const ENV = {
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api",
+
+  // Laravel Reverb (WebSocket, Pusher protocol) — powers live invoice/member
+  // status. Left empty until credentials are provisioned; the app then falls
+  // back to polling. Mirror these with the backend's REVERB_* values.
+  REVERB_APP_KEY: import.meta.env.VITE_REVERB_APP_KEY || "",
+  REVERB_HOST: import.meta.env.VITE_REVERB_HOST || "localhost",
+  REVERB_PORT: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
+  REVERB_SCHEME: import.meta.env.VITE_REVERB_SCHEME || "http",
 } as const;
 
 /** Version prefix shared by every service module. */
