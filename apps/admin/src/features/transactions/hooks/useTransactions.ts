@@ -8,6 +8,9 @@ export const useTransactionList = (params: TransactionListParams) =>
   useQuery({
     queryKey: ["transactions", "list", params],
     queryFn: () => transactionsService.list(params),
+    // Realtime (useTransactionsRealtime) is the primary refresh path; this slow
+    // poll is the fallback for when the WebSocket is unavailable.
+    refetchInterval: 60_000,
   });
 
 export const useTransaction = (id: string) =>
