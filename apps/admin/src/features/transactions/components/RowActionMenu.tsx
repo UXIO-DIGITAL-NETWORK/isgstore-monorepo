@@ -93,7 +93,8 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
           <DropdownMenuItem
             onSelect={() =>
               window.open(
-                `${ENV.API_BASE_URL}${API_VERSION}/invoices/${transaction.invoice_no}/download`,
+                // Strip a trailing slash so ".../api/" doesn't become ".../api//v1".
+                `${ENV.API_BASE_URL.replace(/\/+$/, "")}${API_VERSION}/invoices/${transaction.invoice_no}/download`,
                 "_blank",
                 "noopener",
               )
