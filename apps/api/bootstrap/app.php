@@ -14,6 +14,15 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // Broadcasting auth is placed under the API prefix and behind Sanctum: both
+    // SPAs authenticate with bearer tokens, not the session cookie the default
+    // `/broadcasting/auth` (web guard) route expects. This also loads
+    // routes/channels.php, registering the private-channel authorization
+    // callbacks (admin.transactions, member.{userId}.transactions).
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        attributes: ['prefix' => 'api', 'middleware' => ['auth:sanctum']],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi();
         $middleware->alias([
