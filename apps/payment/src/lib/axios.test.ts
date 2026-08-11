@@ -140,3 +140,46 @@ describe("api response interceptor (401 handling)", () => {
     expect(post).not.toHaveBeenCalled();
   });
 });
+
+describe("api request interceptor (FormData Content-Type)", () => {
+  beforeEach(() => useAuthStore.setState({ token: "seeded-token", refreshToken: null }));
+  afterEach(() => useAuthStore.getState().clearAuth());
+
+  /** Adapter that captures the outgoing Content-Type the interceptors produced. */
+  const captureContentType = (sink: { value: string | null }) => (config: InternalAxiosRequestConfig) => {
+    sink.value = config.headers?.get?.("Content-Type")?.toString() ?? null;
+    return Promise.resolve({
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      config,
+      data: { status: "success", code: 200, message: "ok", data: {} },
+    });
+  };
+
+  it("drops the JSON Content-Type for FormData so the browser can set multipart", async () => {
+    const sink: { value: string | null } = { value: null };
+    const form = new FormData();
+    form.append("method", "manual");
+    form.append("proof", new File(["x"], "bukti.png", { type: "image/png" }));
+
+    await api.post(`${API_VERSION}/payment-internal/withdrawals/1/approve`, form, {
+      adapter: captureContentType(sink),
+    });
+
+    // The pinned application/json must be removed; a real browser then sets
+    // `multipart/form-data; boundary=…` itself (jsdom leaves it unset, which is
+    // fine — the point is it's no longer JSON, which caused the 422).
+    expect(sink.value ?? "").not.toMatch(/application\/json/);
+  });
+
+  it("keeps application/json for a plain-object body", async () => {
+    const sink: { value: string | null } = { value: null };
+
+    await api.post(`${API_VERSION}/payment-internal/withdrawals/1/reject`, { reason: "x" }, {
+      adapter: captureContentType(sink),
+    });
+
+    expect(sink.value ?? "").toMatch(/application\/json/);
+  });
+});
