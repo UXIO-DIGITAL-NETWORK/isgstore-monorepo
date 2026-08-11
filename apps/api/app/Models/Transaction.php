@@ -25,6 +25,12 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** The "client" (merchant) that owns the sold product; null for platform-owned sales. */
+    public function merchant()
+    {
+        return $this->belongsTo(User::class, 'merchant_id');
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);

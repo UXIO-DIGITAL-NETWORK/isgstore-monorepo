@@ -4,6 +4,7 @@ namespace App\Actions\Checkout;
 
 use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Settlement\SettleMerchantTransactionAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\DTOs\Checkout\CheckoutDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
@@ -30,7 +31,8 @@ class CheckoutAction
         private readonly ProcessDigiflazzTransactionAction $digiflazzAction,
         private readonly CreateActivityLogAction $logAction,
         private readonly MonetapayService $monetapayService,
-        private readonly SendTransactionReceiptAction $sendReceiptAction
+        private readonly SendTransactionReceiptAction $sendReceiptAction,
+        private readonly SettleMerchantTransactionAction $settleAction
     ) {}
 
     public function execute(CheckoutDTO $dto): array
@@ -149,6 +151,9 @@ class CheckoutAction
                 'transaction_type' => 'prepaid',
                 'invoice_number' => $invoiceNumber,
                 'user_id' => $user?->id,
+                // The "client" that owns the sold product — settlement credits
+                // them their net. Null for platform-owned catalogue.
+                'merchant_id' => $product->merchant_id,
                 'payment_channel_id' => $channel->id,
                 'guest_contact' => $user ? null : $dto->guestContact,
                 // Stored for everyone (guest + member): the receipt destination and
@@ -210,6 +215,11 @@ class CheckoutAction
 
                 $user->decrement('balance', $grossAmount);
                 $payment->update(['status' => PaymentStatus::SUCCESS, 'paid_at' => now()]);
+
+                // Balance channel has no external gateway cost, so kita keeps
+                // the full admin fee (gateway_fee stays 0). Credit the merchant
+                // and record kita's markup — no-op if platform-owned.
+                $this->settleAction->execute($transaction);
 
                 $transaction = $this->digiflazzAction->execute($transaction);
                 $transactionStatus = $transaction->status; // COMPLETED / PROCESSING / FAILED_PROVIDER

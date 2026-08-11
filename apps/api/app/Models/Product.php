@@ -11,6 +11,12 @@ class Product extends Model
 
     protected $guarded = ['id'];
 
+    /** The "client" (merchant) that sells this product; null for platform-owned catalogue. */
+    public function merchant()
+    {
+        return $this->belongsTo(User::class, 'merchant_id');
+    }
+
     public function category()
     {
         return $this->belongsTo(Category::class);
