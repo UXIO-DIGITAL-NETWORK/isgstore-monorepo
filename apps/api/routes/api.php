@@ -27,6 +27,10 @@ use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
 use App\Http\Controllers\Api\Digiflazz\PriceAlertController;
 use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
+use App\Http\Controllers\Api\Finance\FinanceDashboardController;
+use App\Http\Controllers\Api\Finance\FinanceMerchantController;
+use App\Http\Controllers\Api\Finance\FinanceTransactionController;
+use App\Http\Controllers\Api\Finance\FinanceWithdrawalController;
 use App\Http\Controllers\Api\FinancialController;
 use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
@@ -39,6 +43,10 @@ use App\Http\Controllers\Api\Member\MembershipController;
 use App\Http\Controllers\Api\Member\MemberTransactionController;
 use App\Http\Controllers\Api\Member\ProfileController;
 use App\Http\Controllers\Api\Membership\MembershipPlanController;
+use App\Http\Controllers\Api\Merchant\MerchantDashboardController;
+use App\Http\Controllers\Api\Merchant\MerchantMutationController;
+use App\Http\Controllers\Api\Merchant\MerchantTransactionController;
+use App\Http\Controllers\Api\Merchant\WithdrawalController as MerchantWithdrawalController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController;
@@ -494,4 +502,29 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show']);
     Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
     Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+});
+
+// ── Payment page: merchant ("client") ────────────────────────────────────────
+// The Finance-Developer's own view. Every handler additionally scopes to the
+// caller's id, so the `merchant` gate is defence-in-depth, not the only guard.
+Route::prefix('v1/merchant')->middleware(['auth:sanctum', 'merchant'])->group(function () {
+    Route::get('/dashboard', [MerchantDashboardController::class, 'index']);
+    Route::get('/transactions', [MerchantTransactionController::class, 'index']);
+    Route::get('/mutations', [MerchantMutationController::class, 'index']);
+    Route::get('/withdrawals', [MerchantWithdrawalController::class, 'index']);
+    Route::post('/withdrawals', [MerchantWithdrawalController::class, 'store'])->middleware('throttle:checkout');
+    Route::get('/withdrawals/{number}', [MerchantWithdrawalController::class, 'show']);
+});
+
+// ── Payment page: finance ("kita") ───────────────────────────────────────────
+// The platform operator's cross-merchant view: all data, plus withdrawal
+// approval and (Phase 2) channel/admin-fee settings.
+Route::prefix('v1/finance')->middleware(['auth:sanctum', 'finance'])->group(function () {
+    Route::get('/dashboard', [FinanceDashboardController::class, 'index']);
+    Route::get('/merchants', [FinanceMerchantController::class, 'index']);
+    Route::get('/merchants/{user}', [FinanceMerchantController::class, 'show']);
+    Route::get('/transactions', [FinanceTransactionController::class, 'index']);
+    Route::get('/withdrawals', [FinanceWithdrawalController::class, 'index']);
+    Route::post('/withdrawals/{withdrawal}/approve', [FinanceWithdrawalController::class, 'approve']);
+    Route::post('/withdrawals/{withdrawal}/reject', [FinanceWithdrawalController::class, 'reject']);
 });

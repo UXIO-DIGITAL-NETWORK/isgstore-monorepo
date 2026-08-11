@@ -3,6 +3,7 @@
 namespace App\Actions\Payment\Monetapay;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Settlement\SettleMerchantTransactionAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Payment\Monetapay\MonetapayCallbackDTO;
 use App\Enums\PaymentStatus;
@@ -23,7 +24,8 @@ class HandleMonetapayCallbackAction
     private const TOPUP_REFERENCE_PREFIX = 'TOP-';
 
     public function __construct(
-        private readonly CreateActivityLogAction $activityLogAction
+        private readonly CreateActivityLogAction $activityLogAction,
+        private readonly SettleMerchantTransactionAction $settleAction,
     ) {}
 
     public function execute(MonetapayCallbackDTO $dto): void
@@ -92,6 +94,10 @@ class HandleMonetapayCallbackAction
             $payment->update([
                 'status' => $isSuccess ? PaymentStatus::SUCCESS : PaymentStatus::EXPIRED,
                 'paid_at' => $isSuccess ? now() : null,
+                // Monetapay's actual fee — settlement subtracts it from our
+                // markup to know kita's real profit. Zero if the gateway omits
+                // it from this callback.
+                'gateway_fee' => $isSuccess ? $this->extractGatewayFee($dto->rawPayload) : 0,
             ]);
 
             $transaction->update([
@@ -109,12 +115,33 @@ class HandleMonetapayCallbackAction
         // At this point DB::transaction() has returned, meaning the commit is done.
         // The queue worker will always see the PAID rows when it picks up the job.
         if ($paidTransaction) {
+            // Credit the merchant and record kita's markup once payment is
+            // confirmed. No-op for platform-owned sales (merchant_id = null).
+            $this->settleAction->execute($paidTransaction);
+
             if ($paidTransaction->transaction_type === 'postpaid') {
                 ProcessDigiflazzBillPayment::dispatch($paidTransaction);
             } else {
                 ProcessDigiflazzTopup::dispatch($paidTransaction);
             }
         }
+    }
+
+    /**
+     * Monetapay's fee field name has varied across payment types; pull the
+     * first recognised key from the decrypted payload and treat anything
+     * missing as no fee. The exact key can be pinned once confirmed against
+     * live callbacks — until then this stays defensive rather than assuming.
+     */
+    private function extractGatewayFee(array $raw): int
+    {
+        foreach (['fee', 'mdr_fee', 'mdr', 'admin_fee', 'charge', 'total_fee'] as $key) {
+            if (isset($raw[$key]) && is_numeric($raw[$key])) {
+                return (int) round((float) $raw[$key]);
+            }
+        }
+
+        return 0;
     }
 
     private function log(string $referenceId, string $message): void
