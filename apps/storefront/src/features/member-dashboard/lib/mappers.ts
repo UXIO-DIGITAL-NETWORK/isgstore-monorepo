@@ -52,6 +52,8 @@ export function toHistoryRow(row: TransactionSummaryModel): TransactionHistoryRo
     serviceDetail: row.service_detail ?? "",
     target: row.target ?? "",
     amount: row.amount,
+    channelFee: row.channel_fee ?? 0,
+    adminFee: row.admin_fee ?? 0,
     date: row.created_at,
     status: STATUS_MAP[row.status],
     paymentMethod: PAYMENT_METHOD_MAP[row.payment_method ?? ""] ?? "bank_transfer",

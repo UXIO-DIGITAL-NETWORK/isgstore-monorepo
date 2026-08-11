@@ -26,6 +26,11 @@
     "status": "Status"
   },
 
+  "row": {
+    "feeMethod": "Method Fee",
+    "adminFee": "Admin Fee"
+  },
+
   "status": {
     "process": "Processing",
     "success": "Success",

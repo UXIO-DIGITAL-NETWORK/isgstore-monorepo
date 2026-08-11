@@ -10,10 +10,12 @@ import OrderConfirmModal from "./OrderConfirmModal";
 
 interface Props {
   selectedPackage: DiamondPackage | null;
-  /** Package price only — the admin fee is added for the modal's total. */
+  /** Package price ("Harga"). */
   totalPrice: number;
-  /** Channel fee resolved from the selected payment method. */
-  adminFee: number;
+  /** "Biaya Metode Pembayaran" — the selected channel's fee. */
+  channelFee: number;
+  /** "Biaya Admin" — the global markup. */
+  adminMarkup: number;
   gameThumbnail: string;
   gameName: string;
   selectedPaymentName?: string;
@@ -26,10 +28,25 @@ interface Props {
   onSubmit: () => void;
 }
 
+/** One label/value row in the price breakdown. */
+function FeeRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Box className="flex items-center justify-between gap-4">
+      <Text as="span" className="font-inter text-[13px] text-white/55 leading-none">
+        {label}
+      </Text>
+      <Text as="span" className="font-plex text-[13px] text-white font-medium leading-none">
+        {value}
+      </Text>
+    </Box>
+  );
+}
+
 export default function OrderSummary({
   selectedPackage,
   totalPrice,
-  adminFee,
+  channelFee,
+  adminMarkup,
   gameThumbnail,
   gameName,
   selectedPaymentName,
@@ -43,6 +60,8 @@ export default function OrderSummary({
   const { t, i18n } = useTranslation("checkout");
   const locale = i18n.language;
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const total = totalPrice + channelFee + adminMarkup;
 
   return (
     <Box className="rounded-2xl border border-dotted border-[rgba(147,51,234,0.5)] bg-[#0D1117] overflow-hidden">
@@ -73,23 +92,31 @@ export default function OrderSummary({
             **{t("summary.instantProcess")}
           </Text>
         </Box>
-
-        {/* Total Bayar + price */}
-        <Box className="shrink-0 flex flex-col items-end gap-1">
-          <Text as="span" className="font-inter text-[11px] text-white/45 leading-none whitespace-nowrap">
-            {t("summary.totalLabel")}
-          </Text>
-          <PriceText className="text-[20px] leading-tight">
-            {formatCurrency(totalPrice, locale)}
-          </PriceText>
-        </Box>
       </Box>
 
       {/* Divider */}
       <Box className="h-px bg-white/8 mx-0" />
 
+      {/* Price breakdown */}
+      <Box className="px-4 pt-4 pb-2 flex flex-col gap-2.5">
+        <FeeRow label={t("summary.price")} value={formatCurrency(totalPrice, locale)} />
+        {channelFee > 0 && <FeeRow label={t("summary.feeMethod")} value={formatCurrency(channelFee, locale)} />}
+        {adminMarkup > 0 && <FeeRow label={t("summary.adminFee")} value={formatCurrency(adminMarkup, locale)} />}
+      </Box>
+
+      {/* Divider */}
+      <Box className="h-px bg-white/8 mx-0" />
+
+      {/* Total */}
+      <Box className="px-4 py-3 flex items-center justify-between">
+        <Text as="span" className="font-outfit font-bold text-[14px] text-white">
+          {t("summary.totalPayment")}
+        </Text>
+        <PriceText className="text-[20px] leading-tight">{formatCurrency(total, locale)}</PriceText>
+      </Box>
+
       {/* CTA button */}
-      <Box className="px-4 py-4">
+      <Box className="px-4 pb-4">
         <Button
           type="button"
           onClick={() => setConfirmOpen(true)}
@@ -121,8 +148,9 @@ export default function OrderSummary({
         productName={gameName}
         price={selectedPackage?.price ?? 0}
         paymentName={selectedPaymentName}
-        // What the customer will actually be charged, package + channel fee.
-        total={totalPrice + adminFee}
+        channelFee={channelFee}
+        adminMarkup={adminMarkup}
+        total={total}
       />
     </Box>
   );

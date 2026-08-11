@@ -111,6 +111,10 @@
     "noPackageSelected": "No package selected",
     "total": "Total Payment",
     "totalLabel": "Total Payable",
+    "price": "Price",
+    "feeMethod": "Payment Method Fee",
+    "adminFee": "Admin Fee",
+    "totalPayment": "Total Payment",
     "buyNow": "Top Up Now",
     "processing": "Processing...",
     "instantProcess": "Instant processing time"
@@ -127,6 +131,8 @@
     "product": "Product",
     "price": "Price",
     "method": "Method",
+    "feeMethod": "Payment Method Fee",
+    "adminFee": "Admin Fee",
     "totalPay": "Total Payable",
     "confirm": "Order Now",
     "cancel": "Cancel"

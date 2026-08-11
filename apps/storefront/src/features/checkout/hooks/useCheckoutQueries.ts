@@ -53,8 +53,11 @@ export const usePaymentChannelsQuery = () => {
     queryFn: async () => {
       const response = await checkoutService.paymentChannels();
       return {
-        groups: toPaymentGroups(response.data),
-        memberCredits: toMemberCredits(response.data),
+        groups: toPaymentGroups(response.data.channels),
+        memberCredits: toMemberCredits(response.data.channels),
+        // Global admin markup, so the summary can show the same total the
+        // backend will charge before checkout is submitted.
+        adminFee: response.data.admin_fee,
       };
     },
   });

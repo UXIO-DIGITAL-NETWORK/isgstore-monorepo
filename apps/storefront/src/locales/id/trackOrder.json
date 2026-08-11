@@ -26,6 +26,11 @@
     "status": "Status"
   },
 
+  "row": {
+    "feeMethod": "Biaya Metode",
+    "adminFee": "Biaya Admin"
+  },
+
   "status": {
     "process": "Proses",
     "success": "Sukses",

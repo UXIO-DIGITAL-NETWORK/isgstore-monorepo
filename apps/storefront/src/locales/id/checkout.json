@@ -111,6 +111,10 @@
     "noPackageSelected": "Belum ada paket yang dipilih",
     "total": "Total Pembayaran",
     "totalLabel": "Total Bayar",
+    "price": "Harga",
+    "feeMethod": "Biaya Metode Pembayaran",
+    "adminFee": "Biaya Admin",
+    "totalPayment": "Total Pembayaran",
     "buyNow": "Top Up Sekarang",
     "processing": "Memproses...",
     "instantProcess": "Waktu proses instan"
@@ -127,6 +131,8 @@
     "product": "Produk",
     "price": "Harga",
     "method": "Metode",
+    "feeMethod": "Biaya Metode Pembayaran",
+    "adminFee": "Biaya Admin",
     "totalPay": "Total Bayar",
     "confirm": "Pesan Sekarang",
     "cancel": "Batalkan"

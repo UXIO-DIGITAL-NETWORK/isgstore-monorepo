@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -22,6 +23,7 @@ interface Props {
 
 export default function TransactionRowComponent({ row, index }: Props): React.JSX.Element {
   const navigate = useNavigate();
+  const { t } = useTranslation("trackOrder");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
 
   const handleClick = () => {
@@ -67,9 +69,19 @@ export default function TransactionRowComponent({ row, index }: Props): React.JS
         <Text as="span" className="font-inter text-[13px] text-white/80 leading-none">
           {row.service}
         </Text>
-        <PriceText className="text-[13px] leading-none">
-          {formatCurrency(row.amount, locale)}
-        </PriceText>
+        <Box className="flex flex-col gap-0.5">
+          <PriceText className="text-[13px] leading-none">{formatCurrency(row.amount, locale)}</PriceText>
+          {row.channelFee > 0 && (
+            <Text as="span" className="font-inter text-[10px] text-white/40 leading-tight">
+              {t("row.feeMethod")}: {formatCurrency(row.channelFee, locale)}
+            </Text>
+          )}
+          {row.adminFee > 0 && (
+            <Text as="span" className="font-inter text-[10px] text-white/40 leading-tight">
+              {t("row.adminFee")}: {formatCurrency(row.adminFee, locale)}
+            </Text>
+          )}
+        </Box>
         <Box className="flex justify-center">
           <StatusPill status={row.status} />
         </Box>
@@ -110,8 +122,19 @@ export default function TransactionRowComponent({ row, index }: Props): React.JS
           </Text>
         </Box>
 
-        <Box className="flex items-center justify-between gap-2">
-          <Box className="invisible" />
+        <Box className="flex items-end justify-between gap-2">
+          <Box className="flex flex-col gap-0.5">
+            {row.channelFee > 0 && (
+              <Text as="span" className="font-inter text-[11px] text-white/45 leading-tight">
+                {t("row.feeMethod")}: {formatCurrency(row.channelFee, locale)}
+              </Text>
+            )}
+            {row.adminFee > 0 && (
+              <Text as="span" className="font-inter text-[11px] text-white/45 leading-tight">
+                {t("row.adminFee")}: {formatCurrency(row.adminFee, locale)}
+              </Text>
+            )}
+          </Box>
           <PriceText className="text-[14px] leading-none">
             {formatCurrency(row.amount, locale)}
           </PriceText>
