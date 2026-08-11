@@ -19,8 +19,8 @@ export const useFinanceWithdrawals = (params: ListParams) =>
 export const useApproveWithdrawal = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, method }: { id: number; method?: "manual" | "monetapay" }) =>
-      financeService.approve(id, method),
+    mutationFn: ({ id, method, proof }: { id: number; method?: "manual" | "monetapay"; proof?: File }) =>
+      financeService.approve(id, { method, proof }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance"] });
       toast.success("Penarikan disetujui");

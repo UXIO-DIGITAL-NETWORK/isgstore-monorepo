@@ -34,8 +34,17 @@ export const financeService = {
     return unwrapList<Withdrawal>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
-  approve: async (id: number, method: "manual" | "monetapay" = "manual"): Promise<Withdrawal> => {
-    const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals/${id}/approve`, { method });
+  approve: async (
+    id: number,
+    { method = "manual", proof }: { method?: "manual" | "monetapay"; proof?: File } = {},
+  ): Promise<Withdrawal> => {
+    // Manual settlement carries the bukti transfer, so it goes as multipart;
+    // axios sets the boundary header itself once the body is a FormData.
+    const form = new FormData();
+    form.append("method", method);
+    if (proof) form.append("proof", proof);
+
+    const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals/${id}/approve`, form);
     return res.data;
   },
 

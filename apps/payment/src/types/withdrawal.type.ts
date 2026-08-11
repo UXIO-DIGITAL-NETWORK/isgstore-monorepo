@@ -13,6 +13,7 @@ export interface Withdrawal {
   notes: string | null;
   approved_at: string | null;
   disbursement_ref: string | null;
+  proof_url: string | null;
   created_at: string;
   merchant?: { id: number; name: string; email: string };
 }

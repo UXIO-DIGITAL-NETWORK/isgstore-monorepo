@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
 import { Pager } from "@/components/common/Pager";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -9,14 +10,14 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 import type { Withdrawal } from "@/types/withdrawal.type";
-import { useApproveWithdrawal, useFinanceWithdrawals, useRejectWithdrawal } from "../hooks/useFinance";
+import { SettleWithdrawalDialog } from "../components/SettleWithdrawalDialog";
+import { useFinanceWithdrawals, useRejectWithdrawal } from "../hooks/useFinance";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
 export default function FinanceWithdrawalsPage() {
   const [page, setPage] = useState(1);
   const { data, isLoading, isError } = useFinanceWithdrawals({ page, per_page: 20 });
-  const { mutate: approve, isPending: approving } = useApproveWithdrawal();
   const { mutate: reject, isPending: rejecting } = useRejectWithdrawal();
 
   const columns: Column<Withdrawal>[] = [
@@ -33,9 +34,7 @@ export default function FinanceWithdrawalsPage() {
       cell: (r) =>
         r.status === "PENDING" ? (
           <Box className="flex gap-2">
-            <Button size="sm" disabled={approving} onClick={() => approve({ id: r.id, method: "manual" })}>
-              Setujui
-            </Button>
+            <SettleWithdrawalDialog withdrawal={r} />
             <Button
               size="sm"
               variant="outline"
@@ -45,6 +44,12 @@ export default function FinanceWithdrawalsPage() {
               Tolak
             </Button>
           </Box>
+        ) : r.proof_url ? (
+          <Link href={r.proof_url} target="_blank" rel="noreferrer">
+            <Text as="span" variant="small" className="underline">
+              Lihat Bukti
+            </Text>
+          </Link>
         ) : (
           <Text as="span" variant="small">
             —

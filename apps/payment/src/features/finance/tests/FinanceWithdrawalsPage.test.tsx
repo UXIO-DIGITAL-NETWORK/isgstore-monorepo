@@ -23,17 +23,29 @@ const pending: Withdrawal = {
   notes: null,
   approved_at: null,
   disbursement_ref: null,
+  proof_url: null,
   created_at: "2026-08-11T00:00:00.000000Z",
   merchant: { id: 1, name: "Toko A", email: "a@toko.com" },
 };
 
-beforeEach(() => {
-  vi.clearAllMocks();
+const settled: Withdrawal = {
+  ...pending,
+  id: 6,
+  withdrawal_number: "WD-settled",
+  status: "SETTLED",
+  proof_url: "http://localhost/storage/withdrawals/proofs/bukti.jpg",
+};
+
+const mockRows = (rows: Withdrawal[]) =>
   vi.spyOn(hooks, "useFinanceWithdrawals").mockReturnValue({
-    data: { rows: [pending], page: 1, lastPage: 1, total: 1, perPage: 20 },
+    data: { rows, page: 1, lastPage: 1, total: rows.length, perPage: 20 },
     isLoading: false,
     isError: false,
   } as unknown as ReturnType<typeof hooks.useFinanceWithdrawals>);
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockRows([pending]);
   vi.spyOn(hooks, "useApproveWithdrawal").mockReturnValue({
     mutate: approve,
     isPending: false,
@@ -58,12 +70,40 @@ describe("FinanceWithdrawalsPage", () => {
     expect(screen.getByText("Toko A")).toBeInTheDocument();
   });
 
-  it("approves a pending withdrawal", async () => {
+  it("opens the settle dialog instead of approving directly", async () => {
     const user = userEvent.setup();
     renderPage();
 
     await user.click(screen.getByRole("button", { name: "Setujui" }));
 
-    expect(approve).toHaveBeenCalledWith({ id: 5, method: "manual" });
+    // The dialog is open; approval has not fired yet (proof required first).
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Setujui Penarikan")).toBeInTheDocument();
+    expect(approve).not.toHaveBeenCalled();
+  });
+
+  it("settles with the uploaded bukti transfer", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Setujui" }));
+
+    const file = new File(["proof"], "bukti.png", { type: "image/png" });
+    await user.upload(screen.getByLabelText("Bukti Transfer"), file);
+    await user.click(screen.getByRole("button", { name: "Setujui & Kirim Bukti" }));
+
+    expect(approve).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 5, method: "manual", proof: file }),
+      expect.anything(),
+    );
+  });
+
+  it("shows a proof link for a settled withdrawal", () => {
+    mockRows([settled]);
+    renderPage();
+
+    const link = screen.getByRole("link", { name: "Lihat Bukti" });
+    expect(link).toHaveAttribute("href", settled.proof_url);
+    expect(link).toHaveAttribute("target", "_blank");
   });
 });
