@@ -20,6 +20,13 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // File uploads (e.g. a payment-channel logo) go out as FormData. The
+    // instance pins Content-Type to application/json, which would suppress the
+    // browser's own `multipart/form-data; boundary=…` and strip the file.
+    // Drop it and let the browser set the multipart header + boundary.
+    if (config.data instanceof FormData) {
+      config.headers.delete("Content-Type");
+    }
     return config;
   },
   (error: AxiosError) => Promise.reject(error),

@@ -140,3 +140,40 @@ describe("api response interceptor (401 handling)", () => {
     expect(post).not.toHaveBeenCalled();
   });
 });
+
+describe("api request interceptor (FormData Content-Type)", () => {
+  beforeEach(() => useAuthStore.setState({ token: "seeded-token", refreshToken: null }));
+  afterEach(() => useAuthStore.getState().clearAuth());
+
+  const captureContentType = (sink: { value: string | null }) => (config: InternalAxiosRequestConfig) => {
+    sink.value = config.headers?.get?.("Content-Type")?.toString() ?? null;
+    return Promise.resolve({
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      config,
+      data: { status: "success", code: 200, message: "ok", data: {} },
+    });
+  };
+
+  it("drops the JSON Content-Type for FormData so the browser can set multipart", async () => {
+    const sink: { value: string | null } = { value: null };
+    const form = new FormData();
+    form.append("_method", "PUT");
+    form.append("logo", new File(["x"], "logo.png", { type: "image/png" }));
+
+    await api.post(`${API_VERSION}/payment-channels/1`, form, { adapter: captureContentType(sink) });
+
+    // Was application/json → the logo upload arrived unparseable. Now dropped;
+    // a real browser sets `multipart/form-data; boundary=…` itself.
+    expect(sink.value ?? "").not.toMatch(/application\/json/);
+  });
+
+  it("keeps application/json for a plain-object body", async () => {
+    const sink: { value: string | null } = { value: null };
+
+    await api.put(`${API_VERSION}/settings`, { settings: {} }, { adapter: captureContentType(sink) });
+
+    expect(sink.value ?? "").toMatch(/application\/json/);
+  });
+});
