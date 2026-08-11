@@ -288,8 +288,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     // Reporting hub (consolidated revenue/transactions/profit + breakdown)
     Route::get('/reports/summary', [ReportController::class, 'summary']);
 
-    // Integration channel connectivity overview
+    // Integration channel connectivity overview + per-channel manage
     Route::get('/integration/channels', [IntegrationController::class, 'channels']);
+    Route::get('/integration/channels/{provider}', [IntegrationController::class, 'show']);
+    Route::put('/integration/channels/{provider}', [IntegrationController::class, 'update']);
+    Route::post('/integration/channels/{provider}/ping', [IntegrationController::class, 'ping']);
 
     // Activity Logs
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);

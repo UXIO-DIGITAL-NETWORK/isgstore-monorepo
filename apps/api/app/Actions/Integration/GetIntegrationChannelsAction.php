@@ -4,6 +4,7 @@ namespace App\Actions\Integration;
 
 use App\Actions\Financial\GetPaymentGatewayBalancesAction;
 use App\Actions\Financial\GetSupplierBalancesAction;
+use App\Support\Integration\IntegrationConfig;
 
 /**
  * Connectivity overview for the Integration page — composes the same
@@ -40,10 +41,12 @@ class GetIntegrationChannelsAction
 
         return [[
             'id' => 'digiflazz',
+            'provider' => 'digiflazz',
             'type' => 'supplier',
             'name' => $digiflazz['name'],
             'connection_status' => $digiflazz['balance'] !== null ? 'connected' : 'disconnected',
             'balance' => $digiflazz['balance'],
+            'mode' => filter_var(IntegrationConfig::for('digiflazz')['production'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'production' : 'development',
             'last_ping_at' => now()->toIso8601String(),
         ]];
     }
@@ -53,10 +56,12 @@ class GetIntegrationChannelsAction
         return collect($this->gatewayBalances->execute())
             ->map(fn (array $gateway) => [
                 'id' => $gateway['id'],
+                'provider' => $gateway['id'],
                 'type' => 'payment_gateway',
                 'name' => $gateway['name'],
                 'connection_status' => $gateway['active_balance'] !== null ? 'connected' : 'disconnected',
                 'balance' => $gateway['active_balance'],
+                'mode' => filter_var(IntegrationConfig::for($gateway['id'])['is_production'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'production' : 'sandbox',
                 'last_ping_at' => now()->toIso8601String(),
             ])
             ->all();

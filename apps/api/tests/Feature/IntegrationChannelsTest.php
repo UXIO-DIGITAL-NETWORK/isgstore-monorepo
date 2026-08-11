@@ -32,7 +32,9 @@ class IntegrationChannelsTest extends TestCase
         Http::fake([
             '*/cek-saldo' => Http::response(['data' => ['deposit' => 250000]], 200),
             '*/v1.0.0/balance' => Http::response([
-                'balanceInfos' => [['balanceType' => 'AVAILABLE', 'amount' => ['value' => '750000']]],
+                'code' => 0,
+                'messgae' => 'success',
+                'data' => ['current_balance' => '750000', 'current_freeze' => '0'],
             ], 200),
         ]);
 

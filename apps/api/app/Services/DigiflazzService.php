@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Integration\IntegrationConfig;
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
@@ -31,13 +32,16 @@ class DigiflazzService
 
     public function __construct()
     {
-        $this->username = config('services.digiflazz.username');
+        // DB-backed credentials (admin-editable) merged over config/.env defaults.
+        $cfg = IntegrationConfig::for('digiflazz');
+
+        $this->username = (string) ($cfg['username'] ?? '');
         // apiKey is bound to the account's API mode; the formula is identical in both
         // modes, only the key value differs. Prevents a dev key hitting the prod API (rc 41).
-        $this->key = config('services.digiflazz.production')
-            ? config('services.digiflazz.prod_key')
-            : config('services.digiflazz.dev_key');
-        $this->baseUrl = config('services.digiflazz.base_url');
+        $this->key = (string) (filter_var($cfg['production'] ?? false, FILTER_VALIDATE_BOOLEAN)
+            ? ($cfg['prod_key'] ?? '')
+            : ($cfg['dev_key'] ?? ''));
+        $this->baseUrl = (string) ($cfg['base_url'] ?? 'https://api.digiflazz.com/v1');
     }
 
     private function generateSignature(string $refId): string

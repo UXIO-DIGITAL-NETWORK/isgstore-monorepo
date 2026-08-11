@@ -65,10 +65,9 @@ class FinancialTest extends TestCase
     {
         $this->actingAsAdmin();
         Http::fake(['*/v1.0.0/balance' => Http::response([
-            'balanceInfos' => [
-                ['balanceType' => 'AVAILABLE', 'amount' => ['value' => '1000000']],
-                ['balanceType' => 'HOLD', 'amount' => ['value' => '50000']],
-            ],
+            'code' => 0,
+            'messgae' => 'success',
+            'data' => ['current_balance' => '1000000', 'current_freeze' => '50000'],
         ], 200)]);
 
         $this->getJson('/api/v1/financial/payment-gateways')
