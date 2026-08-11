@@ -17,7 +17,7 @@ class MerchantSettlementTest extends TestCase
 
     private function merchant(int $balance = 0): User
     {
-        $role = Role::factory()->create(['name' => 'Finance-Developer']);
+        $role = Role::factory()->create(['name' => 'Payment-Admin']);
 
         return User::factory()->create(['role_id' => $role->id, 'balance' => $balance]);
     }

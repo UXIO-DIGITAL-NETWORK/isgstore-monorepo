@@ -47,6 +47,11 @@ class SettingSeeder extends Seeder
             ['payment', 'balance_topup_presets', '[10000,25000,50000,100000,250000,500000]', 'json', 'Top-up Nominal Presets', true],
             ['payment', 'min_topup_amount', '10000', 'number', 'Minimum Top-up', true],
 
+            // Global admin-fee markup set by payment-internal (kita). Default 0 =
+            // no markup, so checkout is unchanged until configured.
+            ['payment', 'admin_fee_type', 'fixed', 'string', 'Tipe Biaya Admin', false],
+            ['payment', 'admin_fee_value', '0', 'number', 'Nilai Biaya Admin', false],
+
             // Operational — never exposed publicly.
             ['operational', 'order_auto_expire_minutes', '15', 'number', 'Order Expiry (minutes)', false],
             ['operational', 'support_notification_email', 'ops@topupgame.id', 'string', 'Ops Notification Email', false],

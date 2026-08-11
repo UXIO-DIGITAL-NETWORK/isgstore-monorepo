@@ -15,14 +15,14 @@ class WithdrawalTest extends TestCase
 
     private function merchant(int $balance = 0): User
     {
-        $role = Role::firstOrCreate(['name' => 'Finance-Developer']);
+        $role = Role::firstOrCreate(['name' => 'Payment-Admin']);
 
         return User::factory()->create(['role_id' => $role->id, 'balance' => $balance]);
     }
 
     private function finance(): User
     {
-        $role = Role::firstOrCreate(['name' => 'Finance']);
+        $role = Role::firstOrCreate(['name' => 'Payment-Internal']);
 
         return User::factory()->create(['role_id' => $role->id]);
     }
@@ -42,7 +42,7 @@ class WithdrawalTest extends TestCase
         $merchant = $this->merchant(100000);
         Sanctum::actingAs($merchant);
 
-        $response = $this->postJson('/api/v1/merchant/withdrawals', $this->payload(40000));
+        $response = $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000));
 
         $response->assertCreated()
             ->assertJsonPath('data.status', 'PENDING')
@@ -62,7 +62,7 @@ class WithdrawalTest extends TestCase
         $merchant = $this->merchant(10000);
         Sanctum::actingAs($merchant);
 
-        $this->postJson('/api/v1/merchant/withdrawals', $this->payload(40000))
+        $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))
             ->assertStatus(422);
 
         $this->assertSame(10000, (int) $merchant->fresh()->balance);
@@ -73,11 +73,11 @@ class WithdrawalTest extends TestCase
     {
         $merchant = $this->merchant(100000);
         Sanctum::actingAs($merchant);
-        $this->postJson('/api/v1/merchant/withdrawals', $this->payload(40000))->assertCreated();
+        $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))->assertCreated();
         $withdrawal = Withdrawal::first();
 
         Sanctum::actingAs($this->finance());
-        $this->postJson("/api/v1/finance/withdrawals/{$withdrawal->id}/approve", ['method' => 'manual'])
+        $this->postJson("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/approve", ['method' => 'manual'])
             ->assertOk()
             ->assertJsonPath('data.status', 'SETTLED');
 
@@ -89,11 +89,11 @@ class WithdrawalTest extends TestCase
     {
         $merchant = $this->merchant(100000);
         Sanctum::actingAs($merchant);
-        $this->postJson('/api/v1/merchant/withdrawals', $this->payload(40000))->assertCreated();
+        $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))->assertCreated();
         $withdrawal = Withdrawal::first();
 
         Sanctum::actingAs($this->finance());
-        $this->postJson("/api/v1/finance/withdrawals/{$withdrawal->id}/reject", ['reason' => 'invalid account'])
+        $this->postJson("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/reject", ['reason' => 'invalid account'])
             ->assertOk()
             ->assertJsonPath('data.status', 'REJECTED');
 
@@ -105,21 +105,21 @@ class WithdrawalTest extends TestCase
     {
         $a = $this->merchant(100000);
         Sanctum::actingAs($a);
-        $this->postJson('/api/v1/merchant/withdrawals', $this->payload(40000))->assertCreated();
+        $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))->assertCreated();
         $number = Withdrawal::first()->withdrawal_number;
 
         Sanctum::actingAs($this->merchant(100000));
-        $this->getJson("/api/v1/merchant/withdrawals/{$number}")->assertNotFound();
+        $this->getJson("/api/v1/payment-admin/withdrawals/{$number}")->assertNotFound();
     }
 
     public function test_role_gates(): void
     {
         // A merchant cannot reach the finance surface.
         Sanctum::actingAs($this->merchant());
-        $this->getJson('/api/v1/finance/dashboard')->assertStatus(403);
+        $this->getJson('/api/v1/payment-internal/dashboard')->assertStatus(403);
 
         // Finance cannot reach the merchant surface.
         Sanctum::actingAs($this->finance());
-        $this->getJson('/api/v1/merchant/dashboard')->assertStatus(403);
+        $this->getJson('/api/v1/payment-admin/dashboard')->assertStatus(403);
     }
 }

@@ -15,11 +15,11 @@ class RoleSeeder extends Seeder
             ['name' => 'VIP', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Reseller', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Agent', 'created_at' => now(), 'updated_at' => now()],
-            // Payment-page roles. Names map to RoleType::FINANCE ("kita") and
-            // RoleType::FINANCE_DEVELOPER ("client"); the middleware matches on
-            // the lower-cased name, so the display casing here is cosmetic.
-            ['name' => 'Finance', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Finance-Developer', 'created_at' => now(), 'updated_at' => now()],
+            // Payment-page roles. Names map to RoleType::PAYMENT_INTERNAL ("kita")
+            // and RoleType::PAYMENT_ADMIN ("client"); the middleware matches on the
+            // lower-cased name, so it must equal the enum value exactly.
+            ['name' => 'Payment-Internal', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Payment-Admin', 'created_at' => now(), 'updated_at' => now()],
         ];
 
         DB::table('roles')->insert($roles);

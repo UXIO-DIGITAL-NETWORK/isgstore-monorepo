@@ -18,6 +18,7 @@ use App\Models\PromoRedemption;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
+use App\Support\Pricing\AdminFeeSetting;
 use App\Support\Pricing\RolePrice;
 use App\Support\Promo\PromoResolver;
 use Exception;
@@ -131,9 +132,13 @@ class CheckoutAction
 
             // ── 5. Fee & total ───────────────────────────────────────────────
             // Computed on the discounted price: the customer pays a gateway fee
-            // on what they are actually charged.
+            // on what they are actually charged. The per-channel fee covers the
+            // payment method's cost; the global admin fee (set by payment-internal)
+            // is kita's markup on top. Both default to 0, so an unconfigured
+            // instance charges exactly the product price.
             $feePercent = max(0, min(100, (float) $channel->fee_percent));
-            $adminFee = $channel->fee_flat + (int) round($sellingPrice * ($feePercent / 100));
+            $channelFee = $channel->fee_flat + (int) round($sellingPrice * ($feePercent / 100));
+            $adminFee = $channelFee + AdminFeeSetting::compute($sellingPrice);
             $grossAmount = $sellingPrice + $adminFee;
 
             if ($grossAmount < $channel->min_amount) {
