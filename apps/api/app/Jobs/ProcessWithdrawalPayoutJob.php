@@ -6,6 +6,7 @@ use App\Enums\WithdrawalStatus;
 use App\Models\Withdrawal;
 use App\Services\DiscordWebhookService;
 use App\Services\Payment\MonetapayService;
+use App\Support\Ledger\WithdrawalFeeLedger;
 use App\Support\Wallet\WalletLedger;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -79,6 +80,10 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
             'disbursement_ref' => $response['data']['order_no'] ?? null,
             'payout_data' => $response['data'] ?? null,
         ]);
+
+        // Realise kita's withdraw fee now that the payout has settled. Idempotent
+        // and shared with the manual approval path.
+        WithdrawalFeeLedger::credit($current);
 
         Log::channel('monetapay')->info("Withdrawal payout settled: {$current->withdrawal_number} (Rp {$current->nett})");
     }

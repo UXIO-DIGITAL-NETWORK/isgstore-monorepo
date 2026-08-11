@@ -8,6 +8,7 @@ use App\Enums\WithdrawalStatus;
 use App\Jobs\ProcessWithdrawalPayoutJob;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Support\Ledger\WithdrawalFeeLedger;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -25,9 +26,9 @@ use RuntimeException;
  */
 class ApproveWithdrawalAction
 {
-    public function execute(Withdrawal $withdrawal, User $approver, string $method = 'manual'): Withdrawal
+    public function execute(Withdrawal $withdrawal, User $approver, string $method = 'manual', ?string $proofPath = null): Withdrawal
     {
-        $fresh = DB::transaction(function () use ($withdrawal, $approver, $method) {
+        $fresh = DB::transaction(function () use ($withdrawal, $approver, $method, $proofPath) {
             /** @var Withdrawal $locked */
             $locked = Withdrawal::whereKey($withdrawal->getKey())->lockForUpdate()->firstOrFail();
 
@@ -35,13 +36,22 @@ class ApproveWithdrawalAction
                 throw new RuntimeException('Penarikan ini sudah diproses.');
             }
 
+            $isManual = $method !== 'monetapay';
+
             $locked->update([
                 'approved_by' => $approver->id,
                 'approved_at' => now(),
-                'status' => $method === 'monetapay'
-                    ? WithdrawalStatus::APPROVED
-                    : WithdrawalStatus::SETTLED,
+                'proof_path' => $proofPath ?? $locked->proof_path,
+                'status' => $isManual
+                    ? WithdrawalStatus::SETTLED
+                    : WithdrawalStatus::APPROVED,
             ]);
+
+            // Manual approval settles now, so kita's withdraw fee is realised
+            // here. Idempotent — a retry or the Monetapay path never double-books.
+            if ($isManual) {
+                WithdrawalFeeLedger::credit($locked);
+            }
 
             return $locked->fresh();
         });
