@@ -13,8 +13,9 @@ enum RoleType: string
     case AGENT = 'agent';
 
     // Payment-page roles (see docs / kita-markup plan):
-    // FINANCE = "kita" (platform/internal — sees every merchant, approves withdrawals).
-    // FINANCE_DEVELOPER = "client" (merchant — sees its own data, requests withdrawals).
-    case FINANCE = 'finance';
-    case FINANCE_DEVELOPER = 'finance-developer';
+    // PAYMENT_INTERNAL = "kita" (internal team — verifies withdrawals, sets admin fee &
+    //   per-channel fees, sees every merchant).
+    // PAYMENT_ADMIN = "client" (merchant — sees its own data, requests withdrawals).
+    case PAYMENT_INTERNAL = 'payment-internal';
+    case PAYMENT_ADMIN = 'payment-admin';
 }

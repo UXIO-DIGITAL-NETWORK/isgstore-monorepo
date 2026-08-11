@@ -24,7 +24,7 @@ class FinanceMerchantController extends Controller
         $perPage = min(100, max(1, (int) $request->query('per_page', 20)));
 
         $merchants = User::query()
-            ->whereHas('role', fn (Builder $q) => $q->whereRaw('LOWER(name) = ?', [RoleType::FINANCE_DEVELOPER->value]))
+            ->whereHas('role', fn (Builder $q) => $q->whereRaw('LOWER(name) = ?', [RoleType::PAYMENT_ADMIN->value]))
             ->when($request->query('search'), function (Builder $q, $term) {
                 $like = '%'.str_replace('%', '\%', $term).'%';
                 $q->where(fn (Builder $w) => $w->where('name', 'like', $like)->orWhere('email', 'like', $like));
