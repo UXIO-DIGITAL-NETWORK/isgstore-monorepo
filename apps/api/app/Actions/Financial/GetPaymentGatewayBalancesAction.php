@@ -13,11 +13,10 @@ use Illuminate\Support\Facades\Log;
  * balances. Returns a single-element array so the admin UI's list shape
  * stays stable if a second gateway is ever added.
  *
- * Monetapay's exact balance response schema hasn't been verified against a
- * real account yet (v1.0.0/sub_mch_id suggests a BI SNAP-style payload —
- * `balanceInfos: [{balanceType, amount: {value}}]` — assumed here as a
- * first pass). `raw` is always included so the real shape can be confirmed
- * and this extraction corrected without losing data in the meantime.
+ * Response shape (Monetapay 5.1 Balance Inquiry):
+ *   { code, messgae, data: { current_balance: "…", current_freeze: "…" } }
+ * `current_balance`/`current_freeze` are numeric STRINGS. `raw` is kept so the
+ * real payload is always inspectable.
  */
 class GetPaymentGatewayBalancesAction
 {
@@ -46,28 +45,27 @@ class GetPaymentGatewayBalancesAction
         return [[
             'id' => 'monetapay',
             'name' => 'Monetapay',
-            'active_balance' => $this->extractBalance($response, 'AVAILABLE'),
-            'held_balance' => $this->extractBalance($response, 'HOLD'),
+            'active_balance' => $this->extractBalance($response, 'current_balance'),
+            'held_balance' => $this->extractBalance($response, 'current_freeze'),
             'raw' => $response,
         ]];
     }
 
-    private function extractBalance(array $response, string $balanceType): ?float
+    /**
+     * Reads a numeric-string balance field from the `data` object. Returns null
+     * when the field is absent or non-numeric — i.e. a business-error response
+     * (which omits `data`) reads as "disconnected" rather than throwing.
+     */
+    private function extractBalance(array $response, string $key): ?float
     {
-        $infos = $response['balanceInfos'] ?? $response['body']['balanceInfos'] ?? null;
+        $data = $response['data'] ?? $response['body']['data'] ?? null;
 
-        if (! is_array($infos)) {
+        if (! is_array($data)) {
             return null;
         }
 
-        foreach ($infos as $info) {
-            if (($info['balanceType'] ?? null) === $balanceType) {
-                $amount = $info['amount']['value'] ?? $info['amount'] ?? null;
+        $value = $data[$key] ?? null;
 
-                return is_numeric($amount) ? (float) $amount : null;
-            }
-        }
-
-        return null;
+        return is_numeric($value) ? (float) $value : null;
     }
 }

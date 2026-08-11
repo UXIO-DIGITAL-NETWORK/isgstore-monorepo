@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Support\Integration\IntegrationConfig;
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -36,19 +37,29 @@ class MonetapayService
 
     private string $disbursementAesIv;
 
+    private string $aesKey;
+
+    private string $aesIv;
+
     private string $baseUrl;
 
     public function __construct()
     {
-        $this->collectionAppId = (string) config('services.monetapay.collection_app_id', '');
-        $this->disbursementAppId = (string) config('services.monetapay.disbursement_app_id', '');
-        $this->partnerKey = (string) config('services.monetapay.partner_key', '');
-        $this->token = (string) config('services.monetapay.token', '');
-        $this->disbursementPartnerKey = (string) config('services.monetapay.disbursement_partner_key', '');
-        $this->disbursementToken = (string) config('services.monetapay.disbursement_token', '');
-        $this->disbursementAesKey = (string) config('services.monetapay.disbursement_aes_key', '');
-        $this->disbursementAesIv = (string) config('services.monetapay.disbursement_aes_iv', '');
-        $this->baseUrl = config('services.monetapay.is_production')
+        // DB-backed credentials (admin-editable) merged over config/.env defaults.
+        $cfg = IntegrationConfig::for('monetapay');
+
+        $this->collectionAppId = (string) ($cfg['collection_app_id'] ?? '');
+        $this->disbursementAppId = (string) ($cfg['disbursement_app_id'] ?? '');
+        $this->partnerKey = (string) ($cfg['partner_key'] ?? '');
+        $this->token = (string) ($cfg['token'] ?? '');
+        $this->aesKey = (string) ($cfg['aes_key'] ?? '');
+        $this->aesIv = (string) ($cfg['aes_iv'] ?? '');
+        // Disbursement-specific creds still fall back to the collection ones.
+        $this->disbursementPartnerKey = (string) ($cfg['disbursement_partner_key'] ?? $cfg['partner_key'] ?? '');
+        $this->disbursementToken = (string) ($cfg['disbursement_token'] ?? $cfg['token'] ?? '');
+        $this->disbursementAesKey = (string) ($cfg['disbursement_aes_key'] ?? $cfg['aes_key'] ?? '');
+        $this->disbursementAesIv = (string) ($cfg['disbursement_aes_iv'] ?? $cfg['aes_iv'] ?? '');
+        $this->baseUrl = filter_var($cfg['is_production'] ?? false, FILTER_VALIDATE_BOOLEAN)
             ? 'https://api.monetapay.net'
             : 'https://sandbox-api.monetapay.net';
     }
@@ -74,8 +85,8 @@ class MonetapayService
      */
     public function encryptPayload(string $content): string
     {
-        $key = $this->deriveAesParam(config('services.monetapay.aes_key'));
-        $iv = $this->deriveAesParam(config('services.monetapay.aes_iv'));
+        $key = $this->deriveAesParam($this->aesKey);
+        $iv = $this->deriveAesParam($this->aesIv);
 
         $encrypted = openssl_encrypt($content, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $iv);
 
@@ -97,8 +108,8 @@ class MonetapayService
      */
     public function decryptPayload(string $encodedContent): array
     {
-        $key = $this->deriveAesParam(config('services.monetapay.aes_key'));
-        $iv = $this->deriveAesParam(config('services.monetapay.aes_iv'));
+        $key = $this->deriveAesParam($this->aesKey);
+        $iv = $this->deriveAesParam($this->aesIv);
 
         $decrypted = openssl_decrypt(
             base64_decode($encodedContent),
