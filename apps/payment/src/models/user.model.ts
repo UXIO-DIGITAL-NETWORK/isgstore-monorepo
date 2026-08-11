@@ -6,7 +6,7 @@ export interface User {
   id: number;
   role_id: number;
   /**
-   * Lower-cased role name from the API (e.g. "finance", "finance-developer").
+   * Lower-cased role name from the API (e.g. "payment-internal", "payment-admin").
    * This — not role_id — drives which payment-page surface the user sees, since
    * role ids aren't stable across environments.
    */

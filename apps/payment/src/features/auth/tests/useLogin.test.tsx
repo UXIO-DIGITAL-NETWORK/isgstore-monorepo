@@ -62,8 +62,8 @@ describe("useLogin", () => {
       expect(state.token).toBe("at-123");
       expect(state.refreshToken).toBe("rt-456");
       expect(state.user).toEqual(mockUser);
-      // Merchant role → the "merchant" permission (see @/constants/roles).
-      expect(state.permissions).toEqual(["merchant"]);
+      // payment-admin role → the "payment-admin" permission (see @/constants/roles).
+      expect(state.permissions).toEqual(["payment-admin"]);
     });
     await waitFor(() => expect(router.state.location.pathname).toBe("/app/dashboard"));
   });

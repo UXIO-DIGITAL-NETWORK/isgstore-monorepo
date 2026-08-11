@@ -32,5 +32,5 @@ export const requirePermission = (permission: string) => {
   }
 };
 
-export const requireFinance = () => requirePermission("finance");
-export const requireMerchant = () => requirePermission("merchant");
+export const requirePaymentInternal = () => requirePermission("payment-internal");
+export const requirePaymentAdmin = () => requirePermission("payment-admin");

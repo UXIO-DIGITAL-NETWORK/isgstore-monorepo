@@ -3,9 +3,15 @@ import { API_VERSION } from "@/config/env";
 import { unwrapList, type ListParams, type ListResult } from "@/lib/list";
 import type { ApiResponse } from "@/types/api.type";
 import type { Withdrawal } from "@/types/withdrawal.type";
-import type { FinanceDashboard, FinanceMerchant, FinanceTransaction } from "../types/finance.type";
+import type {
+  AdminFeeSetting,
+  ChannelFee,
+  FinanceDashboard,
+  FinanceMerchant,
+  FinanceTransaction,
+} from "../types/finance.type";
 
-const BASE = `${API_VERSION}/finance`;
+const BASE = `${API_VERSION}/payment-internal`;
 
 export const financeService = {
   dashboard: async (): Promise<FinanceDashboard> => {
@@ -35,6 +41,30 @@ export const financeService = {
 
   reject: async (id: number, reason?: string): Promise<Withdrawal> => {
     const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals/${id}/reject`, { reason });
+    return res.data;
+  },
+
+  // ── Settings ──────────────────────────────────────────────────────────────
+  channels: async (): Promise<ChannelFee[]> => {
+    const res: ApiResponse<ChannelFee[]> = await api.get(`${BASE}/channels`);
+    return res.data;
+  },
+
+  updateChannel: async (
+    id: number,
+    payload: Partial<Pick<ChannelFee, "fee_flat" | "fee_percent" | "is_active">>,
+  ): Promise<ChannelFee> => {
+    const res: ApiResponse<ChannelFee> = await api.put(`${BASE}/channels/${id}`, payload);
+    return res.data;
+  },
+
+  adminFee: async (): Promise<AdminFeeSetting> => {
+    const res: ApiResponse<AdminFeeSetting> = await api.get(`${BASE}/settings/admin-fee`);
+    return res.data;
+  },
+
+  updateAdminFee: async (payload: AdminFeeSetting): Promise<AdminFeeSetting> => {
+    const res: ApiResponse<AdminFeeSetting> = await api.put(`${BASE}/settings/admin-fee`, payload);
     return res.data;
   },
 };

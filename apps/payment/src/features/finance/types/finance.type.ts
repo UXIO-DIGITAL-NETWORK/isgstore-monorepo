@@ -9,6 +9,22 @@ export interface FinanceDashboard {
   pending_withdrawals_amount: number;
 }
 
+export interface ChannelFee {
+  id: number;
+  name: string;
+  channel_code: string;
+  payment_type: string;
+  min_amount: number;
+  fee_flat: number;
+  fee_percent: number;
+  is_active: boolean;
+}
+
+export interface AdminFeeSetting {
+  type: "percent" | "fixed";
+  value: number;
+}
+
 export interface FinanceMerchant {
   id: number;
   name: string;

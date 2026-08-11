@@ -10,7 +10,7 @@ import type {
   Withdrawal,
 } from "../types/merchant.type";
 
-const BASE = `${API_VERSION}/merchant`;
+const BASE = `${API_VERSION}/payment-admin`;
 
 export const merchantService = {
   dashboard: async (): Promise<MerchantDashboard> => {
