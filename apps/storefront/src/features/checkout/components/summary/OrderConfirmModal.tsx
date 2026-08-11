@@ -18,6 +18,10 @@ interface Props {
   productName: string;
   price: number;
   paymentName?: string;
+  /** "Biaya Metode Pembayaran" — hidden when 0. */
+  channelFee?: number;
+  /** "Biaya Admin" — hidden when 0. */
+  adminMarkup?: number;
   total: number;
 }
 
@@ -94,6 +98,8 @@ export default function OrderConfirmModal({
   productName,
   price,
   paymentName,
+  channelFee = 0,
+  adminMarkup = 0,
   total,
 }: Props): React.ReactPortal | null {
   const { t, i18n } = useTranslation("checkout");
@@ -172,6 +178,20 @@ export default function OrderConfirmModal({
             label={t("confirmModal.method")}
             value={paymentName ?? "-"}
           />
+          {channelFee > 0 && (
+            <Field
+              label={t("confirmModal.feeMethod")}
+              value={formatCurrency(channelFee, locale)}
+              numeric
+            />
+          )}
+          {adminMarkup > 0 && (
+            <Field
+              label={t("confirmModal.adminFee")}
+              value={formatCurrency(adminMarkup, locale)}
+              numeric
+            />
+          )}
 
           {/* Divider before total */}
           <Box className="h-px bg-white/10" />

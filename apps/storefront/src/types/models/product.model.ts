@@ -35,3 +35,15 @@ export interface PaymentChannelModel {
   /** Spendable wallet amount — only set for the `balance` channel. */
   balance: number | null;
 }
+
+/** Global admin-fee markup ("Biaya Admin"), set by payment-internal. */
+export interface AdminFeeSettingModel {
+  type: "percent" | "fixed";
+  value: number;
+}
+
+/** `GET /v1/storefront/payment-channels` — channels plus the global markup. */
+export interface PaymentChannelsResponse {
+  admin_fee: AdminFeeSettingModel;
+  channels: PaymentChannelModel[];
+}

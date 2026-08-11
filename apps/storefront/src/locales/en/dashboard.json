@@ -217,6 +217,8 @@
   "transactionHistory": {
     "title": "TRANSACTION HISTORY",
     "subtitle": "Monitor all your purchase history and transaction status.",
+    "feeMethod": "Method Fee",
+    "adminFee": "Admin Fee",
     "searchCard": {
       "title": "Search Invoice",
       "placeholder": "e.g. INV-12345678",

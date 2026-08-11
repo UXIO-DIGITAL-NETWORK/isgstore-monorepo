@@ -25,7 +25,7 @@ import {
   usePaymentChannelsQuery,
   useValidateGameIdQuery,
 } from "@/features/checkout/hooks/useCheckoutQueries";
-import { calculateAdminFee } from "@/features/checkout/lib/mappers";
+import { calculateAdminMarkup, calculateChannelFee } from "@/features/checkout/lib/mappers";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { GameInfo, PaymentOption } from "@/features/checkout/types/checkout.type";
@@ -51,6 +51,7 @@ export default function CheckoutPage(): React.JSX.Element {
   const categories = useMemo(() => productsQuery.data?.categories ?? [], [productsQuery.data]);
   const paymentGroups = useMemo(() => channelsQuery.data?.groups ?? [], [channelsQuery.data]);
   const memberCredits = channelsQuery.data?.memberCredits ?? null;
+  const adminFeeSetting = channelsQuery.data?.adminFee;
 
   const {
     selectedPackageId,
@@ -107,9 +108,10 @@ export default function CheckoutPage(): React.JSX.Element {
     return null;
   }, [selectedPaymentId, memberCredits, paymentGroups, t]);
 
-  // Mirrors CheckoutAction's fee maths so the confirmation modal shows the
-  // number the customer is about to be charged, not the package price alone.
-  const adminFee = selectedPayment ? calculateAdminFee(selectedPayment, totalPrice) : 0;
+  // Mirrors CheckoutAction's fee maths so the summary/modal show the exact
+  // total the customer is about to be charged: package + channel fee + markup.
+  const channelFee = selectedPayment ? calculateChannelFee(selectedPayment, totalPrice) : 0;
+  const adminMarkup = selectedPayment ? calculateAdminMarkup(adminFeeSetting, totalPrice) : 0;
 
   // Held here rather than inside PromoCode so the code reaches checkout and
   // the summary can show what it is worth. The server re-resolves it, so this
@@ -152,7 +154,8 @@ export default function CheckoutPage(): React.JSX.Element {
             username: nickname ?? "",
             paymentName: result.payment.channel,
             price: result.product.price,
-            adminFee: result.payment.admin_fee,
+            channelFee: result.payment.channel_fee,
+            adminFee: result.payment.admin_markup,
             total: result.payment.amount,
             createdAt: Date.now(),
           });
@@ -246,7 +249,8 @@ export default function CheckoutPage(): React.JSX.Element {
             <OrderSummary
               selectedPackage={selectedPackage}
               totalPrice={totalPrice}
-              adminFee={adminFee}
+              channelFee={channelFee}
+              adminMarkup={adminMarkup}
               gameThumbnail={game.thumbnail}
               gameName={game.name}
               selectedPaymentName={selectedPayment?.name}

@@ -217,6 +217,8 @@
   "transactionHistory": {
     "title": "RIWAYAT TRANSAKSI",
     "subtitle": "Pantau semua riwayat pembelian dan status transaksi Anda.",
+    "feeMethod": "Biaya Metode",
+    "adminFee": "Biaya Admin",
     "searchCard": {
       "title": "Cari Invoice",
       "placeholder": "Contoh: INV-12345678",

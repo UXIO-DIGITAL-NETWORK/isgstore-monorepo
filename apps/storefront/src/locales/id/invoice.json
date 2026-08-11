@@ -14,6 +14,7 @@
     "serverId": "Server ID",
     "username": "Username",
     "price": "Harga",
+    "feeMethod": "Biaya Metode Pembayaran",
     "adminFee": "Biaya Admin",
     "totalPayment": "Total Pembayaran"
   },

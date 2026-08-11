@@ -140,7 +140,9 @@ export interface CheckoutResult {
     channel: string;
     type: string;
     amount: number;
-    admin_fee: number;
+    admin_fee: number; // combined total (back-compat)
+    channel_fee: number; // "Biaya Metode Pembayaran"
+    admin_markup: number; // "Biaya Admin"
     status: TransactionStatus;
     instructions: PaymentInstructions | null;
   };

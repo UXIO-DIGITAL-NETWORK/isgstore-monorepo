@@ -11,7 +11,10 @@ export interface PendingOrder {
   username: string;
   paymentName: string;
   price: number;
-  adminFee: number; // TODO: replace with backend-provided value
+  /** "Biaya Metode Pembayaran" — the payment-channel fee. */
+  channelFee: number;
+  /** "Biaya Admin" — the global markup. */
+  adminFee: number;
   total: number;
   createdAt: number;
 }

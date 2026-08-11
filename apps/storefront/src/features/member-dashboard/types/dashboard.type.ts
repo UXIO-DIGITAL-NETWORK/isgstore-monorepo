@@ -45,6 +45,9 @@ export interface TransactionHistoryRow {
   serviceDetail: string; // small grey sub-line (e.g. product detail)
   target: string;        // game player id, e.g. "353850607-9432"
   amount: number;
+  /** Fee breakdown for transparency; 0 when not applicable. */
+  channelFee: number;
+  adminFee: number;
   date: string;          // ISO date string
   status: RecentTransactionStatus;
   paymentMethod: TransactionPaymentMethod;

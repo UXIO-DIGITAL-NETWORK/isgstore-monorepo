@@ -107,14 +107,24 @@ export default function TransactionHistoryTable({ rows }: Props): React.JSX.Elem
                   </Text>
                 </Box>
 
-                {/* Price */}
+                {/* Price + fee breakdown */}
                 <Box as="td" className="px-4 py-3.5 align-middle text-right">
                   <Text
                     as="span"
-                    className="font-plex font-bold text-[13px] text-white leading-none"
+                    className="font-plex font-bold text-[13px] text-white leading-none block"
                   >
                     {formatCurrency(row.amount, locale)}
                   </Text>
+                  {row.channelFee > 0 && (
+                    <Text as="span" className="font-inter text-[11px] text-white/40 leading-tight block mt-1">
+                      {t("transactionHistory.feeMethod")}: {formatCurrency(row.channelFee, locale)}
+                    </Text>
+                  )}
+                  {row.adminFee > 0 && (
+                    <Text as="span" className="font-inter text-[11px] text-white/40 leading-tight block">
+                      {t("transactionHistory.adminFee")}: {formatCurrency(row.adminFee, locale)}
+                    </Text>
+                  )}
                 </Box>
 
                 {/* Date */}

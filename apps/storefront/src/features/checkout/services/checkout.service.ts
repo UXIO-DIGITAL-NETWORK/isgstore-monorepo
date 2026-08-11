@@ -2,7 +2,7 @@ import { api } from "@/config/axios";
 import { API_VERSION } from "@/config/env";
 import type { ApiResponse } from "@/types/api.type";
 import type { GameDetailModel } from "@/types/models/game.model";
-import type { GameProductsResponse, PaymentChannelModel } from "@/types/models/product.model";
+import type { GameProductsResponse, PaymentChannelsResponse } from "@/types/models/product.model";
 import type {
   CheckoutPayload,
   CheckoutResult,
@@ -31,7 +31,7 @@ export const checkoutService = {
    * `/v1/payment-channels` — the two cannot share a URI, and the admin route
    * is auth-gated, so the old path would 401 every anonymous checkout.
    */
-  paymentChannels: async (): Promise<ApiResponse<PaymentChannelModel[]>> => {
+  paymentChannels: async (): Promise<ApiResponse<PaymentChannelsResponse>> => {
     return await api.get(`${API_VERSION}/storefront/payment-channels`);
   },
 

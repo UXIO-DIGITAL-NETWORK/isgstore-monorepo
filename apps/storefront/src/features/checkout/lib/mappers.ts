@@ -2,7 +2,7 @@ import { MEMBER_CREDITS_LOGO, resolvePaymentLogo } from "@/constants/paymentLogo
 import placeholderThumbnail from "@/assets/images/games/games_1.png";
 import placeholderLogo from "@/assets/images/game_logo/mobile_legends.png";
 import type { GameDetailModel } from "@/types/models/game.model";
-import type { GameProductsResponse, PaymentChannelModel } from "@/types/models/product.model";
+import type { AdminFeeSettingModel, GameProductsResponse, PaymentChannelModel } from "@/types/models/product.model";
 import type {
   CategoryTab,
   DiamondPackage,
@@ -123,9 +123,16 @@ export function toReviews(response: GameReviewsResponse): Review[] {
   }));
 }
 
-/** Admin fee for a channel, mirroring CheckoutAction's fee calculation. */
-export function calculateAdminFee(option: Pick<PaymentOption, "feeFlat" | "feePercent">, price: number): number {
+/** Channel fee ("Biaya Metode Pembayaran"), mirroring CheckoutAction's maths. */
+export function calculateChannelFee(option: Pick<PaymentOption, "feeFlat" | "feePercent">, price: number): number {
   const percent = Math.max(0, Math.min(100, option.feePercent));
 
   return option.feeFlat + Math.round((price * percent) / 100);
+}
+
+/** Global admin markup ("Biaya Admin"), mirroring AdminFeeSetting::compute(). */
+export function calculateAdminMarkup(setting: AdminFeeSettingModel | undefined, price: number): number {
+  if (!setting) return 0;
+
+  return setting.type === "percent" ? Math.round((price * setting.value) / 100) : setting.value;
 }
