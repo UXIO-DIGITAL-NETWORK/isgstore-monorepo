@@ -38,8 +38,9 @@ export const financeService = {
     id: number,
     { method = "manual", proof }: { method?: "manual" | "monetapay"; proof?: File } = {},
   ): Promise<Withdrawal> => {
-    // Manual settlement carries the bukti transfer, so it goes as multipart;
-    // axios sets the boundary header itself once the body is a FormData.
+    // Manual settlement carries the bukti transfer, so it goes as multipart.
+    // The axios request interceptor drops the pinned JSON Content-Type for
+    // FormData so the browser sets `multipart/form-data; boundary=…`.
     const form = new FormData();
     form.append("method", method);
     if (proof) form.append("proof", proof);
