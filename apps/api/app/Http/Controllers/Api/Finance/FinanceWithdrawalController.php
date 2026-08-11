@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Finance;
 use App\Actions\Withdrawal\ApproveWithdrawalAction;
 use App\Actions\Withdrawal\RejectWithdrawalAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Withdrawal\ApproveWithdrawalRequest;
 use App\Http\Resources\Withdrawal\WithdrawalResource;
 use App\Models\Withdrawal;
 use App\Traits\ApiResponse;
@@ -35,15 +36,18 @@ class FinanceWithdrawalController extends Controller
         );
     }
 
-    public function approve(Request $request, Withdrawal $withdrawal, ApproveWithdrawalAction $action)
+    public function approve(ApproveWithdrawalRequest $request, Withdrawal $withdrawal, ApproveWithdrawalAction $action)
     {
-        $method = $request->input('method', 'manual');
-        if (! in_array($method, ['manual', 'monetapay'], true)) {
-            return $this->errorResponse('Metode persetujuan tidak valid.', 422);
-        }
+        $method = $request->method();
+
+        // Store the bukti transfer (transfer receipt) on the public disk, same
+        // pattern as banner images. Only a manual payout carries one.
+        $proofPath = $request->hasFile('proof')
+            ? $request->file('proof')->store('withdrawals/proofs', 'public')
+            : null;
 
         try {
-            $updated = $action->execute($withdrawal, $request->user(), $method);
+            $updated = $action->execute($withdrawal, $request->user(), $method, $proofPath);
         } catch (RuntimeException $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }
