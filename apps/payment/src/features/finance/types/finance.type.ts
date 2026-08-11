@@ -42,6 +42,8 @@ export interface FinanceTransaction {
   merchant: { id: number; name: string } | null;
   amount_base: number;
   amount_fee: number;
+  channel_fee: number;
+  admin_fee: number;
   amount_total: number;
   gateway_fee: number;
   platform_profit: number;
