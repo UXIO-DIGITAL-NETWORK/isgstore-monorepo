@@ -49,4 +49,51 @@ describe("unwrapPaginated", () => {
     expect(result.meta.total).toBe(1);
     expect(result.links.next).toBeNull();
   });
+
+  // A bare `successResponse($paginator)` sends Laravel's FLAT paginator (no
+  // nested `meta`). This is what made /admin/users 503: the caller read
+  // `data.meta.total` on an object whose `meta` was undefined.
+  it("synthesises meta from a flat Laravel paginator (no nested meta)", () => {
+    const envelope = {
+      status: "success",
+      code: 200,
+      message: "ok",
+      data: {
+        current_page: 2,
+        last_page: 5,
+        per_page: 10,
+        total: 42,
+        from: 11,
+        to: 20,
+        data: [{ id: 7, name: "User 7" }],
+      },
+    };
+
+    const result = unwrapPaginated(envelope, (row) => ({ id: toRowId(row.id), label: row.name }));
+
+    expect(result.data).toEqual([{ id: "7", label: "User 7" }]);
+    expect(result.meta.total).toBe(42);
+    expect(result.meta.last_page).toBe(5);
+    expect(result.meta.current_page).toBe(2);
+    // A real `meta` object is always present, so `data.meta.total` never throws.
+    expect(result.meta).toBeDefined();
+    expect(result.links).toBeDefined();
+  });
+
+  it("treats a plain array (or missing body) as a single page without throwing", () => {
+    const fromArray = unwrapPaginated({ data: [{ id: 1, name: "A" }] }, (row) => ({
+      id: toRowId(row.id),
+      label: row.name,
+    }));
+    expect(fromArray.data).toHaveLength(1);
+    expect(fromArray.meta.total).toBe(1);
+    expect(fromArray.meta.last_page).toBe(1);
+
+    const fromNull = unwrapPaginated({ data: null }, (row: { id: number; name: string }) => ({
+      id: toRowId(row.id),
+      label: row.name,
+    }));
+    expect(fromNull.data).toEqual([]);
+    expect(fromNull.meta.total).toBe(0);
+  });
 });
