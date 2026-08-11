@@ -17,7 +17,7 @@ describe("merchantService", () => {
 
     const dashboard = await merchantService.dashboard();
 
-    expect(api.get).toHaveBeenCalledWith("/v1/merchant/dashboard");
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/dashboard");
     expect(dashboard.saldo_aktif).toBe(60000);
   });
 
@@ -59,7 +59,7 @@ describe("merchantService", () => {
       account_name: "Toko",
     });
 
-    expect(api.post).toHaveBeenCalledWith("/v1/merchant/withdrawals", expect.objectContaining({ amount: 40000 }));
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/withdrawals", expect.objectContaining({ amount: 40000 }));
     expect(created.status).toBe("PENDING");
   });
 });

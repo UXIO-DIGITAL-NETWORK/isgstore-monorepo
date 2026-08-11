@@ -1,6 +1,6 @@
 import { type ComponentType } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { ArrowDownToLine, LayoutGrid, Receipt, Store, Wallet } from "lucide-react";
+import { ArrowDownToLine, Coins, LayoutGrid, Percent, Receipt, Store, Wallet } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Link } from "@/components/common/Link";
@@ -22,25 +22,29 @@ import { cn } from "@/lib/utils";
 
 type NavItem = { label: string; href: string; icon: ComponentType<{ className?: string }> };
 
-const MERCHANT_NAV: NavItem[] = [
+// payment-admin (client): own data + request withdrawals.
+const PAYMENT_ADMIN_NAV: NavItem[] = [
   { label: "Dashboard", href: "/app/dashboard", icon: LayoutGrid },
-  { label: "Transaksi", href: "/app/transactions", icon: Receipt },
-  { label: "Penarikan", href: "/app/withdrawals", icon: ArrowDownToLine },
-  { label: "Mutasi", href: "/app/mutations", icon: Wallet },
+  { label: "Transaksi", href: "/app/payment-admin/transactions", icon: Receipt },
+  { label: "Penarikan", href: "/app/payment-admin/withdrawals", icon: ArrowDownToLine },
+  { label: "Mutasi", href: "/app/payment-admin/mutations", icon: Wallet },
 ];
 
-const FINANCE_NAV: NavItem[] = [
+// payment-internal (kita): all merchants, verification, and fee settings.
+const PAYMENT_INTERNAL_NAV: NavItem[] = [
   { label: "Dashboard", href: "/app/dashboard", icon: LayoutGrid },
-  { label: "Merchant", href: "/app/finance/merchants", icon: Store },
-  { label: "Transaksi", href: "/app/finance/transactions", icon: Receipt },
-  { label: "Penarikan", href: "/app/finance/withdrawals", icon: ArrowDownToLine },
+  { label: "Merchant", href: "/app/payment-internal/merchants", icon: Store },
+  { label: "Transaksi", href: "/app/payment-internal/transactions", icon: Receipt },
+  { label: "Verifikasi Penarikan", href: "/app/payment-internal/withdrawals", icon: ArrowDownToLine },
+  { label: "Biaya Channel", href: "/app/payment-internal/channels", icon: Coins },
+  { label: "Biaya Admin", href: "/app/payment-internal/admin-fee", icon: Percent },
 ];
 
 export function DashboardSidebar() {
   const { pathname } = useLocation();
   const user = useAuthStore((state) => state.user);
-  const isFinance = user?.role === ROLES.FINANCE;
-  const items = isFinance ? FINANCE_NAV : MERCHANT_NAV;
+  const isInternal = user?.role === ROLES.INTERNAL;
+  const items = isInternal ? PAYMENT_INTERNAL_NAV : PAYMENT_ADMIN_NAV;
 
   return (
     <Sidebar>
@@ -60,7 +64,7 @@ export function DashboardSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isFinance ? "Finance" : "Merchant"}</SidebarGroupLabel>
+          <SidebarGroupLabel>{isInternal ? "Payment Internal" : "Payment Admin"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {

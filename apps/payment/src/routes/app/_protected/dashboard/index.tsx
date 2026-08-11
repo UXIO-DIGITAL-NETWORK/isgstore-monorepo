@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 // Shared route; the shell picks the dashboard for the signed-in role.
 function RoleDashboard() {
   const role = useAuthStore((state) => state.user?.role);
-  return role === ROLES.FINANCE ? <FinanceDashboardPage /> : <MerchantDashboardPage />;
+  return role === ROLES.INTERNAL ? <FinanceDashboardPage /> : <MerchantDashboardPage />;
 }
 
 export const Route = createFileRoute("/app/_protected/dashboard/")({

@@ -22,7 +22,7 @@ const cookieOptions = (remember: boolean) => ({
 });
 
 // Permissions are derived from the role NAME (see @/constants/roles) — the two
-// payment-page roles are "finance" (kita) and "finance-developer" (client).
+// payment-page roles are "payment-internal" (kita) and "payment-admin" (client).
 
 // js-cookie cannot read a cookie's expiry back, so the "remember me" choice is
 // persisted alongside the session. Without it a token refresh would have to

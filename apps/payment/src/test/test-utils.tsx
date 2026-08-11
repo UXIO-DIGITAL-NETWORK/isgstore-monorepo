@@ -7,14 +7,14 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import type { User } from "@/models/user.model";
 
 /**
- * Canonical mock login user for the payment page. Defaults to the merchant
- * ("finance-developer") role; pass `{ role: "finance" }` for the kita view.
+ * Canonical mock login user for the payment page. Defaults to the client
+ * ("payment-admin") role; pass `{ role: "payment-internal" }` for the kita view.
  */
 export function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 1,
     role_id: 7,
-    role: "finance-developer",
+    role: "payment-admin",
     name: "Dimas Sufyan",
     email: "dimas@udn.com",
     phone: "6281234567890",
