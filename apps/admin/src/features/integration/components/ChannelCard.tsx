@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Eye, MoreVertical, Pencil, RefreshCw, Wifi, WifiOff } from "lucide-react";
-import { toast } from "sonner";
 
 import { Box } from "@/components/common/Box";
+import { Can } from "@/components/common/Can";
 import { Heading } from "@/components/common/Heading";
 import { Image } from "@/components/common/Image";
 import { Text } from "@/components/common/Text";
@@ -14,18 +15,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency } from "@/utils/currency";
+import { usePingChannel } from "../hooks/useIntegration";
 import type { IntegrationChannel } from "../types/integration.type";
+import { EditConnectionDialog } from "./EditConnectionDialog";
+import { ViewDetailsDialog } from "./ViewDetailsDialog";
 
 interface ChannelCardProps {
   channel: IntegrationChannel;
 }
 
-// Row-menu items are inferred, not confirmed by any reference (no reference
-// shows the menu open) — a sensible default: re-check connectivity now,
-// edit the connection's config, or view its full detail. No API this phase,
-// so each action is a toast stub rather than a real mutation.
 export function ChannelCard({ channel }: ChannelCardProps) {
   const isConnected = channel.connection_status === "connected";
+  const provider = channel.provider ?? channel.id;
+
+  const pingChannel = usePingChannel();
+  const [editOpen, setEditOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
     <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4">
@@ -96,18 +101,36 @@ export function ChannelCard({ channel }: ChannelCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => toast.info(`Pinging ${channel.name}...`)}>
+            <DropdownMenuItem
+              disabled={pingChannel.isPending}
+              onClick={() => pingChannel.mutate(provider)}
+            >
               <RefreshCw /> Ping / refresh now
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.info(`Edit connection for ${channel.name}`)}>
-              <Pencil /> Edit connection
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.info(`Viewing details for ${channel.name}`)}>
+            <Can permission="integration.manage">
+              <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                <Pencil /> Edit connection
+              </DropdownMenuItem>
+            </Can>
+            <DropdownMenuItem onClick={() => setDetailsOpen(true)}>
               <Eye /> View details
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </Box>
+
+      <EditConnectionDialog
+        provider={provider}
+        channelName={channel.name}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+      <ViewDetailsDialog
+        provider={provider}
+        channelName={channel.name}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
     </Box>
   );
 }
