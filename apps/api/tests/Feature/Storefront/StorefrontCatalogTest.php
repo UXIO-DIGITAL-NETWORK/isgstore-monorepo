@@ -154,7 +154,7 @@ class StorefrontCatalogTest extends TestCase
         PaymentChannel::factory()->create(['channel_code' => 'qris', 'payment_type' => 'qris', 'is_active' => true]);
         PaymentChannel::factory()->balance()->create();
 
-        $codes = collect($this->getJson('/api/v1/storefront/payment-channels')->assertOk()->json('data'))
+        $codes = collect($this->getJson('/api/v1/storefront/payment-channels')->assertOk()->json('data.channels'))
             ->pluck('channel_code');
 
         $this->assertContains('qris', $codes->all());
@@ -170,7 +170,7 @@ class StorefrontCatalogTest extends TestCase
         $role = Role::factory()->create(['name' => 'Member']);
         Sanctum::actingAs(User::factory()->create(['role_id' => $role->id, 'balance' => 50000]));
 
-        $channels = collect($this->getJson('/api/v1/storefront/payment-channels')->assertOk()->json('data'));
+        $channels = collect($this->getJson('/api/v1/storefront/payment-channels')->assertOk()->json('data.channels'));
         $balance = $channels->firstWhere('channel_code', 'balance');
 
         $this->assertNotNull($balance);

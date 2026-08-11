@@ -31,6 +31,8 @@ class GenerateInvoicePdfAction
             'paymentName' => $t->paymentChannel?->name,
             'subtotal' => (int) $t->amount_base,
             'fee' => (int) $t->amount_fee,
+            'channelFee' => (int) $t->channel_fee,
+            'adminFee' => (int) $t->admin_markup,
             'discount' => (int) $t->discount_amount,
             'total' => (int) $t->amount_total,
         ];

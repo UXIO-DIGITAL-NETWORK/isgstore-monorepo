@@ -90,6 +90,10 @@ class ListMemberTransactionsAction
             'target' => trim($transaction->target_uid.($transaction->target_server ? '-'.$transaction->target_server : '')),
             'target_nickname' => $transaction->target_nickname,
             'amount' => (int) $transaction->amount_total,
+            // Fee breakdown for transparency (customer never sees margin/supplier).
+            'base' => (int) $transaction->amount_base,
+            'channel_fee' => (int) $transaction->channel_fee,
+            'admin_fee' => (int) $transaction->admin_markup,
             'status' => $transaction->status?->value,
             'payment_method' => $transaction->paymentChannel?->payment_type,
             'payment_channel' => $transaction->paymentChannel?->name,

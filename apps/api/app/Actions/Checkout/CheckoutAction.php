@@ -138,7 +138,8 @@ class CheckoutAction
             // instance charges exactly the product price.
             $feePercent = max(0, min(100, (float) $channel->fee_percent));
             $channelFee = $channel->fee_flat + (int) round($sellingPrice * ($feePercent / 100));
-            $adminFee = $channelFee + AdminFeeSetting::compute($sellingPrice);
+            $adminMarkup = AdminFeeSetting::compute($sellingPrice);
+            $adminFee = $channelFee + $adminMarkup; // combined total (back-compat)
             $grossAmount = $sellingPrice + $adminFee;
 
             if ($grossAmount < $channel->min_amount) {
@@ -173,6 +174,8 @@ class CheckoutAction
                 'promo_id' => $promo?->id,
                 'amount_base' => $sellingPrice,
                 'amount_fee' => $adminFee,
+                'channel_fee' => $channelFee,
+                'admin_markup' => $adminMarkup,
                 'discount_amount' => $discount,
                 'amount_total' => $grossAmount,
                 'margin' => $margin,
@@ -199,6 +202,8 @@ class CheckoutAction
                 'reference_id' => $referenceId,
                 'gross_amount' => $grossAmount,
                 'admin_fee' => $adminFee,
+                'channel_fee' => $channelFee,
+                'admin_markup' => $adminMarkup,
                 'status' => PaymentStatus::PENDING,
             ]);
 
@@ -345,7 +350,9 @@ class CheckoutAction
                     'channel' => $channel->name,
                     'type' => $channel->payment_type,
                     'amount' => $grossAmount,
-                    'admin_fee' => $adminFee,
+                    'admin_fee' => $adminFee,      // combined total (back-compat)
+                    'channel_fee' => $channelFee,  // "Biaya Metode Pembayaran"
+                    'admin_markup' => $adminMarkup, // "Biaya Admin"
                     'status' => $transactionStatus,
                     'instructions' => $paymentInstructions ?: null,
                 ],

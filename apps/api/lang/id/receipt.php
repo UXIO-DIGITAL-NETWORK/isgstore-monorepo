@@ -21,6 +21,8 @@ return [
     'section_payment' => 'Ringkasan Pembayaran',
     'label_subtotal' => 'Subtotal',
     'label_fee' => 'Biaya Layanan',
+    'label_channel_fee' => 'Biaya Metode Pembayaran',
+    'label_admin_fee' => 'Biaya Admin',
     'label_discount' => 'Diskon',
     'label_total' => 'Total Dibayar',
 

@@ -6,9 +6,12 @@ namespace App\Actions\Storefront;
 
 use App\Models\PaymentChannel;
 use App\Models\User;
+use App\Support\Pricing\AdminFeeSetting;
 
 /**
- * Payment channels the caller can actually complete a purchase with.
+ * Payment channels the caller can actually complete a purchase with, plus the
+ * global admin-fee markup so the storefront can show the same total the backend
+ * will charge (channel fee + admin markup) before checkout.
  *
  * `balance` is member-only — CheckoutAction rejects it for guests — so offering
  * it to an anonymous visitor would be a dead end. It is filtered here rather
@@ -18,7 +21,7 @@ class ListPaymentChannelsAction
 {
     private const MEMBER_ONLY_CHANNELS = ['balance'];
 
-    /** @return list<array<string, mixed>> */
+    /** @return array{admin_fee: array{type: string, value: int}, channels: list<array<string, mixed>>} */
     public function execute(?User $user): array
     {
         $query = PaymentChannel::query()->where('is_active', true);
@@ -27,7 +30,7 @@ class ListPaymentChannelsAction
             $query->whereNotIn('channel_code', self::MEMBER_ONLY_CHANNELS);
         }
 
-        return $query
+        $channels = $query
             ->orderBy('payment_type')
             // by id, not name — keeps seeder order so the "[SIT]" test channels
             // sort last instead of first.
@@ -47,5 +50,10 @@ class ListPaymentChannelsAction
             ])
             ->values()
             ->all();
+
+        return [
+            'admin_fee' => AdminFeeSetting::current(),
+            'channels' => $channels,
+        ];
     }
 }
