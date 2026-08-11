@@ -21,6 +21,8 @@ return [
     'section_payment' => 'Payment Summary',
     'label_subtotal' => 'Subtotal',
     'label_fee' => 'Service Fee',
+    'label_channel_fee' => 'Payment Method Fee',
+    'label_admin_fee' => 'Admin Fee',
     'label_discount' => 'Discount',
     'label_total' => 'Total Paid',
 

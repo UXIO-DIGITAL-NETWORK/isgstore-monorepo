@@ -53,11 +53,14 @@ class TrackOrdersAction
             ])
             ->latest('id')
             ->limit(self::LIMIT)
-            ->get(['id', 'invoice_number', 'product_id', 'amount_total', 'status', 'created_at'])
+            ->get(['id', 'invoice_number', 'product_id', 'amount_base', 'channel_fee', 'admin_markup', 'amount_total', 'status', 'created_at'])
             ->map(fn (Transaction $transaction) => [
                 'invoice_number' => $transaction->invoice_number,
                 'service' => $transaction->product?->name,
                 'amount' => (int) $transaction->amount_total,
+                'base' => (int) $transaction->amount_base,
+                'channel_fee' => (int) $transaction->channel_fee,
+                'admin_fee' => (int) $transaction->admin_markup,
                 'status' => $transaction->status?->value,
                 'game_id' => $transaction->product?->category_id,
                 'game_name' => $transaction->product?->category?->name,

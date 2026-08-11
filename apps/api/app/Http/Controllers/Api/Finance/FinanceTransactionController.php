@@ -42,6 +42,8 @@ class FinanceTransactionController extends Controller
                 'merchant' => $t->merchant ? ['id' => $t->merchant->id, 'name' => $t->merchant->name] : null,
                 'amount_base' => (int) $t->amount_base,
                 'amount_fee' => (int) $t->amount_fee,
+                'channel_fee' => (int) $t->channel_fee,
+                'admin_fee' => (int) $t->admin_markup,
                 'amount_total' => (int) $t->amount_total,
                 'gateway_fee' => (int) ($t->payment?->gateway_fee ?? 0),
                 'platform_profit' => (int) $t->amount_fee - (int) ($t->payment?->gateway_fee ?? 0),
