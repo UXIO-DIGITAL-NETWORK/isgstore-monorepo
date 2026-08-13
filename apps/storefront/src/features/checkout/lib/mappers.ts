@@ -54,17 +54,21 @@ export function toCategoryTabs(response: GameProductsResponse): CategoryTab[] {
   return response.groups.map((group) => ({ key: group, label: group }));
 }
 
-/** API `payment_type` → the group key the payment section renders. */
-const GROUP_BY_PAYMENT_TYPE: Record<PaymentChannelModel["payment_type"], PaymentGroupType> = {
+/**
+ * API `payment_type` → the group key the payment section renders.
+ *
+ * Only the three offered categories (VA / e-wallet / QRIS) are mapped — the
+ * backend already omits everything else from the storefront list, and any
+ * unmapped type is dropped by `toPaymentGroups`, so nothing else can render.
+ */
+const GROUP_BY_PAYMENT_TYPE: Partial<Record<PaymentChannelModel["payment_type"], PaymentGroupType>> = {
   ewallet: "ewallet",
   qris: "qris",
   virtual_account: "va",
-  convenience_store: "retail",
-  payment_link: "link",
 };
 
 /** Display order of the groups, matching the original mock ordering. */
-const GROUP_ORDER: PaymentGroupType[] = ["ewallet", "va", "qris", "retail", "link"];
+const GROUP_ORDER: PaymentGroupType[] = ["ewallet", "va", "qris"];
 
 export function toPaymentGroups(channels: PaymentChannelModel[]): PaymentGroup[] {
   const byGroup = new Map<PaymentGroupType, PaymentOption[]>();

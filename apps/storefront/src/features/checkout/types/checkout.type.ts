@@ -50,7 +50,7 @@ export interface MemberCredits {
   channelId: number;
 }
 
-export type PaymentGroupType = "ewallet" | "qris" | "va" | "retail" | "link";
+export type PaymentGroupType = "ewallet" | "qris" | "va";
 
 export interface PaymentGroup {
   type: PaymentGroupType;
