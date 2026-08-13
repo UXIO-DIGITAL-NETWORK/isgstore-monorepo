@@ -3,14 +3,19 @@
 namespace App\Http\Controllers\Api\Finance;
 
 use App\Http\Controllers\Controller;
-use App\Models\Transaction;
+use App\Queries\UnifiedTransactionQuery;
 use App\Traits\ApiResponse;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 /**
- * Every transaction, full financial breakdown — kita sees the split the
- * merchant projection deliberately hides (admin fee, gateway fee, own profit).
+ * Every client's money movements, full financial breakdown — kita sees the
+ * split the merchant projection deliberately hides (admin fee, gateway fee,
+ * own profit). `type=all|sale|service` picks the tab; `merchant_id` narrows to
+ * one client.
+ *
+ * `direction` stays client-relative here too ("in" = money into the client),
+ * matching what the "Nett Merchant" column has always meant on this screen.
  */
 class FinanceTransactionController extends Controller
 {
@@ -19,40 +24,39 @@ class FinanceTransactionController extends Controller
     public function index(Request $request)
     {
         $perPage = min(100, max(1, (int) $request->query('per_page', 20)));
+        $merchantId = $request->query('merchant_id');
 
-        $transactions = Transaction::query()
-            ->with([
-                'product:id,name',
-                'merchant:id,name,email',
-                'payment:id,transaction_id,gateway_fee',
-                'paymentChannel:id,name,channel_code,payment_type',
-            ])
-            ->when($request->query('merchant_id'), fn (Builder $q, $id) => $q->where('merchant_id', $id))
-            ->when($request->query('status'), fn (Builder $q, $s) => $q->where('status', $s))
-            ->when($request->query('search'), function (Builder $q, $term) {
-                $like = '%'.str_replace('%', '\%', $term).'%';
-                $q->where('invoice_number', 'like', $like);
-            })
-            ->latest('id')
+        $rows = (new UnifiedTransactionQuery(
+            merchantId: $merchantId !== null ? (int) $merchantId : null,
+            withPlatformFigures: true,
+        ))
+            ->build(
+                (string) $request->query('type', UnifiedTransactionQuery::TYPE_ALL),
+                $request->query('status'),
+                $request->query('search'),
+            )
             ->paginate($perPage)
-            ->through(fn (Transaction $t) => [
-                'id' => $t->id,
-                'invoice_number' => $t->invoice_number,
-                'product' => $t->product?->name,
-                'merchant' => $t->merchant ? ['id' => $t->merchant->id, 'name' => $t->merchant->name] : null,
-                'amount_base' => (int) $t->amount_base,
-                // "Biaya Admin" = the payment method's fee. `amount_fee` is the
-                // stored total and equals `channel_fee` for every row written
-                // since the global markup was removed.
-                'admin_fee' => (int) $t->channel_fee,
-                'amount_total' => (int) $t->amount_total,
-                'gateway_fee' => (int) ($t->payment?->gateway_fee ?? 0),
-                'platform_profit' => (int) $t->amount_fee - (int) ($t->payment?->gateway_fee ?? 0),
-                'status' => $t->status?->value,
-                'payment_channel' => $t->paymentChannel?->name,
-                'created_at' => $t->created_at?->toIso8601String(),
+            ->through(fn ($row) => [
+                'type' => $row->source,
+                'id' => (int) $row->source_id,
+                'invoice_number' => $row->invoice_number,
+                'title' => $row->title,
+                'merchant' => $row->merchant_id
+                    ? ['id' => (int) $row->merchant_id, 'name' => $row->merchant_name]
+                    : null,
+                'direction' => $row->direction,
+                'amount' => (int) $row->amount,
+                'amount_total' => (int) $row->amount_total,
+                // "Biaya Admin" = the payment method's fee. Genuinely 0 on a
+                // service bill, which has no channel behind it.
+                'admin_fee' => (int) $row->admin_fee,
+                'gateway_fee' => (int) $row->gateway_fee,
+                'platform_profit' => (int) $row->platform_profit,
+                'status' => $row->status,
+                'payment_channel' => $row->channel,
+                'created_at' => $row->occurred_at ? Carbon::parse($row->occurred_at)->toIso8601String() : null,
             ]);
 
-        return $this->successResponse($transactions, 'Transactions retrieved successfully');
+        return $this->successResponse($rows, 'Transactions retrieved successfully');
     }
 }

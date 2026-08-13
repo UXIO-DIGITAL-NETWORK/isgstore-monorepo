@@ -80,5 +80,12 @@ return [
         // UNPAID service bill. Config rather than a column so the window can be
         // retuned without a migration.
         'due_days' => env('SERVICE_INVOICE_DUE_DAYS', 3),
+
+        // Where a client transfers to. Config for the same reason as due_days —
+        // it changes with the company's banking, not with a release, and there
+        // is no admin screen that would justify a settings row.
+        'bank_name' => env('SERVICE_INVOICE_BANK_NAME', 'BCA'),
+        'bank_account_number' => env('SERVICE_INVOICE_BANK_ACCOUNT', '-'),
+        'bank_account_holder' => env('SERVICE_INVOICE_BANK_HOLDER', 'UXIO Digital Network'),
     ],
 ];

@@ -34,6 +34,9 @@ use App\Http\Controllers\Api\Finance\FinanceTransactionController;
 use App\Http\Controllers\Api\Finance\FinanceWithdrawalController;
 use App\Http\Controllers\Api\Finance\ServiceController;
 use App\Http\Controllers\Api\Finance\ServiceIncidentController;
+use App\Http\Controllers\Api\Finance\ServiceInstallationController;
+use App\Http\Controllers\Api\Finance\ServiceInstallationDetailController;
+use App\Http\Controllers\Api\Finance\ServiceInstallationStepController;
 use App\Http\Controllers\Api\Finance\ServiceInvoiceController;
 use App\Http\Controllers\Api\Finance\ServiceSubscriptionController;
 use App\Http\Controllers\Api\FinancialController;
@@ -51,6 +54,7 @@ use App\Http\Controllers\Api\Membership\MembershipPlanController;
 use App\Http\Controllers\Api\Merchant\MerchantDashboardController;
 use App\Http\Controllers\Api\Merchant\MerchantMutationController;
 use App\Http\Controllers\Api\Merchant\MerchantServiceController;
+use App\Http\Controllers\Api\Merchant\MerchantServiceInstallationController;
 use App\Http\Controllers\Api\Merchant\MerchantServiceInvoiceController;
 use App\Http\Controllers\Api\Merchant\MerchantTransactionController;
 use App\Http\Controllers\Api\Merchant\ServiceStatusController;
@@ -529,12 +533,21 @@ Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'payment-admin'])
     // Services the client buys from kita: catalogue, own subscriptions, and
     // the manual bukti-transfer invoice flow.
     Route::get('/services', [MerchantServiceController::class, 'catalog']);
+    Route::get('/services/{service}', [MerchantServiceController::class, 'show']);
     Route::get('/service-subscriptions', [MerchantServiceController::class, 'subscriptions']);
     Route::get('/service-invoices', [MerchantServiceInvoiceController::class, 'index']);
     Route::post('/service-invoices', [MerchantServiceInvoiceController::class, 'store'])->middleware('throttle:checkout');
     Route::get('/service-invoices/{serviceInvoice}', [MerchantServiceInvoiceController::class, 'show']);
     Route::post('/service-invoices/{serviceInvoice}/proof', [MerchantServiceInvoiceController::class, 'uploadProof'])
         ->middleware('throttle:checkout');
+
+    // Read-only view of kita's installation work and the credentials handed
+    // over. `reveal` is POST so plaintext is neither proxy-cacheable nor
+    // recorded in an access-log query string.
+    Route::get('/service-subscriptions/{serviceSubscription}/installation',
+        [MerchantServiceInstallationController::class, 'show']);
+    Route::post('/installation-details/{serviceInstallationDetail}/reveal',
+        [MerchantServiceInstallationController::class, 'reveal'])->middleware('throttle:30,1');
 
     // Which payment methods are disrupted and which services are closed.
     Route::get('/service-status', [ServiceStatusController::class, 'index']);
@@ -572,7 +585,23 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
 
     // Who subscribes to what.
     Route::get('/service-subscriptions', [ServiceSubscriptionController::class, 'index']);
+    Route::get('/service-subscriptions/{serviceSubscription}', [ServiceSubscriptionController::class, 'show']);
     Route::post('/service-subscriptions/{serviceSubscription}/cancel', [ServiceSubscriptionController::class, 'cancel']);
+
+    // Installation: the window, the milestone checklist, and the credentials.
+    Route::get('/service-subscriptions/{serviceSubscription}/installation', [ServiceInstallationController::class, 'show']);
+    Route::put('/service-subscriptions/{serviceSubscription}/installation', [ServiceInstallationController::class, 'upsert']);
+
+    Route::post('/installations/{serviceInstallation}/steps', [ServiceInstallationStepController::class, 'store']);
+    Route::put('/installation-steps/{serviceInstallationStep}', [ServiceInstallationStepController::class, 'update']);
+    Route::post('/installation-steps/{serviceInstallationStep}/completion', [ServiceInstallationStepController::class, 'setCompletion']);
+    Route::delete('/installation-steps/{serviceInstallationStep}', [ServiceInstallationStepController::class, 'destroy']);
+
+    Route::post('/installations/{serviceInstallation}/detail-items', [ServiceInstallationDetailController::class, 'store']);
+    Route::put('/installation-details/{serviceInstallationDetail}', [ServiceInstallationDetailController::class, 'update']);
+    Route::delete('/installation-details/{serviceInstallationDetail}', [ServiceInstallationDetailController::class, 'destroy']);
+    Route::post('/installation-details/{serviceInstallationDetail}/reveal',
+        [ServiceInstallationController::class, 'reveal'])->middleware('throttle:60,1');
 
     // Incidents driving the clients' Status Layanan page.
     Route::get('/incidents', [ServiceIncidentController::class, 'index']);
