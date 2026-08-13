@@ -75,6 +75,15 @@ class CheckoutAction
 
             $channel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
+            // Only VA / e-wallet / QRIS are offered; `balance` is the member
+            // wallet (a different, allowed path below). Reject anything else even
+            // if a stray active row is targeted directly — the list already hides
+            // these, this stops a hand-crafted request.
+            if ($channel->channel_code !== 'balance'
+                && ! in_array($channel->payment_type, PaymentChannel::ALLOWED_STOREFRONT_PAYMENT_TYPES, true)) {
+                throw new Exception('Metode pembayaran ini tidak tersedia. Silakan pilih VA, E-Wallet, atau QRIS.');
+            }
+
             // ── 2. Guest guards ──────────────────────────────────────────────
             if (! $user && $channel->channel_code === 'balance') {
                 throw new Exception('Saldo internal hanya untuk member. Silakan login atau pilih metode pembayaran lain.');

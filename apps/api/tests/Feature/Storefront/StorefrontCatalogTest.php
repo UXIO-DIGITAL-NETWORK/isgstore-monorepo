@@ -163,6 +163,22 @@ class StorefrontCatalogTest extends TestCase
         $this->assertNotContains('balance', $codes->all());
     }
 
+    public function test_payment_channels_expose_only_va_ewallet_and_qris_categories(): void
+    {
+        PaymentChannel::factory()->create(['channel_code' => 'bca_va', 'payment_type' => 'virtual_account', 'is_active' => true]);
+        PaymentChannel::factory()->create(['channel_code' => 'dana', 'payment_type' => 'ewallet', 'is_active' => true]);
+        PaymentChannel::factory()->create(['channel_code' => 'qris', 'payment_type' => 'qris', 'is_active' => true]);
+        // Active but no longer an offered category — must never reach the storefront.
+        PaymentChannel::factory()->create(['channel_code' => 'alfamart', 'payment_type' => 'convenience_store', 'is_active' => true]);
+        PaymentChannel::factory()->create(['channel_code' => 'payment_link', 'payment_type' => 'payment_link', 'is_active' => true]);
+
+        $types = collect($this->getJson('/api/v1/storefront/payment-channels')->assertOk()->json('data.channels'))
+            ->pluck('payment_type')
+            ->unique();
+
+        $this->assertEqualsCanonicalizing(['virtual_account', 'ewallet', 'qris'], $types->all());
+    }
+
     public function test_payment_channels_expose_balance_to_a_signed_in_member(): void
     {
         PaymentChannel::factory()->balance()->create();
