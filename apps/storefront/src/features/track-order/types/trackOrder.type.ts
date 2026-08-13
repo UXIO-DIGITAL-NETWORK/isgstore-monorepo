@@ -9,8 +9,7 @@ export interface TrackOrderRow {
   service: string;
   /** Total amount in IDR */
   amount: number;
-  /** Fee breakdown for transparency; 0 when not applicable. */
-  channelFee: number;
+  /** "Biaya Admin" — the payment method's fee; 0 when not applicable. */
   adminFee: number;
   /** WhatsApp number — used for search filtering (not shown in table) */
   whatsapp: string;

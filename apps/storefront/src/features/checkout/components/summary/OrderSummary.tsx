@@ -12,10 +12,8 @@ interface Props {
   selectedPackage: DiamondPackage | null;
   /** Package price ("Harga"). */
   totalPrice: number;
-  /** "Biaya Metode Pembayaran" — the selected channel's fee. */
-  channelFee: number;
-  /** "Biaya Admin" — the global markup. */
-  adminMarkup: number;
+  /** "Biaya Admin" — the selected payment method's fee. */
+  adminFee: number;
   gameThumbnail: string;
   gameName: string;
   selectedPaymentName?: string;
@@ -45,8 +43,7 @@ function FeeRow({ label, value }: { label: string; value: string }) {
 export default function OrderSummary({
   selectedPackage,
   totalPrice,
-  channelFee,
-  adminMarkup,
+  adminFee,
   gameThumbnail,
   gameName,
   selectedPaymentName,
@@ -61,7 +58,7 @@ export default function OrderSummary({
   const locale = i18n.language;
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const total = totalPrice + channelFee + adminMarkup;
+  const total = totalPrice + adminFee;
 
   return (
     <Box className="rounded-2xl border border-dotted border-[rgba(147,51,234,0.5)] bg-[#0D1117] overflow-hidden">
@@ -100,8 +97,7 @@ export default function OrderSummary({
       {/* Price breakdown */}
       <Box className="px-4 pt-4 pb-2 flex flex-col gap-2.5">
         <FeeRow label={t("summary.price")} value={formatCurrency(totalPrice, locale)} />
-        {channelFee > 0 && <FeeRow label={t("summary.feeMethod")} value={formatCurrency(channelFee, locale)} />}
-        {adminMarkup > 0 && <FeeRow label={t("summary.adminFee")} value={formatCurrency(adminMarkup, locale)} />}
+        {adminFee > 0 && <FeeRow label={t("summary.adminFee")} value={formatCurrency(adminFee, locale)} />}
       </Box>
 
       {/* Divider */}
@@ -148,8 +144,7 @@ export default function OrderSummary({
         productName={gameName}
         price={selectedPackage?.price ?? 0}
         paymentName={selectedPaymentName}
-        channelFee={channelFee}
-        adminMarkup={adminMarkup}
+        adminFee={adminFee}
         total={total}
       />
     </Box>

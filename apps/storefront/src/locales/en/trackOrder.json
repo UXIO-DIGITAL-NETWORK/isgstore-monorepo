@@ -3,20 +3,17 @@
     "title": "TRACK ORDER",
     "subtitle": "Enter your invoice number, WhatsApp, or email to view real-time transaction status and details."
   },
-
   "search": {
     "label": "Invoice Number / WhatsApp / Email",
     "placeholder": "Enter Invoice, WhatsApp, or Email...",
     "button": "Track Order"
   },
-
   "help": {
     "title": "Having trouble with your transaction?",
     "bodyPrefix": "Contact our",
     "customerCare": "Customer Care",
     "bodySuffix": "team, available 24/7 to help you."
   },
-
   "table": {
     "date": "Date & Time",
     "invoice": "Invoice Number",
@@ -25,17 +22,13 @@
     "gold": "Gold",
     "status": "Status"
   },
-
   "row": {
-    "feeMethod": "Method Fee",
     "adminFee": "Admin Fee"
   },
-
   "status": {
     "process": "Processing",
     "success": "Success",
     "failed": "Failed"
   },
-
   "emptyState": "No transactions matched your search."
 }

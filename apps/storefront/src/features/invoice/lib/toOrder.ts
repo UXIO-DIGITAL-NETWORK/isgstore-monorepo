@@ -20,7 +20,6 @@ export function toOrder(invoice: InvoiceModel): PendingOrder {
     username: invoice.target.nickname ?? "",
     paymentName: invoice.payment.channel ?? "",
     price: invoice.amount.base,
-    channelFee: invoice.amount.channel_fee,
     adminFee: invoice.amount.admin_fee,
     total: invoice.amount.total,
     createdAt: Date.parse(invoice.created_at),

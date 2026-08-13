@@ -1,24 +1,20 @@
 {
   "heading": "WAITING FOR PAYMENT",
   "subtitle": "Please complete the payment using your selected method.",
-
   "timer": {
     "hours": "Hours",
     "minutes": "Minutes",
     "seconds": "Seconds"
   },
-
   "orderDetail": {
     "title": "Order Detail",
     "userId": "User ID",
     "serverId": "Server ID",
     "username": "Username",
     "price": "Price",
-    "feeMethod": "Payment Method Fee",
     "adminFee": "Admin Fee",
     "totalPayment": "Total Payment"
   },
-
   "instructions": {
     "title": "Payment Instructions",
     "steps": [
@@ -30,7 +26,6 @@
       "Do not close this page until the transaction has been processed successfully."
     ]
   },
-
   "paymentMethod": {
     "title": "Payment Method",
     "qrisLabel": "QRIS All Payment",
@@ -45,7 +40,6 @@
     "verifyNote": "After making payment, please wait for the system to verify your payment automatically",
     "copySuccess": "Copied!"
   },
-
   "review": {
     "title": "RATE YOUR TRANSACTION",
     "subtitle": "How was your experience after the transaction?",
@@ -61,7 +55,6 @@
     "skip": "Skip",
     "submit": "Submit Review"
   },
-
   "failed": {
     "heading": "PAYMENT FAILED",
     "subtitle": "The transaction could not be processed",
@@ -76,7 +69,6 @@
       "chatWhatsApp": "Chat WhatsApp"
     }
   },
-
   "success": {
     "heading": "PAYMENT SUCCESSFUL",
     "subtitle": "Your transaction was completed successfully",

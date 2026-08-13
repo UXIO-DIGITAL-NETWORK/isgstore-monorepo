@@ -115,13 +115,8 @@ export default function TransactionHistoryTable({ rows }: Props): React.JSX.Elem
                   >
                     {formatCurrency(row.amount, locale)}
                   </Text>
-                  {row.channelFee > 0 && (
-                    <Text as="span" className="font-inter text-[11px] text-white/40 leading-tight block mt-1">
-                      {t("transactionHistory.feeMethod")}: {formatCurrency(row.channelFee, locale)}
-                    </Text>
-                  )}
                   {row.adminFee > 0 && (
-                    <Text as="span" className="font-inter text-[11px] text-white/40 leading-tight block">
+                    <Text as="span" className="font-inter text-[11px] text-white/40 leading-tight block mt-1">
                       {t("transactionHistory.adminFee")}: {formatCurrency(row.adminFee, locale)}
                     </Text>
                   )}

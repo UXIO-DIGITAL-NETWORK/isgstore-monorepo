@@ -3,20 +3,17 @@
     "title": "LACAK PESANAN",
     "subtitle": "Masukkan nomor invoice, WhatsApp, atau email Anda untuk melihat status dan detail transaksi secara real-time."
   },
-
   "search": {
     "label": "Nomor Invoice / WhatsApp / Email",
     "placeholder": "Masukkan Invoice, WhatsApp, atau Email...",
     "button": "Lacak Pesanan"
   },
-
   "help": {
     "title": "Mengalami kendala saat transaksi?",
     "bodyPrefix": "Hubungi",
     "customerCare": "Customer Care",
     "bodySuffix": "kami, 24 jam non-stop membantu."
   },
-
   "table": {
     "date": "Tanggal & Waktu",
     "invoice": "Nomor Invoice",
@@ -25,17 +22,13 @@
     "gold": "Gold",
     "status": "Status"
   },
-
   "row": {
-    "feeMethod": "Biaya Metode",
     "adminFee": "Biaya Admin"
   },
-
   "status": {
     "process": "Proses",
     "success": "Sukses",
     "failed": "Gagal"
   },
-
   "emptyState": "Tidak ada transaksi yang cocok dengan pencarian Anda."
 }

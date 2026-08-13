@@ -3,7 +3,6 @@
   "history": "Riwayat Transaksi",
   "savedProfiles": "Profil Game Tersimpan",
   "noTransactions": "Belum ada transaksi",
-
   "sidebar": {
     "dashboard": "Dashboard",
     "transactions": "Transaksi",
@@ -14,25 +13,21 @@
     "accountSettings": "Pengaturan Akun",
     "logout": "Keluar"
   },
-
   "banner": {
     "title": "TINGKATKAN LEVEL MEMBERSHIP ANDA",
     "subtitle": "Anda saat ini berada di Level Member. Upgrade sekarang!"
   },
-
   "memberCard": {
     "title": "MEMBER ID",
     "editProfile": "Edit Profil",
     "memberBadge": "MEMBER"
   },
-
   "wallet": {
     "title": "Dompet Anda",
     "points": "Points",
     "topUpBalance": "+ Isi saldo",
     "transactionHistory": "Riwayat Transaksi"
   },
-
   "stats": {
     "title": "STATISTIK TRANSAKSI HARI INI",
     "pending": "Menunggu",
@@ -42,7 +37,6 @@
     "totalTransactions": "Total Transaksi",
     "totalSales": "Total Penjualan"
   },
-
   "filter": {
     "searchPlaceholder": "Cari transaksi...",
     "all": "Semua",
@@ -50,7 +44,6 @@
     "success": "Sukses",
     "failed": "Gagal"
   },
-
   "recentTransactions": {
     "title": "RIWAYAT TRANSAKSI TERBARU",
     "viewAll": "Lihat Semua Transaksi",
@@ -64,7 +57,6 @@
     "statusSuccess": "SUKSES",
     "statusFailed": "GAGAL"
   },
-
   "isiSaldo": {
     "title": "ISI SALDO AKUN",
     "subtitle": "Isi saldo akun Anda dengan metode pembayaran otomatis.",
@@ -102,7 +94,6 @@
       "secureSubtitle": "Semua transaksi diproses otomatis oleh sistem"
     }
   },
-
   "upgradeMembership": {
     "title": "PILIH PAKET MEMBERSHIP",
     "subtitle": "Pilih paket membership yang sesuai dengan kebutuhan top up kami.",
@@ -158,7 +149,6 @@
     },
     "submitSuccess": "Upgrade ke Paket {{plan}} berhasil dikirim!"
   },
-
   "integrasi": {
     "title": "INTEGRASI",
     "subtitle": "Integrasikan layanan kami dengan mudah untuk meningkatkan pengalaman pengguna Anda.",
@@ -182,7 +172,6 @@
       "addButton": "Tambahkan Alamat IP"
     }
   },
-
   "pengaturanAkun": {
     "title": "PENGATURAN AKUN",
     "subtitle": "Kelola informasi profil, keamanan, dan preferensi akun Anda.",
@@ -213,11 +202,9 @@
       "button": "Autentikasi 2FA"
     }
   },
-
   "transactionHistory": {
     "title": "RIWAYAT TRANSAKSI",
     "subtitle": "Pantau semua riwayat pembelian dan status transaksi Anda.",
-    "feeMethod": "Biaya Metode",
     "adminFee": "Biaya Admin",
     "searchCard": {
       "title": "Cari Invoice",
@@ -267,7 +254,6 @@
       }
     }
   },
-
   "activityLog": {
     "title": "LOG AKTIVITAS",
     "subtitle": "Pantau semua aktivitas penting di Top up game.",

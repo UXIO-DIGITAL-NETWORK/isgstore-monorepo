@@ -36,14 +36,10 @@ export interface PaymentChannelModel {
   balance: number | null;
 }
 
-/** Global admin-fee markup ("Biaya Admin"), set by payment-internal. */
-export interface AdminFeeSettingModel {
-  type: "percent" | "fixed";
-  value: number;
-}
-
-/** `GET /v1/storefront/payment-channels` — channels plus the global markup. */
+/**
+ * `GET /v1/storefront/payment-channels`. Each channel carries its own
+ * `fee_flat`/`fee_percent` — that fee is the whole "Biaya Admin".
+ */
 export interface PaymentChannelsResponse {
-  admin_fee: AdminFeeSettingModel;
   channels: PaymentChannelModel[];
 }

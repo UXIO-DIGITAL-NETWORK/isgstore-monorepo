@@ -53,7 +53,6 @@ export function useTrackOrderSearch() {
         createdAt: row.created_at,
         service: row.service ?? "",
         amount: row.amount,
-        channelFee: row.channel_fee ?? 0,
         adminFee: row.admin_fee ?? 0,
         // Never returned by the public endpoint — the phone number is the
         // search input, not an output, and echoing it back would hand it to
