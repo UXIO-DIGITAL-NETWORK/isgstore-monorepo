@@ -24,6 +24,8 @@ const TONE: Record<string, string> = {
   EXPIRED: "bg-muted text-muted-foreground",
   CANCELLED: "bg-muted text-muted-foreground",
   MINOR: "bg-muted text-muted-foreground",
+  // Reachable through the unified transaction feed.
+  REFUNDED: "bg-muted text-muted-foreground",
 };
 
 export function StatusBadge({ status }: { status: string }) {

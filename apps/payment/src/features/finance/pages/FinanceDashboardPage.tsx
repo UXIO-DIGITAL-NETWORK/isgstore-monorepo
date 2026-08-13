@@ -8,13 +8,14 @@ import { Text } from "@/components/common/Text";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 import { useFinanceDashboard, useFinanceTransactions } from "../hooks/useFinance";
-import type { FinanceTransaction } from "../types/finance.type";
+import type { FinanceUnifiedTransaction } from "@/types/transaction.type";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
-const recentColumns: Column<FinanceTransaction>[] = [
+const recentColumns: Column<FinanceUnifiedTransaction>[] = [
   { key: "invoice", header: "Invoice", cell: (r) => <Text as="span" className="font-medium">{r.invoice_number}</Text> },
   { key: "merchant", header: "Merchant", cell: (r) => r.merchant?.name ?? "-" },
+  { key: "title", header: "Item", cell: (r) => r.title ?? "-" },
   { key: "total", header: "Total", className: "text-right tabular-nums", cell: (r) => money(r.amount_total) },
   {
     key: "profit",
@@ -70,7 +71,7 @@ export default function FinanceDashboardPage() {
           isLoading={isLoading}
           isError={isError}
           emptyLabel="Belum ada transaksi"
-          rowKey={(r) => r.id}
+          rowKey={(r) => `${r.type}-${r.id}`}
         />
       </Box>
     </Box>

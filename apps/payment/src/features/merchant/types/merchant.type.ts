@@ -9,16 +9,6 @@ export interface MerchantDashboard {
   active_services_count: number;
 }
 
-export interface MerchantTransaction {
-  id: number;
-  invoice_number: string;
-  product: string | null;
-  nett: number;
-  status: string;
-  payment_channel: string | null;
-  created_at: string;
-}
-
 export interface MerchantMutation {
   id: number;
   type: string;
@@ -31,6 +21,9 @@ export interface MerchantMutation {
 }
 
 export type { Withdrawal, WithdrawalStatus, CreateWithdrawalPayload } from "@/types/withdrawal.type";
+
+// The Transaksi feed merges sales with service bills — see transaction.type.ts.
+export type { UnifiedTransaction, TransactionDirection, TransactionType } from "@/types/transaction.type";
 
 // ── Services the client buys from kita ───────────────────────────────────────
 

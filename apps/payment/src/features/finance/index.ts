@@ -8,3 +8,4 @@ export { default as FinanceInvoicesPage } from "./pages/FinanceInvoicesPage";
 export { default as FinanceSubscriptionsPage } from "./pages/FinanceSubscriptionsPage";
 export { default as FinanceIncidentsPage } from "./pages/FinanceIncidentsPage";
 export { default as NotificationsPage } from "./pages/NotificationsPage";
+export { default as FinanceSubscriptionDetailPage } from "./pages/FinanceSubscriptionDetailPage";

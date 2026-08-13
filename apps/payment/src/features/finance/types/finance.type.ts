@@ -30,24 +30,17 @@ export interface FinanceMerchant {
   created_at: string;
 }
 
-export interface FinanceTransaction {
-  id: number;
-  invoice_number: string;
-  product: string | null;
-  merchant: { id: number; name: string } | null;
-  amount_base: number;
-  /** "Biaya Admin" — the payment method's fee. */
-  admin_fee: number;
-  amount_total: number;
-  gateway_fee: number;
-  platform_profit: number;
-  status: string;
-  payment_channel: string | null;
-  created_at: string;
-}
+// The Transaksi feed merges sales with service bills — see transaction.type.ts.
+export type { FinanceUnifiedTransaction, UnifiedTransaction } from "@/types/transaction.type";
 
 // Shared with the client slice — see src/types/service.type.ts.
 export type {
+  InstallationDetailPayload,
+  InstallationPayload,
+  InstallationStepPayload,
+  ServiceInstallation,
+  ServiceInstallationDetail,
+  ServiceInstallationStep,
   IncidentPayload,
   IncidentTarget,
   Service,

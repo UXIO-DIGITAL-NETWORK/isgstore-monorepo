@@ -33,4 +33,6 @@ export interface ListParams {
   per_page?: number;
   search?: string;
   status?: string;
+  /** Transaction feed tab: "all" | "sale" | "service". */
+  type?: string;
 }

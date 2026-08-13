@@ -2,11 +2,12 @@ import { api } from "@/lib/axios";
 import { API_VERSION } from "@/config/env";
 import { unwrapList, type ListParams, type ListResult } from "@/lib/list";
 import type { ApiResponse } from "@/types/api.type";
+import type { UnifiedTransaction } from "@/types/transaction.type";
+import type { ServiceCheckout, ServiceInstallation } from "@/types/service.type";
 import type {
   CreateWithdrawalPayload,
   MerchantDashboard,
   MerchantMutation,
-  MerchantTransaction,
   Service,
   ServiceInvoice,
   ServiceStatusResponse,
@@ -22,9 +23,9 @@ export const merchantService = {
     return res.data;
   },
 
-  transactions: async (params: ListParams): Promise<ListResult<MerchantTransaction>> => {
+  transactions: async (params: ListParams): Promise<ListResult<UnifiedTransaction>> => {
     const res = await api.get(`${BASE}/transactions`, { params });
-    return unwrapList<MerchantTransaction>(res as unknown as ApiResponse<Record<string, unknown>>);
+    return unwrapList<UnifiedTransaction>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
   mutations: async (params: ListParams): Promise<ListResult<MerchantMutation>> => {
@@ -80,5 +81,34 @@ export const merchantService = {
   serviceStatus: async (): Promise<ServiceStatusResponse> => {
     const res: ApiResponse<ServiceStatusResponse> = await api.get(`${BASE}/service-status`);
     return res.data;
+  },
+  serviceDetail: async (id: number): Promise<ServiceCheckout> => {
+    const res: ApiResponse<ServiceCheckout> = await api.get(`${BASE}/services/${id}`);
+    return res.data;
+  },
+
+  serviceInvoice: async (id: number): Promise<ServiceInvoice> => {
+    const res: ApiResponse<ServiceInvoice> = await api.get(`${BASE}/service-invoices/${id}`);
+    return res.data;
+  },
+
+  installation: async (subscriptionId: number): Promise<ServiceInstallation | null> => {
+    const res: ApiResponse<ServiceInstallation | null> = await api.get(
+      `${BASE}/service-subscriptions/${subscriptionId}/installation`,
+    );
+    return res.data;
+  },
+
+  /**
+   * The only call that returns a credential in the clear. POST so it is neither
+   * proxy-cacheable nor logged in a URL; must be driven by a mutation so the
+   * plaintext never lands in the query cache.
+   */
+  revealDetail: async (id: number): Promise<string> => {
+    const res: ApiResponse<{ id: number; value: string }> = await api.post(
+      `${BASE}/installation-details/${id}/reveal`,
+      {},
+    );
+    return res.data.value;
   },
 };

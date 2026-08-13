@@ -22,7 +22,7 @@ describe("merchantService", () => {
     expect(dashboard.saldo_aktif).toBe(60000);
   });
 
-  it("normalises a raw Laravel paginator for transactions", async () => {
+  it("normalises a raw Laravel paginator for the unified transaction feed", async () => {
     vi.mocked(api.get).mockResolvedValueOnce({
       status: "success",
       code: 200,
@@ -32,17 +32,30 @@ describe("merchantService", () => {
         last_page: 5,
         per_page: 20,
         total: 93,
-        data: [{ id: 1, invoice_number: "INV-1", product: "X", nett: 60000, status: "PAID", payment_channel: "QRIS", created_at: "" }],
+        data: [
+          {
+            type: "sale",
+            id: 1,
+            invoice_number: "INV-1",
+            title: "X",
+            direction: "in",
+            amount: 60000,
+            status: "PAID",
+            payment_channel: "QRIS",
+            created_at: "",
+          },
+        ],
       },
     } as never);
 
-    const result = await merchantService.transactions({ page: 2 });
+    const result = await merchantService.transactions({ page: 2, type: "all" });
 
     expect(result.page).toBe(2);
     expect(result.lastPage).toBe(5);
     expect(result.total).toBe(93);
     expect(result.rows).toHaveLength(1);
-    expect(result.rows[0].nett).toBe(60000);
+    expect(result.rows[0].amount).toBe(60000);
+    expect(result.rows[0].direction).toBe("in");
   });
 
   it("posts a withdrawal request and unwraps the created row", async () => {

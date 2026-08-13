@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Box } from "@/components/common/Box";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
 import { Pager } from "@/components/common/Pager";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -49,23 +50,26 @@ export default function FinanceSubscriptionsPage() {
     {
       key: "actions",
       header: "Aksi",
-      cell: (r) =>
-        r.status === "ACTIVE" ? (
+      cell: (r) => (
+        <Box className="flex gap-2">
           <Button
+            asChild
             size="sm"
             variant="outline"
-            onClick={() => setPendingCancel(r)}
           >
-            Batalkan
+            <Link href={`/app/payment-internal/subscriptions/${r.id}`}>Kelola</Link>
           </Button>
-        ) : (
-          <Text
-            as="span"
-            className="text-muted-foreground"
-          >
-            —
-          </Text>
-        ),
+          {r.status === "ACTIVE" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPendingCancel(r)}
+            >
+              Batalkan
+            </Button>
+          )}
+        </Box>
+      ),
     },
   ];
 

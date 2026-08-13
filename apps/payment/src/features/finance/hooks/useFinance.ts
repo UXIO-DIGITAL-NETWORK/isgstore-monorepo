@@ -2,7 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { ListParams } from "@/lib/list";
 import { financeService } from "../services/finance.service";
-import type { IncidentPayload, ServicePayload } from "../types/finance.type";
+import type {
+  IncidentPayload,
+  InstallationDetailPayload,
+  InstallationPayload,
+  InstallationStepPayload,
+  ServicePayload,
+} from "../types/finance.type";
 
 export const useFinanceDashboard = () =>
   useQuery({ queryKey: ["finance", "dashboard"], queryFn: financeService.dashboard });
@@ -219,3 +225,115 @@ export const useDeleteIncident = () => {
     },
   });
 };
+
+// ── Installation: schedule, checklist, credentials ──────────────────────────
+
+export const useFinanceSubscription = (id: number) =>
+  useQuery({ queryKey: ["finance", "subscription", id], queryFn: () => financeService.subscription(id) });
+
+export const useFinanceInstallation = (subscriptionId: number) =>
+  useQuery({
+    queryKey: ["finance", "installation", subscriptionId],
+    queryFn: () => financeService.installation(subscriptionId),
+  });
+
+export const useUpsertInstallation = (subscriptionId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: InstallationPayload) => financeService.upsertInstallation(subscriptionId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "installation", subscriptionId] });
+      toast.success("Jadwal instalasi disimpan");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menyimpan jadwal instalasi");
+    },
+  });
+};
+
+/** Every checklist and credential mutation refreshes the same installation. */
+const useInstallationMutation = <TVars,>(
+  subscriptionId: number,
+  mutationFn: (vars: TVars) => Promise<unknown>,
+  successMessage: string,
+  errorMessage: string,
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "installation", subscriptionId] });
+      toast.success(successMessage);
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? errorMessage);
+    },
+  });
+};
+
+export const useCreateStep = (subscriptionId: number, installationId: number | undefined) =>
+  useInstallationMutation(
+    subscriptionId,
+    (payload: InstallationStepPayload) => financeService.createStep(installationId as number, payload),
+    "Tahapan ditambahkan",
+    "Gagal menambahkan tahapan",
+  );
+
+export const useUpdateStep = (subscriptionId: number) =>
+  useInstallationMutation(
+    subscriptionId,
+    ({ id, payload }: { id: number; payload: Partial<InstallationStepPayload> }) =>
+      financeService.updateStep(id, payload),
+    "Tahapan diperbarui",
+    "Gagal memperbarui tahapan",
+  );
+
+export const useSetStepCompletion = (subscriptionId: number) =>
+  useInstallationMutation(
+    subscriptionId,
+    ({ id, completed }: { id: number; completed: boolean }) => financeService.setStepCompletion(id, completed),
+    "Status tahapan diperbarui",
+    "Gagal memperbarui status tahapan",
+  );
+
+export const useDeleteStep = (subscriptionId: number) =>
+  useInstallationMutation(
+    subscriptionId,
+    (id: number) => financeService.deleteStep(id),
+    "Tahapan dihapus",
+    "Gagal menghapus tahapan",
+  );
+
+export const useCreateDetailItem = (subscriptionId: number, installationId: number | undefined) =>
+  useInstallationMutation(
+    subscriptionId,
+    (payload: InstallationDetailPayload) => financeService.createDetailItem(installationId as number, payload),
+    "Detail ditambahkan",
+    "Gagal menambahkan detail",
+  );
+
+export const useUpdateDetailItem = (subscriptionId: number) =>
+  useInstallationMutation(
+    subscriptionId,
+    ({ id, payload }: { id: number; payload: Partial<InstallationDetailPayload> }) =>
+      financeService.updateDetailItem(id, payload),
+    "Detail diperbarui",
+    "Gagal memperbarui detail",
+  );
+
+export const useDeleteDetailItem = (subscriptionId: number) =>
+  useInstallationMutation(
+    subscriptionId,
+    (id: number) => financeService.deleteDetailItem(id),
+    "Detail dihapus",
+    "Gagal menghapus detail",
+  );
+
+/** A mutation, never a query — see the merchant twin for why. */
+export const useRevealFinanceDetail = () =>
+  useMutation({
+    mutationFn: (id: number) => financeService.revealDetail(id),
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menampilkan nilai");
+    },
+  });

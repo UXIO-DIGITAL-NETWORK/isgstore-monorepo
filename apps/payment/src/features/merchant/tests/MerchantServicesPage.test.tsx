@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
@@ -5,6 +6,12 @@ import userEvent from "@testing-library/user-event";
 
 import MerchantServicesPage from "../pages/MerchantServicesPage";
 import * as hooks from "../hooks/useMerchant";
+
+// The page now renders internal router links; stub them to plain anchors so
+// this stays a unit test of the page, not of routing.
+vi.mock("@/components/common/Link", () => ({
+  Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
+}));
 
 const list = <T,>(rows: T[]) => ({ rows, page: 1, lastPage: 1, total: rows.length, perPage: 20 });
 
@@ -34,8 +41,6 @@ const subscription = {
   created_at: "",
 };
 
-const subscribe = vi.fn();
-
 beforeEach(() => {
   vi.clearAllMocks();
 
@@ -56,11 +61,6 @@ beforeEach(() => {
     isLoading: false,
     isError: false,
   } as unknown as ReturnType<typeof hooks.useMerchantServiceInvoices>);
-
-  vi.spyOn(hooks, "useSubscribeService").mockReturnValue({
-    mutate: subscribe,
-    isPending: false,
-  } as unknown as ReturnType<typeof hooks.useSubscribeService>);
 });
 
 const renderPage = () =>
@@ -78,7 +78,8 @@ describe("MerchantServicesPage", () => {
     expect(screen.getByText("30 hari tersisa")).toBeInTheDocument();
   });
 
-  it("subscribes from the catalogue tab", async () => {
+  /** Buying now goes through a checkout page, so the client sees what they get. */
+  it("links the catalogue card to the checkout page", async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -86,9 +87,9 @@ describe("MerchantServicesPage", () => {
 
     expect(screen.getByText("Rp 250.000")).toBeInTheDocument();
     expect(screen.getByText("/ 30 hari")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Berlangganan" }));
-
-    expect(subscribe).toHaveBeenCalledWith({ service_id: 1 }, expect.anything());
+    expect(screen.getByRole("link", { name: "Berlangganan" })).toHaveAttribute(
+      "href",
+      "/app/payment-admin/services/1/checkout",
+    );
   });
 });

@@ -28,6 +28,9 @@ import { Route as AppProtectedPaymentAdminTransactionsIndexRouteImport } from '.
 import { Route as AppProtectedPaymentAdminServicesIndexRouteImport } from './routes/app/_protected/payment-admin/services/index'
 import { Route as AppProtectedPaymentAdminServiceStatusIndexRouteImport } from './routes/app/_protected/payment-admin/service-status/index'
 import { Route as AppProtectedPaymentAdminMutationsIndexRouteImport } from './routes/app/_protected/payment-admin/mutations/index'
+import { Route as AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRouteImport } from './routes/app/_protected/payment-internal/subscriptions/$subscriptionId/index'
+import { Route as AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRouteImport } from './routes/app/_protected/payment-admin/service-invoices/$invoiceId/index'
+import { Route as AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRouteImport } from './routes/app/_protected/payment-admin/services/$serviceId/checkout/index'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -138,6 +141,26 @@ const AppProtectedPaymentAdminMutationsIndexRoute =
     path: '/payment-admin/mutations/',
     getParentRoute: () => AppProtectedRoute,
   } as any)
+const AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute =
+  AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRouteImport.update(
+    {
+      id: '/payment-internal/subscriptions/$subscriptionId/',
+      path: '/payment-internal/subscriptions/$subscriptionId/',
+      getParentRoute: () => AppProtectedRoute,
+    } as any,
+  )
+const AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute =
+  AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRouteImport.update({
+    id: '/payment-admin/service-invoices/$invoiceId/',
+    path: '/payment-admin/service-invoices/$invoiceId/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
+const AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute =
+  AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRouteImport.update({
+    id: '/payment-admin/services/$serviceId/checkout/',
+    path: '/payment-admin/services/$serviceId/checkout/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -158,6 +181,9 @@ export interface FileRoutesByFullPath {
   '/app/payment-internal/subscriptions/': typeof AppProtectedPaymentInternalSubscriptionsIndexRoute
   '/app/payment-internal/transactions/': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/payment-internal/withdrawals/': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
+  '/app/payment-admin/service-invoices/$invoiceId/': typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute
+  '/app/payment-internal/subscriptions/$subscriptionId/': typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute
+  '/app/payment-admin/services/$serviceId/checkout/': typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -178,6 +204,9 @@ export interface FileRoutesByTo {
   '/app/payment-internal/subscriptions': typeof AppProtectedPaymentInternalSubscriptionsIndexRoute
   '/app/payment-internal/transactions': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/payment-internal/withdrawals': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
+  '/app/payment-admin/service-invoices/$invoiceId': typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute
+  '/app/payment-internal/subscriptions/$subscriptionId': typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute
+  '/app/payment-admin/services/$serviceId/checkout': typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -200,6 +229,9 @@ export interface FileRoutesById {
   '/app/_protected/payment-internal/subscriptions/': typeof AppProtectedPaymentInternalSubscriptionsIndexRoute
   '/app/_protected/payment-internal/transactions/': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/_protected/payment-internal/withdrawals/': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
+  '/app/_protected/payment-admin/service-invoices/$invoiceId/': typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute
+  '/app/_protected/payment-internal/subscriptions/$subscriptionId/': typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute
+  '/app/_protected/payment-admin/services/$serviceId/checkout/': typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -222,6 +254,9 @@ export interface FileRouteTypes {
     | '/app/payment-internal/subscriptions/'
     | '/app/payment-internal/transactions/'
     | '/app/payment-internal/withdrawals/'
+    | '/app/payment-admin/service-invoices/$invoiceId/'
+    | '/app/payment-internal/subscriptions/$subscriptionId/'
+    | '/app/payment-admin/services/$serviceId/checkout/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -242,6 +277,9 @@ export interface FileRouteTypes {
     | '/app/payment-internal/subscriptions'
     | '/app/payment-internal/transactions'
     | '/app/payment-internal/withdrawals'
+    | '/app/payment-admin/service-invoices/$invoiceId'
+    | '/app/payment-internal/subscriptions/$subscriptionId'
+    | '/app/payment-admin/services/$serviceId/checkout'
   id:
     | '__root__'
     | '/'
@@ -263,6 +301,9 @@ export interface FileRouteTypes {
     | '/app/_protected/payment-internal/subscriptions/'
     | '/app/_protected/payment-internal/transactions/'
     | '/app/_protected/payment-internal/withdrawals/'
+    | '/app/_protected/payment-admin/service-invoices/$invoiceId/'
+    | '/app/_protected/payment-internal/subscriptions/$subscriptionId/'
+    | '/app/_protected/payment-admin/services/$serviceId/checkout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -406,6 +447,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProtectedPaymentAdminMutationsIndexRouteImport
       parentRoute: typeof AppProtectedRoute
     }
+    '/app/_protected/payment-internal/subscriptions/$subscriptionId/': {
+      id: '/app/_protected/payment-internal/subscriptions/$subscriptionId/'
+      path: '/payment-internal/subscriptions/$subscriptionId'
+      fullPath: '/app/payment-internal/subscriptions/$subscriptionId/'
+      preLoaderRoute: typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
+    '/app/_protected/payment-admin/service-invoices/$invoiceId/': {
+      id: '/app/_protected/payment-admin/service-invoices/$invoiceId/'
+      path: '/payment-admin/service-invoices/$invoiceId'
+      fullPath: '/app/payment-admin/service-invoices/$invoiceId/'
+      preLoaderRoute: typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
+    '/app/_protected/payment-admin/services/$serviceId/checkout/': {
+      id: '/app/_protected/payment-admin/services/$serviceId/checkout/'
+      path: '/payment-admin/services/$serviceId/checkout'
+      fullPath: '/app/payment-admin/services/$serviceId/checkout/'
+      preLoaderRoute: typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
   }
 }
 
@@ -437,6 +499,9 @@ interface AppProtectedRouteChildren {
   AppProtectedPaymentInternalSubscriptionsIndexRoute: typeof AppProtectedPaymentInternalSubscriptionsIndexRoute
   AppProtectedPaymentInternalTransactionsIndexRoute: typeof AppProtectedPaymentInternalTransactionsIndexRoute
   AppProtectedPaymentInternalWithdrawalsIndexRoute: typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
+  AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute: typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute
+  AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute: typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute
+  AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute: typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute
 }
 
 const AppProtectedRouteChildren: AppProtectedRouteChildren = {
@@ -469,6 +534,12 @@ const AppProtectedRouteChildren: AppProtectedRouteChildren = {
     AppProtectedPaymentInternalTransactionsIndexRoute,
   AppProtectedPaymentInternalWithdrawalsIndexRoute:
     AppProtectedPaymentInternalWithdrawalsIndexRoute,
+  AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute:
+    AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute,
+  AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute:
+    AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute,
+  AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute:
+    AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute,
 }
 
 const AppProtectedRouteWithChildren = AppProtectedRoute._addFileChildren(
