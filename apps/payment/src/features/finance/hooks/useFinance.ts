@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { ListParams } from "@/lib/list";
 import { financeService } from "../services/finance.service";
-import type { AdminFeeSetting } from "../types/finance.type";
+import type { IncidentPayload, ServicePayload } from "../types/finance.type";
 
 export const useFinanceDashboard = () =>
   useQuery({ queryKey: ["finance", "dashboard"], queryFn: financeService.dashboard });
@@ -70,19 +70,152 @@ export const useUpdateChannelFee = () => {
   });
 };
 
-export const useAdminFee = () =>
-  useQuery({ queryKey: ["finance", "admin-fee"], queryFn: financeService.adminFee });
+// ── Services, invoices, subscriptions & incidents ────────────────────────────
 
-export const useUpdateAdminFee = () => {
+export const useFinanceServices = (params: ListParams) =>
+  useQuery({ queryKey: ["finance", "services", params], queryFn: () => financeService.services(params) });
+
+export const useCreateService = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: AdminFeeSetting) => financeService.updateAdminFee(payload),
+    mutationFn: (payload: ServicePayload) => financeService.createService(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["finance", "admin-fee"] });
-      toast.success("Biaya admin berhasil disimpan");
+      queryClient.invalidateQueries({ queryKey: ["finance", "services"] });
+      toast.success("Service berhasil dibuat");
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menyimpan biaya admin");
+      toast.error(error.response?.data?.message ?? "Gagal membuat service");
+    },
+  });
+};
+
+export const useUpdateService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<ServicePayload> }) =>
+      financeService.updateService(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "services"] });
+      toast.success("Service berhasil diperbarui");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal memperbarui service");
+    },
+  });
+};
+
+export const useDeleteService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => financeService.deleteService(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "services"] });
+      toast.success("Service berhasil dihapus");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menghapus service");
+    },
+  });
+};
+
+export const useServiceInvoices = (params: ListParams) =>
+  useQuery({
+    queryKey: ["finance", "service-invoices", params],
+    queryFn: () => financeService.serviceInvoices(params),
+  });
+
+export const useConfirmServiceInvoice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => financeService.confirmServiceInvoice(id),
+    onSuccess: () => {
+      // Confirming also creates a subscription, so the whole namespace refreshes.
+      queryClient.invalidateQueries({ queryKey: ["finance"] });
+      toast.success("Invoice dikonfirmasi, langganan aktif");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal mengkonfirmasi invoice");
+    },
+  });
+};
+
+export const useRejectServiceInvoice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+      financeService.rejectServiceInvoice(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "service-invoices"] });
+      toast.success("Invoice ditolak");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menolak invoice");
+    },
+  });
+};
+
+export const useServiceSubscriptions = (params: ListParams) =>
+  useQuery({
+    queryKey: ["finance", "service-subscriptions", params],
+    queryFn: () => financeService.serviceSubscriptions(params),
+  });
+
+export const useCancelSubscription = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => financeService.cancelSubscription(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "service-subscriptions"] });
+      toast.success("Langganan dibatalkan");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal membatalkan langganan");
+    },
+  });
+};
+
+export const useIncidents = (params: ListParams) =>
+  useQuery({ queryKey: ["finance", "incidents", params], queryFn: () => financeService.incidents(params) });
+
+export const useCreateIncident = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: IncidentPayload) => financeService.createIncident(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "incidents"] });
+      toast.success("Insiden berhasil dibuat");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal membuat insiden");
+    },
+  });
+};
+
+export const useUpdateIncident = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<IncidentPayload> }) =>
+      financeService.updateIncident(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "incidents"] });
+      toast.success("Insiden berhasil diperbarui");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal memperbarui insiden");
+    },
+  });
+};
+
+export const useDeleteIncident = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => financeService.deleteIncident(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "incidents"] });
+      toast.success("Insiden berhasil dihapus");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menghapus insiden");
     },
   });
 };

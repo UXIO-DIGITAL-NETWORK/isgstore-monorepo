@@ -1,0 +1,111 @@
+import { useState } from "react";
+
+import { Box } from "@/components/common/Box";
+import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { Heading } from "@/components/common/Heading";
+import { Pager } from "@/components/common/Pager";
+import { SimpleTable, type Column } from "@/components/common/SimpleTable";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { Text } from "@/components/common/Text";
+import { Button } from "@/components/ui/button";
+import { formatDate } from "@/utils/date";
+import type { ServiceSubscription } from "@/types/service.type";
+
+import { useCancelSubscription, useServiceSubscriptions } from "../hooks/useFinance";
+
+export default function FinanceSubscriptionsPage() {
+  const [page, setPage] = useState(1);
+  const [pendingCancel, setPendingCancel] = useState<ServiceSubscription | null>(null);
+  const { data, isLoading, isError } = useServiceSubscriptions({ page, per_page: 20 });
+  const { mutate: cancel } = useCancelSubscription();
+
+  const columns: Column<ServiceSubscription>[] = [
+    { key: "merchant", header: "Client", cell: (r) => r.merchant?.name ?? "-" },
+    {
+      key: "service",
+      header: "Service",
+      cell: (r) => (
+        <Text
+          as="span"
+          className="font-medium"
+        >
+          {r.service?.name ?? "-"}
+        </Text>
+      ),
+    },
+    {
+      key: "period",
+      header: "Periode",
+      cell: (r) => `${formatDate(r.starts_at)} – ${formatDate(r.ends_at)}`,
+    },
+    {
+      key: "remaining",
+      header: "Sisa",
+      className: "text-right tabular-nums",
+      cell: (r) => `${r.days_remaining} hari`,
+    },
+    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
+    { key: "invoice", header: "Invoice", cell: (r) => r.invoice_number ?? "—" },
+    {
+      key: "actions",
+      header: "Aksi",
+      cell: (r) =>
+        r.status === "ACTIVE" ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPendingCancel(r)}
+          >
+            Batalkan
+          </Button>
+        ) : (
+          <Text
+            as="span"
+            className="text-muted-foreground"
+          >
+            —
+          </Text>
+        ),
+    },
+  ];
+
+  return (
+    <Box className="flex flex-col gap-6">
+      <Heading level={1}>Subscription</Heading>
+
+      <SimpleTable
+        columns={columns}
+        rows={data?.rows ?? []}
+        isLoading={isLoading}
+        isError={isError}
+        emptyLabel="Belum ada langganan"
+        rowKey={(r) => r.id}
+      />
+
+      <Pager
+        page={data?.page ?? page}
+        lastPage={data?.lastPage ?? 1}
+        total={data?.total ?? 0}
+        onPageChange={setPage}
+      />
+
+      <DeleteConfirmDialog
+        open={pendingCancel !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingCancel(null);
+        }}
+        title="Batalkan langganan ini?"
+        description={
+          pendingCancel
+            ? `${pendingCancel.merchant?.name ?? "Client"} akan kehilangan akses ke ${pendingCancel.service?.name ?? "service ini"} sebelum ${formatDate(pendingCancel.ends_at)}. Pengembalian dana diselesaikan di luar sistem.`
+            : ""
+        }
+        confirmLabel="Batalkan"
+        onConfirm={() => {
+          if (pendingCancel) cancel(pendingCancel.id);
+          setPendingCancel(null);
+        }}
+      />
+    </Box>
+  );
+}

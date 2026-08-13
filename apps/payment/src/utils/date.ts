@@ -29,3 +29,13 @@ export function formatDateTime(isoString: string | null | undefined): string {
   if (!isoString) return "-";
   return format(new Date(isoString), "d MMM yyyy, HH:mm");
 }
+
+/**
+ * Date only, e.g. "24 May 2026". Used for subscription windows, where the time
+ * of day is an artefact of when the invoice happened to be confirmed and
+ * showing it ("00:00") would read as meaningful precision.
+ */
+export function formatDate(isoString: string | null | undefined): string {
+  if (!isoString) return "-";
+  return format(new Date(isoString), "d MMM yyyy");
+}

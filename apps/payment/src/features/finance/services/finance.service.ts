@@ -4,11 +4,16 @@ import { unwrapList, type ListParams, type ListResult } from "@/lib/list";
 import type { ApiResponse } from "@/types/api.type";
 import type { Withdrawal } from "@/types/withdrawal.type";
 import type {
-  AdminFeeSetting,
   ChannelFee,
   FinanceDashboard,
   FinanceMerchant,
   FinanceTransaction,
+  IncidentPayload,
+  Service,
+  ServiceIncident,
+  ServiceInvoice,
+  ServicePayload,
+  ServiceSubscription,
 } from "../types/finance.type";
 
 const BASE = `${API_VERSION}/payment-internal`;
@@ -68,13 +73,68 @@ export const financeService = {
     return res.data;
   },
 
-  adminFee: async (): Promise<AdminFeeSetting> => {
-    const res: ApiResponse<AdminFeeSetting> = await api.get(`${BASE}/settings/admin-fee`);
+  // ── Services, invoices, subscriptions & incidents ──────────────────────────
+
+  services: async (params: ListParams): Promise<ListResult<Service>> => {
+    const res = await api.get(`${BASE}/services`, { params });
+    return unwrapList<Service>(res as unknown as ApiResponse<Record<string, unknown>>);
+  },
+
+  createService: async (payload: ServicePayload): Promise<Service> => {
+    const res: ApiResponse<Service> = await api.post(`${BASE}/services`, payload);
     return res.data;
   },
 
-  updateAdminFee: async (payload: AdminFeeSetting): Promise<AdminFeeSetting> => {
-    const res: ApiResponse<AdminFeeSetting> = await api.put(`${BASE}/settings/admin-fee`, payload);
+  updateService: async (id: number, payload: Partial<ServicePayload>): Promise<Service> => {
+    const res: ApiResponse<Service> = await api.put(`${BASE}/services/${id}`, payload);
     return res.data;
+  },
+
+  deleteService: async (id: number): Promise<void> => {
+    await api.delete(`${BASE}/services/${id}`);
+  },
+
+  serviceInvoices: async (params: ListParams): Promise<ListResult<ServiceInvoice>> => {
+    const res = await api.get(`${BASE}/service-invoices`, { params });
+    return unwrapList<ServiceInvoice>(res as unknown as ApiResponse<Record<string, unknown>>);
+  },
+
+  confirmServiceInvoice: async (id: number): Promise<ServiceInvoice> => {
+    const res: ApiResponse<ServiceInvoice> = await api.post(`${BASE}/service-invoices/${id}/confirm`, {});
+    return res.data;
+  },
+
+  rejectServiceInvoice: async (id: number, reason?: string): Promise<ServiceInvoice> => {
+    const res: ApiResponse<ServiceInvoice> = await api.post(`${BASE}/service-invoices/${id}/reject`, { reason });
+    return res.data;
+  },
+
+  serviceSubscriptions: async (params: ListParams): Promise<ListResult<ServiceSubscription>> => {
+    const res = await api.get(`${BASE}/service-subscriptions`, { params });
+    return unwrapList<ServiceSubscription>(res as unknown as ApiResponse<Record<string, unknown>>);
+  },
+
+  cancelSubscription: async (id: number): Promise<ServiceSubscription> => {
+    const res: ApiResponse<ServiceSubscription> = await api.post(`${BASE}/service-subscriptions/${id}/cancel`, {});
+    return res.data;
+  },
+
+  incidents: async (params: ListParams): Promise<ListResult<ServiceIncident>> => {
+    const res = await api.get(`${BASE}/incidents`, { params });
+    return unwrapList<ServiceIncident>(res as unknown as ApiResponse<Record<string, unknown>>);
+  },
+
+  createIncident: async (payload: IncidentPayload): Promise<ServiceIncident> => {
+    const res: ApiResponse<ServiceIncident> = await api.post(`${BASE}/incidents`, payload);
+    return res.data;
+  },
+
+  updateIncident: async (id: number, payload: Partial<IncidentPayload>): Promise<ServiceIncident> => {
+    const res: ApiResponse<ServiceIncident> = await api.put(`${BASE}/incidents/${id}`, payload);
+    return res.data;
+  },
+
+  deleteIncident: async (id: number): Promise<void> => {
+    await api.delete(`${BASE}/incidents/${id}`);
   },
 };

@@ -19,13 +19,10 @@ const tx: FinanceTransaction = {
   product: "Diamond 100",
   merchant: { id: 1, name: "Toko A" },
   amount_base: 10000,
-  amount_fee: 2000,
-  channel_fee: 500,
-  admin_fee: 1500,
+  admin_fee: 2000,
   amount_total: 12000,
   gateway_fee: 300,
   platform_profit: 1700,
-  margin: 800,
   status: "COMPLETED",
   payment_channel: "QRIS",
   created_at: "2026-08-11T00:00:00.000000Z",
@@ -36,7 +33,7 @@ beforeEach(() => {
   vi.spyOn(hooks, "useFinanceDashboard").mockReturnValue({
     data: {
       saldo: 100000,
-      total_markup: 50000,
+      total_admin_fee: 50000,
       total_gateway_fee: 10000,
       total_settled_to_merchants: 200000,
       pending_withdrawals: 1,
@@ -53,6 +50,23 @@ const renderPage = () =>
   );
 
 describe("FinanceDashboardPage", () => {
+  /**
+   * The global markup is gone: the channel's own fee is the whole admin fee,
+   * so the card reports `total_admin_fee` rather than a separate markup total.
+   */
+  it("reports the total admin fee rather than a markup", () => {
+    vi.spyOn(hooks, "useFinanceTransactions").mockReturnValue({
+      data: { rows: [], page: 1, lastPage: 1, total: 0, perPage: 5 },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof hooks.useFinanceTransactions>);
+
+    renderPage();
+
+    expect(screen.getByText("Total Biaya Admin")).toBeInTheDocument();
+    expect(screen.queryByText("Total Markup")).not.toBeInTheDocument();
+  });
+
   it("lists the most recent transactions", () => {
     vi.spyOn(hooks, "useFinanceTransactions").mockReturnValue({
       data: { rows: [tx], page: 1, lastPage: 1, total: 1, perPage: 5 },

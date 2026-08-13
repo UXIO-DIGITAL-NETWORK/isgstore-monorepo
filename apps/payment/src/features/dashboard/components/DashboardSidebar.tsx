@@ -1,6 +1,18 @@
 import { type ComponentType } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { ArrowDownToLine, Coins, LayoutGrid, Percent, Receipt, Store, Wallet } from "lucide-react";
+import {
+  Activity,
+  ArrowDownToLine,
+  Bell,
+  Boxes,
+  CalendarClock,
+  Coins,
+  FileText,
+  LayoutGrid,
+  Receipt,
+  Store,
+  Wallet,
+} from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Link } from "@/components/common/Link";
@@ -28,6 +40,8 @@ const PAYMENT_ADMIN_NAV: NavItem[] = [
   { label: "Transaksi", href: "/app/payment-admin/transactions", icon: Receipt },
   { label: "Penarikan", href: "/app/payment-admin/withdrawals", icon: ArrowDownToLine },
   { label: "Mutasi", href: "/app/payment-admin/mutations", icon: Wallet },
+  { label: "Services", href: "/app/payment-admin/services", icon: Boxes },
+  { label: "Status Layanan", href: "/app/payment-admin/service-status", icon: Activity },
 ];
 
 // payment-internal (kita): all merchants, verification, and fee settings.
@@ -37,7 +51,11 @@ const PAYMENT_INTERNAL_NAV: NavItem[] = [
   { label: "Transaksi", href: "/app/payment-internal/transactions", icon: Receipt },
   { label: "Verifikasi Penarikan", href: "/app/payment-internal/withdrawals", icon: ArrowDownToLine },
   { label: "Biaya Channel", href: "/app/payment-internal/channels", icon: Coins },
-  { label: "Biaya Admin", href: "/app/payment-internal/admin-fee", icon: Percent },
+  { label: "Product / Services", href: "/app/payment-internal/services", icon: Boxes },
+  { label: "Invoice", href: "/app/payment-internal/invoices", icon: FileText },
+  { label: "Subscription", href: "/app/payment-internal/subscriptions", icon: CalendarClock },
+  { label: "Status Layanan", href: "/app/payment-internal/incidents", icon: Activity },
+  { label: "Notifikasi", href: "/app/payment-internal/notifications", icon: Bell },
 ];
 
 export function DashboardSidebar() {

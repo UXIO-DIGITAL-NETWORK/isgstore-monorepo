@@ -17,7 +17,6 @@ const columns: Column<FinanceTransaction>[] = [
   { key: "merchant", header: "Merchant", cell: (r) => r.merchant?.name ?? "-" },
   { key: "total", header: "Total", className: "text-right tabular-nums", cell: (r) => money(r.amount_total) },
   { key: "base", header: "Nett Merchant", className: "text-right tabular-nums", cell: (r) => money(r.amount_base) },
-  { key: "channel_fee", header: "Biaya Metode", className: "text-right tabular-nums", cell: (r) => money(r.channel_fee) },
   { key: "admin_fee", header: "Biaya Admin", className: "text-right tabular-nums", cell: (r) => money(r.admin_fee) },
   { key: "gateway", header: "Fee Gateway", className: "text-right tabular-nums", cell: (r) => money(r.gateway_fee) },
   {
