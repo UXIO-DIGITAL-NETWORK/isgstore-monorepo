@@ -1,0 +1,92 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Enums\ServiceInvoiceStatus;
+use App\Enums\SubscriptionStatus;
+use App\Models\ServiceInvoice;
+use App\Models\ServiceSubscription;
+use Illuminate\Console\Command;
+
+/**
+ * Closes the two service-billing states that go stale purely because a date
+ * passed and nobody acted.
+ *
+ *   1. ACTIVE subscriptions past their `ends_at` — without this a client keeps
+ *      showing as subscribed forever and the "Active until" card lies.
+ *   2. UNPAID invoices past their `due_at` — an abandoned request would
+ *      otherwise block the client from ordering the same service again, since
+ *      SubscribeToServiceAction refuses a second open invoice.
+ *
+ * WAITING_CONFIRMATION is deliberately never swept: that state is waiting on
+ * kita, and expiring it would penalise the client for kita's own backlog.
+ */
+class ExpireServiceSubscriptions extends Command
+{
+    protected $signature = 'services:expire {--dry-run : Report what would change without writing}';
+
+    protected $description = 'Expire lapsed service subscriptions and overdue unpaid service invoices';
+
+    public function handle(): int
+    {
+        $dryRun = (bool) $this->option('dry-run');
+
+        $lapsed = ServiceSubscription::query()
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('ends_at', '<=', now())
+            ->get();
+
+        $expiredSubscriptions = 0;
+
+        foreach ($lapsed as $subscription) {
+            // A client who renewed holds a later row for the same service. This
+            // one still closes, but it is not a lapse — say so, so the log does
+            // not read as a client losing access they in fact still have.
+            $stillCovered = ServiceSubscription::query()
+                ->where('merchant_id', $subscription->merchant_id)
+                ->where('service_id', $subscription->service_id)
+                ->where('status', SubscriptionStatus::ACTIVE)
+                ->whereKeyNot($subscription->id)
+                ->where('ends_at', '>', now())
+                ->exists();
+
+            if ($dryRun) {
+                $this->line(sprintf(
+                    '  subscription #%d — %s',
+                    $subscription->id,
+                    $stillCovered ? 'closing row only (renewed)' : 'expiring',
+                ));
+
+                continue;
+            }
+
+            $subscription->update(['status' => SubscriptionStatus::EXPIRED]);
+            $expiredSubscriptions++;
+        }
+
+        $overdue = ServiceInvoice::query()
+            ->where('status', ServiceInvoiceStatus::UNPAID)
+            ->whereNotNull('due_at')
+            ->where('due_at', '<=', now())
+            ->get();
+
+        $expiredInvoices = 0;
+
+        foreach ($overdue as $invoice) {
+            if ($dryRun) {
+                $this->line("  invoice {$invoice->invoice_number} — expiring");
+
+                continue;
+            }
+
+            $invoice->update(['status' => ServiceInvoiceStatus::EXPIRED]);
+            $expiredInvoices++;
+        }
+
+        $this->info($dryRun
+            ? sprintf('Dry run: %d subscription(s) and %d invoice(s) would be expired.', $lapsed->count(), $overdue->count())
+            : sprintf('Expired %d subscription(s) and %d invoice(s).', $expiredSubscriptions, $expiredInvoices));
+
+        return self::SUCCESS;
+    }
+}

@@ -6,12 +6,12 @@ namespace App\Actions\Storefront;
 
 use App\Models\PaymentChannel;
 use App\Models\User;
-use App\Support\Pricing\AdminFeeSetting;
 
 /**
- * Payment channels the caller can actually complete a purchase with, plus the
- * global admin-fee markup so the storefront can show the same total the backend
- * will charge (channel fee + admin markup) before checkout.
+ * Payment channels the caller can actually complete a purchase with. Each row
+ * carries its own `fee_flat`/`fee_percent` — that fee IS the "Biaya Admin" the
+ * storefront shows, so the client can render the same total the backend will
+ * charge before checkout without a second lookup.
  *
  * `balance` is member-only — CheckoutAction rejects it for guests — so offering
  * it to an anonymous visitor would be a dead end. It is filtered here rather
@@ -21,7 +21,7 @@ class ListPaymentChannelsAction
 {
     private const MEMBER_ONLY_CHANNELS = ['balance'];
 
-    /** @return array{admin_fee: array{type: string, value: int}, channels: list<array<string, mixed>>} */
+    /** @return array{channels: list<array<string, mixed>>} */
     public function execute(?User $user): array
     {
         $query = PaymentChannel::query()
@@ -63,7 +63,6 @@ class ListPaymentChannelsAction
             ->all();
 
         return [
-            'admin_fee' => AdminFeeSetting::current(),
             'channels' => $channels,
         ];
     }

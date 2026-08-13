@@ -74,12 +74,6 @@
                         <td style="padding:5px 0;" class="muted">{{ __('receipt.label_subtotal') }}</td>
                         <td align="right" style="padding:5px 0;" class="val">{{ $rp($subtotal) }}</td>
                     </tr>
-                    @if (($channelFee ?? 0) > 0)
-                        <tr>
-                            <td style="padding:5px 0;" class="muted">{{ __('receipt.label_channel_fee') }}</td>
-                            <td align="right" style="padding:5px 0;" class="val">{{ $rp($channelFee) }}</td>
-                        </tr>
-                    @endif
                     @if (($adminFee ?? 0) > 0)
                         <tr>
                             <td style="padding:5px 0;" class="muted">{{ __('receipt.label_admin_fee') }}</td>

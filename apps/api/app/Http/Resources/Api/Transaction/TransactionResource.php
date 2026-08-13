@@ -29,7 +29,6 @@ class TransactionResource extends JsonResource
             'amount_base' => $this->amount_base,
             'amount_fee' => $this->amount_fee, // combined total (back-compat)
             'channel_fee' => $this->channel_fee,
-            'admin_markup' => $this->admin_markup,
             'promo_id' => $this->promo_id,
             'discount_amount' => (int) $this->discount_amount,
             'amount_total' => $this->amount_total,

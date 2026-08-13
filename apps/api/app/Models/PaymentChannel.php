@@ -25,4 +25,15 @@ class PaymentChannel extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    /** Services whose availability follows this channel's `is_active` flag. */
+    public function services()
+    {
+        return $this->hasMany(Service::class);
+    }
+
+    public function incidents()
+    {
+        return $this->hasMany(ServiceIncident::class);
+    }
 }

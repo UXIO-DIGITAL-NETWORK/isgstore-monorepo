@@ -19,7 +19,6 @@ class PaymentResource extends JsonResource
             'gross_amount' => $this->gross_amount,
             'admin_fee' => $this->admin_fee, // combined total (back-compat)
             'channel_fee' => $this->channel_fee,
-            'admin_markup' => $this->admin_markup,
             'payment_data' => $this->payment_data,
             'status' => $this->status,
             'paid_at' => $this->paid_at,

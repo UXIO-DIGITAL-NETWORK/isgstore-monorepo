@@ -26,7 +26,7 @@ class FinanceDashboardController extends Controller
         return $this->successResponse([
             // Kita's profit balance = accumulated (admin_fee - gateway_fee).
             'saldo' => (int) ($account?->balance ?? 0),
-            'total_markup' => (int) Transaction::whereNotNull('merchant_id')->sum('amount_fee'),
+            'total_admin_fee' => (int) Transaction::whereNotNull('merchant_id')->sum('amount_fee'),
             'total_gateway_fee' => (int) Payment::sum('gateway_fee'),
             'total_settled_to_merchants' => (int) Transaction::whereNotNull('merchant_id')->sum('amount_base'),
             'pending_withdrawals' => (int) Withdrawal::where('status', WithdrawalStatus::PENDING)->count(),

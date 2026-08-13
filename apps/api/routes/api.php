@@ -27,12 +27,15 @@ use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
 use App\Http\Controllers\Api\Digiflazz\PriceAlertController;
 use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
-use App\Http\Controllers\Api\Finance\AdminFeeSettingController;
 use App\Http\Controllers\Api\Finance\ChannelFeeController;
 use App\Http\Controllers\Api\Finance\FinanceDashboardController;
 use App\Http\Controllers\Api\Finance\FinanceMerchantController;
 use App\Http\Controllers\Api\Finance\FinanceTransactionController;
 use App\Http\Controllers\Api\Finance\FinanceWithdrawalController;
+use App\Http\Controllers\Api\Finance\ServiceController;
+use App\Http\Controllers\Api\Finance\ServiceIncidentController;
+use App\Http\Controllers\Api\Finance\ServiceInvoiceController;
+use App\Http\Controllers\Api\Finance\ServiceSubscriptionController;
 use App\Http\Controllers\Api\FinancialController;
 use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
@@ -47,7 +50,10 @@ use App\Http\Controllers\Api\Member\ProfileController;
 use App\Http\Controllers\Api\Membership\MembershipPlanController;
 use App\Http\Controllers\Api\Merchant\MerchantDashboardController;
 use App\Http\Controllers\Api\Merchant\MerchantMutationController;
+use App\Http\Controllers\Api\Merchant\MerchantServiceController;
+use App\Http\Controllers\Api\Merchant\MerchantServiceInvoiceController;
 use App\Http\Controllers\Api\Merchant\MerchantTransactionController;
+use App\Http\Controllers\Api\Merchant\ServiceStatusController;
 use App\Http\Controllers\Api\Merchant\WithdrawalController as MerchantWithdrawalController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
@@ -519,11 +525,24 @@ Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'payment-admin'])
     Route::get('/withdrawals', [MerchantWithdrawalController::class, 'index']);
     Route::post('/withdrawals', [MerchantWithdrawalController::class, 'store'])->middleware('throttle:checkout');
     Route::get('/withdrawals/{number}', [MerchantWithdrawalController::class, 'show']);
+
+    // Services the client buys from kita: catalogue, own subscriptions, and
+    // the manual bukti-transfer invoice flow.
+    Route::get('/services', [MerchantServiceController::class, 'catalog']);
+    Route::get('/service-subscriptions', [MerchantServiceController::class, 'subscriptions']);
+    Route::get('/service-invoices', [MerchantServiceInvoiceController::class, 'index']);
+    Route::post('/service-invoices', [MerchantServiceInvoiceController::class, 'store'])->middleware('throttle:checkout');
+    Route::get('/service-invoices/{serviceInvoice}', [MerchantServiceInvoiceController::class, 'show']);
+    Route::post('/service-invoices/{serviceInvoice}/proof', [MerchantServiceInvoiceController::class, 'uploadProof'])
+        ->middleware('throttle:checkout');
+
+    // Which payment methods are disrupted and which services are closed.
+    Route::get('/service-status', [ServiceStatusController::class, 'index']);
 });
 
 // ── Payment page: payment-internal ("kita") ──────────────────────────────────
 // The internal team's cross-merchant view: all data, withdrawal verification,
-// plus per-channel fee and global admin-fee settings.
+// per-channel fee settings, and the services it sells to its clients.
 Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-internal'])->group(function () {
     Route::get('/dashboard', [FinanceDashboardController::class, 'index']);
     Route::get('/merchants', [FinanceMerchantController::class, 'index']);
@@ -533,9 +552,32 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
     Route::post('/withdrawals/{withdrawal}/approve', [FinanceWithdrawalController::class, 'approve']);
     Route::post('/withdrawals/{withdrawal}/reject', [FinanceWithdrawalController::class, 'reject']);
 
-    // Settings (biaya per metode + biaya admin global)
+    // Settings — biaya per metode pembayaran. That fee IS the "Biaya Admin"
+    // the customer is charged; there is no separate global markup.
     Route::get('/channels', [ChannelFeeController::class, 'index']);
     Route::put('/channels/{paymentChannel}', [ChannelFeeController::class, 'update']);
-    Route::get('/settings/admin-fee', [AdminFeeSettingController::class, 'show']);
-    Route::put('/settings/admin-fee', [AdminFeeSettingController::class, 'update']);
+
+    // Services catalogue — what kita sells to its clients, and for how long.
+    Route::get('/services', [ServiceController::class, 'index']);
+    Route::post('/services', [ServiceController::class, 'store']);
+    Route::get('/services/{service}', [ServiceController::class, 'show']);
+    Route::put('/services/{service}', [ServiceController::class, 'update']);
+    Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+
+    // Service bills — manual bukti-transfer verification.
+    Route::get('/service-invoices', [ServiceInvoiceController::class, 'index']);
+    Route::get('/service-invoices/{serviceInvoice}', [ServiceInvoiceController::class, 'show']);
+    Route::post('/service-invoices/{serviceInvoice}/confirm', [ServiceInvoiceController::class, 'confirm']);
+    Route::post('/service-invoices/{serviceInvoice}/reject', [ServiceInvoiceController::class, 'reject']);
+
+    // Who subscribes to what.
+    Route::get('/service-subscriptions', [ServiceSubscriptionController::class, 'index']);
+    Route::post('/service-subscriptions/{serviceSubscription}/cancel', [ServiceSubscriptionController::class, 'cancel']);
+
+    // Incidents driving the clients' Status Layanan page.
+    Route::get('/incidents', [ServiceIncidentController::class, 'index']);
+    Route::post('/incidents', [ServiceIncidentController::class, 'store']);
+    Route::get('/incidents/{serviceIncident}', [ServiceIncidentController::class, 'show']);
+    Route::put('/incidents/{serviceIncident}', [ServiceIncidentController::class, 'update']);
+    Route::delete('/incidents/{serviceIncident}', [ServiceIncidentController::class, 'destroy']);
 });

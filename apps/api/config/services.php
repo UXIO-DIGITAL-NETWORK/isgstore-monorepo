@@ -74,4 +74,11 @@ return [
         'url' => env('STOREFRONT_URL', 'http://localhost:5173'),
         'brand' => env('STOREFRONT_BRAND', 'TOPUP GAME'),
     ],
+
+    'service_invoice' => [
+        // How long a client has to transfer before `services:expire` closes an
+        // UNPAID service bill. Config rather than a column so the window can be
+        // retuned without a migration.
+        'due_days' => env('SERVICE_INVOICE_DUE_DAYS', 3),
+    ],
 ];
