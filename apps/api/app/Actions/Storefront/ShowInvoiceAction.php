@@ -78,8 +78,7 @@ class ShowInvoiceAction
                 // customer was actually charged for the product.
                 'base' => (int) $transaction->amount_base,
                 'fee' => (int) $transaction->amount_fee, // combined (back-compat)
-                'channel_fee' => (int) $transaction->channel_fee, // "Biaya Metode Pembayaran"
-                'admin_fee' => (int) $transaction->admin_markup,  // "Biaya Admin" (markup)
+                'admin_fee' => (int) $transaction->channel_fee, // "Biaya Admin" = the channel's fee
                 'discount' => (int) $transaction->discount_amount,
                 'total' => (int) $transaction->amount_total,
             ],

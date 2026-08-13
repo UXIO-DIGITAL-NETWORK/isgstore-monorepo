@@ -72,6 +72,10 @@ class DatabaseSeeder extends Seeder
             PromoSeeder::class,
             FlashSaleSeeder::class,
             MembershipPlanSeeder::class,
+
+            // § Payment-page services kita sells to its clients. After
+            // PaymentChannelSeeder, whose rows Monetapay's service points at.
+            ServiceSeeder::class,
         ]);
     }
 }

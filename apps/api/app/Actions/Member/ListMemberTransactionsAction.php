@@ -92,8 +92,7 @@ class ListMemberTransactionsAction
             'amount' => (int) $transaction->amount_total,
             // Fee breakdown for transparency (customer never sees margin/supplier).
             'base' => (int) $transaction->amount_base,
-            'channel_fee' => (int) $transaction->channel_fee,
-            'admin_fee' => (int) $transaction->admin_markup,
+            'admin_fee' => (int) $transaction->channel_fee,
             'status' => $transaction->status?->value,
             'payment_method' => $transaction->paymentChannel?->payment_type,
             'payment_channel' => $transaction->paymentChannel?->name,

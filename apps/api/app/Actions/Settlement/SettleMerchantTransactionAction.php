@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * ("kita"), once, when payment is confirmed.
  *
  *   - the merchant is credited `amount_base` (their product's net price);
- *   - the platform keeps its markup net of Monetapay's real fee, i.e.
+ *   - the platform keeps the admin fee net of Monetapay's real fee, i.e.
  *     `amount_fee - payments.gateway_fee`.
  *
  * Only merchant-attributed transactions settle here — platform-owned sales
@@ -52,6 +52,10 @@ class SettleMerchantTransactionAction
             }
 
             $amountBase = (int) $transaction->amount_base;
+            // Read `amount_fee`, never `channel_fee`. They are equal for rows
+            // written since the global markup was removed, but historical rows
+            // split into channel_fee + admin_markup — swapping the column here
+            // would silently under-report profit already booked to the ledger.
             $adminFee = (int) $transaction->amount_fee;
             $gatewayFee = (int) ($transaction->payment?->gateway_fee ?? 0);
 
@@ -66,8 +70,8 @@ class SettleMerchantTransactionAction
                 );
             }
 
-            // Keep kita's markup net of Monetapay's actual fee. Can be zero (or
-            // negative if the gateway fee exceeds the markup); only a non-zero
+            // Keep kita's admin fee net of Monetapay's actual fee. Can be zero
+            // (or negative if the gateway fee exceeds it); only a non-zero
             // movement is recorded, since a ledger entry of 0 is meaningless.
             $platformProfit = $adminFee - $gatewayFee;
             if ($platformProfit !== 0) {

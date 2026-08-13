@@ -31,3 +31,13 @@ Schedule::command('memberships:expire')
     ->withoutOverlapping()
     ->runInBackground()
     ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: memberships:expire'));
+
+// Service billing expiry: closes lapsed subscriptions so the client's "Active
+// until" card stops lying, and overdue UNPAID invoices so an abandoned request
+// stops blocking a fresh order for the same service. Daily, like memberships —
+// the granularity of a billing period is days.
+Schedule::command('services:expire')
+    ->dailyAt('00:20')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: services:expire'));

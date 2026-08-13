@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Payment\MonetapayService;
 use App\Support\Integration\IntegrationConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
 use Tests\TestCase;
@@ -62,7 +63,7 @@ class IntegrationChannelTest extends TestCase
 
         // Stored (decrypted via cast) holds the real secret; the raw DB column is ciphertext.
         $this->assertSame('SUPERSECRET9876', IntegrationConfig::stored('monetapay')['token']);
-        $rawColumn = \Illuminate\Support\Facades\DB::table('integration_credentials')
+        $rawColumn = DB::table('integration_credentials')
             ->where('provider', 'monetapay')->value('credentials');
         $this->assertStringNotContainsString('SUPERSECRET9876', (string) $rawColumn);
     }

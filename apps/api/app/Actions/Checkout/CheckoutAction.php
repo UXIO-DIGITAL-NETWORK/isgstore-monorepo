@@ -18,7 +18,6 @@ use App\Models\PromoRedemption;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
-use App\Support\Pricing\AdminFeeSetting;
 use App\Support\Pricing\RolePrice;
 use App\Support\Promo\PromoResolver;
 use Exception;
@@ -140,15 +139,16 @@ class CheckoutAction
             }
 
             // ── 5. Fee & total ───────────────────────────────────────────────
-            // Computed on the discounted price: the customer pays a gateway fee
-            // on what they are actually charged. The per-channel fee covers the
-            // payment method's cost; the global admin fee (set by payment-internal)
-            // is kita's markup on top. Both default to 0, so an unconfigured
-            // instance charges exactly the product price.
+            // Computed on the discounted price: the customer pays the fee on what
+            // they are actually charged. The per-channel fee IS the "Biaya Admin"
+            // the customer is shown — the markup lives in the channel's own
+            // fee_flat/fee_percent, and there is no second global markup on top.
+            // Kita's profit is this fee net of the gateway's real cut (see
+            // SettleMerchantTransactionAction). Defaults to 0, so an unconfigured
+            // channel charges exactly the product price.
             $feePercent = max(0, min(100, (float) $channel->fee_percent));
             $channelFee = $channel->fee_flat + (int) round($sellingPrice * ($feePercent / 100));
-            $adminMarkup = AdminFeeSetting::compute($sellingPrice);
-            $adminFee = $channelFee + $adminMarkup; // combined total (back-compat)
+            $adminFee = $channelFee;
             $grossAmount = $sellingPrice + $adminFee;
 
             if ($grossAmount < $channel->min_amount) {
@@ -184,7 +184,9 @@ class CheckoutAction
                 'amount_base' => $sellingPrice,
                 'amount_fee' => $adminFee,
                 'channel_fee' => $channelFee,
-                'admin_markup' => $adminMarkup,
+                // Always 0 now. The column is kept so historical rows — written
+                // while a global markup existed — stay reconstructable.
+                'admin_markup' => 0,
                 'discount_amount' => $discount,
                 'amount_total' => $grossAmount,
                 'margin' => $margin,
@@ -212,7 +214,7 @@ class CheckoutAction
                 'gross_amount' => $grossAmount,
                 'admin_fee' => $adminFee,
                 'channel_fee' => $channelFee,
-                'admin_markup' => $adminMarkup,
+                'admin_markup' => 0,
                 'status' => PaymentStatus::PENDING,
             ]);
 
@@ -359,9 +361,7 @@ class CheckoutAction
                     'channel' => $channel->name,
                     'type' => $channel->payment_type,
                     'amount' => $grossAmount,
-                    'admin_fee' => $adminFee,      // combined total (back-compat)
-                    'channel_fee' => $channelFee,  // "Biaya Metode Pembayaran"
-                    'admin_markup' => $adminMarkup, // "Biaya Admin"
+                    'admin_fee' => $adminFee, // "Biaya Admin" = the channel's fee
                     'status' => $transactionStatus,
                     'instructions' => $paymentInstructions ?: null,
                 ],

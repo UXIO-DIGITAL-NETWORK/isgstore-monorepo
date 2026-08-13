@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 /**
  * Every transaction, full financial breakdown — kita sees the split the
- * merchant projection deliberately hides (markup, gateway fee, margin).
+ * merchant projection deliberately hides (admin fee, gateway fee, own profit).
  */
 class FinanceTransactionController extends Controller
 {
@@ -41,13 +41,13 @@ class FinanceTransactionController extends Controller
                 'product' => $t->product?->name,
                 'merchant' => $t->merchant ? ['id' => $t->merchant->id, 'name' => $t->merchant->name] : null,
                 'amount_base' => (int) $t->amount_base,
-                'amount_fee' => (int) $t->amount_fee,
-                'channel_fee' => (int) $t->channel_fee,
-                'admin_fee' => (int) $t->admin_markup,
+                // "Biaya Admin" = the payment method's fee. `amount_fee` is the
+                // stored total and equals `channel_fee` for every row written
+                // since the global markup was removed.
+                'admin_fee' => (int) $t->channel_fee,
                 'amount_total' => (int) $t->amount_total,
                 'gateway_fee' => (int) ($t->payment?->gateway_fee ?? 0),
                 'platform_profit' => (int) $t->amount_fee - (int) ($t->payment?->gateway_fee ?? 0),
-                'margin' => (int) $t->margin,
                 'status' => $t->status?->value,
                 'payment_channel' => $t->paymentChannel?->name,
                 'created_at' => $t->created_at?->toIso8601String(),
