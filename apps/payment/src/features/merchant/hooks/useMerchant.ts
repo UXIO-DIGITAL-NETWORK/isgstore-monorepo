@@ -81,3 +81,30 @@ export const useUploadServiceProof = () => {
 
 export const useServiceStatus = () =>
   useQuery({ queryKey: ["merchant", "service-status"], queryFn: merchantService.serviceStatus });
+
+// ── Checkout, invoice detail & installation ─────────────────────────────────
+
+export const useMerchantServiceDetail = (id: number) =>
+  useQuery({ queryKey: ["merchant", "service-detail", id], queryFn: () => merchantService.serviceDetail(id) });
+
+export const useMerchantServiceInvoice = (id: number) =>
+  useQuery({ queryKey: ["merchant", "service-invoice", id], queryFn: () => merchantService.serviceInvoice(id) });
+
+export const useMerchantInstallation = (subscriptionId: number | undefined) =>
+  useQuery({
+    queryKey: ["merchant", "installation", subscriptionId],
+    queryFn: () => merchantService.installation(subscriptionId as number),
+    enabled: Boolean(subscriptionId),
+  });
+
+/**
+ * A mutation on purpose, never a query: a cached query would put the plaintext
+ * credential in the TanStack Query cache, where the devtools panel renders it.
+ */
+export const useRevealDetail = () =>
+  useMutation({
+    mutationFn: (id: number) => merchantService.revealDetail(id),
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menampilkan nilai");
+    },
+  });

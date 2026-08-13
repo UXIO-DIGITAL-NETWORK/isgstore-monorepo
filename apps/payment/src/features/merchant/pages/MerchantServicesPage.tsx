@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
 import { Pager } from "@/components/common/Pager";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -14,12 +15,7 @@ import { formatDate, formatDateTime } from "@/utils/date";
 import type { Service, ServiceInvoice, ServiceSubscription } from "@/types/service.type";
 
 import { UploadProofDialog } from "../components/UploadProofDialog";
-import {
-  useMerchantServiceInvoices,
-  useMerchantServices,
-  useMerchantSubscriptions,
-  useSubscribeService,
-} from "../hooks/useMerchant";
+import { useMerchantServiceInvoices, useMerchantServices, useMerchantSubscriptions } from "../hooks/useMerchant";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
@@ -46,15 +42,7 @@ function SubscriptionCard({ subscription }: { subscription: ServiceSubscription 
   );
 }
 
-function CatalogCard({
-  service,
-  onSubscribe,
-  disabled,
-}: {
-  service: Service;
-  onSubscribe: (service: Service) => void;
-  disabled: boolean;
-}) {
+function CatalogCard({ service }: { service: Service }) {
   return (
     <Box className={CARD}>
       <Box className="flex items-start justify-between gap-2">
@@ -101,11 +89,10 @@ function CatalogCard({
       </Text>
 
       <Button
+        asChild
         className="w-full"
-        disabled={disabled}
-        onClick={() => onSubscribe(service)}
       >
-        Berlangganan
+        <Link href={`/app/payment-admin/services/${service.id}/checkout`}>Berlangganan</Link>
       </Button>
     </Box>
   );
@@ -122,19 +109,18 @@ export default function MerchantServicesPage() {
     isLoading: loadingInvoices,
     isError: invoicesError,
   } = useMerchantServiceInvoices({ page: invoicePage, per_page: 20 });
-  const { mutate: subscribe, isPending: subscribing } = useSubscribeService();
 
   const invoiceColumns: Column<ServiceInvoice>[] = [
     {
       key: "invoice",
       header: "No. Invoice",
       cell: (r) => (
-        <Text
-          as="span"
-          className="font-medium"
+        <Link
+          href={`/app/payment-admin/service-invoices/${r.id}`}
+          className="font-medium underline"
         >
           {r.invoice_number}
-        </Text>
+        </Link>
       ),
     },
     { key: "service", header: "Service", cell: (r) => r.service_name },
@@ -157,13 +143,6 @@ export default function MerchantServicesPage() {
         ),
     },
   ];
-
-  const onSubscribe = (service: Service) =>
-    subscribe(
-      { service_id: service.id },
-      // Land the client where the next step is: the invoice needs a proof.
-      { onSuccess: () => setTab("invoices") },
-    );
 
   return (
     <Box className="flex flex-col gap-6">
@@ -213,8 +192,6 @@ export default function MerchantServicesPage() {
                 <CatalogCard
                   key={service.id}
                   service={service}
-                  onSubscribe={onSubscribe}
-                  disabled={subscribing}
                 />
               ))}
             </Box>

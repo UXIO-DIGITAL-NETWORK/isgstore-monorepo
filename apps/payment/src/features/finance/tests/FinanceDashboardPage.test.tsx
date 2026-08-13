@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import FinanceDashboardPage from "../pages/FinanceDashboardPage";
 import * as hooks from "../hooks/useFinance";
-import type { FinanceTransaction } from "../types/finance.type";
+import type { FinanceUnifiedTransaction } from "@/types/transaction.type";
 
 // The "Lihat semua" shortcut is an internal router Link; stub it to a plain
 // anchor so this stays a unit test of the dashboard, not of routing.
@@ -13,12 +13,14 @@ vi.mock("@/components/common/Link", () => ({
   Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
 }));
 
-const tx: FinanceTransaction = {
+const tx: FinanceUnifiedTransaction = {
+  type: "sale",
   id: 99,
   invoice_number: "INV-777",
-  product: "Diamond 100",
+  title: "Diamond 100",
   merchant: { id: 1, name: "Toko A" },
-  amount_base: 10000,
+  direction: "in",
+  amount: 10000,
   admin_fee: 2000,
   amount_total: 12000,
   gateway_fee: 300,
