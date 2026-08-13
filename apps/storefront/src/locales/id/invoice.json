@@ -1,24 +1,20 @@
 {
   "heading": "MENUNGGU PEMBAYARAN",
   "subtitle": "Silahkan melakukan pembayaran dengan metode yang Anda pilih.",
-
   "timer": {
     "hours": "Jam",
     "minutes": "Menit",
     "seconds": "Detik"
   },
-
   "orderDetail": {
     "title": "Detail Pesanan",
     "userId": "User ID",
     "serverId": "Server ID",
     "username": "Username",
     "price": "Harga",
-    "feeMethod": "Biaya Metode Pembayaran",
     "adminFee": "Biaya Admin",
     "totalPayment": "Total Pembayaran"
   },
-
   "instructions": {
     "title": "Instruksi Pembayaran",
     "steps": [
@@ -30,7 +26,6 @@
       "Jangan menutup halaman sebelum transaksi berhasil diproses."
     ]
   },
-
   "paymentMethod": {
     "title": "Metode Pembayaran",
     "qrisLabel": "QRIS All Payment",
@@ -45,7 +40,6 @@
     "verifyNote": "Setelah melakukan pembayaran, harap menunggu sistem memverifikasi pembayaran secara otomatis",
     "copySuccess": "Tersalin!"
   },
-
   "review": {
     "title": "BERIKAN ULASAN TRANSAKSI",
     "subtitle": "Bagaimana pengalaman Anda setelah bertransaksi?",
@@ -61,7 +55,6 @@
     "skip": "Lewati",
     "submit": "Kirim Ulasan"
   },
-
   "failed": {
     "heading": "PEMBAYARAN GAGAL",
     "subtitle": "Transaksi tidak dapat diproses",
@@ -76,7 +69,6 @@
       "chatWhatsApp": "Chat WhatsApp"
     }
   },
-
   "success": {
     "heading": "PEMBAYARAN BERHASIL",
     "subtitle": "Transaksi telah berhasil dilakukan",

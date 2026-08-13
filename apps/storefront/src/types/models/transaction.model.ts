@@ -61,7 +61,7 @@ export interface InvoiceModel {
     server: string | null;
     nickname: string | null;
   };
-  amount: { base: number; fee: number; channel_fee: number; admin_fee: number; total: number };
+  amount: { base: number; fee: number; admin_fee: number; total: number };
   payment: {
     channel: string | null;
     channel_code: string | null;
@@ -90,7 +90,6 @@ export interface TransactionSummaryModel {
   amount: number;
   /** Fee breakdown (present on member/track lists); optional for older shapes. */
   base?: number;
-  channel_fee?: number;
   admin_fee?: number;
   status: TransactionStatus;
   payment_method?: PaymentType | null;

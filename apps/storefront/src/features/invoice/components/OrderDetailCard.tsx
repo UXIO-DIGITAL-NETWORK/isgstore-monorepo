@@ -94,12 +94,6 @@ export default function OrderDetailCard({ order }: Props): React.JSX.Element {
           label={t("orderDetail.price")}
           value={formatCurrency(order.price, locale)}
         />
-        {order.channelFee > 0 && (
-          <PriceRow
-            label={t("orderDetail.feeMethod")}
-            value={formatCurrency(order.channelFee, locale)}
-          />
-        )}
         {order.adminFee > 0 && (
           <PriceRow
             label={t("orderDetail.adminFee")}

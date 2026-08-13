@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { toDiamondPackages, toGameInfo } from "@/features/checkout/lib/mappers";
+import { calculateAdminFee, toDiamondPackages, toGameInfo } from "@/features/checkout/lib/mappers";
 import type { GameDetailModel } from "@/types/models/game.model";
 import type { GameProductsResponse } from "@/types/models/product.model";
 
@@ -85,5 +85,31 @@ describe("toDiamondPackages", () => {
 
     expect(pkg.name).toBe("Weekly Pass");
     expect(pkg.amount).toBe(0);
+  });
+});
+
+/**
+ * `calculateAdminFee` duplicates CheckoutAction's maths so the summary can show
+ * the total before the order is submitted. A drift here quotes the customer a
+ * price the backend will not charge, which no other test would catch.
+ */
+describe("calculateAdminFee", () => {
+  it("adds the channel's flat fee", () => {
+    expect(calculateAdminFee({ feeFlat: 2500, feePercent: 0 }, 50_000)).toBe(2500);
+  });
+
+  it("adds the channel's percentage of the price, rounded", () => {
+    expect(calculateAdminFee({ feeFlat: 0, feePercent: 0.7 }, 50_000)).toBe(350);
+    expect(calculateAdminFee({ feeFlat: 0, feePercent: 1.5 }, 33_333)).toBe(500);
+  });
+
+  it("adds flat and percent together", () => {
+    expect(calculateAdminFee({ feeFlat: 1000, feePercent: 2 }, 50_000)).toBe(2000);
+  });
+
+  /** Mirrors the backend's `max(0, min(100, ...))` clamp on fee_percent. */
+  it("clamps the percentage to 0..100", () => {
+    expect(calculateAdminFee({ feeFlat: 0, feePercent: -5 }, 50_000)).toBe(0);
+    expect(calculateAdminFee({ feeFlat: 0, feePercent: 150 }, 50_000)).toBe(50_000);
   });
 });
