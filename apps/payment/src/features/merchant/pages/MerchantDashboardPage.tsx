@@ -1,6 +1,7 @@
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { StatCard } from "@/components/common/StatCard";
+import { WebsiteServicesCard } from "../components/WebsiteServicesCard";
 import { useMerchantDashboard } from "../hooks/useMerchant";
 
 export default function MerchantDashboardPage() {
@@ -53,6 +54,8 @@ export default function MerchantDashboardPage() {
           }}
         />
       </Box>
+
+      <WebsiteServicesCard activeUntil={data?.service_active_until ?? null} />
     </Box>
   );
 }

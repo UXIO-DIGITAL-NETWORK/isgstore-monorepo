@@ -16,11 +16,17 @@ import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
 import { Route as AppProtectedDashboardIndexRouteImport } from './routes/app/_protected/dashboard/index'
 import { Route as AppProtectedPaymentInternalWithdrawalsIndexRouteImport } from './routes/app/_protected/payment-internal/withdrawals/index'
 import { Route as AppProtectedPaymentInternalTransactionsIndexRouteImport } from './routes/app/_protected/payment-internal/transactions/index'
+import { Route as AppProtectedPaymentInternalSubscriptionsIndexRouteImport } from './routes/app/_protected/payment-internal/subscriptions/index'
+import { Route as AppProtectedPaymentInternalServicesIndexRouteImport } from './routes/app/_protected/payment-internal/services/index'
+import { Route as AppProtectedPaymentInternalNotificationsIndexRouteImport } from './routes/app/_protected/payment-internal/notifications/index'
 import { Route as AppProtectedPaymentInternalMerchantsIndexRouteImport } from './routes/app/_protected/payment-internal/merchants/index'
+import { Route as AppProtectedPaymentInternalInvoicesIndexRouteImport } from './routes/app/_protected/payment-internal/invoices/index'
+import { Route as AppProtectedPaymentInternalIncidentsIndexRouteImport } from './routes/app/_protected/payment-internal/incidents/index'
 import { Route as AppProtectedPaymentInternalChannelsIndexRouteImport } from './routes/app/_protected/payment-internal/channels/index'
-import { Route as AppProtectedPaymentInternalAdminFeeIndexRouteImport } from './routes/app/_protected/payment-internal/admin-fee/index'
 import { Route as AppProtectedPaymentAdminWithdrawalsIndexRouteImport } from './routes/app/_protected/payment-admin/withdrawals/index'
 import { Route as AppProtectedPaymentAdminTransactionsIndexRouteImport } from './routes/app/_protected/payment-admin/transactions/index'
+import { Route as AppProtectedPaymentAdminServicesIndexRouteImport } from './routes/app/_protected/payment-admin/services/index'
+import { Route as AppProtectedPaymentAdminServiceStatusIndexRouteImport } from './routes/app/_protected/payment-admin/service-status/index'
 import { Route as AppProtectedPaymentAdminMutationsIndexRouteImport } from './routes/app/_protected/payment-admin/mutations/index'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
@@ -60,22 +66,46 @@ const AppProtectedPaymentInternalTransactionsIndexRoute =
     path: '/payment-internal/transactions/',
     getParentRoute: () => AppProtectedRoute,
   } as any)
+const AppProtectedPaymentInternalSubscriptionsIndexRoute =
+  AppProtectedPaymentInternalSubscriptionsIndexRouteImport.update({
+    id: '/payment-internal/subscriptions/',
+    path: '/payment-internal/subscriptions/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
+const AppProtectedPaymentInternalServicesIndexRoute =
+  AppProtectedPaymentInternalServicesIndexRouteImport.update({
+    id: '/payment-internal/services/',
+    path: '/payment-internal/services/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
+const AppProtectedPaymentInternalNotificationsIndexRoute =
+  AppProtectedPaymentInternalNotificationsIndexRouteImport.update({
+    id: '/payment-internal/notifications/',
+    path: '/payment-internal/notifications/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
 const AppProtectedPaymentInternalMerchantsIndexRoute =
   AppProtectedPaymentInternalMerchantsIndexRouteImport.update({
     id: '/payment-internal/merchants/',
     path: '/payment-internal/merchants/',
     getParentRoute: () => AppProtectedRoute,
   } as any)
+const AppProtectedPaymentInternalInvoicesIndexRoute =
+  AppProtectedPaymentInternalInvoicesIndexRouteImport.update({
+    id: '/payment-internal/invoices/',
+    path: '/payment-internal/invoices/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
+const AppProtectedPaymentInternalIncidentsIndexRoute =
+  AppProtectedPaymentInternalIncidentsIndexRouteImport.update({
+    id: '/payment-internal/incidents/',
+    path: '/payment-internal/incidents/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
 const AppProtectedPaymentInternalChannelsIndexRoute =
   AppProtectedPaymentInternalChannelsIndexRouteImport.update({
     id: '/payment-internal/channels/',
     path: '/payment-internal/channels/',
-    getParentRoute: () => AppProtectedRoute,
-  } as any)
-const AppProtectedPaymentInternalAdminFeeIndexRoute =
-  AppProtectedPaymentInternalAdminFeeIndexRouteImport.update({
-    id: '/payment-internal/admin-fee/',
-    path: '/payment-internal/admin-fee/',
     getParentRoute: () => AppProtectedRoute,
   } as any)
 const AppProtectedPaymentAdminWithdrawalsIndexRoute =
@@ -88,6 +118,18 @@ const AppProtectedPaymentAdminTransactionsIndexRoute =
   AppProtectedPaymentAdminTransactionsIndexRouteImport.update({
     id: '/payment-admin/transactions/',
     path: '/payment-admin/transactions/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
+const AppProtectedPaymentAdminServicesIndexRoute =
+  AppProtectedPaymentAdminServicesIndexRouteImport.update({
+    id: '/payment-admin/services/',
+    path: '/payment-admin/services/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
+const AppProtectedPaymentAdminServiceStatusIndexRoute =
+  AppProtectedPaymentAdminServiceStatusIndexRouteImport.update({
+    id: '/payment-admin/service-status/',
+    path: '/payment-admin/service-status/',
     getParentRoute: () => AppProtectedRoute,
   } as any)
 const AppProtectedPaymentAdminMutationsIndexRoute =
@@ -103,11 +145,17 @@ export interface FileRoutesByFullPath {
   '/login/': typeof AuthLoginIndexRoute
   '/app/dashboard/': typeof AppProtectedDashboardIndexRoute
   '/app/payment-admin/mutations/': typeof AppProtectedPaymentAdminMutationsIndexRoute
+  '/app/payment-admin/service-status/': typeof AppProtectedPaymentAdminServiceStatusIndexRoute
+  '/app/payment-admin/services/': typeof AppProtectedPaymentAdminServicesIndexRoute
   '/app/payment-admin/transactions/': typeof AppProtectedPaymentAdminTransactionsIndexRoute
   '/app/payment-admin/withdrawals/': typeof AppProtectedPaymentAdminWithdrawalsIndexRoute
-  '/app/payment-internal/admin-fee/': typeof AppProtectedPaymentInternalAdminFeeIndexRoute
   '/app/payment-internal/channels/': typeof AppProtectedPaymentInternalChannelsIndexRoute
+  '/app/payment-internal/incidents/': typeof AppProtectedPaymentInternalIncidentsIndexRoute
+  '/app/payment-internal/invoices/': typeof AppProtectedPaymentInternalInvoicesIndexRoute
   '/app/payment-internal/merchants/': typeof AppProtectedPaymentInternalMerchantsIndexRoute
+  '/app/payment-internal/notifications/': typeof AppProtectedPaymentInternalNotificationsIndexRoute
+  '/app/payment-internal/services/': typeof AppProtectedPaymentInternalServicesIndexRoute
+  '/app/payment-internal/subscriptions/': typeof AppProtectedPaymentInternalSubscriptionsIndexRoute
   '/app/payment-internal/transactions/': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/payment-internal/withdrawals/': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
 }
@@ -117,11 +165,17 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginIndexRoute
   '/app/dashboard': typeof AppProtectedDashboardIndexRoute
   '/app/payment-admin/mutations': typeof AppProtectedPaymentAdminMutationsIndexRoute
+  '/app/payment-admin/service-status': typeof AppProtectedPaymentAdminServiceStatusIndexRoute
+  '/app/payment-admin/services': typeof AppProtectedPaymentAdminServicesIndexRoute
   '/app/payment-admin/transactions': typeof AppProtectedPaymentAdminTransactionsIndexRoute
   '/app/payment-admin/withdrawals': typeof AppProtectedPaymentAdminWithdrawalsIndexRoute
-  '/app/payment-internal/admin-fee': typeof AppProtectedPaymentInternalAdminFeeIndexRoute
   '/app/payment-internal/channels': typeof AppProtectedPaymentInternalChannelsIndexRoute
+  '/app/payment-internal/incidents': typeof AppProtectedPaymentInternalIncidentsIndexRoute
+  '/app/payment-internal/invoices': typeof AppProtectedPaymentInternalInvoicesIndexRoute
   '/app/payment-internal/merchants': typeof AppProtectedPaymentInternalMerchantsIndexRoute
+  '/app/payment-internal/notifications': typeof AppProtectedPaymentInternalNotificationsIndexRoute
+  '/app/payment-internal/services': typeof AppProtectedPaymentInternalServicesIndexRoute
+  '/app/payment-internal/subscriptions': typeof AppProtectedPaymentInternalSubscriptionsIndexRoute
   '/app/payment-internal/transactions': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/payment-internal/withdrawals': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
 }
@@ -133,11 +187,17 @@ export interface FileRoutesById {
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/app/_protected/dashboard/': typeof AppProtectedDashboardIndexRoute
   '/app/_protected/payment-admin/mutations/': typeof AppProtectedPaymentAdminMutationsIndexRoute
+  '/app/_protected/payment-admin/service-status/': typeof AppProtectedPaymentAdminServiceStatusIndexRoute
+  '/app/_protected/payment-admin/services/': typeof AppProtectedPaymentAdminServicesIndexRoute
   '/app/_protected/payment-admin/transactions/': typeof AppProtectedPaymentAdminTransactionsIndexRoute
   '/app/_protected/payment-admin/withdrawals/': typeof AppProtectedPaymentAdminWithdrawalsIndexRoute
-  '/app/_protected/payment-internal/admin-fee/': typeof AppProtectedPaymentInternalAdminFeeIndexRoute
   '/app/_protected/payment-internal/channels/': typeof AppProtectedPaymentInternalChannelsIndexRoute
+  '/app/_protected/payment-internal/incidents/': typeof AppProtectedPaymentInternalIncidentsIndexRoute
+  '/app/_protected/payment-internal/invoices/': typeof AppProtectedPaymentInternalInvoicesIndexRoute
   '/app/_protected/payment-internal/merchants/': typeof AppProtectedPaymentInternalMerchantsIndexRoute
+  '/app/_protected/payment-internal/notifications/': typeof AppProtectedPaymentInternalNotificationsIndexRoute
+  '/app/_protected/payment-internal/services/': typeof AppProtectedPaymentInternalServicesIndexRoute
+  '/app/_protected/payment-internal/subscriptions/': typeof AppProtectedPaymentInternalSubscriptionsIndexRoute
   '/app/_protected/payment-internal/transactions/': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/_protected/payment-internal/withdrawals/': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
 }
@@ -149,11 +209,17 @@ export interface FileRouteTypes {
     | '/login/'
     | '/app/dashboard/'
     | '/app/payment-admin/mutations/'
+    | '/app/payment-admin/service-status/'
+    | '/app/payment-admin/services/'
     | '/app/payment-admin/transactions/'
     | '/app/payment-admin/withdrawals/'
-    | '/app/payment-internal/admin-fee/'
     | '/app/payment-internal/channels/'
+    | '/app/payment-internal/incidents/'
+    | '/app/payment-internal/invoices/'
     | '/app/payment-internal/merchants/'
+    | '/app/payment-internal/notifications/'
+    | '/app/payment-internal/services/'
+    | '/app/payment-internal/subscriptions/'
     | '/app/payment-internal/transactions/'
     | '/app/payment-internal/withdrawals/'
   fileRoutesByTo: FileRoutesByTo
@@ -163,11 +229,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/dashboard'
     | '/app/payment-admin/mutations'
+    | '/app/payment-admin/service-status'
+    | '/app/payment-admin/services'
     | '/app/payment-admin/transactions'
     | '/app/payment-admin/withdrawals'
-    | '/app/payment-internal/admin-fee'
     | '/app/payment-internal/channels'
+    | '/app/payment-internal/incidents'
+    | '/app/payment-internal/invoices'
     | '/app/payment-internal/merchants'
+    | '/app/payment-internal/notifications'
+    | '/app/payment-internal/services'
+    | '/app/payment-internal/subscriptions'
     | '/app/payment-internal/transactions'
     | '/app/payment-internal/withdrawals'
   id:
@@ -178,11 +250,17 @@ export interface FileRouteTypes {
     | '/_auth/login/'
     | '/app/_protected/dashboard/'
     | '/app/_protected/payment-admin/mutations/'
+    | '/app/_protected/payment-admin/service-status/'
+    | '/app/_protected/payment-admin/services/'
     | '/app/_protected/payment-admin/transactions/'
     | '/app/_protected/payment-admin/withdrawals/'
-    | '/app/_protected/payment-internal/admin-fee/'
     | '/app/_protected/payment-internal/channels/'
+    | '/app/_protected/payment-internal/incidents/'
+    | '/app/_protected/payment-internal/invoices/'
     | '/app/_protected/payment-internal/merchants/'
+    | '/app/_protected/payment-internal/notifications/'
+    | '/app/_protected/payment-internal/services/'
+    | '/app/_protected/payment-internal/subscriptions/'
     | '/app/_protected/payment-internal/transactions/'
     | '/app/_protected/payment-internal/withdrawals/'
   fileRoutesById: FileRoutesById
@@ -244,6 +322,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProtectedPaymentInternalTransactionsIndexRouteImport
       parentRoute: typeof AppProtectedRoute
     }
+    '/app/_protected/payment-internal/subscriptions/': {
+      id: '/app/_protected/payment-internal/subscriptions/'
+      path: '/payment-internal/subscriptions'
+      fullPath: '/app/payment-internal/subscriptions/'
+      preLoaderRoute: typeof AppProtectedPaymentInternalSubscriptionsIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
+    '/app/_protected/payment-internal/services/': {
+      id: '/app/_protected/payment-internal/services/'
+      path: '/payment-internal/services'
+      fullPath: '/app/payment-internal/services/'
+      preLoaderRoute: typeof AppProtectedPaymentInternalServicesIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
+    '/app/_protected/payment-internal/notifications/': {
+      id: '/app/_protected/payment-internal/notifications/'
+      path: '/payment-internal/notifications'
+      fullPath: '/app/payment-internal/notifications/'
+      preLoaderRoute: typeof AppProtectedPaymentInternalNotificationsIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
     '/app/_protected/payment-internal/merchants/': {
       id: '/app/_protected/payment-internal/merchants/'
       path: '/payment-internal/merchants'
@@ -251,18 +350,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProtectedPaymentInternalMerchantsIndexRouteImport
       parentRoute: typeof AppProtectedRoute
     }
+    '/app/_protected/payment-internal/invoices/': {
+      id: '/app/_protected/payment-internal/invoices/'
+      path: '/payment-internal/invoices'
+      fullPath: '/app/payment-internal/invoices/'
+      preLoaderRoute: typeof AppProtectedPaymentInternalInvoicesIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
+    '/app/_protected/payment-internal/incidents/': {
+      id: '/app/_protected/payment-internal/incidents/'
+      path: '/payment-internal/incidents'
+      fullPath: '/app/payment-internal/incidents/'
+      preLoaderRoute: typeof AppProtectedPaymentInternalIncidentsIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
     '/app/_protected/payment-internal/channels/': {
       id: '/app/_protected/payment-internal/channels/'
       path: '/payment-internal/channels'
       fullPath: '/app/payment-internal/channels/'
       preLoaderRoute: typeof AppProtectedPaymentInternalChannelsIndexRouteImport
-      parentRoute: typeof AppProtectedRoute
-    }
-    '/app/_protected/payment-internal/admin-fee/': {
-      id: '/app/_protected/payment-internal/admin-fee/'
-      path: '/payment-internal/admin-fee'
-      fullPath: '/app/payment-internal/admin-fee/'
-      preLoaderRoute: typeof AppProtectedPaymentInternalAdminFeeIndexRouteImport
       parentRoute: typeof AppProtectedRoute
     }
     '/app/_protected/payment-admin/withdrawals/': {
@@ -277,6 +383,20 @@ declare module '@tanstack/react-router' {
       path: '/payment-admin/transactions'
       fullPath: '/app/payment-admin/transactions/'
       preLoaderRoute: typeof AppProtectedPaymentAdminTransactionsIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
+    '/app/_protected/payment-admin/services/': {
+      id: '/app/_protected/payment-admin/services/'
+      path: '/payment-admin/services'
+      fullPath: '/app/payment-admin/services/'
+      preLoaderRoute: typeof AppProtectedPaymentAdminServicesIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
+    '/app/_protected/payment-admin/service-status/': {
+      id: '/app/_protected/payment-admin/service-status/'
+      path: '/payment-admin/service-status'
+      fullPath: '/app/payment-admin/service-status/'
+      preLoaderRoute: typeof AppProtectedPaymentAdminServiceStatusIndexRouteImport
       parentRoute: typeof AppProtectedRoute
     }
     '/app/_protected/payment-admin/mutations/': {
@@ -304,11 +424,17 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 interface AppProtectedRouteChildren {
   AppProtectedDashboardIndexRoute: typeof AppProtectedDashboardIndexRoute
   AppProtectedPaymentAdminMutationsIndexRoute: typeof AppProtectedPaymentAdminMutationsIndexRoute
+  AppProtectedPaymentAdminServiceStatusIndexRoute: typeof AppProtectedPaymentAdminServiceStatusIndexRoute
+  AppProtectedPaymentAdminServicesIndexRoute: typeof AppProtectedPaymentAdminServicesIndexRoute
   AppProtectedPaymentAdminTransactionsIndexRoute: typeof AppProtectedPaymentAdminTransactionsIndexRoute
   AppProtectedPaymentAdminWithdrawalsIndexRoute: typeof AppProtectedPaymentAdminWithdrawalsIndexRoute
-  AppProtectedPaymentInternalAdminFeeIndexRoute: typeof AppProtectedPaymentInternalAdminFeeIndexRoute
   AppProtectedPaymentInternalChannelsIndexRoute: typeof AppProtectedPaymentInternalChannelsIndexRoute
+  AppProtectedPaymentInternalIncidentsIndexRoute: typeof AppProtectedPaymentInternalIncidentsIndexRoute
+  AppProtectedPaymentInternalInvoicesIndexRoute: typeof AppProtectedPaymentInternalInvoicesIndexRoute
   AppProtectedPaymentInternalMerchantsIndexRoute: typeof AppProtectedPaymentInternalMerchantsIndexRoute
+  AppProtectedPaymentInternalNotificationsIndexRoute: typeof AppProtectedPaymentInternalNotificationsIndexRoute
+  AppProtectedPaymentInternalServicesIndexRoute: typeof AppProtectedPaymentInternalServicesIndexRoute
+  AppProtectedPaymentInternalSubscriptionsIndexRoute: typeof AppProtectedPaymentInternalSubscriptionsIndexRoute
   AppProtectedPaymentInternalTransactionsIndexRoute: typeof AppProtectedPaymentInternalTransactionsIndexRoute
   AppProtectedPaymentInternalWithdrawalsIndexRoute: typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
 }
@@ -317,16 +443,28 @@ const AppProtectedRouteChildren: AppProtectedRouteChildren = {
   AppProtectedDashboardIndexRoute: AppProtectedDashboardIndexRoute,
   AppProtectedPaymentAdminMutationsIndexRoute:
     AppProtectedPaymentAdminMutationsIndexRoute,
+  AppProtectedPaymentAdminServiceStatusIndexRoute:
+    AppProtectedPaymentAdminServiceStatusIndexRoute,
+  AppProtectedPaymentAdminServicesIndexRoute:
+    AppProtectedPaymentAdminServicesIndexRoute,
   AppProtectedPaymentAdminTransactionsIndexRoute:
     AppProtectedPaymentAdminTransactionsIndexRoute,
   AppProtectedPaymentAdminWithdrawalsIndexRoute:
     AppProtectedPaymentAdminWithdrawalsIndexRoute,
-  AppProtectedPaymentInternalAdminFeeIndexRoute:
-    AppProtectedPaymentInternalAdminFeeIndexRoute,
   AppProtectedPaymentInternalChannelsIndexRoute:
     AppProtectedPaymentInternalChannelsIndexRoute,
+  AppProtectedPaymentInternalIncidentsIndexRoute:
+    AppProtectedPaymentInternalIncidentsIndexRoute,
+  AppProtectedPaymentInternalInvoicesIndexRoute:
+    AppProtectedPaymentInternalInvoicesIndexRoute,
   AppProtectedPaymentInternalMerchantsIndexRoute:
     AppProtectedPaymentInternalMerchantsIndexRoute,
+  AppProtectedPaymentInternalNotificationsIndexRoute:
+    AppProtectedPaymentInternalNotificationsIndexRoute,
+  AppProtectedPaymentInternalServicesIndexRoute:
+    AppProtectedPaymentInternalServicesIndexRoute,
+  AppProtectedPaymentInternalSubscriptionsIndexRoute:
+    AppProtectedPaymentInternalSubscriptionsIndexRoute,
   AppProtectedPaymentInternalTransactionsIndexRoute:
     AppProtectedPaymentInternalTransactionsIndexRoute,
   AppProtectedPaymentInternalWithdrawalsIndexRoute:

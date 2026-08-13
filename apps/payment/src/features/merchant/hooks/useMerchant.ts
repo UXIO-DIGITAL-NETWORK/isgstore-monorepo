@@ -30,3 +30,54 @@ export const useCreateWithdrawal = () => {
     },
   });
 };
+
+// ── Services bought from kita ────────────────────────────────────────────────
+
+export const useMerchantServices = (params: ListParams) =>
+  useQuery({ queryKey: ["merchant", "services", params], queryFn: () => merchantService.services(params) });
+
+export const useMerchantSubscriptions = (params: ListParams) =>
+  useQuery({
+    queryKey: ["merchant", "service-subscriptions", params],
+    queryFn: () => merchantService.subscriptions(params),
+  });
+
+export const useMerchantServiceInvoices = (params: ListParams) =>
+  useQuery({
+    queryKey: ["merchant", "service-invoices", params],
+    queryFn: () => merchantService.serviceInvoices(params),
+  });
+
+export const useSubscribeService = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { service_id: number; notes?: string }) => merchantService.subscribe(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["merchant"] });
+      toast.success("Invoice langganan dibuat, silakan unggah bukti transfer");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal membuat langganan");
+    },
+  });
+};
+
+export const useUploadServiceProof = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, proof, notes }: { id: number; proof: File; notes?: string }) =>
+      merchantService.uploadProof(id, proof, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["merchant", "service-invoices"] });
+      toast.success("Bukti transfer terkirim, menunggu konfirmasi");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal mengunggah bukti transfer");
+    },
+  });
+};
+
+export const useServiceStatus = () =>
+  useQuery({ queryKey: ["merchant", "service-status"], queryFn: merchantService.serviceStatus });

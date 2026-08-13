@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { api } from "@/lib/axios";
+import { envelope, paginated } from "@/test/apiEnvelope";
 import { merchantService } from "../services/merchant.service";
 
 vi.mock("@/lib/axios");
@@ -61,5 +62,56 @@ describe("merchantService", () => {
 
     expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/withdrawals", expect.objectContaining({ amount: 40000 }));
     expect(created.status).toBe("PENDING");
+  });
+});
+
+describe("merchantService — services bought from kita", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("lists the catalogue", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(paginated([{ id: 1, code: "digiflazz", name: "Digiflazz" }]) as never);
+
+    const result = await merchantService.services({ page: 1, per_page: 50 });
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/services", { params: { page: 1, per_page: 50 } });
+    expect(result.rows[0].code).toBe("digiflazz");
+  });
+
+  it("requests a subscription, which issues an invoice", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(
+      envelope({ id: 9, invoice_number: "SINV-1", status: "UNPAID" }) as never,
+    );
+
+    const invoice = await merchantService.subscribe({ service_id: 1 });
+
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/service-invoices", { service_id: 1 });
+    expect(invoice.status).toBe("UNPAID");
+  });
+
+  /**
+   * Multipart, not JSON — the backend rule is `file`, so a JSON body would fail
+   * validation rather than upload.
+   */
+  it("uploads the bukti transfer as FormData", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(envelope({ id: 9, status: "WAITING_CONFIRMATION" }) as never);
+
+    const proof = new File(["proof"], "bukti.png", { type: "image/png" });
+    await merchantService.uploadProof(9, proof);
+
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/service-invoices/9/proof", expect.any(FormData));
+
+    const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
+    expect(form.get("proof")).toBe(proof);
+  });
+
+  it("reads the service status page", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(
+      envelope({ overall: "degraded", incidents: [], components: [] }) as never,
+    );
+
+    const status = await merchantService.serviceStatus();
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/service-status");
+    expect(status.overall).toBe("degraded");
   });
 });
