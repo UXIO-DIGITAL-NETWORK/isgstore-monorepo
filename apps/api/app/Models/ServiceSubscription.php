@@ -39,4 +39,19 @@ class ServiceSubscription extends Model
     {
         return $this->belongsTo(ServiceInvoice::class, 'service_invoice_id');
     }
+
+    /**
+     * The installation covering this period. Deliberately NOT an Eloquent
+     * relation: the join is two columns (merchant_id, service_id) because
+     * installations are per service account, not per paid period, and hasOne
+     * cannot express that. Naming it resolve* keeps it from being reached for
+     * with `with()` by mistake.
+     */
+    public function resolveInstallation(): ?ServiceInstallation
+    {
+        return ServiceInstallation::query()
+            ->where('merchant_id', $this->merchant_id)
+            ->where('service_id', $this->service_id)
+            ->first();
+    }
 }

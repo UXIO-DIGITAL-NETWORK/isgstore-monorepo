@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers\Api\Merchant;
 
+use App\Enums\ServiceInvoiceStatus;
+use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\Service\ServiceCheckoutResource;
 use App\Http\Resources\Api\Service\ServiceResource;
 use App\Http\Resources\Api\Service\ServiceSubscriptionResource;
 use App\Models\Service;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 /**
  * The client's view: what it can buy, and what it currently holds.
@@ -31,6 +36,39 @@ class MerchantServiceController extends Controller
         return $this->paginatedResponse(
             ServiceResource::collection($services),
             'Services retrieved successfully'
+        );
+    }
+
+    /**
+     * One catalogue entry for the checkout page, with the period confirmation
+     * would open and whether an unpaid bill is already in the way.
+     */
+    public function show(Request $request, Service $service)
+    {
+        // A deactivated service must not be reachable by deep link either.
+        abort_unless($service->is_active, 404);
+
+        $merchantId = $request->user()->id;
+
+        $currentEndsAt = ServiceSubscription::query()
+            ->where('merchant_id', $merchantId)
+            ->where('service_id', $service->id)
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->max('ends_at');
+
+        $openInvoiceId = ServiceInvoice::query()
+            ->where('merchant_id', $merchantId)
+            ->where('service_id', $service->id)
+            ->whereIn('status', [ServiceInvoiceStatus::UNPAID, ServiceInvoiceStatus::WAITING_CONFIRMATION])
+            ->value('id');
+
+        return $this->successResponse(
+            new ServiceCheckoutResource(
+                $service,
+                $currentEndsAt ? Carbon::parse($currentEndsAt) : null,
+                $openInvoiceId ? (int) $openInvoiceId : null,
+            ),
+            'Service retrieved successfully'
         );
     }
 

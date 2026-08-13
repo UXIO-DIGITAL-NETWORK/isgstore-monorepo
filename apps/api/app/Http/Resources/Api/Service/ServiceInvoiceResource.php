@@ -32,6 +32,14 @@ class ServiceInvoiceResource extends JsonResource
             'status' => $this->status?->value,
             'due_at' => $this->due_at?->toIso8601String(),
             'notes' => $this->notes,
+            // Carried on every row rather than fetched separately: three static
+            // strings are cheaper than a second request and a conditional.
+            'transfer_instruction' => [
+                'bank_name' => config('services.service_invoice.bank_name'),
+                'account_number' => config('services.service_invoice.bank_account_number'),
+                'account_holder' => config('services.service_invoice.bank_account_holder'),
+                'note' => 'Transfer tepat sebesar nominal invoice, lalu unggah bukti transfer.',
+            ],
             'proof_url' => $this->proof_path ? Storage::disk('public')->url($this->proof_path) : null,
             'proof_uploaded_at' => $this->proof_uploaded_at?->toIso8601String(),
             'verified_at' => $this->verified_at?->toIso8601String(),

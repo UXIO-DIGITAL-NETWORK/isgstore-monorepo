@@ -32,6 +32,16 @@ class ServiceSubscriptionController extends Controller
         );
     }
 
+    public function show(ServiceSubscription $serviceSubscription)
+    {
+        return $this->successResponse(
+            new ServiceSubscriptionResource(
+                $serviceSubscription->load(['merchant:id,name,email', 'service:id,code,name,category', 'invoice:id,invoice_number'])
+            ),
+            'Subscription retrieved successfully'
+        );
+    }
+
     public function cancel(ServiceSubscription $serviceSubscription, CancelServiceSubscriptionAction $action)
     {
         try {

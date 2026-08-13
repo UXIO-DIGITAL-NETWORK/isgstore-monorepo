@@ -7,6 +7,7 @@ namespace App\Actions\Service;
 use App\DTOs\Service\ConfirmServiceInvoiceDTO;
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\SubscriptionStatus;
+use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use Illuminate\Support\Carbon;
@@ -57,7 +58,7 @@ class ConfirmServiceInvoiceAction
                 ? Carbon::parse($currentEndsAt)->max(now())
                 : now();
 
-            ServiceSubscription::create([
+            $subscription = ServiceSubscription::create([
                 'merchant_id' => $invoice->merchant_id,
                 'service_id' => $invoice->service_id,
                 'service_invoice_id' => $invoice->id,
@@ -65,6 +66,19 @@ class ConfirmServiceInvoiceAction
                 'ends_at' => $startsAt->copy()->addDays((int) $invoice->duration_days),
                 'status' => SubscriptionStatus::ACTIVE,
             ]);
+
+            // Every newly paid service gets an installation record immediately,
+            // so the client's invoice page never has to render a null. A renewal
+            // finds the existing row and leaves its window, checklist and
+            // credentials intact — installations are per service account, not
+            // per paid period.
+            ServiceInstallation::firstOrCreate(
+                [
+                    'merchant_id' => $invoice->merchant_id,
+                    'service_id' => $invoice->service_id,
+                ],
+                ['service_subscription_id' => $subscription->id],
+            );
 
             return $invoice->fresh(['service', 'subscription']);
         });
