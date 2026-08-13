@@ -24,7 +24,18 @@ class ListPaymentChannelsAction
     /** @return array{admin_fee: array{type: string, value: int}, channels: list<array<string, mixed>>} */
     public function execute(?User $user): array
     {
-        $query = PaymentChannel::query()->where('is_active', true);
+        $query = PaymentChannel::query()
+            ->where('is_active', true)
+            // Only the three offered categories (VA / e-wallet / QRIS) reach the
+            // storefront. `balance` is a member wallet, not one of those types,
+            // so members get it back through the union below.
+            ->where(function ($q) use ($user) {
+                $q->whereIn('payment_type', PaymentChannel::ALLOWED_STOREFRONT_PAYMENT_TYPES);
+
+                if ($user) {
+                    $q->orWhereIn('channel_code', self::MEMBER_ONLY_CHANNELS);
+                }
+            });
 
         if (! $user) {
             $query->whereNotIn('channel_code', self::MEMBER_ONLY_CHANNELS);

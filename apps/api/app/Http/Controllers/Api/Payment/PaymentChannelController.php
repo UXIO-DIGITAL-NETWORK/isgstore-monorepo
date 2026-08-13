@@ -97,8 +97,14 @@ class PaymentChannelController extends Controller
 
     private function payload(Request $request, ?PaymentChannel $channel = null): array
     {
+        // Admins may only manage the offered categories (VA / e-wallet / QRIS),
+        // plus the seeded member wallet (`balance`) so its fees stay editable.
+        // This keeps a disallowed type (e.g. convenience_store, payment_link)
+        // from being reintroduced through the admin CRUD.
+        $allowedTypes = array_merge(PaymentChannel::ALLOWED_STOREFRONT_PAYMENT_TYPES, ['balance']);
+
         $validated = $request->validate([
-            'payment_type' => ['required', 'string', 'max:50'],
+            'payment_type' => ['required', 'string', 'max:50', Rule::in($allowedTypes)],
             'channel_code' => [
                 'required', 'string', 'max:50',
                 Rule::unique('payment_channels', 'channel_code')->ignore($channel?->id),

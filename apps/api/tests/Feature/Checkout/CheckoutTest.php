@@ -105,6 +105,28 @@ class CheckoutTest extends TestCase
             ->assertJsonPath('message', 'Produk sedang tidak tersedia.');
     }
 
+    public function test_checkout_rejected_for_disallowed_payment_type(): void
+    {
+        // Active row, but not one of the offered categories (VA / e-wallet / QRIS).
+        $channel = PaymentChannel::factory()->create([
+            'channel_code' => 'alfamart',
+            'payment_type' => 'convenience_store',
+            'is_active' => true,
+        ]);
+        $this->actingAsMember();
+
+        $response = $this->postJson('/api/v1/checkout', [
+            'product_id' => $this->product->id,
+            'payment_channel_id' => $channel->id,
+            'target_uid' => '12345678',
+            'email' => 'buyer@example.com',
+        ]);
+
+        $response->assertStatus(400)
+            ->assertJsonPath('message', 'Metode pembayaran ini tidak tersedia. Silakan pilih VA, E-Wallet, atau QRIS.');
+        $this->assertDatabaseCount('transactions', 0);
+    }
+
     public function test_duplicate_submit_within_window_is_rejected(): void
     {
         Http::fake([
