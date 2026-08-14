@@ -1,11 +1,17 @@
+import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 
 import FinanceInvoicesPage from "../pages/FinanceInvoicesPage";
 import * as hooks from "../hooks/useFinance";
 import type { ServiceInvoice } from "@/types/service.type";
+
+// Every row now carries an internal router link; stub it to a plain anchor so
+// this stays a unit test of the list, not of routing.
+vi.mock("@/components/common/Link", () => ({
+  Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
+}));
 
 const invoice = (over: Partial<ServiceInvoice> = {}): ServiceInvoice =>
   ({
@@ -26,9 +32,6 @@ const invoice = (over: Partial<ServiceInvoice> = {}): ServiceInvoice =>
     ...over,
   }) as ServiceInvoice;
 
-const confirm = vi.fn();
-const reject = vi.fn();
-
 const mockRows = (rows: ServiceInvoice[]) =>
   vi.spyOn(hooks, "useServiceInvoices").mockReturnValue({
     data: { rows, page: 1, lastPage: 1, total: rows.length, perPage: 20 },
@@ -36,24 +39,14 @@ const mockRows = (rows: ServiceInvoice[]) =>
     isError: false,
   } as unknown as ReturnType<typeof hooks.useServiceInvoices>);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  vi.spyOn(hooks, "useConfirmServiceInvoice").mockReturnValue({
-    mutate: confirm,
-    isPending: false,
-  } as unknown as ReturnType<typeof hooks.useConfirmServiceInvoice>);
-  vi.spyOn(hooks, "useRejectServiceInvoice").mockReturnValue({
-    mutate: reject,
-    isPending: false,
-  } as unknown as ReturnType<typeof hooks.useRejectServiceInvoice>);
-});
-
 const renderPage = () =>
   render(
     <QueryClientProvider client={new QueryClient()}>
       <FinanceInvoicesPage />
     </QueryClientProvider>,
   );
+
+beforeEach(() => vi.clearAllMocks());
 
 describe("FinanceInvoicesPage", () => {
   it("lists an invoice awaiting confirmation", () => {
@@ -65,34 +58,17 @@ describe("FinanceInvoicesPage", () => {
     expect(screen.getByText("Rp 250.000")).toBeInTheDocument();
   });
 
-  /** A settled invoice is history — offering "Periksa" would imply otherwise. */
-  it("only offers the review action while a proof is pending", () => {
-    mockRows([invoice({ status: "PAID" })]);
+  /**
+   * Preparation, confirmation and rejection all live on the detail page now, so
+   * even a settled invoice is worth opening — the old em-dash was a dead end.
+   */
+  it("links every row to its detail page, whatever the status", () => {
+    mockRows([invoice(), invoice({ id: 12, invoice_number: "SINV-202608-PAID11", status: "PAID" })]);
     renderPage();
 
-    expect(screen.queryByRole("button", { name: "Periksa" })).not.toBeInTheDocument();
-  });
-
-  it("confirms the invoice from the review dialog", async () => {
-    const user = userEvent.setup();
-    mockRows([invoice()]);
-    renderPage();
-
-    await user.click(screen.getByRole("button", { name: "Periksa" }));
-    await user.click(screen.getByRole("button", { name: "Konfirmasi" }));
-
-    expect(confirm).toHaveBeenCalledWith(9, expect.anything());
-  });
-
-  it("rejects with the typed reason", async () => {
-    const user = userEvent.setup();
-    mockRows([invoice()]);
-    renderPage();
-
-    await user.click(screen.getByRole("button", { name: "Periksa" }));
-    await user.type(screen.getByLabelText("Alasan penolakan"), "Nominal tidak sesuai");
-    await user.click(screen.getByRole("button", { name: "Tolak" }));
-
-    expect(reject).toHaveBeenCalledWith({ id: 9, reason: "Nominal tidak sesuai" }, expect.anything());
+    const links = screen.getAllByRole("link", { name: "Detail" });
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveAttribute("href", "/app/payment-internal/invoices/9");
+    expect(links[1]).toHaveAttribute("href", "/app/payment-internal/invoices/12");
   });
 });

@@ -18,20 +18,19 @@ import type { ServiceInstallationStep } from "@/types/service.type";
 import { useCreateStep, useUpdateStep } from "../hooks/useFinance";
 
 interface StepFormDialogProps {
-  subscriptionId: number;
   installationId: number | undefined;
   /** Absent = add. Present = edit that step. */
   step?: ServiceInstallationStep;
 }
 
-export function StepFormDialog({ subscriptionId, installationId, step }: StepFormDialogProps) {
+export function StepFormDialog({ installationId, step }: StepFormDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(step?.title ?? "");
   const [description, setDescription] = useState(step?.description ?? "");
   const [error, setError] = useState<string>();
 
-  const { mutate: create, isPending: creating } = useCreateStep(subscriptionId, installationId);
-  const { mutate: update, isPending: updating } = useUpdateStep(subscriptionId);
+  const { mutate: create, isPending: creating } = useCreateStep(installationId);
+  const { mutate: update, isPending: updating } = useUpdateStep();
 
   const isEdit = Boolean(step);
   const isPending = creating || updating;

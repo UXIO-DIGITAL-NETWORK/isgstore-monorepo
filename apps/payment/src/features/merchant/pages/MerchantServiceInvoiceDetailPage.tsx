@@ -1,3 +1,5 @@
+import { useNavigate } from "@tanstack/react-router";
+
 import { Box } from "@/components/common/Box";
 import { CopyButton } from "@/components/common/CopyButton";
 import { Heading } from "@/components/common/Heading";
@@ -26,6 +28,7 @@ interface MerchantServiceInvoiceDetailPageProps {
  * over.
  */
 export default function MerchantServiceInvoiceDetailPage({ invoiceId }: MerchantServiceInvoiceDetailPageProps) {
+  const navigate = useNavigate();
   const { data: invoice, isLoading, isError } = useMerchantServiceInvoice(invoiceId);
   const subscriptionId = invoice?.subscription?.id;
   const { data: installation, isLoading: loadingInstallation } = useMerchantInstallation(subscriptionId);
@@ -156,7 +159,14 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
             Belum ada bukti transfer.
           </Text>
         )}
-        {canUpload && <UploadProofDialog invoice={invoice} />}
+        {canUpload && (
+          <UploadProofDialog
+            invoice={invoice}
+            // Nothing more to do here until kita confirms, so land the client
+            // where the result of their upload is visible.
+            onUploaded={() => navigate({ to: "/app/payment-admin/services", search: { tab: "invoices" } })}
+          />
+        )}
       </Box>
 
       {subscriptionId && (
