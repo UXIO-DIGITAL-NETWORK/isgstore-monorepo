@@ -17,6 +17,11 @@ interface Props {
   /** Resolved in-game nickname; the line is hidden while this is null. */
   nickname?: string | null;
   isValidatingNickname?: boolean;
+  /** Whether this game offers a username check (drives the "Cek Username" button). */
+  supportsNicknameCheck?: boolean;
+  onCheckUsername?: () => void;
+  /** True once a check has run for the current id — lets us show "not found". */
+  nicknameChecked?: boolean;
 }
 
 /** Fallback placeholders for the legacy two-field layout. */
@@ -28,8 +33,14 @@ export default function AccountDetailForm({
   onValueChange,
   nickname,
   isValidatingNickname,
+  supportsNicknameCheck,
+  onCheckUsername,
+  nicknameChecked,
 }: Props): React.JSX.Element {
   const { t } = useTranslation("checkout");
+
+  // The account id is the first field; the check needs it filled in.
+  const canCheck = Boolean((values[0] ?? "").trim()) && !isValidatingNickname;
 
   return (
     <SectionCard stepNumber={1} title={t("accountDetail.title")} gradientBorder>
@@ -88,16 +99,40 @@ export default function AccountDetailForm({
           );
         })}
 
-        {/* Validated nickname — omitted entirely when the game has no lookup
-            provider, rather than showing a placeholder name. */}
-        {(isValidatingNickname || nickname) && (
-          <Box className="flex items-center gap-2">
-            <Text as="span" className="font-inter text-[12px] text-white/45 leading-none">
-              {t("accountDetail.nickname")}:
-            </Text>
-            <Text as="span" className="font-inter font-medium text-[12px] text-[#C084FC] leading-none">
-              {isValidatingNickname ? t("accountDetail.nicknameLoading") : nickname}
-            </Text>
+        {/* "Cek Username" — button-triggered because for some games this runs a
+            paid supplier lookup. Only shown when the game supports a check. */}
+        {supportsNicknameCheck && (
+          <Box className="flex flex-col gap-2">
+            <Box
+              as="button"
+              type="button"
+              onClick={() => canCheck && onCheckUsername?.()}
+              aria-disabled={!canCheck}
+              className={`h-10 self-start rounded-xl border border-[#C084FC]/40 bg-[#C084FC]/10 px-4 font-inter font-medium text-[13px] text-[#E9D5FF] leading-none transition-colors ${
+                canCheck ? "hover:bg-[#C084FC]/20 cursor-pointer" : "opacity-50 cursor-not-allowed"
+              }`}
+            >
+              {isValidatingNickname ? t("accountDetail.nicknameLoading") : t("accountDetail.checkUsername")}
+            </Box>
+
+            {/* Resolved name, or "not found" once a check has run and returned nothing. */}
+            {nickname ? (
+              <Box className="flex items-center gap-2">
+                <Text as="span" className="font-inter text-[12px] text-white/45 leading-none">
+                  {t("accountDetail.nickname")}:
+                </Text>
+                <Text as="span" className="font-inter font-medium text-[12px] text-[#C084FC] leading-none">
+                  {nickname}
+                </Text>
+              </Box>
+            ) : (
+              nicknameChecked &&
+              !isValidatingNickname && (
+                <Text as="span" className="font-inter text-[12px] text-red-400 leading-none">
+                  {t("accountDetail.nicknameError")}
+                </Text>
+              )
+            )}
           </Box>
         )}
 

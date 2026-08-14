@@ -39,6 +39,8 @@ export interface OrderFormField {
 export interface GameDetailModel extends GameModel {
   description: string | null;
   order_form_fields: OrderFormField[];
+  /** Whether the storefront should offer a "Cek Username" action for this game. */
+  supports_nickname_check: boolean;
   meta: {
     title: string | null;
     description: string | null;
