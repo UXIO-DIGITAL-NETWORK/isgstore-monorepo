@@ -19,11 +19,14 @@ async function openAdd(user: User): Promise<HTMLElement> {
 async function fillRequiredFields(user: User, dialog: HTMLElement) {
   await user.click(within(dialog).getByRole("combobox", { name: "Category Type" }));
   await user.click(await screen.findByRole("option", { name: "Mobile Game" }));
-  await user.click(within(dialog).getByRole("combobox", { name: "Category UID Parser" }));
-  await user.click(await screen.findByRole("option", { name: "None" }));
   await user.type(within(dialog).getByLabelText("Category Name"), "Wild Rift");
   await user.type(within(dialog).getByLabelText("Category Code"), "WR");
   await user.type(within(dialog).getByLabelText("Category Slug"), "wild-rift");
+}
+
+/** The Media & SEO fields live on the second tab; switch to it first. */
+async function goToMediaTab(user: User, dialog: HTMLElement) {
+  await user.click(within(dialog).getByRole("tab", { name: "Media & SEO" }));
 }
 
 async function waitForModalClosed() {
@@ -51,28 +54,30 @@ describe("AddCategoryDialog", () => {
     const dialog = await openAdd(user);
 
     expect(within(dialog).getByRole("heading", { name: "Basic information" })).toBeInTheDocument();
-    expect(within(dialog).getByText("Type, validation, and category identity on the storefront.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Type, username check, and category identity on the storefront.")).toBeInTheDocument();
 
     expect(within(dialog).getByRole("heading", { name: "Category form" })).toBeInTheDocument();
     expect(within(dialog).getByText("Input fields shown to buyers when ordering.")).toBeInTheDocument();
   });
 
-  it("shows all eight Basic information fields by label", async () => {
+  it("shows the Basic information fields by label (no UID Parser)", async () => {
     const user = userEvent.setup();
     const dialog = await openAdd(user);
 
     for (const label of [
       "Category Type",
-      "Category UID Parser",
+      "Cek Username",
+      "Region",
       "Category Name",
       "Category Sub Name",
-      "Account Nickname Validation",
-      "Region",
       "Category Code",
       "Category Slug",
     ]) {
       expect(within(dialog).getByLabelText(label)).toBeInTheDocument();
     }
+
+    // The dead UID Parser field is gone.
+    expect(within(dialog).queryByLabelText("Category UID Parser")).not.toBeInTheDocument();
   });
 
   it("shows the field-key guide text verbatim", async () => {
@@ -112,7 +117,6 @@ describe("AddCategoryDialog", () => {
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
     expect(await within(dialog).findByText("Category Type is required")).toBeInTheDocument();
-    expect(within(dialog).getByText("Category UID Parser is required")).toBeInTheDocument();
     expect(within(dialog).getByText("Category Name is required")).toBeInTheDocument();
     expect(within(dialog).getByText("Category Code is required")).toBeInTheDocument();
     expect(within(dialog).getByText("Category Slug is required")).toBeInTheDocument();
@@ -150,6 +154,7 @@ describe("AddCategoryDialog", () => {
   it("shows the Media & description and SEO section headings and their exact subcopies", async () => {
     const user = userEvent.setup();
     const dialog = await openAdd(user);
+    await goToMediaTab(user, dialog);
 
     expect(within(dialog).getByRole("heading", { name: "Media & description" })).toBeInTheDocument();
     expect(within(dialog).getByText("Category logo and description content for the product page.")).toBeInTheDocument();
@@ -161,6 +166,7 @@ describe("AddCategoryDialog", () => {
   it("shows every Media & description and SEO field by label", async () => {
     const user = userEvent.setup();
     const dialog = await openAdd(user);
+    await goToMediaTab(user, dialog);
 
     for (const label of [
       "Category Logo",
@@ -178,6 +184,7 @@ describe("AddCategoryDialog", () => {
   it("keeps the Meta Description character count and percentage in sync", async () => {
     const user = userEvent.setup();
     const dialog = await openAdd(user);
+    await goToMediaTab(user, dialog);
 
     // "Fourteen chars" = 14 chars → 14/280 = 5%.
     await user.type(within(dialog).getByLabelText("Meta Description"), "Fourteen chars");
@@ -192,6 +199,7 @@ describe("AddCategoryDialog", () => {
     const dialog = await openAdd(user);
 
     await fillRequiredFields(user, dialog);
+    await goToMediaTab(user, dialog);
     await user.type(within(dialog).getByLabelText("Description"), "Top up MLBB diamonds instantly.");
     await user.type(within(dialog).getByLabelText("Meta Title"), "Mobile Legends Top Up");
     await user.type(within(dialog).getByLabelText("Meta Description"), "Cheap MLBB diamonds");

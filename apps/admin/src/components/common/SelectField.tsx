@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
+
 import { Box } from "@/components/common/Box";
+import { FieldLabel } from "@/components/common/FieldLabel";
 import { Text } from "@/components/common/Text";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SelectFieldOption {
@@ -19,6 +21,8 @@ interface SelectFieldProps {
   disabled?: boolean;
   /** Shown in place of the list when `options` is empty. */
   emptyLabel?: string;
+  /** Optional explanation rendered as an info tooltip beside the label. */
+  tooltip?: ReactNode;
 }
 
 /**
@@ -39,10 +43,13 @@ export function SelectField({
   placeholder = "Type to search...",
   disabled = false,
   emptyLabel = "No options available",
+  tooltip,
 }: SelectFieldProps) {
   return (
     <Box className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <FieldLabel htmlFor={id} tooltip={tooltip}>
+        {label}
+      </FieldLabel>
       <Select
         value={value}
         onValueChange={onChange}

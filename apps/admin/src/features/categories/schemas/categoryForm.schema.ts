@@ -29,7 +29,6 @@ const orderFormFieldSchema = z.object({
 /** Add Category form — product_requirements.md §4.5, follows the reference precisely. */
 export const categoryFormSchema = z.object({
   categoryType: z.string().min(1, "Category Type is required"),
-  uidParser: z.string().min(1, "Category UID Parser is required"),
   name: z.string().min(1, "Category Name is required"),
   subName: z.string().optional(),
   accountNicknameValidation: z.string().optional(),

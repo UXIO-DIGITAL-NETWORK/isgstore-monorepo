@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Box } from "@/components/common/Box";
 import { Can } from "@/components/common/Can";
+import { FieldLabel } from "@/components/common/FieldLabel";
 import { Heading } from "@/components/common/Heading";
 import { ImageDropzone } from "@/components/common/ImageDropzone";
 import { SelectField } from "@/components/common/SelectField";
@@ -167,7 +168,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
 
             <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="product-name">Product Name</Label>
+                <FieldLabel
+                  htmlFor="product-name"
+                  tooltip="The denomination buyers see, e.g. “86 Diamonds”."
+                >
+                  Product Name
+                </FieldLabel>
                 <Input
                   id="product-name"
                   className="rounded-xl"
@@ -189,6 +195,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <SelectField
                     id="product-nickname-validation"
                     label="Nickname Validation"
+                    tooltip="Optional per-product override for the account-name lookup. The username check is normally configured on the game/category (its “Cek Username” field), not here."
                     options={NICKNAME_VALIDATION_OPTIONS}
                     value={field.value ?? ""}
                     onChange={field.onChange}
@@ -199,7 +206,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
 
             <Box className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="product-sub-name">Sub Name</Label>
+                <FieldLabel
+                  htmlFor="product-sub-name"
+                  tooltip="Optional secondary label shown under the product name."
+                >
+                  Sub Name
+                </FieldLabel>
                 <Input
                   id="product-sub-name"
                   className="rounded-xl"
@@ -207,7 +219,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                 />
               </Box>
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="product-code">Product Code</Label>
+                <FieldLabel
+                  htmlFor="product-code"
+                  tooltip="A unique internal SKU for this product (e.g. mlbb-86). Must not clash with another product."
+                >
+                  Product Code
+                </FieldLabel>
                 <Input
                   id="product-code"
                   className="rounded-xl"
@@ -229,6 +246,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <SelectField
                     id="product-access"
                     label="Product Access"
+                    tooltip="Who may buy this product — e.g. everyone (public) or a specific member tier."
                     options={PRODUCT_ACCESS_OPTIONS}
                     value={field.value ?? ""}
                     onChange={field.onChange}
@@ -245,6 +263,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <SelectField
                     id="product-tag"
                     label="Product Tag"
+                    tooltip="An optional marketing badge shown on the product (e.g. Hot, Promo)."
                     options={PRODUCT_TAG_OPTIONS}
                     value={field.value ?? ""}
                     onChange={field.onChange}
@@ -258,6 +277,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <SelectField
                     id="product-category"
                     label="Category"
+                    tooltip="The game this product belongs to."
                     options={categoryOptions}
                     disabled={categoriesLoading}
                     emptyLabel={categoriesLoading ? "Loading categories..." : "No categories available"}
@@ -277,6 +297,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <SelectField
                     id="product-sub-category"
                     label="Sub Category"
+                    tooltip="An optional grouping within the game (e.g. a denomination group). Pick a category first."
                     options={subCategoryOptions}
                     value={field.value ?? ""}
                     onChange={field.onChange}
