@@ -52,6 +52,14 @@ describe("transactionsService.list", () => {
     expect(result.data[0].game.name).toBe("Mobile Legends");
   });
 
+  it("carries the checked username through as the nickname", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow({ target_nickname: "ProPlayerFF" })]));
+
+    const result = await transactionsService.list({});
+
+    expect(result.data[0].nickname).toBe("ProPlayerFF");
+  });
+
   // PAID means the customer has paid but the supplier has not started, which
   // is exactly what the Pending pill means to an operator.
   it("folds PAID into pending and EXPIRED into failed", async () => {

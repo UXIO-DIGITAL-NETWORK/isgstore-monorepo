@@ -119,7 +119,16 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   {
     accessorKey: "target_ref",
     header: "Target",
-    cell: ({ row }) => <Text as="span">{row.original.target_ref ?? "—"}</Text>,
+    cell: ({ row }) => (
+      <Box className="flex flex-col">
+        <Text as="span">{row.original.target_ref ?? "—"}</Text>
+        {row.original.nickname && (
+          <Text as="span" className="text-xs text-muted-foreground">
+            {row.original.nickname}
+          </Text>
+        )}
+      </Box>
+    ),
   },
   {
     id: "status",

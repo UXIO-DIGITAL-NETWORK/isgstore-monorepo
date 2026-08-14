@@ -60,6 +60,8 @@ export interface Transaction {
   admin_fee?: number;
   /** Provider/destination account reference. */
   target_ref?: string;
+  /** In-game username resolved by the "Cek Username" check at checkout. */
+  nickname?: string;
   payment_method: string;
   serial_number?: string;
   proof_url?: string;

@@ -69,6 +69,7 @@ interface TransactionApiRow {
   contact_email: string | null;
   target_uid: string | null;
   target_server: string | null;
+  target_nickname?: string | null;
   amount_fee: number;
   amount_total: number;
   margin: number;
@@ -118,6 +119,7 @@ const toTransaction = (row: TransactionApiRow): Transaction => {
     profit: row.margin,
     admin_fee: row.amount_fee,
     target_ref: [row.target_uid, row.target_server].filter(Boolean).join(" / ") || undefined,
+    nickname: row.target_nickname ?? undefined,
     payment_method: row.payment_channel?.name ?? "",
     serial_number: row.sn ?? undefined,
     proof_url: row.proof_url ?? undefined,
