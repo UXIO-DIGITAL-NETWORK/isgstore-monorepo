@@ -7,6 +7,7 @@ import type { FinanceUnifiedTransaction } from "@/types/transaction.type";
 import type {
   InstallationDetailPayload,
   InstallationPayload,
+  InstallationScope,
   InstallationStepPayload,
   ServiceInstallation,
   ServiceInstallationDetail,
@@ -25,6 +26,12 @@ import type {
 } from "../types/finance.type";
 
 const BASE = `${API_VERSION}/payment-internal`;
+
+/** Both paths resolve to the same (merchant, service) installation row. */
+const installationPath = (scope: InstallationScope) =>
+  scope.by === "invoice"
+    ? `${BASE}/service-invoices/${scope.id}/installation`
+    : `${BASE}/service-subscriptions/${scope.id}/installation`;
 
 export const financeService = {
   dashboard: async (): Promise<FinanceDashboard> => {
@@ -153,18 +160,18 @@ export const financeService = {
     return res.data;
   },
 
-  installation: async (subscriptionId: number): Promise<ServiceInstallation | null> => {
-    const res: ApiResponse<ServiceInstallation | null> = await api.get(
-      `${BASE}/service-subscriptions/${subscriptionId}/installation`,
-    );
+  serviceInvoice: async (id: number): Promise<ServiceInvoice> => {
+    const res: ApiResponse<ServiceInvoice> = await api.get(`${BASE}/service-invoices/${id}`);
     return res.data;
   },
 
-  upsertInstallation: async (subscriptionId: number, payload: InstallationPayload): Promise<ServiceInstallation> => {
-    const res: ApiResponse<ServiceInstallation> = await api.put(
-      `${BASE}/service-subscriptions/${subscriptionId}/installation`,
-      payload,
-    );
+  installation: async (scope: InstallationScope): Promise<ServiceInstallation | null> => {
+    const res: ApiResponse<ServiceInstallation | null> = await api.get(installationPath(scope));
+    return res.data;
+  },
+
+  upsertInstallation: async (scope: InstallationScope, payload: InstallationPayload): Promise<ServiceInstallation> => {
+    const res: ApiResponse<ServiceInstallation> = await api.put(installationPath(scope), payload);
     return res.data;
   },
 

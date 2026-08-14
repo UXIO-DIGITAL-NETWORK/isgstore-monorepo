@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 
 import MerchantTransactionsPage from "../pages/MerchantTransactionsPage";
 import * as hooks from "../hooks/useMerchant";
@@ -17,19 +16,6 @@ const sale: UnifiedTransaction = {
   status: "COMPLETED",
   payment_channel: "QRIS",
   created_at: "2026-08-13T20:04:00+07:00",
-};
-
-// Same id as the sale on purpose: ids are unique only within a type.
-const bill: UnifiedTransaction = {
-  type: "service",
-  id: 12,
-  invoice_number: "SINV-202608-A1B2C3",
-  title: "Digiflazz",
-  direction: "out",
-  amount: 250000,
-  status: "UNPAID",
-  payment_channel: null,
-  created_at: "2026-08-14T09:12:00+07:00",
 };
 
 const mockRows = (rows: UnifiedTransaction[]) =>
@@ -49,35 +35,21 @@ const renderPage = () =>
 beforeEach(() => vi.clearAllMocks());
 
 describe("MerchantTransactionsPage", () => {
-  /** The direction has to be unmissable — the two rows mean opposite things. */
-  it("signs a sale positive and a service bill negative", () => {
-    mockRows([bill, sale]);
+  it("shows the client's topup sale row", () => {
+    mockRows([sale]);
     renderPage();
 
     expect(screen.getByText("+Rp 18.500")).toBeInTheDocument();
-    expect(screen.getByText("−Rp 250.000")).toBeInTheDocument();
-    const rows = screen.getAllByRole("row");
-    expect(rows.some((row) => row.textContent?.includes("Penjualan"))).toBe(true);
-    expect(rows.some((row) => row.textContent?.includes("Langganan"))).toBe(true);
-  });
-
-  it("renders two rows when ids collide across sources", () => {
-    mockRows([bill, sale]);
-    renderPage();
-
     expect(screen.getByText("INV-20260813-XY12")).toBeInTheDocument();
-    expect(screen.getByText("SINV-202608-A1B2C3")).toBeInTheDocument();
   });
 
-  it("re-queries from page one when the tab changes", async () => {
-    const user = userEvent.setup();
+  /** Topup-only: subscriptions live on the Invoice/Langganan pages. */
+  it("queries only topup sales and shows no type tabs", () => {
     const spy = mockRows([sale]);
     renderPage();
 
-    expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "all" });
-
-    await user.click(screen.getByRole("tab", { name: "Langganan Service" }));
-
-    expect(spy).toHaveBeenLastCalledWith({ page: 1, per_page: 20, type: "service" });
+    expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "sale" });
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(screen.queryByText("Langganan")).not.toBeInTheDocument();
   });
 });

@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/utils/currency";
 import { formatDate, formatDateTime } from "@/utils/date";
 import type { Service, ServiceInvoice, ServiceSubscription } from "@/types/service.type";
+import { SERVICES_TABS, type ServicesTab } from "../types/merchant.type";
 
 import { UploadProofDialog } from "../components/UploadProofDialog";
 import { useMerchantServiceInvoices, useMerchantServices, useMerchantSubscriptions } from "../hooks/useMerchant";
@@ -98,9 +99,29 @@ function CatalogCard({ service }: { service: Service }) {
   );
 }
 
-export default function MerchantServicesPage() {
-  const [tab, setTab] = useState("subscriptions");
+interface MerchantServicesPageProps {
+  /** Controlled by the route from ?tab=. Absent in tests → local state. */
+  tab?: ServicesTab;
+  onTabChange?: (tab: ServicesTab) => void;
+}
+
+export default function MerchantServicesPage({ tab, onTabChange }: MerchantServicesPageProps = {}) {
+  const [internalTab, setInternalTab] = useState<ServicesTab>(tab ?? "subscriptions");
   const [invoicePage, setInvoicePage] = useState(1);
+
+  // Controlled when a host supplies onTabChange (the route, writing ?tab=);
+  // uncontrolled otherwise, which is what keeps a bare render() working.
+  const activeTab = onTabChange ? (tab ?? "subscriptions") : internalTab;
+
+  const goToTab = (next: string) => {
+    const value = (SERVICES_TABS as readonly string[]).includes(next) ? (next as ServicesTab) : "subscriptions";
+
+    if (onTabChange) {
+      onTabChange(value);
+    } else {
+      setInternalTab(value);
+    }
+  };
 
   const { data: subscriptions, isLoading: loadingSubs } = useMerchantSubscriptions({ page: 1, per_page: 50 });
   const { data: catalog, isLoading: loadingCatalog } = useMerchantServices({ page: 1, per_page: 50 });
@@ -130,17 +151,25 @@ export default function MerchantServicesPage() {
     {
       key: "actions",
       header: "Aksi",
-      cell: (r) =>
-        r.status === "UNPAID" || r.status === "REJECTED" ? (
-          <UploadProofDialog invoice={r} />
-        ) : (
-          <Text
-            as="span"
-            className="text-muted-foreground"
+      cell: (r) => (
+        <Box className="flex gap-2">
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
           >
-            —
-          </Text>
-        ),
+            <Link href={`/app/payment-admin/service-invoices/${r.id}`}>Detail</Link>
+          </Button>
+          {(r.status === "UNPAID" || r.status === "REJECTED") && (
+            <UploadProofDialog
+              invoice={r}
+              // Already on this page — this only brings the tab forward so the
+              // row's new WAITING_CONFIRMATION status is what the client sees.
+              onUploaded={() => goToTab("invoices")}
+            />
+          )}
+        </Box>
+      ),
     },
   ];
 
@@ -149,8 +178,8 @@ export default function MerchantServicesPage() {
       <Heading level={1}>Services</Heading>
 
       <Tabs
-        value={tab}
-        onValueChange={setTab}
+        value={activeTab}
+        onValueChange={goToTab}
       >
         <TabsList>
           <TabsTrigger value="subscriptions">Langganan Saya</TabsTrigger>

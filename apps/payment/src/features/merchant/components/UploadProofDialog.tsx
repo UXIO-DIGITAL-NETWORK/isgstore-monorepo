@@ -25,13 +25,19 @@ const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
 interface UploadProofDialogProps {
   invoice: ServiceInvoice;
+  /**
+   * Fired after a successful upload, once the dialog has closed. Each mount
+   * point decides where the client lands — the dialog itself stays free of
+   * router imports so the pages hosting it remain bare-renderable in tests.
+   */
+  onUploaded?: () => void;
 }
 
 /**
  * The client attaches its bukti transfer to a service invoice. Available from
  * UNPAID and from REJECTED, so a refused proof can be corrected.
  */
-export function UploadProofDialog({ invoice }: UploadProofDialogProps) {
+export function UploadProofDialog({ invoice, onUploaded }: UploadProofDialogProps) {
   const [open, setOpen] = useState(false);
   const { mutate: upload, isPending } = useUploadServiceProof();
 
@@ -49,6 +55,7 @@ export function UploadProofDialog({ invoice }: UploadProofDialogProps) {
         onSuccess: () => {
           reset();
           setOpen(false);
+          onUploaded?.();
         },
       },
     );

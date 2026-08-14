@@ -23,23 +23,6 @@ const sale: FinanceUnifiedTransaction = {
   created_at: "2026-08-13T20:04:00+07:00",
 };
 
-const bill: FinanceUnifiedTransaction = {
-  type: "service",
-  id: 9,
-  invoice_number: "SINV-202608-A1B2C3",
-  title: "Digiflazz",
-  merchant: { id: 7, name: "Toko A" },
-  direction: "out",
-  amount: 250000,
-  amount_total: 250000,
-  admin_fee: 0,
-  gateway_fee: 0,
-  platform_profit: 250000,
-  status: "PAID",
-  payment_channel: null,
-  created_at: "2026-08-14T09:12:00+07:00",
-};
-
 const mockRows = (rows: FinanceUnifiedTransaction[]) =>
   vi.spyOn(hooks, "useFinanceTransactions").mockReturnValue({
     data: { rows, page: 1, lastPage: 1, total: rows.length, perPage: 20 },
@@ -57,7 +40,7 @@ const renderPage = () =>
 beforeEach(() => vi.clearAllMocks());
 
 describe("FinanceTransactionsPage", () => {
-  it("shows the client's direction and the platform's own figures", () => {
+  it("shows the platform's own figures for a topup sale", () => {
     mockRows([sale]);
     renderPage();
 
@@ -68,16 +51,15 @@ describe("FinanceTransactionsPage", () => {
   });
 
   /**
-   * A service bill has no channel and no gateway, so "Rp 0" would read as a
-   * measured zero rather than an inapplicable one.
+   * This screen is topup-only; subscription invoices have their own pages, so
+   * the feed is locked to sales and there is no "Tipe" tab/column any more.
    */
-  it("renders a dash, not zero, for the fees on a service row", () => {
-    mockRows([bill]);
+  it("queries only topup sales and shows no type tabs", () => {
+    const spy = mockRows([sale]);
     renderPage();
 
-    expect(screen.getByText("−Rp 250.000")).toBeInTheDocument();
-    expect(screen.queryByText("Rp 0")).not.toBeInTheDocument();
-    // Metode, Biaya Admin and Fee Gateway all read "—" on this row.
-    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(2);
+    expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "sale" });
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(screen.queryByText("Langganan")).not.toBeInTheDocument();
   });
 });

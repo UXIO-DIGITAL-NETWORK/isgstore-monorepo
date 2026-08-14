@@ -182,3 +182,13 @@ export interface TransferInstruction {
   account_holder: string;
   note: string;
 }
+
+/**
+ * Which id an installation is reached by. Both resolve to the same
+ * (merchant, service) row on the server — the operator reaches it from a
+ * confirmed subscription, or from an invoice they are about to confirm.
+ *
+ * The read query is keyed on this rather than on the installation id, because
+ * before the first save the endpoint returns null and there is no id to key on.
+ */
+export type InstallationScope = { by: "subscription" | "invoice"; id: number };

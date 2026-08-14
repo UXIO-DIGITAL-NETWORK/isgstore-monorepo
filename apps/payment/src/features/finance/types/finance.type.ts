@@ -35,6 +35,7 @@ export type { FinanceUnifiedTransaction, UnifiedTransaction } from "@/types/tran
 
 // Shared with the client slice — see src/types/service.type.ts.
 export type {
+  InstallationScope,
   InstallationDetailPayload,
   InstallationPayload,
   InstallationStepPayload,

@@ -102,4 +102,43 @@ describe("financeService — services, invoices, subscriptions, incidents", () =
       expect.objectContaining({ payment_channel_id: 3, severity: "MAJOR" }),
     );
   });
+
+  it("reads one service invoice by id", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope({ id: 9, invoice_number: "SINV-1" }) as never);
+
+    await financeService.serviceInvoice(9);
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-internal/service-invoices/9");
+  });
+
+  /**
+   * One installation row, two access paths. A typo in either sends the operator
+   * to a 404 the UI renders as an empty section — indistinguishable from
+   * "nothing prepared yet".
+   */
+  it("reads an installation scoped to an invoice", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope(null) as never);
+
+    await financeService.installation({ by: "invoice", id: 9 });
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-internal/service-invoices/9/installation");
+  });
+
+  it("reads an installation scoped to a subscription", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope(null) as never);
+
+    await financeService.installation({ by: "subscription", id: 4 });
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-internal/service-subscriptions/4/installation");
+  });
+
+  it("upserts an installation scoped to an invoice", async () => {
+    vi.mocked(api.put).mockResolvedValueOnce(envelope({ id: 7 }) as never);
+
+    await financeService.upsertInstallation({ by: "invoice", id: 9 }, { starts_at: "2026-08-15" });
+
+    expect(api.put).toHaveBeenCalledWith("/v1/payment-internal/service-invoices/9/installation", {
+      starts_at: "2026-08-15",
+    });
+  });
 });

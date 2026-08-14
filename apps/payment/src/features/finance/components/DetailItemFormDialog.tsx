@@ -21,7 +21,6 @@ import type { ServiceInstallationDetail } from "@/types/service.type";
 import { useCreateDetailItem, useUpdateDetailItem } from "../hooks/useFinance";
 
 interface DetailItemFormDialogProps {
-  subscriptionId: number;
   installationId: number | undefined;
   detail?: ServiceInstallationDetail;
 }
@@ -33,15 +32,15 @@ interface DetailItemFormDialogProps {
  * stored value, so renaming a label never pulls a secret back through the
  * browser to be re-submitted.
  */
-export function DetailItemFormDialog({ subscriptionId, installationId, detail }: DetailItemFormDialogProps) {
+export function DetailItemFormDialog({ installationId, detail }: DetailItemFormDialogProps) {
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState(detail?.label ?? "");
   const [value, setValue] = useState("");
   const [isSecret, setIsSecret] = useState(detail?.is_secret ?? false);
   const [error, setError] = useState<string>();
 
-  const { mutate: create, isPending: creating } = useCreateDetailItem(subscriptionId, installationId);
-  const { mutate: update, isPending: updating } = useUpdateDetailItem(subscriptionId);
+  const { mutate: create, isPending: creating } = useCreateDetailItem(installationId);
+  const { mutate: update, isPending: updating } = useUpdateDetailItem();
 
   const isEdit = Boolean(detail);
   const isPending = creating || updating;

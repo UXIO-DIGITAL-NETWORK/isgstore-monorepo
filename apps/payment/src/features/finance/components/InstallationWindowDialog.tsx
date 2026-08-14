@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { ServiceInstallation } from "@/types/service.type";
+import type { InstallationScope, ServiceInstallation } from "@/types/service.type";
 
 import { useUpsertInstallation } from "../hooks/useFinance";
 
@@ -22,20 +22,20 @@ import { useUpsertInstallation } from "../hooks/useFinance";
 const toDateInput = (iso: string | null | undefined): string => (iso ? iso.slice(0, 10) : "");
 
 interface InstallationWindowDialogProps {
-  subscriptionId: number;
+  scope: InstallationScope;
   installation: ServiceInstallation | null | undefined;
 }
 
 /** Sets or moves the agreed installation window. Upserts, so the first save on
  *  a comped subscription creates the record. */
-export function InstallationWindowDialog({ subscriptionId, installation }: InstallationWindowDialogProps) {
+export function InstallationWindowDialog({ scope, installation }: InstallationWindowDialogProps) {
   const [open, setOpen] = useState(false);
   const [startsAt, setStartsAt] = useState(toDateInput(installation?.starts_at));
   const [endsAt, setEndsAt] = useState(toDateInput(installation?.ends_at));
   const [notes, setNotes] = useState(installation?.notes ?? "");
   const [error, setError] = useState<string>();
 
-  const { mutate: save, isPending } = useUpsertInstallation(subscriptionId);
+  const { mutate: save, isPending } = useUpsertInstallation(scope);
 
   const reset = () => {
     setStartsAt(toDateInput(installation?.starts_at));
@@ -70,7 +70,11 @@ export function InstallationWindowDialog({ subscriptionId, installation }: Insta
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (!next) reset();
+        // Reset on OPEN too, not just on close: the state is seeded from an
+        // `installation` prop that is undefined on first render, so a
+        // close-only reset left the form blank for an already-scheduled
+        // install the first time it was opened.
+        reset();
       }}
     >
       <DialogTrigger asChild>

@@ -7,12 +7,12 @@ import { Pager } from "@/components/common/Pager";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Text } from "@/components/common/Text";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 import type { ServiceInvoice } from "@/types/service.type";
 
-import { ConfirmServiceInvoiceDialog } from "../components/ConfirmServiceInvoiceDialog";
 import { useServiceInvoices } from "../hooks/useFinance";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
@@ -69,18 +69,17 @@ const columns: Column<ServiceInvoice>[] = [
   {
     key: "actions",
     header: "Aksi",
-    // Only a proof awaiting review is actionable; everything else is history.
-    cell: (r) =>
-      r.status === "WAITING_CONFIRMATION" ? (
-        <ConfirmServiceInvoiceDialog invoice={r} />
-      ) : (
-        <Text
-          as="span"
-          className="text-muted-foreground"
-        >
-          —
-        </Text>
-      ),
+    // Every row is inspectable now: preparation, confirmation and rejection all
+    // live on the detail page, so even a settled invoice is worth opening.
+    cell: (r) => (
+      <Button
+        asChild
+        size="sm"
+        variant="outline"
+      >
+        <Link href={`/app/payment-internal/invoices/${r.id}`}>Detail</Link>
+      </Button>
+    ),
   },
 ];
 

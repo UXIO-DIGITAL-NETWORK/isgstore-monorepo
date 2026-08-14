@@ -59,3 +59,12 @@ export interface ServiceStatusResponse {
   incidents: ServiceStatusIncident[];
   components: ServiceStatusComponent[];
 }
+
+/**
+ * The Services page's three tabs, in order. Lives here rather than in the route
+ * because routes are registry-only and this is page vocabulary — the route just
+ * validates `?tab` against it.
+ */
+export const SERVICES_TABS = ["subscriptions", "catalog", "invoices"] as const;
+
+export type ServicesTab = (typeof SERVICES_TABS)[number];
