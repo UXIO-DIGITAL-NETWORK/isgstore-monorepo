@@ -19,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryFormFieldsBuilder } from "./CategoryFormFieldsBuilder";
 import {
-  ACCOUNT_NICKNAME_VALIDATION_OPTIONS,
   CATEGORY_UID_PARSER_OPTIONS,
   META_ROBOTS_OPTIONS,
   REGION_OPTIONS,
@@ -202,19 +201,23 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   />
                 )}
               />
-              <Controller
-                control={control}
-                name="accountNicknameValidation"
-                render={({ field }) => (
-                  <SelectField
-                    id="account-nickname-validation"
-                    label="Account Nickname Validation"
-                    options={ACCOUNT_NICKNAME_VALIDATION_OPTIONS}
-                    value={field.value ?? ""}
-                    onChange={field.onChange}
-                  />
-                )}
-              />
+              <Box className="flex flex-col gap-1.5">
+                <Label htmlFor="account-nickname-validation">Account Nickname Validation</Label>
+                <Input
+                  id="account-nickname-validation"
+                  className="rounded-xl"
+                  placeholder="digiflazz:ffusername"
+                  {...register("accountNicknameValidation")}
+                />
+                <Text
+                  variant="muted"
+                  className="text-xs"
+                >
+                  Enables the “Cek Username” button for this game. Leave blank for none. Enter
+                  digiflazz:SKU for a paid Digiflazz check (e.g. digiflazz:ffusername), or a full
+                  lookup URL for a free third-party API.
+                </Text>
+              </Box>
 
               <Controller
                 control={control}
