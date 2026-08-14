@@ -14,14 +14,6 @@ export const CATEGORY_UID_PARSER_OPTIONS: SelectOption[] = [
   { value: "None", label: "None" },
 ];
 
-export const ACCOUNT_NICKNAME_VALIDATION_OPTIONS: SelectOption[] = [
-  { value: "Moonton API", label: "Moonton API" },
-  { value: "Garena API", label: "Garena API" },
-  { value: "miHoYo API", label: "miHoYo API" },
-  { value: "Riot API", label: "Riot API" },
-  { value: "None", label: "None" },
-];
-
 export const REGION_OPTIONS: SelectOption[] = [
   { value: "Southeast Asia", label: "Southeast Asia" },
   { value: "Global", label: "Global" },
