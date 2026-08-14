@@ -5,6 +5,7 @@ import type { Category } from "@/features/categories/types/category.type";
 export const CATEGORIES: Category[] = [
   {
     id: "cat-1",
+    type_id: "1",
     type: "Mobile Game",
     uid_parser: "ML UID+Zone Parser",
     name: "Mobile Legends",
@@ -30,6 +31,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "cat-2",
+    type_id: "1",
     type: "Mobile Game",
     uid_parser: "Garena UID Parser",
     name: "Free Fire",
@@ -45,6 +47,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "cat-3",
+    type_id: "1",
     type: "PC Game",
     uid_parser: "miHoYo UID Parser",
     name: "Genshin Impact",
@@ -63,6 +66,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "cat-4",
+    type_id: "1",
     type: "Mobile Game",
     uid_parser: "Level Infinite Parser",
     name: "PUBG Mobile",
@@ -78,6 +82,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "cat-5",
+    type_id: "1",
     type: "PC Game",
     uid_parser: "Riot ID Parser",
     name: "Valorant",
@@ -93,6 +98,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "cat-6",
+    type_id: "1",
     type: "Voucher",
     uid_parser: "None",
     name: "Steam Wallet",

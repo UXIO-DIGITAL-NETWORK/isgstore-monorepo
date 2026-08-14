@@ -49,12 +49,23 @@ describe("categoriesService.list", () => {
     expect(api.get).toHaveBeenCalledWith("/v1/categories", { params: { search: "mobile" } });
     expect(result.data[0]).toMatchObject({
       id: "1",
-      // The list shows the type's name; the API sends type_id plus a nested object.
+      // The list shows the type's name; the form/write key on the id.
       type: "Games",
+      type_id: "2",
       name: "Mobile Legends",
       account_nickname_validation: "mlbb",
       status: "active",
     });
+  });
+
+  it("maps type_id from the row even when the type relation is missing", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow({ type: null })]));
+
+    const result = await categoriesService.list();
+
+    // The Type select must still preselect by id so editing does not resubmit
+    // the name and fail `exists:category_types,id`.
+    expect(result.data[0].type_id).toBe("2");
   });
 
   it("unwraps order_form_fields to the bare field list the form edits", async () => {

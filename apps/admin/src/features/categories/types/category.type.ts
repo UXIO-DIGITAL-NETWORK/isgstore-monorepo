@@ -16,6 +16,9 @@ export interface CategoryOrderFormField {
 
 export interface Category {
   id: string;
+  /** The category-type id — what the form's Type select and `type_id` write use. */
+  type_id: string;
+  /** The category-type display name — what the list column shows. */
   type: string;
   uid_parser: string;
   name: string;
