@@ -107,6 +107,31 @@ class CategoryCrudTest extends TestCase
         $this->assertDatabaseCount('categories', 0);
     }
 
+    public function test_order_form_fields_accepts_a_json_string_from_multipart(): void
+    {
+        $this->actingAsAdmin();
+        $type = CategoryType::factory()->create();
+        $category = Category::factory()->create(['type_id' => $type->id]);
+
+        // The admin form posts multipart (it carries a logo file), so this nested
+        // field arrives JSON-encoded as a string. It must still validate + persist
+        // rather than 422 with "order form fields must be an array".
+        $this->putJson("/api/v1/categories/{$category->id}", [
+            'type_id' => $type->id,
+            'name' => 'Mobile Legends',
+            'code' => $category->code,
+            'status' => true,
+            'order_form_fields' => json_encode([
+                'customer_no_template' => '{user_id}{zone_id}',
+                'fields' => [
+                    ['key' => 'user_id', 'label' => 'User ID', 'required' => true],
+                    ['key' => 'zone_id', 'label' => 'Zone ID', 'required' => true],
+                ],
+            ]),
+        ])->assertOk()
+            ->assertJsonPath('data.order_form_fields.fields.0.key', 'user_id');
+    }
+
     public function test_list_filters_by_type_id(): void
     {
         $this->actingAsAdmin();
