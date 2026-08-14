@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Enums\ServiceInvoiceStatus;
+use App\Models\Concerns\ResolvesServiceInstallation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ServiceInvoice extends Model
 {
     use HasFactory;
+    use ResolvesServiceInstallation;
 
     protected $guarded = ['id'];
 

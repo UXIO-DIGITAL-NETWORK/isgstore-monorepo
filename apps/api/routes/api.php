@@ -592,6 +592,12 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
     Route::get('/service-subscriptions/{serviceSubscription}/installation', [ServiceInstallationController::class, 'show']);
     Route::put('/service-subscriptions/{serviceSubscription}/installation', [ServiceInstallationController::class, 'upsert']);
 
+    // The same installation, reached before confirmation so kita can prepare it
+    // first. Keyed on the invoice because that is what the operator has in
+    // hand; the row itself is still per (client, service).
+    Route::get('/service-invoices/{serviceInvoice}/installation', [ServiceInstallationController::class, 'showForInvoice']);
+    Route::put('/service-invoices/{serviceInvoice}/installation', [ServiceInstallationController::class, 'upsertForInvoice']);
+
     Route::post('/installations/{serviceInstallation}/steps', [ServiceInstallationStepController::class, 'store']);
     Route::put('/installation-steps/{serviceInstallationStep}', [ServiceInstallationStepController::class, 'update']);
     Route::post('/installation-steps/{serviceInstallationStep}/completion', [ServiceInstallationStepController::class, 'setCompletion']);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SubscriptionStatus;
+use App\Models\Concerns\ResolvesServiceInstallation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class ServiceSubscription extends Model
 {
     use HasFactory;
+    use ResolvesServiceInstallation;
 
     protected $guarded = ['id'];
 
@@ -38,20 +40,5 @@ class ServiceSubscription extends Model
     public function invoice()
     {
         return $this->belongsTo(ServiceInvoice::class, 'service_invoice_id');
-    }
-
-    /**
-     * The installation covering this period. Deliberately NOT an Eloquent
-     * relation: the join is two columns (merchant_id, service_id) because
-     * installations are per service account, not per paid period, and hasOne
-     * cannot express that. Naming it resolve* keeps it from being reached for
-     * with `with()` by mistake.
-     */
-    public function resolveInstallation(): ?ServiceInstallation
-    {
-        return ServiceInstallation::query()
-            ->where('merchant_id', $this->merchant_id)
-            ->where('service_id', $this->service_id)
-            ->first();
     }
 }

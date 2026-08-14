@@ -72,13 +72,22 @@ class ConfirmServiceInvoiceAction
             // finds the existing row and leaves its window, checklist and
             // credentials intact — installations are per service account, not
             // per paid period.
-            ServiceInstallation::firstOrCreate(
+            $installation = ServiceInstallation::firstOrCreate(
                 [
                     'merchant_id' => $invoice->merchant_id,
                     'service_id' => $invoice->service_id,
                 ],
                 ['service_subscription_id' => $subscription->id],
             );
+
+            // Stamp ONLY a row that has never been stamped — i.e. one kita
+            // prepared from the invoice page before confirming. A renewal finds
+            // a row already pointing at the FIRST period and must leave it:
+            // this column records which period paid for the install, is audit
+            // only, and never scopes a read.
+            if ($installation->service_subscription_id === null) {
+                $installation->update(['service_subscription_id' => $subscription->id]);
+            }
 
             return $invoice->fresh(['service', 'subscription']);
         });

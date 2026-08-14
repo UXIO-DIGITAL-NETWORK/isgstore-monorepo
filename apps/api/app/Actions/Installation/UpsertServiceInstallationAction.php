@@ -4,29 +4,31 @@ declare(strict_types=1);
 
 namespace App\Actions\Installation;
 
+use App\DTOs\Installation\InstallationTargetDTO;
 use App\Models\ServiceInstallation;
-use App\Models\ServiceSubscription;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Schedules (or reschedules) the installation window for a client's service.
  *
- * firstOrCreate on (merchant_id, service_id) so this also covers comped
- * subscriptions created outside the invoice flow and rows that predate the
- * feature — the database's unique key is what guarantees one installation per
- * service account, not both call sites remembering to check.
+ * The single writer of the installation row. firstOrCreate on the unique
+ * (merchant_id, service_id) key, so it covers all three ways a row comes into
+ * being — prepared from an invoice before confirmation, created by
+ * confirmation itself, or backfilled onto a comped subscription. The database's
+ * unique key is what guarantees one installation per service account, not each
+ * call site remembering to check.
  */
 class UpsertServiceInstallationAction
 {
-    public function execute(ServiceSubscription $subscription, array $data): ServiceInstallation
+    public function execute(InstallationTargetDTO $target, array $data): ServiceInstallation
     {
-        return DB::transaction(function () use ($subscription, $data) {
+        return DB::transaction(function () use ($target, $data) {
             $installation = ServiceInstallation::firstOrCreate(
                 [
-                    'merchant_id' => $subscription->merchant_id,
-                    'service_id' => $subscription->service_id,
+                    'merchant_id' => $target->merchantId,
+                    'service_id' => $target->serviceId,
                 ],
-                ['service_subscription_id' => $subscription->id],
+                ['service_subscription_id' => $target->serviceSubscriptionId],
             );
 
             $installation->update([
