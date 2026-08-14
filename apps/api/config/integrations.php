@@ -37,4 +37,14 @@ return [
             ['key' => 'production', 'label' => 'Production Mode', 'type' => 'boolean', 'secret' => false],
         ],
     ],
+
+    'piwapi' => [
+        'label' => 'PiWAPI (WhatsApp)',
+        'type' => 'whatsapp_gateway',
+        'fields' => [
+            ['key' => 'account', 'label' => 'Account ID', 'type' => 'text', 'secret' => false],
+            ['key' => 'secret', 'label' => 'API Secret', 'type' => 'password', 'secret' => true],
+            ['key' => 'api_url', 'label' => 'API URL', 'type' => 'text', 'secret' => false],
+        ],
+    ],
 ];
