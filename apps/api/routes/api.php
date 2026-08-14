@@ -131,7 +131,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/games/{game}', [StorefrontGameController::class, 'show']);
     Route::get('/games/{game}/products', [StorefrontGameController::class, 'products']);
     Route::get('/games/{game}/reviews', [GameReviewController::class, 'index']);
-    Route::post('/games/{game}/validate-id', ValidateGameIdController::class);
+    // Throttled: for some games this runs a paid Digiflazz "cek username" call,
+    // so it must not be hammerable from the client.
+    Route::post('/games/{game}/validate-id', ValidateGameIdController::class)->middleware('throttle:checkout');
 
     Route::get('/price-list', [PriceListController::class, 'index']);
 

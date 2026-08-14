@@ -5,6 +5,7 @@ namespace App\Actions\Checkout;
 use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Settlement\SettleMerchantTransactionAction;
+use App\Actions\Storefront\ValidateGameIdAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\DTOs\Checkout\CheckoutDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
@@ -32,7 +33,8 @@ class CheckoutAction
         private readonly CreateActivityLogAction $logAction,
         private readonly MonetapayService $monetapayService,
         private readonly SendTransactionReceiptAction $sendReceiptAction,
-        private readonly SettleMerchantTransactionAction $settleAction
+        private readonly SettleMerchantTransactionAction $settleAction,
+        private readonly ValidateGameIdAction $validateGameIdAction
     ) {}
 
     public function execute(CheckoutDTO $dto): array
@@ -162,6 +164,15 @@ class CheckoutAction
             $invoiceNumber = 'INV-'.date('Ymd').'-'.strtoupper(Str::random(6));
             $referenceId = 'PAY-'.$invoiceNumber.'-01';
 
+            // Freeze the checked username. The client normally echoes it back, but
+            // if it didn't, fall back to the name a recent "Cek Username" already
+            // resolved (cache-only — never charges a new lookup) so the admin
+            // record still carries it.
+            $targetNickname = $dto->targetNickname
+                ?: ($product->category
+                    ? $this->validateGameIdAction->cachedNickname($product->category, (string) $dto->targetUid, $dto->targetServer)
+                    : null);
+
             $transaction = Transaction::create([
                 'transaction_type' => 'prepaid',
                 'invoice_number' => $invoiceNumber,
@@ -179,7 +190,7 @@ class CheckoutAction
                 'supplier_id' => $activeSupplier->supplier_id,
                 'target_uid' => $dto->targetUid,
                 'target_server' => $dto->targetServer,
-                'target_nickname' => $dto->targetNickname,
+                'target_nickname' => $targetNickname,
                 'promo_id' => $promo?->id,
                 'amount_base' => $sellingPrice,
                 'amount_fee' => $adminFee,

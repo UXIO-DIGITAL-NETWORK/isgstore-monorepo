@@ -32,5 +32,10 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Keep outbound gateways unconfigured so the sync queue never makes a
+             live call from a test that doesn't Http::fake it (a real .env must
+             not change the suite's outcome). -->
+        <env name="PIWAPI_ACCOUNT" value=""/>
+        <env name="PIWAPI_SECRET" value=""/>
     </php>
 </phpunit>
