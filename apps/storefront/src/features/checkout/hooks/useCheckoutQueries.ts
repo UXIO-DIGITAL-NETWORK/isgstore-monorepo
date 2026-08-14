@@ -1,6 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { checkoutService } from "../services/checkout.service";
 import {
   toCategoryTabs,
@@ -10,10 +9,6 @@ import {
   toPaymentGroups,
   toReviews,
 } from "../lib/mappers";
-
-const VALIDATE_DEBOUNCE_MS = 500;
-/** Below this, an id is still being typed and lookups are just noise. */
-const MIN_VALIDATABLE_ID_LENGTH = 4;
 
 export const useGameQuery = (slug: string) =>
   useQuery({
@@ -71,30 +66,19 @@ export const useGameReviewsQuery = (slug: string) =>
   });
 
 /**
- * Nickname lookup for the entered game id.
- *
- * Debounced so a lookup fires when typing pauses, not per keystroke. Never
- * blocks checkout: a game with no provider, or a provider that is down,
- * resolves to `nickname: null` and the UI simply omits the line.
+ * Nickname lookup for the entered game id — triggered explicitly by the
+ * "Cek Username" button, not on every keystroke: for some games the check runs
+ * a paid supplier inquiry, so it must be user-initiated. Never blocks checkout —
+ * a game with no provider, or a provider that is down, resolves to
+ * `nickname: null` and the UI simply omits the line.
  */
-export const useValidateGameIdQuery = (slug: string, userId: string, serverId: string) => {
-  const debouncedUserId = useDebouncedValue(userId.trim(), VALIDATE_DEBOUNCE_MS);
-  const debouncedServerId = useDebouncedValue(serverId.trim(), VALIDATE_DEBOUNCE_MS);
-
-  return useQuery({
-    queryKey: ["checkout", "validate-id", slug, debouncedUserId, debouncedServerId],
-    queryFn: async () => {
-      const response = await checkoutService.validateGameId(slug, {
-        target_uid: debouncedUserId,
-        target_server: debouncedServerId || undefined,
-      });
+export const useValidateGameIdMutation = (slug: string) =>
+  useMutation({
+    mutationFn: async (input: { target_uid: string; target_server?: string }) => {
+      const response = await checkoutService.validateGameId(slug, input);
       return response.data;
     },
-    enabled: Boolean(slug) && debouncedUserId.length >= MIN_VALIDATABLE_ID_LENGTH,
-    retry: false,
-    staleTime: 5 * 60 * 1000,
   });
-};
 
 export const useCheckoutMutation = () =>
   useMutation({

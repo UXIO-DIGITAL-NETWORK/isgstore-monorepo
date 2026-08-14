@@ -27,6 +27,7 @@
     "nicknamePending": "Masukkan ID untuk melihat nickname",
     "nicknameLoading": "Memvalidasi...",
     "nicknameError": "ID tidak ditemukan",
+    "checkUsername": "Cek Username",
     "viewGuide": "Lihat Panduan Pengisian"
   },
   "packages": {

@@ -27,6 +27,7 @@
     "nicknamePending": "Enter ID to see nickname",
     "nicknameLoading": "Validating...",
     "nicknameError": "ID not found",
+    "checkUsername": "Check Username",
     "viewGuide": "View Account Guide"
   },
   "packages": {

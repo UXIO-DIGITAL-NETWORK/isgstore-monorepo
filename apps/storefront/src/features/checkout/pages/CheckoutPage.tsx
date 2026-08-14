@@ -23,7 +23,7 @@ import {
   useGameQuery,
   useGameReviewsQuery,
   usePaymentChannelsQuery,
-  useValidateGameIdQuery,
+  useValidateGameIdMutation,
 } from "@/features/checkout/hooks/useCheckoutQueries";
 import { calculateAdminFee } from "@/features/checkout/lib/mappers";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
@@ -80,8 +80,30 @@ export default function CheckoutPage(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authEmail]);
 
-  const validation = useValidateGameIdQuery(gameSlug, userId, serverId);
-  const nickname = validation.data?.nickname ?? null;
+  // "Cek Username" is button-triggered (a paid supplier check for some games),
+  // so the resolved name is held locally and cleared whenever the id changes.
+  const supportsNicknameCheck = gameQuery.data?.detail.supports_nickname_check ?? false;
+  const validateMutation = useValidateGameIdMutation(gameSlug);
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [nicknameChecked, setNicknameChecked] = useState(false);
+
+  useEffect(() => {
+    setNickname(null);
+    setNicknameChecked(false);
+  }, [userId, serverId]);
+
+  const handleCheckUsername = () => {
+    if (!userId.trim()) return;
+    validateMutation.mutate(
+      { target_uid: userId.trim(), target_server: serverId.trim() || undefined },
+      {
+        onSuccess: (data) => {
+          setNickname(data.nickname ?? null);
+          setNicknameChecked(true);
+        },
+      },
+    );
+  };
 
   /** The wallet, or the chip the customer picked out of a group. */
   const selectedPayment = useMemo((): PaymentOption | null => {
@@ -199,7 +221,10 @@ export default function CheckoutPage(): React.JSX.Element {
               values={[userId, serverId]}
               onValueChange={setFieldValue}
               nickname={nickname}
-              isValidatingNickname={validation.isFetching}
+              isValidatingNickname={validateMutation.isPending}
+              supportsNicknameCheck={supportsNicknameCheck}
+              onCheckUsername={handleCheckUsername}
+              nicknameChecked={nicknameChecked}
             />
             {/* Reviews: order-last on mobile (after right col), natural position on desktop */}
             <Box className="order-last lg:order-0">
