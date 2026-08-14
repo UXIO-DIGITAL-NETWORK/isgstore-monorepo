@@ -53,6 +53,9 @@ const readTemplate = (raw: CategoryApiRow["order_form_fields"]): string | undefi
 
 const toCategory = (row: CategoryApiRow): Category => ({
   id: toRowId(row.id),
+  // `type_id` drives the form's Type select and the write; `type` is the name
+  // the list column shows.
+  type_id: toRowId(row.type?.id ?? row.type_id),
   type: row.type?.name ?? String(row.type_id),
   uid_parser: row.uid_parser ?? "",
   name: row.name,

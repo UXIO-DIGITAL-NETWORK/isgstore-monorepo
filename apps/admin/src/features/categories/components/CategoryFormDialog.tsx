@@ -96,7 +96,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
     // resolves — on edit it is undefined for the first render.
     values: existing
       ? {
-          categoryType: existing.type,
+          // The id, not the display name — the select and the write both key on it.
+          categoryType: existing.type_id,
           name: existing.name,
           subName: existing.sub_name ?? "",
           accountNicknameValidation: existing.account_nickname_validation ?? "",
