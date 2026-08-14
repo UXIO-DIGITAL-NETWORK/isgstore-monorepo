@@ -68,6 +68,15 @@ return [
         'webhook_log_url' => env('DISCORD_WEBHOOK_LOG_URL'),
     ],
 
+    'piwapi' => [
+        // WhatsApp gateway used to deliver the purchase receipt (bukti pembayaran)
+        // as a document message. Credentials are usually set via the admin
+        // Integration page (DB-backed) and fall back to these env defaults.
+        'api_url' => env('PIWAPI_API_URL', 'https://piwapi.com/api/send/whatsapp'),
+        'account' => env('PIWAPI_ACCOUNT'),
+        'secret' => env('PIWAPI_SECRET'),
+    ],
+
     'storefront' => [
         // Consumer storefront base URL, used to build the "Track Order" link in
         // the receipt email. The tracker lives at /{locale}/cek-pesanan.

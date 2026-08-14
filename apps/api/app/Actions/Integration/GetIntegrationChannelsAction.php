@@ -27,7 +27,29 @@ class GetIntegrationChannelsAction
         return [
             ...$this->supplierChannels(),
             ...$this->gatewayChannels(),
+            ...$this->whatsappChannels(),
         ];
+    }
+
+    /**
+     * WhatsApp gateway (PiWAPI) has no balance to probe, so reachability is just
+     * "are the credentials filled in" — connected once account + secret are set.
+     */
+    private function whatsappChannels(): array
+    {
+        $cfg = IntegrationConfig::for('piwapi');
+        $configured = ! empty($cfg['account']) && ! empty($cfg['secret']);
+
+        return [[
+            'id' => 'piwapi',
+            'provider' => 'piwapi',
+            'type' => 'whatsapp_gateway',
+            'name' => (string) config('integrations.piwapi.label', 'PiWAPI (WhatsApp)'),
+            'connection_status' => $configured ? 'connected' : 'disconnected',
+            'balance' => null,
+            'mode' => null,
+            'last_ping_at' => now()->toIso8601String(),
+        ]];
     }
 
     private function supplierChannels(): array

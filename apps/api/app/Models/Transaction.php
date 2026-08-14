@@ -18,6 +18,7 @@ class Transaction extends Model
     protected $casts = [
         'status' => TransactionStatus::class,
         'receipt_sent_at' => 'datetime',
+        'whatsapp_sent_at' => 'datetime',
     ];
 
     public function user()
