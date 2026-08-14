@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Storefront;
 
 use App\Models\Category;
+use App\Models\Product;
 use App\Services\CustomerNumberFormatter;
 use App\Services\DigiflazzService;
 use Illuminate\Support\Facades\Cache;
@@ -23,6 +24,9 @@ use Throwable;
  *                                    (e.g. `digiflazz:ffusername` for Free Fire),
  *                                    where the account name comes back in the
  *                                    transaction `sn`.
+ *   - `product:{id}`              → the admin picked a cek-username product; its
+ *                                    active supplier SKU is resolved here, so the
+ *                                    operator never has to know the raw SKU.
  *
  * Most games have no provider configured, and that is a normal state — not an
  * error:
@@ -62,6 +66,19 @@ class ValidateGameIdAction
             $sku = trim(substr($provider, strlen('digiflazz:')));
 
             return $sku === '' ? $this->unsupported() : $this->resolveViaDigiflazz($game, $sku, $userId, $serverId);
+        }
+
+        // Admin picked a product; resolve its active supplier SKU here. A product
+        // with no active mapping is a misconfiguration, not "unsupported" — treat
+        // it as "found nothing" so the button still behaves.
+        if (str_starts_with($provider, 'product:')) {
+            $sku = $this->skuForProduct((int) trim(substr($provider, strlen('product:'))));
+
+            if ($sku === null) {
+                return ['nickname' => null, 'validated' => false, 'supported' => true];
+            }
+
+            return $this->resolveViaDigiflazz($game, $sku, $userId, $serverId);
         }
 
         // A free third-party URL template. Anything else is an unrecognised
@@ -214,7 +231,11 @@ class ValidateGameIdAction
      */
     public function cachedNickname(Category $game, string $userId, ?string $serverId): ?string
     {
-        if (! str_starts_with(trim((string) $game->validasi_nickname), 'digiflazz:')) {
+        $provider = trim((string) $game->validasi_nickname);
+
+        // Only the (paid) Digiflazz-backed providers cache a result; a URL lookup
+        // is free and re-run client-side, so there is nothing to reuse here.
+        if (! str_starts_with($provider, 'digiflazz:') && ! str_starts_with($provider, 'product:')) {
             return null;
         }
 
@@ -227,6 +248,21 @@ class ValidateGameIdAction
         $cached = Cache::get("nickname:{$game->code}:{$customerNo}");
 
         return is_string($cached) && $cached !== '' ? $cached : null;
+    }
+
+    /** The active Digiflazz SKU mapped to a product, or null when none is active. */
+    private function skuForProduct(int $productId): ?string
+    {
+        if ($productId <= 0) {
+            return null;
+        }
+
+        $sku = Product::query()->whereKey($productId)->first()
+            ?->supplierProducts()
+            ->where('is_active', true)
+            ->value('buyer_sku_code');
+
+        return is_string($sku) && $sku !== '' ? $sku : null;
     }
 
     /** @return array{nickname: null, validated: false, supported: false} */

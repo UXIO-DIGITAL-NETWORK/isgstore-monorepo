@@ -243,6 +243,36 @@ class StorefrontOrderTest extends TestCase
             ->assertJsonPath('data.supported', true);
     }
 
+    public function test_validate_id_resolves_a_username_from_a_selected_product(): void
+    {
+        // Admin picked a cek-username product; its active supplier SKU is used.
+        $product = Product::factory()->create();
+        SupplierProduct::factory()->for($product)->create(['buyer_sku_code' => 'ffusername', 'is_active' => true]);
+        Category::factory()->create(['slug' => 'free-fire', 'validasi_nickname' => 'product:'.$product->id]);
+
+        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Sukses', 'sn' => 'ProPlayerFF']])]);
+
+        $this->postJson('/api/v1/games/free-fire/validate-id', ['target_uid' => '337850017'])
+            ->assertOk()
+            ->assertJsonPath('data.nickname', 'ProPlayerFF')
+            ->assertJsonPath('data.validated', true);
+    }
+
+    public function test_validate_id_product_without_an_active_mapping_degrades_gracefully(): void
+    {
+        $product = Product::factory()->create(); // no active supplier mapping
+        Category::factory()->create(['slug' => 'free-fire', 'validasi_nickname' => 'product:'.$product->id]);
+
+        Http::fake();
+
+        $this->postJson('/api/v1/games/free-fire/validate-id', ['target_uid' => '337850017'])
+            ->assertOk()
+            ->assertJsonPath('data.nickname', null)
+            ->assertJsonPath('data.supported', true);
+
+        Http::assertNothingSent();
+    }
+
     public function test_game_detail_flags_when_a_username_check_is_available(): void
     {
         Category::factory()->create(['slug' => 'free-fire', 'status' => true, 'validasi_nickname' => 'digiflazz:ffusername']);

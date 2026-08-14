@@ -14,6 +14,22 @@ use App\Support\OrderForm\OrderFormSchema;
  */
 trait ValidatesOrderFormFields
 {
+    /**
+     * The admin form posts as multipart (it carries a logo file), so the nested
+     * `order_form_fields` array arrives JSON-encoded as a single string. Decode
+     * it back to an array before validation; a malformed string is left as-is so
+     * the `array` rule rejects it with a clear message.
+     */
+    protected function normalizeOrderFormFieldsInput(): void
+    {
+        $value = $this->input('order_form_fields');
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $this->merge(['order_form_fields' => is_array($decoded) ? $decoded : $value]);
+        }
+    }
+
     protected function orderFormFieldRules(): array
     {
         $submitted = $this->input('order_form_fields');
