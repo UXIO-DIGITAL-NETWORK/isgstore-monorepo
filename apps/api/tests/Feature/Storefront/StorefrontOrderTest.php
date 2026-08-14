@@ -198,6 +198,60 @@ class StorefrontOrderTest extends TestCase
             ->assertJsonPath('data.nickname', null);
     }
 
+    public function test_validate_id_uses_the_digiflazz_cek_username_sku(): void
+    {
+        Category::factory()->create([
+            'slug' => 'free-fire',
+            'validasi_nickname' => 'digiflazz:ffusername',
+        ]);
+
+        // A Digiflazz cek-username SKU returns the account name in `sn`.
+        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Sukses', 'sn' => 'ProPlayerFF', 'trx_id' => 'X1']])]);
+
+        $this->postJson('/api/v1/games/free-fire/validate-id', ['target_uid' => '337850017'])
+            ->assertOk()
+            ->assertJsonPath('data.nickname', 'ProPlayerFF')
+            ->assertJsonPath('data.validated', true)
+            ->assertJsonPath('data.supported', true);
+    }
+
+    public function test_validate_id_digiflazz_check_is_charged_once_then_cached(): void
+    {
+        Category::factory()->create(['slug' => 'free-fire', 'validasi_nickname' => 'digiflazz:ffusername']);
+        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Sukses', 'sn' => 'ProPlayerFF']])]);
+
+        $payload = ['target_uid' => '337850017'];
+        $this->postJson('/api/v1/games/free-fire/validate-id', $payload)->assertOk();
+        $this->postJson('/api/v1/games/free-fire/validate-id', $payload)
+            ->assertOk()
+            ->assertJsonPath('data.nickname', 'ProPlayerFF');
+
+        // Second lookup for the same id must hit the cache, not re-charge Digiflazz.
+        Http::assertSentCount(1);
+    }
+
+    public function test_validate_id_digiflazz_failure_never_blocks_checkout(): void
+    {
+        Category::factory()->create(['slug' => 'free-fire', 'validasi_nickname' => 'digiflazz:ffusername']);
+
+        // A bad id comes back "Gagal" — that is "no nickname", not a name.
+        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Gagal', 'sn' => '']])]);
+
+        $this->postJson('/api/v1/games/free-fire/validate-id', ['target_uid' => '000'])
+            ->assertOk()
+            ->assertJsonPath('data.nickname', null)
+            ->assertJsonPath('data.supported', true);
+    }
+
+    public function test_game_detail_flags_when_a_username_check_is_available(): void
+    {
+        Category::factory()->create(['slug' => 'free-fire', 'status' => true, 'validasi_nickname' => 'digiflazz:ffusername']);
+        Category::factory()->create(['slug' => 'plain-game', 'status' => true, 'validasi_nickname' => null]);
+
+        $this->getJson('/api/v1/games/free-fire')->assertOk()->assertJsonPath('data.supports_nickname_check', true);
+        $this->getJson('/api/v1/games/plain-game')->assertOk()->assertJsonPath('data.supports_nickname_check', false);
+    }
+
     public function test_checkout_recognises_a_member_from_their_bearer_token(): void
     {
         config([

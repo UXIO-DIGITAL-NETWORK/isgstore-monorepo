@@ -21,6 +21,11 @@ class GameDetailResource extends GameResource
             // field #2 to target_server — checkout accepts nothing else.
             'order_form_fields' => OrderFormFields::for($this->resource),
 
+            // Whether the storefront should offer a "Cek Username" action. A
+            // provider is configured (a lookup URL or a paid Digiflazz SKU), so
+            // the client can show the button without a probing paid call.
+            'supports_nickname_check' => trim((string) $this->validasi_nickname) !== '',
+
             'meta' => [
                 'title' => $this->meta_title,
                 'description' => $this->meta_description,
