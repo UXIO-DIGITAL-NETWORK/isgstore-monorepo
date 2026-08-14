@@ -99,7 +99,6 @@ const toFormData = (
   appendIf(form, "sub_name", input.sub_name);
   appendIf(form, "code", input.code);
   appendIf(form, "slug", input.slug);
-  appendIf(form, "uid_parser", input.uid_parser);
   appendIf(form, "validasi_nickname", input.account_nickname_validation);
   appendIf(form, "region", input.region);
   appendIf(form, "description", input.description);

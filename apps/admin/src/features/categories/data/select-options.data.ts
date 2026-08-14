@@ -6,14 +6,6 @@ export const CATEGORY_TYPE_OPTIONS: SelectOption[] = [
   { value: "Voucher", label: "Voucher" },
 ];
 
-export const CATEGORY_UID_PARSER_OPTIONS: SelectOption[] = [
-  { value: "ML UID+Zone Parser", label: "ML UID+Zone Parser" },
-  { value: "Garena UID Parser", label: "Garena UID Parser" },
-  { value: "miHoYo UID Parser", label: "miHoYo UID Parser" },
-  { value: "Riot ID Parser", label: "Riot ID Parser" },
-  { value: "None", label: "None" },
-];
-
 export const REGION_OPTIONS: SelectOption[] = [
   { value: "Southeast Asia", label: "Southeast Asia" },
   { value: "Global", label: "Global" },
