@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { memberService } from "@/features/member-dashboard/services/member.service";
-import { toHistoryRow } from "@/features/member-dashboard/lib/mappers";
+import { asArray, toHistoryRow } from "@/features/member-dashboard/lib/mappers";
 import { useEchoConnected } from "@/hooks/useEchoConnected";
 import type { TransactionHistoryRow } from "@/features/member-dashboard/types/dashboard.type";
 
@@ -18,5 +18,5 @@ export function useTransactionHistory(): TransactionHistoryRow[] {
     refetchInterval: connected ? false : 30_000,
   });
 
-  return (data?.data ?? []).map(toHistoryRow);
+  return asArray(data?.data).map(toHistoryRow);
 }

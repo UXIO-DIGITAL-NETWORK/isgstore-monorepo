@@ -15,6 +15,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
 import { useAuthStore } from "@/store/useAuthStore";
+import { clearClientSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 
@@ -23,7 +24,6 @@ export function UserMenu(): React.JSX.Element {
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,7 +41,7 @@ export function UserMenu(): React.JSX.Element {
 
   const handleLogout = () => {
     setOpen(false);
-    clearAuth();
+    clearClientSession();
     navigate({ to: "/$locale", params: { locale: locale ?? "id" } });
   };
 
@@ -122,7 +122,7 @@ export function UserMenu(): React.JSX.Element {
           <Box className="py-1.5">
             {/* Dashboard Member */}
             <Link
-              href={`/${locale}/dashboard-preview`}
+              href={`/${locale}/dashboard`}
               className="no-underline"
               onClick={() => setOpen(false)}
             >
@@ -159,7 +159,7 @@ export function UserMenu(): React.JSX.Element {
 
             {/* Pengaturan Akun */}
             <Link
-              href={`/${locale}/pengaturan-akun-preview`}
+              href={`/${locale}/pengaturan-akun`}
               className="no-underline"
               onClick={() => setOpen(false)}
             >

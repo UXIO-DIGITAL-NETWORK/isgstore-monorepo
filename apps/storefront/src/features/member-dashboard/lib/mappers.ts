@@ -9,6 +9,16 @@ import type { MemberActivityLogRow } from "@/features/member-dashboard/services/
 import type { TransactionStatus, TransactionSummaryModel } from "@/types/models/transaction.model";
 
 /**
+ * Guard a value that is expected to be a list before mapping/filtering it.
+ * List endpoints differ in shape (a bare array, a `{channels}` wrapper, or a
+ * nested paginator), and reading the wrong level yields an object — calling
+ * `.map`/`.filter` on it throws and white-screens the whole page. This makes
+ * that degrade to an empty list instead.
+ */
+export const asArray = <T>(value: readonly T[] | null | undefined): T[] =>
+  Array.isArray(value) ? (value as T[]) : [];
+
+/**
  * The API's seven statuses collapsed into the four the dashboard renders.
  * Paid-but-not-yet-delivered is one "process" state to the customer, and every
  * unhappy ending reads as "failed".

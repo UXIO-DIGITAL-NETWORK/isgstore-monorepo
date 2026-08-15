@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { membershipService } from "@/features/member-dashboard/services/membership.service";
+import { asArray } from "@/features/member-dashboard/lib/mappers";
 import { usePaymentGroups } from "@/features/member-dashboard/hooks/usePaymentGroups";
 import type { MembershipPlan, PaymentGroup } from "@/features/member-dashboard/types/upgradeMembership.type";
 
@@ -43,7 +44,7 @@ export function useUpgradeMembership(): UseUpgradeMembershipReturn {
 
   const plans = useMemo<MembershipPlan[]>(
     () =>
-      (plansResponse?.data ?? []).map((plan) => ({
+      asArray(plansResponse?.data).map((plan) => ({
         id: String(plan.id),
         name: plan.name,
         price: plan.price,

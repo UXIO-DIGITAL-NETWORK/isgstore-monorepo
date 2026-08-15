@@ -179,7 +179,7 @@ export default function RecentTransactionsTable({ transactions }: Props): React.
         {/* Footer: "View all" link */}
         <Box className="flex justify-center py-3.5 border-t border-white/8 bg-white/[0.01]">
           <Link
-            href={`/${locale}/dashboard-preview`}
+            href={`/${locale}/dashboard`}
             className="flex items-center gap-1 text-[13px] font-outfit font-semibold text-[#9234EA] hover:text-[#C084FC] transition-colors no-underline"
           >
             {t("recentTransactions.viewAll")}

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
 import { memberService } from "@/features/member-dashboard/services/member.service";
-import { toRecentTransaction } from "@/features/member-dashboard/lib/mappers";
+import { asArray, toRecentTransaction } from "@/features/member-dashboard/lib/mappers";
 import type {
   MemberProfile,
   MembershipLevel,
@@ -72,6 +72,6 @@ export function useDashboardOverview(): UseDashboardOverviewReturn {
       { key: "total", labelKey: "stats.totalTransactions", value: data?.stats.total ?? 0, tone: "neutral" },
       { key: "sales", labelKey: "stats.totalSales", value: data?.total_spent ?? 0, tone: "neutral" },
     ],
-    recentTransactions: (data?.recent_transactions ?? []).map(toRecentTransaction),
+    recentTransactions: asArray(data?.recent_transactions).map(toRecentTransaction),
   };
 }

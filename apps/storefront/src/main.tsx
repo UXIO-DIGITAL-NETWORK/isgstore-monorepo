@@ -1,17 +1,17 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import i18n from "@/config/i18n";
 import { ENV } from "@/config/env";
+import { queryClient } from "@/config/queryClient";
 import "./index.css";
 
 import { routeTree } from "./routeTree.gen";
 
-const queryClient = new QueryClient();
 const router = createRouter({
   routeTree,
   scrollRestoration: true,
