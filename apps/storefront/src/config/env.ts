@@ -15,6 +15,10 @@ export const ENV = {
   REVERB_HOST: import.meta.env.VITE_REVERB_HOST || "localhost",
   REVERB_PORT: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
   REVERB_SCHEME: import.meta.env.VITE_REVERB_SCHEME || "http",
+
+  // Google Sign-In OAuth Client ID. Empty until provisioned — the login page
+  // hides the Google button when it is missing so it never renders broken.
+  GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
 } as const;
 
 /** Version prefix shared by every service module. */

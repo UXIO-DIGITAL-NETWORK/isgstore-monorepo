@@ -40,6 +40,10 @@ jobs:
           VITE_REVERB_HOST: ${{ secrets.VITE_REVERB_HOST }}
           VITE_REVERB_PORT: ${{ secrets.VITE_REVERB_PORT }}
           VITE_REVERB_SCHEME: ${{ secrets.VITE_REVERB_SCHEME }}
+          # Google Sign-In OAuth Client ID. Public by design (it ships inside the
+          # client bundle), so it is committed here rather than kept as a secret.
+          # Must match the API's GOOGLE_CLIENT_ID.
+          VITE_GOOGLE_CLIENT_ID: "84646436486-4mbhi3c5ssavqcnjoqincf2f10k6abbm.apps.googleusercontent.com"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
