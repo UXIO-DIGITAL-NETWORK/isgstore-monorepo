@@ -202,6 +202,7 @@ Route::prefix('v1')->group(function () {
     // Authentication Routes
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+        Route::post('/google', [AuthController::class, 'google'])->middleware('throttle:login');
         Route::post('/refresh', [AuthController::class, 'refreshToken']);
 
         // Self-service signup and password recovery. Both are throttled per IP

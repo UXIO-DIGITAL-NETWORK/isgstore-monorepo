@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Auth\GoogleLoginAction;
 use App\Actions\Auth\LoginAction;
 use App\Actions\Auth\LogoutAction;
 use App\Actions\Auth\RefreshTokenAction;
@@ -12,6 +13,7 @@ use App\Actions\Auth\ResetPasswordAction;
 use App\Actions\Auth\SendPasswordResetLinkAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\GoogleLoginRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RefreshTokenRequest;
 use App\Http\Requests\Auth\RegisterRequest;
@@ -28,6 +30,21 @@ class AuthController extends Controller
      * Handle the login request.
      */
     public function login(LoginRequest $request, LoginAction $action): JsonResponse
+    {
+        $result = $action->execute($request->toDTO());
+
+        return $this->successResponse([
+            'user' => new UserResource($result['user']),
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+        ], 'Login successful');
+    }
+
+    /**
+     * Handle "Sign in with Google" — verifies the ID token and signs the user
+     * in, creating a MEMBER account on first use.
+     */
+    public function google(GoogleLoginRequest $request, GoogleLoginAction $action): JsonResponse
     {
         $result = $action->execute($request->toDTO());
 

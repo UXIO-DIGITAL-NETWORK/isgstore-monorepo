@@ -68,6 +68,14 @@ return [
         'webhook_log_url' => env('DISCORD_WEBHOOK_LOG_URL'),
     ],
 
+    'google' => [
+        // OAuth Client ID for "Sign in with Google". Used as the audience when
+        // verifying the ID token the storefront posts to /v1/auth/google — the
+        // same value the frontend sets as VITE_GOOGLE_CLIENT_ID. No client
+        // secret is needed: ID-token verification uses Google's public certs.
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
     'piwapi' => [
         // WhatsApp gateway used to deliver the purchase receipt (bukti pembayaran)
         // as a document message. Credentials are usually set via the admin
