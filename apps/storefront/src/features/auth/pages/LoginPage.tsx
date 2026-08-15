@@ -4,15 +4,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { useParams } from "@tanstack/react-router";
+import { GoogleLogin } from "@react-oauth/google";
 
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Link } from "@/components/common/Link";
 
-import googleLogo from "@/assets/icons/google_logo.svg";
+import { ENV } from "@/config/env";
 import { loginSchema, type LoginFormValues } from "../schemas/auth.schema";
 import { useLogin } from "../hooks/useLogin";
+import { useGoogleLogin } from "../hooks/useGoogleLogin";
 import type { ApiError } from "@/types/api.type";
 
 const inputClass =
@@ -22,6 +24,7 @@ export default function LoginPage() {
   const { t } = useTranslation("auth");
   const { locale } = useParams({ strict: false }) as { locale: string };
   const { mutate: login, isPending, error } = useLogin();
+  const googleLogin = useGoogleLogin();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -35,7 +38,10 @@ export default function LoginPage() {
 
   const onSubmit = (data: LoginFormValues) => login(data);
 
-  const apiError = error as { response?: { data?: ApiError } } | null;
+  // Surface an error from either the password or the Google path in the same banner.
+  const apiError = (error ?? googleLogin.error) as
+    | { response?: { data?: ApiError } }
+    | null;
   const apiErrorMessage = apiError?.response?.data?.message;
 
   return (
@@ -151,15 +157,28 @@ export default function LoginPage() {
         <Box className="h-px flex-1 bg-white/10" />
       </Box>
 
-      {/* Google Sign-In */}
-      <Box
-        as="button"
-        type="button"
-        className="w-full flex items-center justify-center gap-3 bg-white/[0.04] border border-white/10 rounded-full py-3 text-white text-sm font-inter hover:bg-white/[0.08] transition-colors cursor-pointer"
-      >
-        <Box as="img" src={googleLogo} alt="Google" className="w-5 h-5" />
-        {t("login.googleSignIn")}
-      </Box>
+      {/* Google Sign-In — official GIS button returns an ID token (credential)
+          which the hook posts to /v1/auth/google. Rendered only when a Client ID
+          is configured so it never shows up broken. */}
+      {ENV.GOOGLE_CLIENT_ID && (
+        <Box className="flex justify-center [color-scheme:light]">
+          <GoogleLogin
+            onSuccess={(credentialResponse) => {
+              if (credentialResponse.credential) {
+                googleLogin.mutate(credentialResponse.credential);
+              }
+            }}
+            onError={() => {
+              // GIS-side failure (popup closed, network). The banner above
+              // shows API-side failures; this keeps the UI from hanging.
+            }}
+            theme="filled_black"
+            shape="pill"
+            text="signin_with"
+            width="320"
+          />
+        </Box>
+      )}
 
       {/* Register link */}
       <Text className="block text-center text-sm text-white/50 mt-6">

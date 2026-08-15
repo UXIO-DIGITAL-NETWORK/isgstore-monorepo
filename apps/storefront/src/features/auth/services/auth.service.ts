@@ -22,6 +22,16 @@ export const authService = {
     });
   },
 
+  google: async (credential: string): Promise<AuthApiResponse> => {
+    // `credential` is the Google ID token (JWT) returned by GIS. The API
+    // verifies it server-side and returns the same token pair as login. The
+    // browser timezone is synced onto the account exactly as in login().
+    return await api.post(`${BASE}/google`, {
+      credential,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+  },
+
   register: async (data: RegisterFormValues): Promise<AuthApiResponse> => {
     return await api.post(`${BASE}/register`, {
       name: data.name,
