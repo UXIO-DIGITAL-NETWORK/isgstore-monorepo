@@ -57,7 +57,7 @@ export default function WalletCard({ wallet }: Props): React.JSX.Element {
           as="button"
           type="button"
           onClick={() =>
-            navigate({ to: "/$locale/isi-saldo-preview", params: { locale: locale ?? "id" } })
+            navigate({ to: "/$locale/isi-saldo", params: { locale: locale ?? "id" } })
           }
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] hover:opacity-90 transition-opacity cursor-pointer"
         >

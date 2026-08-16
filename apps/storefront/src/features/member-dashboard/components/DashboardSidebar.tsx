@@ -15,7 +15,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/useAuthStore";
+import { clearClientSession } from "@/lib/session";
 
 interface SidebarNavItem {
   key: string;
@@ -29,55 +29,54 @@ export default function DashboardSidebar(): React.JSX.Element {
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   const { location } = useRouterState();
   const navigate = useNavigate();
-  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const navItems: SidebarNavItem[] = [
     {
       key: "dashboard",
       labelKey: "sidebar.dashboard",
       icon: <LayoutDashboard className="w-4 h-4" />,
-      href: `/${locale}/dashboard-preview`,
+      href: `/${locale}/dashboard`,
     },
     {
       key: "transactions",
       labelKey: "sidebar.transactions",
       icon: <Receipt className="w-4 h-4" />,
-      href: `/${locale}/riwayat-transaksi-preview`,
+      href: `/${locale}/riwayat-transaksi`,
     },
     {
       key: "topUpBalance",
       labelKey: "sidebar.topUpBalance",
       icon: <Wallet className="w-4 h-4" />,
-      href: `/${locale}/isi-saldo-preview`,
+      href: `/${locale}/isi-saldo`,
     },
     {
       key: "integrations",
       labelKey: "sidebar.integrations",
       icon: <Plug className="w-4 h-4" />,
-      href: `/${locale}/integrasi-preview`,
+      href: `/${locale}/integrasi`,
     },
     {
       key: "upgradeMembership",
       labelKey: "sidebar.upgradeMembership",
       icon: <TrendingUp className="w-4 h-4" />,
-      href: `/${locale}/upgrade-membership-preview`,
+      href: `/${locale}/upgrade-membership`,
     },
     {
       key: "activityLog",
       labelKey: "sidebar.activityLog",
       icon: <Activity className="w-4 h-4" />,
-      href: `/${locale}/log-aktivitas-preview`,
+      href: `/${locale}/log-aktivitas`,
     },
     {
       key: "accountSettings",
       labelKey: "sidebar.accountSettings",
       icon: <Settings className="w-4 h-4" />,
-      href: `/${locale}/pengaturan-akun-preview`,
+      href: `/${locale}/pengaturan-akun`,
     },
   ];
 
   const handleLogout = () => {
-    clearAuth();
+    clearClientSession();
     navigate({ to: "/$locale", params: { locale: locale ?? "id" } });
   };
 

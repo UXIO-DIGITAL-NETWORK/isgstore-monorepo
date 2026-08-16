@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/config/axios";
 import { API_VERSION } from "@/config/env";
 import { resolvePaymentLogo } from "@/constants/paymentLogos";
+import { asArray } from "@/features/member-dashboard/lib/mappers";
 import type { ApiResponse } from "@/types/api.type";
-import type { PaymentChannelModel } from "@/types/models/product.model";
+import type { PaymentChannelModel, PaymentChannelsResponse } from "@/types/models/product.model";
 import type { PaymentGroup, PaymentGroupType } from "@/features/member-dashboard/types/upgradeMembership.type";
 
 /** API `payment_type` → the three groups these pages render. */
@@ -35,12 +36,16 @@ const GROUP_LABELS: Record<PaymentGroupType, string> = {
 export const usePaymentGroups = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["payment-channels", "wallet"],
-    queryFn: async (): Promise<ApiResponse<PaymentChannelModel[]>> =>
+    queryFn: async (): Promise<ApiResponse<PaymentChannelsResponse>> =>
       await api.get(`${API_VERSION}/storefront/payment-channels`),
   });
 
   const groups = useMemo<PaymentGroup[]>(() => {
-    const channels = (data?.data ?? []).filter((channel) => channel.channel_code !== "balance");
+    // The endpoint nests the rows under `channels`; reading `data.data` directly
+    // yields that wrapper object, and filtering an object throws.
+    const channels = asArray<PaymentChannelModel>(data?.data?.channels).filter(
+      (channel) => channel.channel_code !== "balance",
+    );
 
     return GROUP_ORDER.map((type) => ({
       type,

@@ -1,6 +1,7 @@
 import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 import { API_VERSION, ENV } from "@/config/env";
 import { useAuthStore } from "@/store/useAuthStore";
+import { clearClientSession } from "@/lib/session";
 
 export const api = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -48,7 +49,7 @@ function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) return Promise.resolve(null);
 
   refreshInFlight ??= (async () => {
-    const { setToken, clearAuth } = useAuthStore.getState();
+    const { setToken } = useAuthStore.getState();
 
     try {
       // Bare axios, not `api`: our request interceptor would attach the
@@ -63,14 +64,14 @@ function refreshAccessToken(): Promise<string | null> {
       const nextRefresh: string | undefined = data?.data?.refresh_token;
 
       if (!nextAccess) {
-        clearAuth();
+        clearClientSession();
         return null;
       }
 
       setToken(nextAccess, nextRefresh);
       return nextAccess;
     } catch {
-      clearAuth();
+      clearClientSession();
       return null;
     } finally {
       refreshInFlight = null;
@@ -109,10 +110,10 @@ api.interceptors.response.use(
 
     // Only bounce someone who actually had a session. A guest whose request
     // happened to 401 must not be thrown onto the login page mid-checkout.
-    const { token: currentToken, refreshToken: currentRefresh, clearAuth } = useAuthStore.getState();
+    const { token: currentToken, refreshToken: currentRefresh } = useAuthStore.getState();
 
     if (currentToken || currentRefresh) {
-      clearAuth();
+      clearClientSession();
       redirectToLogin();
     }
 
