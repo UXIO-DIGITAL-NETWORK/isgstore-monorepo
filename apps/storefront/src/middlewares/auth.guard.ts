@@ -46,6 +46,20 @@ async function hydrateUser(): Promise<void> {
   return hydration;
 }
 
+/**
+ * Rehydrate the cached user on any route — public included — when only the
+ * token survived a page reload. Called from the locale layout guard so a
+ * signed-in user landing on the homepage isn't rendered as a guest (a stuck
+ * "Masuk" button). No-ops for guests and once the user is already loaded;
+ * shares the single in-flight `/me` call with `requireAuth`.
+ */
+export const ensureUserHydrated = async (): Promise<void> => {
+  const { token, user } = useAuthStore.getState();
+  if (token && !user) {
+    await hydrateUser();
+  }
+};
+
 function satisfies(actual: UserRole | undefined, required: RequireAuthOptions["role"]): boolean {
   if (!required) return true;
   if (!actual) return false;
