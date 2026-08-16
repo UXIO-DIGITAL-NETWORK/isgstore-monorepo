@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
 import { memberService } from "@/features/member-dashboard/services/member.service";
 import type { UsePengaturanAkunReturn } from "@/features/member-dashboard/types/pengaturanAkun.type";
+import { normalizeWhatsappNumber, toNationalPhone } from "@/lib/phone";
 
 /** Reads an API error's message, falling back to a caller-supplied default. */
 function errorMessage(error: unknown, fallback: string): string {
@@ -28,7 +29,9 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
   const [fullName, setFullName] = useState<string>(user?.name ?? "");
   const [username, setUsername] = useState<string>(user?.username ?? "");
   const [email, setEmail] = useState<string>(user?.email ?? "");
-  const [whatsapp, setWhatsapp] = useState<string>(user?.phone ?? "");
+  // The stored number is canonical "+62…"; strip the country code so the
+  // +62-chipped input shows only the national part (no doubled prefix).
+  const [whatsapp, setWhatsapp] = useState<string>(toNationalPhone(user?.phone ?? ""));
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url ?? null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
@@ -38,7 +41,7 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
     setFullName(user.name);
     setUsername(user.username ?? "");
     setEmail(user.email);
-    setWhatsapp(user.phone);
+    setWhatsapp(toNationalPhone(user.phone));
     setAvatarPreview((prev) => (prev?.startsWith("blob:") ? prev : user.avatar_url ?? null));
   }, [user]);
 
@@ -84,12 +87,14 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
     mutationFn: () => {
       // Multipart only when a new file was picked; otherwise a plain JSON PUT
       // keeps the request small and avoids re-uploading an unchanged avatar.
+      const phone = normalizeWhatsappNumber(whatsapp);
+
       if (avatarFile) {
         const form = new FormData();
         form.append("name", fullName);
         form.append("username", username);
         form.append("email", email);
-        form.append("phone", whatsapp);
+        form.append("phone", phone);
         form.append("avatar", avatarFile);
         return memberService.updateProfile(form);
       }
@@ -98,7 +103,7 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
         name: fullName,
         username,
         email,
-        phone: whatsapp,
+        phone,
       });
     },
     onSuccess: (response) => {
@@ -148,6 +153,7 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
     selectPhoto,
     removeAvatar,
     submitProfile,
+    isSavingProfile: profileMutation.isPending,
     currentPassword,
     setCurrentPassword,
     newPassword,
@@ -161,6 +167,7 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
     showConfirm,
     toggleShowConfirm,
     submitPassword,
+    isSavingPassword: passwordMutation.isPending,
     setup2fa,
   };
 }

@@ -4,6 +4,8 @@ import { User } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import SectionCard from "@/features/member-dashboard/components/pengaturanAkun/SectionCard";
+import { Spinner } from "@/components/common/Spinner";
+import { toNationalPhone } from "@/lib/phone";
 
 const inputClass =
   "w-full bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#3B82F6]/60 transition-all";
@@ -23,6 +25,7 @@ interface InformasiPribadiCardProps {
   onSelectPhoto: (file: File) => void;
   onRemovePhoto: () => void;
   onSubmit: () => void;
+  loading: boolean;
 }
 
 export default function InformasiPribadiCard({
@@ -38,6 +41,7 @@ export default function InformasiPribadiCard({
   onSelectPhoto,
   onRemovePhoto,
   onSubmit,
+  loading,
 }: InformasiPribadiCardProps): React.JSX.Element {
   const { t } = useTranslation("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -200,7 +204,7 @@ export default function InformasiPribadiCard({
               as="input"
               type="tel"
               value={whatsapp}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeWhatsapp(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeWhatsapp(toNationalPhone(e.target.value))}
               placeholder="8xxx xxxx xxxx"
               className={inputClass}
             />
@@ -216,8 +220,10 @@ export default function InformasiPribadiCard({
             as="button"
             type="button"
             onClick={onSubmit}
-            className="px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer"
+            disabled={loading}
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           >
+            {loading && <Spinner className="w-4 h-4" />}
             {t("pengaturanAkun.personalInfo.saveButton")}
           </Box>
         </Box>

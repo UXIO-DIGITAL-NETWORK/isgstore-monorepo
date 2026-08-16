@@ -14,6 +14,7 @@ import googleLogo from "@/assets/icons/google_logo.svg";
 import { registerSchema, type RegisterFormValues } from "../schemas/auth.schema";
 import { useRegister } from "../hooks/useRegister";
 import type { ApiError } from "@/types/api.type";
+import { normalizeWhatsappNumber, toNationalPhone } from "@/lib/phone";
 
 const inputClass =
   "w-full bg-white/6 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#C084FC] focus:bg-white/8 transition-all";
@@ -28,12 +29,14 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = (data: RegisterFormValues) => registerUser(data);
+  const onSubmit = (data: RegisterFormValues) =>
+    registerUser({ ...data, phone: normalizeWhatsappNumber(data.phone) });
 
   const apiError = error as { response?: { data?: ApiError } } | null;
   const apiErrorMessage = apiError?.response?.data?.message;
@@ -127,7 +130,10 @@ export default function RegisterPage() {
             <Box
               as="input"
               type="tel"
-              {...register("phone")}
+              {...register("phone", {
+                onChange: (e) =>
+                  setValue("phone", toNationalPhone(e.target.value), { shouldValidate: true }),
+              })}
               placeholder={t("register.phonePlaceholder")}
               className="flex-1 bg-transparent px-4 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none"
             />

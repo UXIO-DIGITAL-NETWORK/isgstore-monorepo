@@ -26,6 +26,7 @@ import {
   useValidateGameIdMutation,
 } from "@/features/checkout/hooks/useCheckoutQueries";
 import { calculateAdminFee } from "@/features/checkout/lib/mappers";
+import { normalizeWhatsappNumber } from "@/lib/phone";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { GameInfo, PaymentOption } from "@/features/checkout/types/checkout.type";
@@ -150,7 +151,7 @@ export default function CheckoutPage(): React.JSX.Element {
         // Display-only echo of what validate-id returned; the API stores it so
         // the receipt keeps showing the name that was confirmed here.
         target_nickname: nickname ?? undefined,
-        guest_contact: whatsapp.trim() || undefined,
+        guest_contact: normalizeWhatsappNumber(whatsapp) || undefined,
         // Required destination for the purchase-receipt email (and a tracking key).
         email: email.trim(),
         // Storefront language, so the receipt email is sent in the buyer's language.
