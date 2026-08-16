@@ -70,12 +70,14 @@ export function useIntegrasi(): UseIntegrasiReturn {
       if (credential) regenerate.mutate(credential.id);
       else createCredential.mutate();
     },
+    isRegenerating: createCredential.isPending || regenerate.isPending,
     callbackUrl,
     setCallbackUrl: setCallbackDraft,
     submitCallback: () => {
       if (!credential) return;
       updateCredential.mutate({ callback_url: callbackUrl || null });
     },
+    isSavingCallback: updateCredential.isPending,
     whitelistIps,
     ipDraft,
     setIpDraft,
@@ -89,5 +91,6 @@ export function useIntegrasi(): UseIntegrasiReturn {
       if (!credential) return;
       updateCredential.mutate({ whitelist_ips: whitelistIps.filter((existing) => existing !== ip) });
     },
+    isMutatingWhitelist: updateCredential.isPending,
   };
 }

@@ -12,6 +12,7 @@ export interface UsePengaturanAkunReturn {
   selectPhoto: (file: File) => void;
   removeAvatar: () => void;
   submitProfile: () => void;
+  isSavingProfile: boolean;
 
   // Ubah Password
   currentPassword: string;
@@ -27,6 +28,7 @@ export interface UsePengaturanAkunReturn {
   showConfirm: boolean;
   toggleShowConfirm: () => void;
   submitPassword: () => void;
+  isSavingPassword: boolean;
 
   // Autentikasi Dua Faktor
   setup2fa: () => void;

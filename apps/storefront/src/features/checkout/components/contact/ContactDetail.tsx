@@ -4,6 +4,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
 import SectionCard from "@/features/checkout/components/SectionCard";
+import { toNationalPhone } from "@/lib/phone";
 
 interface Props {
   whatsapp: string;
@@ -43,7 +44,7 @@ export default function ContactDetail({ whatsapp, onWhatsappChange, email, onEma
             <Input
               type="tel"
               value={whatsapp}
-              onChange={(e) => onWhatsappChange(e.target.value)}
+              onChange={(e) => onWhatsappChange(toNationalPhone(e.target.value))}
               onBlur={() => setTouched(true)}
               placeholder={t("contact.whatsappPlaceholder")}
               className={`pl-[52px] ${hasError ? "border-red-500 focus-visible:ring-red-500" : ""}`}

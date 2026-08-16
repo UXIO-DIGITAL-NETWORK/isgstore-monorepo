@@ -4,6 +4,7 @@ import { Lock, Eye, EyeOff } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import SectionCard from "@/features/member-dashboard/components/pengaturanAkun/SectionCard";
+import { Spinner } from "@/components/common/Spinner";
 
 const inputClass =
   "w-full bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 pr-11 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#3B82F6]/60 transition-all";
@@ -24,6 +25,7 @@ interface UbahPasswordCardProps {
   showConfirm: boolean;
   onToggleConfirm: () => void;
   onSubmit: () => void;
+  loading: boolean;
 }
 
 function PasswordField({
@@ -82,6 +84,7 @@ export default function UbahPasswordCard({
   showConfirm,
   onToggleConfirm,
   onSubmit,
+  loading,
 }: UbahPasswordCardProps): React.JSX.Element {
   const { t } = useTranslation("dashboard");
 
@@ -136,8 +139,10 @@ export default function UbahPasswordCard({
             as="button"
             type="button"
             onClick={onSubmit}
-            className="px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer"
+            disabled={loading}
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           >
+            {loading && <Spinner className="w-4 h-4" />}
             {t("pengaturanAkun.password.saveButton")}
           </Box>
         </Box>

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import SectionCard from "@/features/member-dashboard/components/integrasi/SectionCard";
 import IpChip from "@/features/member-dashboard/components/integrasi/IpChip";
+import { Spinner } from "@/components/common/Spinner";
 
 interface WhitelistIpCardProps {
   whitelistIps: string[];
@@ -10,6 +11,7 @@ interface WhitelistIpCardProps {
   onChangeDraft: (value: string) => void;
   onAddIp: () => void;
   onRemoveIp: (ip: string) => void;
+  loading: boolean;
 }
 
 export default function WhitelistIpCard({
@@ -18,6 +20,7 @@ export default function WhitelistIpCard({
   onChangeDraft,
   onAddIp,
   onRemoveIp,
+  loading,
 }: WhitelistIpCardProps): React.JSX.Element {
   const { t } = useTranslation("dashboard");
 
@@ -43,8 +46,10 @@ export default function WhitelistIpCard({
             as="button"
             type="button"
             onClick={onAddIp}
-            className="shrink-0 px-5 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer whitespace-nowrap"
+            disabled={loading}
+            className="shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
           >
+            {loading && <Spinner className="w-4 h-4" />}
             {t("integrasi.whitelist.addButton")}
           </Box>
         </Box>
@@ -53,7 +58,7 @@ export default function WhitelistIpCard({
         {whitelistIps.length > 0 && (
           <Box className="flex flex-wrap gap-2">
             {whitelistIps.map((ip) => (
-              <IpChip key={ip} ip={ip} onRemove={onRemoveIp} />
+              <IpChip key={ip} ip={ip} onRemove={onRemoveIp} disabled={loading} />
             ))}
           </Box>
         )}

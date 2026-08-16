@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { Mail, MessageCircle, Settings, User } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -11,6 +12,8 @@ interface Props {
 
 export default function MemberIdCard({ profile }: Props): React.JSX.Element {
   const { t } = useTranslation("dashboard");
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+  const navigate = useNavigate();
 
   return (
     /* Gradient border wrapper: 1px gradient bg + dark navy inner */
@@ -33,6 +36,9 @@ export default function MemberIdCard({ profile }: Props): React.JSX.Element {
           <Box
             as="button"
             type="button"
+            onClick={() =>
+              navigate({ to: "/$locale/pengaturan-akun", params: { locale: locale ?? "id" } })
+            }
             className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer shrink-0"
           >
             <Settings className="w-3.5 h-3.5 text-white shrink-0" />

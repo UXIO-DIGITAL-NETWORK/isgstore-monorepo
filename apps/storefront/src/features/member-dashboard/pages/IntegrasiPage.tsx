@@ -15,14 +15,17 @@ export default function IntegrasiPage(): React.JSX.Element {
     isKeyVisible,
     toggleKeyVisibility,
     regenerateKey,
+    isRegenerating,
     callbackUrl,
     setCallbackUrl,
     submitCallback,
+    isSavingCallback,
     whitelistIps,
     ipDraft,
     setIpDraft,
     addIp,
     removeIp,
+    isMutatingWhitelist,
   } = useIntegrasi();
 
   return (
@@ -50,12 +53,14 @@ export default function IntegrasiPage(): React.JSX.Element {
           isKeyVisible={isKeyVisible}
           onToggleVisibility={toggleKeyVisibility}
           onRegenerate={regenerateKey}
+          loading={isRegenerating}
         />
 
         <CallbackUrlCard
           callbackUrl={callbackUrl}
           onChangeUrl={setCallbackUrl}
           onSubmit={submitCallback}
+          loading={isSavingCallback}
         />
 
         <WhitelistIpCard
@@ -64,6 +69,7 @@ export default function IntegrasiPage(): React.JSX.Element {
           onChangeDraft={setIpDraft}
           onAddIp={addIp}
           onRemoveIp={removeIp}
+          loading={isMutatingWhitelist}
         />
       </Box>
     </Box>
