@@ -22,6 +22,7 @@ export default function AccountSettingsPage(): React.JSX.Element {
     selectPhoto,
     removeAvatar,
     submitProfile,
+    isSavingProfile,
     currentPassword,
     setCurrentPassword,
     newPassword,
@@ -35,6 +36,7 @@ export default function AccountSettingsPage(): React.JSX.Element {
     showConfirm,
     toggleShowConfirm,
     submitPassword,
+    isSavingPassword,
     setup2fa,
   } = usePengaturanAkun();
 
@@ -71,6 +73,7 @@ export default function AccountSettingsPage(): React.JSX.Element {
           onSelectPhoto={selectPhoto}
           onRemovePhoto={removeAvatar}
           onSubmit={submitProfile}
+          loading={isSavingProfile}
         />
         <UbahPasswordCard
           currentPassword={currentPassword}
@@ -86,6 +89,7 @@ export default function AccountSettingsPage(): React.JSX.Element {
           showConfirm={showConfirm}
           onToggleConfirm={toggleShowConfirm}
           onSubmit={submitPassword}
+          loading={isSavingPassword}
         />
         <DuaFaktorCard onSetup2fa={setup2fa} />
       </Box>

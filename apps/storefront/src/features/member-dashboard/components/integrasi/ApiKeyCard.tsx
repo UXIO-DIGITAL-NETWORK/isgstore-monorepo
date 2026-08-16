@@ -4,12 +4,14 @@ import { Eye, EyeOff, RefreshCw, Info } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import SectionCard from "@/features/member-dashboard/components/integrasi/SectionCard";
+import { Spinner } from "@/components/common/Spinner";
 
 interface ApiKeyCardProps {
   apiKey: string;
   isKeyVisible: boolean;
   onToggleVisibility: () => void;
   onRegenerate: () => void;
+  loading: boolean;
 }
 
 export default function ApiKeyCard({
@@ -17,6 +19,7 @@ export default function ApiKeyCard({
   isKeyVisible,
   onToggleVisibility,
   onRegenerate,
+  loading,
 }: ApiKeyCardProps): React.JSX.Element {
   const { t } = useTranslation("dashboard");
 
@@ -56,10 +59,11 @@ export default function ApiKeyCard({
               as="button"
               type="button"
               onClick={onRegenerate}
+              disabled={loading}
               aria-label={t("integrasi.apiKey.regenerateLabel")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors cursor-pointer bg-transparent border-none p-0"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors cursor-pointer bg-transparent border-none p-0 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <RefreshCw className="w-[16px] h-[16px]" />
+              {loading ? <Spinner className="w-[16px] h-[16px]" /> : <RefreshCw className="w-[16px] h-[16px]" />}
             </Box>
           </Box>
 

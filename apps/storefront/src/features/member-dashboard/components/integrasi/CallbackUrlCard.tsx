@@ -4,17 +4,20 @@ import { Info } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import SectionCard from "@/features/member-dashboard/components/integrasi/SectionCard";
+import { Spinner } from "@/components/common/Spinner";
 
 interface CallbackUrlCardProps {
   callbackUrl: string;
   onChangeUrl: (url: string) => void;
   onSubmit: () => void;
+  loading: boolean;
 }
 
 export default function CallbackUrlCard({
   callbackUrl,
   onChangeUrl,
   onSubmit,
+  loading,
 }: CallbackUrlCardProps): React.JSX.Element {
   const { t } = useTranslation("dashboard");
 
@@ -40,8 +43,10 @@ export default function CallbackUrlCard({
             as="button"
             type="button"
             onClick={onSubmit}
-            className="shrink-0 px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer"
+            disabled={loading}
+            className="shrink-0 flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           >
+            {loading && <Spinner className="w-4 h-4" />}
             {t("integrasi.callback.submitButton")}
           </Box>
         </Box>
