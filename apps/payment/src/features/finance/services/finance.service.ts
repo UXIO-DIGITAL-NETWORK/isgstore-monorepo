@@ -82,7 +82,7 @@ export const financeService = {
 
   updateChannel: async (
     id: number,
-    payload: Partial<Pick<ChannelFee, "fee_flat" | "fee_percent" | "is_active">>,
+    payload: Partial<Pick<ChannelFee, "fee_flat" | "fee_percent" | "gateway_fee_percent" | "is_active">>,
   ): Promise<ChannelFee> => {
     const res: ApiResponse<ChannelFee> = await api.put(`${BASE}/channels/${id}`, payload);
     return res.data;

@@ -65,7 +65,7 @@ export const useUpdateChannelFee = () => {
       payload,
     }: {
       id: number;
-      payload: { fee_flat?: number; fee_percent?: number; is_active?: boolean };
+      payload: { fee_flat?: number; fee_percent?: number; gateway_fee_percent?: number; is_active?: boolean };
     }) => financeService.updateChannel(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "channels"] });

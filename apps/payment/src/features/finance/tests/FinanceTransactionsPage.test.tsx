@@ -50,16 +50,12 @@ describe("FinanceTransactionsPage", () => {
     expect(screen.getByText("Rp 300")).toBeInTheDocument();
   });
 
-  /**
-   * This screen is topup-only; subscription invoices have their own pages, so
-   * the feed is locked to sales and there is no "Tipe" tab/column any more.
-   */
-  it("queries only topup sales and shows no type tabs", () => {
+  /** The internal feed is the whole picture: topup sales and service bills. */
+  it("queries the full feed (sales and service bills)", () => {
     const spy = mockRows([sale]);
     renderPage();
 
-    expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "sale" });
+    expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "all" });
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
-    expect(screen.queryByText("Langganan")).not.toBeInTheDocument();
   });
 });
