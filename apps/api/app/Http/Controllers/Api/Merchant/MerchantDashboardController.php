@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Merchant;
 
 use App\Enums\SubscriptionStatus;
+use App\Enums\TransactionStatus;
 use App\Enums\WithdrawalStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceSubscription;
@@ -38,16 +39,21 @@ class MerchantDashboardController extends Controller
         $nearestExpiry = (clone $activeSubscriptions)->min('ends_at');
         $activeServices = (clone $activeSubscriptions)->distinct('service_id')->count('service_id');
 
+        // "Penjualan bersih (net)" and the transaction count are earned figures,
+        // so only paid transactions count — pending/failed sales never settle.
+        $paidSales = Transaction::where('merchant_id', $user->id)
+            ->whereIn('status', TransactionStatus::paidStates());
+
         return $this->successResponse([
             // The held funds are already debited from balance, so `saldo_aktif`
             // is what the merchant can still withdraw right now.
             'saldo_aktif' => (int) $user->balance,
             'saldo_pending' => $pendingWithdrawal,
-            'total_penjualan' => (int) Transaction::where('merchant_id', $user->id)->sum('amount_base'),
+            'total_penjualan' => (int) $paidSales->clone()->sum('amount_base'),
             'total_penarikan' => (int) Withdrawal::where('merchant_id', $user->id)
                 ->where('status', WithdrawalStatus::SETTLED)
                 ->sum('nett'),
-            'total_transaksi' => (int) Transaction::where('merchant_id', $user->id)->count(),
+            'total_transaksi' => (int) $paidSales->clone()->count(),
             // The nearest expiry — the date the client actually needs to act
             // on. Null when nothing is subscribed, so the card hides the line
             // rather than inventing a date.
