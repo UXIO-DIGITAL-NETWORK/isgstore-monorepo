@@ -527,6 +527,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
 // id, so the `payment-admin` gate is defence-in-depth, not the only guard.
 Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'payment-admin'])->group(function () {
     Route::get('/dashboard', [MerchantDashboardController::class, 'index']);
+    // Specific routes before the collection so /summary and /export are not
+    // swallowed by a wildcard.
+    Route::get('/transactions/summary', [MerchantTransactionController::class, 'summary']);
+    Route::get('/transactions/export', [MerchantTransactionController::class, 'export']);
     Route::get('/transactions', [MerchantTransactionController::class, 'index']);
     Route::get('/mutations', [MerchantMutationController::class, 'index']);
     Route::get('/withdrawals', [MerchantWithdrawalController::class, 'index']);
@@ -563,6 +567,8 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
     Route::get('/dashboard', [FinanceDashboardController::class, 'index']);
     Route::get('/merchants', [FinanceMerchantController::class, 'index']);
     Route::get('/merchants/{user}', [FinanceMerchantController::class, 'show']);
+    Route::get('/transactions/summary', [FinanceTransactionController::class, 'summary']);
+    Route::get('/transactions/export', [FinanceTransactionController::class, 'export']);
     Route::get('/transactions', [FinanceTransactionController::class, 'index']);
     Route::get('/withdrawals', [FinanceWithdrawalController::class, 'index']);
     Route::post('/withdrawals/{withdrawal}/approve', [FinanceWithdrawalController::class, 'approve']);

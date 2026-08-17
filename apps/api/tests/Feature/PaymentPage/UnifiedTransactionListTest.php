@@ -232,4 +232,128 @@ class UnifiedTransactionListTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.per_page', 100);
     }
+
+    public function test_status_group_success_narrows_to_paid_and_completed(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['status' => 'COMPLETED']); // success
+        $this->sale($merchant, ['status' => 'PENDING']);   // pending
+        $this->bill($merchant, ['status' => 'PAID']);      // success
+        $this->bill($merchant, ['status' => 'UNPAID']);    // pending
+        Sanctum::actingAs($merchant);
+
+        $rows = $this->getJson('/api/v1/payment-admin/transactions?status_group=success')
+            ->assertOk()->json('data.data');
+
+        $this->assertCount(2, $rows);
+        foreach ($rows as $row) {
+            $this->assertContains($row['status'], ['COMPLETED', 'PAID']);
+        }
+    }
+
+    /** One bucket must read across both status vocabularies (sale + service). */
+    public function test_status_group_failed_spans_both_status_vocabularies(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['status' => 'FAILED_PROVIDER']);
+        $this->bill($merchant, ['status' => 'REJECTED']);
+        $this->sale($merchant, ['status' => 'COMPLETED']);
+        Sanctum::actingAs($merchant);
+
+        $this->getJson('/api/v1/payment-admin/transactions?status_group=failed')
+            ->assertOk()
+            ->assertJsonPath('data.total', 2);
+    }
+
+    public function test_date_range_filters_by_created_at(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['created_at' => '2026-07-01 10:00:00']);
+        $this->sale($merchant, ['created_at' => '2026-08-15 10:00:00']);
+        Sanctum::actingAs($merchant);
+
+        $this->getJson('/api/v1/payment-admin/transactions?start_date=2026-08-01&end_date=2026-08-31')
+            ->assertOk()
+            ->assertJsonPath('data.total', 1);
+    }
+
+    public function test_summary_counts_transactions_by_bucket(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['status' => 'COMPLETED']);       // success
+        $this->sale($merchant, ['status' => 'PENDING']);         // pending
+        $this->sale($merchant, ['status' => 'FAILED_PROVIDER']); // failed
+        $this->bill($merchant, ['status' => 'UNPAID', 'amount' => 250000]); // pending
+        Sanctum::actingAs($merchant);
+
+        $summary = $this->getJson('/api/v1/payment-admin/transactions/summary')
+            ->assertOk()->json('data');
+
+        $this->assertSame(4, $summary['count_total']);
+        $this->assertSame(1, $summary['count_success']);
+        $this->assertSame(2, $summary['count_pending']);
+        $this->assertSame(1, $summary['count_failed']);
+        $this->assertSame(18500 * 3 + 250000, $summary['amount_total']);
+        // The client summary must not leak platform figures either.
+        $this->assertArrayNotHasKey('platform_profit_total', $summary);
+    }
+
+    /** Clicking a pill filters the table, but the pills keep the full picture. */
+    public function test_summary_ignores_status_group(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['status' => 'COMPLETED']);
+        $this->sale($merchant, ['status' => 'FAILED_PROVIDER']);
+        Sanctum::actingAs($merchant);
+
+        $summary = $this->getJson('/api/v1/payment-admin/transactions/summary?status_group=failed')
+            ->assertOk()->json('data');
+
+        $this->assertSame(2, $summary['count_total']);
+        $this->assertSame(1, $summary['count_success']);
+        $this->assertSame(1, $summary['count_failed']);
+    }
+
+    public function test_internal_summary_includes_profit_totals(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['status' => 'COMPLETED']); // amount_fee 1000, no payment -> profit 1000
+        $this->bill($merchant, ['status' => 'PAID', 'amount' => 250000]); // profit = whole amount
+        Sanctum::actingAs($this->internal());
+
+        $summary = $this->getJson('/api/v1/payment-internal/transactions/summary')
+            ->assertOk()->json('data');
+
+        $this->assertSame(2, $summary['count_total']);
+        $this->assertSame(2, $summary['count_success']);
+        $this->assertSame(1000 + 250000, $summary['platform_profit_total']);
+        $this->assertSame(0, $summary['gateway_fee_total']);
+    }
+
+    public function test_export_streams_csv_without_platform_columns_for_merchant(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['status' => 'COMPLETED']);
+        Sanctum::actingAs($merchant);
+
+        $response = $this->get('/api/v1/payment-admin/transactions/export')->assertOk();
+        $this->assertStringContainsString('text/csv', (string) $response->headers->get('content-type'));
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Invoice,Item,Metode,Arah,Jumlah,Status,Tanggal', $csv);
+        $this->assertStringNotContainsString('Profit', $csv);
+        $this->assertStringContainsString('INV-', $csv);
+    }
+
+    public function test_export_includes_profit_column_for_internal(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['status' => 'COMPLETED']);
+        Sanctum::actingAs($this->internal());
+
+        $csv = $this->get('/api/v1/payment-internal/transactions/export')->assertOk()->streamedContent();
+
+        $this->assertStringContainsString('Profit Kita', $csv);
+        $this->assertStringContainsString($merchant->name, $csv);
+    }
 }
