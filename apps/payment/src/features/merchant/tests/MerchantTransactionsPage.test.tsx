@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import MerchantTransactionsPage from "../pages/MerchantTransactionsPage";
 import * as hooks from "../hooks/useMerchant";
-import type { UnifiedTransaction } from "@/types/transaction.type";
+import type { TransactionSummary, UnifiedTransaction } from "@/types/transaction.type";
 
 const sale: UnifiedTransaction = {
   type: "sale",
@@ -37,6 +37,12 @@ const mockRows = (rows: UnifiedTransaction[]) =>
     isError: false,
   } as unknown as ReturnType<typeof hooks.useMerchantTransactions>);
 
+const mockSummary = (over: Partial<TransactionSummary> = {}) =>
+  vi.spyOn(hooks, "useMerchantTransactionSummary").mockReturnValue({
+    data: { count_total: 2, count_success: 1, count_pending: 1, count_failed: 0, amount_total: 218500, ...over },
+    isLoading: false,
+  } as unknown as ReturnType<typeof hooks.useMerchantTransactionSummary>);
+
 const renderPage = () =>
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -44,7 +50,10 @@ const renderPage = () =>
     </QueryClientProvider>,
   );
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockSummary();
+});
 
 describe("MerchantTransactionsPage", () => {
   it("shows the client's topup sale row", () => {
@@ -63,10 +72,27 @@ describe("MerchantTransactionsPage", () => {
     expect(screen.getByText("—")).toBeInTheDocument();
   });
 
-  it("queries both sales and service bills", () => {
+  it("queries the feed with the default filters", () => {
     const spy = mockRows([sale, serviceBill]);
     renderPage();
 
     expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "all" });
+  });
+
+  it("renders the status summary pills from the summary endpoint", () => {
+    mockRows([sale]);
+    mockSummary({ count_success: 3 });
+    renderPage();
+
+    expect(screen.getByRole("button", { name: /Sukses/i })).toHaveTextContent("3");
+  });
+
+  it("filters the table by bucket when a pill is clicked", () => {
+    const spy = mockRows([sale]);
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /Gagal/i }));
+
+    expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ status_group: "failed", page: 1 }));
   });
 });

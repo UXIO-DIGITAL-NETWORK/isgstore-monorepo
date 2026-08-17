@@ -10,6 +10,12 @@ export const useMerchantDashboard = () =>
 export const useMerchantTransactions = (params: ListParams) =>
   useQuery({ queryKey: ["merchant", "transactions", params], queryFn: () => merchantService.transactions(params) });
 
+export const useMerchantTransactionSummary = (params: ListParams) =>
+  useQuery({
+    queryKey: ["merchant", "transactions", "summary", params],
+    queryFn: () => merchantService.transactionSummary(params),
+  });
+
 export const useMerchantMutations = (params: ListParams) =>
   useQuery({ queryKey: ["merchant", "mutations", params], queryFn: () => merchantService.mutations(params) });
 

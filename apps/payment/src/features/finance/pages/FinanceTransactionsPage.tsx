@@ -1,18 +1,37 @@
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
+import { ExportButton } from "@/components/common/ExportButton";
 import { Heading } from "@/components/common/Heading";
 import { Pager } from "@/components/common/Pager";
+import { RecapDialog } from "@/components/common/RecapDialog";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Text } from "@/components/common/Text";
+import { TransactionFilters, type TransactionFilterState } from "@/components/common/TransactionFilters";
+import { TransactionSummaryPills } from "@/components/common/TransactionSummaryPills";
+import { useDebouncedValue } from "@/components/common/useDebouncedValue";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { ListParams } from "@/lib/list";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
-import type { FinanceUnifiedTransaction } from "@/types/transaction.type";
+import type { FinanceUnifiedTransaction, TransactionType } from "@/types/transaction.type";
 
-import { useFinanceTransactions } from "../hooks/useFinance";
+import { financeService } from "../services/finance.service";
+import { useFinanceMerchants, useFinanceTransactions, useFinanceTransactionSummary } from "../hooks/useFinance";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
+
+const TYPE_LABEL: Record<TransactionType, string> = {
+  sale: "Penjualan",
+  service: "Tagihan Layanan",
+};
 
 // The whole feed: topup sales and the service bills kita issues clients. A
 // service row carries no payment channel and zero admin/gateway fee, so its
@@ -22,30 +41,33 @@ const columns: Column<FinanceUnifiedTransaction>[] = [
     key: "invoice",
     header: "Invoice",
     cell: (r) => (
-      <Text
-        as="span"
-        className="font-medium"
-      >
-        {r.invoice_number}
-      </Text>
+      <Box className="flex flex-col">
+        <Text as="span" className="font-medium">
+          {r.invoice_number}
+        </Text>
+        <Text as="span" variant="small" className="text-muted-foreground">
+          {TYPE_LABEL[r.type]}
+        </Text>
+      </Box>
     ),
   },
   { key: "merchant", header: "Client", cell: (r) => r.merchant?.name ?? "-" },
   { key: "title", header: "Item", cell: (r) => r.title ?? "-" },
   {
-    key: "amount",
-    header: "Jumlah Client",
+    key: "total",
+    header: "Nominal",
     className: "text-right tabular-nums",
     cell: (r) => (
-      <Text
-        as="span"
-        className="text-success tabular-nums"
-      >
-        +{money(r.amount)}
-      </Text>
+      <Box className="flex flex-col items-end">
+        <Text as="span" className="tabular-nums">
+          {money(r.amount_total)}
+        </Text>
+        <Text as="span" variant="small" className="text-muted-foreground tabular-nums">
+          Net +{money(r.amount)}
+        </Text>
+      </Box>
     ),
   },
-  { key: "total", header: "Total", className: "text-right tabular-nums", cell: (r) => money(r.amount_total) },
   {
     key: "admin_fee",
     header: "Biaya Admin",
@@ -63,10 +85,7 @@ const columns: Column<FinanceUnifiedTransaction>[] = [
     header: "Profit Kita",
     className: "text-right tabular-nums",
     cell: (r) => (
-      <Text
-        as="span"
-        className="text-success tabular-nums"
-      >
+      <Text as="span" className="text-success tabular-nums">
         {money(r.platform_profit)}
       </Text>
     ),
@@ -75,19 +94,87 @@ const columns: Column<FinanceUnifiedTransaction>[] = [
   { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
 ];
 
+const INITIAL_FILTERS: TransactionFilterState = {
+  search: "",
+  statusGroup: "",
+  type: "all",
+  startDate: "",
+  endDate: "",
+};
+
 export default function FinanceTransactionsPage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isError } = useFinanceTransactions({ page, per_page: 20, type: "all" });
+  const [filters, setFilters] = useState<TransactionFilterState>(INITIAL_FILTERS);
+  const [merchantId, setMerchantId] = useState(""); // "" = every client
+  const debouncedSearch = useDebouncedValue(filters.search, 300);
+
+  const merchants = useFinanceMerchants({ per_page: 100 });
+
+  const filterParams: ListParams = {
+    type: filters.type,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(filters.statusGroup ? { status_group: filters.statusGroup } : {}),
+    ...(filters.startDate ? { start_date: filters.startDate } : {}),
+    ...(filters.endDate ? { end_date: filters.endDate } : {}),
+    ...(merchantId ? { merchant_id: Number(merchantId) } : {}),
+  };
+  const listParams: ListParams = { ...filterParams, page, per_page: 20 };
+
+  const { data, isLoading, isError } = useFinanceTransactions(listParams);
+  const summary = useFinanceTransactionSummary(filterParams);
+
+  const patch = (next: Partial<TransactionFilterState>) => {
+    setFilters((current) => ({ ...current, ...next }));
+    setPage(1);
+  };
+
+  const merchantSelect = (
+    <Select
+      value={merchantId || "all"}
+      onValueChange={(next) => {
+        setMerchantId(next === "all" ? "" : next);
+        setPage(1);
+      }}
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Semua client" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Semua client</SelectItem>
+        {(merchants.data?.rows ?? []).map((merchant) => (
+          <SelectItem key={merchant.id} value={String(merchant.id)}>
+            {merchant.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Transaksi</Heading>
+      <Box className="flex flex-wrap items-center justify-between gap-3">
+        <Heading level={1}>Transaksi</Heading>
+        <Box className="flex items-center gap-2">
+          <RecapDialog summary={summary.data} isInternal isLoading={summary.isLoading} />
+          <ExportButton onExport={() => financeService.exportTransactions(filterParams)} />
+        </Box>
+      </Box>
+
+      <TransactionSummaryPills
+        counts={summary.data}
+        active={filters.statusGroup}
+        onToggle={(group) => patch({ statusGroup: group })}
+        isLoading={summary.isLoading}
+      />
+
+      <TransactionFilters value={filters} onChange={patch} extra={merchantSelect} />
 
       <SimpleTable
         columns={columns}
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
+        emptyLabel="Belum ada transaksi"
         rowKey={(r) => `${r.type}-${r.id}`}
       />
 

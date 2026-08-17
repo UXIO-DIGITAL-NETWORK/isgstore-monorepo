@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 
 import FinanceTransactionsPage from "../pages/FinanceTransactionsPage";
 import * as hooks from "../hooks/useFinance";
-import type { FinanceUnifiedTransaction } from "@/types/transaction.type";
+import type { FinanceTransactionSummary, FinanceUnifiedTransaction } from "@/types/transaction.type";
 
 const sale: FinanceUnifiedTransaction = {
   type: "sale",
@@ -30,6 +30,30 @@ const mockRows = (rows: FinanceUnifiedTransaction[]) =>
     isError: false,
   } as unknown as ReturnType<typeof hooks.useFinanceTransactions>);
 
+const mockSummary = (over: Partial<FinanceTransactionSummary> = {}) =>
+  vi.spyOn(hooks, "useFinanceTransactionSummary").mockReturnValue({
+    data: {
+      count_total: 1,
+      count_success: 1,
+      count_pending: 0,
+      count_failed: 0,
+      amount_total: 18500,
+      gross_total: 19500,
+      admin_fee_total: 1000,
+      gateway_fee_total: 700,
+      platform_profit_total: 300,
+      ...over,
+    },
+    isLoading: false,
+  } as unknown as ReturnType<typeof hooks.useFinanceTransactionSummary>);
+
+const mockMerchants = () =>
+  vi.spyOn(hooks, "useFinanceMerchants").mockReturnValue({
+    data: { rows: [{ id: 7, name: "Toko A" }], page: 1, lastPage: 1, total: 1, perPage: 100 },
+    isLoading: false,
+    isError: false,
+  } as unknown as ReturnType<typeof hooks.useFinanceMerchants>);
+
 const renderPage = () =>
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -37,25 +61,37 @@ const renderPage = () =>
     </QueryClientProvider>,
   );
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockSummary();
+  mockMerchants();
+});
 
 describe("FinanceTransactionsPage", () => {
   it("shows the platform's own figures for a topup sale", () => {
     mockRows([sale]);
     renderPage();
 
-    expect(screen.getByText("+Rp 18.500")).toBeInTheDocument();
+    expect(screen.getByText("Net +Rp 18.500")).toBeInTheDocument();
     expect(screen.getByText("Toko A")).toBeInTheDocument();
     expect(screen.getByText("Rp 700")).toBeInTheDocument();
-    expect(screen.getByText("Rp 300")).toBeInTheDocument();
+    // Row profit and the summary "Profit Kita" pill total are both Rp 300.
+    expect(screen.getAllByText("Rp 300").length).toBeGreaterThan(0);
   });
 
-  /** The internal feed is the whole picture: topup sales and service bills. */
-  it("queries the full feed (sales and service bills)", () => {
+  it("queries the full feed with the default filters", () => {
     const spy = mockRows([sale]);
     renderPage();
 
     expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "all" });
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+  });
+
+  it("shows the internal profit total in the summary pills", () => {
+    mockRows([sale]);
+    mockSummary({ count_success: 4 });
+    renderPage();
+
+    expect(screen.getByRole("button", { name: /Sukses/i })).toHaveTextContent("4");
   });
 });
