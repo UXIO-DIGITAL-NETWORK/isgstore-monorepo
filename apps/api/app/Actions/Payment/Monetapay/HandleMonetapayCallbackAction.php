@@ -91,13 +91,13 @@ class HandleMonetapayCallbackAction
             $isSuccess = \in_array(\strtolower($dto->status), ['1', '3', 'success'], true);
 
             // ── Persist payment result ───────────────────────────────────────
+            // `gateway_fee` is intentionally left as the per-channel percentage
+            // frozen at checkout — settlement reads it to compute kita's profit.
+            // Monetapay's own fee (extractGatewayFee) is not applied yet; wire it
+            // in per gateway once the live callback key is confirmed.
             $payment->update([
                 'status' => $isSuccess ? PaymentStatus::SUCCESS : PaymentStatus::EXPIRED,
                 'paid_at' => $isSuccess ? now() : null,
-                // Monetapay's actual fee — settlement subtracts it from our
-                // markup to know kita's real profit. Zero if the gateway omits
-                // it from this callback.
-                'gateway_fee' => $isSuccess ? $this->extractGatewayFee($dto->rawPayload) : 0,
             ]);
 
             $transaction->update([
