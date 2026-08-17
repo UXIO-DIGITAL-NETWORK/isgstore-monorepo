@@ -19,6 +19,7 @@ use App\Models\PromoRedemption;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
+use App\Support\Payment\DefaultMerchant;
 use App\Support\Pricing\RolePrice;
 use App\Support\Promo\PromoResolver;
 use Exception;
@@ -178,8 +179,10 @@ class CheckoutAction
                 'invoice_number' => $invoiceNumber,
                 'user_id' => $user?->id,
                 // The "client" that owns the sold product — settlement credits
-                // them their net. Null for platform-owned catalogue.
-                'merchant_id' => $product->merchant_id,
+                // them their net. Products carry no owner, so fall back to the
+                // single default client merchant; that attribution is what makes
+                // the sale appear in the payment-page feeds and settle at PAID.
+                'merchant_id' => $product->merchant_id ?? DefaultMerchant::id(),
                 'payment_channel_id' => $channel->id,
                 'guest_contact' => $user ? null : $dto->guestContact,
                 // Stored for everyone (guest + member): the receipt destination and
