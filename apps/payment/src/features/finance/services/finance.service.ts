@@ -3,7 +3,7 @@ import { API_VERSION } from "@/config/env";
 import { unwrapList, type ListParams, type ListResult } from "@/lib/list";
 import type { ApiResponse } from "@/types/api.type";
 import type { Withdrawal } from "@/types/withdrawal.type";
-import type { FinanceUnifiedTransaction } from "@/types/transaction.type";
+import type { FinanceTransactionSummary, FinanceUnifiedTransaction } from "@/types/transaction.type";
 import type {
   InstallationDetailPayload,
   InstallationPayload,
@@ -47,6 +47,16 @@ export const financeService = {
   transactions: async (params: ListParams): Promise<ListResult<FinanceUnifiedTransaction>> => {
     const res = await api.get(`${BASE}/transactions`, { params });
     return unwrapList<FinanceUnifiedTransaction>(res as unknown as ApiResponse<Record<string, unknown>>);
+  },
+
+  transactionSummary: async (params: ListParams): Promise<FinanceTransactionSummary> => {
+    const res: ApiResponse<FinanceTransactionSummary> = await api.get(`${BASE}/transactions/summary`, { params });
+    return res.data;
+  },
+
+  /** CSV of the filtered set. The response interceptor hands back the Blob body. */
+  exportTransactions: async (params: ListParams): Promise<Blob> => {
+    return (await api.get(`${BASE}/transactions/export`, { params, responseType: "blob" })) as unknown as Blob;
   },
 
   withdrawals: async (params: ListParams): Promise<ListResult<Withdrawal>> => {

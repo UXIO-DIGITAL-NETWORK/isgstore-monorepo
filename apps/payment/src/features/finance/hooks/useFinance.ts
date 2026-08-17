@@ -20,6 +20,12 @@ export const useFinanceMerchants = (params: ListParams) =>
 export const useFinanceTransactions = (params: ListParams) =>
   useQuery({ queryKey: ["finance", "transactions", params], queryFn: () => financeService.transactions(params) });
 
+export const useFinanceTransactionSummary = (params: ListParams) =>
+  useQuery({
+    queryKey: ["finance", "transactions", "summary", params],
+    queryFn: () => financeService.transactionSummary(params),
+  });
+
 export const useFinanceWithdrawals = (params: ListParams) =>
   useQuery({ queryKey: ["finance", "withdrawals", params], queryFn: () => financeService.withdrawals(params) });
 

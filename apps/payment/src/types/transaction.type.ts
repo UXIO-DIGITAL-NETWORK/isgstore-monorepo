@@ -32,3 +32,26 @@ export interface FinanceUnifiedTransaction extends UnifiedTransaction {
   gateway_fee: number;
   platform_profit: number;
 }
+
+/**
+ * Status-bucket counts + totals for the summary pills and the Recap dialog.
+ * Honours every list filter except the status bucket, so the pills always show
+ * the full distribution of the current search/type/date/merchant scope.
+ */
+export interface TransactionSummary {
+  count_total: number;
+  count_success: number;
+  count_pending: number;
+  count_failed: number;
+  /** Sum of the client-relative amount across the filtered set. */
+  amount_total: number;
+}
+
+/** The internal view also sees the platform's own money. */
+export interface FinanceTransactionSummary extends TransactionSummary {
+  /** Sum of what customers actually paid (gross). */
+  gross_total: number;
+  admin_fee_total: number;
+  gateway_fee_total: number;
+  platform_profit_total: number;
+}

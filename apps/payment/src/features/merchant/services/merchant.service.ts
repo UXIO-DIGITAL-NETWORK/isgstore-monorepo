@@ -2,7 +2,7 @@ import { api } from "@/lib/axios";
 import { API_VERSION } from "@/config/env";
 import { unwrapList, type ListParams, type ListResult } from "@/lib/list";
 import type { ApiResponse } from "@/types/api.type";
-import type { UnifiedTransaction } from "@/types/transaction.type";
+import type { TransactionSummary, UnifiedTransaction } from "@/types/transaction.type";
 import type { ServiceCheckout, ServiceInstallation } from "@/types/service.type";
 import type {
   CreateWithdrawalPayload,
@@ -26,6 +26,16 @@ export const merchantService = {
   transactions: async (params: ListParams): Promise<ListResult<UnifiedTransaction>> => {
     const res = await api.get(`${BASE}/transactions`, { params });
     return unwrapList<UnifiedTransaction>(res as unknown as ApiResponse<Record<string, unknown>>);
+  },
+
+  transactionSummary: async (params: ListParams): Promise<TransactionSummary> => {
+    const res: ApiResponse<TransactionSummary> = await api.get(`${BASE}/transactions/summary`, { params });
+    return res.data;
+  },
+
+  /** CSV of the filtered set. The response interceptor hands back the Blob body. */
+  exportTransactions: async (params: ListParams): Promise<Blob> => {
+    return (await api.get(`${BASE}/transactions/export`, { params, responseType: "blob" })) as unknown as Blob;
   },
 
   mutations: async (params: ListParams): Promise<ListResult<MerchantMutation>> => {

@@ -33,6 +33,13 @@ export interface ListParams {
   per_page?: number;
   search?: string;
   status?: string;
+  /** Coarse status bucket for the pills/dropdown: "success" | "pending" | "failed". */
+  status_group?: string;
   /** Transaction feed tab: "all" | "sale" | "service". */
   type?: string;
+  /** Inclusive created-date bounds, "YYYY-MM-DD". */
+  start_date?: string;
+  end_date?: string;
+  /** Internal view only — narrow the feed to one client. */
+  merchant_id?: number;
 }
