@@ -7,6 +7,7 @@ use App\Queries\UnifiedTransactionQuery;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Every client's money movements, full financial breakdown — kita sees the
@@ -24,16 +25,13 @@ class FinanceTransactionController extends Controller
     public function index(Request $request)
     {
         $perPage = min(100, max(1, (int) $request->query('per_page', 20)));
-        $merchantId = $request->query('merchant_id');
 
-        $rows = (new UnifiedTransactionQuery(
-            merchantId: $merchantId !== null ? (int) $merchantId : null,
-            withPlatformFigures: true,
-        ))
+        $rows = $this->query($request)
             ->build(
                 (string) $request->query('type', UnifiedTransactionQuery::TYPE_ALL),
                 $request->query('status'),
                 $request->query('search'),
+                $request->query('status_group'),
             )
             ->paginate($perPage)
             ->through(fn ($row) => [
@@ -54,9 +52,74 @@ class FinanceTransactionController extends Controller
                 'platform_profit' => (int) $row->platform_profit,
                 'status' => $row->status,
                 'payment_channel' => $row->channel,
-                'created_at' => $row->occurred_at ? Carbon::parse($row->occurred_at)->toIso8601String() : null,
+                'created_at' => $this->iso($row->occurred_at),
             ]);
 
         return $this->successResponse($rows, 'Transactions retrieved successfully');
+    }
+
+    /** Status-bucket counts + fee/profit totals for the summary pills and Recap. */
+    public function summary(Request $request)
+    {
+        $summary = $this->query($request)->summary(
+            (string) $request->query('type', UnifiedTransactionQuery::TYPE_ALL),
+            $request->query('search'),
+        );
+
+        return $this->successResponse($summary, 'Transaction summary retrieved successfully');
+    }
+
+    /**
+     * CSV of the filtered set (no pagination). Binary/stream response — an
+     * intentional deviation from the ApiResponse envelope. Full breakdown, as
+     * kita is allowed to see it.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $rows = $this->query($request)
+            ->build(
+                (string) $request->query('type', UnifiedTransactionQuery::TYPE_ALL),
+                $request->query('status'),
+                $request->query('search'),
+                $request->query('status_group'),
+            )
+            ->get();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Invoice', 'Client', 'Item', 'Total', 'Biaya Admin', 'Fee Gateway', 'Profit Kita', 'Status', 'Tanggal']);
+            foreach ($rows as $row) {
+                fputcsv($out, [
+                    $row->invoice_number,
+                    $row->merchant_name ?? '',
+                    $row->title,
+                    (int) $row->amount_total,
+                    (int) $row->admin_fee,
+                    (int) $row->gateway_fee,
+                    (int) $row->platform_profit,
+                    $row->status,
+                    $this->iso($row->occurred_at),
+                ]);
+            }
+            fclose($out);
+        }, 'transaksi.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    /** Cross-merchant (or one merchant) feed with fee/profit columns + date range. */
+    private function query(Request $request): UnifiedTransactionQuery
+    {
+        $merchantId = $request->query('merchant_id');
+
+        return new UnifiedTransactionQuery(
+            merchantId: $merchantId !== null ? (int) $merchantId : null,
+            withPlatformFigures: true,
+            startDate: $request->query('start_date'),
+            endDate: $request->query('end_date'),
+        );
+    }
+
+    private function iso(?string $value): ?string
+    {
+        return $value ? Carbon::parse($value)->toIso8601String() : null;
     }
 }
