@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useChannelFees, useUpdateChannelFee } from "../hooks/useFinance";
 import type { ChannelFee } from "../types/finance.type";
 
-type RowDraft = Partial<Pick<ChannelFee, "fee_flat" | "fee_percent" | "is_active">>;
+type RowDraft = Partial<Pick<ChannelFee, "fee_flat" | "fee_percent" | "gateway_fee_percent" | "is_active">>;
 
 export default function ChannelFeePage() {
   const { data, isLoading, isError } = useChannelFees();
@@ -25,6 +25,7 @@ export default function ChannelFeePage() {
   const merged = (row: ChannelFee): Required<RowDraft> => ({
     fee_flat: drafts[row.id]?.fee_flat ?? row.fee_flat,
     fee_percent: drafts[row.id]?.fee_percent ?? row.fee_percent,
+    gateway_fee_percent: drafts[row.id]?.gateway_fee_percent ?? row.gateway_fee_percent,
     is_active: drafts[row.id]?.is_active ?? row.is_active,
   });
 
@@ -53,6 +54,19 @@ export default function ChannelFeePage() {
           step="0.01"
           value={merged(r).fee_percent}
           onChange={(e) => patch(r.id, { fee_percent: Number(e.target.value) })}
+        />
+      ),
+    },
+    {
+      key: "gateway_fee_percent",
+      header: "Fee Gateway (%)",
+      className: "w-40",
+      cell: (r) => (
+        <Input
+          type="number"
+          step="0.01"
+          value={merged(r).gateway_fee_percent}
+          onChange={(e) => patch(r.id, { gateway_fee_percent: Number(e.target.value) })}
         />
       ),
     },

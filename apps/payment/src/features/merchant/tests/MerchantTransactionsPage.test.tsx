@@ -18,6 +18,18 @@ const sale: UnifiedTransaction = {
   created_at: "2026-08-13T20:04:00+07:00",
 };
 
+const serviceBill: UnifiedTransaction = {
+  type: "service",
+  id: 5,
+  invoice_number: "SINV-202608-AB12",
+  title: "Domain",
+  direction: "out",
+  amount: 200000,
+  status: "PAID",
+  payment_channel: null,
+  created_at: "2026-08-12T09:00:00+07:00",
+};
+
 const mockRows = (rows: UnifiedTransaction[]) =>
   vi.spyOn(hooks, "useMerchantTransactions").mockReturnValue({
     data: { rows, page: 1, lastPage: 1, total: rows.length, perPage: 20 },
@@ -43,13 +55,18 @@ describe("MerchantTransactionsPage", () => {
     expect(screen.getByText("INV-20260813-XY12")).toBeInTheDocument();
   });
 
-  /** Topup-only: subscriptions live on the Invoice/Langganan pages. */
-  it("queries only topup sales and shows no type tabs", () => {
-    const spy = mockRows([sale]);
+  it("renders a service bill as an outgoing amount with no method", () => {
+    mockRows([serviceBill]);
     renderPage();
 
-    expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "sale" });
-    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
-    expect(screen.queryByText("Langganan")).not.toBeInTheDocument();
+    expect(screen.getByText("−Rp 200.000")).toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
+  });
+
+  it("queries both sales and service bills", () => {
+    const spy = mockRows([sale, serviceBill]);
+    renderPage();
+
+    expect(spy).toHaveBeenCalledWith({ page: 1, per_page: 20, type: "all" });
   });
 });

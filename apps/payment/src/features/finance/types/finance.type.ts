@@ -17,6 +17,8 @@ export interface ChannelFee {
   min_amount: number;
   fee_flat: number;
   fee_percent: number;
+  /** The payment gateway's cut of each transaction; kita's profit is the admin fee net of this. */
+  gateway_fee_percent: number;
   is_active: boolean;
 }
 

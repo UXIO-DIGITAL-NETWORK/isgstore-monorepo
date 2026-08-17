@@ -14,8 +14,9 @@ import { useMerchantTransactions } from "../hooks/useMerchant";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
-// Topup sales only. Service subscription bills have their own Invoice /
-// Langganan pages, so they never appear in this transaction feed.
+// Both topup sales (money in) and the service bills kita issues the client
+// (money out). Direction drives the sign/colour; a service bill has no payment
+// channel, so "Metode" falls back to a dash.
 const columns: Column<UnifiedTransaction>[] = [
   {
     key: "invoice",
@@ -38,9 +39,10 @@ const columns: Column<UnifiedTransaction>[] = [
     cell: (r) => (
       <Text
         as="span"
-        className="text-success tabular-nums"
+        className={`tabular-nums ${r.direction === "out" ? "text-destructive" : "text-success"}`}
       >
-        +{money(r.amount)}
+        {r.direction === "out" ? "−" : "+"}
+        {money(r.amount)}
       </Text>
     ),
   },
@@ -50,7 +52,7 @@ const columns: Column<UnifiedTransaction>[] = [
 
 export default function MerchantTransactionsPage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isError } = useMerchantTransactions({ page, per_page: 20, type: "sale" });
+  const { data, isLoading, isError } = useMerchantTransactions({ page, per_page: 20, type: "all" });
 
   return (
     <Box className="flex flex-col gap-6">
@@ -61,7 +63,7 @@ export default function MerchantTransactionsPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        rowKey={(r) => r.id}
+        rowKey={(r) => `${r.type}-${r.id}`}
       />
 
       <Pager

@@ -14,8 +14,9 @@ import { useFinanceTransactions } from "../hooks/useFinance";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
-// This screen is topup-only ("Penjualan"): service subscription invoices live
-// on the dedicated Invoice / Subscription pages, so the feed is locked to sales.
+// The whole feed: topup sales and the service bills kita issues clients. A
+// service row carries no payment channel and zero admin/gateway fee, so its
+// entire amount is kita's profit.
 const columns: Column<FinanceUnifiedTransaction>[] = [
   {
     key: "invoice",
@@ -76,7 +77,7 @@ const columns: Column<FinanceUnifiedTransaction>[] = [
 
 export default function FinanceTransactionsPage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isError } = useFinanceTransactions({ page, per_page: 20, type: "sale" });
+  const { data, isLoading, isError } = useFinanceTransactions({ page, per_page: 20, type: "all" });
 
   return (
     <Box className="flex flex-col gap-6">
@@ -87,7 +88,7 @@ export default function FinanceTransactionsPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        rowKey={(r) => r.id}
+        rowKey={(r) => `${r.type}-${r.id}`}
       />
 
       <Pager
