@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 
 import { makeUser, renderRoute, screen, within } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
-import { paymentChannelsService, usersService } from "../services/administration.service";
+import { usersService } from "../services/administration.service";
 
 // Guarded routes with no preview twin — the store is seeded so requireAuth and
 // requirePermission run for real rather than being bypassed.
@@ -24,28 +24,12 @@ describe("administration routes", () => {
     expect(await screen.findByText("bca_va")).toBeInTheDocument();
   });
 
-  it("Payment row menu deactivates an active channel through the update service", async () => {
-    const updateSpy = vi.spyOn(paymentChannelsService, "update").mockResolvedValue({
-      id: "1",
-      payment_type: "virtual_account",
-      channel_code: "bca_va",
-      name: "BCA Virtual Account",
-      min_amount: 10000,
-      fee_flat: 4000,
-      fee_percent: 0,
-      sort_order: 0,
-      is_active: false,
-      is_single_use: false,
-      created_at: "2026-07-31",
-      updated_at: "2026-07-31",
-    });
-    const user = userEvent.setup();
+  it("Payment is read-only — no row actions or bulk selection", async () => {
     await renderRoute("/admin/payments");
+    await screen.findByText("BCA Virtual Account");
 
-    await user.click(await screen.findByRole("button", { name: "Actions for BCA Virtual Account" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Deactivate" }));
-
-    expect(updateSpy).toHaveBeenCalledWith("1", { is_active: false });
+    expect(screen.queryByRole("button", { name: /Actions for/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   it("Users lists members with their balance", async () => {
