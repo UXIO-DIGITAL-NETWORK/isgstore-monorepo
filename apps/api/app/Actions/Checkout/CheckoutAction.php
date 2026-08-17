@@ -154,6 +154,14 @@ class CheckoutAction
             $adminFee = $channelFee;
             $grossAmount = $sellingPrice + $adminFee;
 
+            // The gateway's cut of the whole amount the customer pays, frozen now
+            // (per-channel percent, 0 for the wallet channel) rather than read from
+            // Monetapay's callback. Kita's profit is the admin fee net of this, so
+            // settlement (SettleMerchantTransactionAction) reads it straight off the
+            // payment row.
+            $gatewayPercent = max(0, min(100, (float) $channel->gateway_fee_percent));
+            $gatewayFee = (int) round($grossAmount * ($gatewayPercent / 100));
+
             if ($grossAmount < $channel->min_amount) {
                 throw new Exception(
                     'Total tagihan Rp '.number_format($grossAmount).
@@ -229,6 +237,7 @@ class CheckoutAction
                 'admin_fee' => $adminFee,
                 'channel_fee' => $channelFee,
                 'admin_markup' => 0,
+                'gateway_fee' => $gatewayFee,
                 'status' => PaymentStatus::PENDING,
             ]);
 
