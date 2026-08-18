@@ -42,7 +42,8 @@ const defaults = (service?: Service): ServiceFormValues => ({
   category: service?.category ?? "other",
   description: service?.description ?? "",
   features: (service?.features ?? []).join("\n"),
-  price: service?.price ?? 0,
+  cost_price: service?.cost_price ?? 0,
+  selling_price: service?.selling_price ?? 0,
   duration_days: service?.duration_days ?? 30,
   is_active: service?.is_active ?? true,
 });
@@ -113,7 +114,7 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Service" : "Tambah Service"}</DialogTitle>
           <DialogDescription>
-            Atur harga dan masa aktif satu periode langganan untuk service ini.
+            Atur harga modal, harga jual, dan masa aktif satu periode langganan untuk service ini.
           </DialogDescription>
         </DialogHeader>
 
@@ -192,19 +193,37 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="service-price">Harga (Rp)</Label>
+              <Label htmlFor="service-cost-price">Cost Price (Rp)</Label>
               <Input
-                id="service-price"
+                id="service-cost-price"
                 type="number"
                 min={0}
-                {...register("price", { valueAsNumber: true })}
+                {...register("cost_price", { valueAsNumber: true })}
               />
-              {errors.price && (
+              {errors.cost_price && (
                 <Text
                   variant="small"
                   className="text-destructive"
                 >
-                  {errors.price.message}
+                  {errors.cost_price.message}
+                </Text>
+              )}
+            </Box>
+
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="service-selling-price">Selling Price (Rp)</Label>
+              <Input
+                id="service-selling-price"
+                type="number"
+                min={0}
+                {...register("selling_price", { valueAsNumber: true })}
+              />
+              {errors.selling_price && (
+                <Text
+                  variant="small"
+                  className="text-destructive"
+                >
+                  {errors.selling_price.message}
                 </Text>
               )}
             </Box>

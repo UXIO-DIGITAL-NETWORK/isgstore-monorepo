@@ -24,7 +24,7 @@ const service = (over: Partial<ServiceCheckout> = {}): ServiceCheckout =>
     category_label: "Supplier",
     description: "Integrasi supplier produk digital",
     features: ["Sinkronisasi harga otomatis"],
-    price: 250000,
+    selling_price: 250000,
     duration_days: 30,
     is_active: true,
     sort_order: 1,

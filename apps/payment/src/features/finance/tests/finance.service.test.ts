@@ -34,7 +34,8 @@ describe("financeService — services, invoices, subscriptions, incidents", () =
       code: "domain",
       name: "Domain",
       category: "infrastructure",
-      price: 200000,
+      cost_price: 120000,
+      selling_price: 200000,
       duration_days: 365,
       is_active: true,
     });

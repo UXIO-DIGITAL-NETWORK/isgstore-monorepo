@@ -20,7 +20,14 @@ export interface Service {
   category_label: string;
   description: string | null;
   features: string[];
-  price: number;
+  /** What kita bills a client for ONE period, in whole rupiah. */
+  selling_price: number;
+  /**
+   * What the service costs kita for ONE period. Internal only — the merchant
+   * endpoints serve the same resource with this key omitted, so it is optional
+   * on purpose: the type stops a client-facing screen from reading it.
+   */
+  cost_price?: number;
   /** Length of ONE subscription period, in days. */
   duration_days: number;
   payment_channel?: { id: number; name: string } | null;
@@ -97,8 +104,9 @@ export interface IncidentPayload {
 /** Body of POST/PUT /services. `sort_order` defaults server-side when omitted. */
 export type ServicePayload = Pick<
   Service,
-  "code" | "name" | "category" | "price" | "duration_days" | "is_active"
+  "code" | "name" | "category" | "selling_price" | "duration_days" | "is_active"
 > & {
+  cost_price: number;
   description?: string | null;
   features?: string[];
   payment_channel_id?: number | null;
