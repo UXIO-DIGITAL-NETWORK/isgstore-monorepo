@@ -4,6 +4,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
 import SectionCard from "@/features/checkout/components/SectionCard";
+import type { OrderFormFieldError } from "@/features/checkout/lib/orderFormValidation";
 import type { OrderFormField } from "@/types/models/game.model";
 
 interface Props {
@@ -14,6 +15,10 @@ interface Props {
   fields: OrderFormField[];
   values: string[];
   onValueChange: (index: number, value: string) => void;
+  /** Rule violations per field, index-aligned with `fields`. */
+  errors?: (OrderFormFieldError | null)[];
+  /** Errors stay hidden until the buyer has actually tried to check out. */
+  showErrors?: boolean;
   /** Resolved in-game nickname; the line is hidden while this is null. */
   nickname?: string | null;
   isValidatingNickname?: boolean;
@@ -31,6 +36,8 @@ export default function AccountDetailForm({
   fields,
   values,
   onValueChange,
+  errors,
+  showErrors = false,
   nickname,
   isValidatingNickname,
   supportsNicknameCheck,
@@ -47,6 +54,7 @@ export default function AccountDetailForm({
       <Box className="flex flex-col gap-4">
         {fields.map((field, index) => {
           const fallbackKey = DEFAULT_FIELD_KEYS[index];
+          const error = showErrors ? (errors?.[index] ?? null) : null;
 
           return (
             <Box key={field.key} className="flex flex-col gap-1.5">
@@ -63,7 +71,10 @@ export default function AccountDetailForm({
                   as="select"
                   value={values[index] ?? ""}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onValueChange(index, e.target.value)}
-                  className="w-full h-11 rounded-xl border border-white/10 bg-white/[0.03] px-3 font-inter text-[13px] text-white outline-none focus-visible:border-[#C084FC]"
+                  aria-invalid={error ? true : undefined}
+                  className={`w-full h-11 rounded-xl border bg-white/[0.03] px-3 font-inter text-[13px] text-white outline-none focus-visible:border-[#C084FC] ${
+                    error ? "border-red-400/60" : "border-white/10"
+                  }`}
                 >
                   <Box as="option" value="">
                     {field.placeholder ?? field.label}
@@ -83,6 +94,8 @@ export default function AccountDetailForm({
                   maxLength={field.max_length ?? undefined}
                   value={values[index] ?? ""}
                   onChange={(e) => onValueChange(index, e.target.value)}
+                  aria-invalid={error ? true : undefined}
+                  className={error ? "border-red-400/60" : undefined}
                   placeholder={
                     field.placeholder ??
                     (fallbackKey ? t(`accountDetail.${fallbackKey}Placeholder`) : field.label)
@@ -90,24 +103,31 @@ export default function AccountDetailForm({
                 />
               )}
 
-              {field.help && (
-                <Text as="span" className="font-inter text-[11px] text-white/40 leading-none px-1">
-                  {field.help}
+              {error ? (
+                <Text as="span" className="font-inter text-[11px] text-red-400 leading-none px-1">
+                  {t(error.key, error.values)}
                 </Text>
+              ) : (
+                field.help && (
+                  <Text as="span" className="font-inter text-[11px] text-white/40 leading-none px-1">
+                    {field.help}
+                  </Text>
+                )
               )}
             </Box>
           );
         })}
 
         {/* "Cek Username" — button-triggered because for some games this runs a
-            paid supplier lookup. Only shown when the game supports a check. */}
+            paid supplier lookup. Only shown when the game supports a check.
+            Pressing "Top Up Sekarang" without pressing this runs it too. */}
         {supportsNicknameCheck && (
           <Box className="flex flex-col gap-2">
             <Box
               as="button"
               type="button"
-              onClick={() => canCheck && onCheckUsername?.()}
-              aria-disabled={!canCheck}
+              onClick={() => onCheckUsername?.()}
+              disabled={!canCheck}
               className={`h-10 self-start rounded-xl border border-[#C084FC]/40 bg-[#C084FC]/10 px-4 font-inter font-medium text-[13px] text-[#E9D5FF] leading-none transition-colors ${
                 canCheck ? "hover:bg-[#C084FC]/20 cursor-pointer" : "opacity-50 cursor-not-allowed"
               }`}

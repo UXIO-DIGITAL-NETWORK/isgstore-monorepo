@@ -28,7 +28,15 @@
     "nicknameLoading": "Memvalidasi...",
     "nicknameError": "ID tidak ditemukan",
     "checkUsername": "Cek Username",
-    "viewGuide": "Lihat Panduan Pengisian"
+    "viewGuide": "Lihat Panduan Pengisian",
+    "errors": {
+      "required": "Wajib diisi",
+      "numeric": "Hanya boleh angka",
+      "minLength": "Minimal {{length}} karakter",
+      "maxLength": "Maksimal {{length}} karakter",
+      "pattern": "Format tidak sesuai",
+      "fixFields": "Lengkapi detail akun dengan benar"
+    }
   },
   "packages": {
     "title": "Pilih Paket Diamond",
@@ -117,6 +125,7 @@
     "totalPayment": "Total Pembayaran",
     "buyNow": "Top Up Sekarang",
     "processing": "Memproses...",
+    "checkingId": "Mengecek ID...",
     "instantProcess": "Waktu proses instan"
   },
   "confirmModal": {

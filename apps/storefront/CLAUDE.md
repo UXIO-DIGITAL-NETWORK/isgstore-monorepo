@@ -229,7 +229,9 @@ Things that bite if you assume otherwise:
 - Transaction statuses are the API's **uppercase** enum (`PENDING`, `PAID`, `PROCESSING`, `COMPLETED`, `FAILED_PROVIDER`, `EXPIRED`, `REFUNDED`). Invoice polling stops on the `is_terminal` flag the API returns — don't re-derive it.
 - Prices come **pre-resolved for the caller**. There is no tier to pick on the client; queries that return prices are keyed on the user id so login/logout refetches.
 - `GET /v1/games/{slug}` returns `order_form_fields`. The checkout account step renders those — it does not hardcode "User ID / Server ID". **A zone is always a free-text numeric input, never a dropdown** (the API deletes seeded zone options on purpose: a picker produced wrong ids that only failed at the supplier, after payment).
-- Nickname validation degrades to `null`. Hide the line; never block checkout on it.
+- **The account id is verified before the confirmation modal opens.** A game with a lookup provider (`supports_nickname_check`) must have a resolved nickname: "Cek Username" sets it, and pressing "Top Up Sekarang" runs the lookup itself if it has not run for the current id. A rejected id keeps the modal shut. A game with no provider is gated on the `order_form_fields` rules instead. An already-checked id is never looked up twice — the Digiflazz inquiry is billed per call.
+- Nickname validation still degrades to `null` in the *API* sense — the endpoint always 200s, and the account-step line stays hidden until there is a name. What changed is that for a provider-backed game, `null` now blocks checkout rather than passing silently.
+- The provider's answer is the raw receipt line (`User ID … / Username EkaNata / Region = ID`); `features/checkout/lib/nickname.ts` trims it to the name for display and for `target_nickname`. It never turns an unrecognised string into `null`.
 
 ### Where API code lives
 
@@ -421,6 +423,20 @@ Order matters — outer to inner:
 ```
 
 Zustand stores do NOT need a provider — they are accessible globally via their hooks.
+
+## Image uploads
+
+The one image upload in this app is the member avatar (`InformasiPribadiCard`). It is re-encoded to WebP by
+`src/lib/imageCompression.ts` (quality 0.82, longest edge 1920px, EXIF rotation baked in) **before** the 2 MB
+size check, so a multi-megabyte phone photo is accepted rather than rejected — the check has to run on what
+actually gets uploaded.
+
+`compressImage` never throws: SVG/ICO/PDF, animated GIFs, already-small WebP, a browser without WebP encoding,
+and a result that came out bigger all return the input file untouched. The API re-encodes everything it
+receives anyway (`App\Services\ImageOptimizer`), so this is the shortcut, not the guarantee.
+
+The file is a byte-identical copy of the one in `web-admin-topup-fe`, where it carries its unit tests (this
+repo's vitest runs on `node`, with no canvas to exercise). Change one, change both.
 
 ## Definition of Done (Per Feature)
 

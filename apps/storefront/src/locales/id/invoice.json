@@ -53,7 +53,10 @@
     },
     "placeholder": "Tulis pengalaman top up Anda di sini...",
     "skip": "Lewati",
-    "submit": "Kirim Ulasan"
+    "submit": "Kirim Ulasan",
+    "submitting": "Mengirim...",
+    "thanks": "Terima kasih atas ulasan Anda",
+    "failed": "Ulasan gagal dikirim."
   },
   "failed": {
     "heading": "PEMBAYARAN GAGAL",

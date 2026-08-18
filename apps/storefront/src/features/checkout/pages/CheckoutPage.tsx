@@ -23,9 +23,10 @@ import {
   useGameQuery,
   useGameReviewsQuery,
   usePaymentChannelsQuery,
-  useValidateGameIdMutation,
 } from "@/features/checkout/hooks/useCheckoutQueries";
+import { useNicknameCheck } from "@/features/checkout/hooks/useNicknameCheck";
 import { calculateAdminFee } from "@/features/checkout/lib/mappers";
+import { getOrderFormErrors } from "@/features/checkout/lib/orderFormValidation";
 import { normalizeWhatsappNumber } from "@/lib/phone";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -47,7 +48,12 @@ export default function CheckoutPage(): React.JSX.Element {
   const checkoutMutation = useCheckoutMutation();
 
   const game = gameQuery.data?.info ?? EMPTY_GAME;
-  const orderFormFields = gameQuery.data?.detail.order_form_fields ?? [];
+  // Memoised because the `?? []` fallback would otherwise hand `getOrderFormErrors`
+  // a fresh array on every render.
+  const orderFormFields = useMemo(
+    () => gameQuery.data?.detail.order_form_fields ?? [],
+    [gameQuery.data],
+  );
   const packages = useMemo(() => productsQuery.data?.packages ?? [], [productsQuery.data]);
   const categories = useMemo(() => productsQuery.data?.categories ?? [], [productsQuery.data]);
   const paymentGroups = useMemo(() => channelsQuery.data?.groups ?? [], [channelsQuery.data]);
@@ -84,27 +90,27 @@ export default function CheckoutPage(): React.JSX.Element {
   // "Cek Username" is button-triggered (a paid supplier check for some games),
   // so the resolved name is held locally and cleared whenever the id changes.
   const supportsNicknameCheck = gameQuery.data?.detail.supports_nickname_check ?? false;
-  const validateMutation = useValidateGameIdMutation(gameSlug);
-  const [nickname, setNickname] = useState<string | null>(null);
-  const [nicknameChecked, setNicknameChecked] = useState(false);
+  const {
+    nickname,
+    checked: nicknameChecked,
+    isChecking,
+    checkNow,
+    ensureChecked,
+  } = useNicknameCheck({
+    slug: gameSlug,
+    supported: supportsNicknameCheck,
+    userId,
+    serverId,
+  });
 
-  useEffect(() => {
-    setNickname(null);
-    setNicknameChecked(false);
-  }, [userId, serverId]);
-
-  const handleCheckUsername = () => {
-    if (!userId.trim()) return;
-    validateMutation.mutate(
-      { target_uid: userId.trim(), target_server: serverId.trim() || undefined },
-      {
-        onSuccess: (data) => {
-          setNickname(data.nickname ?? null);
-          setNicknameChecked(true);
-        },
-      },
-    );
-  };
+  // The account fields are validated against the rules the game declared. For a
+  // game with no lookup provider this is the only thing standing between a
+  // typo'd id and a paid order the supplier will reject.
+  const fieldErrors = useMemo(
+    () => getOrderFormErrors(orderFormFields, [userId, serverId]),
+    [orderFormFields, userId, serverId],
+  );
+  const [showFieldErrors, setShowFieldErrors] = useState(false);
 
   /** The wallet, or the chip the customer picked out of a group. */
   const selectedPayment = useMemo((): PaymentOption | null => {
@@ -138,6 +144,33 @@ export default function CheckoutPage(): React.JSX.Element {
   // the summary can show what it is worth. The server re-resolves it, so this
   // figure is display-only.
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountAmount: number } | null>(null);
+
+  /**
+   * Runs when the buyer presses "Top Up Sekarang", before the confirmation
+   * modal is allowed to open. Returning false keeps it shut.
+   *
+   * The account id gets whichever guard the game can offer: a live lookup when
+   * it has a provider, the declared field rules when it does not. Everything
+   * past this point costs the buyer money, so an unverified id must not reach
+   * it.
+   */
+  const handleRequestConfirm = async (): Promise<boolean> => {
+    if (fieldErrors.some(Boolean)) {
+      setShowFieldErrors(true);
+      toast.error(t("accountDetail.errors.fixFields"));
+      return false;
+    }
+
+    if (!supportsNicknameCheck) return true;
+
+    // Already checked → reuse that answer; never pay for a second inquiry.
+    if (!(await ensureChecked())) {
+      toast.error(t("accountDetail.nicknameError"));
+      return false;
+    }
+
+    return true;
+  };
 
   const handleConfirmCheckout = () => {
     if (!selectedPackage || !selectedPayment) return;
@@ -221,10 +254,12 @@ export default function CheckoutPage(): React.JSX.Element {
               fields={orderFormFields}
               values={[userId, serverId]}
               onValueChange={setFieldValue}
+              errors={fieldErrors}
+              showErrors={showFieldErrors}
               nickname={nickname}
-              isValidatingNickname={validateMutation.isPending}
+              isValidatingNickname={isChecking}
               supportsNicknameCheck={supportsNicknameCheck}
-              onCheckUsername={handleCheckUsername}
+              onCheckUsername={checkNow}
               nicknameChecked={nicknameChecked}
             />
             {/* Reviews: order-last on mobile (after right col), natural position on desktop */}
@@ -281,6 +316,8 @@ export default function CheckoutPage(): React.JSX.Element {
               whatsapp={whatsapp}
               nickname={nickname}
               isSubmitting={checkoutMutation.isPending}
+              onRequestConfirm={handleRequestConfirm}
+              isPreparing={isChecking}
               onSubmit={handleConfirmCheckout}
             />
           </Box>

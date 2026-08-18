@@ -17,7 +17,12 @@ import { toOrder } from "@/features/invoice/lib/toOrder";
 export default function PaymentSuccessPage(): React.JSX.Element {
   const { invoiceNumber } = useParams({ strict: false }) as { invoiceNumber: string };
   const pendingOrder = useCheckoutStore((s) => s.pendingOrder);
-  const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(5000);
+  // Keyed per invoice so dismissing the prompt for this order survives a
+  // reload, while a later order still gets asked.
+  const { isOpen: reviewOpen, close: closeReview } = useDelayedModal(
+    undefined,
+    `review-dismissed:${invoiceNumber}`,
+  );
 
   // Same query key as the invoice page, so arriving here from the poll is a
   // cache hit and the card renders without a second round trip.
@@ -81,12 +86,13 @@ export default function PaymentSuccessPage(): React.JSX.Element {
 
       <Footer />
 
-      {/* Transaction review modal — auto-opens 15s after mount */}
-      <TransactionReviewModal
-        isOpen={reviewOpen}
-        onClose={closeReview}
-        invoiceNumber={order.invoiceNumber}
-      />
+      {/* Transaction review modal — auto-opens 15s after mount, once per invoice */}
+      {reviewOpen && (
+        <TransactionReviewModal
+          onClose={closeReview}
+          invoiceNumber={order.invoiceNumber}
+        />
+      )}
     </Box>
   );
 }

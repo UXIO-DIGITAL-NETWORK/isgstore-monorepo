@@ -8,40 +8,42 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useSubmitReviewMutation } from "@/features/invoice/hooks/useSubmitReviewMutation";
+import {
+  buildReviewComment,
+  shouldClearPrefill,
+  CHIP_KEYS,
+  PREFILLED_CHIPS,
+  type ChipKey,
+} from "@/features/invoice/lib/review";
 
 interface Props {
-  isOpen: boolean;
   onClose: () => void;
   /** Identifies the order being reviewed; omit to keep the modal read-only. */
   invoiceNumber?: string;
 }
 
-const CHIP_KEYS = [
-  "fastProcess",
-  "cheapPrice",
-  "friendlyService",
-  "easyPayment",
-  "recommended",
-] as const;
-
-type ChipKey = (typeof CHIP_KEYS)[number];
-
+/**
+ * Mounted only while open (the parent guards with `&&`), so every prompt starts
+ * from fresh state without a reset effect.
+ */
 export default function TransactionReviewModal({
-  isOpen,
   onClose,
   invoiceNumber,
-}: Props): React.ReactPortal | null {
+}: Props): React.ReactPortal {
   const { t } = useTranslation("invoice");
   const submitReview = useSubmitReviewMutation();
   const [rating, setRating] = useState(5);
   const [hovered, setHovered] = useState(0);
-  const [selected, setSelected] = useState<Set<ChipKey>>(new Set());
+  const [selected, setSelected] = useState<Set<ChipKey>>(() => new Set(PREFILLED_CHIPS));
+  // False once the customer edits the chips themselves — from then on the
+  // selection is theirs and we never clear it for them.
+  const [prefillIntact, setPrefillIntact] = useState(true);
   const [comment, setComment] = useState("");
+
+  const isSubmitting = submitReview.isPending;
 
   // ESC to close + body scroll-lock
   useEffect(() => {
-    if (!isOpen) return;
-
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -54,11 +56,10 @@ export default function TransactionReviewModal({
       document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  }, [onClose]);
 
   const handleToggleChip = (key: ChipKey) => {
+    setPrefillIntact(false);
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
@@ -70,9 +71,21 @@ export default function TransactionReviewModal({
     });
   };
 
+  const handleSetRating = (star: number) => {
+    setRating(star);
+
+    // Dropping to a low score contradicts praise the customer never chose —
+    // clear it so "Proses Cepat" can't be published alongside two stars.
+    if (shouldClearPrefill(star, prefillIntact)) {
+      setSelected(new Set());
+      setPrefillIntact(false);
+    }
+  };
+
   const handleSubmit = () => {
-    // Guests have no account to attach a rating to; the modal still closes so
-    // the flow is never stuck behind a login they didn't ask for.
+    // Without an invoice there is nothing to attach the rating to (the
+    // read-only mode the prop documents), so just close rather than fail.
+    // Guests are not the case here — they submit through the public path.
     if (!invoiceNumber) {
       onClose();
       return;
@@ -80,20 +93,19 @@ export default function TransactionReviewModal({
 
     // Selected chips are prepended to the free text so the quick-review choice
     // survives into the single `comment` column the API stores.
-    const chips = [...selected].map((key) => t(`review.chips.${key}`));
-    const body = [chips.join(", "), comment.trim()].filter(Boolean).join(" — ");
+    const chipLabels = [...selected].map((key) => t(`review.chips.${key}`));
 
     submitReview.mutate(
-      { invoiceNumber, rating, comment: body || undefined },
+      { invoiceNumber, rating, comment: buildReviewComment(chipLabels, comment) },
       {
         onSuccess: () => {
-          toast.success(t("review.thanks", { defaultValue: "Terima kasih atas ulasan Anda" }));
+          toast.success(t("review.thanks"));
           onClose();
         },
         onError: (error: unknown) => {
           const message =
             (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-            t("review.failed", { defaultValue: "Ulasan gagal dikirim." });
+            t("review.failed");
           toast.error(message);
         },
       },
@@ -145,7 +157,7 @@ export default function TransactionReviewModal({
                 key={star}
                 as="button"
                 type="button"
-                onClick={() => setRating(star)}
+                onClick={() => handleSetRating(star)}
                 onMouseEnter={() => setHovered(star)}
                 className="cursor-pointer transition-transform hover:scale-110 focus:outline-none"
                 aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
@@ -209,7 +221,8 @@ export default function TransactionReviewModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-[50px] border border-white/15 bg-white/5 px-6 py-2.5 font-outfit font-semibold text-[14px] text-white/80 cursor-pointer hover:bg-white/10 transition-colors"
+              disabled={isSubmitting}
+              className="rounded-[50px] border border-white/15 bg-white/5 px-6 py-2.5 font-outfit font-semibold text-[14px] text-white/80 cursor-pointer hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t("review.skip")}
             </button>
@@ -217,9 +230,10 @@ export default function TransactionReviewModal({
             <Button
               type="button"
               onClick={handleSubmit}
-              className="px-6 py-2.5 text-[14px]"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 text-[14px] disabled:cursor-not-allowed"
             >
-              {t("review.submit")}
+              {isSubmitting ? t("review.submitting") : t("review.submit")}
             </Button>
           </Box>
         </Box>
