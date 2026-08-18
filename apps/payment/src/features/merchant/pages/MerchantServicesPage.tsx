@@ -15,7 +15,6 @@ import { formatDate, formatDateTime } from "@/utils/date";
 import type { Service, ServiceInvoice, ServiceSubscription } from "@/types/service.type";
 import { SERVICES_TABS, type ServicesTab } from "../types/merchant.type";
 
-import { UploadProofDialog } from "../components/UploadProofDialog";
 import { useMerchantServiceInvoices, useMerchantServices, useMerchantSubscriptions } from "../hooks/useMerchant";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
@@ -151,24 +150,18 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
     {
       key: "actions",
       header: "Aksi",
+      // An unpaid bill is settled on its own page, where the QR or VA lives —
+      // there is nothing to do from a table row any more.
       cell: (r) => (
-        <Box className="flex gap-2">
-          <Button
-            asChild
-            size="sm"
-            variant="outline"
-          >
-            <Link href={`/app/payment-admin/service-invoices/${r.id}`}>Detail</Link>
-          </Button>
-          {(r.status === "UNPAID" || r.status === "REJECTED") && (
-            <UploadProofDialog
-              invoice={r}
-              // Already on this page — this only brings the tab forward so the
-              // row's new WAITING_CONFIRMATION status is what the client sees.
-              onUploaded={() => goToTab("invoices")}
-            />
-          )}
-        </Box>
+        <Button
+          asChild
+          size="sm"
+          variant={r.status === "UNPAID" ? "default" : "outline"}
+        >
+          <Link href={`/app/payment-admin/service-invoices/${r.id}`}>
+            {r.status === "UNPAID" ? "Bayar" : "Detail"}
+          </Link>
+        </Button>
       ),
     },
   ];

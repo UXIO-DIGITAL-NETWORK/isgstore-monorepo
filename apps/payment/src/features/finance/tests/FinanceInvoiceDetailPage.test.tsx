@@ -24,11 +24,21 @@ const invoice = (over: Partial<ServiceInvoice> = {}): ServiceInvoice =>
     service_name: "Digiflazz",
     amount: 250000,
     duration_days: 30,
-    status: "WAITING_CONFIRMATION",
+    status: "UNPAID",
     due_at: "2026-08-17T00:00:00+07:00",
     notes: null,
-    proof_url: "https://example.test/storage/bukti.jpg",
-    proof_uploaded_at: "2026-08-15T00:00:00+07:00",
+    payment: {
+      channel: "QRIS",
+      channel_code: "qris",
+      type: "qris",
+      amount: 250000,
+      admin_fee: 2500,
+      total: 252500,
+      status: "PENDING",
+      expires_at: null,
+      is_expired: false,
+      instructions: { order_no: "MP-1", qr_string: "000201-QR" },
+    },
     verified_at: null,
     created_at: "2026-08-14T00:00:00+07:00",
     ...over,
@@ -103,13 +113,26 @@ const renderPage = () =>
   );
 
 describe("FinanceInvoiceDetailPage", () => {
-  it("shows the invoice, the client and the bukti transfer", () => {
+  it("shows the invoice, the client and how it is being paid", () => {
     mockScene(invoice(), prepared);
     renderPage();
 
     expect(screen.getByText("SINV-202608-A1B2C3")).toBeInTheDocument();
     expect(screen.getByText("Toko A")).toBeInTheDocument();
-    expect(screen.getByAltText("Bukti transfer SINV-202608-A1B2C3")).toBeInTheDocument();
+    expect(screen.getByText("QRIS")).toBeInTheDocument();
+    // The gateway's own reference, so a payment can be traced on their side.
+    expect(screen.getByText("MP-1")).toBeInTheDocument();
+  });
+
+  /**
+   * A bill settled by hand, or one whose gateway attempt never opened, has no
+   * payment — the panel must say so rather than render blank.
+   */
+  it("says so when no payment has been opened", () => {
+    mockScene(invoice({ payment: null }), prepared);
+    renderPage();
+
+    expect(screen.getByText("Belum ada pembayaran dibuka untuk invoice ini.")).toBeInTheDocument();
   });
 
   /** Warn, do not block — but say exactly what the client will be left seeing. */

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import MerchantServicesPage from "../pages/MerchantServicesPage";
@@ -11,16 +11,6 @@ import * as hooks from "../hooks/useMerchant";
 // this stays a unit test of the page, not of routing.
 vi.mock("@/components/common/Link", () => ({
   Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
-}));
-
-// Stubbed so the test can fire the upload's completion callback directly rather
-// than driving a file picker.
-let lastOnUploaded: (() => void) | undefined;
-vi.mock("../components/UploadProofDialog", () => ({
-  UploadProofDialog: ({ onUploaded }: { onUploaded?: () => void }) => {
-    lastOnUploaded = onUploaded;
-    return <button type="button">Unggah Bukti</button>;
-  },
 }));
 
 const list = <T,>(rows: T[]) => ({ rows, page: 1, lastPage: 1, total: rows.length, perPage: 20 });
@@ -50,7 +40,6 @@ const invoice = {
   status: "UNPAID",
   due_at: "2026-08-17T00:00:00+07:00",
   notes: null,
-  proof_url: null,
   proof_uploaded_at: null,
   verified_at: null,
   created_at: "",
@@ -147,7 +136,8 @@ describe("MerchantServicesPage", () => {
     expect(onTabChange).toHaveBeenCalledWith("catalog");
   });
 
-  it("offers a Detail link on every purchase row", async () => {
+  /** An unpaid bill is settled on its own page, where the QR or VA lives. */
+  it("sends an unpaid purchase row to its payment page", async () => {
     const user = userEvent.setup();
     vi.spyOn(hooks, "useMerchantServiceInvoices").mockReturnValue({
       data: list([invoice]),
@@ -158,37 +148,24 @@ describe("MerchantServicesPage", () => {
     renderPage();
     await user.click(screen.getByRole("tab", { name: "Riwayat Pembelian" }));
 
-    expect(screen.getByRole("link", { name: "Detail" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Bayar" })).toHaveAttribute(
       "href",
       "/app/payment-admin/service-invoices/9",
     );
   });
 
-  /** After uploading there is nothing more to do until kita confirms. */
-  it("brings the purchase history forward after a successful upload", async () => {
+  it("labels a settled purchase row Detail instead", async () => {
     const user = userEvent.setup();
-    const onTabChange = vi.fn();
     vi.spyOn(hooks, "useMerchantServiceInvoices").mockReturnValue({
-      data: list([invoice]),
+      data: list([{ ...invoice, status: "PAID" }]),
       isLoading: false,
       isError: false,
     } as unknown as ReturnType<typeof hooks.useMerchantServiceInvoices>);
 
-    render(
-      <QueryClientProvider client={new QueryClient()}>
-        <MerchantServicesPage
-          tab="invoices"
-          onTabChange={onTabChange}
-        />
-      </QueryClientProvider>,
-    );
-
-    // Mounting the tab is what registers the dialog's completion callback.
+    renderPage();
     await user.click(screen.getByRole("tab", { name: "Riwayat Pembelian" }));
-    onTabChange.mockClear();
 
-    act(() => lastOnUploaded?.());
-
-    expect(onTabChange).toHaveBeenCalledWith("invoices");
+    expect(screen.getByRole("link", { name: "Detail" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Bayar" })).not.toBeInTheDocument();
   });
 });

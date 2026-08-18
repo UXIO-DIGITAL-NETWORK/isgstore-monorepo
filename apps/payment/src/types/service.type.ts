@@ -40,7 +40,6 @@ export interface Service {
 export interface ServiceInvoice {
   id: number;
   invoice_number: string;
-  transfer_instruction?: TransferInstruction;
   service?: { id: number; code: string; name: string };
   /** Present only in the internal view, which eager-loads it. */
   merchant?: { id: number; name: string; email: string };
@@ -50,8 +49,8 @@ export interface ServiceInvoice {
   status: string;
   due_at: string | null;
   notes: string | null;
-  proof_url: string | null;
-  proof_uploaded_at: string | null;
+  /** The gateway attempt the client is looking at; null until one is opened. */
+  payment?: ServiceInvoicePayment | null;
   verified_at: string | null;
   /** Present once kita has confirmed payment; the installation hangs off it. */
   subscription?: { id: number; starts_at: string; ends_at: string; status: string } | null;
@@ -184,11 +183,46 @@ export interface ServiceCheckout extends Service {
   open_invoice_id: number | null;
 }
 
-export interface TransferInstruction {
-  bank_name: string;
-  account_number: string;
-  account_holder: string;
-  note: string;
+/**
+ * One Monetapay attempt against a bill.
+ *
+ * Which keys `instructions` carries depends on the method — a QRIS answers with
+ * a payload to render, a virtual account with a number, an e-wallet with a link
+ * — so the card branches on presence rather than on `type`.
+ */
+export interface ServiceInvoicePayment {
+  channel: string | null;
+  channel_code: string | null;
+  type: string | null;
+  amount: number;
+  admin_fee: number;
+  total: number;
+  status: "PENDING" | "PAID" | "EXPIRED";
+  /** Server-declared; never re-derived on the client. */
+  expires_at: string | null;
+  is_expired: boolean;
+  instructions: {
+    order_no?: string;
+    qr_string?: string;
+    virtual_account?: string;
+    bank_code?: string;
+    redirect_url?: string;
+    deeplink_url?: string;
+  } | null;
+}
+
+/** A method a client may settle a service bill with. */
+export interface ServicePaymentChannel {
+  id: number;
+  payment_type: string;
+  channel_code: string;
+  name: string;
+  logo_url: string | null;
+  description: string | null;
+  min_amount: number;
+  fee_flat: number;
+  fee_percent: number;
+  sort_order: number;
 }
 
 /**
