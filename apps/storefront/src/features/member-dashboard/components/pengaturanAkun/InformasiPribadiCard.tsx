@@ -1,16 +1,21 @@
 import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { User } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import SectionCard from "@/features/member-dashboard/components/pengaturanAkun/SectionCard";
 import { Spinner } from "@/components/common/Spinner";
+import { compressImage } from "@/lib/imageCompression";
 import { toNationalPhone } from "@/lib/phone";
 
 const inputClass =
   "w-full bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#3B82F6]/60 transition-all";
 
 const labelClass = "block text-[12px] font-outfit font-medium text-white/60 leading-none mb-2";
+
+/** Matches the API's `max:2048` on the avatar field. */
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
 interface InformasiPribadiCardProps {
   fullName: string;
@@ -46,20 +51,28 @@ export default function InformasiPribadiCard({
   const { t } = useTranslation("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     // Reset so the same file can be re-selected later
     e.target.value = "";
     if (!file) return;
+
     if (!file.type.startsWith("image/")) {
-      window.alert("File harus berupa gambar (JPG atau PNG).");
+      toast.error(t("pengaturanAkun.personalInfo.photoNotAnImage"));
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      window.alert("Ukuran file tidak boleh melebihi 2MB.");
+
+    // Re-encode to WebP first — a phone photo is several MB as shot and a few
+    // hundred KB after, so the size check below must run on what actually gets
+    // uploaded, not on what came off the camera.
+    const optimised = await compressImage(file);
+
+    if (optimised.size > MAX_AVATAR_BYTES) {
+      toast.error(t("pengaturanAkun.personalInfo.photoTooLarge"));
       return;
     }
-    onSelectPhoto(file);
+
+    onSelectPhoto(optimised);
   };
 
   const sectionTitle = (
@@ -83,9 +96,9 @@ export default function InformasiPribadiCard({
         <Box
           as="input"
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/png,image/jpeg,image/webp"
           ref={fileInputRef}
-          onChange={handleFileChange}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => void handleFileChange(e)}
           className="hidden"
         />
 
