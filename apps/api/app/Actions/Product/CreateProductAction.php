@@ -6,19 +6,23 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Product\CreateProductDTO;
 use App\Models\Product;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 
 class CreateProductAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(CreateProductDTO $dto): Product
     {
         $logoPath = null;
 
         if ($dto->logo instanceof UploadedFile) {
-            $logoPath = $dto->logo->store('products/logos', 'public');
+            $logoPath = $this->images->store($dto->logo, 'products/logos');
         }
 
         $product = Product::create([

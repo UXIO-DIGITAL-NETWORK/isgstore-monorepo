@@ -27,6 +27,8 @@ class ManualReviewTransactionAction
             if ($proofPath && Storage::disk('public')->exists($proofPath)) {
                 Storage::disk('public')->delete($proofPath);
             }
+            // Payment proof is evidence: stored byte-for-byte, never re-encoded.
+            // See App\Services\ImageOptimizer — do not route this through it.
             $proofPath = $dto->proof->store('transactions/proofs', 'public');
         }
 

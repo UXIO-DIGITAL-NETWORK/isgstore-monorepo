@@ -7,6 +7,7 @@ use App\DTOs\Log\CreateActivityLogDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Content\SettingResource;
 use App\Models\Setting;
+use App\Services\ImageOptimizer;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -77,7 +78,7 @@ class SettingController extends Controller
     }
 
     /** Image-typed settings (logo, favicon, OG image) need a file endpoint. */
-    public function upload(Request $request)
+    public function upload(Request $request, ImageOptimizer $images)
     {
         $validated = $request->validate([
             'key' => ['required', 'string', 'exists:settings,key'],
@@ -90,7 +91,9 @@ class SettingController extends Controller
             Storage::disk('public')->delete($setting->value);
         }
 
-        $setting->update(['value' => $request->file('file')->store('settings', 'public')]);
+        // SVG and ICO pass through the optimiser untouched — a favicon and a
+        // vector logo must keep their format.
+        $setting->update(['value' => $images->store($request->file('file'), 'settings')]);
 
         return $this->successResponse(new SettingResource($setting->fresh()), 'Setting file uploaded successfully');
     }

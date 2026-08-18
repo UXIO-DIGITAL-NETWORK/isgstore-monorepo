@@ -6,13 +6,17 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Banner\UpdateBannerDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Banner;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class UpdateBannerAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(Banner $banner, UpdateBannerDTO $dto): Banner
     {
@@ -22,7 +26,7 @@ class UpdateBannerAction
             if ($imagePath && Storage::disk('public')->exists($imagePath)) {
                 Storage::disk('public')->delete($imagePath);
             }
-            $imagePath = $dto->imagePath->store('banners/images', 'public');
+            $imagePath = $this->images->store($dto->imagePath, 'banners/images');
         }
 
         $banner->update([

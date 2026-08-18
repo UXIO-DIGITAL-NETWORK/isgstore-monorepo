@@ -6,13 +6,17 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Category\UpdateCategoryDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Category;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class UpdateCategoryAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(Category $category, UpdateCategoryDTO $dto): Category
     {
@@ -22,7 +26,7 @@ class UpdateCategoryAction
             if ($logoPath && Storage::disk('public')->exists($logoPath)) {
                 Storage::disk('public')->delete($logoPath);
             }
-            $logoPath = $dto->logo->store('categories/logos', 'public');
+            $logoPath = $this->images->store($dto->logo, 'categories/logos');
         }
 
         $ogImagePath = $category->og_image;
@@ -31,7 +35,7 @@ class UpdateCategoryAction
             if ($ogImagePath && Storage::disk('public')->exists($ogImagePath)) {
                 Storage::disk('public')->delete($ogImagePath);
             }
-            $ogImagePath = $dto->ogImage->store('categories/og-images', 'public');
+            $ogImagePath = $this->images->store($dto->ogImage, 'categories/og-images');
         }
 
         $category->update([

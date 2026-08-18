@@ -6,19 +6,23 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Article\CreateArticleDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Article;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 
 class CreateArticleAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(CreateArticleDTO $dto): Article
     {
         $imagePath = null;
 
         if ($dto->imagePath instanceof UploadedFile) {
-            $imagePath = $dto->imagePath->store('articles/images', 'public');
+            $imagePath = $this->images->store($dto->imagePath, 'articles/images');
         }
 
         $article = Article::create([

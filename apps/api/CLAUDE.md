@@ -179,6 +179,35 @@ Queue driver is `database` by default (`QUEUE_CONNECTION=database`). Tests run w
 
 ---
 
+## Image Uploads
+
+Every image goes to disk through `App\Services\ImageOptimizer::store($file, $directory)` — the drop-in
+replacement for `$file->store($dir, 'public')`. It returns the same relative path, so model columns,
+`MediaUrl::for()` and the delete-the-old-file logic are unaffected.
+
+- **Output is WebP**, quality 82, longest edge capped at 1920px (never upscaled), EXIF rotation baked in,
+  alpha preserved. Tuned in `config/images.php` (`IMAGE_OPTIMIZE_ENABLED`, `IMAGE_WEBP_QUALITY`,
+  `IMAGE_MAX_DIMENSION`, `IMAGE_MAX_MEGAPIXELS`) — no code change needed to retune.
+- **It degrades, never fails.** SVG/ICO/PDF, animated GIFs, already-small WebP, absurd pixel counts, a GD
+  without WebP, and any thrown error all fall back to storing the original bytes (with a log line for the
+  failure paths). An upload must never 500 because the optimiser could not do its job.
+- **Payment proofs are excluded on purpose** — `ManualReviewTransactionAction`,
+  `MerchantServiceInvoiceController::uploadProof` and `FinanceWithdrawalController::approve` still call
+  `->store()` directly. Proof is evidence; it is kept byte-for-byte as the customer submitted it. Do not
+  "tidy" those three into the optimiser.
+- Existing images are **not** backfilled; only new uploads are converted. Both extensions coexist fine
+  because the path is read from the database.
+- Requires the `gd` extension (and `exif` for JPEG orientation) — both are in the CI workflows' extension
+  list, and `UploadedFile::fake()->image()` already depends on GD.
+- Behaviour is pinned in `tests/Unit/ImageOptimizerTest.php`; the endpoint wiring in
+  `tests/Feature/ImageUploadWebpTest.php`.
+
+The browsers help but do not guarantee: `web-admin-topup-fe` and `web-topup-fe` re-encode to WebP client-side
+before uploading (same rules, same skips) so a phone photo does not have to travel as several MB. Anything
+they skip is still handled here.
+
+---
+
 ## Key Database Relationships
 
 ```

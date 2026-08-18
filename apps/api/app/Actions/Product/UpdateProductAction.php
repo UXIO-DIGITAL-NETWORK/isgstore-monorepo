@@ -6,13 +6,17 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Product\UpdateProductDTO;
 use App\Models\Product;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class UpdateProductAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(Product $product, UpdateProductDTO $dto): Product
     {
@@ -25,7 +29,7 @@ class UpdateProductAction
             if ($logoPath) {
                 Storage::disk('public')->delete($logoPath);
             }
-            $logoPath = $dto->logo->store('products/logos', 'public');
+            $logoPath = $this->images->store($dto->logo, 'products/logos');
         }
 
         $product->update([

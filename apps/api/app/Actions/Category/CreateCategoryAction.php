@@ -6,25 +6,29 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Category\CreateCategoryDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Category;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 
 class CreateCategoryAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(CreateCategoryDTO $dto): Category
     {
         $logoPath = null;
 
         if ($dto->logo instanceof UploadedFile) {
-            $logoPath = $dto->logo->store('categories/logos', 'public');
+            $logoPath = $this->images->store($dto->logo, 'categories/logos');
         }
 
         $ogImagePath = null;
 
         if ($dto->ogImage instanceof UploadedFile) {
-            $ogImagePath = $dto->ogImage->store('categories/og-images', 'public');
+            $ogImagePath = $this->images->store($dto->ogImage, 'categories/og-images');
         }
 
         $category = Category::create([
