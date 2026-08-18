@@ -28,7 +28,15 @@
     "nicknameLoading": "Validating...",
     "nicknameError": "ID not found",
     "checkUsername": "Check Username",
-    "viewGuide": "View Account Guide"
+    "viewGuide": "View Account Guide",
+    "errors": {
+      "required": "Required",
+      "numeric": "Numbers only",
+      "minLength": "Must be at least {{length}} characters",
+      "maxLength": "Must be at most {{length}} characters",
+      "pattern": "Invalid format",
+      "fixFields": "Please complete your account details"
+    }
   },
   "packages": {
     "title": "Select Diamond Package",
@@ -117,6 +125,7 @@
     "totalPayment": "Total Payment",
     "buyNow": "Top Up Now",
     "processing": "Processing...",
+    "checkingId": "Checking ID...",
     "instantProcess": "Instant processing time"
   },
   "confirmModal": {

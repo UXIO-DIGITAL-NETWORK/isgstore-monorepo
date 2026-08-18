@@ -23,6 +23,15 @@ interface Props {
   /** Validated in-game nickname, or null when the game has no lookup provider. */
   nickname?: string | null;
   isSubmitting?: boolean;
+  /**
+   * Last gate before the confirmation modal: validates the account fields and,
+   * for a game with a lookup provider, makes sure the id has actually been
+   * checked. Resolving false keeps the modal shut — the page has already told
+   * the buyer why.
+   */
+  onRequestConfirm?: () => Promise<boolean>;
+  /** True while that gate is running (a supplier lookup takes a moment). */
+  isPreparing?: boolean;
   onSubmit: () => void;
 }
 
@@ -52,6 +61,8 @@ export default function OrderSummary({
   whatsapp,
   nickname,
   isSubmitting = false,
+  onRequestConfirm,
+  isPreparing = false,
   onSubmit,
 }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("checkout");
@@ -59,6 +70,15 @@ export default function OrderSummary({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const total = totalPrice + adminFee;
+
+  const handleTopUp = async () => {
+    if (!onRequestConfirm) {
+      setConfirmOpen(true);
+      return;
+    }
+
+    if (await onRequestConfirm()) setConfirmOpen(true);
+  };
 
   return (
     <Box className="rounded-2xl border border-dotted border-[rgba(147,51,234,0.5)] bg-[#0D1117] overflow-hidden">
@@ -115,11 +135,23 @@ export default function OrderSummary({
       <Box className="px-4 pb-4">
         <Button
           type="button"
-          onClick={() => setConfirmOpen(true)}
-          disabled={!selectedPackage || !selectedPaymentName || whatsapp.trim() === "" || isSubmitting}
+          onClick={() => void handleTopUp()}
+          // `isPreparing` is in here too: a second click would fire a second
+          // supplier lookup, and for some games that one is billed.
+          disabled={
+            !selectedPackage ||
+            !selectedPaymentName ||
+            whatsapp.trim() === "" ||
+            isPreparing ||
+            isSubmitting
+          }
           className="w-full py-3 text-[15px]"
         >
-          {isSubmitting ? t("summary.processing") : t("summary.buyNow")}
+          {isPreparing
+            ? t("summary.checkingId")
+            : isSubmitting
+              ? t("summary.processing")
+              : t("summary.buyNow")}
         </Button>
       </Box>
 
