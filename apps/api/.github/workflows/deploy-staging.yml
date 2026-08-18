@@ -95,7 +95,7 @@ jobs:
             cd /home/uxioserver1/web-topup/api/staging
 
             # 2. Tarik kode terbaru dari branch staging
-            git pull origin staging
+            git pull origin staging || { echo "::error::git pull gagal — deploy dibatalkan sebelum kode lama ter-cache ulang."; exit 1; }
 
             # 3. Tulis ulang file .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
@@ -118,6 +118,21 @@ jobs:
             sudo chown -R uxioserver1:www-data /home/uxioserver1/web-topup/api/staging
             sudo chmod -R 775 /home/uxioserver1/web-topup/api/staging/storage
             sudo chmod -R 775 /home/uxioserver1/web-topup/api/staging/bootstrap/cache
+
+            # 8b. Reload PHP-FPM agar proses web memuat kode yang baru turun.
+            # Langkah 12-14 hanya me-restart queue worker; pool PHP-FPM yang melayani
+            # HTTP tidak pernah disentuh. Dengan OPcache aktif, pool itu terus
+            # mengeksekusi bytecode rilis sebelumnya walau file di disk sudah baru —
+            # deploy "sukses" tapi API masih menjawab dengan kode lama (mis. rilis
+            # split services.price: FE mengirim cost_price/selling_price, API lama
+            # tetap menolak dengan 422 "The price field is required").
+            FPM_UNIT=$(systemctl list-units --type=service --state=running --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}' | head -1)
+            if [ -n "$FPM_UNIT" ]; then
+              sudo systemctl reload "$FPM_UNIT"
+              echo "Reloaded $FPM_UNIT"
+            else
+              echo "::warning::Tidak menemukan php*-fpm.service yang berjalan — kode baru mungkin belum aktif di proses web."
+            fi
 
             # 9. Pasang cron Laravel scheduler (idempotent, spesifik per environment).
             # Tanpa ini payments:sync-expired & digiflazz:sync-products tidak pernah jalan.
