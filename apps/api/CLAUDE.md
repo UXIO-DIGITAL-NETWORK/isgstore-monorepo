@@ -179,6 +179,46 @@ Queue driver is `database` by default (`QUEUE_CONNECTION=database`). Tests run w
 
 ---
 
+## Service Billing (payment page)
+
+A client (`payment-admin`) subscribes to a service kita sells. The bill is a
+`service_invoices` row; **the payment is a separate `service_invoice_payments`
+row, one per attempt.** They are separate because a bill outlives its payment —
+a virtual account expires in 600s while `due_at` is three days out — so
+re-opening a payment is the normal case, not an edge one.
+
+- **`SRV-` is the third payable prefix.** `HandleMonetapayCallbackAction` routes
+  by reference prefix before any lookup: `TOP-` → `balance_topups`, `SRV-` →
+  `service_invoice_payments`, and the fall-through `PAY-` → `payments`. A new
+  payable needs its own prefix and its own early-return branch; without one it
+  falls into the checkout lookup, 500s, and Monetapay retries forever.
+- **`ActivateServiceSubscriptionAction` is the only definition of "the client
+  now has this service."** Both routes to paid call it — the webhook, and a
+  payment-internal user marking a bill paid by hand — so the renewal-stacking
+  rule cannot fork.
+- **The manual confirm/reject stays** as the fallback for a webhook that never
+  arrived or a client who paid outside the gateway.
+- **Admin fee is the storefront top-up formula**: `fee_flat + round(amount ×
+  fee_percent/100)`, added on top and frozen onto the attempt. The bill's
+  `amount` never changes.
+- **The wallet channel cannot pay a service bill.** A merchant's settlement
+  balance is money kita owes it, not a way to pay kita back.
+- **`service-payments:sync-expired`** (every 5 min) sweeps stale attempts.
+  `payments:sync-expired` cannot: it joins `whereHas('transaction')` and a
+  service payment owns no transaction. Its recovery half matters — a client
+  whose webhook was lost has genuinely paid.
+- `OpenServiceInvoicePaymentAction` keeps `redirect_url`/`deeplink_url`, which
+  `CheckoutAction`'s instruction filter drops — they are the only output of
+  `createTransaction`'s e-wallet branch.
+- `ServiceInvoiceStatus::WAITING_CONFIRMATION` is legacy: nothing produces it
+  since the bukti-transfer flow was removed, but old rows still carry it.
+- Covered by `tests/Feature/PaymentPage/ServiceInvoicePaymentTest.php` and
+  `ServiceInvoiceWebhookTest.php` — the latter is the **only** Monetapay callback
+  coverage in the repo; copy its envelope builder rather than re-deriving the
+  signature.
+
+---
+
 ## Image Uploads
 
 Every image goes to disk through `App\Services\ImageOptimizer::store($file, $directory)` — the drop-in

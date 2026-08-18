@@ -6,37 +6,35 @@ namespace App\Actions\Service;
 
 use App\DTOs\Service\ConfirmServiceInvoiceDTO;
 use App\Enums\ServiceInvoiceStatus;
-use App\Enums\SubscriptionStatus;
-use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoice;
-use App\Models\ServiceSubscription;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Kita confirms the bukti transfer. This is the only place a subscription is
- * born: the invoice flips to PAID and a period is opened for its duration.
+ * A payment-internal user marks a service bill paid by hand.
  *
- * Renewals stack. If the client already holds an active period for the same
- * service, the new one starts where that one ends rather than overwriting it,
- * so a client who renews early keeps every day they paid for and the purchase
- * history stays one row per purchase.
+ * Bills are normally settled through Monetapay and activated by the webhook
+ * (`HandleMonetapayCallbackAction`). This stays as the manual fallback for the
+ * cases the gateway cannot cover: a webhook that never arrived, or a client
+ * who paid kita outside the gateway entirely.
  *
- * Deliberately touches no ledger: the money arrived by bank transfer into an
- * account PlatformLedger does not model, so crediting it there would stop
- * `platform_accounts.balance` meaning "admin fees net of gateway fees".
+ * The period itself is opened by `ActivateServiceSubscriptionAction`, shared
+ * with the webhook, so both routes to "paid" agree on the stacking rule.
  */
 class ConfirmServiceInvoiceAction
 {
+    public function __construct(
+        private readonly ActivateServiceSubscriptionAction $activateAction,
+    ) {}
+
     public function execute(ConfirmServiceInvoiceDTO $dto): ServiceInvoice
     {
         return DB::transaction(function () use ($dto) {
             /** @var ServiceInvoice $invoice */
             $invoice = ServiceInvoice::whereKey($dto->invoiceId)->lockForUpdate()->firstOrFail();
 
-            // Idempotency: a double-click or a retried request must not open a
-            // second period against one payment.
+            // Idempotency: a double-click, a retried request, or a webhook that
+            // landed first must not open a second period against one payment.
             if ($invoice->status === ServiceInvoiceStatus::PAID) {
                 throw new RuntimeException('Invoice ini sudah dikonfirmasi.');
             }
@@ -48,46 +46,7 @@ class ConfirmServiceInvoiceAction
                 'notes' => $dto->notes ?? $invoice->notes,
             ]);
 
-            $currentEndsAt = ServiceSubscription::query()
-                ->where('merchant_id', $invoice->merchant_id)
-                ->where('service_id', $invoice->service_id)
-                ->where('status', SubscriptionStatus::ACTIVE)
-                ->max('ends_at');
-
-            $startsAt = $currentEndsAt
-                ? Carbon::parse($currentEndsAt)->max(now())
-                : now();
-
-            $subscription = ServiceSubscription::create([
-                'merchant_id' => $invoice->merchant_id,
-                'service_id' => $invoice->service_id,
-                'service_invoice_id' => $invoice->id,
-                'starts_at' => $startsAt,
-                'ends_at' => $startsAt->copy()->addDays((int) $invoice->duration_days),
-                'status' => SubscriptionStatus::ACTIVE,
-            ]);
-
-            // Every newly paid service gets an installation record immediately,
-            // so the client's invoice page never has to render a null. A renewal
-            // finds the existing row and leaves its window, checklist and
-            // credentials intact — installations are per service account, not
-            // per paid period.
-            $installation = ServiceInstallation::firstOrCreate(
-                [
-                    'merchant_id' => $invoice->merchant_id,
-                    'service_id' => $invoice->service_id,
-                ],
-                ['service_subscription_id' => $subscription->id],
-            );
-
-            // Stamp ONLY a row that has never been stamped — i.e. one kita
-            // prepared from the invoice page before confirming. A renewal finds
-            // a row already pointing at the FIRST period and must leave it:
-            // this column records which period paid for the install, is audit
-            // only, and never scopes a read.
-            if ($installation->service_subscription_id === null) {
-                $installation->update(['service_subscription_id' => $subscription->id]);
-            }
+            $this->activateAction->execute($invoice);
 
             return $invoice->fresh(['service', 'subscription']);
         });

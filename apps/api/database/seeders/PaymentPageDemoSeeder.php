@@ -140,7 +140,7 @@ class PaymentPageDemoSeeder extends Seeder
         // Two paid ones — driven through the real action so the subscription and
         // its installation arrive by the same code path production uses.
         foreach ($services->take(2) as $service) {
-            $invoice = $this->bill($merchant, $service, ServiceInvoiceStatus::WAITING_CONFIRMATION, now()->subDays(9));
+            $invoice = $this->bill($merchant, $service, ServiceInvoiceStatus::UNPAID, now()->subDays(9));
             $confirm->execute(new ConfirmServiceInvoiceDTO($invoice->id, $merchant->id));
         }
 
@@ -149,7 +149,7 @@ class PaymentPageDemoSeeder extends Seeder
         }
 
         if ($services->count() > 3) {
-            $this->bill($merchant, $services[3], ServiceInvoiceStatus::WAITING_CONFIRMATION, now()->subDays(2));
+            $this->bill($merchant, $services[3], ServiceInvoiceStatus::UNPAID, now()->subDays(2));
         }
 
         $this->seedInstallationDetail($merchant);
@@ -166,10 +166,6 @@ class PaymentPageDemoSeeder extends Seeder
             'duration_days' => (int) $service->duration_days,
             'status' => $status,
             'due_at' => $createdAt->copy()->addDays(3),
-            'proof_path' => $status === ServiceInvoiceStatus::WAITING_CONFIRMATION
-                ? 'service-invoices/proofs/demo-bukti.jpg'
-                : null,
-            'proof_uploaded_at' => $status === ServiceInvoiceStatus::WAITING_CONFIRMATION ? $createdAt : null,
             'created_at' => $createdAt,
             'updated_at' => $createdAt,
         ]);

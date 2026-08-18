@@ -30,8 +30,6 @@ class ServiceInvoiceFactory extends Factory
     {
         return $this->state(fn () => [
             'status' => ServiceInvoiceStatus::WAITING_CONFIRMATION->value,
-            'proof_path' => 'service-invoices/proofs/bukti.jpg',
-            'proof_uploaded_at' => now(),
         ]);
     }
 }

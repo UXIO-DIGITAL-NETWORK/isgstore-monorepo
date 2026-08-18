@@ -202,17 +202,28 @@ final class UnifiedTransactionQuery
 
         if ($this->withPlatformFigures) {
             $columns = array_merge($columns, [
-                'si.amount as amount_total',
-                // A service bill carries no payment channel and no gateway, so
-                // both fees are genuinely zero and the whole amount is kita's.
-                DB::raw('0 as admin_fee'),
+                // What the client was actually charged: the bill plus whatever
+                // the payment channel took on top. Falls back to the bill for
+                // rows settled by hand, which have no gateway attempt.
+                DB::raw('COALESCE(sip.total, si.amount) as amount_total'),
+                DB::raw('COALESCE(sip.admin_fee, 0) as admin_fee'),
+                // Not read from the callback anywhere yet — same open item as
+                // `payments.gateway_fee`.
                 DB::raw('0 as gateway_fee'),
+                // The bill itself. The admin fee covers the gateway's cut and
+                // is not kita's margin, so it must not be counted as profit.
                 'si.amount as platform_profit',
             ]);
         }
 
         $query = DB::table('service_invoices as si')
             ->leftJoin('users as m', 'm.id', '=', 'si.merchant_id')
+            // The attempt that settled the bill, if any. `PAID` rather than the
+            // latest row: an expired attempt charged nobody anything.
+            ->leftJoin('service_invoice_payments as sip', function ($join) {
+                $join->on('sip.service_invoice_id', '=', 'si.id')
+                    ->where('sip.status', '=', 'PAID');
+            })
             ->select($columns);
 
         if ($this->merchantId !== null) {

@@ -3,15 +3,19 @@
 namespace App\Actions\Payment\Monetapay;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Service\ActivateServiceSubscriptionAction;
+use App\Actions\Service\OpenServiceInvoicePaymentAction;
 use App\Actions\Settlement\SettleMerchantTransactionAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Payment\Monetapay\MonetapayCallbackDTO;
 use App\Enums\PaymentStatus;
+use App\Enums\ServiceInvoiceStatus;
 use App\Enums\TransactionStatus;
 use App\Jobs\ProcessDigiflazzBillPayment;
 use App\Jobs\ProcessDigiflazzTopup;
 use App\Models\BalanceTopup;
 use App\Models\Payment;
+use App\Models\ServiceInvoicePayment;
 use App\Models\Transaction;
 use App\Support\Wallet\WalletLedger;
 use Exception;
@@ -20,12 +24,19 @@ use Illuminate\Support\Facades\Log;
 
 class HandleMonetapayCallbackAction
 {
-    /** Wallet top-up references carry this prefix; checkout uses `PAY-`. */
+    /**
+     * Every payable that shares this webhook is told apart by its reference
+     * prefix, so the lookup never has to fail first: wallet top-ups are `TOP-`,
+     * service bills `SRV-`, and checkout — the fall-through — is `PAY-`.
+     */
     private const TOPUP_REFERENCE_PREFIX = 'TOP-';
+
+    private const SERVICE_REFERENCE_PREFIX = OpenServiceInvoicePaymentAction::REFERENCE_PREFIX;
 
     public function __construct(
         private readonly CreateActivityLogAction $activityLogAction,
         private readonly SettleMerchantTransactionAction $settleAction,
+        private readonly ActivateServiceSubscriptionAction $activateSubscriptionAction,
     ) {}
 
     public function execute(MonetapayCallbackDTO $dto): void
@@ -35,6 +46,14 @@ class HandleMonetapayCallbackAction
         // below never has to fail first.
         if (str_starts_with($dto->outNo, self::TOPUP_REFERENCE_PREFIX)) {
             $this->handleBalanceTopup($dto);
+
+            return;
+        }
+
+        // Service bills likewise: their own table, their own prefix, no
+        // Transaction or Payment row.
+        if (str_starts_with($dto->outNo, self::SERVICE_REFERENCE_PREFIX)) {
+            $this->handleServiceInvoicePayment($dto);
 
             return;
         }
@@ -222,6 +241,89 @@ class HandleMonetapayCallbackAction
             );
 
             $this->log($dto->outNo, "Top-up credited: Rp {$topup->amount}");
+        });
+    }
+
+    /**
+     * Marks a service bill paid and opens the subscription period it bought.
+     *
+     * Mirrors the wallet path's guarantees, because the failure modes are the
+     * same and what is at stake here is a service the client either gets or
+     * does not:
+     *
+     *  - the attempt row is locked for the whole read-modify-write, so two
+     *    concurrent deliveries cannot both activate;
+     *  - an attempt already in a terminal state is ignored, so a retried
+     *    webhook opens one period, not two;
+     *  - the paid amount must match the attempt exactly, so a tampered
+     *    callback cannot buy a subscription for less than it costs;
+     *  - the period is opened by the same action the manual confirmation uses,
+     *    so the two can never disagree about how renewals stack.
+     */
+    private function handleServiceInvoicePayment(MonetapayCallbackDTO $dto): void
+    {
+        DB::transaction(function () use ($dto) {
+            /** @var ServiceInvoicePayment|null $attempt */
+            $attempt = ServiceInvoicePayment::where('reference_id', $dto->outNo)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $attempt) {
+                Log::channel('monetapay')->warning('Monetapay callback for an unknown service payment reference', [
+                    'reference_id' => $dto->outNo,
+                ]);
+
+                throw new Exception("No service invoice payment found for reference {$dto->outNo}.");
+            }
+
+            if ($attempt->status !== 'PENDING') {
+                Log::channel('monetapay')->info("Service payment callback ignored — already {$attempt->status}", [
+                    'reference_id' => $dto->outNo,
+                ]);
+
+                return;
+            }
+
+            if ((int) $attempt->total !== (int) $dto->amount) {
+                $this->log(
+                    $dto->outNo,
+                    "FRAUD: service payment amount mismatch. Expected {$attempt->total}, received {$dto->amount}."
+                );
+
+                throw new Exception("Amount mismatch for service payment {$dto->outNo}.");
+            }
+
+            $isSuccess = \in_array(\strtolower($dto->status), ['1', '3', 'success'], true);
+
+            if (! $isSuccess) {
+                $attempt->update(['status' => 'EXPIRED']);
+                $this->log($dto->outNo, "Service payment failed — Monetapay status: {$dto->status}");
+
+                return;
+            }
+
+            $attempt->update(['status' => 'PAID', 'paid_at' => now()]);
+
+            $invoice = $attempt->invoice()->lockForUpdate()->first();
+
+            // A payment-internal user may have marked this bill paid by hand
+            // while the callback was in flight. The money is still recorded on
+            // the attempt above; opening a second period is what must not
+            // happen.
+            if (! $invoice || $invoice->status === ServiceInvoiceStatus::PAID) {
+                $this->log($dto->outNo, 'Service payment received for an invoice already settled.');
+
+                return;
+            }
+
+            $invoice->update([
+                'status' => ServiceInvoiceStatus::PAID,
+                'verified_at' => now(),
+            ]);
+
+            $this->activateSubscriptionAction->execute($invoice);
+
+            $this->log($dto->outNo, "Service invoice {$invoice->invoice_number} paid: Rp {$attempt->total}");
         });
     }
 }

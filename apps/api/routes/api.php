@@ -538,14 +538,19 @@ Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'payment-admin'])
     Route::get('/withdrawals/{number}', [MerchantWithdrawalController::class, 'show']);
 
     // Services the client buys from kita: catalogue, own subscriptions, and
-    // the manual bukti-transfer invoice flow.
+    // the invoice flow — paid through Monetapay, same gateway as checkout.
     Route::get('/services', [MerchantServiceController::class, 'catalog']);
     Route::get('/services/{service}', [MerchantServiceController::class, 'show']);
     Route::get('/service-subscriptions', [MerchantServiceController::class, 'subscriptions']);
+    // The methods a client may settle a bill with. Separate from the admin
+    // CRUD at /v1/payment-channels, which is payment-internal only.
+    Route::get('/payment-channels', [MerchantServiceInvoiceController::class, 'paymentChannels']);
     Route::get('/service-invoices', [MerchantServiceInvoiceController::class, 'index']);
     Route::post('/service-invoices', [MerchantServiceInvoiceController::class, 'store'])->middleware('throttle:checkout');
     Route::get('/service-invoices/{serviceInvoice}', [MerchantServiceInvoiceController::class, 'show']);
-    Route::post('/service-invoices/{serviceInvoice}/proof', [MerchantServiceInvoiceController::class, 'uploadProof'])
+    // Re-open payment: a VA expires in 600s while the bill is due in days, so
+    // an unpaid invoice must always be payable again.
+    Route::post('/service-invoices/{serviceInvoice}/pay', [MerchantServiceInvoiceController::class, 'pay'])
         ->middleware('throttle:checkout');
 
     // Read-only view of kita's installation work and the credentials handed

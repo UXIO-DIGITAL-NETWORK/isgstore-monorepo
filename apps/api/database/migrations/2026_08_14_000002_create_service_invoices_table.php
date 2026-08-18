@@ -7,11 +7,14 @@ use Illuminate\Support\Facades\Schema;
 /**
  * A client's bill for one period of one service.
  *
- * Payment is manual: the invoice is issued UNPAID, the client transfers and
- * uploads a bukti transfer (WAITING_CONFIRMATION), kita verifies (PAID) and
- * only then does a `service_subscriptions` row come into existence. Nothing
- * here touches WalletLedger or PlatformLedger — the money arrives by bank
- * transfer into an account those ledgers do not model.
+ * The invoice is issued UNPAID and settled through Monetapay; only once the
+ * payment is confirmed does a `service_subscriptions` row come into existence.
+ * Nothing here touches WalletLedger or PlatformLedger — kita selling to a
+ * client is not a movement those ledgers model.
+ *
+ * (As first written, payment was a manual bank transfer with an uploaded bukti
+ * transfer. `proof_path` / `proof_uploaded_at` below are dropped by
+ * 2026_08_18_000003.)
  */
 return new class extends Migration
 {

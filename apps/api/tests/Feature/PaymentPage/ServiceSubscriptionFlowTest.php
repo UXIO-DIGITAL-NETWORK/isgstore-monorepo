@@ -2,70 +2,67 @@
 
 namespace Tests\Feature\PaymentPage;
 
-use App\Models\Role;
 use App\Models\Service;
-use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
+use Tests\Feature\PaymentPage\Concerns\PaysServiceInvoices;
 use Tests\TestCase;
 
 /**
- * The whole manual billing loop: request → invoice → bukti transfer →
- * verification → an active period.
+ * The whole billing loop: request → invoice with an open Monetapay payment →
+ * confirmation → an active period.
+ *
+ * The webhook half — how a payment actually becomes confirmed in production —
+ * is covered by ServiceInvoiceWebhookTest. What is exercised here is the manual
+ * confirmation that stays as the fallback, and the invariants around it.
  */
 class ServiceSubscriptionFlowTest extends TestCase
 {
+    use PaysServiceInvoices;
     use RefreshDatabase;
 
-    private function internal(): User
+    protected function setUp(): void
     {
-        return User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Internal'])->id]);
+        parent::setUp();
+
+        $this->fakeGateway();
     }
 
-    private function merchant(): User
-    {
-        return User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id]);
-    }
-
-    private function subscribe(User $merchant, Service $service): ServiceInvoice
-    {
-        Sanctum::actingAs($merchant);
-
-        $response = $this->postJson('/api/v1/payment-admin/service-invoices', ['service_id' => $service->id])
-            ->assertCreated();
-
-        return ServiceInvoice::findOrFail($response->json('data.id'));
-    }
-
-    private function uploadProof(User $merchant, ServiceInvoice $invoice): void
-    {
-        Sanctum::actingAs($merchant);
-
-        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/proof", [
-            'proof' => UploadedFile::fake()->image('bukti.jpg'),
-        ])->assertOk();
-    }
-
-    public function test_subscribing_issues_an_unpaid_invoice(): void
+    public function test_subscribing_issues_an_unpaid_invoice_with_a_payment(): void
     {
         $service = Service::factory()->create(['selling_price' => 250000, 'duration_days' => 30]);
         $merchant = $this->merchant();
+        $channel = $this->qrisChannel();
         Sanctum::actingAs($merchant);
 
-        $this->postJson('/api/v1/payment-admin/service-invoices', ['service_id' => $service->id])
+        $this->postJson('/api/v1/payment-admin/service-invoices', [
+            'service_id' => $service->id,
+            'payment_channel_id' => $channel->id,
+        ])
             ->assertCreated()
             ->assertJsonPath('data.status', 'UNPAID')
             ->assertJsonPath('data.amount', 250000)
             ->assertJsonPath('data.duration_days', 30)
-            ->assertJsonPath('data.proof_url', null);
+            ->assertJsonPath('data.payment.status', 'PENDING')
+            ->assertJsonPath('data.payment.total', 250000)
+            ->assertJsonPath('data.payment.instructions.qr_string', '000201-QR');
 
-        // No subscription until kita confirms.
+        // No subscription until the payment is confirmed.
         $this->assertDatabaseCount('service_subscriptions', 0);
+    }
+
+    public function test_a_payment_channel_is_required(): void
+    {
+        $service = Service::factory()->create();
+        Sanctum::actingAs($this->merchant());
+
+        $this->postJson('/api/v1/payment-admin/service-invoices', ['service_id' => $service->id])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('payment_channel_id');
     }
 
     public function test_an_inactive_service_cannot_be_subscribed(): void
@@ -73,44 +70,55 @@ class ServiceSubscriptionFlowTest extends TestCase
         $service = Service::factory()->inactive()->create();
         Sanctum::actingAs($this->merchant());
 
-        $this->postJson('/api/v1/payment-admin/service-invoices', ['service_id' => $service->id])
-            ->assertStatus(422);
+        $this->postJson('/api/v1/payment-admin/service-invoices', [
+            'service_id' => $service->id,
+            'payment_channel_id' => $this->qrisChannel()->id,
+        ])->assertStatus(422);
     }
 
     public function test_a_second_open_invoice_is_refused(): void
     {
         $service = Service::factory()->create();
         $merchant = $this->merchant();
-        $this->subscribe($merchant, $service);
+        $channel = $this->qrisChannel();
+        $this->subscribe($merchant, $service, $channel);
 
         Sanctum::actingAs($merchant);
-        $this->postJson('/api/v1/payment-admin/service-invoices', ['service_id' => $service->id])
-            ->assertStatus(422);
+        $this->postJson('/api/v1/payment-admin/service-invoices', [
+            'service_id' => $service->id,
+            'payment_channel_id' => $channel->id,
+        ])->assertStatus(422);
     }
 
-    public function test_uploading_proof_moves_the_invoice_to_waiting_confirmation(): void
+    /**
+     * A bill nobody can pay would trip the one-open-invoice guard and lock the
+     * client out of subscribing at all, so a failed gateway call must leave no
+     * trace behind.
+     */
+    public function test_a_failed_gateway_call_leaves_no_invoice_behind(): void
     {
-        Storage::fake('public');
+        // A second Http::fake() only appends a stub and the first match wins,
+        // so the happy-path fake from setUp has to be swapped out entirely.
+        Http::swap(new HttpFactory);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 500, 'message' => 'gateway down'], 500)]);
+
         $service = Service::factory()->create();
-        $merchant = $this->merchant();
-        $invoice = $this->subscribe($merchant, $service);
+        Sanctum::actingAs($this->merchant());
 
-        Sanctum::actingAs($merchant);
-        $response = $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/proof", [
-            'proof' => UploadedFile::fake()->image('bukti.jpg'),
-        ])->assertOk()->assertJsonPath('data.status', 'WAITING_CONFIRMATION');
+        $this->postJson('/api/v1/payment-admin/service-invoices', [
+            'service_id' => $service->id,
+            'payment_channel_id' => $this->qrisChannel()->id,
+        ])->assertStatus(422);
 
-        $this->assertNotNull($response->json('data.proof_url'));
-        Storage::disk('public')->assertExists($invoice->fresh()->proof_path);
+        $this->assertDatabaseCount('service_invoices', 0);
     }
 
     public function test_confirming_opens_the_subscription_period(): void
     {
-        Storage::fake('public');
         $service = Service::factory()->create(['duration_days' => 30]);
         $merchant = $this->merchant();
         $invoice = $this->subscribe($merchant, $service);
-        $this->uploadProof($merchant, $invoice);
 
         Sanctum::actingAs($this->internal());
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")
@@ -120,9 +128,7 @@ class ServiceSubscriptionFlowTest extends TestCase
 
         $this->assertDatabaseCount('service_subscriptions', 1);
 
-        $subscription = $merchant->fresh()->id
-            ? ServiceSubscription::where('merchant_id', $merchant->id)->firstOrFail()
-            : null;
+        $subscription = ServiceSubscription::where('merchant_id', $merchant->id)->firstOrFail();
 
         $this->assertSame(
             30,
@@ -132,11 +138,9 @@ class ServiceSubscriptionFlowTest extends TestCase
 
     public function test_confirming_twice_is_refused(): void
     {
-        Storage::fake('public');
         $service = Service::factory()->create();
         $merchant = $this->merchant();
         $invoice = $this->subscribe($merchant, $service);
-        $this->uploadProof($merchant, $invoice);
 
         Sanctum::actingAs($this->internal());
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
@@ -145,23 +149,29 @@ class ServiceSubscriptionFlowTest extends TestCase
         $this->assertDatabaseCount('service_subscriptions', 1);
     }
 
-    public function test_a_rejected_invoice_can_be_re_uploaded(): void
+    public function test_a_rejected_invoice_can_be_paid_again(): void
     {
-        Storage::fake('public');
         $service = Service::factory()->create();
         $merchant = $this->merchant();
-        $invoice = $this->subscribe($merchant, $service);
-        $this->uploadProof($merchant, $invoice);
+        $channel = $this->qrisChannel();
+        $invoice = $this->subscribe($merchant, $service, $channel);
 
         Sanctum::actingAs($this->internal());
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/reject", ['reason' => 'Nominal tidak sesuai'])
             ->assertOk()
             ->assertJsonPath('data.status', 'REJECTED');
 
+        // A rejected bill is not UNPAID, so it is not payable — the client
+        // subscribes again rather than retrying a bill kita has refused.
         Sanctum::actingAs($merchant);
-        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/proof", [
-            'proof' => UploadedFile::fake()->image('bukti-2.jpg'),
-        ])->assertOk()->assertJsonPath('data.status', 'WAITING_CONFIRMATION');
+        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
+            'payment_channel_id' => $channel->id,
+        ])->assertStatus(422);
+
+        $this->postJson('/api/v1/payment-admin/service-invoices', [
+            'service_id' => $service->id,
+            'payment_channel_id' => $channel->id,
+        ])->assertCreated();
     }
 
     /**
@@ -170,17 +180,15 @@ class ServiceSubscriptionFlowTest extends TestCase
      */
     public function test_a_renewal_stacks_on_the_current_period(): void
     {
-        Storage::fake('public');
         $service = Service::factory()->create(['duration_days' => 30]);
         $merchant = $this->merchant();
+        $channel = $this->qrisChannel();
 
-        $first = $this->subscribe($merchant, $service);
-        $this->uploadProof($merchant, $first);
+        $first = $this->subscribe($merchant, $service, $channel);
         Sanctum::actingAs($this->internal());
         $this->postJson("/api/v1/payment-internal/service-invoices/{$first->id}/confirm")->assertOk();
 
-        $second = $this->subscribe($merchant, $service);
-        $this->uploadProof($merchant, $second);
+        $second = $this->subscribe($merchant, $service, $channel);
         Sanctum::actingAs($this->internal());
         $this->postJson("/api/v1/payment-internal/service-invoices/{$second->id}/confirm")->assertOk();
 
@@ -198,15 +206,15 @@ class ServiceSubscriptionFlowTest extends TestCase
     /** Another client's invoice must be indistinguishable from a missing one. */
     public function test_a_client_cannot_touch_another_clients_invoice(): void
     {
-        Storage::fake('public');
         $service = Service::factory()->create();
         $owner = $this->merchant();
-        $invoice = $this->subscribe($owner, $service);
+        $channel = $this->qrisChannel();
+        $invoice = $this->subscribe($owner, $service, $channel);
 
         Sanctum::actingAs($this->merchant());
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")->assertStatus(404);
-        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/proof", [
-            'proof' => UploadedFile::fake()->image('bukti.jpg'),
+        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
+            'payment_channel_id' => $channel->id,
         ])->assertStatus(404);
     }
 

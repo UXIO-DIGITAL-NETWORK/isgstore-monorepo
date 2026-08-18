@@ -11,7 +11,7 @@ use RuntimeException;
 
 /**
  * Kita refuses the bukti transfer. The invoice stays open — REJECTED is a state
- * SubmitServiceProofAction accepts, so the client can correct and re-upload.
+ * REJECTED, so the client can open a fresh payment against the same bill.
  */
 class RejectServiceInvoiceAction
 {
