@@ -3,7 +3,7 @@ import { API_VERSION } from "@/config/env";
 import { unwrapList, type ListParams, type ListResult } from "@/lib/list";
 import type { ApiResponse } from "@/types/api.type";
 import type { TransactionSummary, UnifiedTransaction } from "@/types/transaction.type";
-import type { ServiceCheckout, ServiceInstallation } from "@/types/service.type";
+import type { ServiceCheckout, ServiceInstallation, ServicePaymentChannel } from "@/types/service.type";
 import type {
   CreateWithdrawalPayload,
   MerchantDashboard,
@@ -70,21 +70,30 @@ export const merchantService = {
     return unwrapList<ServiceInvoice>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
-  subscribe: async (payload: { service_id: number; notes?: string }): Promise<ServiceInvoice> => {
+  /** The methods a client may settle a bill with — gateway only, no wallet. */
+  paymentChannels: async (): Promise<ServicePaymentChannel[]> => {
+    const res: ApiResponse<ServicePaymentChannel[]> = await api.get(`${BASE}/payment-channels`);
+    return res.data;
+  },
+
+  /** Issues the bill and opens its payment in one step. */
+  subscribe: async (payload: {
+    service_id: number;
+    payment_channel_id: number;
+    notes?: string;
+  }): Promise<ServiceInvoice> => {
     const res: ApiResponse<ServiceInvoice> = await api.post(`${BASE}/service-invoices`, payload);
     return res.data;
   },
 
   /**
-   * Multipart — the axios request interceptor drops the pinned JSON
-   * Content-Type for FormData so the browser sets the boundary itself.
+   * Re-opens payment on an unpaid bill — after a QR or VA expires, or when the
+   * client wants a different method.
    */
-  uploadProof: async (id: number, proof: File, notes?: string): Promise<ServiceInvoice> => {
-    const form = new FormData();
-    form.append("proof", proof);
-    if (notes) form.append("notes", notes);
-
-    const res: ApiResponse<ServiceInvoice> = await api.post(`${BASE}/service-invoices/${id}/proof`, form);
+  payInvoice: async (id: number, paymentChannelId: number): Promise<ServiceInvoice> => {
+    const res: ApiResponse<ServiceInvoice> = await api.post(`${BASE}/service-invoices/${id}/pay`, {
+      payment_channel_id: paymentChannelId,
+    });
     return res.data;
   },
 

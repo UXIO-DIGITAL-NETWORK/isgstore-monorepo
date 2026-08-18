@@ -54,14 +54,24 @@ export const useMerchantServiceInvoices = (params: ListParams) =>
     queryFn: () => merchantService.serviceInvoices(params),
   });
 
+export const useServicePaymentChannels = () =>
+  useQuery({
+    queryKey: ["merchant", "payment-channels"],
+    queryFn: merchantService.paymentChannels,
+    // The method list changes when kita edits a channel, not while a client is
+    // picking one.
+    staleTime: 5 * 60_000,
+  });
+
 export const useSubscribeService = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: { service_id: number; notes?: string }) => merchantService.subscribe(payload),
+    mutationFn: (payload: { service_id: number; payment_channel_id: number; notes?: string }) =>
+      merchantService.subscribe(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["merchant"] });
-      toast.success("Invoice langganan dibuat, silakan unggah bukti transfer");
+      toast.success("Invoice dibuat, silakan selesaikan pembayaran");
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message ?? "Gagal membuat langganan");
@@ -69,18 +79,18 @@ export const useSubscribeService = () => {
   });
 };
 
-export const useUploadServiceProof = () => {
+export const usePayServiceInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, proof, notes }: { id: number; proof: File; notes?: string }) =>
-      merchantService.uploadProof(id, proof, notes),
+    mutationFn: ({ id, paymentChannelId }: { id: number; paymentChannelId: number }) =>
+      merchantService.payInvoice(id, paymentChannelId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["merchant", "service-invoices"] });
-      toast.success("Bukti transfer terkirim, menunggu konfirmasi");
+      queryClient.invalidateQueries({ queryKey: ["merchant"] });
+      toast.success("Pembayaran baru dibuka");
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal mengunggah bukti transfer");
+      toast.error(error.response?.data?.message ?? "Gagal membuka pembayaran");
     },
   });
 };
@@ -93,8 +103,20 @@ export const useServiceStatus = () =>
 export const useMerchantServiceDetail = (id: number) =>
   useQuery({ queryKey: ["merchant", "service-detail", id], queryFn: () => merchantService.serviceDetail(id) });
 
+/**
+ * Polls while the bill is still open.
+ *
+ * Stops on a status the *server* declares terminal, never on one re-derived
+ * here — a client-side guess about what "settled" means would eventually
+ * disagree with the webhook that decided it.
+ */
 export const useMerchantServiceInvoice = (id: number) =>
-  useQuery({ queryKey: ["merchant", "service-invoice", id], queryFn: () => merchantService.serviceInvoice(id) });
+  useQuery({
+    queryKey: ["merchant", "service-invoice", id],
+    queryFn: () => merchantService.serviceInvoice(id),
+    refetchInterval: (query) => (query.state.data?.status === "UNPAID" ? 5_000 : false),
+    refetchIntervalInBackground: true,
+  });
 
 export const useMerchantInstallation = (subscriptionId: number | undefined) =>
   useQuery({

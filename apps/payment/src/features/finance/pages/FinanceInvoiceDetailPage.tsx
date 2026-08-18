@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
-import { Image } from "@/components/common/Image";
 import { Link } from "@/components/common/Link";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Text } from "@/components/common/Text";
@@ -57,7 +56,7 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
   }
 
   const isPaid = invoice.status === "PAID";
-  const isPdf = invoice.proof_url?.toLowerCase().endsWith(".pdf") ?? false;
+  const payment = invoice.payment ?? null;
 
   // Phrased as the client will read it, so the warning is accountable to what
   // they actually end up seeing.
@@ -115,36 +114,42 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
       </Box>
 
       <Box className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6">
-        <Heading level={2}>Bukti Transfer</Heading>
-        {invoice.proof_url ? (
-          isPdf ? (
-            <Link
-              href={invoice.proof_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm underline"
-            >
-              Buka bukti transfer (PDF)
-            </Link>
-          ) : (
-            <Link
-              href={invoice.proof_url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Image
-                src={invoice.proof_url}
-                alt={`Bukti transfer ${invoice.invoice_number}`}
-                className="max-h-72 w-full rounded-xl border border-border object-contain"
+        <Heading level={2}>Pembayaran</Heading>
+        {payment ? (
+          <>
+            <PaymentRow
+              label="Metode"
+              value={payment.channel ?? "—"}
+            />
+            <PaymentRow
+              label="Nominal"
+              value={money(payment.amount)}
+            />
+            <PaymentRow
+              label="Biaya Admin"
+              value={money(payment.admin_fee)}
+            />
+            <PaymentRow
+              label="Total"
+              value={money(payment.total)}
+            />
+            <PaymentRow
+              label="Status"
+              value={payment.status}
+            />
+            {payment.instructions?.order_no && (
+              <PaymentRow
+                label="Ref Gateway"
+                value={payment.instructions.order_no}
               />
-            </Link>
-          )
+            )}
+          </>
         ) : (
           <Text
             variant="small"
             className="text-muted-foreground"
           >
-            Belum ada bukti transfer.
+            Belum ada pembayaran dibuka untuk invoice ini.
           </Text>
         )}
       </Box>
@@ -181,6 +186,26 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
         open={warning}
         onOpenChange={setWarning}
       />
+    </Box>
+  );
+}
+
+function PaymentRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Box className="flex items-center justify-between gap-4">
+      <Text
+        as="span"
+        variant="small"
+        className="text-muted-foreground"
+      >
+        {label}
+      </Text>
+      <Text
+        as="span"
+        className="font-medium tabular-nums"
+      >
+        {value}
+      </Text>
     </Box>
   );
 }

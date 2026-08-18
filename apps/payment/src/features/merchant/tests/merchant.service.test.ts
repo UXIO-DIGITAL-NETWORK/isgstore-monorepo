@@ -90,31 +90,39 @@ describe("merchantService — services bought from kita", () => {
     expect(result.rows[0].code).toBe("digiflazz");
   });
 
-  it("requests a subscription, which issues an invoice", async () => {
+  /** The bill and its payment are opened in one request. */
+  it("requests a subscription, which issues an invoice with a payment", async () => {
     vi.mocked(api.post).mockResolvedValueOnce(
       envelope({ id: 9, invoice_number: "SINV-1", status: "UNPAID" }) as never,
     );
 
-    const invoice = await merchantService.subscribe({ service_id: 1 });
+    const invoice = await merchantService.subscribe({ service_id: 1, payment_channel_id: 3 });
 
-    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/service-invoices", { service_id: 1 });
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/service-invoices", {
+      service_id: 1,
+      payment_channel_id: 3,
+    });
     expect(invoice.status).toBe("UNPAID");
   });
 
-  /**
-   * Multipart, not JSON — the backend rule is `file`, so a JSON body would fail
-   * validation rather than upload.
-   */
-  it("uploads the bukti transfer as FormData", async () => {
-    vi.mocked(api.post).mockResolvedValueOnce(envelope({ id: 9, status: "WAITING_CONFIRMATION" }) as never);
+  /** A VA expires long before the bill does, so re-opening is the normal case. */
+  it("re-opens payment on an existing invoice", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(envelope({ id: 9, status: "UNPAID" }) as never);
 
-    const proof = new File(["proof"], "bukti.png", { type: "image/png" });
-    await merchantService.uploadProof(9, proof);
+    await merchantService.payInvoice(9, 2);
 
-    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/service-invoices/9/proof", expect.any(FormData));
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/service-invoices/9/pay", {
+      payment_channel_id: 2,
+    });
+  });
 
-    const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
-    expect(form.get("proof")).toBe(proof);
+  it("lists the methods a bill may be settled with", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope([{ id: 1, channel_code: "qris" }]) as never);
+
+    const channels = await merchantService.paymentChannels();
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/payment-channels");
+    expect(channels[0].channel_code).toBe("qris");
   });
 
   it("reads the service status page", async () => {

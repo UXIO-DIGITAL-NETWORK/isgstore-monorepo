@@ -98,6 +98,32 @@ Precedence when they conflict:
 - **TDD, always:** test cases → failing tests → implementation to green. Colocated `*.test.tsx`, Vitest + React Testing Library. Never loosen/delete a test to pass it.
 - TS strict, no `any`. Green (`tsc` + `lint` + `test`) before commit. Never `Read`/commit `.env*`.
 
+## Service billing
+
+A client pays a service bill through **Monetapay**, in the app — there is no
+bukti-transfer upload any more.
+
+- The checkout page picks a channel (`useServicePaymentChannels`) and posts
+  `service_id` + `payment_channel_id`; the bill and its payment open together.
+- `ServicePaymentCard` branches on which keys `payment.instructions` actually
+  carries — `qr_string`, `virtual_account`, `redirect_url` — not on
+  `payment.type`, so one card covers every method and an unfamiliar one degrades
+  instead of blanking.
+- `useMerchantServiceInvoice` polls every 5s while the invoice is `UNPAID` and
+  stops on the **server's** status. Never re-derive "settled" here; the webhook
+  decides it.
+- An attempt that lapses is not a dead end: the card swaps to the picker and
+  `usePayServiceInvoice` opens a fresh one. A VA expires in minutes, the bill in
+  days.
+- `adminFeeFor` (`features/merchant/lib/adminFee.ts`) mirrors the server's sum so
+  the total moves as methods are compared. The server recomputes on submit and
+  **its** figure is charged.
+- `formatCurrency` renders a non-finite value as `-`. That is a guard, not a fix:
+  a price showing `-` means the API stopped sending the field (a stale process
+  after a column rename, say) — restart it.
+
+`ImageDropzone` stays: the withdrawal flow still uploads proof.
+
 ## MCP (`.mcp.json`)
 
 `context7` (live TanStack/Tailwind v4/shadcn/Zod docs), `shadcn` (browse/install primitives), `chrome-devtools` (QA screenshots/console/perf), `figma` (pull frames/tokens from file `l7izBcDr0PtS2FUdMdHFk3` — Dashboard node `22011-2008`, components `22078-1614`).

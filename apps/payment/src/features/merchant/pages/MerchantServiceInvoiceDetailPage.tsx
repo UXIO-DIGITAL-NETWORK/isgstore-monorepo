@@ -1,7 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
-
 import { Box } from "@/components/common/Box";
-import { CopyButton } from "@/components/common/CopyButton";
 import { Heading } from "@/components/common/Heading";
 import { InstallationProgress } from "@/components/common/InstallationProgress";
 import { Link } from "@/components/common/Link";
@@ -13,8 +10,14 @@ import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 import type { ServiceInstallationDetail } from "@/types/service.type";
 
-import { UploadProofDialog } from "../components/UploadProofDialog";
-import { useMerchantInstallation, useMerchantServiceInvoice, useRevealDetail } from "../hooks/useMerchant";
+import { ServicePaymentCard } from "../components/ServicePaymentCard";
+import {
+  useMerchantInstallation,
+  useMerchantServiceInvoice,
+  usePayServiceInvoice,
+  useRevealDetail,
+  useServicePaymentChannels,
+} from "../hooks/useMerchant";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
@@ -23,15 +26,19 @@ interface MerchantServiceInvoiceDetailPageProps {
 }
 
 /**
- * Where a purchase lives after checkout: how to pay, proof of payment, and —
- * once kita confirms — the installation progress and the credentials handed
+ * Where a purchase lives after checkout: how to pay it through Monetapay and —
+ * once the payment lands — the installation progress and the credentials handed
  * over.
+ *
+ * The page polls itself while the bill is open, so a client watching it sees
+ * the subscription appear without refreshing.
  */
 export default function MerchantServiceInvoiceDetailPage({ invoiceId }: MerchantServiceInvoiceDetailPageProps) {
-  const navigate = useNavigate();
   const { data: invoice, isLoading, isError } = useMerchantServiceInvoice(invoiceId);
   const subscriptionId = invoice?.subscription?.id;
   const { data: installation, isLoading: loadingInstallation } = useMerchantInstallation(subscriptionId);
+  const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
+  const { mutate: reopenPayment, isPending: isReopening } = usePayServiceInvoice();
   const { mutateAsync: reveal } = useRevealDetail();
 
   if (isLoading) {
@@ -67,7 +74,9 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
   ];
 
   const isPaid = invoice.status === "PAID";
-  const canUpload = invoice.status === "UNPAID" || invoice.status === "REJECTED";
+  // Only an open bill is payable; a rejected or expired one is settled with
+  // kita, not with the gateway.
+  const isPayable = invoice.status === "UNPAID";
 
   return (
     <Box className="flex max-w-3xl flex-col gap-6">
@@ -108,66 +117,17 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
       </Box>
 
       {/* Once paid the instructions are noise, and leaving them up invites a
-          second transfer. */}
-      {!isPaid && invoice.transfer_instruction && (
-        <Box className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6">
-          <Heading level={3}>Instruksi Transfer</Heading>
-          <InstructionRow
-            label="Bank"
-            value={invoice.transfer_instruction.bank_name}
-          />
-          <InstructionRow
-            label="Nomor Rekening"
-            value={invoice.transfer_instruction.account_number}
-            copyable
-          />
-          <InstructionRow
-            label="Atas Nama"
-            value={invoice.transfer_instruction.account_holder}
-          />
-          <InstructionRow
-            label="Nominal"
-            value={String(invoice.amount)}
-            display={money(invoice.amount)}
-            copyable
-          />
-          <Text
-            variant="small"
-            className="text-muted-foreground"
-          >
-            {invoice.transfer_instruction.note}
-          </Text>
-        </Box>
+          second payment. */}
+      {isPayable && (
+        <ServicePaymentCard
+          payment={invoice.payment ?? null}
+          amount={invoice.amount}
+          channels={channels ?? []}
+          isLoadingChannels={loadingChannels}
+          isReopening={isReopening}
+          onReopen={(channel) => reopenPayment({ id: invoice.id, paymentChannelId: channel.id })}
+        />
       )}
-
-      <Box className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6">
-        <Heading level={3}>Bukti Transfer</Heading>
-        {invoice.proof_url ? (
-          <Link
-            href={invoice.proof_url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm underline"
-          >
-            Lihat bukti yang sudah diunggah
-          </Link>
-        ) : (
-          <Text
-            variant="small"
-            className="text-muted-foreground"
-          >
-            Belum ada bukti transfer.
-          </Text>
-        )}
-        {canUpload && (
-          <UploadProofDialog
-            invoice={invoice}
-            // Nothing more to do here until kita confirms, so land the client
-            // where the result of their upload is visible.
-            onUploaded={() => navigate({ to: "/app/payment-admin/services", search: { tab: "invoices" } })}
-          />
-        )}
-      </Box>
 
       {subscriptionId && (
         <>
@@ -195,44 +155,6 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
           </Box>
         </>
       )}
-    </Box>
-  );
-}
-
-function InstructionRow({
-  label,
-  value,
-  display,
-  copyable = false,
-}: {
-  label: string;
-  value: string;
-  display?: string;
-  copyable?: boolean;
-}) {
-  return (
-    <Box className="flex items-center justify-between gap-4">
-      <Text
-        as="span"
-        variant="small"
-        className="text-muted-foreground"
-      >
-        {label}
-      </Text>
-      <Box className="flex items-center gap-1">
-        <Text
-          as="span"
-          className="font-medium tabular-nums"
-        >
-          {display ?? value}
-        </Text>
-        {copyable && (
-          <CopyButton
-            value={value}
-            label={label}
-          />
-        )}
-      </Box>
     </Box>
   );
 }

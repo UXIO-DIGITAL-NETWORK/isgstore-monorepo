@@ -44,19 +44,10 @@ const columns: Column<ServiceInvoice>[] = [
   { key: "amount", header: "Nominal", className: "text-right tabular-nums", cell: (r) => money(r.amount) },
   { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
   {
-    key: "proof",
-    header: "Bukti",
+    key: "method",
+    header: "Metode",
     cell: (r) =>
-      r.proof_url ? (
-        <Link
-          href={r.proof_url}
-          target="_blank"
-          rel="noreferrer"
-          className="underline"
-        >
-          Lihat
-        </Link>
-      ) : (
+      r.payment?.channel ?? (
         <Text
           as="span"
           className="text-muted-foreground"

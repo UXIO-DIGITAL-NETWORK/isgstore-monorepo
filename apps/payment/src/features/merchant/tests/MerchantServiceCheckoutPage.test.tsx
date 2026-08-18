@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 
 import MerchantServiceCheckoutPage from "../pages/MerchantServiceCheckoutPage";
 import * as hooks from "../hooks/useMerchant";
-import type { ServiceCheckout } from "@/types/service.type";
+import type { ServiceCheckout, ServicePaymentChannel } from "@/types/service.type";
 
 const navigate = vi.fn();
 
@@ -40,6 +40,25 @@ const service = (over: Partial<ServiceCheckout> = {}): ServiceCheckout =>
 
 const subscribe = vi.fn();
 
+const channel = (over: Partial<ServicePaymentChannel> = {}): ServicePaymentChannel => ({
+  id: 1,
+  payment_type: "qris",
+  channel_code: "qris",
+  name: "QRIS",
+  logo_url: null,
+  description: null,
+  min_amount: 0,
+  fee_flat: 0,
+  fee_percent: 0,
+  sort_order: 0,
+  ...over,
+});
+
+const CHANNELS = [
+  channel(),
+  channel({ id: 2, payment_type: "virtual_account", channel_code: "bca_va", name: "BCA VA", fee_flat: 4000 }),
+];
+
 const mockService = (data: ServiceCheckout) =>
   vi.spyOn(hooks, "useMerchantServiceDetail").mockReturnValue({
     data,
@@ -53,6 +72,10 @@ beforeEach(() => {
     mutate: subscribe,
     isPending: false,
   } as unknown as ReturnType<typeof hooks.useSubscribeService>);
+  vi.spyOn(hooks, "useServicePaymentChannels").mockReturnValue({
+    data: CHANNELS,
+    isLoading: false,
+  } as unknown as ReturnType<typeof hooks.useServicePaymentChannels>);
 });
 
 const renderPage = () =>
@@ -69,23 +92,48 @@ describe("MerchantServiceCheckoutPage", () => {
     renderPage();
 
     expect(screen.getByText("Digiflazz")).toBeInTheDocument();
-    expect(screen.getByText("Rp 250.000")).toBeInTheDocument();
+    // Twice: the bill itself, and the total — no method picked, so no fee yet.
+    expect(screen.getAllByText("Rp 250.000")).toHaveLength(2);
     expect(screen.getByText("30 hari")).toBeInTheDocument();
     expect(screen.getByText("15 Aug 2026 – 14 Sep 2026")).toBeInTheDocument();
   });
 
-  it("creates the invoice with the typed note", async () => {
+  /** Paying is the whole point of the screen, so it must not start ambiguous. */
+  it("cannot be paid until a method is picked", () => {
+    mockService(service());
+    renderPage();
+
+    expect(screen.getByRole("button", { name: "Bayar Sekarang" })).toBeDisabled();
+  });
+
+  it("creates the invoice with the chosen method and the typed note", async () => {
     const user = userEvent.setup();
     mockService(service());
     renderPage();
 
     await user.type(screen.getByLabelText("Catatan (opsional)"), "Butuh instalasi cepat");
-    await user.click(screen.getByRole("button", { name: "Konfirmasi & Buat Invoice" }));
+    await user.click(screen.getByRole("button", { name: /QRIS/ }));
+    await user.click(screen.getByRole("button", { name: "Bayar Sekarang" }));
 
     expect(subscribe).toHaveBeenCalledWith(
-      { service_id: 1, notes: "Butuh instalasi cepat" },
+      { service_id: 1, payment_channel_id: 1, notes: "Butuh instalasi cepat" },
       expect.anything(),
     );
+  });
+
+  /**
+   * The fee differs per method and is what makes two otherwise identical
+   * options unequal, so the total has to follow the choice.
+   */
+  it("adds the chosen method's fee to the total", async () => {
+    const user = userEvent.setup();
+    mockService(service());
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: /BCA VA/ }));
+
+    expect(screen.getByText("Rp 4.000")).toBeInTheDocument();
+    expect(screen.getByText("Rp 254.000")).toBeInTheDocument();
   });
 
   /**
@@ -96,7 +144,7 @@ describe("MerchantServiceCheckoutPage", () => {
     mockService(service({ has_open_invoice: true, open_invoice_id: 41 }));
     renderPage();
 
-    expect(screen.queryByRole("button", { name: "Konfirmasi & Buat Invoice" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Bayar Sekarang" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Lihat Invoice/ })).toHaveAttribute(
       "href",
       "/app/payment-admin/service-invoices/41",

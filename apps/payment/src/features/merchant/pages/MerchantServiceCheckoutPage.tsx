@@ -9,10 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { ServicePaymentChannel } from "@/types/service.type";
 import { formatCurrency } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
 
-import { useMerchantServiceDetail, useSubscribeService } from "../hooks/useMerchant";
+import { PaymentChannelPicker } from "../components/PaymentChannelPicker";
+import { adminFeeFor } from "../lib/adminFee";
+import { useMerchantServiceDetail, useServicePaymentChannels, useSubscribeService } from "../hooks/useMerchant";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
@@ -22,16 +25,20 @@ interface MerchantServiceCheckoutPageProps {
 
 /**
  * What the client is about to buy, before they are committed to it: price,
- * period length, and the exact window confirmation will open.
+ * period length, how they will pay, and the exact window the payment will open.
  *
  * The window comes from the server, which applies the same renewal-stacking
- * rule the confirmation does — deriving it here would eventually disagree with
- * what the client actually gets.
+ * rule the activation does — deriving it here would eventually disagree with
+ * what the client actually gets. The admin fee is mirrored locally so the total
+ * updates as methods are compared, but the server recomputes it on submit and
+ * its figure is the one charged.
  */
 export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServiceCheckoutPageProps) {
   const [notes, setNotes] = useState("");
+  const [channel, setChannel] = useState<ServicePaymentChannel | null>(null);
   const navigate = useNavigate();
   const { data: service, isLoading, isError } = useMerchantServiceDetail(serviceId);
+  const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
   const { mutate: subscribe, isPending } = useSubscribeService();
 
   if (isLoading) {
@@ -53,9 +60,14 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
     );
   }
 
-  const confirm = () =>
+  const adminFee = adminFeeFor(channel, service.selling_price);
+  const total = service.selling_price + adminFee;
+
+  const pay = () => {
+    if (!channel) return;
+
     subscribe(
-      { service_id: service.id, notes: notes.trim() || undefined },
+      { service_id: service.id, payment_channel_id: channel.id, notes: notes.trim() || undefined },
       {
         onSuccess: (invoice) =>
           navigate({
@@ -64,6 +76,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
           }),
       },
     );
+  };
 
   return (
     <Box className="flex max-w-2xl flex-col gap-6">
@@ -132,6 +145,28 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
           </Text>
         )}
 
+        {!service.has_open_invoice && (
+          <Box className="flex flex-col gap-3 border-t border-border pt-4">
+            <Label>Metode Pembayaran</Label>
+            <PaymentChannelPicker
+              channels={channels ?? []}
+              selectedId={channel?.id ?? null}
+              onSelect={setChannel}
+              isLoading={loadingChannels}
+            />
+            <Box className="flex flex-col gap-2 border-t border-border pt-4">
+              <Row
+                label="Biaya Admin"
+                value={money(adminFee)}
+              />
+              <Row
+                label="Total"
+                value={money(total)}
+              />
+            </Box>
+          </Box>
+        )}
+
         <Box className="flex flex-col gap-1.5">
           <Label htmlFor="checkout-notes">Catatan (opsional)</Label>
           <Textarea
@@ -163,10 +198,10 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
         ) : (
           <Button
             className="w-full"
-            disabled={isPending}
-            onClick={confirm}
+            disabled={isPending || !channel}
+            onClick={pay}
           >
-            {isPending ? "Memproses…" : "Konfirmasi & Buat Invoice"}
+            {isPending ? "Memproses…" : "Bayar Sekarang"}
           </Button>
         )}
       </Box>
