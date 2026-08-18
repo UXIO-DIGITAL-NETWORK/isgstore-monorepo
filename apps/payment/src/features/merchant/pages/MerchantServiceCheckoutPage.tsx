@@ -110,7 +110,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
         <Box className="flex flex-col gap-2 border-t border-border pt-4">
           <Row
             label="Harga"
-            value={money(service.price)}
+            value={money(service.selling_price)}
           />
           <Row
             label="Masa aktif"

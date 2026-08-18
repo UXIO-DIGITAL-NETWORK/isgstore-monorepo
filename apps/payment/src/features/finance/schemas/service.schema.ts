@@ -12,7 +12,8 @@ export const serviceSchema = z.object({
   description: z.string().max(1000, "Deskripsi maksimal 1000 karakter").optional(),
   // Newline-separated in the textarea; split into the array the API wants.
   features: z.string().optional(),
-  price: z.number({ error: "Harga wajib diisi" }).int().min(0, "Harga tidak boleh negatif"),
+  cost_price: z.number({ error: "Harga modal wajib diisi" }).int().min(0, "Harga modal tidak boleh negatif"),
+  selling_price: z.number({ error: "Harga jual wajib diisi" }).int().min(0, "Harga jual tidak boleh negatif"),
   duration_days: z.number({ error: "Masa aktif wajib diisi" }).int().min(1, "Masa aktif minimal 1 hari"),
   is_active: z.boolean(),
 });

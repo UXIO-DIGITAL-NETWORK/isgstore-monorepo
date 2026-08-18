@@ -79,7 +79,7 @@ function CatalogCard({ service }: { service: Service }) {
         as="span"
         className="tabular-nums font-medium"
       >
-        {money(service.price)}{" "}
+        {money(service.selling_price)}{" "}
         <Text
           as="span"
           variant="small"

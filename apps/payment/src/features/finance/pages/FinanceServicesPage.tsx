@@ -51,7 +51,48 @@ export default function FinanceServicesPage() {
       // tone-mapped StatusBadge.
       cell: (r) => <Badge variant="secondary">{r.category_label}</Badge>,
     },
-    { key: "price", header: "Harga", className: "text-right tabular-nums", cell: (r) => money(r.price) },
+    {
+      key: "cost_price",
+      header: "Cost Price",
+      className: "text-right tabular-nums",
+      cell: (r) => money(r.cost_price ?? 0),
+    },
+    {
+      key: "selling_price",
+      header: "Selling Price",
+      className: "text-right tabular-nums",
+      cell: (r) => money(r.selling_price),
+    },
+    {
+      key: "margin",
+      header: "Margin",
+      className: "text-right tabular-nums",
+      // Gross margin: against the selling price, which is what the operator
+      // compares across services. Derived here rather than stored, so it can
+      // never disagree with the two numbers beside it.
+      cell: (r) => {
+        const margin = r.selling_price - (r.cost_price ?? 0);
+        const percent = r.selling_price > 0 ? (margin / r.selling_price) * 100 : 0;
+
+        return (
+          <Box className="flex flex-col items-end">
+            <Text
+              as="span"
+              className={margin < 0 ? "text-destructive" : undefined}
+            >
+              {money(margin)}
+            </Text>
+            <Text
+              as="span"
+              variant="small"
+              className="text-muted-foreground"
+            >
+              {percent.toFixed(1)}%
+            </Text>
+          </Box>
+        );
+      },
+    },
     {
       key: "duration",
       header: "Masa Aktif",
