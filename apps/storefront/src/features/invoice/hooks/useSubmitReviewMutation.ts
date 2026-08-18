@@ -1,31 +1,24 @@
-import { useMutation } from "@tanstack/react-query";
-import { api } from "@/config/axios";
-import { API_VERSION } from "@/config/env";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { invoiceService, type SubmitRatingPayload } from "@/features/invoice/services/invoice.service";
 import type { ApiResponse } from "@/types/api.type";
-
-interface SubmitReviewPayload {
-  invoiceNumber: string;
-  rating: number;
-  comment?: string;
-}
 
 /**
  * Post-purchase review.
  *
- * Keyed on the invoice number — the only order identifier the storefront holds.
- * Members submit through the auth-scoped `/me/...` path; guests (no token) use
- * the public path, where the API generates a "Guest <letter><digits>" author
- * name. Either way the name is resolved server-side, never sent from here.
+ * On success the game-review lists are invalidated by prefix: the modal knows
+ * the invoice number but not the game slug, and TanStack Query matches keys
+ * prefix-first, so `["checkout", "reviews"]` reaches `["checkout", "reviews",
+ * slug]` for every slug. Without it a customer submits a review and does not
+ * see it on the game page, which reads as a failed submit.
  */
-export const useSubmitReviewMutation = () =>
-  useMutation({
-    mutationFn: async ({ invoiceNumber, rating, comment }: SubmitReviewPayload): Promise<ApiResponse<null>> => {
-      const isGuest = !useAuthStore.getState().token;
-      const path = isGuest
-        ? `${API_VERSION}/transactions/${invoiceNumber}/rating`
-        : `${API_VERSION}/me/transactions/${invoiceNumber}/rating`;
+export const useSubmitReviewMutation = () => {
+  const queryClient = useQueryClient();
 
-      return await api.post(path, { rating, comment });
+  return useMutation({
+    mutationFn: (payload: SubmitRatingPayload): Promise<ApiResponse<null>> =>
+      invoiceService.submitRating(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["checkout", "reviews"] });
     },
   });
+};

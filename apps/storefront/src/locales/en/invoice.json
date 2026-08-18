@@ -53,7 +53,10 @@
     },
     "placeholder": "Write your top-up experience here...",
     "skip": "Skip",
-    "submit": "Submit Review"
+    "submit": "Submit Review",
+    "submitting": "Submitting...",
+    "thanks": "Thanks for your review",
+    "failed": "Failed to submit review."
   },
   "failed": {
     "heading": "PAYMENT FAILED",
