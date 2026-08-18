@@ -15,6 +15,16 @@ Schedule::command('payments:sync-expired')
     ->runInBackground()
     ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: payments:sync-expired'));
 
+// Same job for service bills, which own no `transactions` row and are
+// therefore invisible to the command above. Five minutes because the recovery
+// half matters: a client whose webhook was lost has genuinely paid and is
+// waiting for a subscription.
+Schedule::command('service-payments:sync-expired')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: service-payments:sync-expired'));
+
 // Price checker: updates supplier cost/availability + raises price change
 // alerts. No success/before Discord embeds — 288 runs/day would be spam.
 Schedule::command('digiflazz:check-prices --type=all')

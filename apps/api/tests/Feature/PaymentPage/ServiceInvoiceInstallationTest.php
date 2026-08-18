@@ -2,16 +2,14 @@
 
 namespace Tests\Feature\PaymentPage;
 
-use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Tests\Feature\PaymentPage\Concerns\PaysServiceInvoices;
 use Tests\TestCase;
 
 /**
@@ -20,32 +18,20 @@ use Tests\TestCase;
  */
 class ServiceInvoiceInstallationTest extends TestCase
 {
+    use PaysServiceInvoices;
     use RefreshDatabase;
 
-    private function internal(): User
+    protected function setUp(): void
     {
-        return User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Internal'])->id]);
+        parent::setUp();
+
+        $this->fakeGateway();
     }
 
-    private function merchant(): User
-    {
-        return User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id]);
-    }
-
-    /** Request + proof, deliberately NOT confirmed. */
+    /** A bill with its payment open, deliberately NOT settled. */
     private function subscribeAndUpload(User $merchant, Service $service): ServiceInvoice
     {
-        Storage::fake('public');
-        Sanctum::actingAs($merchant);
-
-        $id = $this->postJson('/api/v1/payment-admin/service-invoices', ['service_id' => $service->id])
-            ->assertCreated()->json('data.id');
-
-        $this->postJson("/api/v1/payment-admin/service-invoices/{$id}/proof", [
-            'proof' => UploadedFile::fake()->image('bukti.jpg'),
-        ])->assertOk();
-
-        return ServiceInvoice::findOrFail($id);
+        return $this->subscribe($merchant, $service);
     }
 
     private function schedule(ServiceInvoice $invoice, array $over = []): void

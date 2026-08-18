@@ -17,7 +17,6 @@ class ServiceInvoice extends Model
     protected $casts = [
         'status' => ServiceInvoiceStatus::class,
         'due_at' => 'datetime',
-        'proof_uploaded_at' => 'datetime',
         'verified_at' => 'datetime',
     ];
 
@@ -40,5 +39,22 @@ class ServiceInvoice extends Model
     public function subscription()
     {
         return $this->hasOne(ServiceSubscription::class);
+    }
+
+    /** Every Monetapay attempt made against this bill, newest last. */
+    public function payments()
+    {
+        return $this->hasMany(ServiceInvoicePayment::class);
+    }
+
+    /**
+     * The attempt the client is currently looking at.
+     *
+     * `latestOfMany` rather than "the PENDING one": once an attempt is paid or
+     * expired the invoice page still has to show which one it was.
+     */
+    public function latestPayment()
+    {
+        return $this->hasOne(ServiceInvoicePayment::class)->latestOfMany();
     }
 }

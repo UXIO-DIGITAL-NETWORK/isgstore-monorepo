@@ -15,7 +15,12 @@ use RuntimeException;
 /**
  * A client asks to subscribe to a service. This issues an UNPAID invoice and
  * nothing more — no ledger movement, no subscription row. The subscription only
- * comes into existence once kita confirms the bukti transfer.
+ * comes into existence once the payment is confirmed, by the Monetapay webhook
+ * or by a payment-internal user marking the bill paid.
+ *
+ * The caller opens the payment right after (`OpenServiceInvoicePaymentAction`);
+ * the two are separate because a bill outlives its payment — a virtual account
+ * expires in minutes while the invoice is due in days.
  */
 class SubscribeToServiceAction
 {

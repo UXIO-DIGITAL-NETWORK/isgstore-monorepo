@@ -107,9 +107,13 @@ class ServiceCheckoutTest extends TestCase
             ->assertJsonPath('data.open_invoice_id', $invoice->id);
     }
 
-    public function test_the_invoice_carries_transfer_instructions(): void
+    /**
+     * A bill exists before its payment does — an invoice whose gateway attempt
+     * failed to open, or one settled by hand, has nothing to show. The client
+     * must get an explicit null rather than a missing key.
+     */
+    public function test_an_invoice_without_a_payment_reports_none(): void
     {
-        config(['services.service_invoice.bank_name' => 'BCA']);
         $merchant = $this->merchant();
         $invoice = ServiceInvoice::factory()->create(['merchant_id' => $merchant->id]);
 
@@ -117,7 +121,6 @@ class ServiceCheckoutTest extends TestCase
 
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")
             ->assertOk()
-            ->assertJsonPath('data.transfer_instruction.bank_name', 'BCA')
-            ->assertJsonStructure(['data' => ['transfer_instruction' => ['bank_name', 'account_number', 'account_holder', 'note']]]);
+            ->assertJsonPath('data.payment', null);
     }
 }

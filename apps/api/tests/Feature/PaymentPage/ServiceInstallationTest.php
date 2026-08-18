@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\PaymentPage;
 
-use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceInstallation;
 use App\Models\ServiceInstallationStep;
@@ -10,42 +9,31 @@ use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Tests\Feature\PaymentPage\Concerns\PaysServiceInvoices;
 use Tests\TestCase;
 
 class ServiceInstallationTest extends TestCase
 {
+    use PaysServiceInvoices;
     use RefreshDatabase;
 
-    private function internal(): User
+    protected function setUp(): void
     {
-        return User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Internal'])->id]);
+        parent::setUp();
+
+        $this->fakeGateway();
     }
 
-    private function merchant(): User
-    {
-        return User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id]);
-    }
-
-    /** Drives one invoice through the real flow: request → proof → confirm. */
+    /** Drives one invoice through the real flow: request → payment → paid. */
     private function buyAndConfirm(User $merchant, Service $service): ServiceInvoice
     {
-        Storage::fake('public');
-
-        Sanctum::actingAs($merchant);
-        $id = $this->postJson('/api/v1/payment-admin/service-invoices', ['service_id' => $service->id])
-            ->assertCreated()->json('data.id');
-
-        $this->postJson("/api/v1/payment-admin/service-invoices/{$id}/proof", [
-            'proof' => UploadedFile::fake()->image('bukti.jpg'),
-        ])->assertOk();
+        $invoice = $this->subscribe($merchant, $service);
 
         Sanctum::actingAs($this->internal());
-        $this->postJson("/api/v1/payment-internal/service-invoices/{$id}/confirm")->assertOk();
+        $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
 
-        return ServiceInvoice::findOrFail($id);
+        return $invoice->fresh();
     }
 
     public function test_confirming_an_invoice_opens_exactly_one_installation(): void

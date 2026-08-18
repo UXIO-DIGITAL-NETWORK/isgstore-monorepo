@@ -9,6 +9,7 @@ readonly class SubscribeToServiceDTO
     public function __construct(
         public int $merchantId,
         public int $serviceId,
+        public int $paymentChannelId,
         public ?string $notes = null,
     ) {}
 
@@ -17,6 +18,7 @@ readonly class SubscribeToServiceDTO
         return new self(
             merchantId: $merchantId,
             serviceId: (int) $validated['service_id'],
+            paymentChannelId: (int) $validated['payment_channel_id'],
             notes: $validated['notes'] ?? null,
         );
     }

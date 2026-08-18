@@ -5,7 +5,6 @@ namespace App\Http\Resources\Api\Service;
 use App\Models\ServiceInvoice;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /** @mixin ServiceInvoice */
 class ServiceInvoiceResource extends JsonResource
@@ -32,16 +31,23 @@ class ServiceInvoiceResource extends JsonResource
             'status' => $this->status?->value,
             'due_at' => $this->due_at?->toIso8601String(),
             'notes' => $this->notes,
-            // Carried on every row rather than fetched separately: three static
-            // strings are cheaper than a second request and a conditional.
-            'transfer_instruction' => [
-                'bank_name' => config('services.service_invoice.bank_name'),
-                'account_number' => config('services.service_invoice.bank_account_number'),
-                'account_holder' => config('services.service_invoice.bank_account_holder'),
-                'note' => 'Transfer tepat sebesar nominal invoice, lalu unggah bukti transfer.',
-            ],
-            'proof_url' => $this->proof_path ? Storage::disk('public')->url($this->proof_path) : null,
-            'proof_uploaded_at' => $this->proof_uploaded_at?->toIso8601String(),
+            // The gateway attempt the client is looking at. Null until one is
+            // opened, and carried on the row so the invoice page needs no
+            // second request to know what to pay against.
+            'payment' => $this->whenLoaded('latestPayment', fn () => $this->latestPayment ? [
+                'channel' => $this->latestPayment->paymentChannel?->name,
+                'channel_code' => $this->latestPayment->paymentChannel?->channel_code,
+                'type' => $this->latestPayment->paymentChannel?->payment_type,
+                'amount' => (int) $this->latestPayment->amount,
+                'admin_fee' => (int) $this->latestPayment->admin_fee,
+                'total' => (int) $this->latestPayment->total,
+                'status' => $this->latestPayment->status,
+                // Server-declared, never re-derived on the client — the same
+                // window PaymentExpiry gives the storefront invoice page.
+                'expires_at' => $this->latestPayment->expiresAt()?->toIso8601String(),
+                'is_expired' => $this->latestPayment->status === 'PENDING' && $this->latestPayment->isExpired(),
+                'instructions' => $this->latestPayment->payment_data ?: null,
+            ] : null),
             'verified_at' => $this->verified_at?->toIso8601String(),
             'subscription' => $this->whenLoaded('subscription', fn () => $this->subscription ? [
                 'id' => $this->subscription->id,
