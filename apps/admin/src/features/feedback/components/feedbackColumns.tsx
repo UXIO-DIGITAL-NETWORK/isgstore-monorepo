@@ -6,13 +6,15 @@ import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/utils/date";
+import { FeedbackRowActions } from "./FeedbackRowActions";
 import type { Feedback } from "../types/feedback.type";
 
 /**
  * Columns for the admin Feedback list. The `No.` column is injected by the
- * shared `DataTable` (`showRowNumber`). Read-only — no action column.
+ * shared `DataTable` (`showRowNumber`). The only row action is delete —
+ * reviews are customer-authored and are never edited here.
  */
-export const feedbackColumns: ColumnDef<Feedback>[] = [
+export const feedbackColumns = (onDelete: (id: string) => void): ColumnDef<Feedback>[] => [
   {
     id: "reviewer",
     header: "Reviewer",
@@ -92,6 +94,16 @@ export const feedbackColumns: ColumnDef<Feedback>[] = [
       >
         {formatRelativeTime(row.original.createdAt)}
       </Text>
+    ),
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => (
+      <FeedbackRowActions
+        id={row.original.id}
+        label={row.original.reviewer}
+        onDelete={onDelete}
+      />
     ),
   },
 ];

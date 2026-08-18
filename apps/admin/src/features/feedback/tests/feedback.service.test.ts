@@ -74,3 +74,13 @@ describe("feedbackService.list", () => {
     });
   });
 });
+
+describe("feedbackService.remove", () => {
+  it("deletes the rating by id", async () => {
+    vi.mocked(api.delete).mockResolvedValue(undefined);
+
+    await feedbackService.remove("7");
+
+    expect(api.delete).toHaveBeenCalledWith("/v1/ratings/7");
+  });
+});

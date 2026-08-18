@@ -3,12 +3,15 @@ import { z } from "zod";
 const RESERVED_KEYS = ["whatsapp", "email"];
 
 // Image uploads (§4.5 Media/SEO), mirrors transactions' editTransaction.schema.
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+// WEBP is accepted because ImageDropzone re-encodes every pick to it before the
+// form ever sees the File — leaving it out would reject the browser's own
+// optimised output.
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB, per system_architecture.md §4.9
 
 const imageFileSchema = z
   .instanceof(File)
-  .refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type), "Only JPG, JPEG, or PNG files are allowed")
+  .refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type), "Only JPG, JPEG, PNG, or WEBP files are allowed")
   .refine((file) => file.size <= MAX_IMAGE_SIZE_BYTES, "File must be 10MB or smaller")
   .optional();
 
