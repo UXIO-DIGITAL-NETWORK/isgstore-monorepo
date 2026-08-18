@@ -5,8 +5,12 @@ import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type { Feedback, FeedbackListParams } from "../types/feedback.type";
 
 /**
- * Data layer for customer feedback (`GET /v1/ratings`). Read-only: reviews are
- * written by customers on the storefront, never from the admin.
+ * Data layer for customer feedback (`/v1/ratings`).
+ *
+ * Read and delete only. Reviews are written by customers on the storefront and
+ * are never authored or edited here — the API keeps `ratings` strictly
+ * purchase-linked, so admin-written text in this table would read as a verified
+ * purchase review. Removing spam or abuse is the one moderation action needed.
  */
 const BASE = `${API_VERSION}/ratings`;
 
@@ -38,5 +42,10 @@ export const feedbackService = {
   list: async (params: FeedbackListParams = {}): Promise<PaginatedResponse<Feedback>> => {
     const response: ApiResponse<PaginatedResponse<RatingApiRow>> = await api.get(BASE, { params });
     return unwrapPaginated(response, toFeedback);
+  },
+
+  /** Permanently removes one review. The API logs it to `activity_logs`. */
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`${BASE}/${id}`);
   },
 };
