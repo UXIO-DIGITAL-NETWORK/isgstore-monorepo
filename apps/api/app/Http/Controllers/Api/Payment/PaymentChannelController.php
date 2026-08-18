@@ -8,6 +8,7 @@ use App\DTOs\Log\CreateActivityLogDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Payment\PaymentChannelResource;
 use App\Models\PaymentChannel;
+use App\Services\ImageOptimizer;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,6 +26,8 @@ use Illuminate\Validation\Rule;
 class PaymentChannelController extends Controller
 {
     use ApiResponse;
+
+    public function __construct(private readonly ImageOptimizer $images) {}
 
     public function index(Request $request)
     {
@@ -126,7 +129,8 @@ class PaymentChannelController extends Controller
             if ($channel?->logo_path && Storage::disk('public')->exists($channel->logo_path)) {
                 Storage::disk('public')->delete($channel->logo_path);
             }
-            $validated['logo_path'] = $request->file('logo')->store('payment-channels', 'public');
+            // An SVG logo passes through the optimiser unconverted.
+            $validated['logo_path'] = $this->images->store($request->file('logo'), 'payment-channels');
         }
 
         return $validated;

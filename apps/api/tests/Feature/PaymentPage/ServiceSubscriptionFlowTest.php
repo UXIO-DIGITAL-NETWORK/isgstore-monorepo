@@ -53,7 +53,7 @@ class ServiceSubscriptionFlowTest extends TestCase
 
     public function test_subscribing_issues_an_unpaid_invoice(): void
     {
-        $service = Service::factory()->create(['price' => 250000, 'duration_days' => 30]);
+        $service = Service::factory()->create(['selling_price' => 250000, 'duration_days' => 30]);
         $merchant = $this->merchant();
         Sanctum::actingAs($merchant);
 

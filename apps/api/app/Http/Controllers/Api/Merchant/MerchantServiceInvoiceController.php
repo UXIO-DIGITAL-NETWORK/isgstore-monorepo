@@ -72,6 +72,8 @@ class MerchantServiceInvoiceController extends Controller
     {
         $this->assertOwned($request, $serviceInvoice);
 
+        // Payment proof is evidence: stored byte-for-byte, never re-encoded.
+        // See App\Services\ImageOptimizer — do not route this through it.
         $proofPath = $request->file('proof')->store('service-invoices/proofs', 'public');
 
         try {

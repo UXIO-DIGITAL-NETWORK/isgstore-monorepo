@@ -40,8 +40,11 @@ class FinanceWithdrawalController extends Controller
     {
         $method = $request->method();
 
-        // Store the bukti transfer (transfer receipt) on the public disk, same
-        // pattern as banner images. Only a manual payout carries one.
+        // Store the bukti transfer (transfer receipt) on the public disk. Only
+        // a manual payout carries one.
+        //
+        // Payment proof is evidence: stored byte-for-byte, never re-encoded.
+        // See App\Services\ImageOptimizer — do not route this through it.
         $proofPath = $request->hasFile('proof')
             ? $request->file('proof')->store('withdrawals/proofs', 'public')
             : null;

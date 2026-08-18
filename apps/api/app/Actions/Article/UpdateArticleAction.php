@@ -6,13 +6,17 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Article\UpdateArticleDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Article;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class UpdateArticleAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(Article $article, UpdateArticleDTO $dto): Article
     {
@@ -24,7 +28,7 @@ class UpdateArticleAction
             if ($imagePath && Storage::disk('public')->exists($imagePath)) {
                 Storage::disk('public')->delete($imagePath);
             }
-            $imagePath = $dto->imagePath->store('articles/images', 'public');
+            $imagePath = $this->images->store($dto->imagePath, 'articles/images');
         }
 
         $article->update([

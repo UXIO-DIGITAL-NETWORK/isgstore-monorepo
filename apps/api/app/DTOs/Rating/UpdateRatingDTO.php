@@ -6,7 +6,8 @@ readonly class UpdateRatingDTO
 {
     public function __construct(
         public int $transactionId,
-        public int $userId,
-        public int $rating
+        public ?int $userId,
+        public int $rating,
+        public ?string $comment
     ) {}
 }

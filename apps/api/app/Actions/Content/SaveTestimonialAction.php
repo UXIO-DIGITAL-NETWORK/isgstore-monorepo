@@ -6,13 +6,17 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Content\TestimonialDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Testimonial;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class SaveTestimonialAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(TestimonialDTO $dto, ?Testimonial $testimonial = null): Testimonial
     {
@@ -23,7 +27,7 @@ class SaveTestimonialAction
             if ($avatarPath && Storage::disk('public')->exists($avatarPath)) {
                 Storage::disk('public')->delete($avatarPath);
             }
-            $avatarPath = $dto->avatarPath->store('testimonials/avatars', 'public');
+            $avatarPath = $this->images->store($dto->avatarPath, 'testimonials/avatars');
         }
 
         $attributes = [

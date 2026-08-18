@@ -23,6 +23,10 @@ class Service extends Model
         'category' => ServiceCategory::class,
         'features' => 'array',
         'is_active' => 'boolean',
+        // Integer rupiah. Cast here rather than at each call site, so a new
+        // consumer cannot pick up the raw PDO string.
+        'cost_price' => 'integer',
+        'selling_price' => 'integer',
     ];
 
     public function paymentChannel()

@@ -14,10 +14,13 @@ class UpdateRatingAction
 
     public function execute(Rating $ratingRecord, UpdateRatingDTO $dto): Rating
     {
+        // PUT semantics: the request carries the whole record, so an omitted
+        // comment clears it rather than silently keeping the old text.
         $ratingRecord->update([
             'transaction_id' => $dto->transactionId,
             'user_id' => $dto->userId,
             'rating' => $dto->rating,
+            'comment' => $dto->comment,
         ]);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(

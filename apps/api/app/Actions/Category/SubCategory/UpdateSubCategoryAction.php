@@ -6,13 +6,17 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Category\SubCategory\UpdateSubCategoryDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\SubCategory;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Auth; // Tambahkan facade Storage
+use App\Services\ImageOptimizer;
+use Illuminate\Http\UploadedFile; // Tambahkan facade Storage
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class UpdateSubCategoryAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private ImageOptimizer $images,
+    ) {}
 
     public function execute(SubCategory $subCategory, UpdateSubCategoryDTO $dto): SubCategory
     {
@@ -25,7 +29,7 @@ class UpdateSubCategoryAction
                 Storage::disk('public')->delete($logoPath);
             }
             // Simpan logo baru
-            $logoPath = $dto->logo->store('subcategories/logos', 'public');
+            $logoPath = $this->images->store($dto->logo, 'subcategories/logos');
         }
 
         $subCategory->update([

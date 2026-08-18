@@ -50,7 +50,7 @@ class SubscribeToServiceAction
                 'service_id' => $service->id,
                 // Snapshot: the catalogue may be repriced before this is paid.
                 'service_name' => $service->name,
-                'amount' => (int) $service->price,
+                'amount' => (int) $service->selling_price,
                 'duration_days' => (int) $service->duration_days,
                 'status' => ServiceInvoiceStatus::UNPAID,
                 'due_at' => now()->addDays((int) config('services.service_invoice.due_days', 3)),

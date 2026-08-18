@@ -32,7 +32,8 @@ class ServiceCatalogTest extends TestCase
             'category' => 'communication',
             'description' => 'Notifikasi WhatsApp',
             'features' => ['Blast pesan'],
-            'price' => 300000,
+            'cost_price' => 200000,
+            'selling_price' => 300000,
             'duration_days' => 30,
         ], $over);
     }
@@ -44,11 +45,12 @@ class ServiceCatalogTest extends TestCase
         $this->postJson('/api/v1/payment-internal/services', $this->payload())
             ->assertCreated()
             ->assertJsonPath('data.code', 'whatsapp-api')
-            ->assertJsonPath('data.price', 300000)
+            ->assertJsonPath('data.cost_price', 200000)
+            ->assertJsonPath('data.selling_price', 300000)
             ->assertJsonPath('data.duration_days', 30)
             ->assertJsonPath('data.category_label', 'Komunikasi');
 
-        $this->assertDatabaseHas('services', ['code' => 'whatsapp-api', 'price' => 300000]);
+        $this->assertDatabaseHas('services', ['code' => 'whatsapp-api', 'cost_price' => 200000, 'selling_price' => 300000]);
     }
 
     public function test_service_code_must_be_unique(): void
@@ -63,13 +65,46 @@ class ServiceCatalogTest extends TestCase
 
     public function test_internal_updates_price_and_period(): void
     {
-        $service = Service::factory()->create(['price' => 100000, 'duration_days' => 30]);
+        $service = Service::factory()->create([
+            'cost_price' => 80000,
+            'selling_price' => 100000,
+            'duration_days' => 30,
+        ]);
         Sanctum::actingAs($this->internal());
 
-        $this->putJson("/api/v1/payment-internal/services/{$service->id}", ['price' => 150000, 'duration_days' => 60])
+        $this->putJson("/api/v1/payment-internal/services/{$service->id}", [
+            'cost_price' => 90000,
+            'selling_price' => 150000,
+            'duration_days' => 60,
+        ])
             ->assertOk()
-            ->assertJsonPath('data.price', 150000)
+            ->assertJsonPath('data.cost_price', 90000)
+            ->assertJsonPath('data.selling_price', 150000)
             ->assertJsonPath('data.duration_days', 60);
+    }
+
+    /**
+     * What a service costs kita must never reach a client. The internal list and
+     * the merchant catalogue share one ServiceResource, so this is the only
+     * thing standing between the two audiences.
+     */
+    public function test_cost_price_is_internal_only(): void
+    {
+        Service::factory()->create(['code' => 'digiflazz', 'cost_price' => 180000, 'selling_price' => 250000]);
+
+        Sanctum::actingAs($this->internal());
+        $this->getJson('/api/v1/payment-internal/services')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.cost_price', 180000)
+            ->assertJsonPath('data.data.0.selling_price', 250000);
+
+        Sanctum::actingAs($this->merchant());
+        $row = $this->getJson('/api/v1/payment-admin/services')
+            ->assertOk()
+            ->json('data.data.0');
+
+        $this->assertSame(250000, $row['selling_price']);
+        $this->assertArrayNotHasKey('cost_price', $row);
     }
 
     /**

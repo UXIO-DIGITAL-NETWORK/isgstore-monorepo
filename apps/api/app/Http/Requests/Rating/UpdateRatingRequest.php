@@ -25,17 +25,25 @@ class UpdateRatingRequest extends FormRequest
     {
         return [
             'transaction_id' => ['required', 'exists:transactions,id'],
-            'user_id' => ['required', 'exists:users,id'],
+            // Nullable since ratings.user_id became nullable for guest reviews —
+            // requiring it here made every guest review uneditable.
+            'user_id' => ['nullable', 'exists:users,id'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            // Same ceiling the storefront submit paths validate against.
+            'comment' => ['nullable', 'string', 'max:1000'],
         ];
     }
 
     public function toDTO(): UpdateRatingDTO
     {
+        $userId = $this->validated('user_id');
+        $comment = $this->validated('comment');
+
         return new UpdateRatingDTO(
             transactionId: (int) $this->validated('transaction_id'),
-            userId: (int) $this->validated('user_id'),
-            rating: (int) $this->validated('rating')
+            userId: $userId === null ? null : (int) $userId,
+            rating: (int) $this->validated('rating'),
+            comment: $comment === null ? null : (string) $comment
         );
     }
 }

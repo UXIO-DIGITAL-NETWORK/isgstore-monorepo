@@ -18,7 +18,9 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: sqlite3, pdo_sqlite
+          # gd + exif back App\Services\ImageOptimizer: uploads are re-encoded to WebP,
+          # and UploadedFile::fake()->image() in the suite needs GD to exist.
+          extensions: sqlite3, pdo_sqlite, gd, exif
           coverage: none
 
       - name: Install dependencies

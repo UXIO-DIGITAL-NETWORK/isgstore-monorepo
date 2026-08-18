@@ -9,12 +9,16 @@ use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Member\UpdateProfileDTO;
 use App\Enums\ActivityType;
 use App\Models\User;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class UpdateProfileAction
 {
-    public function __construct(private readonly CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private readonly CreateActivityLogAction $activityLogAction,
+        private readonly ImageOptimizer $images,
+    ) {}
 
     public function execute(User $user, UpdateProfileDTO $dto): User
     {
@@ -51,6 +55,6 @@ class UpdateProfileAction
             Storage::disk('public')->delete($user->avatar);
         }
 
-        return $avatar->store('avatars', 'public');
+        return $this->images->store($avatar, 'avatars');
     }
 }

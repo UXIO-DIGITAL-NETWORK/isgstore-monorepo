@@ -162,7 +162,7 @@ class PaymentPageDemoSeeder extends Seeder
             'merchant_id' => $merchant->id,
             'service_id' => $service->id,
             'service_name' => $service->name,
-            'amount' => (int) $service->price,
+            'amount' => (int) $service->selling_price,
             'duration_days' => (int) $service->duration_days,
             'status' => $status,
             'due_at' => $createdAt->copy()->addDays(3),
