@@ -5,6 +5,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { compressImage } from "@/lib/imageCompression";
 import { cn } from "@/lib/utils";
 
 // Started as a categories-local copy of the transactions "Invoice Proof"
@@ -12,8 +13,8 @@ import { cn } from "@/lib/utils";
 // became the second feature to need one, exactly as that note prescribed.
 // ponytail: transactions still has its own inline copy — fold it in the next
 // time that form is touched, not as drive-by churn now.
-const DEFAULT_ACCEPT = "image/jpeg,image/jpg,image/png";
-const DEFAULT_FORMATS_LABEL = "JPG, JPEG, PNG up to 10mb";
+const DEFAULT_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
+const DEFAULT_FORMATS_LABEL = "JPG, JPEG, PNG, WEBP — optimised automatically";
 
 interface ImageDropzoneProps {
   id: string;
@@ -39,11 +40,23 @@ export function ImageDropzone({
   formatsLabel = DEFAULT_FORMATS_LABEL,
 }: ImageDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
+  const [optimising, setOptimising] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = (files: FileList | null) => {
+  // Every image is re-encoded to WebP before it leaves the browser. The API
+  // converts anyway, so a failure here costs bandwidth, never the upload —
+  // compressImage returns the original file rather than throwing.
+  const handleFiles = async (files: FileList | null) => {
     const file = files?.[0];
-    if (file) onChange(file);
+    if (!file) return;
+
+    setOptimising(true);
+
+    try {
+      onChange(await compressImage(file));
+    } finally {
+      setOptimising(false);
+    }
   };
 
   return (
@@ -58,7 +71,7 @@ export function ImageDropzone({
         onDrop={(event) => {
           event.preventDefault();
           setDragActive(false);
-          handleFiles(event.dataTransfer.files);
+          void handleFiles(event.dataTransfer.files);
         }}
         className={cn(
           "flex flex-col items-center gap-2 rounded-xl border border-dashed border-input p-6 text-center",
@@ -77,7 +90,7 @@ export function ImageDropzone({
           type="file"
           accept={accept}
           className="hidden"
-          onChange={(event) => handleFiles(event.target.files)}
+          onChange={(event) => void handleFiles(event.target.files)}
         />
         <Button
           type="button"
@@ -85,10 +98,15 @@ export function ImageDropzone({
           size="sm"
           className="rounded-xl"
           onClick={() => fileInputRef.current?.click()}
+          disabled={optimising}
         >
           Browse files
         </Button>
-        {value && <Text variant="small">{value.name}</Text>}
+        {optimising ? (
+          <Text variant="small">Optimising image…</Text>
+        ) : (
+          value && <Text variant="small">{value.name}</Text>
+        )}
       </Box>
       <Text variant="small">{caption}</Text>
       {error && (

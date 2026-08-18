@@ -77,6 +77,21 @@ Precedence when they conflict:
 
 A `PostToolUse` hook (`.claude/hooks/format.sh`) prettier-formats every `Edit`/`Write` on `.ts/.tsx/.css/.json`.
 
+## Image uploads
+
+`ImageDropzone` re-encodes every picked image to WebP (`src/lib/imageCompression.ts`: quality 0.82, longest
+edge 1920px, EXIF rotation baked in) before the form ever sees the `File`. Three consequences worth knowing:
+
+- **Any zod schema validating an image must accept `image/webp`** — otherwise it rejects the browser's own
+  optimised output. It also means a size limit is checked against the compressed file, not the camera original.
+- **`compressImage` never throws.** SVG/ICO/PDF, animated GIFs, already-small WebP, a browser without WebP
+  encoding, and a result that came out bigger all return the input file untouched.
+- **Payment proof is not compressed** (`EditTransactionForm`) — proof is evidence and is uploaded exactly as
+  submitted. The API excludes those endpoints from conversion for the same reason.
+
+The API converts everything it receives anyway (`App\Services\ImageOptimizer`); this is the shortcut, not the
+guarantee.
+
 ## Definition of Done
 
 See `system_architecture.md §9` and `.agents/workflows/qa.md`. A feature is done only when it's built **TDD-first** with `npm run test` passing, isolated, tokens-only, both-theme correct, Figma-reconciled, type/lint-clean, `<Can>`-gated where privileged, tables have loading/empty/error states, and it carries a `logs/feature-changes/` entry.
