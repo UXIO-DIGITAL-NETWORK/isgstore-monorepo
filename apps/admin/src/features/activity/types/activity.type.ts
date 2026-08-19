@@ -4,7 +4,14 @@
  * is `"System"` when no user is attached, and `type` is null for legacy rows
  * written before the classification column existed.
  */
-export type ActivityType = "login" | "membership" | "transaction" | "security" | "verification" | "failed";
+export type ActivityType =
+  | "login"
+  | "membership"
+  | "transaction"
+  | "data"
+  | "security"
+  | "verification"
+  | "failed";
 
 export interface ActivityLog {
   /** Normalized to a string for `DataTable`/column keys via `toRowId`. */

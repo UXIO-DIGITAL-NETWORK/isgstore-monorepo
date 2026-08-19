@@ -11,6 +11,7 @@ const TYPE_LABEL: Record<ActivityType, string> = {
   login: "Login",
   membership: "Membership",
   transaction: "Transaction",
+  data: "Perubahan Data",
   security: "Security",
   verification: "Verification",
   failed: "Failed",
