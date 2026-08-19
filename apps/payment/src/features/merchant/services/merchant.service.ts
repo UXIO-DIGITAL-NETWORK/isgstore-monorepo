@@ -17,6 +17,18 @@ import type {
 
 const BASE = `${API_VERSION}/payment-admin`;
 
+/** A row from the public storefront `payment-channels` endpoint. */
+interface StorefrontPaymentChannel {
+  id: number;
+  name: string;
+  channel_code: string;
+  payment_type: string;
+  fee_flat: number;
+  fee_percent: number;
+  min_amount: number;
+  balance: number | null;
+}
+
 export const merchantService = {
   dashboard: async (): Promise<MerchantDashboard> => {
     const res: ApiResponse<MerchantDashboard> = await api.get(`${BASE}/dashboard`);
@@ -70,10 +82,35 @@ export const merchantService = {
     return unwrapList<ServiceInvoice>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
-  /** The methods a client may settle a bill with — gateway only, no wallet. */
+  /**
+   * The methods a client may settle a bill with — gateway only, no wallet.
+   *
+   * Reuses the public storefront endpoint (same one web-topup-fe calls) so the
+   * payment page works against the deployed backend. That endpoint nests the
+   * list under `data.channels` and — because our caller is authenticated —
+   * includes the `balance` wallet, which cannot pay a service bill, so it is
+   * dropped here. The storefront row omits logo/description/sort_order, none of
+   * which the payment-page picker uses.
+   */
   paymentChannels: async (): Promise<ServicePaymentChannel[]> => {
-    const res: ApiResponse<ServicePaymentChannel[]> = await api.get(`${BASE}/payment-channels`);
-    return res.data;
+    const res: ApiResponse<{ channels: StorefrontPaymentChannel[] }> = await api.get(
+      `${API_VERSION}/storefront/payment-channels`,
+    );
+
+    return (res.data.channels ?? [])
+      .filter((channel) => channel.channel_code !== "balance")
+      .map((channel) => ({
+        id: channel.id,
+        payment_type: channel.payment_type,
+        channel_code: channel.channel_code,
+        name: channel.name,
+        logo_url: null,
+        description: null,
+        min_amount: channel.min_amount,
+        fee_flat: channel.fee_flat,
+        fee_percent: channel.fee_percent,
+        sort_order: 0,
+      }));
   },
 
   /** Issues the bill and opens its payment in one step. */
