@@ -17,6 +17,8 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // NOTE: the balance column below is the intended per-user starting saldo,
+        // but every account is seeded with balance 0 for now (see the insert).
         $users = [
             // role, name, username, email, phone, balance
             [RoleType::ADMIN, 'Super Admin', 'superadmin', 'admin@example.com', '6281200000001', 9999999],
@@ -40,7 +42,9 @@ class UserSeeder extends Seeder
                     'avatar' => null,
                     'password' => Hash::make('password'),
                     'phone' => $phone,
-                    'balance' => $balance,
+                    // Temporarily 0 for every user; swap back to `$balance` to
+                    // restore the intended saldo listed in $users above.
+                    'balance' => 0,
                     'point' => 0,
                     'status' => 'active',
                     'locale' => 'id',
