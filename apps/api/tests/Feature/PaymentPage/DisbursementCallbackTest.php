@@ -130,13 +130,13 @@ class DisbursementCallbackTest extends TestCase
         $this->sendCallback($this->signedPayload($withdrawal->withdrawal_number, '1'))->assertOk();
 
         $this->assertSame('SETTLED', $withdrawal->fresh()->status->value);
-        // fee = 1500 + round(100000 * 0.11) = 12500, booked exactly once.
+        // fee = 1500 + round(1500 * 0.11) = 1665 (flat), booked exactly once.
         $this->assertSame(1, PlatformMutation::where('type', 'withdrawal_fee')
             ->where('reference', $withdrawal->withdrawal_number)->count());
         $this->assertDatabaseHas('platform_mutations', [
             'type' => 'withdrawal_fee',
             'reference' => $withdrawal->withdrawal_number,
-            'amount' => 12500,
+            'amount' => 1665,
         ]);
         // Settled means paid out — the hold is not refunded.
         $this->assertSame(0, (int) $withdrawal->merchant->fresh()->balance);

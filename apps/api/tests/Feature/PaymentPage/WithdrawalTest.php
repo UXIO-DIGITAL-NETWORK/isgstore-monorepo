@@ -21,7 +21,8 @@ class WithdrawalTest extends TestCase
         parent::setUp();
 
         // Pin the fee schedule so the assertions don't depend on env overrides:
-        // fee = 1500 + 11% of amount, minimum request 10.000.
+        // fee = 1500 + 11% of the flat 1500 = 1665 (flat, amount-independent),
+        // minimum request 10.000.
         config([
             'services.withdrawal.fee_flat' => 1500,
             'services.withdrawal.fee_percent' => 11,
@@ -60,11 +61,11 @@ class WithdrawalTest extends TestCase
 
         $response = $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000));
 
-        // fee = 1500 + round(40000 * 0.11) = 1500 + 4400 = 5900; nett = 34100.
+        // fee = 1500 + round(1500 * 0.11) = 1500 + 165 = 1665 (flat); nett = 40000 - 1665 = 38335.
         $response->assertCreated()
             ->assertJsonPath('data.status', 'PENDING')
-            ->assertJsonPath('data.fee', 5900)
-            ->assertJsonPath('data.nett', 34100);
+            ->assertJsonPath('data.fee', 1665)
+            ->assertJsonPath('data.nett', 38335);
 
         // The hold debits the full requested amount immediately (not the nett).
         $this->assertSame(60000, (int) $merchant->fresh()->balance);
@@ -75,16 +76,23 @@ class WithdrawalTest extends TestCase
         ]);
     }
 
-    public function test_fee_is_flat_plus_eleven_percent(): void
+    public function test_fee_is_a_flat_1665_regardless_of_amount(): void
     {
-        $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
-
-        // fee = 1500 + round(100000 * 0.11) = 1500 + 11000 = 12500; nett = 87500.
+        // fee = 1500 + round(1500 * 0.11) = 1500 + 165 = 1665, the same for
+        // every amount (the 11% is taken on the flat, not the withdrawal amount).
+        $big = $this->merchant(500000);
+        Sanctum::actingAs($big);
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(100000))
             ->assertCreated()
-            ->assertJsonPath('data.fee', 12500)
-            ->assertJsonPath('data.nett', 87500);
+            ->assertJsonPath('data.fee', 1665)
+            ->assertJsonPath('data.nett', 98335); // 100000 - 1665
+
+        $small = $this->merchant(500000);
+        Sanctum::actingAs($small);
+        $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(20000))
+            ->assertCreated()
+            ->assertJsonPath('data.fee', 1665) // identical fee on a different amount
+            ->assertJsonPath('data.nett', 18335); // 20000 - 1665
     }
 
     public function test_request_below_minimum_is_rejected(): void

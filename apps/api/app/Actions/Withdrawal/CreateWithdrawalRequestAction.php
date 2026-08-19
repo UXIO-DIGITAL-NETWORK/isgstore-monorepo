@@ -21,15 +21,17 @@ use RuntimeException;
  * hold becomes a real transfer) or rejects (the hold is credited back).
  *
  * `fee` is kita's withdraw markup; `nett` = amount − fee is what reaches the
- * merchant. The fee schedule is a flat + percent read from config for now;
- * Phase 2's admin-fee settings will drive it.
+ * merchant. The fee is a flat charge: `fee_flat + fee_percent% of fee_flat`
+ * (1500 + 11% × 1500 = 1665 with the defaults), the same for every withdrawal
+ * regardless of amount. Read from config for now; Phase 2's admin-fee settings
+ * will drive it.
  */
 class CreateWithdrawalRequestAction
 {
     public function execute(CreateWithdrawalDTO $dto): Withdrawal
     {
         return DB::transaction(function () use ($dto) {
-            $fee = $this->resolveFee($dto->amount);
+            $fee = $this->resolveFee();
             $nett = $dto->amount - $fee;
 
             // Defensive floor behind StoreWithdrawalRequest's min_amount rule: a
@@ -65,11 +67,15 @@ class CreateWithdrawalRequestAction
         });
     }
 
-    private function resolveFee(int $amount): int
+    /**
+     * Flat withdrawal fee, independent of the amount:
+     * fee_flat + fee_percent% of fee_flat (1500 + 11% × 1500 = 1665).
+     */
+    private function resolveFee(): int
     {
         $flat = (int) config('services.withdrawal.fee_flat', 0);
         $percent = (float) config('services.withdrawal.fee_percent', 0);
 
-        return $flat + (int) round($amount * ($percent / 100));
+        return $flat + (int) round($flat * ($percent / 100));
     }
 }

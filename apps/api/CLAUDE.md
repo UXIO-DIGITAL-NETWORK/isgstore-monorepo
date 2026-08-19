@@ -125,11 +125,11 @@ Two-stage: a merchant (`payment-admin`) requests a payout; kita (`payment-intern
 approves it. `CreateWithdrawalRequestAction` holds the full `amount` via `WalletLedger`
 at request time and freezes `fee`/`nett`.
 
-- **Fee** = `services.withdrawal.fee_flat + round(amount * fee_percent/100)` (default
-  `1500 + 11%`), `nett = amount - fee` (the merchant is disbursed `nett`; `fee` is kita's
-  markup booked to the platform ledger on final success). `services.withdrawal.min_amount`
-  (default 10.000) floors the request so `nett` stays positive — enforced by
-  `StoreWithdrawalRequest` and re-guarded in the action.
+- **Fee** = `services.withdrawal.fee_flat + round(fee_flat * fee_percent/100)` — a flat
+  charge, **amount-independent** (default `1500 + 11% of 1500 = 1665`). `nett = amount - fee`
+  (the merchant is disbursed `nett`; `fee` is kita's markup booked to the platform ledger on
+  final success). `services.withdrawal.min_amount` (default 10.000) floors the request so
+  `nett` stays positive — enforced by `StoreWithdrawalRequest` and re-guarded in the action.
 - **Approve `manual`** → `SETTLED` immediately, fee booked (`WithdrawalFeeLedger::credit`).
 - **Approve `monetapay`** → `ProcessWithdrawalPayoutJob` calls `createDisbursement`. A
   successful create only *accepts* the payout (create-response `status:0` = Processing), so
