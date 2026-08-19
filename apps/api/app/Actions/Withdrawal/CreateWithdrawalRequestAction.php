@@ -10,6 +10,7 @@ use App\Models\Withdrawal;
 use App\Support\Wallet\WalletLedger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * A merchant ("client") requests a payout from its wallet balance.
@@ -30,6 +31,12 @@ class CreateWithdrawalRequestAction
         return DB::transaction(function () use ($dto) {
             $fee = $this->resolveFee($dto->amount);
             $nett = $dto->amount - $fee;
+
+            // Defensive floor behind StoreWithdrawalRequest's min_amount rule: a
+            // payout must deliver something. Controller maps this to a 422.
+            if ($nett <= 0) {
+                throw new RuntimeException('Nominal penarikan terlalu kecil untuk menutup biaya.');
+            }
 
             $number = 'WD-'.Str::lower(Str::random(12));
 

@@ -98,4 +98,17 @@ return [
         // retuned without a migration.
         'due_days' => env('SERVICE_INVOICE_DUE_DAYS', 3),
     ],
+
+    'withdrawal' => [
+        // Kita's withdraw fee, charged on every payout. Read by
+        // CreateWithdrawalRequestAction::resolveFee() as `flat + round(amount *
+        // percent / 100)`; the merchant is disbursed `nett = amount - fee`.
+        // Config (not a column) so the schedule can change without a migration.
+        'fee_flat' => (int) env('WITHDRAWAL_FEE_FLAT', 1500),
+        'fee_percent' => (float) env('WITHDRAWAL_FEE_PERCENT', 11),
+        // Floor on the requested amount. Must exceed the fee so `nett` stays
+        // positive (Rp 1.000 would otherwise net -610) and clear the gateway's
+        // minimum payout. StoreWithdrawalRequest enforces it.
+        'min_amount' => (int) env('WITHDRAWAL_MIN_AMOUNT', 10000),
+    ],
 ];
