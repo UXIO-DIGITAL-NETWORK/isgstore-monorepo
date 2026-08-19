@@ -116,13 +116,24 @@ describe("merchantService — services bought from kita", () => {
     });
   });
 
-  it("lists the methods a bill may be settled with", async () => {
-    vi.mocked(api.get).mockResolvedValueOnce(envelope([{ id: 1, channel_code: "qris" }]) as never);
+  it("lists the methods a bill may be settled with from the storefront endpoint, minus the wallet", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(
+      envelope({
+        channels: [
+          { id: 1, name: "QRIS", channel_code: "qris", payment_type: "qris", fee_flat: 0, fee_percent: 0.7, min_amount: 0, balance: null },
+          { id: 9, name: "Saldo", channel_code: "balance", payment_type: "balance", fee_flat: 0, fee_percent: 0, min_amount: 0, balance: 60000 },
+        ],
+      }) as never,
+    );
 
     const channels = await merchantService.paymentChannels();
 
-    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/payment-channels");
+    // Reuses the storefront endpoint, unwraps `data.channels`.
+    expect(api.get).toHaveBeenCalledWith("/v1/storefront/payment-channels");
+    // The wallet can't pay a service bill, so it is dropped.
+    expect(channels).toHaveLength(1);
     expect(channels[0].channel_code).toBe("qris");
+    expect(channels.some((c) => c.channel_code === "balance")).toBe(false);
   });
 
   it("reads the service status page", async () => {
