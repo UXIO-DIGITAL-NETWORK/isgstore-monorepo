@@ -11,6 +11,11 @@ class Supplier extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'status' => 'boolean',
+        'is_system' => 'boolean',
+    ];
+
     public function categories()
     {
         return $this->hasMany(SupplierCategory::class);

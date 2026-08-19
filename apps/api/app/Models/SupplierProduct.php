@@ -13,6 +13,11 @@ class SupplierProduct extends Model
 
     protected $casts = [
         'sync_deactivated_at' => 'datetime',
+        'is_price_locked' => 'boolean',
+        'margin_member' => 'float',
+        'margin_vip' => 'float',
+        'margin_reseller' => 'float',
+        'margin_agent' => 'float',
     ];
 
     public function product()

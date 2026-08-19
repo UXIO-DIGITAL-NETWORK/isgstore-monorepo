@@ -378,17 +378,32 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::prefix('products')->group(function () {
         Route::get('/', [ProductController::class, 'index']);
         Route::post('/', [ProductController::class, 'store']);
+        // Bulk routes precede the {product} binding so "bulk" is never a model key.
+        Route::post('/bulk-create', [ProductController::class, 'bulkCreate']);
+        Route::post('/bulk/lock-price', [ProductController::class, 'bulkLockPrice']);
+        Route::post('/bulk/show-price', [ProductController::class, 'bulkShowPrice']);
+        Route::post('/bulk/deactivate', [ProductController::class, 'bulkDeactivate']);
+        Route::post('/bulk/digiflazz-update', [ProductController::class, 'bulkDigiflazzUpdate']);
+        Route::post('/bulk/delete', [ProductController::class, 'bulkDelete']);
         Route::get('/{product}', [ProductController::class, 'show']);
         Route::put('/{product}', [ProductController::class, 'update']);
         Route::delete('/{product}', [ProductController::class, 'destroy']);
+        Route::post('/{product}/price-limit', [ProductController::class, 'setPriceLimit']);
     });
 
     Route::prefix('supplier-products')->group(function () {
         Route::get('/', [SupplierProductController::class, 'index']);
         Route::post('/', [SupplierProductController::class, 'store']);
+        // Bulk routes precede the {supplierProduct} binding so "bulk" is never
+        // resolved as a model key.
+        Route::post('/bulk/lock-price', [SupplierProductController::class, 'bulkLockPrice']);
+        Route::post('/bulk/profit-margin', [SupplierProductController::class, 'bulkSetMargin']);
+        Route::post('/bulk/delete', [SupplierProductController::class, 'bulkDelete']);
         Route::get('/{supplierProduct}', [SupplierProductController::class, 'show']);
         Route::put('/{supplierProduct}', [SupplierProductController::class, 'update']);
         Route::delete('/{supplierProduct}', [SupplierProductController::class, 'destroy']);
+        Route::post('/{supplierProduct}/lock-price', [SupplierProductController::class, 'lockPrice']);
+        Route::post('/{supplierProduct}/profit-margin', [SupplierProductController::class, 'setMargin']);
     });
 
     // Pricing Rules (markup config used by the daily Digiflazz price sync)

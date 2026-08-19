@@ -24,6 +24,16 @@ class SupplierProductResource extends JsonResource
             'buyer_product_status' => (bool) $this->buyer_product_status,
             'seller_product_status' => (bool) $this->seller_product_status,
             'is_active' => (bool) $this->is_active,
+            'is_price_locked' => (bool) $this->is_price_locked,
+            // Convenience mirror of the supplier flag so the table can protect
+            // System rows without eager-reading the relationship every render.
+            'is_system' => (bool) ($this->relationLoaded('supplier') && $this->supplier?->is_system),
+            'margins' => [
+                'member' => $this->margin_member !== null ? (float) $this->margin_member : null,
+                'vip' => $this->margin_vip !== null ? (float) $this->margin_vip : null,
+                'reseller' => $this->margin_reseller !== null ? (float) $this->margin_reseller : null,
+                'agent' => $this->margin_agent !== null ? (float) $this->margin_agent : null,
+            ],
             'product' => new ProductResource($this->whenLoaded('product')),
             'supplier' => new SupplierResource($this->whenLoaded('supplier')),
             'created_at' => $this->created_at,

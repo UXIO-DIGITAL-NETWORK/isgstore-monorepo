@@ -11,9 +11,9 @@ class SupplierSeeder extends Seeder
     {
         $now = now();
         $suppliers = [
-            ['id' => 1, 'name' => 'Digiflazz',       'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 2, 'name' => 'VIP Reseller',    'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 3, 'name' => 'Internal System', 'status' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 1, 'name' => 'Digiflazz',       'status' => true, 'is_system' => false, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'name' => 'VIP Reseller',    'status' => true, 'is_system' => false, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 3, 'name' => 'Internal System', 'status' => true, 'is_system' => true,  'created_at' => $now, 'updated_at' => $now],
         ];
 
         DB::table('suppliers')->insert($suppliers);

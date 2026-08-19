@@ -11,6 +11,13 @@ class Product extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'is_price_locked' => 'boolean',
+        'is_price_hidden' => 'boolean',
+        'price_min' => 'integer',
+        'price_max' => 'integer',
+    ];
+
     /** The "client" (merchant) that sells this product; null for platform-owned catalogue. */
     public function merchant()
     {

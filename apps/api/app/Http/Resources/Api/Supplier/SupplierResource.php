@@ -18,6 +18,7 @@ class SupplierResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'status' => (bool) $this->status,
+            'is_system' => (bool) $this->is_system,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
