@@ -4,7 +4,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import MerchantWithdrawalsPage from "../pages/MerchantWithdrawalsPage";
 import * as hooks from "../hooks/useMerchant";
-import { BANK_OPTIONS } from "../constants/bankCodes";
 
 const mockList = (rows: unknown[] = []) =>
   vi.spyOn(hooks, "useMerchantWithdrawals").mockReturnValue({
@@ -26,6 +25,14 @@ const renderPage = () =>
     </QueryClientProvider>,
   );
 
+/** Type a query into the searchable bank picker and click the exact option. */
+const selectBank = (query: string, exactLabel: string) => {
+  const input = screen.getByLabelText("Bank / E-wallet");
+  fireEvent.focus(input);
+  fireEvent.change(input, { target: { value: query } });
+  fireEvent.click(screen.getByRole("button", { name: exactLabel }));
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockList();
@@ -33,14 +40,16 @@ beforeEach(() => {
 });
 
 describe("MerchantWithdrawalsPage", () => {
-  it("renders the bank picker as a dropdown of every known bank", () => {
+  it("filters the bank catalogue as you type", () => {
     renderPage();
 
-    const select = screen.getByLabelText("Bank");
-    expect(select.tagName).toBe("SELECT");
-    // One <option> per bank plus the disabled placeholder.
-    expect(screen.getAllByRole("option")).toHaveLength(BANK_OPTIONS.length + 1);
-    expect(screen.getByRole("option", { name: /Bank Central Asia/i })).toBeInTheDocument();
+    const input = screen.getByLabelText("Bank / E-wallet");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "neo commerce" } });
+
+    expect(screen.getByRole("button", { name: "BNC — Bank Neo Commerce" })).toBeInTheDocument();
+    // An unrelated bank is filtered out.
+    expect(screen.queryByRole("button", { name: "BCA — Bank Central Asia (BCA)" })).not.toBeInTheDocument();
   });
 
   it("previews the flat 1.665 fee and the nett as the amount changes", () => {
@@ -53,13 +62,13 @@ describe("MerchantWithdrawalsPage", () => {
     expect(screen.getByText("Rp 98.335")).toBeInTheDocument();
   });
 
-  it("captures the beneficiary phone Monetapay needs and submits it", async () => {
+  it("submits the picked bank code and beneficiary phone", async () => {
     const create = vi.fn();
     mockCreate(create);
     renderPage();
 
     fireEvent.change(screen.getByLabelText("Nominal"), { target: { value: "50000" } });
-    fireEvent.change(screen.getByLabelText("Bank"), { target: { value: "BCA" } });
+    selectBank("central asia", "BCA — Bank Central Asia (BCA)");
     fireEvent.change(screen.getByLabelText("No. Rekening"), { target: { value: "1234567890" } });
     fireEvent.change(screen.getByLabelText("Nama Pemilik"), { target: { value: "Toko Jaya" } });
     fireEvent.change(screen.getByLabelText("No. HP Penerima"), { target: { value: "081234567890" } });
@@ -67,19 +76,27 @@ describe("MerchantWithdrawalsPage", () => {
 
     await waitFor(() =>
       expect(create).toHaveBeenCalledWith(
-        expect.objectContaining({ account_phone: "081234567890" }),
+        expect.objectContaining({ bank_code: "BCA", account_phone: "081234567890" }),
         expect.anything(),
       ),
     );
   });
 
-  it("rejects a request with a missing or malformed phone", async () => {
+  it("hides the account number field when an e-wallet is picked", () => {
+    renderPage();
+
+    expect(screen.getByLabelText("No. Rekening")).toBeInTheDocument();
+    selectBank("gopay", "GOPAY — GoPay");
+    expect(screen.queryByLabelText("No. Rekening")).not.toBeInTheDocument();
+  });
+
+  it("rejects a request with a malformed phone", async () => {
     const create = vi.fn();
     mockCreate(create);
     renderPage();
 
     fireEvent.change(screen.getByLabelText("Nominal"), { target: { value: "50000" } });
-    fireEvent.change(screen.getByLabelText("Bank"), { target: { value: "BCA" } });
+    selectBank("central asia", "BCA — Bank Central Asia (BCA)");
     fireEvent.change(screen.getByLabelText("No. Rekening"), { target: { value: "1234567890" } });
     fireEvent.change(screen.getByLabelText("Nama Pemilik"), { target: { value: "Toko Jaya" } });
     fireEvent.change(screen.getByLabelText("No. HP Penerima"), { target: { value: "12345" } });

@@ -11,11 +11,11 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 
-import { BANK_OPTIONS } from "../constants/bankCodes";
+import { BankCombobox } from "../components/BankCombobox";
+import { isEwalletCode } from "../constants/bankCodes";
 import { withdrawalFeeFor, withdrawalNettFor } from "../lib/withdrawalFee";
 import { useCreateWithdrawal, useMerchantWithdrawals } from "../hooks/useMerchant";
 import { withdrawalSchema, type WithdrawalFormValues } from "../schemas/withdrawal.schema";
@@ -40,8 +40,12 @@ export default function MerchantWithdrawalsPage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<WithdrawalFormValues>({ resolver: zodResolver(withdrawalSchema) });
+
+  const bankCode = watch("bank_code");
+  const isEwallet = isEwalletCode(bankCode);
 
   // Live preview of kita's fee and what lands in the bank. Mirrors the server;
   // the charged figure is recomputed on submit.
@@ -67,30 +71,26 @@ export default function MerchantWithdrawalsPage() {
           <Input id="amount" type="number" {...register("amount", { valueAsNumber: true })} placeholder="100000" />
           {errors.amount && <Text variant="small" className="text-destructive">{errors.amount.message}</Text>}
         </Box>
-        <Box className="flex flex-col gap-1.5 [&_[data-slot=native-select-wrapper]]:w-full">
-          <Label htmlFor="bank_code">Bank</Label>
-          <NativeSelect
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="bank_code">Bank / E-wallet</Label>
+          {/* Registered hidden field so the value is validated + submitted; the
+              combobox drives it via setValue. */}
+          <input type="hidden" {...register("bank_code")} />
+          <BankCombobox
             id="bank_code"
-            defaultValue=""
-            aria-invalid={errors.bank_code ? true : undefined}
-            {...register("bank_code")}
-          >
-            <NativeSelectOption value="" disabled>
-              Pilih bank
-            </NativeSelectOption>
-            {BANK_OPTIONS.map((bank) => (
-              <NativeSelectOption key={bank.code} value={bank.code}>
-                {bank.label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+            value={bankCode}
+            invalid={!!errors.bank_code}
+            onChange={(code) => setValue("bank_code", code, { shouldValidate: true })}
+          />
           {errors.bank_code && <Text variant="small" className="text-destructive">{errors.bank_code.message}</Text>}
         </Box>
-        <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="account_number">No. Rekening</Label>
-          <Input id="account_number" {...register("account_number")} placeholder="1234567890" />
-          {errors.account_number && <Text variant="small" className="text-destructive">{errors.account_number.message}</Text>}
-        </Box>
+        {!isEwallet && (
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="account_number">No. Rekening</Label>
+            <Input id="account_number" {...register("account_number")} placeholder="1234567890" />
+            {errors.account_number && <Text variant="small" className="text-destructive">{errors.account_number.message}</Text>}
+          </Box>
+        )}
         <Box className="flex flex-col gap-1.5">
           <Label htmlFor="account_name">Nama Pemilik</Label>
           <Input id="account_name" {...register("account_name")} placeholder="Nama sesuai rekening" />

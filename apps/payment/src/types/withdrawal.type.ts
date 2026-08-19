@@ -7,9 +7,10 @@ export interface Withdrawal {
   fee: number;
   nett: number;
   bank_code: string;
-  account_number: string;
+  // Null for e-wallet payouts (keyed on the phone, not an account number).
+  account_number: string | null;
   account_name: string;
-  account_phone: string;
+  account_phone: string | null;
   status: WithdrawalStatus;
   notes: string | null;
   approved_at: string | null;
@@ -25,9 +26,10 @@ export interface Withdrawal {
 export interface CreateWithdrawalPayload {
   amount: number;
   bank_code: string;
-  account_number: string;
+  // Optional: e-wallet payouts have no account number.
+  account_number?: string;
   account_name: string;
-  // Monetapay requires the beneficiary's phone number for a disbursement.
+  // Monetapay requires the beneficiary's phone number (the wallet id for e-wallets).
   account_phone: string;
   notes?: string;
 }
