@@ -64,12 +64,20 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
         }
 
         // HTTP call runs outside any DB transaction so no row lock spans it.
+        // Mirror the field set of the proven pay-in createTransaction(): Monetapay
+        // rejects a disbursement missing `currency` (and expects `account_phone`)
+        // with a generic code:-1 "failure". account_phone falls back to the
+        // merchant's phone, then a placeholder, so the field is always present —
+        // postSigned() drops it from the signed map only if it is blank.
         $response = $monetapay->createDisbursement([
             'mch_order_no' => $current->withdrawal_number,
             'amount' => (string) $current->nett,
+            'currency' => 'IDR',
             'account_bank_code' => $current->bank_code,
             'account_name' => $current->account_name,
             'account_number' => $current->account_number,
+            'account_phone' => (string) ($current->merchant?->phone ?: '08123456789'),
+            'notes' => $current->notes ?: "Pencairan {$current->withdrawal_number}",
         ]);
 
         $code = $response['code'] ?? null;
