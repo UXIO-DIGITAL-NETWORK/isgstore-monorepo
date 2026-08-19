@@ -18,6 +18,9 @@ export interface ChannelFee {
   fee_flat: number;
   fee_percent: number;
   /** The payment gateway's cut of each transaction; kita's profit is the admin fee net of this. */
+  /** Flat (Rp) gateway fee for VA/retail channels. */
+  gateway_fee_flat: number;
+  /** Percent gateway fee for QRIS/e-wallet channels. */
   gateway_fee_percent: number;
   is_active: boolean;
 }
