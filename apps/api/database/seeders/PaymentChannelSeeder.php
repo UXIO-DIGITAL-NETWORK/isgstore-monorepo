@@ -13,8 +13,13 @@ class PaymentChannelSeeder extends Seeder
      * `gateway_fee_flat` / `gateway_fee_percent` are Monetapay's fee kita pays per
      * transaction — flat (Rp) for VA/retail, percent for QRIS/e-wallet; a channel
      * uses one or the other. They feed `payments.gateway_fee` at checkout and drive
-     * kita's profit (`amount_fee - gateway_fee`). `fee_flat`/`fee_percent` (kita's
-     * own markup shown to payers) stay 0 here — that is a separate admin decision.
+     * kita's profit (`amount_fee - gateway_fee`).
+     *
+     * `fee_flat`/`fee_percent` is the "Biaya Admin" the customer pays (topup
+     * storefront AND service checkout, same channels). Seeded EQUAL to the gateway
+     * fee — the customer covers Monetapay's cut, so kita breaks even on fees (its
+     * profit is the product/service margin, not the payment fee). Editable per
+     * channel via the finance Biaya Channel page.
      */
     public function run(): void
     {
@@ -58,6 +63,9 @@ class PaymentChannelSeeder extends Seeder
                 'min_amount' => $min,
                 'is_active' => true,
                 'is_single_use' => $singleUse,
+                // Admin fee (Biaya Admin) = gateway fee: customer covers Monetapay's cut.
+                'fee_flat' => $gwFlat,
+                'fee_percent' => $gwPercent,
                 'gateway_fee_flat' => $gwFlat,
                 'gateway_fee_percent' => $gwPercent,
                 'extra_config' => null,
@@ -74,6 +82,8 @@ class PaymentChannelSeeder extends Seeder
             'min_amount' => 1000,
             'is_active' => true,
             'is_single_use' => false,
+            'fee_flat' => 0,
+            'fee_percent' => 0,
             'gateway_fee_flat' => 0,
             'gateway_fee_percent' => 0,
             'extra_config' => json_encode([
@@ -92,7 +102,7 @@ class PaymentChannelSeeder extends Seeder
         DB::table('payment_channels')->upsert(
             $channels,
             ['channel_code'],
-            ['name', 'payment_type', 'min_amount', 'is_active', 'is_single_use', 'gateway_fee_flat', 'gateway_fee_percent', 'extra_config', 'updated_at']
+            ['name', 'payment_type', 'min_amount', 'is_active', 'is_single_use', 'fee_flat', 'fee_percent', 'gateway_fee_flat', 'gateway_fee_percent', 'extra_config', 'updated_at']
         );
     }
 }
