@@ -24,7 +24,9 @@ return new class extends Migration
             $table->bigInteger('min_amount')->default(0);
             $table->bigInteger('fee_flat')->default(0);
             $table->decimal('fee_percent', 5, 2)->default(0);
-            // Payment-gateway cut; 0 for the internal wallet, 0.70% for real channels.
+            // Payment-gateway cut (Monetapay's fee kita pays). Flat for VA/retail
+            // channels, percent for QRIS/e-wallet; a channel uses one or the other.
+            $table->bigInteger('gateway_fee_flat')->default(0);
             $table->decimal('gateway_fee_percent', 5, 2)->default(0.70);
             $table->boolean('is_active')->default(true);
             $table->boolean('is_single_use')->default(true);

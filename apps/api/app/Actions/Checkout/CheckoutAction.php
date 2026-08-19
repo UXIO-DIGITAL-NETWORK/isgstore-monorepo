@@ -155,12 +155,13 @@ class CheckoutAction
             $grossAmount = $sellingPrice + $adminFee;
 
             // The gateway's cut of the whole amount the customer pays, frozen now
-            // (per-channel percent, 0 for the wallet channel) rather than read from
-            // Monetapay's callback. Kita's profit is the admin fee net of this, so
+            // rather than read from Monetapay's callback. Monetapay charges a flat
+            // fee on VA/retail and a percent on QRIS/e-wallet — a channel carries
+            // one or the other. Kita's profit is the admin fee net of this, so
             // settlement (SettleMerchantTransactionAction) reads it straight off the
             // payment row.
             $gatewayPercent = max(0, min(100, (float) $channel->gateway_fee_percent));
-            $gatewayFee = (int) round($grossAmount * ($gatewayPercent / 100));
+            $gatewayFee = (int) $channel->gateway_fee_flat + (int) round($grossAmount * ($gatewayPercent / 100));
 
             if ($grossAmount < $channel->min_amount) {
                 throw new Exception(

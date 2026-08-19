@@ -32,11 +32,17 @@ class PaymentInternalSettingsTest extends TestCase
         $channel = PaymentChannel::factory()->create(['fee_flat' => 0, 'fee_percent' => 0]);
         Sanctum::actingAs($this->internal());
 
-        $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['fee_flat' => 2500, 'is_active' => true])
+        $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", [
+            'fee_flat' => 2500,
+            'gateway_fee_flat' => 1900,
+            'is_active' => true,
+        ])
             ->assertOk()
-            ->assertJsonPath('data.fee_flat', 2500);
+            ->assertJsonPath('data.fee_flat', 2500)
+            ->assertJsonPath('data.gateway_fee_flat', 1900);
 
         $this->assertSame(2500, (int) $channel->fresh()->fee_flat);
+        $this->assertSame(1900, (int) $channel->fresh()->gateway_fee_flat);
     }
 
     public function test_merchant_cannot_touch_settings(): void

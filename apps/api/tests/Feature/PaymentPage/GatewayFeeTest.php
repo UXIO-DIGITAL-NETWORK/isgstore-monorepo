@@ -86,6 +86,36 @@ class GatewayFeeTest extends TestCase
             ->assertJsonPath('data.data.0.platform_profit', 2559);
     }
 
+    public function test_checkout_freezes_a_flat_gateway_fee_for_va_style_channels(): void
+    {
+        User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id]);
+        $product = Product::factory()->create(['price_member' => 60000]);
+        SupplierProduct::factory()->for($product)->create(['price' => 50000]);
+
+        // Flat gateway fee (Rp 1.900, like Mandiri VA), no percent — frozen as-is
+        // regardless of the total.
+        $channel = PaymentChannel::factory()->balance()->create([
+            'fee_flat' => 3000,
+            'gateway_fee_flat' => 1900,
+            'gateway_fee_percent' => 0,
+        ]);
+
+        $buyer = User::factory()->create([
+            'role_id' => Role::firstOrCreate(['name' => 'Member'])->id,
+            'balance' => 100000,
+        ]);
+        Sanctum::actingAs($buyer);
+
+        $this->postJson('/api/v1/checkout', [
+            'product_id' => $product->id,
+            'payment_channel_id' => $channel->id,
+            'target_uid' => '12345678',
+            'email' => 'buyer@example.com',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('payments', ['gross_amount' => 63000, 'gateway_fee' => 1900]);
+    }
+
     public function test_wallet_channel_takes_no_gateway_cut(): void
     {
         User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id]);

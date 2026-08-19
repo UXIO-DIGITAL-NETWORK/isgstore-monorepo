@@ -33,7 +33,9 @@ class ChannelFeeController extends Controller
             'fee_flat' => ['sometimes', 'integer', 'min:0'],
             'fee_percent' => ['sometimes', 'numeric', 'between:0,100'],
             // The gateway's cut of each payment through this channel; subtracted
-            // from the admin fee to leave kita's profit.
+            // from the admin fee to leave kita's profit. Flat (Rp) for VA/retail,
+            // percent for QRIS/e-wallet.
+            'gateway_fee_flat' => ['sometimes', 'integer', 'min:0'],
             'gateway_fee_percent' => ['sometimes', 'numeric', 'between:0,100'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -54,6 +56,7 @@ class ChannelFeeController extends Controller
             'min_amount' => (int) $c->min_amount,
             'fee_flat' => (int) $c->fee_flat,
             'fee_percent' => (float) $c->fee_percent,
+            'gateway_fee_flat' => (int) $c->gateway_fee_flat,
             'gateway_fee_percent' => (float) $c->gateway_fee_percent,
             'is_active' => (bool) $c->is_active,
         ];
