@@ -26,17 +26,26 @@ export const useFinanceTransactionSummary = (params: ListParams) =>
     queryFn: () => financeService.transactionSummary(params),
   });
 
+/**
+ * Polls while a payout is mid-flight. Approval hands the row back PROCESSING and
+ * Monetapay settles it asynchronously via webhook, so the list keeps refreshing
+ * until nothing is PROCESSING — the server owns the terminal state.
+ */
 export const useFinanceWithdrawals = (params: ListParams) =>
-  useQuery({ queryKey: ["finance", "withdrawals", params], queryFn: () => financeService.withdrawals(params) });
+  useQuery({
+    queryKey: ["finance", "withdrawals", params],
+    queryFn: () => financeService.withdrawals(params),
+    refetchInterval: (query) =>
+      query.state.data?.rows.some((w) => w.status === "PROCESSING") ? 5_000 : false,
+  });
 
 export const useApproveWithdrawal = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, method, proof }: { id: number; method?: "manual" | "monetapay"; proof?: File }) =>
-      financeService.approve(id, { method, proof }),
+    mutationFn: ({ id }: { id: number }) => financeService.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success("Penarikan disetujui");
+      toast.success("Penarikan diproses ke Monetapay");
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message ?? "Gagal menyetujui penarikan");

@@ -19,10 +19,12 @@ const pending: Withdrawal = {
   bank_code: "BCA",
   account_number: "123",
   account_name: "Toko",
+  account_phone: "081234567890",
   status: "PENDING",
   notes: null,
   approved_at: null,
   disbursement_ref: null,
+  failure_reason: null,
   proof_url: null,
   created_at: "2026-08-11T00:00:00.000000Z",
   merchant: { id: 1, name: "Toko A", email: "a@toko.com" },
@@ -33,7 +35,22 @@ const settled: Withdrawal = {
   id: 6,
   withdrawal_number: "WD-settled",
   status: "SETTLED",
-  proof_url: "http://localhost/storage/withdrawals/proofs/bukti.jpg",
+  disbursement_ref: "MP-88231",
+};
+
+const processing: Withdrawal = {
+  ...pending,
+  id: 7,
+  withdrawal_number: "WD-processing",
+  status: "PROCESSING",
+};
+
+const failed: Withdrawal = {
+  ...pending,
+  id: 8,
+  withdrawal_number: "WD-failed",
+  status: "FAILED",
+  failure_reason: "Rekening tidak ditemukan",
 };
 
 const mockRows = (rows: Withdrawal[]) =>
@@ -70,40 +87,49 @@ describe("FinanceWithdrawalsPage", () => {
     expect(screen.getByText("Toko A")).toBeInTheDocument();
   });
 
-  it("opens the settle dialog instead of approving directly", async () => {
+  it("confirms before firing the Monetapay disbursement", async () => {
     const user = userEvent.setup();
     renderPage();
 
     await user.click(screen.getByRole("button", { name: "Setujui" }));
 
-    // The dialog is open; approval has not fired yet (proof required first).
+    // The confirm dialog is open; the payout has not fired yet.
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Setujui Penarikan")).toBeInTheDocument();
+    expect(screen.getByText("Cairkan via Monetapay")).toBeInTheDocument();
     expect(approve).not.toHaveBeenCalled();
   });
 
-  it("settles with the uploaded bukti transfer", async () => {
+  it("approves via Monetapay without any proof upload", async () => {
     const user = userEvent.setup();
     renderPage();
 
     await user.click(screen.getByRole("button", { name: "Setujui" }));
-
-    const file = new File(["proof"], "bukti.png", { type: "image/png" });
-    await user.upload(screen.getByLabelText("Bukti Transfer"), file);
-    await user.click(screen.getByRole("button", { name: "Setujui & Kirim Bukti" }));
+    await user.click(screen.getByRole("button", { name: "Setujui & Cairkan via Monetapay" }));
 
     expect(approve).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 5, method: "manual", proof: file }),
+      { id: 5 },
       expect.anything(),
     );
   });
 
-  it("shows a proof link for a settled withdrawal", () => {
+  it("shows the disbursement reference for a settled withdrawal", () => {
     mockRows([settled]);
     renderPage();
 
-    const link = screen.getByRole("link", { name: "Lihat Bukti" });
-    expect(link).toHaveAttribute("href", settled.proof_url);
-    expect(link).toHaveAttribute("target", "_blank");
+    expect(screen.getByText("MP-88231")).toBeInTheDocument();
+  });
+
+  it("marks an in-flight payout as processing", () => {
+    mockRows([processing]);
+    renderPage();
+
+    expect(screen.getByText("Memproses…")).toBeInTheDocument();
+  });
+
+  it("surfaces the failure reason for a failed payout", () => {
+    mockRows([failed]);
+    renderPage();
+
+    expect(screen.getByText("Rekening tidak ditemukan")).toBeInTheDocument();
   });
 });

@@ -19,8 +19,19 @@ export const useMerchantTransactionSummary = (params: ListParams) =>
 export const useMerchantMutations = (params: ListParams) =>
   useQuery({ queryKey: ["merchant", "mutations", params], queryFn: () => merchantService.mutations(params) });
 
+/**
+ * Polls while any payout is still in flight. A Monetapay disbursement settles
+ * asynchronously (PENDING → PROCESSING → SETTLED/FAILED via webhook), so the
+ * list keeps refreshing until every row reaches a terminal state — the server
+ * decides that, never a client-side guess.
+ */
 export const useMerchantWithdrawals = (params: ListParams) =>
-  useQuery({ queryKey: ["merchant", "withdrawals", params], queryFn: () => merchantService.withdrawals(params) });
+  useQuery({
+    queryKey: ["merchant", "withdrawals", params],
+    queryFn: () => merchantService.withdrawals(params),
+    refetchInterval: (query) =>
+      query.state.data?.rows.some((w) => w.status === "PENDING" || w.status === "PROCESSING") ? 5_000 : false,
+  });
 
 export const useCreateWithdrawal = () => {
   const queryClient = useQueryClient();

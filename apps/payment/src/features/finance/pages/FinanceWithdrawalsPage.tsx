@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 import type { Withdrawal } from "@/types/withdrawal.type";
-import { SettleWithdrawalDialog } from "../components/SettleWithdrawalDialog";
+import { ApproveWithdrawalDialog } from "../components/ApproveWithdrawalDialog";
 import { useFinanceWithdrawals, useRejectWithdrawal } from "../hooks/useFinance";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
@@ -31,30 +31,60 @@ export default function FinanceWithdrawalsPage() {
     {
       key: "actions",
       header: "Aksi",
-      cell: (r) =>
-        r.status === "PENDING" ? (
-          <Box className="flex gap-2">
-            <SettleWithdrawalDialog withdrawal={r} />
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={rejecting}
-              onClick={() => reject({ id: r.id, reason: "Ditolak oleh admin" })}
-            >
-              Tolak
-            </Button>
-          </Box>
-        ) : r.proof_url ? (
-          <Link href={r.proof_url} target="_blank" rel="noreferrer">
-            <Text as="span" variant="small" className="underline">
-              Lihat Bukti
+      cell: (r) => {
+        if (r.status === "PENDING") {
+          return (
+            <Box className="flex gap-2">
+              <ApproveWithdrawalDialog withdrawal={r} />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={rejecting}
+                onClick={() => reject({ id: r.id, reason: "Ditolak oleh admin" })}
+              >
+                Tolak
+              </Button>
+            </Box>
+          );
+        }
+        if (r.status === "PROCESSING") {
+          return (
+            <Text as="span" variant="small" className="text-muted-foreground">
+              Memproses…
             </Text>
-          </Link>
-        ) : (
+          );
+        }
+        if (r.status === "FAILED") {
+          return (
+            <Text as="span" variant="small" className="text-destructive">
+              {r.failure_reason ?? "Pencairan gagal"}
+            </Text>
+          );
+        }
+        // SETTLED — show the Monetapay disbursement reference; fall back to the
+        // legacy manual proof link for rows settled before the switch.
+        if (r.disbursement_ref) {
+          return (
+            <Text as="span" variant="small" className="tabular-nums text-muted-foreground">
+              {r.disbursement_ref}
+            </Text>
+          );
+        }
+        if (r.proof_url) {
+          return (
+            <Link href={r.proof_url} target="_blank" rel="noreferrer">
+              <Text as="span" variant="small" className="underline">
+                Lihat Bukti
+              </Text>
+            </Link>
+          );
+        }
+        return (
           <Text as="span" variant="small">
             —
           </Text>
-        ),
+        );
+      },
     },
   ];
 

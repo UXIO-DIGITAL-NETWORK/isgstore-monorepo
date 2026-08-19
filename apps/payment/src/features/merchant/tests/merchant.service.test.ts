@@ -71,9 +71,13 @@ describe("merchantService", () => {
       bank_code: "BCA",
       account_number: "123",
       account_name: "Toko",
+      account_phone: "081234567890",
     });
 
-    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/withdrawals", expect.objectContaining({ amount: 40000 }));
+    expect(api.post).toHaveBeenCalledWith(
+      "/v1/payment-admin/withdrawals",
+      expect.objectContaining({ amount: 40000, account_phone: "081234567890" }),
+    );
     expect(created.status).toBe("PENDING");
   });
 });

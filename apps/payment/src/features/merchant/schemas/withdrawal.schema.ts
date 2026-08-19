@@ -13,6 +13,12 @@ export const withdrawalSchema = z.object({
   bank_code: z.enum(BANK_CODES, { message: "Bank wajib dipilih" }),
   account_number: z.string().min(1, "Nomor rekening wajib diisi"),
   account_name: z.string().min(1, "Nama pemilik rekening wajib diisi"),
+  // Monetapay needs the beneficiary's phone to run the disbursement. Accept the
+  // common Indonesian mobile formats (0…, 62…, +62…).
+  account_phone: z
+    .string()
+    .min(1, "No. HP penerima wajib diisi")
+    .regex(/^(\+62|62|0)8[0-9]{7,12}$/, "No. HP penerima tidak valid"),
   notes: z.string().optional(),
 });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import MerchantWithdrawalsPage from "../pages/MerchantWithdrawalsPage";
 import * as hooks from "../hooks/useMerchant";
@@ -43,13 +43,49 @@ describe("MerchantWithdrawalsPage", () => {
     expect(screen.getByRole("option", { name: /Bank Central Asia/i })).toBeInTheDocument();
   });
 
-  it("previews the 1500 + 11% fee and the nett as the amount changes", () => {
+  it("previews the flat 1.665 fee and the nett as the amount changes", () => {
     renderPage();
 
     fireEvent.change(screen.getByLabelText("Nominal"), { target: { value: "100000" } });
 
-    // fee = 1500 + round(100000 * 0.11) = 12500; nett = 87500.
-    expect(screen.getByText("Rp 12.500")).toBeInTheDocument();
-    expect(screen.getByText("Rp 87.500")).toBeInTheDocument();
+    // fee = 1500 + round(1500 * 0.11) = 1665 (flat); nett = 100000 - 1665 = 98335.
+    expect(screen.getByText("Rp 1.665")).toBeInTheDocument();
+    expect(screen.getByText("Rp 98.335")).toBeInTheDocument();
+  });
+
+  it("captures the beneficiary phone Monetapay needs and submits it", async () => {
+    const create = vi.fn();
+    mockCreate(create);
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText("Nominal"), { target: { value: "50000" } });
+    fireEvent.change(screen.getByLabelText("Bank"), { target: { value: "BCA" } });
+    fireEvent.change(screen.getByLabelText("No. Rekening"), { target: { value: "1234567890" } });
+    fireEvent.change(screen.getByLabelText("Nama Pemilik"), { target: { value: "Toko Jaya" } });
+    fireEvent.change(screen.getByLabelText("No. HP Penerima"), { target: { value: "081234567890" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ajukan Penarikan" }));
+
+    await waitFor(() =>
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ account_phone: "081234567890" }),
+        expect.anything(),
+      ),
+    );
+  });
+
+  it("rejects a request with a missing or malformed phone", async () => {
+    const create = vi.fn();
+    mockCreate(create);
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText("Nominal"), { target: { value: "50000" } });
+    fireEvent.change(screen.getByLabelText("Bank"), { target: { value: "BCA" } });
+    fireEvent.change(screen.getByLabelText("No. Rekening"), { target: { value: "1234567890" } });
+    fireEvent.change(screen.getByLabelText("Nama Pemilik"), { target: { value: "Toko Jaya" } });
+    fireEvent.change(screen.getByLabelText("No. HP Penerima"), { target: { value: "12345" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ajukan Penarikan" }));
+
+    expect(await screen.findByText("No. HP penerima tidak valid")).toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
   });
 });

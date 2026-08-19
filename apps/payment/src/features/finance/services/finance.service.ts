@@ -64,18 +64,16 @@ export const financeService = {
     return unwrapList<Withdrawal>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
-  approve: async (
-    id: number,
-    { method = "manual", proof }: { method?: "manual" | "monetapay"; proof?: File } = {},
-  ): Promise<Withdrawal> => {
-    // Manual settlement carries the bukti transfer, so it goes as multipart.
-    // The axios request interceptor drops the pinned JSON Content-Type for
-    // FormData so the browser sets `multipart/form-data; boundary=…`.
-    const form = new FormData();
-    form.append("method", method);
-    if (proof) form.append("proof", proof);
-
-    const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals/${id}/approve`, form);
+  /**
+   * Approve a pending withdrawal and fire the payout through Monetapay. The
+   * backend holds the partner key, encrypts the disbursement payload, signs it,
+   * and calls Monetapay; the row comes back PROCESSING with a `disbursement_ref`
+   * and settles to SETTLED/FAILED asynchronously via the gateway webhook.
+   */
+  approve: async (id: number): Promise<Withdrawal> => {
+    const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals/${id}/approve`, {
+      method: "monetapay",
+    });
     return res.data;
   },
 

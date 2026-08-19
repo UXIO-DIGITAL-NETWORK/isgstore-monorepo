@@ -96,6 +96,11 @@ export default function MerchantWithdrawalsPage() {
           <Input id="account_name" {...register("account_name")} placeholder="Nama sesuai rekening" />
           {errors.account_name && <Text variant="small" className="text-destructive">{errors.account_name.message}</Text>}
         </Box>
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="account_phone">No. HP Penerima</Label>
+          <Input id="account_phone" {...register("account_phone")} placeholder="08123456789" />
+          {errors.account_phone && <Text variant="small" className="text-destructive">{errors.account_phone.message}</Text>}
+        </Box>
         <Box className="flex flex-col gap-2 sm:col-span-2 lg:col-span-4">
           {previewAmount > 0 && (
             <Box className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-muted/50 px-4 py-3 text-sm tabular-nums">
