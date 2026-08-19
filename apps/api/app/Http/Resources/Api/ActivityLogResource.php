@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Support\Activity\ActivityTypeClassifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,7 +19,9 @@ class ActivityLogResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'transaction_id' => $this->transaction_id,
-            'type' => $this->type,
+            // Stored type wins; otherwise derive a display category so the admin
+            // Activity "Type" column is meaningful for un-typed rows.
+            'type' => ActivityTypeClassifier::classify($this->type, $this->transaction_id, $this->message),
             'actor' => $this->user?->name ?? 'System',
             'role' => $this->user?->role?->name,
             'ip_address' => $this->ip_address,

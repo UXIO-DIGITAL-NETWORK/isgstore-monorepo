@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\RoleType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\ActivityLogResource;
 use App\Models\ActivityLog;
 use App\Traits\ApiResponse;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
@@ -18,6 +20,17 @@ class ActivityLogController extends Controller
         $search = $request->query('search');
 
         $logs = ActivityLog::with('user.role')
+            // Topup-domain only: admin actions + storefront customers (members and
+            // guests / system logs with no user). The payment page is a separate
+            // product — its merchant (payment-admin) and finance (payment-internal)
+            // activity has its own feed and must not leak in here.
+            ->where(function (Builder $q) {
+                $q->whereDoesntHave('user')
+                    ->orWhereHas('user.role', fn (Builder $r) => $r->whereRaw('LOWER(name) NOT IN (?, ?)', [
+                        RoleType::PAYMENT_ADMIN->value,
+                        RoleType::PAYMENT_INTERNAL->value,
+                    ]));
+            })
             ->when($transactionId, fn ($q) => $q->where('transaction_id', (int) $transactionId))
             ->when($search, fn ($q) => $q->where('message', 'like', "%{$search}%"))
             ->latest()
