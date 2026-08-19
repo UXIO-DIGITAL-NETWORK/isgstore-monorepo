@@ -6,7 +6,6 @@ use App\Enums\WithdrawalStatus;
 use App\Models\Withdrawal;
 use App\Services\DiscordWebhookService;
 use App\Services\Payment\MonetapayService;
-use App\Support\Ledger\WithdrawalFeeLedger;
 use App\Support\Wallet\WalletLedger;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -27,8 +26,11 @@ use Throwable;
  * re-checked under lock and skipped once terminal. The merchant is paid `nett`
  * (amount − kita's fee).
  *
- * On exhausted retries the held funds are credited back and kita is alerted —
- * a payout that can't complete must not silently keep the merchant's money.
+ * This job only *hands off* the payout: a successful create leaves the row
+ * PROCESSING, and the async /disbursement/merchant/callback settles it (SETTLED,
+ * realising the fee) or fails it (FAILED, refunding the hold). The job's own
+ * refund path below covers the other failure — the create being rejected or all
+ * retries exhausted, so the payout never even reached Monetapay.
  */
 class ProcessWithdrawalPayoutJob implements ShouldQueue
 {
@@ -75,17 +77,16 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
             throw new Exception('Monetapay disbursement rejected: '.json_encode($response));
         }
 
+        // A successful create only means Monetapay *accepted* the payout (create
+        // response status 0 = Processing). The final SETTLED/FAILED — and kita's
+        // fee — are decided by the async /disbursement/merchant/callback, handled
+        // in HandleDisbursementCallbackAction. Record the gateway ref and wait.
         $current->update([
-            'status' => WithdrawalStatus::SETTLED,
             'disbursement_ref' => $response['data']['order_no'] ?? null,
             'payout_data' => $response['data'] ?? null,
         ]);
 
-        // Realise kita's withdraw fee now that the payout has settled. Idempotent
-        // and shared with the manual approval path.
-        WithdrawalFeeLedger::credit($current);
-
-        Log::channel('monetapay')->info("Withdrawal payout settled: {$current->withdrawal_number} (Rp {$current->nett})");
+        Log::channel('monetapay')->info("Withdrawal payout accepted, awaiting callback: {$current->withdrawal_number} (Rp {$current->nett})");
     }
 
     public function failed(Throwable $e): void

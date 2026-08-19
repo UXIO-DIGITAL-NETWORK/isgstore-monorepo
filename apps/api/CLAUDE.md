@@ -119,6 +119,29 @@ Key points:
 - `collection_app_id` has **no fallback** — set `MONETAPAY_COLLECTION_APP_ID` explicitly per environment or collection calls sign with a blank `app_id`.
 - `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement, plus the account-validation pre-payout check); defaults to `mch_id` if unset.
 
+### Withdrawal / Payout (Monetapay disbursement)
+
+Two-stage: a merchant (`payment-admin`) requests a payout; kita (`payment-internal`)
+approves it. `CreateWithdrawalRequestAction` holds the full `amount` via `WalletLedger`
+at request time and freezes `fee`/`nett`.
+
+- **Fee** = `services.withdrawal.fee_flat + round(amount * fee_percent/100)` (default
+  `1500 + 11%`), `nett = amount - fee` (the merchant is disbursed `nett`; `fee` is kita's
+  markup booked to the platform ledger on final success). `services.withdrawal.min_amount`
+  (default 10.000) floors the request so `nett` stays positive — enforced by
+  `StoreWithdrawalRequest` and re-guarded in the action.
+- **Approve `manual`** → `SETTLED` immediately, fee booked (`WithdrawalFeeLedger::credit`).
+- **Approve `monetapay`** → `ProcessWithdrawalPayoutJob` calls `createDisbursement`. A
+  successful create only *accepts* the payout (create-response `status:0` = Processing), so
+  the job leaves the row **`PROCESSING`** and books **no** fee yet. Job-`failed()` (create
+  rejected / retries exhausted) refunds the hold and marks `FAILED`.
+- **Final result is async**: `POST /disbursement/merchant/callback` (public, `throttle:webhooks`,
+  `DisbursementCallbackController` → `HandleDisbursementCallbackAction`) decrypts+verifies the
+  same way as the pay-in callback, then maps Monetapay `status`: `1`→`SETTLED` + fee booked,
+  `2`→`FAILED` + hold refunded, `0`→stay `PROCESSING`. Idempotent — a row already terminal is a
+  no-op, so retries never double-book a fee or double-refund. Covered by `WithdrawalTest` and
+  `DisbursementCallbackTest`.
+
 ### Digiflazz (Product Supplier)
 
 - Signature: `md5(username + key + refId)` — the formula is **mode-agnostic**; only the apiKey *value* differs between Development and Production. A wrong-mode key returns rc `41` ("Signature tidak valid").
@@ -322,6 +345,10 @@ MONETAPAY_AES_IV=
 MONETAPAY_IS_PRODUCTION=false
 MONETAPAY_SUCCESS_REDIRECT_URL=   # redirect after successful e-wallet / payment link payment
 MONETAPAY_FAILED_REDIRECT_URL=    # redirect after failed payment link payment (optional)
+
+WITHDRAWAL_FEE_FLAT=1500          # withdraw fee = flat + round(amount * percent/100); nett = amount - fee
+WITHDRAWAL_FEE_PERCENT=11
+WITHDRAWAL_MIN_AMOUNT=10000       # floor on the requested amount so nett stays positive
 
 DIGIFLAZZ_USERNAME=
 DIGIFLAZZ_KEY=

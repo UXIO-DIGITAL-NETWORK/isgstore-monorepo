@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\Merchant\MerchantServiceInvoiceController;
 use App\Http\Controllers\Api\Merchant\MerchantTransactionController;
 use App\Http\Controllers\Api\Merchant\ServiceStatusController;
 use App\Http\Controllers\Api\Merchant\WithdrawalController as MerchantWithdrawalController;
+use App\Http\Controllers\Api\Payment\Monetapay\DisbursementCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayCallbackController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapayController;
 use App\Http\Controllers\Api\Payment\Monetapay\MonetapaySubscriptionCallbackController;
@@ -121,6 +122,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/monetapay/subscription/callback/deduct/before', [MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
         Route::post('/monetapay/subscription/callback/deduct/after', [MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
         Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
+        // Payout (disbursement) result callback (7.4.2) — drives a withdrawal to
+        // SETTLED/FAILED. Point Monetapay's disbursement callback URL here.
+        Route::post('/disbursement/merchant/callback', DisbursementCallbackController::class);
     });
 
     // ── Public storefront ────────────────────────────────────────────────

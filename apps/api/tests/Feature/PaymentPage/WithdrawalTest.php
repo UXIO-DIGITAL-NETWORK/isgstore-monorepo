@@ -16,6 +16,19 @@ class WithdrawalTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Pin the fee schedule so the assertions don't depend on env overrides:
+        // fee = 1500 + 11% of amount, minimum request 10.000.
+        config([
+            'services.withdrawal.fee_flat' => 1500,
+            'services.withdrawal.fee_percent' => 11,
+            'services.withdrawal.min_amount' => 10000,
+        ]);
+    }
+
     private function merchant(int $balance = 0): User
     {
         $role = Role::firstOrCreate(['name' => 'Payment-Admin']);
@@ -47,17 +60,46 @@ class WithdrawalTest extends TestCase
 
         $response = $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000));
 
+        // fee = 1500 + round(40000 * 0.11) = 1500 + 4400 = 5900; nett = 34100.
         $response->assertCreated()
             ->assertJsonPath('data.status', 'PENDING')
-            ->assertJsonPath('data.nett', 40000);
+            ->assertJsonPath('data.fee', 5900)
+            ->assertJsonPath('data.nett', 34100);
 
-        // The hold is debited immediately.
+        // The hold debits the full requested amount immediately (not the nett).
         $this->assertSame(60000, (int) $merchant->fresh()->balance);
         $this->assertDatabaseHas('balance_mutations', [
             'user_id' => $merchant->id,
             'type' => 'withdrawal',
             'amount' => -40000,
         ]);
+    }
+
+    public function test_fee_is_flat_plus_eleven_percent(): void
+    {
+        $merchant = $this->merchant(100000);
+        Sanctum::actingAs($merchant);
+
+        // fee = 1500 + round(100000 * 0.11) = 1500 + 11000 = 12500; nett = 87500.
+        $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(100000))
+            ->assertCreated()
+            ->assertJsonPath('data.fee', 12500)
+            ->assertJsonPath('data.nett', 87500);
+    }
+
+    public function test_request_below_minimum_is_rejected(): void
+    {
+        $merchant = $this->merchant(100000);
+        Sanctum::actingAs($merchant);
+
+        // Below the 10.000 floor — rejected before any hold, so nett can never
+        // go non-positive under the 1500 + 11% schedule.
+        $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(5000))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('amount');
+
+        $this->assertSame(100000, (int) $merchant->fresh()->balance);
+        $this->assertDatabaseCount('withdrawals', 0);
     }
 
     public function test_request_rejected_when_balance_insufficient(): void
@@ -111,8 +153,8 @@ class WithdrawalTest extends TestCase
     public function test_manual_approve_stores_proof_and_credits_fee_once(): void
     {
         Storage::fake('public');
-        // A non-zero withdraw fee so the platform credit is observable.
-        config(['services.withdrawal.fee_flat' => 5000]);
+        // A clean flat-only fee so the platform credit is exactly observable.
+        config(['services.withdrawal.fee_flat' => 5000, 'services.withdrawal.fee_percent' => 0]);
 
         $merchant = $this->merchant(100000);
         Sanctum::actingAs($merchant);
