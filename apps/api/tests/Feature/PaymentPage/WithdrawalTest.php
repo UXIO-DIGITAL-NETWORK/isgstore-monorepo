@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -120,6 +121,49 @@ class WithdrawalTest extends TestCase
 
         $this->assertSame(10000, (int) $merchant->fresh()->balance);
         $this->assertDatabaseCount('withdrawals', 0);
+    }
+
+    public function test_rejects_an_unknown_bank_code(): void
+    {
+        $merchant = $this->merchant(100000);
+        Sanctum::actingAs($merchant);
+
+        $this->postJson('/api/v1/payment-admin/withdrawals', [
+            'amount' => 40000,
+            'bank_code' => 'NOT_A_BANK',
+            'account_number' => '1234567890',
+            'account_name' => 'Client Store',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('bank_code');
+
+        $this->assertDatabaseCount('withdrawals', 0);
+    }
+
+    public function test_ewallet_withdrawal_routes_to_the_ewallet_payout_endpoint(): void
+    {
+        config(['services.monetapay.token' => 'test-token']);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['order_no' => 'MP-EW-1']])]);
+
+        // E-wallet payout: keyed on the phone, no account number required.
+        $merchant = $this->merchant(100000);
+        Sanctum::actingAs($merchant);
+        $this->postJson('/api/v1/payment-admin/withdrawals', [
+            'amount' => 40000,
+            'bank_code' => 'DANA',
+            'account_name' => 'Client Store',
+            'account_phone' => '08123456789',
+        ])->assertCreated();
+        $withdrawal = Withdrawal::firstOrFail();
+
+        Sanctum::actingAs($this->finance());
+        $this->postJson("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/approve", ['method' => 'monetapay'])
+            ->assertOk();
+
+        // The job routed to the e-wallet disbursement endpoint, not the bank one.
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/ewallet-disbursement'));
+        $this->assertSame('PROCESSING', $withdrawal->fresh()->status->value);
     }
 
     public function test_finance_approve_manual_settles_without_refunding(): void

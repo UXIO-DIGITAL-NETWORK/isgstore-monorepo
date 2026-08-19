@@ -10,8 +10,9 @@ readonly class CreateWithdrawalDTO
         public int $merchantId,
         public int $amount,
         public string $bankCode,
-        public string $accountNumber,
+        public ?string $accountNumber,
         public string $accountName,
+        public ?string $accountPhone = null,
         public ?string $notes = null,
     ) {}
 
@@ -21,8 +22,9 @@ readonly class CreateWithdrawalDTO
             merchantId: $merchantId,
             amount: (int) $validated['amount'],
             bankCode: $validated['bank_code'],
-            accountNumber: $validated['account_number'],
+            accountNumber: $validated['account_number'] ?? null,
             accountName: $validated['account_name'],
+            accountPhone: $validated['account_phone'] ?? null,
             notes: $validated['notes'] ?? null,
         );
     }

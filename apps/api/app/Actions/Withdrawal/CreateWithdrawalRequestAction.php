@@ -61,6 +61,7 @@ class CreateWithdrawalRequestAction
                 'bank_code' => $dto->bankCode,
                 'account_number' => $dto->accountNumber,
                 'account_name' => $dto->accountName,
+                'account_phone' => $dto->accountPhone,
                 'status' => WithdrawalStatus::PENDING,
                 'notes' => $dto->notes,
             ]);

@@ -25,8 +25,12 @@ return new class extends Migration
             $table->bigInteger('fee')->default(0);
             $table->bigInteger('nett');
             $table->string('bank_code');
-            $table->string('account_number');
+            // Nullable: e-wallet payouts are keyed on the phone, not an account number.
+            $table->string('account_number')->nullable();
             $table->string('account_name');
+            // Beneficiary phone — the wallet id for e-wallet payouts, and the
+            // disbursement account_phone for bank payouts.
+            $table->string('account_phone')->nullable();
             $table->string('status')->default('PENDING')->index();
             $table->string('notes')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();

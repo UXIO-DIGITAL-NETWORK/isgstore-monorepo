@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Withdrawal;
 
+use App\Support\Payout\BankCatalog;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreWithdrawalRequest extends FormRequest
 {
@@ -22,9 +24,21 @@ class StoreWithdrawalRequest extends FormRequest
 
         return [
             'amount' => ['required', 'integer', "min:{$min}"],
-            'bank_code' => ['required', 'string', 'max:50'],
-            'account_number' => ['required', 'string', 'max:50'],
+            // Must be a code Monetapay can pay out to (config/banks.php).
+            'bank_code' => ['required', 'string', Rule::in(BankCatalog::codes())],
+            // Bank payouts need an account number; e-wallet payouts are keyed on
+            // the phone instead, so account_number is optional for those.
+            'account_number' => [
+                Rule::requiredIf(fn () => ! BankCatalog::isEwallet((string) $this->input('bank_code'))),
+                'nullable', 'string', 'max:50',
+            ],
             'account_name' => ['required', 'string', 'max:255'],
+            // Beneficiary phone: required for e-wallet payouts (the wallet id),
+            // and used as the disbursement account_phone for banks too.
+            'account_phone' => [
+                Rule::requiredIf(fn () => BankCatalog::isEwallet((string) $this->input('bank_code'))),
+                'nullable', 'string', 'max:20',
+            ],
             'notes' => ['nullable', 'string', 'max:255'],
         ];
     }

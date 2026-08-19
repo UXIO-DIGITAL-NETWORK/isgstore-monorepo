@@ -6,6 +6,8 @@ use App\Enums\WithdrawalStatus;
 use App\Models\Withdrawal;
 use App\Services\DiscordWebhookService;
 use App\Services\Payment\MonetapayService;
+use App\Support\Integration\IntegrationConfig;
+use App\Support\Payout\BankCatalog;
 use App\Support\Wallet\WalletLedger;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -63,25 +65,58 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
             return;
         }
 
+        // The beneficiary phone: the e-wallet number for e-wallet payouts, else
+        // the disbursement account_phone. Falls back to the merchant's phone then
+        // a placeholder so the field is always present (postSigned() drops it from
+        // the signed map only if it is blank).
+        $accountPhone = (string) ($current->account_phone ?: $current->merchant?->phone ?: '08123456789');
+        $isEwallet = BankCatalog::isEwallet((string) $current->bank_code);
+
         // HTTP call runs outside any DB transaction so no row lock spans it.
         // Mirror the field set of the proven pay-in createTransaction(): Monetapay
-        // rejects a disbursement missing `currency` (and expects `account_phone`)
-        // with a generic code:-1 "failure". account_phone falls back to the
-        // merchant's phone, then a placeholder, so the field is always present —
-        // postSigned() drops it from the signed map only if it is blank.
-        $response = $monetapay->createDisbursement([
-            'mch_order_no' => $current->withdrawal_number,
-            'amount' => (string) $current->nett,
-            'currency' => 'IDR',
-            'account_bank_code' => $current->bank_code,
-            'account_name' => $current->account_name,
-            'account_number' => $current->account_number,
-            'account_phone' => (string) ($current->merchant?->phone ?: '08123456789'),
-            'notes' => $current->notes ?: "Pencairan {$current->withdrawal_number}",
-        ]);
+        // rejects a payout missing `currency` (and expects `account_phone`) with a
+        // generic code:-1 "failure". E-wallet payouts have no account number.
+        $response = $isEwallet
+            ? $monetapay->createEwalletPayout([
+                'mch_order_no' => $current->withdrawal_number,
+                'amount' => (string) $current->nett,
+                'currency' => 'IDR',
+                'account_bank_code' => $current->bank_code,
+                'account_name' => $current->account_name,
+                'account_phone' => $accountPhone,
+                'notes' => $current->notes ?: "Pencairan {$current->withdrawal_number}",
+            ])
+            : $monetapay->createDisbursement([
+                'mch_order_no' => $current->withdrawal_number,
+                'amount' => (string) $current->nett,
+                'currency' => 'IDR',
+                'account_bank_code' => $current->bank_code,
+                'account_name' => $current->account_name,
+                'account_number' => $current->account_number,
+                'account_phone' => $accountPhone,
+                'notes' => $current->notes ?: "Pencairan {$current->withdrawal_number}",
+            ]);
 
         $code = $response['code'] ?? null;
         if (! in_array($code, [0, 200, '0', '200'], true) && strtolower((string) ($response['message'] ?? '')) !== 'success') {
+            // Prod runs at LOG_LEVEL=error, so the service's debug pre-flight is
+            // invisible. Log the effective app_id + business params (no secrets)
+            // and the raw response here so a generic code:-1 "failure" is
+            // diagnosable — a mch_id fallback for `disbursement_app_id` is the
+            // usual cause (Monetapay rejects an app_id not registered for payout).
+            Log::channel('monetapay')->error('Withdrawal payout rejected by Monetapay', [
+                'withdrawal_number' => $current->withdrawal_number,
+                'method' => $isEwallet ? 'ewallet' : 'bank',
+                'disbursement_app_id' => (string) (IntegrationConfig::for('monetapay')['disbursement_app_id'] ?? ''),
+                'request' => [
+                    'amount' => $current->nett,
+                    'account_bank_code' => $current->bank_code,
+                    'account_number' => $current->account_number,
+                    'account_phone' => $accountPhone,
+                ],
+                'response' => $response,
+            ]);
+
             throw new Exception('Monetapay disbursement rejected: '.json_encode($response));
         }
 

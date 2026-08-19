@@ -23,6 +23,7 @@ class WithdrawalResource extends JsonResource
             'bank_code' => $this->bank_code,
             'account_number' => $this->account_number,
             'account_name' => $this->account_name,
+            'account_phone' => $this->account_phone,
             'status' => $this->status?->value,
             'notes' => $this->notes,
             'approved_at' => $this->approved_at?->toIso8601String(),
