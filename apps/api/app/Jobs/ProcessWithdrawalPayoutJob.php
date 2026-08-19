@@ -73,14 +73,15 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
         $isEwallet = BankCatalog::isEwallet((string) $current->bank_code);
 
         // HTTP call runs outside any DB transaction so no row lock spans it.
-        // Mirror the field set of the proven pay-in createTransaction(): Monetapay
-        // rejects a payout missing `currency` (and expects `account_phone`) with a
-        // generic code:-1 "failure". E-wallet payouts have no account number.
+        // Field set follows the official /v1.0.0/disbursement spec exactly:
+        // mch_order_no, amount, account_name, account_bank_code, account_number,
+        // account_phone, notes (+ app_id/timestamp/sign injected by postSigned).
+        // No `currency` field — the payout spec does not define one, unlike pay-in.
+        // E-wallet payouts have no account number.
         $response = $isEwallet
             ? $monetapay->createEwalletPayout([
                 'mch_order_no' => $current->withdrawal_number,
                 'amount' => (string) $current->nett,
-                'currency' => 'IDR',
                 'account_bank_code' => $current->bank_code,
                 'account_name' => $current->account_name,
                 'account_phone' => $accountPhone,
@@ -89,7 +90,6 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
             : $monetapay->createDisbursement([
                 'mch_order_no' => $current->withdrawal_number,
                 'amount' => (string) $current->nett,
-                'currency' => 'IDR',
                 'account_bank_code' => $current->bank_code,
                 'account_name' => $current->account_name,
                 'account_number' => $current->account_number,
