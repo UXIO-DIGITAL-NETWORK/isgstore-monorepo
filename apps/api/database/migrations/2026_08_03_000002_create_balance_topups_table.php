@@ -39,7 +39,9 @@ return new class extends Migration
         Schema::create('balance_mutations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->enum('type', ['topup', 'purchase', 'refund', 'adjustment']);
+            // Plain string (not an enum) so new movement types — settlement,
+            // withdrawal — don't need a migration each time.
+            $table->string('type');
             // Signed: a debit is negative, so summing the column reconciles
             // against users.balance directly.
             $table->bigInteger('amount');

@@ -11,10 +11,6 @@ use Illuminate\Support\Facades\Schema;
  * payment is confirmed does a `service_subscriptions` row come into existence.
  * Nothing here touches WalletLedger or PlatformLedger — kita selling to a
  * client is not a movement those ledgers model.
- *
- * (As first written, payment was a manual bank transfer with an uploaded bukti
- * transfer. `proof_path` / `proof_uploaded_at` below are dropped by
- * 2026_08_18_000003.)
  */
 return new class extends Migration
 {
@@ -36,8 +32,6 @@ return new class extends Migration
             $table->string('status')->default('UNPAID')->index(); // App\Enums\ServiceInvoiceStatus
             // Drives the nightly UNPAID sweep and the "jatuh tempo" column.
             $table->timestamp('due_at')->nullable();
-            $table->string('proof_path')->nullable(); // public disk, like withdrawals.proof_path
-            $table->timestamp('proof_uploaded_at')->nullable();
             $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('verified_at')->nullable();
             // The client's note on submit, or kita's reason on rejection.
@@ -46,6 +40,8 @@ return new class extends Migration
 
             // "My purchase history", and kita's verification queue filter.
             $table->index(['merchant_id', 'status']);
+            // Serves the date-ordered single-client transaction tabs.
+            $table->index(['merchant_id', 'created_at'], 'service_invoices_merchant_date_idx');
         });
     }
 

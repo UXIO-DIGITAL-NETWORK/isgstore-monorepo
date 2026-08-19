@@ -32,6 +32,8 @@ return new class extends Migration
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->string('disbursement_ref')->nullable();
+            // Bukti transfer for a manually-settled payout (public disk path).
+            $table->string('proof_path')->nullable();
             $table->json('payout_data')->nullable();
             $table->timestamps();
 

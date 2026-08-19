@@ -15,14 +15,21 @@ return new class extends Migration
             $table->id();
             $table->foreignId('role_id')->constrained();
             $table->string('name');
+            $table->string('username')->nullable()->unique();
+            $table->string('avatar')->nullable();
             $table->string('email')->unique();
-            $table->string('phone')->unique();
+            // Google subject id for "Sign in with Google"; unique but nullable (password accounts).
+            $table->string('google_id')->nullable()->unique();
+            // Nullable: a Google-only account has no phone/password.
+            $table->string('phone')->nullable()->unique();
             $table->integer('balance')->default(0);
             $table->integer('point')->default(0);
+            // Account standing for admin moderation: active | suspended | banned.
+            $table->string('status')->default('active');
             $table->string('locale')->default('id');
             $table->string('timezone')->default('Asia/Jakarta');
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

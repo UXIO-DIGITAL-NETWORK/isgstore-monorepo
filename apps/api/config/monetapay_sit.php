@@ -22,14 +22,11 @@
 */
 
 // Staging seeded payment_channel ids (confirmed): 1=bca_va, 3=bni_va, 5=qris, 6=gopay.
-// SIT-only ids (confirm after running seeder on staging): 10=test_va, 11=bnc_va, 12=bni_va_s.
-// NOTE: mandiri_va (id 2) returns 7003 in sandbox — Monetapay sandbox does not support
-//       MANDIRI bank code. Use bnc_va (BNC) for the intended 7003 scenario (2.4).
 // VA channels enforce min Rp 10,000 → use a pricier product (id 4, Rp 33,596).
+// NOTE: scenarios 2.2/2.3/2.4 (static VA, 4012, 7003) required dedicated SIT-only
+//       VA channels that have been removed from the seeder — they are recorded as
+//       NOT_IMPLEMENTED below.
 $VA = 1;       // bca_va   (virtual_account, dynamic is_single_use=1)
-$VA_STATIC = 12;      // bni_va_s (virtual_account, static  is_single_use=0) for scenario 2.2
-$TEST_VA = 10;      // test_va  (virtual_account → account_bank_code=TEST → triggers 4012)
-$BNC_VA = 11;      // bnc_va   (virtual_account → account_bank_code=BNC  → triggers 7003)
 $EW = 6;       // gopay    (ewallet)
 $QR = 5;       // qris
 $PROD_VA = 4;       // VA-eligible product (>= Rp 10,000)
@@ -96,25 +93,19 @@ return [
         'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutController', 'CheckoutAction', 'MonetapayService::createTransaction']],
 
     ['no' => '2.2', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Successful Static VA Creation',
-        'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
-        'body' => ['product_id' => $PROD_VA, 'payment_channel_id' => $VA_STATIC, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
-        'expect_code' => '0', 'expect_http' => 201,
+        'exec' => 'not_implemented', 'expect_code' => '0', 'expect_http' => 200,
         'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction', 'MonetapayService::createTransaction'],
-        'note' => 'bni_va_s channel sends account_bank_code=BNI with is_single_use=0 (static VA). Confirm id=12 after running seeder.'],
+        'note' => 'Required the SIT-only static-VA channel (bni_va_s), which has been removed from the seeder.'],
 
     ['no' => '2.3', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Not support VA bank codes',
-        'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
-        'body' => ['product_id' => $PROD_VA, 'payment_channel_id' => $TEST_VA, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
-        'expect_code' => '4012', 'expect_http' => 400,
+        'exec' => 'not_implemented', 'expect_code' => '4012', 'expect_http' => 400,
         'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction', 'MonetapayService::createTransaction'],
-        'note' => 'test_va channel_code produces account_bank_code=TEST → Monetapay returns 4012 → our API returns HTTP 400.'],
+        'note' => 'Required the SIT-only test_va channel (account_bank_code=TEST → 4012), which has been removed from the seeder.'],
 
     ['no' => '2.4', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Unexpected Bank Error',
-        'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
-        'body' => ['product_id' => $PROD_VA, 'payment_channel_id' => $BNC_VA, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
-        'expect_code' => '7003', 'expect_http' => 400,
+        'exec' => 'not_implemented', 'expect_code' => '7003', 'expect_http' => 400,
         'route' => 'POST /api/v1/checkout', 'files' => ['MonetapayService::createTransaction'],
-        'note' => 'bnc_va channel_code produces account_bank_code=BNC → Monetapay returns 7003 (bank gateway error) → our API returns HTTP 400.'],
+        'note' => 'Required the SIT-only bnc_va channel (account_bank_code=BNC → 7003), which has been removed from the seeder.'],
 
     ['no' => '2.5', 'sheet' => 'Virtual Account', 'service' => 'VA Inquiry', 'scenario' => 'Successful VA Inquiry',
         'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/virtual-account/query', 'auth' => true,

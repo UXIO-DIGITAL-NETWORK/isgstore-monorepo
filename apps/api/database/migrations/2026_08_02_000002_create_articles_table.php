@@ -27,6 +27,8 @@ return new class extends Migration
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('article_category_id')->constrained()->cascadeOnDelete();
+            // Per-article override for the category badge; falls back to the category name when null.
+            $table->string('category_label')->nullable();
             $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('author_name')->default('Admin');
             $table->enum('type', ['article', 'news'])->default('article')->index();

@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('category_types', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            // Voucher-style category type rather than in-game top-up.
+            $table->boolean('is_voucher')->default(false);
             $table->boolean('status')->default(true);
             $table->timestamps();
         });
