@@ -35,12 +35,15 @@ describe("products routes", () => {
     }
   });
 
-  it("serves the Product Provider tab with the real Digiflazz price list, not a placeholder", async () => {
+  it("serves the Product Provider tab as the managed provider list", async () => {
     await renderRoute("/admin/products/provider");
     expect(await screen.findByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
-    // The provisional "waiting on a reference frame" notice is gone now that the
-    // screen is built against the documented Digiflazz price-list contract.
     expect(screen.queryByText(/waiting on a reference/i)).not.toBeInTheDocument();
+    expect(await screen.findByPlaceholderText("Search provider product")).toBeInTheDocument();
+  });
+
+  it("reaches the Digiflazz price list under Add Product Provider", async () => {
+    await renderRoute("/admin/products/provider/add");
     expect(await screen.findByPlaceholderText("Search product, SKU or brand")).toBeInTheDocument();
   });
 });

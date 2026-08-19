@@ -14,93 +14,89 @@ async function selectTwoRows(user: ReturnType<typeof userEvent.setup>) {
   await user.click(rowCheckboxes[1]);
 }
 
+async function openBulkMenu(user: ReturnType<typeof userEvent.setup>, count: number) {
+  await user.click(await screen.findByRole("button", { name: new RegExp(`${count} items selected`) }));
+}
+
 /**
- * The selection action bar (product_requirements.md §4.6) — the reference shows
- * Digiflazz / Logo / Deactive / Delete, each carrying the selected count, and
- * only while rows are selected.
- *
- * Deactivating is a status override, so it goes through the shared
- * confirmation and a toast like delete does (`.claude/rules/rbac-security.md`).
+ * The selection menu (product_requirements.md §4.6) — a single "N items
+ * selected" chip that opens the bulk actions (Edit Logo, Digiflazz Update, Show
+ * Price, Lock Price, Deactive, Delete), only while rows are selected.
  */
 describe("Main Products bulk actions", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("reveals every bulk action, count included, only once rows are selected", async () => {
+  it("reveals the selection chip and its actions only once rows are selected", async () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await screen.findByText(FIRST_ROW);
-    for (const name of [/^Digiflazz \(/, /^Logo \(/, /^Deactive \(/, /^Delete \(/]) {
-      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-    }
+    expect(screen.queryByRole("button", { name: /items selected/ })).not.toBeInTheDocument();
 
     await selectTwoRows(user);
+    await openBulkMenu(user, 2);
 
-    for (const name of ["Digiflazz (2)", "Logo (2)", "Deactive (2)", "Delete (2)"]) {
-      expect(await screen.findByRole("button", { name })).toBeInTheDocument();
+    for (const name of ["Edit Logo", "Digiflazz Update", "Show Price", "Lock Price", "Deactive", "Delete"]) {
+      expect(await screen.findByRole("menuitem", { name })).toBeInTheDocument();
     }
   });
 
   it("deactivates nothing until the confirmation is accepted", async () => {
-    const deactivateSpy = vi.spyOn(productsService, "deactivate").mockResolvedValue(undefined);
+    const spy = vi.spyOn(productsService, "bulkDeactivate").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await selectTwoRows(user);
-    await user.click(await screen.findByRole("button", { name: "Deactive (2)" }));
+    await openBulkMenu(user, 2);
+    await user.click(await screen.findByRole("menuitem", { name: "Deactive" }));
 
     const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText("Deactivate 2 products?")).toBeInTheDocument();
-    expect(within(dialog).getByText(/hidden from the storefront/)).toBeInTheDocument();
-    expect(within(dialog).queryByText(/your account/i)).not.toBeInTheDocument();
-    expect(deactivateSpy).not.toHaveBeenCalled();
+    expect(spy).not.toHaveBeenCalled();
 
     await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
-
-    expect(deactivateSpy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenCalledWith(expect.arrayContaining([expect.any(String)]));
+    expect(spy.mock.calls[0][0]).toHaveLength(2);
   });
 
-  it("cancelling the confirmation deactivates nothing", async () => {
-    const deactivateSpy = vi.spyOn(productsService, "deactivate").mockResolvedValue(undefined);
+  it("confirms and fires a bulk Digiflazz update", async () => {
+    const spy = vi.spyOn(productsService, "bulkDigiflazzUpdate").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await selectTwoRows(user);
-    await user.click(await screen.findByRole("button", { name: "Deactive (2)" }));
+    await openBulkMenu(user, 2);
+    await user.click(await screen.findByRole("menuitem", { name: "Digiflazz Update" }));
 
-    const dialog = await screen.findByRole("alertdialog");
-    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Update" }));
+    expect(spy.mock.calls[0][0]).toHaveLength(2);
+  });
 
-    expect(deactivateSpy).not.toHaveBeenCalled();
+  it("cancelling the confirmation deactivates nothing", async () => {
+    const spy = vi.spyOn(productsService, "bulkDeactivate").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await selectTwoRows(user);
+    await openBulkMenu(user, 2);
+    await user.click(await screen.findByRole("menuitem", { name: "Deactive" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancel" }));
+
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it("marks a single-row deactivation in the singular", async () => {
-    vi.spyOn(productsService, "deactivate").mockResolvedValue(undefined);
+    vi.spyOn(productsService, "bulkDeactivate").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await screen.findByText(FIRST_ROW);
     await user.click(screen.getAllByRole("checkbox", { name: "Select row" })[0]);
-    await user.click(await screen.findByRole("button", { name: "Deactive (1)" }));
+    await openBulkMenu(user, 1);
+    await user.click(await screen.findByRole("menuitem", { name: "Deactive" }));
 
-    const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText("Deactivate this product?")).toBeInTheDocument();
-  });
-
-  it("leaves the rows untouched for the two actions still awaiting a spec", async () => {
-    const deactivateSpy = vi.spyOn(productsService, "deactivate").mockResolvedValue(undefined);
-    const removeSpy = vi.spyOn(productsService, "remove").mockResolvedValue(undefined);
-    const user = userEvent.setup();
-    await renderRoute(LIST_PATH);
-
-    await selectTwoRows(user);
-    await user.click(await screen.findByRole("button", { name: "Digiflazz (2)" }));
-    await user.click(await screen.findByRole("button", { name: "Logo (2)" }));
-
-    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-    expect(deactivateSpy).not.toHaveBeenCalled();
-    expect(removeSpy).not.toHaveBeenCalled();
+    expect(within(await screen.findByRole("alertdialog")).getByText("Deactivate this product?")).toBeInTheDocument();
   });
 });

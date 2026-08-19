@@ -10,6 +10,9 @@ import type {
   DigiflazzPriceListParams,
   DigiflazzSkuPreview,
   DigiflazzType,
+  ProviderProduct,
+  ProviderProductListParams,
+  SetProviderMarginInput,
 } from "../types/product.type";
 
 /**
@@ -18,9 +21,72 @@ import type {
  * `products.service.ts` (the catalog CRUD) so each service owns one concern.
  */
 const BASE = `${API_VERSION}/digiflazz`;
+/** The redesigned Product Provider tab reads the managed mapping list. */
+const MANAGED_BASE = `${API_VERSION}/supplier-products`;
 
 /** The API row is the view row minus the synthetic `id` the service injects. */
 type PriceListApiRow = Omit<DigiflazzPriceListItem, "id">;
+
+/** The `/supplier-products` row shape (SupplierProductResource + product/supplier). */
+interface SupplierProductApiRow {
+  id: number;
+  buyer_sku_code: string;
+  price: number;
+  is_active: boolean;
+  is_price_locked: boolean;
+  is_system: boolean;
+  margins: { member: number | null; vip: number | null; reseller: number | null; agent: number | null };
+  product?: {
+    id: number;
+    name: string;
+    code: string;
+    price_modal: number;
+    price_member: number;
+    price_vip: number;
+    price_reseller: number;
+    price_agent: number;
+    status: boolean;
+    category?: { id: number; name: string } | null;
+  } | null;
+  supplier?: { id: number; name: string; is_system: boolean } | null;
+  created_at: string;
+}
+
+/** Flatten the nested API row into the view model the managed table renders. */
+const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
+  const product = row.product;
+  return {
+    id: String(row.id),
+    buyer_sku_code: row.buyer_sku_code,
+    cost: row.price,
+    is_active: Boolean(row.is_active),
+    is_price_locked: Boolean(row.is_price_locked),
+    is_system: Boolean(row.is_system),
+    supplier_name: row.supplier?.name ?? "—",
+    category_name: product?.category?.name ?? "—",
+    product_name: product?.name ?? "—",
+    product_code: product?.code ?? "—",
+    margins: {
+      public: row.margins?.member ?? null,
+      vip: row.margins?.vip ?? null,
+      reseller: row.margins?.reseller ?? null,
+      agent: row.margins?.agent ?? null,
+    },
+    variant: {
+      id: String(product?.id ?? row.id),
+      name: product?.name ?? row.buyer_sku_code,
+      cost_price: product?.price_modal ?? row.price,
+      prices: {
+        public: product?.price_member ?? 0,
+        vip: product?.price_vip ?? 0,
+        reseller: product?.price_reseller ?? 0,
+        agent: product?.price_agent ?? 0,
+      },
+      status: product?.status ? "active" : "inactive",
+    },
+    created_at: row.created_at,
+  };
+};
 
 export const providerService = {
   priceList: async (params: DigiflazzPriceListParams = {}): Promise<PaginatedResponse<DigiflazzPriceListItem>> => {
@@ -69,6 +135,52 @@ export const providerService = {
       status: input.status,
       buyer_sku_codes: input.buyer_sku_codes,
     });
+    return response.data;
+  },
+
+  // ── Managed provider products (redesigned Product Provider tab) ────────────
+
+  list: async (params: ProviderProductListParams = {}): Promise<PaginatedResponse<ProviderProduct>> => {
+    const query = {
+      ...(params.search ? { search: params.search } : {}),
+      ...(params.supplier_id ? { supplier_id: toFk(params.supplier_id) } : {}),
+      ...(params.category_id ? { category_id: toFk(params.category_id) } : {}),
+      ...(params.status ? { status: params.status } : {}),
+      ...(params.mode ? { mode: params.mode } : {}),
+      page: params.page,
+      per_page: params.per_page,
+    };
+    const response: ApiResponse<PaginatedResponse<SupplierProductApiRow>> = await api.get(MANAGED_BASE, { params: query });
+    return unwrapPaginated(response, toProviderProduct);
+  },
+
+  lockPrice: async (id: string, locked: boolean): Promise<void> => {
+    await api.post(`${MANAGED_BASE}/${id}/lock-price`, { locked });
+  },
+
+  setMargin: async (id: string, input: SetProviderMarginInput): Promise<void> => {
+    await api.post(`${MANAGED_BASE}/${id}/profit-margin`, input);
+  },
+
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`${MANAGED_BASE}/${id}`);
+  },
+
+  // ── Bulk provider actions ──────────────────────────────────────────────────
+
+  bulkLockPrice: async (ids: string[], locked: boolean): Promise<void> => {
+    await api.post(`${MANAGED_BASE}/bulk/lock-price`, { ids: ids.map(toFk), locked });
+  },
+
+  bulkSetMargin: async (ids: string[], input: SetProviderMarginInput): Promise<void> => {
+    await api.post(`${MANAGED_BASE}/bulk/profit-margin`, { ids: ids.map(toFk), ...input });
+  },
+
+  bulkRemove: async (ids: string[]): Promise<{ deleted: number; skipped: { id: number; reason: string }[] }> => {
+    const response: ApiResponse<{ deleted: number; skipped: { id: number; reason: string }[] }> = await api.post(
+      `${MANAGED_BASE}/bulk/delete`,
+      { ids: ids.map(toFk) },
+    );
     return response.data;
   },
 };

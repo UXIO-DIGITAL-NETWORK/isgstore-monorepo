@@ -68,6 +68,10 @@ import { Route as AdminPreviewCategoriesPreviewCategoryIndexRouteImport } from '
 import { Route as AdminPreviewCategoriesPreviewCategoryTypeIndexRouteImport } from './routes/admin/_preview/categories-preview/category-type/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryServerIndexRouteImport } from './routes/admin/_preview/categories-preview/category-server/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryProviderIndexRouteImport } from './routes/admin/_preview/categories-preview/category-provider/index'
+import { Route as AdminProtectedProductsProviderSetProfitMarginIndexRouteImport } from './routes/admin/_protected/products/provider/set-profit-margin/index'
+import { Route as AdminProtectedProductsProviderAddIndexRouteImport } from './routes/admin/_protected/products/provider/add/index'
+import { Route as AdminProtectedProductsMainSetPriceLimitIndexRouteImport } from './routes/admin/_protected/products/main/set-price-limit/index'
+import { Route as AdminProtectedProductsMainAddBulkIndexRouteImport } from './routes/admin/_protected/products/main/add-bulk/index'
 import { Route as AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport } from './routes/admin/_preview/transaction-preview/$invoiceNo/edit/index'
 import { Route as AdminProtectedTransactionsManualInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/manual/$invoiceNo/edit/index'
 import { Route as AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/automatic/$invoiceNo/edit/index'
@@ -419,6 +423,30 @@ const AdminPreviewCategoriesPreviewCategoryProviderIndexRoute =
     path: '/category-provider/',
     getParentRoute: () => AdminPreviewCategoriesPreviewRouteRoute,
   } as any)
+const AdminProtectedProductsProviderSetProfitMarginIndexRoute =
+  AdminProtectedProductsProviderSetProfitMarginIndexRouteImport.update({
+    id: '/provider/set-profit-margin/',
+    path: '/provider/set-profit-margin/',
+    getParentRoute: () => AdminProtectedProductsRouteRoute,
+  } as any)
+const AdminProtectedProductsProviderAddIndexRoute =
+  AdminProtectedProductsProviderAddIndexRouteImport.update({
+    id: '/provider/add/',
+    path: '/provider/add/',
+    getParentRoute: () => AdminProtectedProductsRouteRoute,
+  } as any)
+const AdminProtectedProductsMainSetPriceLimitIndexRoute =
+  AdminProtectedProductsMainSetPriceLimitIndexRouteImport.update({
+    id: '/main/set-price-limit/',
+    path: '/main/set-price-limit/',
+    getParentRoute: () => AdminProtectedProductsRouteRoute,
+  } as any)
+const AdminProtectedProductsMainAddBulkIndexRoute =
+  AdminProtectedProductsMainAddBulkIndexRouteImport.update({
+    id: '/main/add-bulk/',
+    path: '/main/add-bulk/',
+    getParentRoute: () => AdminProtectedProductsRouteRoute,
+  } as any)
 const AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute =
   AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport.update({
     id: '/transaction-preview/$invoiceNo/edit/',
@@ -497,6 +525,10 @@ export interface FileRoutesByFullPath {
   '/admin/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
+  '/admin/products/main/add-bulk/': typeof AdminProtectedProductsMainAddBulkIndexRoute
+  '/admin/products/main/set-price-limit/': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
+  '/admin/products/provider/add/': typeof AdminProtectedProductsProviderAddIndexRoute
+  '/admin/products/provider/set-profit-margin/': typeof AdminProtectedProductsProviderSetProfitMarginIndexRoute
   '/admin/transactions/automatic/$invoiceNo/edit/': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
   '/admin/transactions/manual/$invoiceNo/edit/': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
@@ -553,6 +585,10 @@ export interface FileRoutesByTo {
   '/admin/transactions/automatic': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
+  '/admin/products/main/add-bulk': typeof AdminProtectedProductsMainAddBulkIndexRoute
+  '/admin/products/main/set-price-limit': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
+  '/admin/products/provider/add': typeof AdminProtectedProductsProviderAddIndexRoute
+  '/admin/products/provider/set-profit-margin': typeof AdminProtectedProductsProviderSetProfitMarginIndexRoute
   '/admin/transactions/automatic/$invoiceNo/edit': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
   '/admin/transactions/manual/$invoiceNo/edit': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
@@ -618,6 +654,10 @@ export interface FileRoutesById {
   '/admin/_protected/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/_protected/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/_preview/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
+  '/admin/_protected/products/main/add-bulk/': typeof AdminProtectedProductsMainAddBulkIndexRoute
+  '/admin/_protected/products/main/set-price-limit/': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
+  '/admin/_protected/products/provider/add/': typeof AdminProtectedProductsProviderAddIndexRoute
+  '/admin/_protected/products/provider/set-profit-margin/': typeof AdminProtectedProductsProviderSetProfitMarginIndexRoute
   '/admin/_protected/transactions/automatic/$invoiceNo/edit/': typeof AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRoute
   '/admin/_protected/transactions/manual/$invoiceNo/edit/': typeof AdminProtectedTransactionsManualInvoiceNoEditIndexRoute
 }
@@ -682,6 +722,10 @@ export interface FileRouteTypes {
     | '/admin/transactions/automatic/'
     | '/admin/transactions/manual/'
     | '/admin/transaction-preview/$invoiceNo/edit/'
+    | '/admin/products/main/add-bulk/'
+    | '/admin/products/main/set-price-limit/'
+    | '/admin/products/provider/add/'
+    | '/admin/products/provider/set-profit-margin/'
     | '/admin/transactions/automatic/$invoiceNo/edit/'
     | '/admin/transactions/manual/$invoiceNo/edit/'
   fileRoutesByTo: FileRoutesByTo
@@ -738,6 +782,10 @@ export interface FileRouteTypes {
     | '/admin/transactions/automatic'
     | '/admin/transactions/manual'
     | '/admin/transaction-preview/$invoiceNo/edit'
+    | '/admin/products/main/add-bulk'
+    | '/admin/products/main/set-price-limit'
+    | '/admin/products/provider/add'
+    | '/admin/products/provider/set-profit-margin'
     | '/admin/transactions/automatic/$invoiceNo/edit'
     | '/admin/transactions/manual/$invoiceNo/edit'
   id:
@@ -802,6 +850,10 @@ export interface FileRouteTypes {
     | '/admin/_protected/transactions/automatic/'
     | '/admin/_protected/transactions/manual/'
     | '/admin/_preview/transaction-preview/$invoiceNo/edit/'
+    | '/admin/_protected/products/main/add-bulk/'
+    | '/admin/_protected/products/main/set-price-limit/'
+    | '/admin/_protected/products/provider/add/'
+    | '/admin/_protected/products/provider/set-profit-margin/'
     | '/admin/_protected/transactions/automatic/$invoiceNo/edit/'
     | '/admin/_protected/transactions/manual/$invoiceNo/edit/'
   fileRoutesById: FileRoutesById
@@ -1229,6 +1281,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPreviewCategoriesPreviewCategoryProviderIndexRouteImport
       parentRoute: typeof AdminPreviewCategoriesPreviewRouteRoute
     }
+    '/admin/_protected/products/provider/set-profit-margin/': {
+      id: '/admin/_protected/products/provider/set-profit-margin/'
+      path: '/provider/set-profit-margin'
+      fullPath: '/admin/products/provider/set-profit-margin/'
+      preLoaderRoute: typeof AdminProtectedProductsProviderSetProfitMarginIndexRouteImport
+      parentRoute: typeof AdminProtectedProductsRouteRoute
+    }
+    '/admin/_protected/products/provider/add/': {
+      id: '/admin/_protected/products/provider/add/'
+      path: '/provider/add'
+      fullPath: '/admin/products/provider/add/'
+      preLoaderRoute: typeof AdminProtectedProductsProviderAddIndexRouteImport
+      parentRoute: typeof AdminProtectedProductsRouteRoute
+    }
+    '/admin/_protected/products/main/set-price-limit/': {
+      id: '/admin/_protected/products/main/set-price-limit/'
+      path: '/main/set-price-limit'
+      fullPath: '/admin/products/main/set-price-limit/'
+      preLoaderRoute: typeof AdminProtectedProductsMainSetPriceLimitIndexRouteImport
+      parentRoute: typeof AdminProtectedProductsRouteRoute
+    }
+    '/admin/_protected/products/main/add-bulk/': {
+      id: '/admin/_protected/products/main/add-bulk/'
+      path: '/main/add-bulk'
+      fullPath: '/admin/products/main/add-bulk/'
+      preLoaderRoute: typeof AdminProtectedProductsMainAddBulkIndexRouteImport
+      parentRoute: typeof AdminProtectedProductsRouteRoute
+    }
     '/admin/_preview/transaction-preview/$invoiceNo/edit/': {
       id: '/admin/_preview/transaction-preview/$invoiceNo/edit/'
       path: '/transaction-preview/$invoiceNo/edit'
@@ -1414,6 +1494,10 @@ interface AdminProtectedProductsRouteRouteChildren {
   AdminProtectedProductsIndexRoute: typeof AdminProtectedProductsIndexRoute
   AdminProtectedProductsMainIndexRoute: typeof AdminProtectedProductsMainIndexRoute
   AdminProtectedProductsProviderIndexRoute: typeof AdminProtectedProductsProviderIndexRoute
+  AdminProtectedProductsMainAddBulkIndexRoute: typeof AdminProtectedProductsMainAddBulkIndexRoute
+  AdminProtectedProductsMainSetPriceLimitIndexRoute: typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
+  AdminProtectedProductsProviderAddIndexRoute: typeof AdminProtectedProductsProviderAddIndexRoute
+  AdminProtectedProductsProviderSetProfitMarginIndexRoute: typeof AdminProtectedProductsProviderSetProfitMarginIndexRoute
 }
 
 const AdminProtectedProductsRouteRouteChildren: AdminProtectedProductsRouteRouteChildren =
@@ -1422,6 +1506,14 @@ const AdminProtectedProductsRouteRouteChildren: AdminProtectedProductsRouteRoute
     AdminProtectedProductsMainIndexRoute: AdminProtectedProductsMainIndexRoute,
     AdminProtectedProductsProviderIndexRoute:
       AdminProtectedProductsProviderIndexRoute,
+    AdminProtectedProductsMainAddBulkIndexRoute:
+      AdminProtectedProductsMainAddBulkIndexRoute,
+    AdminProtectedProductsMainSetPriceLimitIndexRoute:
+      AdminProtectedProductsMainSetPriceLimitIndexRoute,
+    AdminProtectedProductsProviderAddIndexRoute:
+      AdminProtectedProductsProviderAddIndexRoute,
+    AdminProtectedProductsProviderSetProfitMarginIndexRoute:
+      AdminProtectedProductsProviderSetProfitMarginIndexRoute,
   }
 
 const AdminProtectedProductsRouteRouteWithChildren =

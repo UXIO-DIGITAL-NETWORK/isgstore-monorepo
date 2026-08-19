@@ -62,6 +62,11 @@ export interface Product {
   status: ProductStatus;
   /** §6's `is_available` — storefront visibility. The second badge. */
   is_available: boolean;
+  /** Price controls (bulk feature). `0/null = no limit`. */
+  is_price_locked?: boolean;
+  is_price_hidden?: boolean;
+  price_min?: number | null;
+  price_max?: number | null;
   variants: ProductVariant[];
   created_at: string;
   updated_at: string;
@@ -188,4 +193,73 @@ export interface BulkAddDigiflazzInput {
 export interface BulkAddDigiflazzResult {
   created: number;
   skipped: { buyer_sku_code: string; reason: string }[];
+}
+
+/* ── Product Provider tab — managed provider products ──────────────────────── */
+
+/**
+ * A managed provider product: a `SupplierProduct` mapping joined to its Product
+ * and Supplier (`GET /v1/supplier-products`). This is the row the redesigned
+ * Product Provider table lists — with the product's price breakdown, its
+ * supplier, and the flags bulk/row actions act on. `is_system` rows come from
+ * the Internal System supplier and are protected (not selectable, no delete).
+ */
+export interface ProviderProduct {
+  id: string;
+  buyer_sku_code: string;
+  /** Supplier cost in IDR (the price card's Cost row). */
+  cost: number;
+  is_active: boolean;
+  is_price_locked: boolean;
+  is_system: boolean;
+  supplier_name: string;
+  category_name: string;
+  product_name: string;
+  product_code: string;
+  /** Per-tier margin overrides in percent; null = derived from pricing rules. */
+  margins: Record<PriceTier, number | null>;
+  /** The product's price breakdown, ready for `ProductPriceCell`. */
+  variant: ProductVariant;
+  created_at: string;
+}
+
+export interface ProviderProductListParams {
+  search?: string;
+  supplier_id?: string;
+  category_id?: string;
+  /** "active" | "inactive" | undefined (all). */
+  status?: string;
+  /** "auto" | "manual" | undefined — locked mappings are "manual". */
+  mode?: string;
+  page?: number;
+  per_page?: number;
+}
+
+/** Per-tier profit-margin percentages sent to `POST …/profit-margin`. */
+export interface SetProviderMarginInput {
+  margin_member?: number | null;
+  margin_vip?: number | null;
+  margin_reseller?: number | null;
+  margin_agent?: number | null;
+}
+
+/* ── Add Product (Bulk) ─────────────────────────────────────────────────────── */
+
+/** One row to create in the Add Product Bulk flow. */
+export interface BulkCreateProductItem {
+  code: string;
+  name: string;
+  cost: number;
+  sub_category_id?: string | null;
+}
+
+export interface BulkCreateProductsInput {
+  supplier_id: string;
+  category_id: string;
+  items: BulkCreateProductItem[];
+}
+
+export interface BulkCreateProductsResult {
+  created: number;
+  skipped: { code: string; reason: string }[];
 }

@@ -7,6 +7,8 @@ import {
   type RowSelectionState,
 } from "@tanstack/react-table";
 
+import { Lock } from "lucide-react";
+
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
@@ -50,6 +52,10 @@ interface DataTableProps<TData extends { id: string }> {
   /** Row checkboxes. Off for lists with no bulk action — the Category Type
    * reference shows no selection column at all (§4.5). */
   enableSelection?: boolean;
+  /** Per-row selection guard. A row that returns `false` is never selectable —
+   * its checkbox is replaced by a lock glyph and it never enters the selection.
+   * Used to protect System provider rows from bulk actions. */
+  canSelectRow?: (row: TData) => boolean;
   /** Label rendered in the page-size trigger, e.g. `10 Row`. Defaults to the
    * bare number. */
   formatPageSizeLabel?: (pageSize: number) => string;
@@ -90,6 +96,7 @@ export function DataTable<TData extends { id: string }>({
   entityLabel,
   showRowNumber = false,
   enableSelection = true,
+  canSelectRow,
   formatPageSizeLabel,
   onSelectionChange,
   page,
@@ -124,13 +131,21 @@ export function DataTable<TData extends { id: string }>({
           aria-label="Select all rows"
         />
       ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
+      cell: ({ row }) =>
+        row.getCanSelect() ? (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        ) : (
+          // Protected row (e.g. a System provider): not selectable, so the
+          // checkbox slot carries a lock instead of an empty gap.
+          <Lock
+            className="size-4 text-muted-foreground"
+            aria-label="Locked row"
+          />
+        ),
     }),
     [],
   );
@@ -164,7 +179,7 @@ export function DataTable<TData extends { id: string }>({
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
     manualPagination: true,
-    enableRowSelection: true,
+    enableRowSelection: canSelectRow ? (row) => canSelectRow(row.original) : true,
     state: { rowSelection },
     onRowSelectionChange: setRowSelection,
   });

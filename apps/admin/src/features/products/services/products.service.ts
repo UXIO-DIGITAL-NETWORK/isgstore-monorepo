@@ -3,7 +3,13 @@ import { API_VERSION } from "@/config/env";
 import { toFk, toRowId, unwrapPaginated } from "@/lib/apiMappers";
 import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import { PRICE_RANGE_OPTIONS } from "../data/select-options.data";
-import type { Product, ProductListParams } from "../types/product.type";
+import type {
+  BulkCreateProductsInput,
+  BulkCreateProductsResult,
+  Product,
+  ProductListParams,
+  SelectOption,
+} from "../types/product.type";
 
 const BASE = `${API_VERSION}/products`;
 
@@ -26,6 +32,10 @@ interface ProductApiRow {
   price_agent: number;
   status: boolean;
   is_available: boolean;
+  is_price_locked?: boolean;
+  is_price_hidden?: boolean;
+  price_min?: number | null;
+  price_max?: number | null;
   category?: { id: number; name: string } | null;
   sub_category?: { id: number; name: string } | null;
   created_at: string;
@@ -59,6 +69,10 @@ const toProduct = (row: ProductApiRow): Product => ({
   description: row.description ?? undefined,
   status: row.status ? "active" : "inactive",
   is_available: Boolean(row.is_available),
+  is_price_locked: Boolean(row.is_price_locked),
+  is_price_hidden: Boolean(row.is_price_hidden),
+  price_min: row.price_min ?? null,
+  price_max: row.price_max ?? null,
   variants: [
     {
       id: toRowId(row.id),
@@ -167,5 +181,55 @@ export const productsService = {
 
   remove: async (id: string): Promise<void> => {
     await api.delete(`${BASE}/${id}`);
+  },
+
+  // ── Price controls (row + bulk) ────────────────────────────────────────────
+
+  setPriceLimit: async (id: string, limits: { price_min: number | null; price_max: number | null }): Promise<void> => {
+    await api.post(`${BASE}/${id}/price-limit`, limits);
+  },
+
+  bulkLockPrice: async (ids: string[], locked: boolean): Promise<void> => {
+    await api.post(`${BASE}/bulk/lock-price`, { ids: ids.map(toFk), locked });
+  },
+
+  bulkShowPrice: async (ids: string[], hidden: boolean): Promise<void> => {
+    await api.post(`${BASE}/bulk/show-price`, { ids: ids.map(toFk), hidden });
+  },
+
+  bulkDeactivate: async (ids: string[]): Promise<void> => {
+    await api.post(`${BASE}/bulk/deactivate`, { ids: ids.map(toFk) });
+  },
+
+  bulkDigiflazzUpdate: async (ids: string[]): Promise<void> => {
+    await api.post(`${BASE}/bulk/digiflazz-update`, { ids: ids.map(toFk) });
+  },
+
+  bulkDelete: async (ids: string[]): Promise<void> => {
+    await api.post(`${BASE}/bulk/delete`, { ids: ids.map(toFk) });
+  },
+
+  // ── Add Product (Bulk) ─────────────────────────────────────────────────────
+
+  suppliers: async (): Promise<SelectOption[]> => {
+    const response: ApiResponse<PaginatedResponse<{ id: number; name: string }>> = await api.get(
+      `${API_VERSION}/suppliers`,
+      { params: { per_page: 100 } },
+    );
+    return unwrapPaginated(response, (row) => ({ value: toRowId(row.id), label: row.name })).data;
+  },
+
+  bulkCreate: async (input: BulkCreateProductsInput): Promise<BulkCreateProductsResult> => {
+    const response: ApiResponse<BulkCreateProductsResult> = await api.post(`${BASE}/bulk-create`, {
+      supplier_id: toFk(input.supplier_id),
+      category_id: toFk(input.category_id),
+      items: input.items.map((item) => ({
+        code: item.code,
+        name: item.name,
+        cost: item.cost,
+        ...(item.sub_category_id ? { sub_category_id: toFk(item.sub_category_id) } : {}),
+      })),
+    });
+    return response.data;
   },
 };

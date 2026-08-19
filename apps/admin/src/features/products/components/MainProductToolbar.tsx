@@ -1,8 +1,9 @@
-import { ChevronDown, CloudUpload, ImageIcon, Plus, Power, RefreshCw, Search, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ChevronDown, Eye, ImageIcon, Lock, Plus, Power, RefreshCcw, RefreshCw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Box } from "@/components/common/Box";
-import { Can } from "@/components/common/Can";
+import { BulkActionsMenu } from "@/components/common/BulkActionsMenu";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,9 @@ interface MainProductToolbarProps {
   onRefresh: () => void;
   onAdd: () => void;
   selectedCount: number;
+  onBulkDigiflazz: () => void;
+  onBulkShowPrice: () => void;
+  onBulkLock: () => void;
   onBulkDeactivate: () => void;
   onBulkDelete: () => void;
 }
@@ -54,13 +58,15 @@ export function MainProductToolbar({
   onRefresh,
   onAdd,
   selectedCount,
+  onBulkDigiflazz,
+  onBulkShowPrice,
+  onBulkLock,
   onBulkDeactivate,
   onBulkDelete,
 }: MainProductToolbarProps) {
-  // ponytail: the reference shows these two, but nothing specifies what a bulk
-  // Digiflazz push or a bulk logo upload does — the Product Provider tab and
-  // the upload endpoint are both roadmap (§5). They say so rather than guess a
-  // mutation; swap in the real handler when either lands.
+  const navigate = useNavigate();
+  // Edit Logo (bulk) still waits on the product image endpoint (§5); it says so
+  // rather than guessing a mutation.
   const announceDeferred = (message: string) => () => toast.info(message);
 
   return (
@@ -170,7 +176,7 @@ export function MainProductToolbar({
               className="rounded-2xl"
             >
               <DropdownMenuItem onSelect={onAdd}>Manual</DropdownMenuItem>
-              <DropdownMenuItem onSelect={announceDeferred("Bulk product import lands with the Add Product form")}>
+              <DropdownMenuItem onSelect={() => navigate({ to: "/admin/products/main/add-bulk" })}>
                 Bulk
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -178,49 +184,26 @@ export function MainProductToolbar({
         </Box>
       </Box>
 
-      {/* Selection actions, in the reference's order. Only rendered with a
-          selection, so the row is never a bar of dead buttons. */}
+      {/* Selection actions collapse into one "N items selected" menu (the
+          reference's checklist menu), only shown with a selection. Edit Logo
+          still waits on the product image endpoint (§5). */}
       {selectedCount > 0 && (
-        <Box className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            className="rounded-xl"
-            onClick={announceDeferred("Pushing products to Digiflazz lands with the Product Provider tab")}
-          >
-            <CloudUpload className="size-4" />
-            Digiflazz ({selectedCount})
-          </Button>
-          <Button
-            variant="outline"
-            className="rounded-xl"
-            onClick={announceDeferred("Bulk logo upload lands with the product image endpoint")}
-          >
-            <ImageIcon className="size-4" />
-            Logo ({selectedCount})
-          </Button>
-          <Can permission="products.edit">
-            <Button
-              variant="outline"
-              className="rounded-xl"
-              onClick={onBulkDeactivate}
-            >
-              <Power className="size-4" />
-              Deactive ({selectedCount})
-            </Button>
-          </Can>
-          <Can permission="products.delete">
-            <Button
-              variant="destructive"
-              // `dark:bg-destructive` overrides the variant's own
-              // `dark:bg-destructive/60`, which renders washed out next to the
-              // row menu's full-strength red Delete.
-              className="rounded-xl bg-destructive text-white hover:bg-destructive/90 dark:bg-destructive dark:hover:bg-destructive/90"
-              onClick={onBulkDelete}
-            >
-              <Trash2 className="size-4" />
-              Delete ({selectedCount})
-            </Button>
-          </Can>
+        <Box className="flex justify-end">
+          <BulkActionsMenu
+            count={selectedCount}
+            actions={[
+              {
+                label: "Edit Logo",
+                icon: <ImageIcon className="size-4" />,
+                onSelect: announceDeferred("Bulk logo upload lands with the product image endpoint"),
+              },
+              { label: "Digiflazz Update", icon: <RefreshCcw className="size-4" />, onSelect: onBulkDigiflazz },
+              { label: "Show Price", icon: <Eye className="size-4" />, onSelect: onBulkShowPrice },
+              { label: "Lock Price", icon: <Lock className="size-4" />, onSelect: onBulkLock },
+              { label: "Deactive", icon: <Power className="size-4" />, onSelect: onBulkDeactivate },
+              { label: "Delete", icon: <Trash2 className="size-4" />, destructive: true, onSelect: onBulkDelete },
+            ]}
+          />
         </Box>
       )}
     </Box>

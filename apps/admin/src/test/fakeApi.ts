@@ -246,6 +246,61 @@ const toApiTransaction = (row: (typeof TRANSACTIONS)[number], index: number): Ro
 /** Suppliers back the provider select, which submits a real supplier_id. */
 const SUPPLIER_NAMES = ["Digiflazz Buyer", "Digiflazz Seller", "UxioTopup", "Zelpoint", "Topupkuy"];
 
+/**
+ * Managed provider products (redesigned Product Provider tab). Served in the
+ * `/v1/supplier-products` row shape so the service mapper runs for real. One
+ * System row (protected: no checkbox, no delete) and one Digiflazz row.
+ */
+const SUPPLIER_PRODUCTS = (): Row[] => {
+  const priced = (modal: number) => ({
+    price_modal: modal,
+    price_member: Math.ceil(modal * 1.2),
+    price_vip: Math.ceil(modal * 1.15),
+    price_reseller: Math.ceil(modal * 1.1),
+    price_agent: Math.ceil(modal * 1.05),
+  });
+  return [
+    {
+      id: 1,
+      buyer_sku_code: "MEMBERSHIP_VIP",
+      price: 58745,
+      is_active: true,
+      is_price_locked: false,
+      is_system: true,
+      margins: { member: null, vip: null, reseller: null, agent: null },
+      product: {
+        id: 101,
+        name: "Membership VIP",
+        code: "MEMBERSHIP_VIP",
+        ...priced(58745),
+        status: true,
+        category: { id: 1, name: "Membership" },
+      },
+      supplier: { id: 3, name: "Internal System", is_system: true },
+      created_at: "2026-03-08T07:32:00.000000Z",
+    },
+    {
+      id: 2,
+      buyer_sku_code: "MLID_19_S1",
+      price: 4865,
+      is_active: true,
+      is_price_locked: false,
+      is_system: false,
+      margins: { member: null, vip: null, reseller: null, agent: null },
+      product: {
+        id: 102,
+        name: "MOBILELEGEND - 19 Diamond",
+        code: "MLID_19_S1",
+        ...priced(4865),
+        status: true,
+        category: { id: 2, name: "Mobile Legends Indonesia" },
+      },
+      supplier: { id: 1, name: "Digiflazz Buyer", is_system: false },
+      created_at: "2026-03-10T21:58:00.000000Z",
+    },
+  ];
+};
+
 const SEEDS: Record<string, () => Row[]> = {
   "suppliers": () => SUPPLIER_NAMES.map((name, index) => ({ id: index + 1, name, status: true })),
   "categories": () => CATEGORIES.map(toApiCategory),
@@ -255,6 +310,7 @@ const SEEDS: Record<string, () => Row[]> = {
   "server-category-options": () => [],
   "supplier-categories": () => CATEGORY_PROVIDERS.map(toApiSupplierCategory),
   "products": () => PRODUCTS.map(toApiProduct),
+  "supplier-products": () => SUPPLIER_PRODUCTS(),
   "transactions": () => TRANSACTIONS.map(toApiTransaction),
   "article-categories": () =>
     ["promo", "mobile-legend", "free-fire"].map((key, index) => ({
@@ -522,6 +578,7 @@ const SEARCHABLE: Record<string, string[]> = {
   "server-categories": ["name"],
   "supplier-categories": ["template_code"],
   "products": ["name", "code"],
+  "supplier-products": ["buyer_sku_code"],
   "transactions": ["invoice_number"],
   "articles": ["title"],
   "article-categories": ["name"],

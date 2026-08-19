@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Eye, Lock, MoreHorizontal, Pencil, Power, RefreshCcw, SlidersHorizontal, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Can } from "@/components/common/Can";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
@@ -12,7 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDeactivateProducts, useDeleteProducts } from "../hooks/useProducts";
+import {
+  useDeactivateProducts,
+  useDeleteProducts,
+  useDigiflazzUpdateProducts,
+  useLockProducts,
+  useShowProducts,
+} from "../hooks/useProducts";
 import type { Product } from "../types/product.type";
 import { MainProductFormDialog } from "./MainProductFormDialog";
 
@@ -21,25 +27,24 @@ interface ProductRowActionsProps {
 }
 
 /**
- * Row menu for the Main Products list, in the reference's order.
- *
- * Only Deactive and Delete mutate: Edit has no form frame yet (§4.6), and
- * nothing specifies what a per-row Digiflazz push, a price reveal, a price
- * lock or a price limit actually change — the fields behind the last three
- * (the `Public` padlock, "Price limits: No limit") aren't modelled either.
- * They stay listed, `<Can>`-gated and labelled, announcing what they wait on
- * rather than guessing a mutation; wiring each is a one-line change.
+ * Row menu for the Main Products list, in the reference's order. Each action is
+ * wired: Digiflazz Update / Show Price / Lock Price go through a confirm dialog,
+ * Set Price Limit opens its page, and Deactive / Edit / Delete are unchanged.
+ * The single-row paths reuse the bulk hooks with a one-id selection.
  */
 export function ProductRowActions({ product }: ProductRowActionsProps) {
+  const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [lockOpen, setLockOpen] = useState(false);
+  const [showOpen, setShowOpen] = useState(false);
+  const [digiflazzOpen, setDigiflazzOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteProducts = useDeleteProducts();
   const deactivateProducts = useDeactivateProducts();
-
-  // ponytail: one stub for the five unspecced entries — a distinct handler per
-  // action would be five copies of the same toast.
-  const announceDeferred = (message: string) => () => toast.info(message);
+  const lockProducts = useLockProducts();
+  const showProducts = useShowProducts();
+  const digiflazzUpdate = useDigiflazzUpdateProducts();
 
   return (
     <>
@@ -58,21 +63,23 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
           className="rounded-2xl"
         >
           <Can permission="products.edit">
-            <DropdownMenuItem
-              onSelect={announceDeferred(`Digiflazz update for ${product.name} lands with the Product Provider tab`)}
-            >
+            <DropdownMenuItem onSelect={() => setDigiflazzOpen(true)}>
               <RefreshCcw />
               Digiflazz Update
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={announceDeferred("Showing a locked price needs the price-visibility field")}>
+            <DropdownMenuItem onSelect={() => setShowOpen(true)}>
               <Eye />
               Show Price
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={announceDeferred("Locking a price needs the price-lock field")}>
+            <DropdownMenuItem onSelect={() => setLockOpen(true)}>
               <Lock />
               Lock Price
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={announceDeferred("Price limits land with the Add/Edit Product form")}>
+            <DropdownMenuItem
+              onSelect={() =>
+                navigate({ to: "/admin/products/main/set-price-limit", search: { id: product.id } })
+              }
+            >
               <SlidersHorizontal />
               Set Price Limit
             </DropdownMenuItem>
@@ -97,6 +104,36 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <DeleteConfirmDialog
+        open={digiflazzOpen}
+        onOpenChange={setDigiflazzOpen}
+        icon={<RefreshCcw />}
+        confirmLabel="Update"
+        title="Update this product?"
+        description="Re-pull this product's selling prices from its supplier cost. A locked price is left unchanged."
+        onConfirm={() => digiflazzUpdate.mutate([product.id])}
+      />
+
+      <DeleteConfirmDialog
+        open={showOpen}
+        onOpenChange={setShowOpen}
+        icon={<Eye />}
+        confirmLabel="Show"
+        title="Show price for this product?"
+        description="The price will be visible on the storefront."
+        onConfirm={() => showProducts.mutate({ ids: [product.id], hidden: false })}
+      />
+
+      <DeleteConfirmDialog
+        open={lockOpen}
+        onOpenChange={setLockOpen}
+        icon={<Lock />}
+        confirmLabel="Lock"
+        title="Lock this price?"
+        description="The supplier sync will stop overwriting this product's price until it is unlocked."
+        onConfirm={() => lockProducts.mutate({ ids: [product.id], locked: true })}
+      />
 
       {/* Same shared dialog and same mutation as the toolbar's bulk delete —
           only the set of ids differs. The reference ships shadcn's own

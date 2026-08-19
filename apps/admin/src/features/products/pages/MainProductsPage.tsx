@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Power } from "lucide-react";
+import { Eye, Lock, Power, RefreshCcw } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { DataTable } from "@/components/common/DataTable";
@@ -9,7 +9,14 @@ import { Text } from "@/components/common/Text";
 import { mainProductColumns } from "../components/mainProductColumns";
 import { MainProductFormDialog } from "../components/MainProductFormDialog";
 import { MainProductToolbar } from "../components/MainProductToolbar";
-import { useDeactivateProducts, useDeleteProducts, useProductList } from "../hooks/useProducts";
+import {
+  useDeactivateProducts,
+  useDeleteProducts,
+  useDigiflazzUpdateProducts,
+  useLockProducts,
+  useProductList,
+  useShowProducts,
+} from "../hooks/useProducts";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -31,6 +38,9 @@ export default function MainProductsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeactivateOpen, setBulkDeactivateOpen] = useState(false);
+  const [bulkLockOpen, setBulkLockOpen] = useState(false);
+  const [bulkShowOpen, setBulkShowOpen] = useState(false);
+  const [bulkDigiflazzOpen, setBulkDigiflazzOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
@@ -40,6 +50,9 @@ export default function MainProductsPage() {
   const { data, isLoading, isError, refetch } = useProductList(params);
   const deleteProducts = useDeleteProducts();
   const deactivateProducts = useDeactivateProducts();
+  const lockProducts = useLockProducts();
+  const showProducts = useShowProducts();
+  const digiflazzUpdate = useDigiflazzUpdateProducts();
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -85,6 +98,9 @@ export default function MainProductsPage() {
           onRefresh={() => refetch()}
           onAdd={() => setAddOpen(true)}
           selectedCount={selectedIds.length}
+          onBulkDigiflazz={() => setBulkDigiflazzOpen(true)}
+          onBulkShowPrice={() => setBulkShowOpen(true)}
+          onBulkLock={() => setBulkLockOpen(true)}
           onBulkDeactivate={() => setBulkDeactivateOpen(true)}
           onBulkDelete={() => setBulkDeleteOpen(true)}
         />
@@ -139,6 +155,36 @@ export default function MainProductsPage() {
             : `These ${selectedIds.length} products will be marked inactive and hidden from the storefront. You can activate them again at any time.`
         }
         onConfirm={() => deactivateProducts.mutate(selectedIds)}
+      />
+
+      <DeleteConfirmDialog
+        open={bulkDigiflazzOpen}
+        onOpenChange={setBulkDigiflazzOpen}
+        icon={<RefreshCcw />}
+        confirmLabel="Update"
+        title={selectedIds.length <= 1 ? "Update this product?" : `Update ${selectedIds.length} products?`}
+        description="Re-pull selling prices from each product's supplier cost. Locked prices are left unchanged."
+        onConfirm={() => digiflazzUpdate.mutate(selectedIds)}
+      />
+
+      <DeleteConfirmDialog
+        open={bulkShowOpen}
+        onOpenChange={setBulkShowOpen}
+        icon={<Eye />}
+        confirmLabel="Show"
+        title={selectedIds.length <= 1 ? "Show this price?" : `Show ${selectedIds.length} prices?`}
+        description="The selected prices will be visible on the storefront."
+        onConfirm={() => showProducts.mutate({ ids: selectedIds, hidden: false })}
+      />
+
+      <DeleteConfirmDialog
+        open={bulkLockOpen}
+        onOpenChange={setBulkLockOpen}
+        icon={<Lock />}
+        confirmLabel="Lock"
+        title={selectedIds.length <= 1 ? "Lock this price?" : `Lock ${selectedIds.length} prices?`}
+        description="The supplier sync will stop overwriting the selected prices until they are unlocked."
+        onConfirm={() => lockProducts.mutate({ ids: selectedIds, locked: true })}
       />
 
       <MainProductFormDialog

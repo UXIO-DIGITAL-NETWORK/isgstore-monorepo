@@ -19,7 +19,7 @@ describe("ProductProviderPage", () => {
   });
 
   it("renders the header and the toolbar", async () => {
-    await renderRoute("/admin/products/provider");
+    await renderRoute("/admin/products/provider/add");
 
     expect(await screen.findByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Search product, SKU or brand")).toBeInTheDocument();
@@ -28,14 +28,14 @@ describe("ProductProviderPage", () => {
   });
 
   it("lists the price-list rows from the Digiflazz endpoint", async () => {
-    await renderRoute("/admin/products/provider");
+    await renderRoute("/admin/products/provider/add");
 
     expect(await screen.findByText("Xl 100.000")).toBeInTheDocument();
     expect(screen.getByText("Telkomsel Pulsa 5.000")).toBeInTheDocument();
   });
 
   it("marks an already-mapped SKU and disables its Add button", async () => {
-    await renderRoute("/admin/products/provider");
+    await renderRoute("/admin/products/provider/add");
 
     const mappedRow = (await screen.findByText("Xl 100.000")).closest("tr") as HTMLElement;
     expect(within(mappedRow).getByText("Mapped")).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe("ProductProviderPage", () => {
   });
 
   it("offers an enabled Add button for an unmapped SKU", async () => {
-    await renderRoute("/admin/products/provider");
+    await renderRoute("/admin/products/provider/add");
 
     const freshRow = (await screen.findByText("Telkomsel Pulsa 5.000")).closest("tr") as HTMLElement;
     expect(within(freshRow).getByText("Not mapped")).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe("ProductProviderPage", () => {
 
   it("filters the list by search", async () => {
     const user = userEvent.setup();
-    await renderRoute("/admin/products/provider");
+    await renderRoute("/admin/products/provider/add");
 
     await screen.findByText("Xl 100.000");
     await user.type(screen.getByPlaceholderText("Search product, SKU or brand"), "telkomsel");
@@ -63,7 +63,7 @@ describe("ProductProviderPage", () => {
 
   it("reveals the bulk add button once a row is selected", async () => {
     const user = userEvent.setup();
-    await renderRoute("/admin/products/provider");
+    await renderRoute("/admin/products/provider/add");
 
     await screen.findByText("Telkomsel Pulsa 5.000");
     expect(screen.queryByRole("button", { name: /Add selected/ })).not.toBeInTheDocument();
@@ -74,7 +74,7 @@ describe("ProductProviderPage", () => {
 
   it("opens the add dialog with prices pre-filled from the SKU's suggestions", async () => {
     const user = userEvent.setup();
-    await renderRoute("/admin/products/provider");
+    await renderRoute("/admin/products/provider/add");
 
     const freshRow = (await screen.findByText("Telkomsel Pulsa 5.000")).closest("tr") as HTMLElement;
     await user.click(within(freshRow).getByRole("button", { name: "Add to products" }));
@@ -89,7 +89,7 @@ describe("ProductProviderPage", () => {
   it("hides the Add action without the products.create permission", async () => {
     // products.view lets the route render; products.create is what gates Add.
     useAuthStore.setState({ token: "test-token", permissions: ["products.view"] });
-    await renderRoute("/admin/products/provider");
+    await renderRoute("/admin/products/provider/add");
 
     await screen.findByText("Telkomsel Pulsa 5.000");
     expect(screen.queryByRole("button", { name: "Add to products" })).not.toBeInTheDocument();

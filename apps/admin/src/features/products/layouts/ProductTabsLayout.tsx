@@ -29,7 +29,14 @@ export function ProductTabsLayout() {
   const base = pathname.startsWith(PREVIEW_BASE) ? PREVIEW_BASE : REAL_BASE;
   const activeSegment = pathname.slice(base.length).split("/").filter(Boolean)[0];
   const activeTab = TAB_SEGMENTS.find((tab) => tab.segment === activeSegment)?.value ?? "main";
-  const onFormRoute = pathname.endsWith("/add") || pathname.endsWith("/edit");
+  // Form/action routes render standalone (no tab bar): the add flows plus the
+  // dedicated Set Profit Margin / Set Price Limit pages.
+  const onFormRoute =
+    pathname.endsWith("/add") ||
+    pathname.endsWith("/add-bulk") ||
+    pathname.endsWith("/edit") ||
+    pathname.includes("/set-profit-margin") ||
+    pathname.includes("/set-price-limit");
 
   return (
     <Box className="flex flex-col gap-6">
