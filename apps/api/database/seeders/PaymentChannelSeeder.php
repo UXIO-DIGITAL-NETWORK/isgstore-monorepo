@@ -133,10 +133,6 @@ class PaymentChannelSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // SIT-only channels: produce specific account_bank_code values / is_single_use states
-            // to trigger Monetapay error scenarios 2.2 (static VA), 2.3 (4012), 2.4 (7003).
-            // Order matters for auto-increment on fresh DBs: test_va=10, bnc_va=11, bni_va_s=12.
-            // Set is_active = false before deploying to production.
             [
                 'name' => 'Payment Link',
                 'payment_type' => 'payment_link',
@@ -153,44 +149,6 @@ class PaymentChannelSeeder extends Seeder
                     'account_bank_code' => '',
                     'sender_name' => 'Uxio',
                 ]),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-
-            // SIT-only channels: produce specific account_bank_code values / is_single_use states
-            // to trigger Monetapay error scenarios 2.2 (static VA), 2.3 (4012), 2.4 (7003).
-            // Order matters for auto-increment on fresh DBs: test_va=10, bnc_va=11, bni_va_s=12.
-            // Set is_active = false before deploying to production.
-            [
-                'name' => '[SIT] Invalid Bank Code',
-                'payment_type' => 'virtual_account',
-                'channel_code' => 'test_va',
-                'min_amount' => 10000,
-                'is_active' => true,
-                'is_single_use' => false,
-                'extra_config' => null,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'name' => '[SIT] BNC Bank Error',
-                'payment_type' => 'virtual_account',
-                'channel_code' => 'bnc_va',
-                'min_amount' => 10000,
-                'is_active' => true,
-                'is_single_use' => true,
-                'extra_config' => null,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'name' => '[SIT] BNI Static VA',
-                'payment_type' => 'virtual_account',
-                'channel_code' => 'bni_va_s',
-                'min_amount' => 10000,
-                'is_active' => true,
-                'is_single_use' => false,
-                'extra_config' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],

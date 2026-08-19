@@ -14,8 +14,11 @@ return new class extends Migration
         Schema::create('ratings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('transaction_id')->constrained('transactions')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            // Nullable for guest reviews (transaction had no user); guest_name holds a display pseudonym instead.
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->string('guest_name')->nullable();
             $table->integer('rating')->comment('1 to 5');
+            $table->text('comment')->nullable();
             $table->timestamps();
         });
     }

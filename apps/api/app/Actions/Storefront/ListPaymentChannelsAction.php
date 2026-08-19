@@ -43,8 +43,7 @@ class ListPaymentChannelsAction
 
         $channels = $query
             ->orderBy('payment_type')
-            // by id, not name — keeps seeder order so the "[SIT]" test channels
-            // sort last instead of first.
+            // by id, not name — keeps the seeded channel order stable.
             ->orderBy('id')
             ->get(['id', 'name', 'channel_code', 'payment_type', 'fee_flat', 'fee_percent', 'min_amount'])
             ->map(fn (PaymentChannel $channel) => [

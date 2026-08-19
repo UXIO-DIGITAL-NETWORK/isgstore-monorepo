@@ -54,10 +54,21 @@ return new class extends Migration
 
             $table->index(['promo_id', 'user_id']);
         });
+
+        // transactions.promo_id is defined column-only in create_transactions
+        // (transactions is created before promos); wire its FK now that promos
+        // exists. The promo feature owns both sides of its own relationship.
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->foreign('promo_id')->references('id')->on('promos')->nullOnDelete();
+        });
     }
 
     public function down(): void
     {
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->dropForeign(['promo_id']);
+        });
+
         Schema::dropIfExists('promo_redemptions');
         Schema::dropIfExists('promos');
     }

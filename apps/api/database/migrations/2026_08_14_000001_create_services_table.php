@@ -25,9 +25,11 @@ return new class extends Migration
             $table->string('category')->default('other')->index(); // App\Enums\ServiceCategory
             $table->text('description')->nullable();
             $table->json('features')->nullable(); // Bullet list on the client's catalogue card.
-            // Rupiah for ONE period. Integer like membership_plans.price —
+            // Two figures kita needs: what a service costs us per period, and
+            // what we bill a client. Integer money like membership_plans.price —
             // there is no float money anywhere in this codebase.
-            $table->unsignedBigInteger('price');
+            $table->unsignedBigInteger('cost_price')->default(0);
+            $table->unsignedBigInteger('selling_price');
             $table->unsignedInteger('duration_days');
             // Lets a service inherit its channel's live on/off flag on the
             // status page. Null for services with no payment channel behind

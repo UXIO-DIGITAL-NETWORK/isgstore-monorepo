@@ -18,7 +18,11 @@ return new class extends Migration
             $table->string('reference_id')->unique()->comment('Dikirim ke Monetapay sbg mch_order_no');
             $table->string('pg_transaction_id')->nullable()->comment('order_no balikan dari Monetapay');
             $table->bigInteger('gross_amount')->comment('Total harga order + admin fee PG');
-            $table->bigInteger('admin_fee')->comment('Biaya admin PG yang dibebankan');
+            $table->bigInteger('admin_fee')->comment('Biaya admin PG yang dibebankan (channel_fee + admin_markup)');
+            $table->bigInteger('channel_fee')->default(0)->comment('Biaya Metode Pembayaran');
+            $table->bigInteger('admin_markup')->default(0)->comment('Biaya Admin (markup kita)');
+            // What Monetapay actually deducted; platform profit = admin_fee - gateway_fee.
+            $table->bigInteger('gateway_fee')->default(0);
             $table->json('payment_data')->nullable()->comment('MYSQL JSON TYPE: {"virtual_account": "123", "deep_link": "ovo://"}');
             $table->string('status')->comment('1: pending, 2: expired, 3: success, 4: fail');
             $table->timestamp('paid_at')->nullable();

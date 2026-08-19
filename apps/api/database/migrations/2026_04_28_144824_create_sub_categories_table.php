@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
             $table->string('name');
+            $table->string('currency_name')->nullable()->comment('In-game currency this sub-category sells');
             $table->string('logo')->nullable();
+            $table->text('description')->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
         });
