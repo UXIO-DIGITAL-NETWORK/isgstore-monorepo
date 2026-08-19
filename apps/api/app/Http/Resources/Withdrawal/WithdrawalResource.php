@@ -26,6 +26,7 @@ class WithdrawalResource extends JsonResource
             'account_phone' => $this->account_phone,
             'status' => $this->status?->value,
             'notes' => $this->notes,
+            'failure_reason' => $this->failure_reason,
             'approved_at' => $this->approved_at?->toIso8601String(),
             'disbursement_ref' => $this->disbursement_ref,
             'proof_url' => $this->proof_path ? Storage::disk('public')->url($this->proof_path) : null,

@@ -6,8 +6,10 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Service\ActivateServiceSubscriptionAction;
 use App\Actions\Service\OpenServiceInvoicePaymentAction;
 use App\Actions\Settlement\SettleMerchantTransactionAction;
+use App\Actions\Withdrawal\HandleDisbursementCallbackAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Payment\Monetapay\MonetapayCallbackDTO;
+use App\DTOs\Withdrawal\DisbursementCallbackDTO;
 use App\Enums\PaymentStatus;
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\TransactionStatus;
@@ -33,10 +35,13 @@ class HandleMonetapayCallbackAction
 
     private const SERVICE_REFERENCE_PREFIX = OpenServiceInvoicePaymentAction::REFERENCE_PREFIX;
 
+    private const WITHDRAWAL_REFERENCE_PREFIX = 'WD-';
+
     public function __construct(
         private readonly CreateActivityLogAction $activityLogAction,
         private readonly SettleMerchantTransactionAction $settleAction,
         private readonly ActivateServiceSubscriptionAction $activateSubscriptionAction,
+        private readonly HandleDisbursementCallbackAction $disbursementCallbackAction,
     ) {}
 
     public function execute(MonetapayCallbackDTO $dto): void
@@ -54,6 +59,21 @@ class HandleMonetapayCallbackAction
         // Transaction or Payment row.
         if (str_starts_with($dto->outNo, self::SERVICE_REFERENCE_PREFIX)) {
             $this->handleServiceInvoicePayment($dto);
+
+            return;
+        }
+
+        // Monetapay delivers the payout (disbursement) callback to this same
+        // account-level URL, not the dedicated /disbursement/merchant/callback.
+        // Recognise it by our `WD-` order prefix or the payout-only beneficiary
+        // fields, and hand it to the payout handler before the Payment lookup —
+        // otherwise it falls through and 500s on a missing Payment row.
+        if (str_starts_with($dto->outNo, self::WITHDRAWAL_REFERENCE_PREFIX) || $this->looksLikePayout($dto->rawPayload)) {
+            $this->disbursementCallbackAction->execute(new DisbursementCallbackDTO(
+                outNo: $dto->outNo,
+                status: $dto->status,
+                rawPayload: $dto->rawPayload,
+            ));
 
             return;
         }
@@ -152,6 +172,17 @@ class HandleMonetapayCallbackAction
      * missing as no fee. The exact key can be pinned once confirmed against
      * live callbacks — until then this stays defensive rather than assuming.
      */
+    /**
+     * A payout (disbursement) callback carries beneficiary fields a pay-in
+     * callback never does, and its order_no is batch-suffixed. Lets us route a
+     * payout even when its mch_order_no predates our `WD-` prefix (foreign/legacy).
+     */
+    private function looksLikePayout(array $raw): bool
+    {
+        return isset($raw['account_number'])
+            || (isset($raw['order_no']) && str_ends_with((string) $raw['order_no'], '_BATCH'));
+    }
+
     private function extractGatewayFee(array $raw): int
     {
         foreach (['fee', 'mdr_fee', 'mdr', 'admin_fee', 'charge', 'total_fee'] as $key) {

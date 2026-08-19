@@ -25,6 +25,15 @@ Schedule::command('service-payments:sync-expired')
     ->runInBackground()
     ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: service-payments:sync-expired'));
 
+// Payout recovery: a PROCESSING withdrawal whose disbursement callback (7.4.2)
+// was lost is resolved by polling the payout inquiry (7.4.1) and driving it
+// through the same callback handler (settle/refund + idempotency shared).
+Schedule::command('withdrawals:sync-processing')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: withdrawals:sync-processing'));
+
 // Price checker: updates supplier cost/availability + raises price change
 // alerts. No success/before Discord embeds — 288 runs/day would be spam.
 Schedule::command('digiflazz:check-prices --type=all')

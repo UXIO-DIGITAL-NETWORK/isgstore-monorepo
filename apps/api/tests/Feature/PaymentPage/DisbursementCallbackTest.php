@@ -39,7 +39,9 @@ class DisbursementCallbackTest extends TestCase
             'services.withdrawal.min_amount' => 10000,
         ]);
         Http::preventStrayRequests();
-        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['order_no' => 'MP-OUT-1']])]);
+        // Only the disbursement CREATE endpoint — not the /query inquiry — so a
+        // test can add its own query stub (Http::fake is first-match-wins).
+        Http::fake(['*/v1.0.0/disbursement' => Http::response(['code' => 0, 'data' => ['order_no' => 'MP-OUT-1']])]);
     }
 
     private function merchant(int $balance = 0): User
@@ -108,6 +110,26 @@ class DisbursementCallbackTest extends TestCase
     private function sendCallback(array $payload)
     {
         return $this->postJson('/api/v1/disbursement/merchant/callback', $payload);
+    }
+
+    /** Sign + encrypt an arbitrary callback param set (double-MD5, same as the gateway). */
+    private function signedEnvelope(array $params): array
+    {
+        $timestamp = (string) time();
+
+        ksort($params);
+        $buffer = '';
+        foreach ($params as $key => $value) {
+            $buffer .= $key.'='.$value.'__';
+        }
+        $strMap = substr($buffer, 0, -2);
+
+        $params['sign'] = md5(md5('test-token'.'*|*'.$strMap.'@!@'.$timestamp));
+        $params['timestamp'] = $timestamp;
+
+        $flat = collect($params)->map(fn ($v, $k) => "{$k}={$v}")->implode('__');
+
+        return ['data' => ['en_data' => app(MonetapayService::class)->encryptPayload($flat)]];
     }
 
     public function test_monetapay_approval_leaves_the_withdrawal_processing(): void
@@ -188,6 +210,85 @@ class DisbursementCallbackTest extends TestCase
         // A forged callback changes nothing.
         $this->assertSame('PROCESSING', $withdrawal->fresh()->status->value);
         $this->assertDatabaseMissing('platform_mutations', [
+            'type' => 'withdrawal_fee',
+            'reference' => $withdrawal->withdrawal_number,
+        ]);
+    }
+
+    /**
+     * Monetapay delivers the payout callback to the shared pay-in URL. The pay-in
+     * handler must recognise it (WD- prefix) and settle it, not 500 on a missing Payment.
+     */
+    public function test_payout_callback_delivered_to_the_payin_url_settles(): void
+    {
+        $withdrawal = $this->processingWithdrawal(100000);
+
+        $this->postJson('/api/v1/payment/callback', $this->signedEnvelope([
+            'mch_order_no' => $withdrawal->withdrawal_number,
+            'order_no' => 'MP-OUT-1',
+            'amount' => '98335',
+            'status' => '1',
+        ]))->assertOk();
+
+        $this->assertSame('SETTLED', $withdrawal->fresh()->status->value);
+        $this->assertDatabaseHas('platform_mutations', [
+            'type' => 'withdrawal_fee',
+            'reference' => $withdrawal->withdrawal_number,
+            'amount' => 1665,
+        ]);
+    }
+
+    public function test_failed_payout_callback_on_payin_url_refunds_and_stores_reason(): void
+    {
+        $withdrawal = $this->processingWithdrawal(100000);
+
+        $this->postJson('/api/v1/payment/callback', $this->signedEnvelope([
+            'mch_order_no' => $withdrawal->withdrawal_number,
+            'order_no' => '20260814774744200471855104_BATCH',
+            'amount' => '98335',
+            'status' => '2',
+            'error_code' => '7114',
+            'error_msg' => 'Insufficient balance',
+        ]))->assertOk();
+
+        $fresh = $withdrawal->fresh();
+        $this->assertSame('FAILED', $fresh->status->value);
+        $this->assertSame('Insufficient balance', $fresh->failure_reason);
+        // Hold refunded to the merchant.
+        $this->assertSame(100000, (int) $withdrawal->merchant->fresh()->balance);
+    }
+
+    /**
+     * A foreign/legacy disbursement (no matching withdrawal, non-WD order) sharing
+     * our callback URL must be acked (200), not 500'd into an infinite retry loop.
+     */
+    public function test_unknown_payout_callback_is_acked_not_500(): void
+    {
+        $this->postJson('/api/v1/payment/callback', $this->signedEnvelope([
+            'mch_order_no' => '2026-08-14dYCeQNAyNZzQ',
+            'order_no' => '20260814774744200471855104_BATCH',
+            'account_number' => '6700519102',
+            'amount' => '24904',
+            'status' => '2',
+            'error_msg' => 'Insufficient balance',
+        ]))->assertOk();
+    }
+
+    /** Recovery: a PROCESSING payout whose callback was lost is resolved by the inquiry poll. */
+    public function test_sync_processing_command_settles_a_stuck_payout(): void
+    {
+        $withdrawal = $this->processingWithdrawal(100000);
+        // Clear the 2-minute grace window (query builder — don't touch timestamps).
+        Withdrawal::whereKey($withdrawal->id)->update(['updated_at' => now()->subMinutes(5)]);
+
+        // Payout inquiry (7.4.1) reports the payout succeeded. Matches the /query
+        // URL, which setUp's create stub deliberately doesn't.
+        Http::fake(['*/v1.0.0/disbursement/query' => Http::response(['code' => 0, 'data' => ['order_no' => 'MP-OUT-1', 'status' => 1]])]);
+
+        $this->artisan('withdrawals:sync-processing')->assertSuccessful();
+
+        $this->assertSame('SETTLED', $withdrawal->fresh()->status->value);
+        $this->assertDatabaseHas('platform_mutations', [
             'type' => 'withdrawal_fee',
             'reference' => $withdrawal->withdrawal_number,
         ]);

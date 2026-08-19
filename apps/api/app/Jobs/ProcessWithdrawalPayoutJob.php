@@ -17,6 +17,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -152,7 +153,10 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
                 description: "Penarikan {$locked->withdrawal_number} gagal — dana dikembalikan",
             );
 
-            $locked->update(['status' => WithdrawalStatus::FAILED]);
+            $locked->update([
+                'status' => WithdrawalStatus::FAILED,
+                'failure_reason' => Str::limit($e->getMessage(), 255),
+            ]);
         });
 
         Log::channel('monetapay')->error("ProcessWithdrawalPayoutJob: retries exhausted for {$this->withdrawal->withdrawal_number}: {$e->getMessage()}");

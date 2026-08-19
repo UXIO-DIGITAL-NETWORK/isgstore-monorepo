@@ -33,6 +33,8 @@ return new class extends Migration
             $table->string('account_phone')->nullable();
             $table->string('status')->default('PENDING')->index();
             $table->string('notes')->nullable();
+            // Gateway error_msg when a payout FAILED (e.g. "Insufficient balance").
+            $table->string('failure_reason')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->string('disbursement_ref')->nullable();
