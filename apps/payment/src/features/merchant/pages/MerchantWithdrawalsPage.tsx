@@ -11,9 +11,12 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 
+import { BANK_OPTIONS } from "../constants/bankCodes";
+import { withdrawalFeeFor, withdrawalNettFor } from "../lib/withdrawalFee";
 import { useCreateWithdrawal, useMerchantWithdrawals } from "../hooks/useMerchant";
 import { withdrawalSchema, type WithdrawalFormValues } from "../schemas/withdrawal.schema";
 import type { Withdrawal } from "../types/merchant.type";
@@ -36,8 +39,16 @@ export default function MerchantWithdrawalsPage() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<WithdrawalFormValues>({ resolver: zodResolver(withdrawalSchema) });
+
+  // Live preview of kita's fee and what lands in the bank. Mirrors the server;
+  // the charged figure is recomputed on submit.
+  const amount = watch("amount");
+  const previewAmount = Number.isFinite(amount) ? Number(amount) : 0;
+  const previewFee = withdrawalFeeFor(previewAmount);
+  const previewNett = withdrawalNettFor(previewAmount);
 
   const onSubmit = (values: WithdrawalFormValues) => create(values, { onSuccess: () => reset() });
 
@@ -56,9 +67,23 @@ export default function MerchantWithdrawalsPage() {
           <Input id="amount" type="number" {...register("amount", { valueAsNumber: true })} placeholder="100000" />
           {errors.amount && <Text variant="small" className="text-destructive">{errors.amount.message}</Text>}
         </Box>
-        <Box className="flex flex-col gap-1.5">
+        <Box className="flex flex-col gap-1.5 [&_[data-slot=native-select-wrapper]]:w-full">
           <Label htmlFor="bank_code">Bank</Label>
-          <Input id="bank_code" {...register("bank_code")} placeholder="BCA" />
+          <NativeSelect
+            id="bank_code"
+            defaultValue=""
+            aria-invalid={errors.bank_code ? true : undefined}
+            {...register("bank_code")}
+          >
+            <NativeSelectOption value="" disabled>
+              Pilih bank
+            </NativeSelectOption>
+            {BANK_OPTIONS.map((bank) => (
+              <NativeSelectOption key={bank.code} value={bank.code}>
+                {bank.label}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
           {errors.bank_code && <Text variant="small" className="text-destructive">{errors.bank_code.message}</Text>}
         </Box>
         <Box className="flex flex-col gap-1.5">
@@ -71,8 +96,18 @@ export default function MerchantWithdrawalsPage() {
           <Input id="account_name" {...register("account_name")} placeholder="Nama sesuai rekening" />
           {errors.account_name && <Text variant="small" className="text-destructive">{errors.account_name.message}</Text>}
         </Box>
-        <Box className="sm:col-span-2 lg:col-span-4">
-          <Button type="submit" disabled={isPending}>
+        <Box className="flex flex-col gap-2 sm:col-span-2 lg:col-span-4">
+          {previewAmount > 0 && (
+            <Box className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-muted/50 px-4 py-3 text-sm tabular-nums">
+              <Text as="span" className="text-muted-foreground">
+                Biaya: <Text as="span" className="text-foreground">{formatCurrency(previewFee, { fractionDigits: 0 })}</Text>
+              </Text>
+              <Text as="span" className="text-muted-foreground">
+                Diterima: <Text as="span" className="font-medium text-foreground">{formatCurrency(previewNett, { fractionDigits: 0 })}</Text>
+              </Text>
+            </Box>
+          )}
+          <Button type="submit" disabled={isPending} className="w-fit">
             {isPending ? "Memproses…" : "Ajukan Penarikan"}
           </Button>
         </Box>
