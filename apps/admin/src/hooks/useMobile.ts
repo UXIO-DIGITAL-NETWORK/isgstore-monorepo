@@ -1,6 +1,9 @@
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+// Sidebar drawer cutoff: below `lg` (1024px) the sidebar collapses to an
+// off-canvas drawer so tablets get full-width content instead of a squeezed,
+// clipped table. Only components/ui/sidebar.tsx consumes this hook.
+const MOBILE_BREAKPOINT = 1024
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)

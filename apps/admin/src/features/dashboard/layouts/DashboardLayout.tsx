@@ -8,11 +8,11 @@ export function DashboardLayout() {
   return (
     <SidebarProvider>
       <DashboardSidebar />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <DashboardNavbar />
         <Box
           as="main"
-          className="flex-1 overflow-y-auto bg-background p-4 md:p-6 lg:p-8"
+          className="min-w-0 flex-1 overflow-y-auto bg-background p-4 md:p-6 lg:p-8"
         >
           <Outlet />
         </Box>
