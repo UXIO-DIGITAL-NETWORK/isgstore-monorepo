@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Support\Wallet\MerchantBalance;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class FinanceMerchantController extends Controller
                 'email' => $u->email,
                 'phone' => $u->phone,
                 'status' => $u->status ?? 'active',
-                'balance' => (int) $u->balance,
+                'balance' => MerchantBalance::available($u->id),
                 'created_at' => $u->created_at?->toIso8601String(),
             ]);
 
@@ -52,7 +53,7 @@ class FinanceMerchantController extends Controller
             'email' => $user->email,
             'phone' => $user->phone,
             'status' => $user->status ?? 'active',
-            'balance' => (int) $user->balance,
+            'balance' => MerchantBalance::available($user->id),
             'total_penjualan' => (int) Transaction::where('merchant_id', $user->id)->sum('amount_base'),
             'total_transaksi' => (int) Transaction::where('merchant_id', $user->id)->count(),
             'total_penarikan' => (int) Withdrawal::where('merchant_id', $user->id)

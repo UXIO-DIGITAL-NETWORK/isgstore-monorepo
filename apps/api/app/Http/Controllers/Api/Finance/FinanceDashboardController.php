@@ -38,6 +38,10 @@ class FinanceDashboardController extends Controller
                 'transaction_id', $paid->clone()->select('id')
             )->sum('gateway_fee'),
             'total_settled_to_merchants' => (int) $paid->clone()->sum('amount_base'),
+            // Headline transaction volume across every merchant: how many, and
+            // the paid nominal (amount_base) they represent.
+            'total_transactions_count' => (int) Transaction::whereNotNull('merchant_id')->count(),
+            'total_transactions_amount' => (int) $paid->clone()->sum('amount_base'),
             'pending_withdrawals' => (int) Withdrawal::where('status', WithdrawalStatus::PENDING)->count(),
             'pending_withdrawals_amount' => (int) Withdrawal::where('status', WithdrawalStatus::PENDING)->sum('amount'),
         ], 'Dashboard retrieved successfully');

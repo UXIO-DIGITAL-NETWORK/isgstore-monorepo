@@ -4,8 +4,10 @@ namespace Tests\Feature\PaymentPage;
 
 use App\Models\PlatformMutation;
 use App\Models\Role;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Support\Wallet\MerchantBalance;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -31,11 +33,27 @@ class WithdrawalTest extends TestCase
         ]);
     }
 
-    private function merchant(int $balance = 0): User
+    /**
+     * A payment-page merchant whose withdrawable balance is $sales, seeded as a
+     * paid sale (the withdrawable balance is now derived from sales, not the
+     * users.balance column).
+     */
+    private function merchant(int $sales = 0): User
     {
         $role = Role::firstOrCreate(['name' => 'Payment-Admin']);
+        $merchant = User::factory()->create(['role_id' => $role->id]);
 
-        return User::factory()->create(['role_id' => $role->id, 'balance' => $balance]);
+        if ($sales > 0) {
+            Transaction::factory()->create([
+                'merchant_id' => $merchant->id,
+                'amount_base' => $sales,
+                'amount_fee' => 0,
+                'amount_total' => $sales,
+                'status' => 'PAID',
+            ]);
+        }
+
+        return $merchant;
     }
 
     private function finance(): User
@@ -55,7 +73,7 @@ class WithdrawalTest extends TestCase
         ];
     }
 
-    public function test_merchant_request_holds_funds(): void
+    public function test_merchant_request_reduces_available_balance(): void
     {
         $merchant = $this->merchant(100000);
         Sanctum::actingAs($merchant);
@@ -68,12 +86,13 @@ class WithdrawalTest extends TestCase
             ->assertJsonPath('data.fee', 1665)
             ->assertJsonPath('data.nett', 38335);
 
-        // The hold debits the full requested amount immediately (not the nett).
-        $this->assertSame(60000, (int) $merchant->fresh()->balance);
-        $this->assertDatabaseHas('balance_mutations', [
-            'user_id' => $merchant->id,
-            'type' => 'withdrawal',
-            'amount' => -40000,
+        // The pending request holds the full requested amount against sales, so
+        // the live available balance drops by 40000 (not the nett).
+        $this->assertSame(60000, MerchantBalance::available($merchant->id));
+        $this->assertDatabaseHas('withdrawals', [
+            'merchant_id' => $merchant->id,
+            'status' => 'PENDING',
+            'amount' => 40000,
         ]);
     }
 
@@ -107,11 +126,11 @@ class WithdrawalTest extends TestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors('amount');
 
-        $this->assertSame(100000, (int) $merchant->fresh()->balance);
+        $this->assertSame(100000, MerchantBalance::available($merchant->id));
         $this->assertDatabaseCount('withdrawals', 0);
     }
 
-    public function test_request_rejected_when_balance_insufficient(): void
+    public function test_request_rejected_when_sales_insufficient(): void
     {
         $merchant = $this->merchant(10000);
         Sanctum::actingAs($merchant);
@@ -119,7 +138,7 @@ class WithdrawalTest extends TestCase
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))
             ->assertStatus(422);
 
-        $this->assertSame(10000, (int) $merchant->fresh()->balance);
+        $this->assertSame(10000, MerchantBalance::available($merchant->id));
         $this->assertDatabaseCount('withdrawals', 0);
     }
 
@@ -182,8 +201,9 @@ class WithdrawalTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.status', 'SETTLED');
 
-        // Balance stays held (paid out), not refunded.
-        $this->assertSame(60000, (int) $merchant->fresh()->balance);
+        // A settled withdrawal stays held (paid out), not refunded: available
+        // remains reduced by the withdrawn amount.
+        $this->assertSame(60000, MerchantBalance::available($merchant->id));
     }
 
     public function test_manual_approve_requires_bukti_transfer(): void
@@ -241,7 +261,7 @@ class WithdrawalTest extends TestCase
         );
     }
 
-    public function test_finance_reject_refunds_the_hold(): void
+    public function test_finance_reject_restores_available_balance(): void
     {
         $merchant = $this->merchant(100000);
         Sanctum::actingAs($merchant);
@@ -253,8 +273,9 @@ class WithdrawalTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.status', 'REJECTED');
 
-        // The held amount is returned.
-        $this->assertSame(100000, (int) $merchant->fresh()->balance);
+        // A REJECTED withdrawal drops out of the hold, so available recovers in
+        // full with no ledger reversal.
+        $this->assertSame(100000, MerchantBalance::available($merchant->id));
     }
 
     public function test_merchant_cannot_see_another_merchants_withdrawal(): void

@@ -127,7 +127,17 @@ class NotificationTest extends TestCase
     public function test_creating_a_withdrawal_notifies_internal(): void
     {
         $internal = $this->internal();
-        $merchant = $this->merchant(100000);
+        $merchant = $this->merchant();
+
+        // The withdrawable balance is derived from sales, so seed a paid sale to
+        // cover the request.
+        Transaction::factory()->create([
+            'merchant_id' => $merchant->id,
+            'amount_base' => 100000,
+            'amount_fee' => 0,
+            'amount_total' => 100000,
+            'status' => 'PAID',
+        ]);
 
         app(CreateWithdrawalRequestAction::class)->execute(new CreateWithdrawalDTO(
             merchantId: $merchant->id,

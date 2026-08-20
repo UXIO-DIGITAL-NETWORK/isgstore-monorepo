@@ -7,16 +7,17 @@ namespace App\Actions\Withdrawal;
 use App\Enums\WithdrawalStatus;
 use App\Models\User;
 use App\Models\Withdrawal;
-use App\Support\Wallet\WalletLedger;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
  * Kita rejects a pending withdrawal.
  *
- * The amount held at request time is credited back to the merchant's balance
- * (via WalletLedger, keyed on the withdrawal number so it is auditable) and the
- * request moves to the terminal REJECTED state.
+ * The request moves to the terminal REJECTED state. No balance reversal is
+ * needed: the withdrawable balance is derived live from sales minus non-refunded
+ * withdrawals (App\Support\Wallet\MerchantBalance), and a REJECTED row is
+ * excluded from that hold — so the merchant's available balance recovers on its
+ * own the moment the status flips.
  */
 class RejectWithdrawalAction
 {
@@ -29,14 +30,6 @@ class RejectWithdrawalAction
             if ($locked->status !== WithdrawalStatus::PENDING) {
                 throw new RuntimeException('Penarikan ini sudah diproses.');
             }
-
-            WalletLedger::record(
-                user: $locked->merchant_id,
-                amount: (int) $locked->amount,
-                type: 'refund',
-                reference: $locked->withdrawal_number,
-                description: "Penarikan {$locked->withdrawal_number} ditolak",
-            );
 
             $locked->update([
                 'approved_by' => $approver->id,
