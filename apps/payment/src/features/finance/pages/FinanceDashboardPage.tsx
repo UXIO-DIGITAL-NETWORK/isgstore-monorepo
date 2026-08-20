@@ -49,6 +49,12 @@ export default function FinanceDashboardPage() {
           data={{ id: "settled", label: "Disetorkan ke Merchant", value: data?.total_settled_to_merchants ?? 0, caption: "Penjualan bersih merchant" }}
         />
         <StatCard
+          data={{ id: "tx-count", label: "Total Transaksi", value: data?.total_transactions_count ?? 0, format: "count", caption: "Seluruh transaksi merchant" }}
+        />
+        <StatCard
+          data={{ id: "tx-amount", label: "Total Nominal Penjualan", value: data?.total_transactions_amount ?? 0, caption: "Nominal penjualan berbayar" }}
+        />
+        <StatCard
           data={{ id: "pending", label: "Penarikan Pending", value: data?.pending_withdrawals ?? 0, format: "count", caption: "Menunggu persetujuan" }}
         />
         <StatCard
