@@ -45,12 +45,18 @@ function TabsList({
 }: React.ComponentProps<typeof TabsPrimitive.List> &
   VariantProps<typeof tabsListVariants>) {
   return (
-    <TabsPrimitive.List
-      data-slot="tabs-list"
-      data-variant={variant}
-      className={cn(tabsListVariants({ variant }), className)}
-      {...props}
-    />
+    // Scroll container so a tab strip wider than the viewport scrolls horizontally
+    // instead of overflowing the page (which shifts/overlaps content on mobile).
+    // pb/-mb gives room for the active-tab underline (after:bottom-[-5px]) so the
+    // overflow container doesn't clip it, without changing the layout height.
+    <div className="max-w-full overflow-x-auto pb-1.5 -mb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <TabsPrimitive.List
+        data-slot="tabs-list"
+        data-variant={variant}
+        className={cn(tabsListVariants({ variant }), className)}
+        {...props}
+      />
+    </div>
   )
 }
 

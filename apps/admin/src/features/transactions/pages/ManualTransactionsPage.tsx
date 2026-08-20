@@ -58,7 +58,7 @@ export default function ManualTransactionsPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Box className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-6">
+      <Box className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 sm:flex-row sm:items-start sm:justify-between">
         <Box>
           <Heading
             level={1}
