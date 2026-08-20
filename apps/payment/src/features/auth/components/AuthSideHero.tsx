@@ -13,8 +13,8 @@ export function AuthSideHero() {
       >
         <Gem className="w-8 h-8 text-white drop-shadow-md" />
         <Box>
-          <Text className="text-xl text-white font-bold tracking-tight drop-shadow-md">UDN Admin</Text>
-          <Text className="text-xs text-slate-300 tracking-wide">UXIOTOPUP</Text>
+          <Text className="text-xl text-white font-bold tracking-tight drop-shadow-md">Uxiolabs Pay</Text>
+          <Text className="text-xs text-slate-300 tracking-wide">UXIOLABS</Text>
         </Box>
       </Link>
 

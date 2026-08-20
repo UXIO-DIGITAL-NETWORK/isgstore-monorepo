@@ -75,7 +75,7 @@ export function DashboardSidebar() {
             as="span"
             className="text-base font-semibold"
           >
-            Uxio Pay
+            Uxiolabs Pay
           </Text>
         </Box>
       </SidebarHeader>

@@ -1,9 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useAuthStore } from "@/store/useAuthStore";
 
-// The app has no public landing — send everyone to the shell, which in turn
-// bounces guests to /login.
+// No public landing: the root bounces straight to the dashboard when signed in,
+// or to /login when not — no intermediate hop through the protected shell.
 export const Route = createFileRoute("/")({
   beforeLoad: () => {
-    throw redirect({ to: "/app/dashboard" });
+    const { token } = useAuthStore.getState();
+    throw redirect({ to: token ? "/app/dashboard" : "/login" });
   },
 });
