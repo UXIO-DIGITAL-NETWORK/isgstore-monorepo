@@ -49,6 +49,22 @@ export const useUpdateCategory = () => {
   });
 };
 
+export const useSetCategoryStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: "active" | "inactive" }) =>
+      categoriesService.setStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Category status updated");
+    },
+    onError: () => {
+      toast.error("Failed to update category status");
+    },
+  });
+};
+
 export const useDeleteCategory = () => {
   const queryClient = useQueryClient();
 

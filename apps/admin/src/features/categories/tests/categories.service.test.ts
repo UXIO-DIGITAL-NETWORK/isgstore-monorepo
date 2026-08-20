@@ -122,6 +122,34 @@ describe("categoriesService.update", () => {
   });
 });
 
+describe("categoriesService.setStatus", () => {
+  /**
+   * The toggle must NOT round-trip the whole entity: `update` is a full replace
+   * that 422s on a status-only body. This hits the dedicated status endpoint
+   * with a plain boolean JSON body — no FormData, no other fields.
+   */
+  it("POSTs a boolean status to the dedicated /status endpoint", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow({ status: false })));
+
+    const result = await categoriesService.setStatus("1", "inactive");
+
+    expect(api.post).toHaveBeenCalledWith("/v1/categories/1/status", { status: false });
+    // No pre-read of the record and no FormData — just the toggle.
+    expect(api.get).not.toHaveBeenCalled();
+    const [, body] = vi.mocked(api.post).mock.calls[0];
+    expect(body).not.toBeInstanceOf(FormData);
+    expect(result.status).toBe("inactive");
+  });
+
+  it("maps the active union to status:true", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow({ status: true })));
+
+    await categoriesService.setStatus("1", "active");
+
+    expect(api.post).toHaveBeenCalledWith("/v1/categories/1/status", { status: true });
+  });
+});
+
 describe("categoriesService.remove", () => {
   it("deletes by id", async () => {
     vi.mocked(api.delete).mockResolvedValue(envelope(null));

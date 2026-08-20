@@ -157,6 +157,18 @@ export const categoriesService = {
     return toCategory(response.data);
   },
 
+  /**
+   * Status-only toggle. Dedicated endpoint because `update` is a full replace —
+   * a status-only payload there 422s on the required `type_id`/`name`/`code` and
+   * would wipe every other column. JSON body: no file, so no FormData.
+   */
+  setStatus: async (id: string, status: "active" | "inactive"): Promise<Category> => {
+    const response: ApiResponse<CategoryApiRow> = await api.post(`${BASE}/${id}/status`, {
+      status: fromStatusUnion(status),
+    });
+    return toCategory(response.data);
+  },
+
   remove: async (id: string): Promise<void> => {
     await api.delete(`${BASE}/${id}`);
   },

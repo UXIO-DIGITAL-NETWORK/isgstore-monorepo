@@ -2,7 +2,7 @@ import { Box } from "@/components/common/Box";
 import { Can } from "@/components/common/Can";
 import { Text } from "@/components/common/Text";
 import { Switch } from "@/components/ui/switch";
-import { useUpdateCategory } from "../hooks/useCategories";
+import { useSetCategoryStatus } from "../hooks/useCategories";
 import type { Category } from "../types/category.type";
 
 interface CategoryStatusToggleProps {
@@ -15,7 +15,7 @@ interface CategoryStatusToggleProps {
  * Process"/"Done" pills, which have no meaning for a taxonomy record.
  */
 export function CategoryStatusToggle({ category }: CategoryStatusToggleProps) {
-  const updateCategory = useUpdateCategory();
+  const setStatus = useSetCategoryStatus();
   const isActive = category.status === "active";
   const label = isActive ? "Active" : "Inactive";
 
@@ -35,7 +35,7 @@ export function CategoryStatusToggle({ category }: CategoryStatusToggleProps) {
         <Switch
           checked={isActive}
           onCheckedChange={(checked) =>
-            updateCategory.mutate({ id: category.id, input: { status: checked ? "active" : "inactive" } })
+            setStatus.mutate({ id: category.id, status: checked ? "active" : "inactive" })
           }
           aria-label={`${category.name} status`}
         />
