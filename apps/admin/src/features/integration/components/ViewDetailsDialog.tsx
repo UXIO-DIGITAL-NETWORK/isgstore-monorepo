@@ -62,7 +62,7 @@ export function ViewDetailsDialog({ provider, channelName, open, onOpenChange }:
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{`${channelName} details`}</DialogTitle>
-          <DialogDescription>Connection status, balance, and (masked) credentials.</DialogDescription>
+          <DialogDescription>Connection status and (masked) credentials.</DialogDescription>
         </DialogHeader>
 
         {isLoading || !details ? (
@@ -82,9 +82,9 @@ export function ViewDetailsDialog({ provider, channelName, open, onOpenChange }:
                   {isConnected ? "Connected" : "Disconnected"}
                 </Badge>
               </Row>
-              <Row label="Balance">
-                {details.balance !== null ? formatCurrency(details.balance, { fractionDigits: 0 }) : "—"}
-              </Row>
+              {details.balance !== null ? (
+                <Row label="Balance">{formatCurrency(details.balance, { fractionDigits: 0 })}</Row>
+              ) : null}
               <Row label="Mode">{details.mode ?? "—"}</Row>
               <Row label="Endpoint">{details.endpoint ?? "—"}</Row>
             </Box>
