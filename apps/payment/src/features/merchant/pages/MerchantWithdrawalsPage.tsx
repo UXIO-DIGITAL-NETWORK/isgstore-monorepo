@@ -7,6 +7,7 @@ import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { Pager } from "@/components/common/Pager";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
+import { StatCard } from "@/components/common/StatCard";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ import { formatDateTime } from "@/utils/date";
 import { BankCombobox } from "../components/BankCombobox";
 import { isEwalletCode } from "../constants/bankCodes";
 import { withdrawalFeeFor, withdrawalNettFor } from "../lib/withdrawalFee";
-import { useCreateWithdrawal, useMerchantWithdrawals } from "../hooks/useMerchant";
+import { useCreateWithdrawal, useMerchantDashboard, useMerchantWithdrawals } from "../hooks/useMerchant";
 import { withdrawalSchema, type WithdrawalFormValues } from "../schemas/withdrawal.schema";
 import type { Withdrawal } from "../types/merchant.type";
 
@@ -33,6 +34,7 @@ const columns: Column<Withdrawal>[] = [
 export default function MerchantWithdrawalsPage() {
   const [page, setPage] = useState(1);
   const { data, isLoading, isError } = useMerchantWithdrawals({ page, per_page: 20 });
+  const { data: dash } = useMerchantDashboard();
   const { mutate: create, isPending } = useCreateWithdrawal();
 
   const {
@@ -59,6 +61,15 @@ export default function MerchantWithdrawalsPage() {
   return (
     <Box className="flex flex-col gap-6">
       <Heading level={1}>Penarikan</Heading>
+
+      <StatCard
+        data={{
+          id: "saldo",
+          label: "Saldo yang bisa ditarik",
+          value: dash?.saldo_aktif ?? 0,
+          caption: "Nominal maksimal yang dapat kamu tarik saat ini",
+        }}
+      />
 
       {/* Request form */}
       <Box
