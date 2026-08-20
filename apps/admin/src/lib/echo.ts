@@ -5,11 +5,11 @@ import { ENV } from "@/config/env";
 import { useAuthStore } from "@/store/useAuthStore";
 
 /**
- * Laravel Echo client (Reverb — Pusher wire protocol).
+ * Laravel Echo client (hosted Pusher — pusher.com).
  *
  * Realtime is an enhancement: if credentials are absent, `echo` is `null` and
  * consumers fall back to TanStack Query polling, so the app works before
- * `VITE_REVERB_*` is provisioned.
+ * `VITE_PUSHER_*` is provisioned.
  *
  * Private channels authorise against our Sanctum-guarded `/api/broadcasting/auth`.
  * A bare axios call (not the app's `api` instance) is used on purpose: `api`'s
@@ -17,51 +17,35 @@ import { useAuthStore } from "@/store/useAuthStore";
  * body. The bearer token is read at authorize time so rotations are respected.
  */
 
-// laravel-echo's reverb connector reads Pusher off the global.
+// laravel-echo's pusher connector reads Pusher off the global.
 (window as unknown as { Pusher: typeof Pusher }).Pusher = Pusher;
 
-const LOOPBACK_HOSTS = ["localhost", "127.0.0.1", "::1", "0.0.0.0"];
-
 /**
- * Why realtime can't run, or null if it can. Guarding here (rather than letting
- * pusher-js dial an unusable host) stops the endless failed-reconnect loop that
- * floods the console when the WebSocket host is unset or still points at
- * localhost on a deployed origin.
+ * Why realtime can't run, or null if it can. Hosted Pusher needs only an app key
+ * and a cluster — there is no local WebSocket host to point at.
  */
 function realtimeDisabledReason(): string | null {
-  if (!ENV.REVERB_APP_KEY) {
-    return "VITE_REVERB_APP_KEY is empty";
+  if (!ENV.PUSHER_APP_KEY) {
+    return "VITE_PUSHER_APP_KEY is empty";
   }
-  if (!ENV.REVERB_HOST) {
-    return "VITE_REVERB_HOST is empty";
+  if (!ENV.PUSHER_APP_CLUSTER) {
+    return "VITE_PUSHER_APP_CLUSTER is empty";
   }
-
-  const pageHost = typeof window !== "undefined" ? window.location.hostname : "";
-  const hostIsLoopback = LOOPBACK_HOSTS.includes(ENV.REVERB_HOST);
-  const pageIsLoopback = LOOPBACK_HOSTS.includes(pageHost);
-
-  if (hostIsLoopback && pageHost && !pageIsLoopback) {
-    return `VITE_REVERB_HOST is "${ENV.REVERB_HOST}" but the app is served from "${pageHost}" — set VITE_REVERB_* to the deployed WebSocket host`;
-  }
-
   return null;
 }
 
-function createEcho(): Echo<"reverb"> | null {
+function createEcho(): Echo<"pusher"> | null {
   const disabledReason = realtimeDisabledReason();
   if (disabledReason) {
     console.warn(`[echo] realtime disabled (${disabledReason}); using polling fallback.`);
     return null;
   }
 
-  return new Echo<"reverb">({
-    broadcaster: "reverb",
-    key: ENV.REVERB_APP_KEY,
-    wsHost: ENV.REVERB_HOST,
-    wsPort: ENV.REVERB_PORT,
-    wssPort: ENV.REVERB_PORT,
-    forceTLS: ENV.REVERB_SCHEME === "https",
-    enabledTransports: ["ws", "wss"],
+  return new Echo<"pusher">({
+    broadcaster: "pusher",
+    key: ENV.PUSHER_APP_KEY,
+    cluster: ENV.PUSHER_APP_CLUSTER,
+    forceTLS: true,
     authorizer: (channel: { name: string }) => ({
       authorize: (socketId: string, callback: ChannelAuthorizationCallback) => {
         const token = useAuthStore.getState().token;
