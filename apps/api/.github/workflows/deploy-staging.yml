@@ -158,8 +158,16 @@ jobs:
             # (dilakukan sebelum daemon start/health-check di bawah — config yang salah
             # di conf.d bisa membuat seluruh supervisord gagal start, jadi config terbaru
             # harus sudah ter-copy sebelum kita mencoba (re)start daemonnya)
-            sudo cp /home/uxioserver1/web-topup/api/staging/supervisor/laravel-queue-staging.conf \
-                    /etc/supervisor/conf.d/laravel-queue-staging.conf
+            sudo cp /home/uxioserver1/web-topup/api/staging/supervisor/api-staging-worker.conf \
+                    /etc/supervisor/conf.d/api-staging-worker.conf
+
+            # 12b. Cleanup program lama dari penamaan sebelumnya (one-time, idempotent).
+            # Tanpa ini config lama tetap terdaftar → dua worker menarik queue yang sama,
+            # dan yang lama tidak pernah reload kode baru.
+            if [ -f /etc/supervisor/conf.d/laravel-queue-staging.conf ]; then
+              sudo supervisorctl stop laravel-queue-staging:* || true
+              sudo rm -f /etc/supervisor/conf.d/laravel-queue-staging.conf
+            fi
 
             # Pastikan daemon supervisord benar-benar berjalan (idempotent — no-op jika sudah up).
             # Binary bisa saja sudah terpasang tapi daemonnya mati/belum pernah dijalankan.
@@ -175,12 +183,19 @@ jobs:
             fi
 
             # 13. Reload supervisor agar membaca config terbaru
+            # (mendaftarkan api-staging-worker; men-deregister laravel-queue-staging yang
+            # confnya sudah dihapus di 12b)
             sudo supervisorctl reread
             sudo supervisorctl update
 
-            # 14. Restart queue worker agar muat kode yang baru di-deploy
-            # (queue:work meng-cache kode — harus restart setiap deploy)
-            sudo supervisorctl restart laravel-queue-staging:*
+            # 14. Pastikan worker hidup + reload kode baru secara graceful.
+            # queue:work meng-cache kode di memory, jadi harus di-reload tiap deploy.
+            # queue:restart menyuruh worker menyelesaikan job yang sedang jalan lalu exit;
+            # supervisor (autorestart) langsung menghidupkannya lagi dengan kode baru —
+            # tidak memutus ProcessDigiflazzTopup/refund di tengah seperti hard-restart.
+            sudo supervisorctl start api-staging-worker:* 2>/dev/null || true
+            php artisan queue:restart
+            sudo supervisorctl status api-staging-worker:* || true
 
       - name: Notify Discord — deploy succeeded
         if: success()

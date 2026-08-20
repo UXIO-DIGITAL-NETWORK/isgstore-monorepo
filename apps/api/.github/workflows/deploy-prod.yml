@@ -161,8 +161,16 @@ jobs:
             # (dilakukan sebelum daemon start/health-check di bawah — config yang salah
             # di conf.d bisa membuat seluruh supervisord gagal start, jadi config terbaru
             # harus sudah ter-copy sebelum kita mencoba (re)start daemonnya)
-            sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/laravel-queue-prod.conf \
-                    /etc/supervisor/conf.d/laravel-queue-prod.conf
+            sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/api-prod-worker.conf \
+                    /etc/supervisor/conf.d/api-prod-worker.conf
+
+            # 12b. Cleanup program lama dari penamaan sebelumnya (one-time, idempotent).
+            # Tanpa ini config lama tetap terdaftar → dua worker menarik queue yang sama,
+            # dan yang lama tidak pernah reload kode baru.
+            if [ -f /etc/supervisor/conf.d/laravel-queue-prod.conf ]; then
+              sudo supervisorctl stop laravel-queue-prod:* || true
+              sudo rm -f /etc/supervisor/conf.d/laravel-queue-prod.conf
+            fi
 
             # Pastikan daemon supervisord benar-benar berjalan (idempotent — no-op jika sudah up).
             # Binary bisa saja sudah terpasang tapi daemonnya mati/belum pernah dijalankan.
@@ -178,11 +186,19 @@ jobs:
             fi
 
             # 13. Reload supervisor agar membaca config terbaru
+            # (mendaftarkan api-prod-worker; men-deregister laravel-queue-prod yang confnya
+            # sudah dihapus di 12b)
             sudo supervisorctl reread
             sudo supervisorctl update
 
-            # 14. Restart queue worker agar muat kode yang baru di-deploy
-            sudo supervisorctl restart laravel-queue-prod:*
+            # 14. Pastikan worker hidup + reload kode baru secara graceful.
+            # queue:work meng-cache kode di memory, jadi harus di-reload tiap deploy.
+            # queue:restart menyuruh worker menyelesaikan job yang sedang jalan lalu exit;
+            # supervisor (autorestart) langsung menghidupkannya lagi dengan kode baru —
+            # tidak memutus ProcessDigiflazzTopup/refund di tengah seperti hard-restart.
+            sudo supervisorctl start api-prod-worker:* 2>/dev/null || true
+            php artisan queue:restart
+            sudo supervisorctl status api-prod-worker:* || true
 
       - name: Notify Discord — deploy succeeded
         if: success()
