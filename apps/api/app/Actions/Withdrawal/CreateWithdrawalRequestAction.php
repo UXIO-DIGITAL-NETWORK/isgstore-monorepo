@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Withdrawal;
 
+use App\Actions\Notification\NotifyPaymentInternalAction;
 use App\DTOs\Withdrawal\CreateWithdrawalDTO;
 use App\Enums\WithdrawalStatus;
 use App\Models\Withdrawal;
@@ -30,7 +31,7 @@ class CreateWithdrawalRequestAction
 {
     public function execute(CreateWithdrawalDTO $dto): Withdrawal
     {
-        return DB::transaction(function () use ($dto) {
+        $withdrawal = DB::transaction(function () use ($dto) {
             $fee = $this->resolveFee();
             $nett = $dto->amount - $fee;
 
@@ -66,6 +67,22 @@ class CreateWithdrawalRequestAction
                 'notes' => $dto->notes,
             ]);
         });
+
+        // Alert the internal team that a client wants to withdraw, so an approver
+        // picks it up. Fires after commit — the hold and the row already exist.
+        $merchantName = $withdrawal->merchant?->name ?? "Client #{$dto->merchantId}";
+        app(NotifyPaymentInternalAction::class)->execute(
+            type: 'withdrawal_request',
+            title: 'Permintaan penarikan',
+            message: "{$merchantName} mengajukan penarikan {$withdrawal->withdrawal_number} Rp ".number_format((int) $withdrawal->amount),
+            data: [
+                'withdrawal_number' => $withdrawal->withdrawal_number,
+                'merchant_id' => $dto->merchantId,
+                'amount' => (int) $withdrawal->amount,
+            ],
+        );
+
+        return $withdrawal;
     }
 
     /**

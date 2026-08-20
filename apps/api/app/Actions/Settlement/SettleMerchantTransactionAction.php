@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Settlement;
 
+use App\Actions\Notification\NotifyPaymentInternalAction;
 use App\Models\BalanceMutation;
 use App\Models\Transaction;
 use App\Support\Ledger\PlatformLedger;
@@ -38,8 +39,9 @@ class SettleMerchantTransactionAction
         }
 
         $reference = $transaction->invoice_number;
+        $settled = false;
 
-        DB::transaction(function () use ($transaction, $merchantId, $reference) {
+        DB::transaction(function () use ($transaction, $merchantId, $reference, &$settled) {
             // Idempotency guard under the transaction: if the settlement credit
             // already exists for this invoice, a second delivery is a no-op.
             $alreadySettled = BalanceMutation::query()
@@ -50,6 +52,7 @@ class SettleMerchantTransactionAction
             if ($alreadySettled) {
                 return;
             }
+            $settled = true;
 
             $amountBase = (int) $transaction->amount_base;
             // Read `amount_fee`, never `channel_fee`. They are equal for rows
@@ -83,5 +86,21 @@ class SettleMerchantTransactionAction
                 );
             }
         });
+
+        // After commit and only on a real (non-duplicate) settlement: alert the
+        // internal team that a client transaction came in.
+        if ($settled) {
+            $merchantName = $transaction->merchant?->name ?? "Client #{$merchantId}";
+            app(NotifyPaymentInternalAction::class)->execute(
+                type: 'transaction_sale',
+                title: 'Transaksi masuk',
+                message: "Transaksi masuk dari {$merchantName} — {$reference} Rp ".number_format((int) $transaction->amount_base),
+                data: [
+                    'invoice_number' => $reference,
+                    'merchant_id' => $merchantId,
+                    'amount' => (int) $transaction->amount_base,
+                ],
+            );
+        }
     }
 }

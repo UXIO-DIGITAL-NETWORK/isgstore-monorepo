@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Service;
 
+use App\Actions\Notification\NotifyPaymentInternalAction;
 use App\Enums\SubscriptionStatus;
 use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoice;
@@ -72,6 +73,22 @@ class ActivateServiceSubscriptionAction
         if ($installation->service_subscription_id === null) {
             $installation->update(['service_subscription_id' => $subscription->id]);
         }
+
+        // Alert the internal team that a client paid a service bill. Both the
+        // webhook and the manual confirm converge here, so this fires exactly
+        // once per paid invoice regardless of which path settled it.
+        $merchantName = $invoice->merchant?->name ?? "Client #{$invoice->merchant_id}";
+        app(NotifyPaymentInternalAction::class)->execute(
+            type: 'service_payment',
+            title: 'Pembayaran layanan',
+            message: "{$merchantName} membayar {$invoice->service_name} — {$invoice->invoice_number} Rp ".number_format((int) $invoice->amount),
+            data: [
+                'invoice_number' => $invoice->invoice_number,
+                'merchant_id' => $invoice->merchant_id,
+                'service_id' => $invoice->service_id,
+                'amount' => (int) $invoice->amount,
+            ],
+        );
 
         return $subscription;
     }

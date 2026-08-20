@@ -60,3 +60,13 @@ Schedule::command('services:expire')
     ->withoutOverlapping()
     ->runInBackground()
     ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: services:expire'));
+
+// Expiring-subscription reminders (H-7 and H-3) for the internal team, so kita
+// can chase a renewal before a client's access lapses. Runs after the expiry
+// sweep so a package that lapsed overnight is already EXPIRED and skipped. Once
+// a day at business hours — the dedupe key makes each threshold fire once.
+Schedule::command('subscriptions:notify-expiring')
+    ->dailyAt('08:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: subscriptions:notify-expiring'));

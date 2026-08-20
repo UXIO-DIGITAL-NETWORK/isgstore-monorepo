@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\Finance\FinanceDashboardController;
 use App\Http\Controllers\Api\Finance\FinanceMerchantController;
 use App\Http\Controllers\Api\Finance\FinanceTransactionController;
 use App\Http\Controllers\Api\Finance\FinanceWithdrawalController;
+use App\Http\Controllers\Api\Finance\NotificationController;
 use App\Http\Controllers\Api\Finance\ServiceController;
 use App\Http\Controllers\Api\Finance\ServiceIncidentController;
 use App\Http\Controllers\Api\Finance\ServiceInstallationController;
@@ -589,6 +590,14 @@ Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'payment-admin'])
 // per-channel fee settings, and the services it sells to its clients.
 Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-internal'])->group(function () {
     Route::get('/dashboard', [FinanceDashboardController::class, 'index']);
+
+    // In-app notifications — one fan-out row per internal user; every query is
+    // scoped to the caller. The bell polls unread-count; the page reads index.
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+
     Route::get('/merchants', [FinanceMerchantController::class, 'index']);
     Route::get('/merchants/{user}', [FinanceMerchantController::class, 'show']);
     Route::get('/transactions/summary', [FinanceTransactionController::class, 'summary']);
