@@ -19,7 +19,15 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    // Restrict to the known frontends (admin, storefront, payment) via a
+    // comma-separated env allowlist. Falls back to '*' only when the var is
+    // unset (local dev), so a deployed API never advertises itself to every
+    // origin. Auth is Bearer-token in a header, not a cookie, so credentials
+    // stay off — but a tight allowlist is still the right default.
+    'allowed_origins' => array_values(array_filter(
+        array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '*'))),
+        fn ($origin) => $origin !== '',
+    )),
 
     'allowed_origins_patterns' => [],
 
