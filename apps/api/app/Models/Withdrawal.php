@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use App\Enums\WithdrawalStatus;
+use App\Observers\WithdrawalObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[ObservedBy(WithdrawalObserver::class)]
 class Withdrawal extends Model
 {
     use HasFactory;

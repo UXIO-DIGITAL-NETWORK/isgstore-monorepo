@@ -4,9 +4,12 @@ namespace App\Models;
 
 use App\Enums\ServiceInvoiceStatus;
 use App\Models\Concerns\ResolvesServiceInstallation;
+use App\Observers\ServiceInvoiceObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[ObservedBy(ServiceInvoiceObserver::class)]
 class ServiceInvoice extends Model
 {
     use HasFactory;
