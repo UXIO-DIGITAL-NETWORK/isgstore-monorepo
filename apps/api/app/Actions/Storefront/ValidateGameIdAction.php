@@ -123,6 +123,21 @@ class ValidateGameIdAction
 
             if ($nickname !== null) {
                 Cache::put($cacheKey, $nickname, self::NICKNAME_CACHE_TTL);
+            } else {
+                // Digiflazz answered (HTTP 200) but carried no name: a bad id, an
+                // unknown/mistyped SKU, or a wrong-mode key (rc 41 "Signature tidak
+                // valid"). Without this the failure is invisible — it just surfaces
+                // as "ID tidak ditemukan" on the storefront. Log the envelope so the
+                // real cause is diagnosable.
+                Log::warning('Digiflazz username check returned no nickname', [
+                    'game' => $game->code,
+                    'sku' => $sku,
+                    'customer_no' => $customerNo,
+                    'rc' => $response['rc'] ?? null,
+                    'status' => $response['status'] ?? null,
+                    'message' => $response['message'] ?? null,
+                    'sn' => $response['sn'] ?? null,
+                ]);
             }
 
             return ['nickname' => $nickname, 'validated' => $nickname !== null, 'supported' => true];
