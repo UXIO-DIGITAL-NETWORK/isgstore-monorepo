@@ -7,9 +7,9 @@
  */
 /**
  * Read a Vite env var, trimming whitespace and any stray surrounding quotes.
- * A deploy that sets `VITE_REVERB_HOST="localhost"` (quotes included) would
- * otherwise bake the quotes into the value and produce a `wss://"localhost"`
- * URL that can never connect — so strip them defensively.
+ * A deploy that sets `VITE_PUSHER_APP_KEY="abc"` (quotes included) would
+ * otherwise bake the quotes into the value and hand pusher-js a key it can
+ * never authenticate with — so strip them defensively.
  */
 const cleanEnv = (value: unknown, fallback = ""): string => {
   const s = String(value ?? "")
@@ -22,13 +22,11 @@ const cleanEnv = (value: unknown, fallback = ""): string => {
 export const ENV = {
   API_BASE_URL: cleanEnv(import.meta.env.VITE_API_BASE_URL, "http://localhost:8000/api"),
 
-  // Laravel Reverb (WebSocket, Pusher protocol) — powers live invoice/member
-  // status. Left empty until credentials are provisioned; the app then falls
-  // back to polling. Mirror these with the backend's REVERB_* values.
-  REVERB_APP_KEY: cleanEnv(import.meta.env.VITE_REVERB_APP_KEY),
-  REVERB_HOST: cleanEnv(import.meta.env.VITE_REVERB_HOST, "localhost"),
-  REVERB_PORT: Number(cleanEnv(import.meta.env.VITE_REVERB_PORT, "8080")) || 8080,
-  REVERB_SCHEME: cleanEnv(import.meta.env.VITE_REVERB_SCHEME, "http"),
+  // Pusher (hosted, pusher.com) — powers live invoice/member status. Left empty
+  // until credentials are provisioned; the app then falls back to polling.
+  // Mirror these with the backend's PUSHER_APP_KEY / PUSHER_APP_CLUSTER.
+  PUSHER_APP_KEY: cleanEnv(import.meta.env.VITE_PUSHER_APP_KEY),
+  PUSHER_APP_CLUSTER: cleanEnv(import.meta.env.VITE_PUSHER_APP_CLUSTER, "ap1"),
 
   // Google Sign-In OAuth Client ID. Empty until provisioned — the login page
   // hides the Google button when it is missing so it never renders broken.
