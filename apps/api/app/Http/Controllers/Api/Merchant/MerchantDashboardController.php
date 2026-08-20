@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ServiceSubscription;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
+use App\Support\Wallet\MerchantBalance;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -25,10 +26,6 @@ class MerchantDashboardController extends Controller
     {
         $user = $request->user();
 
-        $pendingWithdrawal = (int) Withdrawal::where('merchant_id', $user->id)
-            ->whereIn('status', [WithdrawalStatus::PENDING, WithdrawalStatus::APPROVED, WithdrawalStatus::PROCESSING])
-            ->sum('amount');
-
         // Feeds the "Website Services" card. Returned here rather than from a
         // second endpoint so the card has its date on first paint.
         $activeSubscriptions = ServiceSubscription::query()
@@ -39,17 +36,17 @@ class MerchantDashboardController extends Controller
         $nearestExpiry = (clone $activeSubscriptions)->min('ends_at');
         $activeServices = (clone $activeSubscriptions)->distinct('service_id')->count('service_id');
 
-        // "Penjualan bersih (net)" and the transaction count are earned figures,
-        // so only paid transactions count — pending/failed sales never settle.
+        // The transaction count is an earned figure, so only paid transactions
+        // count — pending/failed sales never settle.
         $paidSales = Transaction::where('merchant_id', $user->id)
             ->whereIn('status', TransactionStatus::paidStates());
 
         return $this->successResponse([
-            // The held funds are already debited from balance, so `saldo_aktif`
-            // is what the merchant can still withdraw right now.
-            'saldo_aktif' => (int) $user->balance,
-            'saldo_pending' => $pendingWithdrawal,
-            'total_penjualan' => (int) $paidSales->clone()->sum('amount_base'),
+            // Withdrawable balance is derived live from sales minus non-refunded
+            // withdrawals (MerchantBalance), not the stored users.balance column.
+            'saldo_aktif' => MerchantBalance::available($user->id),
+            'saldo_pending' => MerchantBalance::pending($user->id),
+            'total_penjualan' => MerchantBalance::salesTotal($user->id),
             'total_penarikan' => (int) Withdrawal::where('merchant_id', $user->id)
                 ->where('status', WithdrawalStatus::SETTLED)
                 ->sum('nett'),

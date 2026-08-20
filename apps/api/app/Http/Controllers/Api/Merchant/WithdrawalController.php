@@ -39,7 +39,8 @@ class WithdrawalController extends Controller
         try {
             $withdrawal = $action->execute($dto);
         } catch (RuntimeException $e) {
-            // WalletLedger throws when the balance can't cover the hold.
+            // The action throws when the live available balance can't cover the
+            // requested amount (or the amount is below the fee floor).
             return $this->errorResponse($e->getMessage(), 422);
         }
 

@@ -35,7 +35,7 @@ class IntegrationChannelTest extends TestCase
         });
     }
 
-    public function test_channels_report_monetapay_connected_with_parsed_balance(): void
+    public function test_channels_report_monetapay_connected_without_exposing_balance(): void
     {
         $this->fakeMonetapayBalance();
         $this->actingAsAdmin();
@@ -43,8 +43,9 @@ class IntegrationChannelTest extends TestCase
         $monetapay = collect($this->getJson('/api/v1/integration/channels')->assertOk()->json('data'))
             ->firstWhere('id', 'monetapay');
 
+        // A successful probe still marks it connected, but the amount is hidden.
         $this->assertSame('connected', $monetapay['connection_status']);
-        $this->assertSame(1500000.0, (float) $monetapay['balance']);
+        $this->assertNull($monetapay['balance']);
     }
 
     public function test_update_persists_secret_encrypted_and_returns_it_masked(): void

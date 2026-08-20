@@ -7,19 +7,22 @@ namespace App\Actions\Withdrawal;
 use App\Actions\Notification\NotifyPaymentInternalAction;
 use App\DTOs\Withdrawal\CreateWithdrawalDTO;
 use App\Enums\WithdrawalStatus;
+use App\Models\User;
 use App\Models\Withdrawal;
-use App\Support\Wallet\WalletLedger;
+use App\Support\Wallet\MerchantBalance;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
- * A merchant ("client") requests a payout from its wallet balance.
+ * A merchant ("client") requests a payout.
  *
- * The funds are held immediately: the balance is debited via WalletLedger when
- * the request is created, so a merchant can never have more pending withdrawals
- * than it holds, and the ledger records the movement. Kita later approves (the
- * hold becomes a real transfer) or rejects (the hold is credited back).
+ * The withdrawable balance is derived live from sales (MerchantBalance), not a
+ * stored `users.balance`: available = paid sales − non-refunded withdrawals. The
+ * new request itself becomes part of that hold — once PENDING it is counted, so
+ * a merchant can never have more open+settled withdrawals than it has earned.
+ * Kita later approves (settles) or rejects/fails (the withdrawal drops out of
+ * the hold and the balance recovers on its own — no ledger reversal needed).
  *
  * `fee` is kita's withdraw markup; `nett` = amount − fee is what reaches the
  * merchant. The fee is a flat charge: `fee_flat + fee_percent% of fee_flat`
@@ -41,17 +44,18 @@ class CreateWithdrawalRequestAction
                 throw new RuntimeException('Nominal penarikan terlalu kecil untuk menutup biaya.');
             }
 
-            $number = 'WD-'.Str::lower(Str::random(12));
+            // Serialise concurrent requests from the same merchant on its user
+            // row, then check the requested amount against the live available
+            // balance (sales − existing non-refunded withdrawals). Locking the
+            // row makes the read-then-create atomic even though no balance column
+            // is written.
+            User::whereKey($dto->merchantId)->lockForUpdate()->firstOrFail();
 
-            // Hold the funds. WalletLedger locks the merchant row and throws if
-            // the balance is insufficient, so this is the balance guard too.
-            WalletLedger::record(
-                user: $dto->merchantId,
-                amount: -$dto->amount,
-                type: 'withdrawal',
-                reference: $number,
-                description: "Penarikan {$number}",
-            );
+            if ($dto->amount > MerchantBalance::available($dto->merchantId)) {
+                throw new RuntimeException('Saldo tidak mencukupi untuk penarikan ini.');
+            }
+
+            $number = 'WD-'.Str::lower(Str::random(12));
 
             return Withdrawal::create([
                 'merchant_id' => $dto->merchantId,

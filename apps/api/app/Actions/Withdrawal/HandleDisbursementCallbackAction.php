@@ -8,7 +8,6 @@ use App\DTOs\Withdrawal\DisbursementCallbackDTO;
 use App\Enums\WithdrawalStatus;
 use App\Models\Withdrawal;
 use App\Support\Ledger\WithdrawalFeeLedger;
-use App\Support\Wallet\WalletLedger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -19,10 +18,10 @@ use Illuminate\Support\Facades\Log;
  * success/failure lands here.
  *
  * Monetapay payout status: "1" Successful → SETTLED + realise kita's fee;
- * "2" Failed → FAILED + refund the held amount to the merchant; "0" Processing
- * → stay PROCESSING (an intermediate ping). The whole thing is idempotent: a row
- * already terminal is a no-op, so Monetapay's retries never double-book a fee or
- * double-refund a hold.
+ * "2" Failed → FAILED (the withdrawal drops out of the merchant's live hold, so
+ * its balance recovers with no ledger reversal); "0" Processing → stay PROCESSING
+ * (an intermediate ping). The whole thing is idempotent: a row already terminal
+ * is a no-op, so Monetapay's retries never double-book a fee.
  */
 class HandleDisbursementCallbackAction
 {
@@ -67,16 +66,10 @@ class HandleDisbursementCallbackAction
                     WithdrawalFeeLedger::credit($withdrawal);
                     break;
 
-                case '2': // Failed — return the held amount to the merchant.
-                    // The hold debited the full `amount` at request time; refund
-                    // the same so the merchant is made whole.
-                    WalletLedger::record(
-                        user: (int) $withdrawal->merchant_id,
-                        amount: (int) $withdrawal->amount,
-                        type: 'refund',
-                        reference: $withdrawal->withdrawal_number,
-                        description: "Penarikan {$withdrawal->withdrawal_number} gagal — dana dikembalikan",
-                    );
+                case '2': // Failed — the merchant is made whole automatically.
+                    // Marking the row FAILED removes it from the live withdrawn
+                    // hold (MerchantBalance counts only non-refunded withdrawals),
+                    // so the available balance recovers without a ledger reversal.
                     $withdrawal->update([
                         'status' => WithdrawalStatus::FAILED,
                         'failure_reason' => $dto->rawPayload['error_msg'] ?? null,

@@ -8,7 +8,6 @@ use App\Services\DiscordWebhookService;
 use App\Services\Payment\MonetapayService;
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Payout\BankCatalog;
-use App\Support\Wallet\WalletLedger;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,9 +30,12 @@ use Throwable;
  *
  * This job only *hands off* the payout: a successful create leaves the row
  * PROCESSING, and the async /disbursement/merchant/callback settles it (SETTLED,
- * realising the fee) or fails it (FAILED, refunding the hold). The job's own
- * refund path below covers the other failure — the create being rejected or all
- * retries exhausted, so the payout never even reached Monetapay.
+ * realising the fee) or fails it (FAILED). The job's own failed() path below
+ * covers the other failure — the create being rejected or all retries exhausted,
+ * so the payout never even reached Monetapay — by marking the row FAILED. No
+ * balance reversal is needed: a FAILED withdrawal drops out of the merchant's
+ * live withdrawn hold (App\Support\Wallet\MerchantBalance), so its available
+ * balance recovers on its own.
  */
 class ProcessWithdrawalPayoutJob implements ShouldQueue
 {
@@ -135,23 +137,16 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
 
     public function failed(Throwable $e): void
     {
-        // Refund the hold and mark the request failed so the merchant's money
-        // is returned rather than stranded.
-        DB::transaction(function () {
+        // Mark the request FAILED so the merchant's money is returned rather than
+        // stranded. No ledger reversal: a FAILED withdrawal is excluded from the
+        // merchant's live withdrawn hold, so its available balance recovers.
+        DB::transaction(function () use ($e) {
             /** @var Withdrawal|null $locked */
             $locked = Withdrawal::whereKey($this->withdrawal->getKey())->lockForUpdate()->first();
 
             if (! $locked || $locked->status === WithdrawalStatus::FAILED || $locked->status === WithdrawalStatus::SETTLED) {
                 return;
             }
-
-            WalletLedger::record(
-                user: $locked->merchant_id,
-                amount: (int) $locked->amount,
-                type: 'refund',
-                reference: $locked->withdrawal_number,
-                description: "Penarikan {$locked->withdrawal_number} gagal — dana dikembalikan",
-            );
 
             $locked->update([
                 'status' => WithdrawalStatus::FAILED,
@@ -165,7 +160,7 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
             '[MONETAPAY] 🚨 Withdrawal Payout Failed',
             [],
             DiscordWebhookService::COLOR_RED,
-            "Withdrawal `{$this->withdrawal->withdrawal_number}` (Rp ".number_format($this->withdrawal->nett).') failed after all retries — hold refunded to merchant.'
+            "Withdrawal `{$this->withdrawal->withdrawal_number}` (Rp ".number_format($this->withdrawal->nett).') failed after all retries — balance returned to merchant.'
         );
     }
 }

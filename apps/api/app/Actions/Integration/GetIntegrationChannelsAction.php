@@ -75,6 +75,9 @@ class GetIntegrationChannelsAction
 
     private function gatewayChannels(): array
     {
+        // A successful balance read still tells us the gateway is reachable, but
+        // the amount is deliberately NOT exposed — the admin panel only needs the
+        // connected/disconnected status for a payment gateway, not its float.
         return collect($this->gatewayBalances->execute())
             ->map(fn (array $gateway) => [
                 'id' => $gateway['id'],
@@ -82,7 +85,7 @@ class GetIntegrationChannelsAction
                 'type' => 'payment_gateway',
                 'name' => $gateway['name'],
                 'connection_status' => $gateway['active_balance'] !== null ? 'connected' : 'disconnected',
-                'balance' => $gateway['active_balance'],
+                'balance' => null,
                 'mode' => filter_var(IntegrationConfig::for($gateway['id'])['is_production'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'production' : 'sandbox',
                 'last_ping_at' => now()->toIso8601String(),
             ])

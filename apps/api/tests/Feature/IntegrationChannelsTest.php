@@ -25,7 +25,7 @@ class IntegrationChannelsTest extends TestCase
         $this->getJson('/api/v1/integration/channels')->assertUnauthorized();
     }
 
-    public function test_reports_connected_channels_with_balances(): void
+    public function test_reports_connected_channels(): void
     {
         $this->actingAsAdmin();
         Supplier::factory()->create(['name' => 'Digiflazz']);
@@ -41,13 +41,16 @@ class IntegrationChannelsTest extends TestCase
         $response = $this->getJson('/api/v1/integration/channels')->assertOk();
         $channels = collect($response->json('data'))->keyBy('id');
 
+        // Digiflazz (supplier) still exposes its balance.
         $this->assertSame('supplier', $channels['digiflazz']['type']);
         $this->assertSame('connected', $channels['digiflazz']['connection_status']);
         $this->assertEquals(250000, $channels['digiflazz']['balance']);
 
+        // A payment gateway's balance is deliberately hidden — only the
+        // connected status is reported, even though the probe succeeded.
         $this->assertSame('payment_gateway', $channels['monetapay']['type']);
         $this->assertSame('connected', $channels['monetapay']['connection_status']);
-        $this->assertEquals(750000, $channels['monetapay']['balance']);
+        $this->assertNull($channels['monetapay']['balance']);
     }
 
     public function test_reports_disconnected_when_the_upstream_call_fails(): void

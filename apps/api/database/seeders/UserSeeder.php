@@ -17,18 +17,19 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // NOTE: the balance column below is the intended per-user starting saldo,
-        // but every account is seeded with balance 0 for now (see the insert).
+        // Every account starts with balance 0 — no seeded "free" saldo. For a
+        // payment-page merchant the withdrawable balance is derived from actual
+        // sales (see App\Support\Wallet\MerchantBalance), not this column.
         $users = [
             // role, name, username, email, phone, balance
-            [RoleType::ADMIN, 'Super Admin', 'superadmin', 'admin@example.com', '6281200000001', 9999999],
-            [RoleType::MEMBER, 'Member Satu', 'member1', 'member1@example.com', '6281200000002', 100000],
-            [RoleType::MEMBER, 'Member Dua', 'member2', 'member2@example.com', '6281200000003', 100000],
-            [RoleType::VIP, 'VIP User', 'vipuser', 'vip@example.com', '6281200000004', 250000],
-            [RoleType::RESELLER, 'Reseller User', 'reseller', 'reseller@example.com', '6281200000005', 250000],
-            [RoleType::AGENT, 'Agent User', 'agentuser', 'agent@example.com', '6281200000006', 250000],
+            [RoleType::ADMIN, 'Super Admin', 'superadmin', 'admin@example.com', '6281200000001', 0],
+            [RoleType::MEMBER, 'Member Satu', 'member1', 'member1@example.com', '6281200000002', 0],
+            [RoleType::MEMBER, 'Member Dua', 'member2', 'member2@example.com', '6281200000003', 0],
+            [RoleType::VIP, 'VIP User', 'vipuser', 'vip@example.com', '6281200000004', 0],
+            [RoleType::RESELLER, 'Reseller User', 'reseller', 'reseller@example.com', '6281200000005', 0],
+            [RoleType::AGENT, 'Agent User', 'agentuser', 'agent@example.com', '6281200000006', 0],
             // Payment page: client (requests withdrawals) and internal team (verifies).
-            [RoleType::PAYMENT_ADMIN, 'Client Merchant', 'client', 'client@example.com', '6281200000007', 500000],
+            [RoleType::PAYMENT_ADMIN, 'Client Merchant', 'client', 'client@example.com', '6281200000007', 0],
             [RoleType::PAYMENT_INTERNAL, 'Internal Finance', 'internal', 'internal@example.com', '6281200000008', 0],
         ];
 
@@ -42,9 +43,7 @@ class UserSeeder extends Seeder
                     'avatar' => null,
                     'password' => Hash::make('password'),
                     'phone' => $phone,
-                    // Temporarily 0 for every user; swap back to `$balance` to
-                    // restore the intended saldo listed in $users above.
-                    'balance' => 0,
+                    'balance' => $balance,
                     'point' => 0,
                     'status' => 'active',
                     'locale' => 'id',

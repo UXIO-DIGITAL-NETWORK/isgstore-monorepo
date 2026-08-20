@@ -6,9 +6,11 @@ namespace Tests\Feature\PaymentPage;
 
 use App\Models\PlatformMutation;
 use App\Models\Role;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
+use App\Support\Wallet\MerchantBalance;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
@@ -44,11 +46,23 @@ class DisbursementCallbackTest extends TestCase
         Http::fake(['*/v1.0.0/disbursement' => Http::response(['code' => 0, 'data' => ['order_no' => 'MP-OUT-1']])]);
     }
 
-    private function merchant(int $balance = 0): User
+    /** A merchant whose withdrawable balance is $sales, seeded as a paid sale. */
+    private function merchant(int $sales = 0): User
     {
         $role = Role::firstOrCreate(['name' => 'Payment-Admin']);
+        $merchant = User::factory()->create(['role_id' => $role->id]);
 
-        return User::factory()->create(['role_id' => $role->id, 'balance' => $balance]);
+        if ($sales > 0) {
+            Transaction::factory()->create([
+                'merchant_id' => $merchant->id,
+                'amount_base' => $sales,
+                'amount_fee' => 0,
+                'amount_total' => $sales,
+                'status' => 'PAID',
+            ]);
+        }
+
+        return $merchant;
     }
 
     private function finance(): User
@@ -160,25 +174,22 @@ class DisbursementCallbackTest extends TestCase
             'reference' => $withdrawal->withdrawal_number,
             'amount' => 1665,
         ]);
-        // Settled means paid out — the hold is not refunded.
-        $this->assertSame(0, (int) $withdrawal->merchant->fresh()->balance);
+        // Settled means paid out — the hold is not restored: available stays 0.
+        $this->assertSame(0, MerchantBalance::available((int) $withdrawal->merchant_id));
     }
 
-    public function test_failed_callback_marks_failed_and_refunds_the_hold(): void
+    public function test_failed_callback_marks_failed_and_restores_available(): void
     {
         $withdrawal = $this->processingWithdrawal(100000);
-        $this->assertSame(0, (int) $withdrawal->merchant->fresh()->balance);
+        // Approved/processing — the request holds the full amount, so available is 0.
+        $this->assertSame(0, MerchantBalance::available((int) $withdrawal->merchant_id));
 
         $this->sendCallback($this->signedPayload($withdrawal->withdrawal_number, '2'))->assertOk();
 
         $this->assertSame('FAILED', $withdrawal->fresh()->status->value);
-        // The full held amount is returned to the merchant.
-        $this->assertSame(100000, (int) $withdrawal->merchant->fresh()->balance);
-        $this->assertDatabaseHas('balance_mutations', [
-            'reference' => $withdrawal->withdrawal_number,
-            'type' => 'refund',
-            'amount' => 100000,
-        ]);
+        // A FAILED withdrawal drops out of the hold, so available recovers in full
+        // with no ledger reversal.
+        $this->assertSame(100000, MerchantBalance::available((int) $withdrawal->merchant_id));
         // No fee is booked for a payout that never delivered.
         $this->assertDatabaseMissing('platform_mutations', [
             'type' => 'withdrawal_fee',
@@ -254,8 +265,8 @@ class DisbursementCallbackTest extends TestCase
         $fresh = $withdrawal->fresh();
         $this->assertSame('FAILED', $fresh->status->value);
         $this->assertSame('Insufficient balance', $fresh->failure_reason);
-        // Hold refunded to the merchant.
-        $this->assertSame(100000, (int) $withdrawal->merchant->fresh()->balance);
+        // Available restored to the merchant (FAILED excluded from the hold).
+        $this->assertSame(100000, MerchantBalance::available((int) $withdrawal->merchant_id));
     }
 
     /**
