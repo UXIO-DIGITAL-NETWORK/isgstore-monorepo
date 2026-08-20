@@ -1,10 +1,14 @@
 import { Outlet } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { usePaymentRealtime } from "@/hooks/usePaymentRealtime";
 import { DashboardSidebar } from "../components/DashboardSidebar";
 import { DashboardNavbar } from "../components/DashboardNavbar";
 
 export function DashboardLayout() {
+  // Subscribe the authenticated user to their Pusher feeds for the whole session.
+  usePaymentRealtime();
+
   return (
     <SidebarProvider>
       <DashboardSidebar />

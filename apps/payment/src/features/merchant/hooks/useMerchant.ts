@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useEchoConnected } from "@/hooks/useEchoConnected";
 import type { ListParams } from "@/lib/list";
 import { merchantService } from "../services/merchant.service";
 import type { CreateWithdrawalPayload } from "../types/merchant.type";
@@ -20,18 +21,23 @@ export const useMerchantMutations = (params: ListParams) =>
   useQuery({ queryKey: ["merchant", "mutations", params], queryFn: () => merchantService.mutations(params) });
 
 /**
- * Polls while any payout is still in flight. A Monetapay disbursement settles
- * asynchronously (PENDING → PROCESSING → SETTLED/FAILED via webhook), so the
- * list keeps refreshing until every row reaches a terminal state — the server
- * decides that, never a client-side guess.
+ * Realtime-primary: the `merchant.{id}.withdrawals` Pusher channel invalidates
+ * this on every status change (see usePaymentRealtime). Polling stays only as a
+ * fallback while a payout is mid-flight — slow when the socket is up, fast when
+ * it's down. The server owns the terminal state, never a client-side guess.
  */
-export const useMerchantWithdrawals = (params: ListParams) =>
-  useQuery({
+export const useMerchantWithdrawals = (params: ListParams) => {
+  const connected = useEchoConnected();
+  return useQuery({
     queryKey: ["merchant", "withdrawals", params],
     queryFn: () => merchantService.withdrawals(params),
-    refetchInterval: (query) =>
-      query.state.data?.rows.some((w) => w.status === "PENDING" || w.status === "PROCESSING") ? 5_000 : false,
+    refetchInterval: (query) => {
+      const inFlight = query.state.data?.rows.some((w) => w.status === "PENDING" || w.status === "PROCESSING");
+      if (!inFlight) return false;
+      return connected ? 30_000 : 5_000;
+    },
   });
+};
 
 export const useCreateWithdrawal = () => {
   const queryClient = useQueryClient();
@@ -115,19 +121,24 @@ export const useMerchantServiceDetail = (id: number) =>
   useQuery({ queryKey: ["merchant", "service-detail", id], queryFn: () => merchantService.serviceDetail(id) });
 
 /**
- * Polls while the bill is still open.
- *
- * Stops on a status the *server* declares terminal, never on one re-derived
- * here — a client-side guess about what "settled" means would eventually
- * disagree with the webhook that decided it.
+ * Realtime-primary: the `merchant.{id}.service-invoices` Pusher channel
+ * invalidates this the moment the webhook flips the bill to PAID. Polling stays
+ * as a fallback while it is still UNPAID — slow when the socket is up, fast when
+ * it's down. Stops on a status the *server* declares terminal, never a
+ * client-side guess.
  */
-export const useMerchantServiceInvoice = (id: number) =>
-  useQuery({
+export const useMerchantServiceInvoice = (id: number) => {
+  const connected = useEchoConnected();
+  return useQuery({
     queryKey: ["merchant", "service-invoice", id],
     queryFn: () => merchantService.serviceInvoice(id),
-    refetchInterval: (query) => (query.state.data?.status === "UNPAID" ? 5_000 : false),
+    refetchInterval: (query) => {
+      if (query.state.data?.status !== "UNPAID") return false;
+      return connected ? 30_000 : 5_000;
+    },
     refetchIntervalInBackground: true,
   });
+};
 
 export const useMerchantInstallation = (subscriptionId: number | undefined) =>
   useQuery({

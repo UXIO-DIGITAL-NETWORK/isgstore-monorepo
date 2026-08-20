@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useEchoConnected } from "@/hooks/useEchoConnected";
 import type { ListParams } from "@/lib/list";
 import { financeService } from "../services/finance.service";
 import type {
@@ -27,17 +28,23 @@ export const useFinanceTransactionSummary = (params: ListParams) =>
   });
 
 /**
- * Polls while a payout is mid-flight. Approval hands the row back PROCESSING and
- * Monetapay settles it asynchronously via webhook, so the list keeps refreshing
- * until nothing is PROCESSING — the server owns the terminal state.
+ * Realtime-primary: the `finance.withdrawals` Pusher channel invalidates this on
+ * every status change (see usePaymentRealtime). Polling stays only as a fallback
+ * while a payout is mid-flight — slow when the socket is up (self-heal a missed
+ * push), fast when it's down. The server still owns the terminal state.
  */
-export const useFinanceWithdrawals = (params: ListParams) =>
-  useQuery({
+export const useFinanceWithdrawals = (params: ListParams) => {
+  const connected = useEchoConnected();
+  return useQuery({
     queryKey: ["finance", "withdrawals", params],
     queryFn: () => financeService.withdrawals(params),
-    refetchInterval: (query) =>
-      query.state.data?.rows.some((w) => w.status === "PROCESSING") ? 5_000 : false,
+    refetchInterval: (query) => {
+      const inFlight = query.state.data?.rows.some((w) => w.status === "PROCESSING");
+      if (!inFlight) return false;
+      return connected ? 30_000 : 5_000;
+    },
   });
+};
 
 export const useApproveWithdrawal = () => {
   const queryClient = useQueryClient();
@@ -368,16 +375,19 @@ export const useNotifications = (params: ListParams) =>
   });
 
 /**
- * Drives the navbar bell badge. Polls so a notification raised server-side
- * (a settlement, a paid bill, an expiry sweep) surfaces without a reload; the
- * badge is the one number that must feel live.
+ * Drives the navbar bell badge. Realtime-primary: the `user.{id}.notifications`
+ * Pusher channel invalidates it the moment a notification lands. The interval is
+ * now just a slow self-heal (2 min) when the socket is up, tightening to 20s only
+ * if it drops — the badge is the one number that must feel live.
  */
-export const useNotificationUnreadCount = () =>
-  useQuery({
+export const useNotificationUnreadCount = () => {
+  const connected = useEchoConnected();
+  return useQuery({
     queryKey: ["finance", "notifications", "unread-count"],
     queryFn: financeService.notificationsUnreadCount,
-    refetchInterval: 20_000,
+    refetchInterval: connected ? 120_000 : 20_000,
   });
+};
 
 export const useMarkNotificationRead = () => {
   const queryClient = useQueryClient();
