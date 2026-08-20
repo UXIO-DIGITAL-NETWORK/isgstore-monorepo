@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Box } from "@/components/common/Box";
 import { Button } from "@/components/ui/button";
+import { Can } from "@/components/common/Can";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,8 @@ import { Text } from "@/components/common/Text";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { initials } from "@/utils/initials";
 import { useAuthStore } from "@/store/useAuthStore";
+import { ROLES } from "@/constants/roles";
+import { NotificationBell } from "@/features/finance";
 
 export function DashboardNavbar() {
   const user = useAuthStore((state) => state.user);
@@ -36,6 +39,10 @@ export function DashboardNavbar() {
 
       <Box className="flex items-center gap-1">
         <ThemeToggle />
+
+        <Can permission={ROLES.INTERNAL}>
+          <NotificationBell />
+        </Can>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

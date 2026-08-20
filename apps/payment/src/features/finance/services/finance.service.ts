@@ -17,7 +17,9 @@ import type {
   ChannelFee,
   FinanceDashboard,
   FinanceMerchant,
+  FinanceNotification,
   IncidentPayload,
+  NotificationUnreadCount,
   Service,
   ServiceIncident,
   ServiceInvoice,
@@ -37,6 +39,24 @@ export const financeService = {
   dashboard: async (): Promise<FinanceDashboard> => {
     const res: ApiResponse<FinanceDashboard> = await api.get(`${BASE}/dashboard`);
     return res.data;
+  },
+
+  notifications: async (params: ListParams): Promise<ListResult<FinanceNotification>> => {
+    const res = await api.get(`${BASE}/notifications`, { params });
+    return unwrapList<FinanceNotification>(res as unknown as ApiResponse<Record<string, unknown>>);
+  },
+
+  notificationsUnreadCount: async (): Promise<number> => {
+    const res: ApiResponse<NotificationUnreadCount> = await api.get(`${BASE}/notifications/unread-count`);
+    return res.data.unread_count;
+  },
+
+  markNotificationRead: async (id: number): Promise<void> => {
+    await api.post(`${BASE}/notifications/${id}/read`, {});
+  },
+
+  markAllNotificationsRead: async (): Promise<void> => {
+    await api.post(`${BASE}/notifications/read-all`, {});
   },
 
   merchants: async (params: ListParams): Promise<ListResult<FinanceMerchant>> => {

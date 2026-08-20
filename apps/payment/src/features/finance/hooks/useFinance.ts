@@ -358,3 +358,48 @@ export const useRevealFinanceDetail = () =>
       toast.error(error.response?.data?.message ?? "Gagal menampilkan nilai");
     },
   });
+
+// ── Notifications ───────────────────────────────────────────────────────────
+
+export const useNotifications = (params: ListParams) =>
+  useQuery({
+    queryKey: ["finance", "notifications", params],
+    queryFn: () => financeService.notifications(params),
+  });
+
+/**
+ * Drives the navbar bell badge. Polls so a notification raised server-side
+ * (a settlement, a paid bill, an expiry sweep) surfaces without a reload; the
+ * badge is the one number that must feel live.
+ */
+export const useNotificationUnreadCount = () =>
+  useQuery({
+    queryKey: ["finance", "notifications", "unread-count"],
+    queryFn: financeService.notificationsUnreadCount,
+    refetchInterval: 20_000,
+  });
+
+export const useMarkNotificationRead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => financeService.markNotificationRead(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["finance", "notifications"] }),
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menandai notifikasi");
+    },
+  });
+};
+
+export const useMarkAllNotificationsRead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => financeService.markAllNotificationsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "notifications"] });
+      toast.success("Semua notifikasi ditandai dibaca");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menandai notifikasi");
+    },
+  });
+};

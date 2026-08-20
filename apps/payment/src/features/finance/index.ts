@@ -10,3 +10,4 @@ export { default as FinanceIncidentsPage } from "./pages/FinanceIncidentsPage";
 export { default as NotificationsPage } from "./pages/NotificationsPage";
 export { default as FinanceSubscriptionDetailPage } from "./pages/FinanceSubscriptionDetailPage";
 export { default as FinanceInvoiceDetailPage } from "./pages/FinanceInvoiceDetailPage";
+export { NotificationBell } from "./components/NotificationBell";

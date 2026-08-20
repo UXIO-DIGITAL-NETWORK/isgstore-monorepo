@@ -35,6 +35,27 @@ export interface FinanceMerchant {
   created_at: string;
 }
 
+/**
+ * One in-app notification for the internal team. `type` is a coarse category
+ * (`transaction_sale` | `service_payment` | `withdrawal_request` |
+ * `subscription_expiring`) the bell/page use to pick an icon; `data` carries the
+ * event's ids (invoice/withdrawal number, merchant id) for future deep-linking.
+ */
+export interface FinanceNotification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  data: Record<string, unknown> | null;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string | null;
+}
+
+export interface NotificationUnreadCount {
+  unread_count: number;
+}
+
 // The Transaksi feed merges sales with service bills — see transaction.type.ts.
 export type { FinanceUnifiedTransaction, UnifiedTransaction } from "@/types/transaction.type";
 

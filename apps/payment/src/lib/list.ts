@@ -37,6 +37,8 @@ export interface ListParams {
   status_group?: string;
   /** Transaction feed tab: "all" | "sale" | "service". */
   type?: string;
+  /** Notifications feed: "unread" narrows to the badge set. */
+  filter?: string;
   /** Inclusive created-date bounds, "YYYY-MM-DD". */
   start_date?: string;
   end_date?: string;
