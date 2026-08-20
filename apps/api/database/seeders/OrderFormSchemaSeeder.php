@@ -73,7 +73,7 @@ class OrderFormSchemaSeeder extends Seeder
                         'label' => 'User ID',
                         'type' => 'number',
                         'required' => true,
-                        'placeholder' => '63193868',
+                        'placeholder' => 'Contoh: 12345678',
                         'help' => 'Buka profil di game, User ID ada di bawah nama kamu.',
                     ],
                     [
@@ -81,7 +81,7 @@ class OrderFormSchemaSeeder extends Seeder
                         'label' => 'Zone ID',
                         'type' => 'number',
                         'required' => true,
-                        'placeholder' => '2027',
+                        'placeholder' => 'Contoh: 1234',
                         'help' => 'Angka di dalam kurung setelah User ID.',
                     ],
                 ],
