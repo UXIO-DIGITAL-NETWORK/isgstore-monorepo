@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\Category;
 use App\Actions\Category\CreateCategoryAction;
 use App\Actions\Category\DeleteCategoryAction;
 use App\Actions\Category\GetCategoriesAction;
+use App\Actions\Category\SetCategoryStatusAction;
 use App\Actions\Category\UpdateCategoryAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Category\SetCategoryStatusRequest;
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Http\Resources\Api\Category\CategoryResource;
@@ -58,6 +60,16 @@ class CategoryController extends Controller
         return $this->successResponse(
             new CategoryResource($updatedCategory->load('categoryType')),
             'Category updated successfully'
+        );
+    }
+
+    public function setStatus(SetCategoryStatusRequest $request, Category $category, SetCategoryStatusAction $action)
+    {
+        $category = $action->execute($category, $request->boolean('status'));
+
+        return $this->successResponse(
+            new CategoryResource($category->load('categoryType')),
+            'Category status updated successfully'
         );
     }
 

@@ -332,6 +332,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/', [CategoryController::class, 'store']);
         Route::get('/{category}', [CategoryController::class, 'show']);
         Route::put('/{category}', [CategoryController::class, 'update']);
+        Route::post('/{category}/status', [CategoryController::class, 'setStatus']);
         Route::delete('/{category}', [CategoryController::class, 'destroy']);
     });
 

@@ -132,6 +132,50 @@ class CategoryCrudTest extends TestCase
             ->assertJsonPath('data.order_form_fields.fields.0.key', 'user_id');
     }
 
+    public function test_status_toggle_updates_status_without_touching_other_columns(): void
+    {
+        $this->actingAsAdmin();
+        $type = CategoryType::factory()->create();
+        $category = Category::factory()->create([
+            'type_id' => $type->id,
+            'name' => 'Mobile Legends',
+            'code' => 'ml-diamonds',
+            'sub_name' => 'Diamonds',
+            'status' => true,
+            'order_form_fields' => [
+                ['key' => 'user_id', 'label' => 'User ID', 'required' => true],
+            ],
+        ]);
+
+        // A status-only payload must succeed — the storefront switch does not
+        // resend the whole entity — and must leave every other column intact.
+        $this->postJson("/api/v1/categories/{$category->id}/status", ['status' => false])
+            ->assertOk()
+            ->assertJsonPath('data.status', false);
+
+        $this->assertDatabaseHas('categories', [
+            'id' => $category->id,
+            'status' => false,
+            'name' => 'Mobile Legends',
+            'code' => 'ml-diamonds',
+            'sub_name' => 'Diamonds',
+        ]);
+        $this->assertSame(
+            [['key' => 'user_id', 'label' => 'User ID', 'required' => true]],
+            $category->fresh()->order_form_fields,
+        );
+    }
+
+    public function test_status_toggle_rejects_a_non_boolean_status(): void
+    {
+        $this->actingAsAdmin();
+        $category = Category::factory()->create();
+
+        $this->postJson("/api/v1/categories/{$category->id}/status", ['status' => 'nope'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    }
+
     public function test_list_filters_by_type_id(): void
     {
         $this->actingAsAdmin();
