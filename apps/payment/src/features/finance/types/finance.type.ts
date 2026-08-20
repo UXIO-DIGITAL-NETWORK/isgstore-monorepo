@@ -5,6 +5,10 @@ export interface FinanceDashboard {
   total_admin_fee: number;
   total_gateway_fee: number;
   total_settled_to_merchants: number;
+  /** How many merchant-attributed transactions exist, all statuses. */
+  total_transactions_count: number;
+  /** Paid nominal (amount_base) those transactions represent. */
+  total_transactions_amount: number;
   pending_withdrawals: number;
   pending_withdrawals_amount: number;
 }
