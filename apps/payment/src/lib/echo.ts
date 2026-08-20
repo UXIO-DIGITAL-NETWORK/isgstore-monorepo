@@ -20,9 +20,37 @@ import { useAuthStore } from "@/store/useAuthStore";
 // laravel-echo's reverb connector reads Pusher off the global.
 (window as unknown as { Pusher: typeof Pusher }).Pusher = Pusher;
 
-function createEcho(): Echo<"reverb"> | null {
+const LOOPBACK_HOSTS = ["localhost", "127.0.0.1", "::1", "0.0.0.0"];
+
+/**
+ * Why realtime can't run, or null if it can. Guarding here (rather than letting
+ * pusher-js dial an unusable host) stops the endless failed-reconnect loop that
+ * floods the console when the WebSocket host is unset or still points at
+ * localhost on a deployed origin.
+ */
+function realtimeDisabledReason(): string | null {
   if (!ENV.REVERB_APP_KEY) {
-    console.warn("[echo] VITE_REVERB_APP_KEY is empty — realtime disabled, using polling fallback.");
+    return "VITE_REVERB_APP_KEY is empty";
+  }
+  if (!ENV.REVERB_HOST) {
+    return "VITE_REVERB_HOST is empty";
+  }
+
+  const pageHost = typeof window !== "undefined" ? window.location.hostname : "";
+  const hostIsLoopback = LOOPBACK_HOSTS.includes(ENV.REVERB_HOST);
+  const pageIsLoopback = LOOPBACK_HOSTS.includes(pageHost);
+
+  if (hostIsLoopback && pageHost && !pageIsLoopback) {
+    return `VITE_REVERB_HOST is "${ENV.REVERB_HOST}" but the app is served from "${pageHost}" — set VITE_REVERB_* to the deployed WebSocket host`;
+  }
+
+  return null;
+}
+
+function createEcho(): Echo<"reverb"> | null {
+  const disabledReason = realtimeDisabledReason();
+  if (disabledReason) {
+    console.warn(`[echo] realtime disabled (${disabledReason}); using polling fallback.`);
     return null;
   }
 
