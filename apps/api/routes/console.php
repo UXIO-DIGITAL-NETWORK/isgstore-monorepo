@@ -42,6 +42,17 @@ Schedule::command('digiflazz:check-prices --type=all')
     ->runInBackground()
     ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: digiflazz:check-prices'));
 
+// Gateway-fee reconciliation: audits each channel's gateway fee against the
+// Monetapay contract, re-checks the frozen fee on recent settled payments, and
+// reconciles the reported balance against our ledger (delta since the last
+// snapshot). Daily — fee drift is a slow leak, not a live incident; the command
+// alerts Discord itself on any finding, so onFailure only covers a hard crash.
+Schedule::command('monetapay:reconcile-fees')
+    ->dailyAt('01:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(fn () => app(DiscordWebhookService::class)->sendAlert('Scheduled command failed: monetapay:reconcile-fees'));
+
 // Membership expiry: reverts a lapsed member's role so RolePrice stops quoting
 // them a tier they no longer pay for. Daily is enough — a plan's granularity is
 // days, and running it more often would just re-scan the same empty set.
