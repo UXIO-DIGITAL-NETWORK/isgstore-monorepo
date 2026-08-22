@@ -18,8 +18,8 @@ vi.mock("@/components/common/Link", () => ({
 const service = (over: Partial<ServiceCheckout> = {}): ServiceCheckout =>
   ({
     id: 1,
-    code: "digiflazz",
-    name: "Digiflazz",
+    code: "uxiotopup",
+    name: "Uxiotopup",
     category: "supplier",
     category_label: "Supplier",
     description: "Integrasi supplier produk digital",
@@ -91,7 +91,7 @@ describe("MerchantServiceCheckoutPage", () => {
     mockService(service());
     renderPage();
 
-    expect(screen.getByText("Digiflazz")).toBeInTheDocument();
+    expect(screen.getByText("Uxiotopup")).toBeInTheDocument();
     // Twice: the bill itself, and the total — no method picked, so no fee yet.
     expect(screen.getAllByText("Rp 250.000")).toHaveLength(2);
     expect(screen.getByText("30 hari")).toBeInTheDocument();

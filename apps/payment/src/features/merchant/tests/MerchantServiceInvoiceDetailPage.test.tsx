@@ -50,8 +50,8 @@ const invoice = (over: Partial<ServiceInvoice> = {}): ServiceInvoice =>
   ({
     id: 9,
     invoice_number: "SINV-202608-A1B2C3",
-    service: { id: 1, code: "digiflazz", name: "Digiflazz" },
-    service_name: "Digiflazz",
+    service: { id: 1, code: "uxiotopup", name: "Uxiotopup" },
+    service_name: "Uxiotopup",
     amount: 250000,
     duration_days: 30,
     status: "UNPAID",

@@ -57,7 +57,7 @@ describe("MerchantServiceStatusPage", () => {
     mockStatus({
       overall: "operational",
       incidents: [],
-      components: [{ type: "service", id: 1, name: "Digiflazz", status: "operational" }],
+      components: [{ type: "service", id: 1, name: "Uxiotopup", status: "operational" }],
     });
 
     renderPage();

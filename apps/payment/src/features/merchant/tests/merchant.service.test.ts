@@ -86,12 +86,12 @@ describe("merchantService — services bought from kita", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("lists the catalogue", async () => {
-    vi.mocked(api.get).mockResolvedValueOnce(paginated([{ id: 1, code: "digiflazz", name: "Digiflazz" }]) as never);
+    vi.mocked(api.get).mockResolvedValueOnce(paginated([{ id: 1, code: "uxiotopup", name: "Uxiotopup" }]) as never);
 
     const result = await merchantService.services({ page: 1, per_page: 50 });
 
     expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/services", { params: { page: 1, per_page: 50 } });
-    expect(result.rows[0].code).toBe("digiflazz");
+    expect(result.rows[0].code).toBe("uxiotopup");
   });
 
   /** The bill and its payment are opened in one request. */

@@ -14,7 +14,7 @@ describe("financeService — services, invoices, subscriptions, incidents", () =
 
   it("normalises a Resource collection for the services list", async () => {
     vi.mocked(api.get).mockResolvedValueOnce(
-      paginated([{ id: 1, code: "digiflazz", name: "Digiflazz", price: 250000, duration_days: 30 }], {
+      paginated([{ id: 1, code: "uxiotopup", name: "Uxiotopup", price: 250000, duration_days: 30 }], {
         total: 5,
         per_page: 20,
       }) as never,
@@ -24,7 +24,7 @@ describe("financeService — services, invoices, subscriptions, incidents", () =
 
     expect(api.get).toHaveBeenCalledWith("/v1/payment-internal/services", { params: { page: 1, per_page: 20 } });
     expect(result.total).toBe(5);
-    expect(result.rows[0].code).toBe("digiflazz");
+    expect(result.rows[0].code).toBe("uxiotopup");
   });
 
   it("posts a new service", async () => {

@@ -8,8 +8,8 @@ import type { Service } from "@/types/service.type";
 
 const base: Service = {
   id: 1,
-  code: "digiflazz",
-  name: "Digiflazz",
+  code: "uxiotopup",
+  name: "Uxiotopup",
   category: "supplier",
   category_label: "Supplier",
   description: null,
@@ -95,7 +95,7 @@ describe("FinanceServicesPage", () => {
     mockRows([withoutCost]);
     renderPage();
 
-    const row = screen.getByText("Digiflazz").closest("tr");
+    const row = screen.getByText("Uxiotopup").closest("tr");
     expect(row).not.toBeNull();
     expect(within(row!).getByText("Rp 0")).toBeInTheDocument();
     // Whole selling price is margin when we record no cost — so it appears

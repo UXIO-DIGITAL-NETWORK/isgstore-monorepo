@@ -17,8 +17,8 @@ const list = <T,>(rows: T[]) => ({ rows, page: 1, lastPage: 1, total: rows.lengt
 
 const service = {
   id: 1,
-  code: "digiflazz",
-  name: "Digiflazz",
+  code: "uxiotopup",
+  name: "Uxiotopup",
   category: "supplier",
   category_label: "Supplier",
   description: "Integrasi supplier produk digital",
@@ -34,7 +34,7 @@ const service = {
 const invoice = {
   id: 9,
   invoice_number: "SINV-202608-A1B2C3",
-  service_name: "Digiflazz",
+  service_name: "Uxiotopup",
   amount: 250000,
   duration_days: 30,
   status: "UNPAID",
@@ -47,7 +47,7 @@ const invoice = {
 
 const subscription = {
   id: 4,
-  service: { id: 1, code: "digiflazz", name: "Digiflazz", category: "supplier" },
+  service: { id: 1, code: "uxiotopup", name: "Uxiotopup", category: "supplier" },
   starts_at: "2026-08-15T00:00:00+07:00",
   ends_at: "2026-09-14T00:00:00+07:00",
   days_remaining: 30,
