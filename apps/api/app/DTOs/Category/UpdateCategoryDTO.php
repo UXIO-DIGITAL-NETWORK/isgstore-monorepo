@@ -18,6 +18,7 @@ readonly class UpdateCategoryDTO
         public ?string $slug,
         public ?string $uidParser,
         public ?string $validasiNickname,
+        public bool $nicknameCheckEnabled,
         public ?string $region,
         public UploadedFile|string|null $logo,
         public ?string $description,

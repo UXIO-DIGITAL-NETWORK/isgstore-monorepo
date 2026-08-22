@@ -40,6 +40,7 @@ class UpdateCategoryRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('categories', 'slug')->ignore($this->route('category'))],
             'uid_parser' => ['nullable', 'string', 'max:255'],
             'validasi_nickname' => ['nullable', 'string', 'max:255'],
+            'nickname_check_enabled' => ['sometimes', 'boolean'],
             'region' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'description' => ['nullable', 'string'],
@@ -63,6 +64,9 @@ class UpdateCategoryRequest extends FormRequest
             slug: $this->validated('slug'),
             uidParser: $this->validated('uid_parser'),
             validasiNickname: $this->validated('validasi_nickname'),
+            // Absent → keep enabled, so a partial update that omits the flag never
+            // silently turns the check off.
+            nicknameCheckEnabled: $this->has('nickname_check_enabled') ? $this->boolean('nickname_check_enabled') : true,
             region: $this->validated('region'),
             logo: $this->file('logo'),
             description: $this->validated('description'),

@@ -277,9 +277,18 @@ class StorefrontOrderTest extends TestCase
     {
         Category::factory()->create(['slug' => 'free-fire', 'status' => true, 'validasi_nickname' => 'digiflazz:ffusername']);
         Category::factory()->create(['slug' => 'plain-game', 'status' => true, 'validasi_nickname' => null]);
+        // Provider configured but the operator switched the check off — the master
+        // toggle wins, so the storefront must not offer the button.
+        Category::factory()->create([
+            'slug' => 'disabled-game',
+            'status' => true,
+            'validasi_nickname' => 'digiflazz:ffusername',
+            'nickname_check_enabled' => false,
+        ]);
 
         $this->getJson('/api/v1/games/free-fire')->assertOk()->assertJsonPath('data.supports_nickname_check', true);
         $this->getJson('/api/v1/games/plain-game')->assertOk()->assertJsonPath('data.supports_nickname_check', false);
+        $this->getJson('/api/v1/games/disabled-game')->assertOk()->assertJsonPath('data.supports_nickname_check', false);
     }
 
     public function test_checkout_recognises_a_member_from_their_bearer_token(): void

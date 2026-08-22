@@ -15,6 +15,7 @@ class Category extends Model
     {
         return [
             'status' => 'boolean',
+            'nickname_check_enabled' => 'boolean',
             'order_form_fields' => 'array',
             'meta_keywords' => 'array',
         ];

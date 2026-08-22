@@ -46,6 +46,7 @@ class UpdateCategoryAction
             'slug' => $dto->slug,
             'uid_parser' => $dto->uidParser,
             'validasi_nickname' => $dto->validasiNickname,
+            'nickname_check_enabled' => $dto->nicknameCheckEnabled,
             'region' => $dto->region,
             'logo' => $logoPath,
             'description' => $dto->description,

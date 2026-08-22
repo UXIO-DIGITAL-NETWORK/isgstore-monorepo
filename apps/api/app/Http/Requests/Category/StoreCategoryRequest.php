@@ -39,6 +39,7 @@ class StoreCategoryRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255', 'unique:categories,slug'],
             'uid_parser' => ['nullable', 'string', 'max:255'],
             'validasi_nickname' => ['nullable', 'string', 'max:255'],
+            'nickname_check_enabled' => ['sometimes', 'boolean'],
             'region' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'description' => ['nullable', 'string'],
@@ -62,6 +63,9 @@ class StoreCategoryRequest extends FormRequest
             slug: $this->validated('slug'),
             uidParser: $this->validated('uid_parser'),
             validasiNickname: $this->validated('validasi_nickname'),
+            // Absent → default enabled; the provider still gates whether the check
+            // actually runs (supports = enabled && provider set).
+            nicknameCheckEnabled: $this->has('nickname_check_enabled') ? $this->boolean('nickname_check_enabled') : true,
             region: $this->validated('region'),
             logo: $this->file('logo'),
             description: $this->validated('description'),

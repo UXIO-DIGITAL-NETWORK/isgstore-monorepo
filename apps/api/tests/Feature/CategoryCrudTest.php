@@ -107,6 +107,53 @@ class CategoryCrudTest extends TestCase
         $this->assertDatabaseCount('categories', 0);
     }
 
+    public function test_nickname_check_enabled_toggle_persists_and_gates_the_storefront_flag(): void
+    {
+        $this->actingAsAdmin();
+        $type = CategoryType::factory()->create();
+        $category = Category::factory()->create([
+            'type_id' => $type->id,
+            'slug' => 'free-fire',
+            'validasi_nickname' => 'digiflazz:ffusername',
+            'nickname_check_enabled' => true,
+        ]);
+
+        // Turn the check off — the form resubmits the provider, which stays put.
+        $this->putJson("/api/v1/categories/{$category->id}", [
+            'type_id' => $type->id,
+            'name' => $category->name,
+            'code' => $category->code,
+            'slug' => 'free-fire',
+            'status' => true,
+            'validasi_nickname' => 'digiflazz:ffusername',
+            'nickname_check_enabled' => false,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('categories', [
+            'id' => $category->id,
+            'nickname_check_enabled' => false,
+            'validasi_nickname' => 'digiflazz:ffusername',
+        ]);
+        $this->getJson('/api/v1/games/free-fire')
+            ->assertOk()
+            ->assertJsonPath('data.supports_nickname_check', false);
+
+        // Flip it back on — the storefront offers the check again.
+        $this->putJson("/api/v1/categories/{$category->id}", [
+            'type_id' => $type->id,
+            'name' => $category->name,
+            'code' => $category->code,
+            'slug' => 'free-fire',
+            'status' => true,
+            'validasi_nickname' => 'digiflazz:ffusername',
+            'nickname_check_enabled' => true,
+        ])->assertOk();
+
+        $this->getJson('/api/v1/games/free-fire')
+            ->assertOk()
+            ->assertJsonPath('data.supports_nickname_check', true);
+    }
+
     public function test_order_form_fields_accepts_a_json_string_from_multipart(): void
     {
         $this->actingAsAdmin();
