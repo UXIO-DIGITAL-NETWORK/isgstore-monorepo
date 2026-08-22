@@ -1,15 +1,14 @@
 /**
  * Normalise whatever the nickname provider returned into the player's name.
  *
- * Providers disagree wildly on shape. A free URL lookup answers with a bare
- * name ("EkaNata"), while the Digiflazz cek-username SKU hands back its whole
- * receipt line verbatim:
+ * Providers disagree wildly on shape. Most URL lookups answer with a bare
+ * name ("EkaNata"), but some hand back a whole receipt-style line verbatim:
  *
  *   "User ID 63193868 Zone 2027 / Username EkaNata / Region = ID"
  *
- * The API stores that string as-is (`ValidateGameIdAction::extractDigiflazzNickname`
- * only trims it), so the trimming happens here — the confirmation modal must
- * show a name, not a receipt.
+ * The API stores that string as-is (ValidateGameIdAction only trims it), so
+ * the trimming happens here — the confirmation modal must show a name, not a
+ * receipt.
  */
 
 /** Segment separators used by the receipt-style providers. */

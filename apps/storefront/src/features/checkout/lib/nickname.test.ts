@@ -8,7 +8,7 @@ import { parseNickname } from "@/features/checkout/lib/nickname";
  * here is visible on the receipt long after checkout.
  */
 describe("parseNickname", () => {
-  it("pulls the player name out of the Digiflazz receipt line", () => {
+  it("pulls the player name out of a receipt-style provider line", () => {
     expect(parseNickname("User ID 63193868 Zone 2027 / Username EkaNata / Region = ID")).toBe("EkaNata");
   });
 
