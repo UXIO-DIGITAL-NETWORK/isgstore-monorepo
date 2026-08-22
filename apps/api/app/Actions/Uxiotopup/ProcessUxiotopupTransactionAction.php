@@ -65,7 +65,8 @@ class ProcessUxiotopupTransactionAction
                 userId: null,
                 ipAddress: '127.0.0.1',
                 userAgent: 'System/UxiotopupWorker',
-                message: "Uxiotopup duplicate idtrx for {$transaction->invoice_number} — order already placed, awaiting callback."
+                message: "Uxiotopup duplicate idtrx for {$transaction->invoice_number} — order already placed, awaiting callback.",
+                isSystem: true,
             ));
 
             return $transaction;
@@ -83,7 +84,8 @@ class ProcessUxiotopupTransactionAction
             userId: null,
             ipAddress: '127.0.0.1',
             userAgent: 'System/UxiotopupWorker',
-            message: "Uxiotopup order sent for {$transaction->invoice_number}. Status: {$transaction->supplier_status}"
+            message: "Uxiotopup order sent for {$transaction->invoice_number}. Status: {$transaction->supplier_status}",
+            isSystem: true,
         ));
 
         return $transaction;

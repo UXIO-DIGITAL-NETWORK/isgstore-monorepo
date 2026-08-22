@@ -11,6 +11,11 @@ class ActivityLog extends Model
 
     protected $guarded = ['id'];
 
+    protected function casts(): array
+    {
+        return ['is_system' => 'boolean'];
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

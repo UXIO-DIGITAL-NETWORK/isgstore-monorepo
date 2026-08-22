@@ -22,7 +22,10 @@ class ActivityLogResource extends JsonResource
             // Stored type wins; otherwise derive a display category so the admin
             // Activity "Type" column is meaningful for un-typed rows.
             'type' => ActivityTypeClassifier::classify($this->type, $this->transaction_id, $this->message),
-            'actor' => $this->user?->name ?? 'System',
+            // No user means either an automated system event or a guest
+            // storefront action; the origin flag tells them apart so a guest
+            // checkout reads as "Guest" rather than the misleading "System".
+            'actor' => $this->user?->name ?? ($this->is_system ? 'System' : 'Guest'),
             'role' => $this->user?->role?->name,
             'ip_address' => $this->ip_address,
             'user_agent' => $this->user_agent,

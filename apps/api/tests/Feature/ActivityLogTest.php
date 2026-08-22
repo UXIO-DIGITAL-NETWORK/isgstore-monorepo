@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ActivityLog;
 use App\Models\Role;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -61,6 +62,50 @@ class ActivityLogTest extends TestCase
         $this->assertTrue($messages->contains('Checkout INV-20260819-0001 — Diamonds'));
         $this->assertFalse($messages->contains('Membuka pembayaran SINV-1 Rp 151050 via QRIS'));
         $this->assertFalse($messages->contains('Finance approved a withdrawal'));
+    }
+
+    public function test_it_hides_automated_system_events_from_the_global_feed(): void
+    {
+        $this->actingAsAdmin();
+
+        ActivityLog::factory()->system()->create(['message' => 'Uxiotopup order sent for INV-20260822-0001. Status: pending']);
+        ActivityLog::factory()->system()->create(['message' => 'Callback processed — Monetapay status: 3 | Ref: PAY-INV-20260822-0001-01']);
+        ActivityLog::factory()->create(['user_id' => null, 'message' => 'Checkout INV-20260822-0001 — Diamonds (Guest)']);
+
+        $messages = collect($this->getJson('/api/v1/activity-logs')->assertOk()->json('data.data'))
+            ->pluck('message');
+
+        $this->assertFalse($messages->contains('Uxiotopup order sent for INV-20260822-0001. Status: pending'));
+        $this->assertFalse($messages->contains('Callback processed — Monetapay status: 3 | Ref: PAY-INV-20260822-0001-01'));
+        $this->assertTrue($messages->contains('Checkout INV-20260822-0001 — Diamonds (Guest)'));
+    }
+
+    public function test_it_labels_guest_actions_as_guest_and_system_events_as_system(): void
+    {
+        $this->actingAsAdmin();
+
+        ActivityLog::factory()->create(['user_id' => null, 'message' => 'Checkout INV-20260822-0002 — Diamonds (Guest)']);
+
+        $this->getJson('/api/v1/activity-logs')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.actor', 'Guest');
+    }
+
+    public function test_a_transaction_trail_still_includes_its_system_events(): void
+    {
+        $this->actingAsAdmin();
+
+        $transaction = Transaction::factory()->create();
+        ActivityLog::factory()->system()->create([
+            'transaction_id' => $transaction->id,
+            'message' => 'Uxiotopup order sent for INV-20260822-0003. Status: pending',
+        ]);
+
+        $response = $this->getJson("/api/v1/activity-logs?transaction_id={$transaction->id}")->assertOk();
+        $messages = collect($response->json('data.data'))->pluck('message');
+
+        $this->assertTrue($messages->contains('Uxiotopup order sent for INV-20260822-0003. Status: pending'));
+        $response->assertJsonPath('data.data.0.actor', 'System');
     }
 
     public function test_it_derives_a_display_type_for_untyped_rows(): void

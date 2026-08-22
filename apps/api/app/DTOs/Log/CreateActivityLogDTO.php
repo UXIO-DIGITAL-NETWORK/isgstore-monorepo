@@ -15,5 +15,7 @@ readonly class CreateActivityLogDTO
         public ?ActivityType $type = null,
         /** Set for order-scoped events so the admin can show one order's trail. */
         public ?int $transactionId = null,
+        /** True for automated machine-to-machine events; hidden from the admin feed. */
+        public bool $isSystem = false,
     ) {}
 }

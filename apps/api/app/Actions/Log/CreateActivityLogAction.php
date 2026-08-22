@@ -22,6 +22,7 @@ class CreateActivityLogAction
             'user_agent' => $dto->userAgent,
             'message' => $dto->message,
             'type' => $dto->type?->value,
+            'is_system' => $dto->isSystem,
         ]);
     }
 }
