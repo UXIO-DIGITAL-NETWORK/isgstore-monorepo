@@ -6,9 +6,11 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\TransactionStatus;
 use App\Exceptions\UxiotopupDuplicateOrderException;
+use App\Jobs\PollUxiotopupStatusJob;
 use App\Models\Transaction;
 use App\Services\CustomerNumberFormatter;
 use App\Services\UxiotopupService;
+use App\Support\Uxiotopup\StatusPollSchedule;
 use App\Traits\MapsUxiotopupStatus;
 use Exception;
 
@@ -87,6 +89,17 @@ class ProcessUxiotopupTransactionAction
             message: "Uxiotopup order sent for {$transaction->invoice_number}. Status: {$transaction->supplier_status}",
             isSystem: true,
         ));
+
+        // The supplier callback is unreliable, so start the self-rescheduling poll
+        // chain (5s → widening) that drives this order to its terminal state. Only
+        // when it's actually in flight — an order that came back terminal, or the
+        // duplicate-idtrx branch (no supplier_trx_id), has nothing to poll.
+        if ($transaction->status === TransactionStatus::PROCESSING && $transaction->supplier_trx_id) {
+            $transaction->forceFill(['supplier_status_checked_at' => now()])->saveQuietly();
+
+            PollUxiotopupStatusJob::dispatch($transaction->id, now()->toIso8601String())
+                ->delay(now()->addSeconds(StatusPollSchedule::intervalSeconds(0)));
+        }
 
         return $transaction;
     }

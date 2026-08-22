@@ -52,6 +52,17 @@ Schedule::command('withdrawals:sync-processing')
     ->runInBackground()
     ->onFailure($alertFailure('withdrawals:sync-processing'));
 
+// Uxiotopup order-status recovery: the supplier callback is unreliable, so each
+// in-flight order runs a self-rescheduling PollUxiotopupStatusJob (5s → widening).
+// This is only the safety net — it re-arms chains that died and alerts orders that
+// cannot be polled (no supplier_trx_id). Five minutes: a paid order awaiting its
+// product should not sit unnoticed for long.
+Schedule::command('uxiotopup:sync-processing')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure($alertFailure('uxiotopup:sync-processing'));
+
 // Price checker: updates supplier cost/availability + raises price change
 // alerts. No success/before Discord embeds — 288 runs/day would be spam.
 Schedule::command('uxiotopup:check-prices')
