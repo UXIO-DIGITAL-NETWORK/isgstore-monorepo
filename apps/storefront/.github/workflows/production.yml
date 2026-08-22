@@ -33,13 +33,10 @@ jobs:
         run: npm run build
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-          # Reverb (Pusher protocol) — embedded into the client bundle at build.
-          # HOST must be the PUBLIC WebSocket hostname the browser reaches,
-          # SCHEME=https and PORT=443 behind a TLS reverse proxy.
-          VITE_REVERB_APP_KEY: ${{ secrets.VITE_REVERB_APP_KEY }}
-          VITE_REVERB_HOST: ${{ secrets.VITE_REVERB_HOST }}
-          VITE_REVERB_PORT: ${{ secrets.VITE_REVERB_PORT }}
-          VITE_REVERB_SCHEME: ${{ secrets.VITE_REVERB_SCHEME }}
+          # Hosted Pusher (pusher.com) — embedded into the client bundle at build.
+          # Only the public app key + cluster; the secret never ships to the client.
+          VITE_PUSHER_APP_KEY: ${{ secrets.VITE_PUSHER_APP_KEY }}
+          VITE_PUSHER_APP_CLUSTER: ${{ secrets.VITE_PUSHER_APP_CLUSTER }}
           # Google Sign-In OAuth Client ID. Public by design (it ships inside the
           # client bundle), so it is committed here rather than kept as a secret.
           # Must match the API's GOOGLE_CLIENT_ID.
