@@ -67,6 +67,7 @@ class CheckUxiotopupPricesAction
                     ."({$report->alertsCreated} alert baru, {$report->alertsUpdated} alert diperbarui), "
                     .count($report->deactivated).' dinonaktifkan, '
                     .count($report->reactivated).' diaktifkan lagi.',
+                isSystem: true,
             ));
         }
 

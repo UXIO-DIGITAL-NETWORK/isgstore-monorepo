@@ -196,6 +196,7 @@ class HandleMonetapayCallbackAction
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
             message: "{$message} | Ref: {$referenceId}",
+            isSystem: true,
         ));
     }
 

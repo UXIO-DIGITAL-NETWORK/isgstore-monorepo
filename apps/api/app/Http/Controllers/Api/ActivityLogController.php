@@ -31,6 +31,11 @@ class ActivityLogController extends Controller
                         RoleType::PAYMENT_INTERNAL->value,
                     ]));
             })
+            // Automated machine-to-machine events (order dispatch, gateway
+            // callbacks, scheduled checks) are noise on the global feed — hide
+            // them there, but keep them when scoping to one transaction so its
+            // full lifecycle trail stays intact.
+            ->when(! $transactionId, fn (Builder $q) => $q->where('is_system', false))
             ->when($transactionId, fn ($q) => $q->where('transaction_id', (int) $transactionId))
             ->when($search, fn ($q) => $q->where('message', 'like', "%{$search}%"))
             ->latest()

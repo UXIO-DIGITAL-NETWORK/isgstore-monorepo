@@ -18,6 +18,13 @@ class ActivityLogFactory extends Factory
             'ip_address' => fake()->ipv4(),
             'user_agent' => fake()->userAgent(),
             'message' => fake()->sentence(),
+            'is_system' => false,
         ];
+    }
+
+    /** An automated machine-to-machine event, hidden from the admin global feed. */
+    public function system(): static
+    {
+        return $this->state(fn () => ['user_id' => null, 'is_system' => true]);
     }
 }
