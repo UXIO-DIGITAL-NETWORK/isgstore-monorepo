@@ -15,12 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
-import { useBulkAddDigiflazzProducts } from "../hooks/useProviderProducts";
-import type { DigiflazzType } from "../types/product.type";
+import { useBulkAddUxiotopupProducts } from "../hooks/useProviderProducts";
 
 interface BulkAddProviderDialogProps {
   skus: string[];
-  type: DigiflazzType;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone: () => void;
@@ -31,8 +29,8 @@ interface BulkAddProviderDialogProps {
  * server-side per SKU from the pricing rules, so this form only collects the
  * category (required), an optional sub-category, and the storefront status.
  */
-export function BulkAddProviderDialog({ skus, type, open, onOpenChange, onDone }: BulkAddProviderDialogProps) {
-  const bulkAdd = useBulkAddDigiflazzProducts();
+export function BulkAddProviderDialog({ skus, open, onOpenChange, onDone }: BulkAddProviderDialogProps) {
+  const bulkAdd = useBulkAddUxiotopupProducts();
   const [categoryId, setCategoryId] = useState("");
   const [subCategoryId, setSubCategoryId] = useState("");
   const [status, setStatus] = useState(true);
@@ -48,7 +46,6 @@ export function BulkAddProviderDialog({ skus, type, open, onOpenChange, onDone }
     setError(null);
     bulkAdd.mutate(
       {
-        type,
         category_id: categoryId,
         sub_category_id: subCategoryId || null,
         status,

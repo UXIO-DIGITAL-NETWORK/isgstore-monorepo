@@ -244,12 +244,12 @@ const toApiTransaction = (row: (typeof TRANSACTIONS)[number], index: number): Ro
 });
 
 /** Suppliers back the provider select, which submits a real supplier_id. */
-const SUPPLIER_NAMES = ["Digiflazz Buyer", "Digiflazz Seller", "UxioTopup", "Zelpoint", "Topupkuy"];
+const SUPPLIER_NAMES = ["Uxiotopup", "Zelpoint", "Topupkuy"];
 
 /**
  * Managed provider products (redesigned Product Provider tab). Served in the
  * `/v1/supplier-products` row shape so the service mapper runs for real. One
- * System row (protected: no checkbox, no delete) and one Digiflazz row.
+ * System row (protected: no checkbox, no delete) and one Uxiotopup row.
  */
 const SUPPLIER_PRODUCTS = (): Row[] => {
   const priced = (modal: number) => ({
@@ -295,7 +295,7 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
         status: true,
         category: { id: 2, name: "Mobile Legends Indonesia" },
       },
-      supplier: { id: 1, name: "Digiflazz Buyer", is_system: false },
+      supplier: { id: 1, name: "Uxiotopup", is_system: false },
       created_at: "2026-03-10T21:58:00.000000Z",
     },
   ];
@@ -597,61 +597,43 @@ const SEARCHABLE: Record<string, string[]> = {
 const envelope = <T>(data: T) => ({ status: "success", code: 200, message: "ok", data });
 
 /**
- * Digiflazz price list (Product Provider tab). Served in the backend's row shape
+ * Uxiotopup price list (Product Provider tab). Served in the backend's row shape
  * so the provider service's mapper runs for real; `X100` is pre-mapped so the
  * "Add" action's disabled/"Mapped" states have something to assert against.
  */
-const DIGIFLAZZ_PRICE_LIST: Row[] = [
+const UXIOTOPUP_PRICE_LIST: Row[] = [
   {
     buyer_sku_code: "X100",
     name: "Xl 100.000",
-    brand: "XL",
     category: "Pulsa",
-    seller_name: "PT. ABC",
-    desc: "Pulsa Xl Rp 100.000",
-    type: "prepaid",
     cost: 98000,
+    harga: 98000,
+    harga_gold: 97800,
+    harga_silver: 97900,
+    harga_pro: 97700,
     available: true,
     already_mapped: true,
-    buyer_product_status: true,
-    seller_product_status: true,
-    product_type: "Umum",
-    price: 98000,
-    unlimited_stock: true,
-    stock: 0,
-    multi: true,
-    start_cut_off: "23:45",
-    end_cut_off: "00:15",
   },
   {
     buyer_sku_code: "S5",
     name: "Telkomsel Pulsa 5.000",
-    brand: "TELKOMSEL",
     category: "Pulsa",
-    seller_name: "PT. BCA",
-    desc: "Pulsa Telkomsel Rp 5.000",
-    type: "prepaid",
     cost: 5100,
+    harga: 5100,
+    harga_gold: 5000,
+    harga_silver: 5050,
+    harga_pro: 4950,
     available: true,
     already_mapped: false,
-    buyer_product_status: true,
-    seller_product_status: true,
-    product_type: "Umum",
-    price: 5100,
-    unlimited_stock: false,
-    stock: 1200,
-    multi: false,
-    start_cut_off: "00:00",
-    end_cut_off: "00:00",
   },
 ];
 
-const digiflazzPriceList = (params: Record<string, unknown>): Row[] => {
+const uxiotopupPriceList = (params: Record<string, unknown>): Row[] => {
   const search = (params.search as string | undefined)?.toLowerCase();
-  return DIGIFLAZZ_PRICE_LIST.filter((row) => {
+  return UXIOTOPUP_PRICE_LIST.filter((row) => {
     if (params.only_unmapped && row.already_mapped) return false;
     if (search) {
-      const haystack = [row.name, row.buyer_sku_code, row.brand, row.category]
+      const haystack = [row.name, row.buyer_sku_code, row.category]
         .map((value) => String(value ?? "").toLowerCase())
         .join(" ");
       if (!haystack.includes(search)) return false;
@@ -745,13 +727,13 @@ export function createFakeApi() {
       if (url in DOCUMENTS) return envelope(DOCUMENTS[url]);
       if (url in PARAMETERIZED) return envelope(PARAMETERIZED[url](config?.params ?? {}));
 
-      // Digiflazz endpoints are documents, not CRUD collections.
-      if (url === "/v1/digiflazz/price-list") {
-        return paginate(digiflazzPriceList(config?.params ?? {}), config?.params ?? {});
+      // Uxiotopup endpoints are documents, not CRUD collections.
+      if (url === "/v1/uxiotopup/price-list") {
+        return paginate(uxiotopupPriceList(config?.params ?? {}), config?.params ?? {});
       }
-      if (url === "/v1/digiflazz/sku-preview") {
+      if (url === "/v1/uxiotopup/sku-preview") {
         const sku = String(config?.params?.buyer_sku_code ?? "");
-        const found = DIGIFLAZZ_PRICE_LIST.find((row) => row.buyer_sku_code === sku);
+        const found = UXIOTOPUP_PRICE_LIST.find((row) => row.buyer_sku_code === sku);
         const cost = Number(found?.cost ?? 0);
         return envelope({
           buyer_sku_code: sku,

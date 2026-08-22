@@ -6,29 +6,20 @@ import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { AddProviderProductDialog } from "../components/AddProviderProductDialog";
 import { providerService } from "../services/provider.service";
-import type { DigiflazzPriceListItem } from "../types/product.type";
+import type { UxiotopupPriceListItem } from "../types/product.type";
 
-const ITEM: DigiflazzPriceListItem = {
+const ITEM: UxiotopupPriceListItem = {
   id: "S5",
   buyer_sku_code: "S5",
   name: "Telkomsel Pulsa 5.000",
-  brand: "TELKOMSEL",
   category: "Pulsa",
-  seller_name: "PT. BCA",
-  desc: "Pulsa Telkomsel Rp 5.000",
-  type: "prepaid",
   cost: 5100,
+  harga: 5100,
+  harga_gold: 5000,
+  harga_silver: 5050,
+  harga_pro: 4950,
   available: true,
   already_mapped: false,
-  buyer_product_status: true,
-  seller_product_status: true,
-  product_type: "Umum",
-  price: 5100,
-  unlimited_stock: false,
-  stock: 1200,
-  multi: false,
-  start_cut_off: "00:00",
-  end_cut_off: "00:00",
 };
 
 function renderDialog() {
@@ -69,10 +60,10 @@ describe("AddProviderProductDialog", () => {
     const payload = addSpy.mock.calls[0][0];
     expect(payload).toMatchObject({
       buyer_sku_code: "S5",
-      type: "prepaid",
       price_member: 6120,
       status: true,
     });
+    expect(payload).not.toHaveProperty("type");
     // A real category id (string) was selected, not the empty default.
     expect(payload.category_id).not.toBe("");
     expect(typeof payload.price_member).toBe("number");

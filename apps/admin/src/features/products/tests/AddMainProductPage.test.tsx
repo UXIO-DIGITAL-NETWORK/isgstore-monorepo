@@ -198,7 +198,7 @@ describe("AddMainProductDialog", () => {
     await user.type(within(dialog).getByLabelText("Public Price"), "15000");
     await user.click(within(dialog).getByRole("button", { name: /Add Mix/i }));
     await user.click(within(dialog).getByRole("combobox", { name: "Supplier Product" }));
-    await user.click(await screen.findByRole("option", { name: "Digiflazz — ML 86 Diamond" }));
+    await user.click(await screen.findByRole("option", { name: "Uxiotopup — ML 86 Diamond" }));
     await user.type(within(dialog).getByLabelText("Quantity"), "2");
 
     await user.click(within(dialog).getByRole("button", { name: "Save" }));

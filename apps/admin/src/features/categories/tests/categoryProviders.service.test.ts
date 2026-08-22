@@ -13,7 +13,7 @@ const apiRow = (over: Record<string, unknown> = {}) => ({
   category_id: 1,
   supplier_id: 4,
   template_code: "mlbb",
-  supplier: { id: 4, name: "Digiflazz" },
+  supplier: { id: 4, name: "Uxiotopup" },
   created_at: "2026-07-01T00:00:00.000000Z",
   updated_at: "2026-07-01T00:00:00.000000Z",
   ...over,
@@ -36,7 +36,7 @@ describe("categoryProvidersService.list", () => {
     expect(result.data[0]).toMatchObject({
       id: "9",
       category_id: "1",
-      provider_name: "Digiflazz",
+      provider_name: "Uxiotopup",
       provider_template: "mlbb",
     });
   });
@@ -44,10 +44,10 @@ describe("categoryProvidersService.list", () => {
   it("translates the toolbar's provider_name filter into the API's search param", async () => {
     vi.mocked(api.get).mockResolvedValue(paginated([apiRow()]));
 
-    await categoryProvidersService.list({ provider_name: "Digiflazz", page: 2 });
+    await categoryProvidersService.list({ provider_name: "Uxiotopup", page: 2 });
 
     expect(api.get).toHaveBeenCalledWith("/v1/supplier-categories", {
-      params: { page: 2, search: "Digiflazz" },
+      params: { page: 2, search: "Uxiotopup" },
     });
   });
 
@@ -67,7 +67,7 @@ describe("categoryProvidersService mutations", () => {
     await categoryProvidersService.create({
       category_id: "1",
       supplier_id: "4",
-      provider_name: "Digiflazz",
+      provider_name: "Uxiotopup",
       provider_template: "mlbb",
     });
 

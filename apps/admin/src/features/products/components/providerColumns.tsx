@@ -6,24 +6,23 @@ import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/currency";
-import type { DigiflazzPriceListItem } from "../types/product.type";
+import type { UxiotopupPriceListItem } from "../types/product.type";
 import { ProductAvailabilityBadge } from "./ProductStatusBadge";
 
 /**
- * Columns for the Digiflazz price list (Product Provider tab). The `No.` column
+ * Columns for the Uxiotopup price list (Product Provider tab). The `No.` column
  * and the select checkbox are injected by the shared `DataTable`. The action
  * column lifts the row up via `onAdd` so the page can own the add dialog, and
  * is disabled once a SKU is already mapped to one of our products.
  */
 export const providerColumns = (
-  onAdd: (item: DigiflazzPriceListItem) => void,
-): ColumnDef<DigiflazzPriceListItem>[] => [
+  onAdd: (item: UxiotopupPriceListItem) => void,
+): ColumnDef<UxiotopupPriceListItem>[] => [
   {
     id: "product",
     header: "Product",
     cell: ({ row }) => {
       const item = row.original;
-      const subline = [item.brand, item.product_type || item.seller_name].filter(Boolean).join(" · ");
       return (
         <Box className="flex flex-col">
           <Text
@@ -32,14 +31,6 @@ export const providerColumns = (
           >
             {item.name}
           </Text>
-          {subline && (
-            <Text
-              as="span"
-              variant="muted"
-            >
-              {subline}
-            </Text>
-          )}
           <Text
             as="span"
             variant="muted"
@@ -59,54 +50,14 @@ export const providerColumns = (
   {
     id: "cost",
     header: "Cost",
-    cell: ({ row }) => {
-      const item = row.original;
-      return (
-        <Box className="flex flex-col">
-          <Text
-            as="span"
-            className="tabular-nums"
-          >
-            {formatCurrency(item.cost, { fractionDigits: 0 })}
-          </Text>
-          {item.type === "pasca" && item.commission !== undefined && (
-            <Text
-              as="span"
-              variant="muted"
-              className="tabular-nums"
-            >
-              Commission {formatCurrency(item.commission, { fractionDigits: 0 })}
-            </Text>
-          )}
-        </Box>
-      );
-    },
-  },
-  {
-    id: "stock",
-    header: "Stock",
-    cell: ({ row }) => {
-      const item = row.original;
-      // Pasca has no stock concept; prepaid reports a count or "Unlimited".
-      if (item.type === "pasca") {
-        return (
-          <Text
-            as="span"
-            variant="muted"
-          >
-            &mdash;
-          </Text>
-        );
-      }
-      return (
-        <Text
-          as="span"
-          className="tabular-nums"
-        >
-          {item.unlimited_stock ? "Unlimited" : String(item.stock ?? 0)}
-        </Text>
-      );
-    },
+    cell: ({ row }) => (
+      <Text
+        as="span"
+        className="tabular-nums"
+      >
+        {formatCurrency(row.original.cost, { fractionDigits: 0 })}
+      </Text>
+    ),
   },
   {
     id: "availability",

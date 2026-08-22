@@ -101,49 +101,33 @@ export interface PriceRangeOption extends SelectOption {
   max?: number;
 }
 
-/* ── Product Provider tab — Digiflazz price list ──────────────────────────── */
-
-/** Digiflazz command: prepaid (pulsa/games/etc.) or postpaid bill (pasca). */
-export type DigiflazzType = "prepaid" | "pasca";
+/* ── Product Provider tab — Uxiotopup price list ──────────────────────────── */
 
 /**
- * One row of the Digiflazz price list (`GET /v1/digiflazz/price-list`), mirroring
- * the documented Digiflazz fields. `id` is the `buyer_sku_code` — the SKU is the
- * natural key, and `DataTable<TData extends {id: string}>` needs a string id.
- * The prepaid-only and pasca-only groups are optional because a pasca item never
- * carries stock/cut-off and a prepaid item never carries an admin fee.
+ * One row of the Uxiotopup price list (`GET /v1/uxiotopup/price-list`).
+ * Uxiotopup is prepaid-only, so there is no `type` dimension anymore. `id` is
+ * the `buyer_sku_code` (the uxiotopup service id) — the SKU is the natural key,
+ * and `DataTable<TData extends {id: string}>` needs a string id.
  */
-export interface DigiflazzPriceListItem {
+export interface UxiotopupPriceListItem {
   id: string;
   buyer_sku_code: string;
   name: string;
-  brand: string;
   category: string;
-  seller_name: string;
-  desc: string;
-  type: DigiflazzType;
-  /** Supplier cost in IDR — prepaid `price`, or pasca `admin`. */
+  /** Supplier cost in IDR at the configured price tier. */
   cost: number;
+  /** The four uxiotopup tier prices, as published. */
+  harga: number;
+  harga_gold: number;
+  harga_silver: number;
+  harga_pro: number;
+  /** Uxiotopup `status === "aktif"`. */
   available: boolean;
   /** Already mapped to one of our products (SupplierProduct exists). */
   already_mapped: boolean;
-  buyer_product_status: boolean;
-  seller_product_status: boolean;
-  /** Prepaid-only: Digiflazz product type label (e.g. "Umum"). */
-  product_type?: string;
-  price?: number;
-  unlimited_stock?: boolean;
-  stock?: number;
-  multi?: boolean;
-  start_cut_off?: string;
-  end_cut_off?: string;
-  /** Pasca-only. */
-  admin_fee?: number;
-  commission?: number;
 }
 
-export interface DigiflazzPriceListParams {
-  type?: DigiflazzType;
+export interface UxiotopupPriceListParams {
   search?: string;
   only_unmapped?: boolean;
   page?: number;
@@ -151,7 +135,7 @@ export interface DigiflazzPriceListParams {
 }
 
 /** Suggested selling prices from the backend's SKU preview (pricing rules). */
-export interface DigiflazzSuggestedPrices {
+export interface UxiotopupSuggestedPrices {
   price_modal: number;
   price_member: number;
   price_vip: number;
@@ -159,18 +143,17 @@ export interface DigiflazzSuggestedPrices {
   price_agent: number;
 }
 
-export interface DigiflazzSkuPreview {
+export interface UxiotopupSkuPreview {
   buyer_sku_code: string;
   name: string;
   cost: number;
   already_mapped: boolean;
-  suggested_prices: DigiflazzSuggestedPrices;
+  suggested_prices: UxiotopupSuggestedPrices;
 }
 
 /** Single add: the admin picks a category and confirms the four tier prices. */
-export interface AddDigiflazzProductInput {
+export interface AddUxiotopupProductInput {
   buyer_sku_code: string;
-  type: DigiflazzType;
   category_id: string;
   sub_category_id?: string | null;
   name?: string;
@@ -182,15 +165,14 @@ export interface AddDigiflazzProductInput {
 }
 
 /** Bulk add: one shared category, prices derived server-side per SKU. */
-export interface BulkAddDigiflazzInput {
-  type: DigiflazzType;
+export interface BulkAddUxiotopupInput {
   category_id: string;
   sub_category_id?: string | null;
   status: boolean;
   buyer_sku_codes: string[];
 }
 
-export interface BulkAddDigiflazzResult {
+export interface BulkAddUxiotopupResult {
   created: number;
   skipped: { buyer_sku_code: string; reason: string }[];
 }

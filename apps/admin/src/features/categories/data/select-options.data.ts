@@ -19,9 +19,7 @@ export const REGION_OPTIONS: SelectOption[] = [
  * `integration.type.ts` states the overlap is deliberately not a shared type.
  */
 export const PROVIDER_OPTIONS: SelectOption[] = [
-  { value: "Digiflazz Buyer", label: "Digiflazz Buyer" },
-  { value: "Digiflazz Seller", label: "Digiflazz Seller" },
-  { value: "UxioTopup", label: "UxioTopup" },
+  { value: "Uxiotopup", label: "Uxiotopup" },
   { value: "Zelpoint", label: "Zelpoint" },
   { value: "Topupkuy", label: "Topupkuy" },
 ];

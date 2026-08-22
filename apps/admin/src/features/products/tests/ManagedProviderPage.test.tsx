@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 
 /**
  * Managed Product Provider tab, served by fakeApi's `supplier-products` seed:
- * one System row (Membership VIP — protected) and one Digiflazz row
+ * one System row (Membership VIP — protected) and one Uxiotopup row
  * (MOBILELEGEND - 19 Diamond).
  */
 describe("ManagedProviderPage", () => {

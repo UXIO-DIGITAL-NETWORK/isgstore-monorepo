@@ -19,12 +19,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { computeRolePrice, impliedPercent } from "../lib/computeRolePrice";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
-import { useAddDigiflazzProduct, useDigiflazzSkuPreview } from "../hooks/useProviderProducts";
+import { useAddUxiotopupProduct, useUxiotopupSkuPreview } from "../hooks/useProviderProducts";
 import { providerAddSchema, type ProviderAddFormValues } from "../schemas/providerAdd.schema";
-import type { DigiflazzPriceListItem } from "../types/product.type";
+import type { UxiotopupPriceListItem } from "../types/product.type";
 
 interface AddProviderProductDialogProps {
-  item: DigiflazzPriceListItem | null;
+  item: UxiotopupPriceListItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -37,13 +37,13 @@ const PRICE_FIELDS = [
 ] as const;
 
 /**
- * Adds one Digiflazz SKU to the catalog. The admin picks a category (required —
+ * Adds one Uxiotopup SKU to the catalog. The admin picks a category (required —
  * the backend never guesses one) and confirms the four tier prices, which are
  * pre-filled from the SKU's suggested prices and re-suggested whenever the
  * category changes (pricing rules are per category).
  */
 export function AddProviderProductDialog({ item, open, onOpenChange }: AddProviderProductDialogProps) {
-  const addProduct = useAddDigiflazzProduct();
+  const addProduct = useAddUxiotopupProduct();
 
   const [percentMode, setPercentMode] = useState(false);
 
@@ -70,10 +70,10 @@ export function AddProviderProductDialog({ item, open, onOpenChange }: AddProvid
 
   const categoryId = useWatch({ control, name: "category_id" });
   const { categoryOptions, subCategoryOptions } = useProductSelectOptions(categoryId || undefined);
-  const { data: preview } = useDigiflazzSkuPreview(item?.buyer_sku_code, item?.type ?? "prepaid", categoryId || undefined);
+  const { data: preview } = useUxiotopupSkuPreview(item?.buyer_sku_code, categoryId || undefined);
 
   // Pre-fill (and re-suggest on category change) the four tier prices. The
-  // preview only refetches on sku/type/category change, so a price the admin
+  // preview only refetches on sku/category change, so a price the admin
   // typed within one category is never clobbered.
   useEffect(() => {
     if (!preview?.suggested_prices) return;
@@ -108,7 +108,6 @@ export function AddProviderProductDialog({ item, open, onOpenChange }: AddProvid
     addProduct.mutate(
       {
         buyer_sku_code: item.buyer_sku_code,
-        type: item.type,
         category_id: values.category_id,
         sub_category_id: values.sub_category_id || null,
         name: values.name || undefined,

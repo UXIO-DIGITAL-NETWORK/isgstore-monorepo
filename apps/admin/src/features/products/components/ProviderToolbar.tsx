@@ -6,15 +6,11 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import type { DigiflazzType } from "../types/product.type";
 
 interface ProviderToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
-  type: DigiflazzType;
-  onTypeChange: (value: DigiflazzType) => void;
   onlyUnmapped: boolean;
   onOnlyUnmappedChange: (value: boolean) => void;
   onRefresh: () => void;
@@ -23,15 +19,14 @@ interface ProviderToolbarProps {
 }
 
 /**
- * Toolbar for the Digiflazz price list (Product Provider tab) — search, a
- * prepaid/pasca switch, an "only unmapped" toggle, and refresh. When rows are
- * selected, a permission-gated "Add selected (N)" button opens the bulk dialog.
+ * Toolbar for the Uxiotopup price list (Product Provider tab) — search, an
+ * "only unmapped" toggle, and refresh (Uxiotopup is prepaid-only, so there is
+ * no type switch). When rows are selected, a permission-gated "Add selected
+ * (N)" button opens the bulk dialog.
  */
 export function ProviderToolbar({
   search,
   onSearchChange,
-  type,
-  onTypeChange,
   onlyUnmapped,
   onOnlyUnmappedChange,
   onRefresh,
@@ -49,30 +44,11 @@ export function ProviderToolbar({
               <Input
                 id="provider-search"
                 className="w-64 rounded-xl pl-8"
-                placeholder="Search product, SKU or brand"
+                placeholder="Search product, SKU or category"
                 value={search}
                 onChange={(event) => onSearchChange(event.target.value)}
               />
             </Box>
-          </Box>
-
-          <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="provider-type">Type</Label>
-            <Select
-              value={type}
-              onValueChange={(next) => onTypeChange(next as DigiflazzType)}
-            >
-              <SelectTrigger
-                id="provider-type"
-                className="w-40 rounded-xl"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="prepaid">Prepaid</SelectItem>
-                <SelectItem value="pasca">Postpaid</SelectItem>
-              </SelectContent>
-            </Select>
           </Box>
 
           <Box className="flex items-center gap-2 pb-1">

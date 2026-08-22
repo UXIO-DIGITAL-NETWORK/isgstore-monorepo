@@ -29,7 +29,7 @@ interface MainProductToolbarProps {
   onRefresh: () => void;
   onAdd: () => void;
   selectedCount: number;
-  onBulkDigiflazz: () => void;
+  onBulkUxiotopup: () => void;
   onBulkShowPrice: () => void;
   onBulkLock: () => void;
   onBulkDeactivate: () => void;
@@ -40,7 +40,7 @@ interface MainProductToolbarProps {
  * Toolbar for the Main Products list (product_requirements.md §4.6) — search,
  * a category filter, a price filter, refresh, and "+ Add Main Products",
  * matching the reference left to right, with the selection action bar
- * (Digiflazz / Logo / Deactive / Delete) on its own right-aligned row below.
+ * (Uxiotopup / Logo / Deactive / Delete) on its own right-aligned row below.
  *
  * The add link derives its target from the current pathname rather than a
  * hardcoded absolute path, so the same component works under both the real
@@ -58,7 +58,7 @@ export function MainProductToolbar({
   onRefresh,
   onAdd,
   selectedCount,
-  onBulkDigiflazz,
+  onBulkUxiotopup,
   onBulkShowPrice,
   onBulkLock,
   onBulkDeactivate,
@@ -197,7 +197,7 @@ export function MainProductToolbar({
                 icon: <ImageIcon className="size-4" />,
                 onSelect: announceDeferred("Bulk logo upload lands with the product image endpoint"),
               },
-              { label: "Digiflazz Update", icon: <RefreshCcw className="size-4" />, onSelect: onBulkDigiflazz },
+              { label: "Uxiotopup Update", icon: <RefreshCcw className="size-4" />, onSelect: onBulkUxiotopup },
               { label: "Show Price", icon: <Eye className="size-4" />, onSelect: onBulkShowPrice },
               { label: "Lock Price", icon: <Lock className="size-4" />, onSelect: onBulkLock },
               { label: "Deactive", icon: <Power className="size-4" />, onSelect: onBulkDeactivate },

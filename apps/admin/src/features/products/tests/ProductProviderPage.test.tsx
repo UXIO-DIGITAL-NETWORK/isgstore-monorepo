@@ -5,7 +5,7 @@ import { renderRoute, screen, within } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
 
 /**
- * Product Provider tab — the Digiflazz price list served by fakeApi. `X100` is
+ * Product Provider tab — the Uxiotopup price list served by fakeApi. `X100` is
  * seeded as already-mapped, `S5` as unmapped, so the mapped badge and the
  * disabled-Add behaviour both have something concrete to assert.
  */
@@ -22,12 +22,12 @@ describe("ProductProviderPage", () => {
     await renderRoute("/admin/products/provider/add");
 
     expect(await screen.findByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Search product, SKU or brand")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Search product, SKU or category")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
     expect(screen.getByLabelText("Only unmapped")).toBeInTheDocument();
   });
 
-  it("lists the price-list rows from the Digiflazz endpoint", async () => {
+  it("lists the price-list rows from the Uxiotopup endpoint", async () => {
     await renderRoute("/admin/products/provider/add");
 
     expect(await screen.findByText("Xl 100.000")).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe("ProductProviderPage", () => {
     await renderRoute("/admin/products/provider/add");
 
     await screen.findByText("Xl 100.000");
-    await user.type(screen.getByPlaceholderText("Search product, SKU or brand"), "telkomsel");
+    await user.type(screen.getByPlaceholderText("Search product, SKU or category"), "telkomsel");
 
     await waitForRemoved("Xl 100.000");
     expect(screen.getByText("Telkomsel Pulsa 5.000")).toBeInTheDocument();

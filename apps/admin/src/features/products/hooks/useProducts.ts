@@ -29,7 +29,7 @@ export const useBulkCreateProducts = () => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["supplier-products"] });
-      queryClient.invalidateQueries({ queryKey: ["digiflazz", "price-list"] });
+      queryClient.invalidateQueries({ queryKey: ["uxiotopup", "price-list"] });
       toast.success(
         result.skipped.length === 0
           ? `${result.created} products added`
@@ -135,11 +135,11 @@ export const useShowProducts = () => {
 };
 
 /** Re-pull selling prices from the supplier cost (row `[id]` or bulk). */
-export const useDigiflazzUpdateProducts = () => {
+export const useUxiotopupUpdateProducts = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ids: string[]) => productsService.bulkDigiflazzUpdate(ids),
+    mutationFn: (ids: string[]) => productsService.bulkUxiotopupUpdate(ids),
     onSuccess: (_result, ids) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(ids.length === 1 ? "Product updated from supplier" : `${ids.length} products updated from supplier`);

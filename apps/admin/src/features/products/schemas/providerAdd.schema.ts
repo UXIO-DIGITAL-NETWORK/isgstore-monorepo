@@ -7,7 +7,7 @@ const priceField = z
   .regex(/^\d+$/, "Numbers only");
 
 /**
- * Add-from-Digiflazz form. A category is mandatory — the backend never guesses
+ * Add-from-Uxiotopup form. A category is mandatory — the backend never guesses
  * one — and the four tier prices are pre-filled from the SKU's suggested prices
  * but remain the admin's decision.
  */

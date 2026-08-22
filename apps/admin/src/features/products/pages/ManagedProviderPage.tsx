@@ -26,7 +26,7 @@ const ALL = "all";
 /**
  * Product Provider tab (redesigned) — the managed list of provider products
  * (supplier mappings) with their price breakdown, status and per-row actions.
- * Adding a provider still goes through the Digiflazz price list, reached via
+ * Adding a provider still goes through the Uxiotopup price list, reached via
  * "Add Product Provider". System rows are protected: not selectable, no delete.
  */
 export default function ManagedProviderPage() {

@@ -36,11 +36,11 @@ describe("IntegrationPage", () => {
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect((await screen.findAllByText("Disconnected")).length).toBeGreaterThan(0);
 
-    expect((await screen.findAllByText("7")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("6")).length).toBeGreaterThan(0);
     expect((await screen.findAllByText("5")).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText("2")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("1")).length).toBeGreaterThan(0);
 
-    expect(screen.getByText("4 Supplier, 2 Payment, 1 WhatsApp")).toBeInTheDocument();
+    expect(screen.getByText("3 Supplier, 2 Payment, 1 WhatsApp")).toBeInTheDocument();
     expect(screen.getByText("Channels with an active connection (status ping).")).toBeInTheDocument();
     expect(screen.getByText("Registered channels with a lost connection.")).toBeInTheDocument();
   });

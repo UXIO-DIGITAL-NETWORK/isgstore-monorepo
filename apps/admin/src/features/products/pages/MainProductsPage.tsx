@@ -12,7 +12,7 @@ import { MainProductToolbar } from "../components/MainProductToolbar";
 import {
   useDeactivateProducts,
   useDeleteProducts,
-  useDigiflazzUpdateProducts,
+  useUxiotopupUpdateProducts,
   useLockProducts,
   useProductList,
   useShowProducts,
@@ -40,7 +40,7 @@ export default function MainProductsPage() {
   const [bulkDeactivateOpen, setBulkDeactivateOpen] = useState(false);
   const [bulkLockOpen, setBulkLockOpen] = useState(false);
   const [bulkShowOpen, setBulkShowOpen] = useState(false);
-  const [bulkDigiflazzOpen, setBulkDigiflazzOpen] = useState(false);
+  const [bulkUxiotopupOpen, setBulkUxiotopupOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
@@ -52,7 +52,7 @@ export default function MainProductsPage() {
   const deactivateProducts = useDeactivateProducts();
   const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
-  const digiflazzUpdate = useDigiflazzUpdateProducts();
+  const uxiotopupUpdate = useUxiotopupUpdateProducts();
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -98,7 +98,7 @@ export default function MainProductsPage() {
           onRefresh={() => refetch()}
           onAdd={() => setAddOpen(true)}
           selectedCount={selectedIds.length}
-          onBulkDigiflazz={() => setBulkDigiflazzOpen(true)}
+          onBulkUxiotopup={() => setBulkUxiotopupOpen(true)}
           onBulkShowPrice={() => setBulkShowOpen(true)}
           onBulkLock={() => setBulkLockOpen(true)}
           onBulkDeactivate={() => setBulkDeactivateOpen(true)}
@@ -158,13 +158,13 @@ export default function MainProductsPage() {
       />
 
       <DeleteConfirmDialog
-        open={bulkDigiflazzOpen}
-        onOpenChange={setBulkDigiflazzOpen}
+        open={bulkUxiotopupOpen}
+        onOpenChange={setBulkUxiotopupOpen}
         icon={<RefreshCcw />}
         confirmLabel="Update"
         title={selectedIds.length <= 1 ? "Update this product?" : `Update ${selectedIds.length} products?`}
         description="Re-pull selling prices from each product's supplier cost. Locked prices are left unchanged."
-        onConfirm={() => digiflazzUpdate.mutate(selectedIds)}
+        onConfirm={() => uxiotopupUpdate.mutate(selectedIds)}
       />
 
       <DeleteConfirmDialog

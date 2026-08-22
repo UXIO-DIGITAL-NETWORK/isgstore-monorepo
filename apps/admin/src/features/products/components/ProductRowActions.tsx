@@ -15,7 +15,7 @@ import {
 import {
   useDeactivateProducts,
   useDeleteProducts,
-  useDigiflazzUpdateProducts,
+  useUxiotopupUpdateProducts,
   useLockProducts,
   useShowProducts,
 } from "../hooks/useProducts";
@@ -28,7 +28,7 @@ interface ProductRowActionsProps {
 
 /**
  * Row menu for the Main Products list, in the reference's order. Each action is
- * wired: Digiflazz Update / Show Price / Lock Price go through a confirm dialog,
+ * wired: Uxiotopup Update / Show Price / Lock Price go through a confirm dialog,
  * Set Price Limit opens its page, and Deactive / Edit / Delete are unchanged.
  * The single-row paths reuse the bulk hooks with a one-id selection.
  */
@@ -38,13 +38,13 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [lockOpen, setLockOpen] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
-  const [digiflazzOpen, setDigiflazzOpen] = useState(false);
+  const [uxiotopupOpen, setUxiotopupOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteProducts = useDeleteProducts();
   const deactivateProducts = useDeactivateProducts();
   const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
-  const digiflazzUpdate = useDigiflazzUpdateProducts();
+  const uxiotopupUpdate = useUxiotopupUpdateProducts();
 
   return (
     <>
@@ -63,9 +63,9 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
           className="rounded-2xl"
         >
           <Can permission="products.edit">
-            <DropdownMenuItem onSelect={() => setDigiflazzOpen(true)}>
+            <DropdownMenuItem onSelect={() => setUxiotopupOpen(true)}>
               <RefreshCcw />
-              Digiflazz Update
+              Uxiotopup Update
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setShowOpen(true)}>
               <Eye />
@@ -106,13 +106,13 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
       </DropdownMenu>
 
       <DeleteConfirmDialog
-        open={digiflazzOpen}
-        onOpenChange={setDigiflazzOpen}
+        open={uxiotopupOpen}
+        onOpenChange={setUxiotopupOpen}
         icon={<RefreshCcw />}
         confirmLabel="Update"
         title="Update this product?"
         description="Re-pull this product's selling prices from its supplier cost. A locked price is left unchanged."
-        onConfirm={() => digiflazzUpdate.mutate([product.id])}
+        onConfirm={() => uxiotopupUpdate.mutate([product.id])}
       />
 
       <DeleteConfirmDialog

@@ -201,8 +201,8 @@ export const productsService = {
     await api.post(`${BASE}/bulk/deactivate`, { ids: ids.map(toFk) });
   },
 
-  bulkDigiflazzUpdate: async (ids: string[]): Promise<void> => {
-    await api.post(`${BASE}/bulk/digiflazz-update`, { ids: ids.map(toFk) });
+  bulkUxiotopupUpdate: async (ids: string[]): Promise<void> => {
+    await api.post(`${BASE}/bulk/uxiotopup-update`, { ids: ids.map(toFk) });
   },
 
   bulkDelete: async (ids: string[]): Promise<void> => {

@@ -9,8 +9,7 @@ import type { CategoryProvider } from "@/features/categories/types/categoryProvi
  * `features/integration/data/channels.data.ts` (§4.5 line 239). They are
  * mirrored rather than imported — feature isolation forbids reaching across
  * features, and `integration.type.ts` states the overlap is deliberately not
- * a shared type. Note the reference spells it "Uxiotopup"; the existing
- * fixtures spell it "UxioTopup", and reusing the established name wins.
+ * a shared type.
  *
  * `category_id` points at real rows in `categories.data.ts`. The reference's
  * Category column reads "Mobile Legends Indonesia", which is not a Category
@@ -19,7 +18,7 @@ import type { CategoryProvider } from "@/features/categories/types/categoryProvi
 export const CATEGORY_PROVIDERS: CategoryProvider[] = [
   {
     id: "cprov-1",
-    provider_name: "Digiflazz Buyer",
+    provider_name: "Uxiotopup",
     supplier_id: "1",
     category_id: "cat-1",
     provider_template: "Games-Mobile Legends",
@@ -28,7 +27,7 @@ export const CATEGORY_PROVIDERS: CategoryProvider[] = [
   },
   {
     id: "cprov-2",
-    provider_name: "UxioTopup",
+    provider_name: "Zelpoint",
     supplier_id: "1",
     category_id: "cat-2",
     provider_template: "Free Fire Indonesia",
@@ -37,7 +36,7 @@ export const CATEGORY_PROVIDERS: CategoryProvider[] = [
   },
   {
     id: "cprov-3",
-    provider_name: "Digiflazz Seller",
+    provider_name: "Topupkuy",
     supplier_id: "1",
     category_id: "cat-3",
     provider_template: "Games-Genshin Impact",

@@ -3,36 +3,35 @@ import { toast } from "sonner";
 
 import { providerService } from "../services/provider.service";
 import type {
-  AddDigiflazzProductInput,
-  BulkAddDigiflazzInput,
-  DigiflazzPriceListParams,
-  DigiflazzType,
+  AddUxiotopupProductInput,
+  BulkAddUxiotopupInput,
   ProviderProductListParams,
   SetProviderMarginInput,
+  UxiotopupPriceListParams,
 } from "../types/product.type";
 
-export const useDigiflazzPriceList = (params: DigiflazzPriceListParams) =>
+export const useUxiotopupPriceList = (params: UxiotopupPriceListParams) =>
   useQuery({
-    queryKey: ["digiflazz", "price-list", params],
+    queryKey: ["uxiotopup", "price-list", params],
     queryFn: () => providerService.priceList(params),
   });
 
 /** Suggested prices for the add dialog; only runs once a SKU is selected. */
-export const useDigiflazzSkuPreview = (sku?: string, type: DigiflazzType = "prepaid", categoryId?: string) =>
+export const useUxiotopupSkuPreview = (sku?: string, categoryId?: string) =>
   useQuery({
-    queryKey: ["digiflazz", "sku-preview", sku, type, categoryId],
-    queryFn: () => providerService.skuPreview(sku as string, type, categoryId),
+    queryKey: ["uxiotopup", "sku-preview", sku, categoryId],
+    queryFn: () => providerService.skuPreview(sku as string, categoryId),
     enabled: Boolean(sku),
   });
 
 /** Single "Add to products" — the Main Products list is invalidated too. */
-export const useAddDigiflazzProduct = () => {
+export const useAddUxiotopupProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: AddDigiflazzProductInput) => providerService.add(input),
+    mutationFn: (input: AddUxiotopupProductInput) => providerService.add(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["digiflazz", "price-list"] });
+      queryClient.invalidateQueries({ queryKey: ["uxiotopup", "price-list"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product added to your catalog");
     },
@@ -156,13 +155,13 @@ export const useBulkDeleteProviderProducts = () => {
 };
 
 /** Bulk add — the toast reports how many were created vs skipped. */
-export const useBulkAddDigiflazzProducts = () => {
+export const useBulkAddUxiotopupProducts = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: BulkAddDigiflazzInput) => providerService.bulkAdd(input),
+    mutationFn: (input: BulkAddUxiotopupInput) => providerService.bulkAdd(input),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["digiflazz", "price-list"] });
+      queryClient.invalidateQueries({ queryKey: ["uxiotopup", "price-list"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(
         result.skipped.length === 0

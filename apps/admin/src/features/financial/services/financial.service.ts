@@ -78,7 +78,7 @@ export const financialService = {
       id: toRowId(row.id),
       name: row.name,
       logoUrl: NO_LOGO,
-      // Only Digiflazz has a live balance integration; the rest genuinely have
+      // Only Uxiotopup has a live balance integration; the rest genuinely have
       // no figure, which is different from a balance of zero.
       balance: row.balance,
     }));

@@ -14,9 +14,9 @@ describe("integrationService.getChannels", () => {
     vi.mocked(api.get).mockResolvedValue(
       envelope([
         {
-          id: "digiflazz",
+          id: "uxiotopup",
           type: "supplier",
-          name: "Digiflazz",
+          name: "Uxiotopup",
           connection_status: "connected",
           balance: 6324067,
           last_ping_at: "2026-07-10T08:12:00.000Z",
@@ -28,9 +28,9 @@ describe("integrationService.getChannels", () => {
 
     expect(api.get).toHaveBeenCalledWith("/v1/integration/channels");
     expect(result[0]).toMatchObject({
-      id: "digiflazz",
+      id: "uxiotopup",
       type: "supplier",
-      name: "Digiflazz",
+      name: "Uxiotopup",
       connection_status: "connected",
       balance: 6324067,
     });
@@ -67,20 +67,20 @@ describe("integrationService.getChannels", () => {
  * service no longer returns them directly.
  */
 describe("channel fixtures", () => {
-  it("has 7 channels broken down 4 supplier / 2 payment_gateway / 1 whatsapp_gateway", () => {
-    expect(CHANNELS).toHaveLength(7);
+  it("has 6 channels broken down 3 supplier / 2 payment_gateway / 1 whatsapp_gateway", () => {
+    expect(CHANNELS).toHaveLength(6);
 
     const countByType = (type: string) => CHANNELS.filter((channel) => channel.type === type).length;
-    expect(countByType("supplier")).toBe(4);
+    expect(countByType("supplier")).toBe(3);
     expect(countByType("payment_gateway")).toBe(2);
     expect(countByType("whatsapp_gateway")).toBe(1);
     expect(countByType("email_gateway")).toBe(0);
   });
 
-  it("has 5 connected and 2 disconnected channels", () => {
+  it("has 5 connected and 1 disconnected channel", () => {
     const connected = CHANNELS.filter((channel) => channel.connection_status === "connected").length;
     const disconnected = CHANNELS.filter((channel) => channel.connection_status === "disconnected").length;
     expect(connected).toBe(5);
-    expect(disconnected).toBe(2);
+    expect(disconnected).toBe(1);
   });
 });

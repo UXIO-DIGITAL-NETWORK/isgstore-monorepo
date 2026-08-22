@@ -42,8 +42,8 @@ describe("products routes", () => {
     expect(await screen.findByPlaceholderText("Search provider product")).toBeInTheDocument();
   });
 
-  it("reaches the Digiflazz price list under Add Product Provider", async () => {
+  it("reaches the Uxiotopup price list under Add Product Provider", async () => {
     await renderRoute("/admin/products/provider/add");
-    expect(await screen.findByPlaceholderText("Search product, SKU or brand")).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText("Search product, SKU or category")).toBeInTheDocument();
   });
 });

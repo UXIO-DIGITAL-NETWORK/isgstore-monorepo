@@ -71,8 +71,8 @@ describe("CategoryProviderListPage", () => {
 
     // The same supplier names already fixtured in financial/integration
     // (§4.5 line 239) — not invented ones, and not the shadcn demo dataset.
-    expect(await screen.findByText("Digiflazz Buyer")).toBeInTheDocument();
-    expect(screen.getByText("UxioTopup")).toBeInTheDocument();
+    expect(await screen.findByText("Uxiotopup")).toBeInTheDocument();
+    expect(screen.getAllByText("Zelpoint").length).toBeGreaterThan(0);
     expect(screen.getByText("Games-Mobile Legends")).toBeInTheDocument();
     // category_id resolved against the Category tab's own records, so this is
     // "Mobile Legends" (cat-1), not the reference's "Mobile Legends Indonesia".
@@ -94,7 +94,7 @@ describe("CategoryProviderListPage", () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
-    await user.click(await screen.findByRole("button", { name: /Actions for Digiflazz Buyer/i }));
+    await user.click(await screen.findByRole("button", { name: /Actions for Uxiotopup/i }));
 
     // Exactly two: no deactivate/activate, since this entity has no status.
     const items = await screen.findAllByRole("menuitem");
