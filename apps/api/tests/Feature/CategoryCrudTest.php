@@ -114,7 +114,7 @@ class CategoryCrudTest extends TestCase
         $category = Category::factory()->create([
             'type_id' => $type->id,
             'slug' => 'free-fire',
-            'validasi_nickname' => 'digiflazz:ffusername',
+            'validasi_nickname' => 'https://api.example.com/validate/ff',
             'nickname_check_enabled' => true,
         ]);
 
@@ -125,14 +125,14 @@ class CategoryCrudTest extends TestCase
             'code' => $category->code,
             'slug' => 'free-fire',
             'status' => true,
-            'validasi_nickname' => 'digiflazz:ffusername',
+            'validasi_nickname' => 'https://api.example.com/validate/ff',
             'nickname_check_enabled' => false,
         ])->assertOk();
 
         $this->assertDatabaseHas('categories', [
             'id' => $category->id,
             'nickname_check_enabled' => false,
-            'validasi_nickname' => 'digiflazz:ffusername',
+            'validasi_nickname' => 'https://api.example.com/validate/ff',
         ]);
         $this->getJson('/api/v1/games/free-fire')
             ->assertOk()
@@ -145,7 +145,7 @@ class CategoryCrudTest extends TestCase
             'code' => $category->code,
             'slug' => 'free-fire',
             'status' => true,
-            'validasi_nickname' => 'digiflazz:ffusername',
+            'validasi_nickname' => 'https://api.example.com/validate/ff',
             'nickname_check_enabled' => true,
         ])->assertOk();
 

@@ -134,9 +134,9 @@ collection["item"].append({"name":"Server Category Options","item":[
 # --- Suppliers ---
 collection["item"].append({"name":"Suppliers","item":[
     get("Get All Suppliers", "v1/suppliers"),
-    post("Create Supplier", "v1/suppliers", {"name":"Digiflazz","status":True}),
+    post("Create Supplier", "v1/suppliers", {"name":"Uxiotopup","status":True}),
     get("Get Supplier Detail", "v1/suppliers/1"),
-    put("Update Supplier", "v1/suppliers/1", {"name":"Digiflazz V2","status":True}),
+    put("Update Supplier", "v1/suppliers/1", {"name":"Uxiotopup V2","status":True}),
     delete("Delete Supplier", "v1/suppliers/1")
 ]})
 

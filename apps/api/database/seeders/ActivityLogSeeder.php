@@ -21,7 +21,7 @@ class ActivityLogSeeder extends Seeder
             'System processed order INV-20260428-ABCD1234',
             'Admin created new user: johndoe@example.com',
             'Admin updated user role to VIP',
-            'Admin activated supplier: Digiflazz',
+            'Admin activated supplier: Uxiotopup',
             'System auto-resolved pending payment MNTP-TRX-001',
             'Admin created new announcement: Server Maintenance',
             'Admin updated Banner: Promo Ramadan 2026',

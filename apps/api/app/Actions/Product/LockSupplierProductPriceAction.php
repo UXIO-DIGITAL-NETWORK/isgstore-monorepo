@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * Toggles the price lock on a provider mapping. A locked mapping is skipped by
- * the daily Digiflazz price sync, so an admin-set price is never overwritten.
+ * the uxiotopup price sync, so an admin-set price is never overwritten.
  */
 class LockSupplierProductPriceAction
 {

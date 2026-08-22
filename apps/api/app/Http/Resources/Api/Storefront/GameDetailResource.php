@@ -24,7 +24,7 @@ class GameDetailResource extends GameResource
             // Whether the storefront should offer a "Cek Username" action. Two
             // conditions: the operator has enabled the check for this game (the
             // master switch), AND a provider is configured (a lookup URL or a paid
-            // Digiflazz SKU) to actually resolve the name. Disabling keeps the
+            // lookup URL) to actually resolve the name. Disabling keeps the
             // provider config so it can be turned back on without re-entry.
             'supports_nickname_check' => (bool) $this->nickname_check_enabled
                 && trim((string) $this->validasi_nickname) !== '',

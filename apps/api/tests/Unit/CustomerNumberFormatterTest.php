@@ -37,18 +37,14 @@ class CustomerNumberFormatterTest extends TestCase
         ];
     }
 
-    public function test_unconfigured_category_reproduces_the_legacy_concatenation(): void
+    public function test_unconfigured_category_uses_the_pipe_joined_default(): void
     {
-        $uid = '123456789';
-        $server = '2001';
-
-        // Byte-for-byte identical to the expression this class replaced.
-        $legacy = $uid.($server ?? '');
-
-        $this->assertSame($legacy, $this->formatter->format($this->category(null), $uid, $server));
-        $this->assertSame('123456789', $this->formatter->format($this->category(null), $uid, null));
-        $this->assertSame('123456789', $this->formatter->format($this->category([]), $uid, null));
-        $this->assertSame('123456789', $this->formatter->format(null, $uid, null));
+        // uxiotopup's documented target shape: "dataId|zoneId", or just the
+        // dataId when there is no zone/server component.
+        $this->assertSame('123456789|2001', $this->formatter->format($this->category(null), '123456789', '2001'));
+        $this->assertSame('123456789', $this->formatter->format($this->category(null), '123456789', null));
+        $this->assertSame('123456789', $this->formatter->format($this->category([]), '123456789', null));
+        $this->assertSame('123456789', $this->formatter->format(null, '123456789', null));
     }
 
     public function test_two_field_schema_joins_by_template(): void

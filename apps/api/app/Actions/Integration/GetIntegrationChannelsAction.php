@@ -9,7 +9,7 @@ use App\Support\Integration\IntegrationConfig;
 /**
  * Connectivity overview for the Integration page — composes the same
  * balance checks Financial uses (a successful balance read implies the
- * channel is reachable) rather than duplicating the Digiflazz/Monetapay
+ * channel is reachable) rather than duplicating the uxiotopup/Monetapay
  * calls. Only reports channels with a real backend integration: there is
  * no WhatsApp/email gateway model in this system, so those channel types
  * never appear here (the frontend's own type anticipates them, but nothing
@@ -54,21 +54,22 @@ class GetIntegrationChannelsAction
 
     private function supplierChannels(): array
     {
-        $digiflazz = collect($this->supplierBalances->execute())
-            ->first(fn (array $row) => strtolower($row['name']) === 'digiflazz');
+        $uxiotopup = collect($this->supplierBalances->execute())
+            ->first(fn (array $row) => strtolower($row['name']) === 'uxiotopup');
 
-        if (! $digiflazz) {
+        if (! $uxiotopup) {
             return [];
         }
 
         return [[
-            'id' => 'digiflazz',
-            'provider' => 'digiflazz',
+            'id' => 'uxiotopup',
+            'provider' => 'uxiotopup',
             'type' => 'supplier',
-            'name' => $digiflazz['name'],
-            'connection_status' => $digiflazz['balance'] !== null ? 'connected' : 'disconnected',
-            'balance' => $digiflazz['balance'],
-            'mode' => filter_var(IntegrationConfig::for('digiflazz')['production'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'production' : 'development',
+            'name' => $uxiotopup['name'],
+            'connection_status' => $uxiotopup['balance'] !== null ? 'connected' : 'disconnected',
+            'balance' => $uxiotopup['balance'],
+            // uxiotopup has a single API key — no dev/prod mode split.
+            'mode' => 'production',
             'last_ping_at' => now()->toIso8601String(),
         ]];
     }

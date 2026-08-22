@@ -54,11 +54,11 @@ Schedule::command('withdrawals:sync-processing')
 
 // Price checker: updates supplier cost/availability + raises price change
 // alerts. No success/before Discord embeds — 288 runs/day would be spam.
-Schedule::command('digiflazz:check-prices --type=all')
+Schedule::command('uxiotopup:check-prices')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground()
-    ->onFailure($alertFailure('digiflazz:check-prices'));
+    ->onFailure($alertFailure('uxiotopup:check-prices'));
 
 // Gateway-fee reconciliation: audits each channel's gateway fee against the
 // Monetapay contract, re-checks the frozen fee on recent settled payments, and

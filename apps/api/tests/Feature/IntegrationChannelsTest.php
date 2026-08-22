@@ -28,9 +28,9 @@ class IntegrationChannelsTest extends TestCase
     public function test_reports_connected_channels(): void
     {
         $this->actingAsAdmin();
-        Supplier::factory()->create(['name' => 'Digiflazz']);
+        Supplier::factory()->create(['name' => 'Uxiotopup']);
         Http::fake([
-            '*/cek-saldo' => Http::response(['data' => ['deposit' => 250000]], 200),
+            '*/saldo' => Http::response(['status' => true, 'msg' => 'berhasil', 'data' => ['saldo' => 250000]], 200),
             '*/v1.0.0/balance' => Http::response([
                 'code' => 0,
                 'messgae' => 'success',
@@ -41,10 +41,10 @@ class IntegrationChannelsTest extends TestCase
         $response = $this->getJson('/api/v1/integration/channels')->assertOk();
         $channels = collect($response->json('data'))->keyBy('id');
 
-        // Digiflazz (supplier) still exposes its balance.
-        $this->assertSame('supplier', $channels['digiflazz']['type']);
-        $this->assertSame('connected', $channels['digiflazz']['connection_status']);
-        $this->assertEquals(250000, $channels['digiflazz']['balance']);
+        // Uxiotopup (supplier) still exposes its balance.
+        $this->assertSame('supplier', $channels['uxiotopup']['type']);
+        $this->assertSame('connected', $channels['uxiotopup']['connection_status']);
+        $this->assertEquals(250000, $channels['uxiotopup']['balance']);
 
         // A payment gateway's balance is deliberately hidden — only the
         // connected status is reported, even though the probe succeeded.
@@ -56,22 +56,22 @@ class IntegrationChannelsTest extends TestCase
     public function test_reports_disconnected_when_the_upstream_call_fails(): void
     {
         $this->actingAsAdmin();
-        Supplier::factory()->create(['name' => 'Digiflazz']);
+        Supplier::factory()->create(['name' => 'Uxiotopup']);
         Http::fake([
-            '*/cek-saldo' => Http::response(['message' => 'error'], 500),
+            '*/saldo' => Http::response(['message' => 'error'], 500),
             '*/v1.0.0/balance' => Http::response(['message' => 'error'], 500),
         ]);
 
         $response = $this->getJson('/api/v1/integration/channels')->assertOk();
         $channels = collect($response->json('data'))->keyBy('id');
 
-        $this->assertSame('disconnected', $channels['digiflazz']['connection_status']);
-        $this->assertNull($channels['digiflazz']['balance']);
+        $this->assertSame('disconnected', $channels['uxiotopup']['connection_status']);
+        $this->assertNull($channels['uxiotopup']['balance']);
         $this->assertSame('disconnected', $channels['monetapay']['connection_status']);
         $this->assertNull($channels['monetapay']['balance']);
     }
 
-    public function test_omits_digiflazz_channel_when_no_such_supplier_is_configured(): void
+    public function test_omits_uxiotopup_channel_when_no_such_supplier_is_configured(): void
     {
         $this->actingAsAdmin();
         Http::fake(['*/v1.0.0/balance' => Http::response(['balanceInfos' => []], 200)]);
@@ -79,7 +79,7 @@ class IntegrationChannelsTest extends TestCase
         $response = $this->getJson('/api/v1/integration/channels')->assertOk();
         $channels = collect($response->json('data'))->keyBy('id');
 
-        $this->assertArrayNotHasKey('digiflazz', $channels);
+        $this->assertArrayNotHasKey('uxiotopup', $channels);
         $this->assertArrayHasKey('monetapay', $channels);
     }
 }

@@ -23,12 +23,12 @@ class ServiceCheckoutTest extends TestCase
 
     public function test_the_checkout_detail_returns_one_active_service(): void
     {
-        $service = Service::factory()->create(['name' => 'Digiflazz', 'selling_price' => 250000, 'duration_days' => 30]);
+        $service = Service::factory()->create(['name' => 'Uxiotopup', 'selling_price' => 250000, 'duration_days' => 30]);
         Sanctum::actingAs($this->merchant());
 
         $this->getJson("/api/v1/payment-admin/services/{$service->id}")
             ->assertOk()
-            ->assertJsonPath('data.name', 'Digiflazz')
+            ->assertJsonPath('data.name', 'Uxiotopup')
             ->assertJsonPath('data.selling_price', 250000)
             ->assertJsonPath('data.duration_days', 30)
             ->assertJsonPath('data.has_open_invoice', false)

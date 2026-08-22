@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * Shared shape for the Main Products bulk actions. `locked`/`hidden` are only
  * read by the lock/show endpoints; the plain actions (deactivate, delete,
- * digiflazz-update) ignore them.
+ * uxiotopup-update) ignore them.
  */
 class BulkProductActionRequest extends FormRequest
 {

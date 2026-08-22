@@ -83,7 +83,7 @@ class ServiceIncidentTest extends TestCase
     {
         $broken = PaymentChannel::factory()->create(['name' => 'QRIS', 'is_active' => true]);
         PaymentChannel::factory()->create(['name' => 'BNI VA', 'is_active' => false]);
-        Service::factory()->create(['name' => 'Digiflazz', 'is_active' => true]);
+        Service::factory()->create(['name' => 'Uxiotopup', 'is_active' => true]);
 
         ServiceIncident::factory()->create([
             'title' => 'QRIS lambat',
@@ -105,7 +105,7 @@ class ServiceIncidentTest extends TestCase
         $byName = collect($response->json('data.components'))->keyBy('name');
         $this->assertSame('degraded', $byName['QRIS']['status']);
         $this->assertSame('closed', $byName['BNI VA']['status']);
-        $this->assertSame('operational', $byName['Digiflazz']['status']);
+        $this->assertSame('operational', $byName['Uxiotopup']['status']);
     }
 
     public function test_a_critical_incident_reports_the_component_as_down(): void

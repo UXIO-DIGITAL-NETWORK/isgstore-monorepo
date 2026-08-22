@@ -96,15 +96,21 @@ class TransactionActionsTest extends TestCase
             ->assertUnprocessable();
     }
 
-    public function test_resend_callback_syncs_status_from_digiflazz(): void
+    public function test_resend_callback_syncs_status_from_uxiotopup(): void
     {
         $this->actingAsAdmin();
         $product = Product::factory()->create();
         SupplierProduct::factory()->create(['product_id' => $product->id, 'is_active' => true]);
-        $transaction = Transaction::factory()->create(['product_id' => $product->id, 'status' => 'PROCESSING']);
+        $transaction = Transaction::factory()->create([
+            'product_id' => $product->id,
+            'status' => 'PROCESSING',
+            'supplier_trx_id' => 'UXORDER-999', // /status polls by uxiotopup's own invoice
+        ]);
 
-        Http::fake(['*/transaction' => Http::response([
-            'data' => ['status' => 'Sukses', 'sn' => 'SN-999', 'trx_id' => 'TRX-999'],
+        Http::fake(['*/status' => Http::response([
+            'status' => true,
+            'msg' => 'berhasil mengecek status',
+            'data' => ['id' => 'UXORDER-999', 'keterangan' => 'SN-999', 'status' => 'success'],
         ])]);
 
         $this->postJson("/api/v1/transactions/{$transaction->id}/resend-callback")
@@ -113,20 +119,45 @@ class TransactionActionsTest extends TestCase
             ->assertJsonPath('data.sn', 'SN-999');
     }
 
-    public function test_retry_redispatches_to_digiflazz(): void
+    public function test_retry_redispatches_to_uxiotopup(): void
     {
         $this->actingAsAdmin();
         $product = Product::factory()->create();
         SupplierProduct::factory()->create(['product_id' => $product->id, 'is_active' => true]);
         $transaction = Transaction::factory()->create(['product_id' => $product->id, 'status' => 'FAILED_PROVIDER']);
 
-        Http::fake(['*/transaction' => Http::response([
-            'data' => ['status' => 'Pending', 'sn' => null, 'trx_id' => 'TRX-000'],
+        Http::fake(['*/order' => Http::response([
+            'status' => true,
+            'msg' => 'ok',
+            'data' => ['status' => 'pending', 'keterangan' => '', 'id' => 'UXORDER-000'],
         ])]);
 
         $this->postJson("/api/v1/transactions/{$transaction->id}/retry")
             ->assertOk()
             ->assertJsonPath('data.status', 'PROCESSING')
-            ->assertJsonPath('data.supplier_trx_id', 'TRX-000');
+            ->assertJsonPath('data.supplier_trx_id', 'UXORDER-000');
+    }
+
+    /**
+     * A retried order that already reached uxiotopup hits their duplicate-idtrx
+     * guard — the retry must settle to PROCESSING (awaiting callback), never
+     * double-order or error out.
+     */
+    public function test_retry_after_duplicate_idtrx_settles_to_processing(): void
+    {
+        $this->actingAsAdmin();
+        $product = Product::factory()->create();
+        SupplierProduct::factory()->create(['product_id' => $product->id, 'is_active' => true]);
+        $transaction = Transaction::factory()->create(['product_id' => $product->id, 'status' => 'FAILED_PROVIDER']);
+
+        Http::fake(['*/order' => Http::response([
+            'status' => false,
+            'msg' => 'idtrx sudah ada',
+            'data' => [],
+        ])]);
+
+        $this->postJson("/api/v1/transactions/{$transaction->id}/retry")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'PROCESSING');
     }
 }

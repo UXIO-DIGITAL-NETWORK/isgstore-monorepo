@@ -119,10 +119,10 @@ class ProductController extends Controller
         );
     }
 
-    public function bulkDigiflazzUpdate(BulkProductActionRequest $request, BulkProductAction $action)
+    public function bulkUxiotopupUpdate(BulkProductActionRequest $request, BulkProductAction $action)
     {
         return $this->successResponse(
-            $action->digiflazzUpdate($request->validated('ids')),
+            $action->uxiotopupUpdate($request->validated('ids')),
             'Products updated from supplier successfully'
         );
     }

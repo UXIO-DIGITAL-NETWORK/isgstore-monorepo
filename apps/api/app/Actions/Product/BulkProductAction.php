@@ -46,9 +46,9 @@ class BulkProductAction
      * @param  int[]  $ids
      * @return array{updated:int}
      */
-    public function digiflazzUpdate(array $ids): array
+    public function uxiotopupUpdate(array $ids): array
     {
-        return $this->each($ids, fn (Product $p) => $this->priceControl->digiflazzUpdate($p));
+        return $this->each($ids, fn (Product $p) => $this->priceControl->uxiotopupUpdate($p));
     }
 
     /**

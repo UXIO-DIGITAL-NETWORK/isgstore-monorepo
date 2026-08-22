@@ -8,7 +8,7 @@ use App\Models\Transaction;
 /**
  * Single choke point for realtime transaction broadcasts.
  *
- * Status changes happen in many places (Monetapay webhook, the Digiflazz jobs,
+ * Status changes happen in many places (Monetapay webhook, the uxiotopup jobs,
  * refunds). Rather than dispatch from each, we observe the model: any created
  * row or any update that actually changed `status` fires one broadcast event.
  * Combined with the event's ShouldDispatchAfterCommit, no transition is missed

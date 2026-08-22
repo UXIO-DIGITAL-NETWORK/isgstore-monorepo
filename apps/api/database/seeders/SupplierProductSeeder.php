@@ -19,7 +19,7 @@ class SupplierProductSeeder extends Seeder
         foreach ($products as $product) {
             $items[] = [
                 'product_id' => $product->id,
-                // Karena data JSON murni dari Digiflazz, kita assign ke supplier 1
+                // Data produk lama diassign ke supplier 1 (Uxiotopup)
                 'supplier_id' => 1,
                 // buyer_sku_code diisi otomatis menggunakan property code produk
                 'buyer_sku_code' => $product->code,

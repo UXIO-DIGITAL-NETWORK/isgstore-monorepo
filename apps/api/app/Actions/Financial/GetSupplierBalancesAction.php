@@ -3,19 +3,19 @@
 namespace App\Actions\Financial;
 
 use App\Models\Supplier;
-use App\Services\DigiflazzService;
+use App\Services\UxiotopupService;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Only Digiflazz has a live balance-check integration (DigiflazzService).
+ * Only uxiotopup has a live balance-check integration (UxiotopupService).
  * Other suppliers (e.g. "VIP Reseller", "Internal System" — see
  * SupplierSeeder) have no such API, so their balance is null rather than
  * a fabricated number.
  */
 class GetSupplierBalancesAction
 {
-    public function __construct(private readonly DigiflazzService $digiflazzService) {}
+    public function __construct(private readonly UxiotopupService $uxiotopupService) {}
 
     public function execute(): array
     {
@@ -25,26 +25,26 @@ class GetSupplierBalancesAction
             ->map(fn (Supplier $supplier) => [
                 'id' => $supplier->id,
                 'name' => $supplier->name,
-                'balance' => $this->isDigiflazz($supplier) ? $this->digiflazzBalance() : null,
+                'balance' => $this->isUxiotopup($supplier) ? $this->uxiotopupBalance() : null,
             ])
             ->all();
     }
 
-    private function isDigiflazz(Supplier $supplier): bool
+    private function isUxiotopup(Supplier $supplier): bool
     {
-        return strtolower($supplier->name) === 'digiflazz';
+        return strtolower($supplier->name) === 'uxiotopup';
     }
 
-    private function digiflazzBalance(): ?float
+    private function uxiotopupBalance(): ?float
     {
         try {
-            // Cached (60s) so the admin panel + integration poll never hit Digiflazz
+            // Cached (60s) so the admin panel + integration poll never hit uxiotopup
             // live on every request — that live call is what hangs the server.
-            $data = $this->digiflazzService->getBalanceCached();
+            $data = $this->uxiotopupService->getBalanceCached();
 
-            return isset($data['deposit']) && is_numeric($data['deposit']) ? (float) $data['deposit'] : null;
+            return isset($data['saldo']) && is_numeric($data['saldo']) ? (float) $data['saldo'] : null;
         } catch (Exception $e) {
-            Log::warning('GetSupplierBalancesAction: Digiflazz balance check failed', ['message' => $e->getMessage()]);
+            Log::warning('GetSupplierBalancesAction: uxiotopup balance check failed', ['message' => $e->getMessage()]);
 
             return null;
         }

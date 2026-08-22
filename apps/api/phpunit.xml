@@ -18,6 +18,9 @@
         </include>
     </source>
     <php>
+        <!-- The default CLI 128M is exhausted mid-suite (PhpSpreadsheet tests
+             are the usual straw) — this bounds the whole phpunit process. -->
+        <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

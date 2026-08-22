@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 /**
  * Per-product price controls used by the Main Products row and bulk actions:
  * lock (skip the supplier sync), hide the price (Show Price), set min/max limits,
- * and re-pull selling prices from the supplier cost (Digiflazz Update).
+ * and re-pull selling prices from the supplier cost (Uxiotopup Update).
  */
 class ProductPriceControlAction
 {
@@ -57,7 +57,7 @@ class ProductPriceControlAction
      * its margin overrides and this product's limits. A locked product is left
      * untouched.
      */
-    public function digiflazzUpdate(Product $product): Product
+    public function uxiotopupUpdate(Product $product): Product
     {
         if ($product->is_price_locked) {
             return $product;
@@ -83,7 +83,7 @@ class ProductPriceControlAction
             $product->price_max,
         );
         $product->update($prices);
-        $this->log($product, 'Digiflazz price update');
+        $this->log($product, 'Uxiotopup price update');
 
         return $product->fresh();
     }

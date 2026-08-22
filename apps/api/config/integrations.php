@@ -27,14 +27,13 @@ return [
         ],
     ],
 
-    'digiflazz' => [
-        'label' => 'Digiflazz',
+    'uxiotopup' => [
+        'label' => 'Uxiotopup',
         'type' => 'supplier',
         'fields' => [
-            ['key' => 'username', 'label' => 'Username', 'type' => 'text', 'secret' => false],
-            ['key' => 'dev_key', 'label' => 'Development Key', 'type' => 'password', 'secret' => true],
-            ['key' => 'prod_key', 'label' => 'Production Key', 'type' => 'password', 'secret' => true],
-            ['key' => 'production', 'label' => 'Production Mode', 'type' => 'boolean', 'secret' => false],
+            ['key' => 'api_key', 'label' => 'API Key', 'type' => 'password', 'secret' => true],
+            ['key' => 'base_url', 'label' => 'Base URL', 'type' => 'text', 'secret' => false],
+            ['key' => 'price_tier', 'label' => 'Price Tier', 'type' => 'text', 'secret' => false],
         ],
     ],
 

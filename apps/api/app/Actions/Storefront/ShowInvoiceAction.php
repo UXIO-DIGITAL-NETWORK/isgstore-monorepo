@@ -98,7 +98,7 @@ class ShowInvoiceAction
             // window — the client then hides the timer rather than inventing one.
             'expires_at' => $expiresAt?->toIso8601String(),
 
-            // Voucher / serial number, present once Digiflazz has fulfilled.
+            // Voucher / serial number, present once uxiotopup has fulfilled.
             'sn' => $transaction->sn,
             'created_at' => $transaction->created_at?->toIso8601String(),
         ];

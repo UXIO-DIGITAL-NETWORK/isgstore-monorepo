@@ -13,7 +13,7 @@ class PingIntegrationChannelAction
 {
     private const BALANCE_CACHE_KEYS = [
         'monetapay' => 'monetapay:balance',
-        'digiflazz' => 'digiflazz:balance',
+        'uxiotopup' => 'uxiotopup:balance',
     ];
 
     public function __construct(private readonly GetIntegrationChannelsAction $channels) {}

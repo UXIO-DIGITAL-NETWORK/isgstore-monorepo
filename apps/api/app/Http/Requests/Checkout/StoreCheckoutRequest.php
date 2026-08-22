@@ -31,7 +31,7 @@ class StoreCheckoutRequest extends FormRequest
             // Storefront language, used to localise the receipt email (id|en).
             'locale' => ['nullable', 'string', 'in:id,en'],
             // Display-only echo of what validate-id returned. Never trusted for
-            // fulfilment — Digiflazz is sent target_uid/target_server only.
+            // fulfilment — uxiotopup is sent target_uid/target_server only.
             'target_nickname' => ['nullable', 'string', 'max:100'],
             'promo_code' => ['nullable', 'string', 'max:64'],
         ];

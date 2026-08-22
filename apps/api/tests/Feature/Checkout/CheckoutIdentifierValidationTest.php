@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 /**
  * Identifier shape is enforced at checkout — i.e. BEFORE payment — instead of
- * failing at Digiflazz after the customer has already paid.
+ * failing at uxiotopup after the customer has already paid.
  */
 class CheckoutIdentifierValidationTest extends TestCase
 {

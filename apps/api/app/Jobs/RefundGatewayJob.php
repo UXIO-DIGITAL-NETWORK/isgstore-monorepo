@@ -53,7 +53,7 @@ class RefundGatewayJob implements ShouldQueue
             'refund_mch_order_no' => 'RFD-'.$current->reference_id,
             'payment_order_no' => $current->pg_transaction_id,
             'amount' => (string) $current->gross_amount,
-            'reason' => 'Auto-refund: Digiflazz order failed',
+            'reason' => 'Auto-refund: uxiotopup order failed',
         ]);
 
         // postSigned() throws on HTTP failure, but a 200 body can still carry a

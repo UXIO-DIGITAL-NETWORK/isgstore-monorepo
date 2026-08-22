@@ -73,9 +73,9 @@ return [
             'replace_placeholders' => true,
         ],
 
-        'digiflazz' => [
+        'uxiotopup' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/digiflazz.log'),
+            'path' => storage_path('logs/uxiotopup.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,

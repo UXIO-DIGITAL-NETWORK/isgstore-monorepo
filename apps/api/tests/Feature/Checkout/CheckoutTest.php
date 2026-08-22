@@ -24,10 +24,7 @@ class CheckoutTest extends TestCase
     {
         parent::setUp();
 
-        config([
-            'services.digiflazz.username' => 'testuser',
-            'services.digiflazz.key' => 'testkey',
-        ]);
+        config(['services.uxiotopup.api_key' => 'test-api-key']);
 
         $this->product = Product::factory()->create([
             'price_member' => 12000,
@@ -48,7 +45,7 @@ class CheckoutTest extends TestCase
     public function test_balance_checkout_deducts_balance_and_processes_topup(): void
     {
         Http::fake([
-            '*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']]),
+            '*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']]),
         ]);
 
         $user = $this->actingAsMember();
@@ -130,7 +127,7 @@ class CheckoutTest extends TestCase
     public function test_duplicate_submit_within_window_is_rejected(): void
     {
         Http::fake([
-            '*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']]),
+            '*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']]),
         ]);
 
         $this->actingAsMember();
@@ -154,7 +151,7 @@ class CheckoutTest extends TestCase
     public function test_failed_checkout_releases_dedupe_key_for_retry(): void
     {
         Http::fake([
-            '*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']]),
+            '*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']]),
         ]);
 
         $user = $this->actingAsMember(balance: 1000); // insufficient
@@ -196,7 +193,7 @@ class CheckoutTest extends TestCase
 
     public function test_checkout_stores_contact_email_and_locale(): void
     {
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']])]);
+        Http::fake(['*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']])]);
         $this->actingAsMember();
 
         $this->postJson('/api/v1/checkout', [

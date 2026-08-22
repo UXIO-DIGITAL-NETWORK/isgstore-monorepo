@@ -22,4 +22,4 @@
 | `locale`   | String    | -      | Default: 'id' (Indonesian). |
 | `timezone` | String    | -      | Default: 'Asia/Jakarta'.    |
 
-> _Note: This schema also includes Categories, Products, Supplier_Products (Digiflazz), and Payments (Midtrans) tables as defined in previous technical specifications._
+> _Note: This schema also includes Categories, Products, Supplier_Products (uxiotopup), and Payments (Midtrans) tables as defined in previous technical specifications._

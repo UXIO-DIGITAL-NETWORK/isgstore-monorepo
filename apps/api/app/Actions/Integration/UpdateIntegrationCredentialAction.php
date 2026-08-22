@@ -17,7 +17,7 @@ class UpdateIntegrationCredentialAction
 {
     private const BALANCE_CACHE_KEYS = [
         'monetapay' => 'monetapay:balance',
-        'digiflazz' => 'digiflazz:balance',
+        'uxiotopup' => 'uxiotopup:balance',
     ];
 
     public function execute(string $provider, array $input, ?int $userId = null): IntegrationCredential
@@ -74,7 +74,6 @@ class UpdateIntegrationCredentialAction
     {
         return match ($provider) {
             'monetapay' => filter_var($creds['is_production'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'production' : 'sandbox',
-            'digiflazz' => filter_var($creds['production'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'production' : 'development',
             default => 'production',
         };
     }

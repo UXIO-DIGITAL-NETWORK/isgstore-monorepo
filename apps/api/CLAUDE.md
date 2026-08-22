@@ -70,7 +70,7 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 3. Price is role-resolved: `vip → reseller → agent → member → guest` (guests receive `price_member`).
 4. Margin guard: aborts if `selling_price - supplier_price < 0`. The price/margin are frozen into the Transaction row at checkout — a later supplier price change (daily sync) is margin variance, not a correctness bug.
 5. Creates `Transaction` (status: `PENDING`) then `Payment` (status: `'1'`) inside a single `DB::transaction()`.
-6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, deducts `user->balance`, marks Payment `'3'`, calls `ProcessDigiflazzTransactionAction` synchronously.
+6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, deducts `user->balance`, marks Payment `'3'`, calls `ProcessUxiotopupTransactionAction` synchronously.
 7. **External path**: calls `MonetapayService::createTransaction()`, returns `qr_string` or `virtual_account` to the client.
 
 Rate limiting (named limiters in `AppServiceProvider`): `throttle:checkout` (10/min) on checkout + postpaid endpoints, `throttle:webhooks` (120/min per IP) on all callback routes, `throttle:login` (5/min per IP), and a global `throttle:api` (120/min) via `bootstrap/app.php`.
@@ -84,7 +84,7 @@ PENDING → PAID → PROCESSING → COMPLETED
 ```
 
 - `EXPIRED` — payment window timed out; customer never paid (set by Monetapay callback or `payments:sync-expired`).
-- `FAILED_PROVIDER` — customer paid; Digiflazz supplier failed to fulfil the order.
+- `FAILED_PROVIDER` — customer paid; the uxiotopup supplier failed to fulfil the order (status `cancel`/`refund`).
 
 Statuses are backed enums cast on the models: `App\Enums\TransactionStatus` (values are the exact uppercase strings above) and `App\Enums\PaymentStatus`. `$model->status` returns the enum instance — compare against enum cases, never raw strings; JSON output is unchanged (enums serialize to their values).
 
@@ -142,61 +142,63 @@ at request time and freezes `fee`/`nett`.
   no-op, so retries never double-book a fee or double-refund. Covered by `WithdrawalTest` and
   `DisbursementCallbackTest`.
 
-### Digiflazz (Product Supplier)
+### uxiotopup (Product Supplier)
 
-- Signature: `md5(username + key + refId)` — the formula is **mode-agnostic**; only the apiKey *value* differs between Development and Production. A wrong-mode key returns rc `41` ("Signature tidak valid").
-- The apiKey is selected by `DIGIFLAZZ_PRODUCTION`: `true` → `prod_key`, `false` → `dev_key` (resolved in `DigiflazzService::__construct`). Both fall back to legacy `DIGIFLAZZ_KEY` if the mode-specific key is unset, so older envs keep working.
-- `customer_no` sent to Digiflazz = `target_uid . target_server` (concatenated, no separator).
-- `invoice_number` is used as the Digiflazz `ref_id`.
-- Config keys: `services.digiflazz.{username, production, dev_key, prod_key, base_url, webhook_secret}`.
-- Inbound webhook authenticated via HMAC-SHA1 on raw body against `X-Hub-Signature` header.
+- Auth: a single `api_key` sent in every JSON request body (no signing, no dev/prod key split). The caller's server IP must additionally be whitelisted in the uxiotopup dashboard, or every call fails.
+- Endpoints (all POST JSON to `UXIOTOPUP_BASE_URL`, default `https://api.uxiotopup.id`): `/service` (price list), `/order`, `/status`, `/saldo`. Errors come back as HTTP 200 with `{status:false, msg}` — `UxiotopupService` rejects those envelopes rather than passing them through.
+- `target` sent to uxiotopup = pipe-joined `target_uid|target_server` (just the uid when there is no server) — composed by `CustomerNumberFormatter` from `categories.order_form_fields` templates like `{user_id}|{zone_id}`.
+- `invoice_number` is used as the uxiotopup `idtrx`. The order response's `data.id` is uxiotopup's OWN invoice and is persisted to `transactions.supplier_trx_id` — it is the only key `/status` accepts (there is no lookup by idtrx). `keterangan` carries the SN.
+- `kontak` (phone) is required on `/order`: member phone → `guest_contact` → `'0000000000'` fallback.
+- Duplicate `idtrx` ("idtrx sudah ada") means a previous attempt already placed the order — `UxiotopupDuplicateOrderException` is caught in `ProcessUxiotopupTransactionAction`, which settles the row to PROCESSING and waits for the callback instead of re-ordering or refunding.
+- Supplier cost = the configured tier column from `/service` (`UXIOTOPUP_PRICE_TIER`: harga | harga_gold | harga_silver | harga_pro, default `harga`).
+- Config keys: `services.uxiotopup.{api_key, base_url, callback_url, price_tier, callback_ips}`.
+- Inbound webhook (`POST /v1/uxiotopup/callback`) carries **no signature** — authenticated only by source IP against `UXIOTOPUP_CALLBACK_IP` (comma-separated; default `103.146.202.50`). TrustProxies must be correct behind a LB or `$request->ip()` rejects every callback. Payload is flat: `{id, idtrx, keterangan, status, url_cb}`; statuses `pending|processing|paid` → PROCESSING, `success` → COMPLETED, `cancel|refund` → FAILED_PROVIDER (+refund).
 
 ### Discord (Operational Notifications)
 
 - All Discord sends go through `App\Services\DiscordWebhookService` (`sendEmbed`/`sendAlert`) — never `Http::post` a webhook URL directly.
 - Silently no-ops (and never throws) if `services.discord.webhook_log_url` is not set — safe to omit in dev.
-- Used by: Digiflazz status transitions, the manual price-check report, `RefundGatewayJob::failed`, and scheduler `onFailure` alerts.
+- Used by: uxiotopup status transitions, the manual price-check report, `RefundGatewayJob::failed`, and scheduler `onFailure` alerts.
 
 ---
 
-## Digiflazz Price Checker & Manual Product Management
+## uxiotopup Price Checker & Manual Product Management
 
-Core principle: **supplier cost is fact (auto-updated), selling price is the admin's decision (never auto-changed), products are never auto-created**. Full admin guide: `docs/digiflazz-product-management.md`.
+Core principle: **supplier cost is fact (auto-updated), selling price is the admin's decision (never auto-changed), products are never auto-created**. Full admin guide: `docs/uxiotopup-product-management.md`.
 
 ### 5-minute price checker
 
-`digiflazz:check-prices {--type=all}` (scheduled `everyFiveMinutes` in `routes/console.php`, Discord alert only on failure) runs `CheckDigiflazzPricesAction`:
+`uxiotopup:check-prices` (scheduled `everyFiveMinutes` in `routes/console.php`, Discord alert only on failure) runs `CheckUxiotopupPricesAction`:
 
-- Fetches the price list (warming the shared cache `digiflazz:price-list:{prepaid|pasca}`, TTL 300s — `DigiflazzService::getPriceListCached()` / `findSkuInPriceList()` read it).
-- Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Pasca items store `admin` → `price`/`admin_fee` and `commission`.
+- Fetches the price list (warming the shared cache `uxiotopup:price-list`, TTL 300s — `UxiotopupService::getPriceListCached()` / `findServiceInPriceList()` read it). `supplier_products.buyer_sku_code` stores the uxiotopup service `id`.
+- Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Availability = `status === "aktif"`, mirrored into both `buyer_product_status` and `seller_product_status`. Postpaid/pasca is gone — uxiotopup is prepaid-only.
 - **Availability**: unavailable SKUs get `is_active = false` + `sync_deactivated_at` stamp; only stamped rows are ever auto-reactivated, so a manual admin deactivation is never overridden.
 - **Cost changes** raise `price_change_alerts` rows (enum `App\Enums\PriceAlertStatus`). Dedupe: one pending alert per mapping — repeat changes update `new_price` (original `old_price` kept); a revert to `old_price` deletes the pending alert; acknowledged alerts stay as history and a later change creates a fresh pending row.
 - **Never** creates products (unknown SKUs are only counted/sampled in the report) and **never** touches selling prices.
-- Report DTO: `PriceCheckReportDTO` (type, total_fetched, price_changed, alerts_created/updated, deactivated/reactivated, negative_margin, unknown_count/sample).
+- Report DTO: `PriceCheckReportDTO` (total_fetched, price_changed, alerts_created/updated, deactivated/reactivated, negative_margin, unknown_count/sample).
 
-`digiflazz:sync-products {--type=all}` (name kept; also `POST /v1/digiflazz/sync-products`) is the **manual** run of the same action with a console table + Discord report — it no longer auto-creates or reprices anything.
+`uxiotopup:sync-products` (name kept; also `POST /v1/uxiotopup/sync-products`) is the **manual** run of the same action with a console table + Discord report — it no longer auto-creates or reprices anything.
 
 ### Manual product creation
 
-- `GET /v1/digiflazz/sku-preview` — previews a SKU from the cached price list (name/brand/cost/availability, `already_mapped`, `suggested_prices` from `PricingService`).
-- `POST /v1/digiflazz/products` — `CreateDigiflazzProductAction`: creates Product (price_modal = Digiflazz cost) + SupplierProduct mapping; admin supplies all 4 selling prices. Business-rule failures throw `App\Exceptions\DigiflazzProductException` → 422.
-- `POST /v1/digiflazz/products/import` — Excel bulk import (`ImportDigiflazzProductsAction`, PhpSpreadsheet): headers matched by NAME on row 1 (`buyer_sku_code, category_code, name, code, price_member..price_agent, status`), max 500 rows, per-row validation + transaction so bad rows never abort the batch; blank prices default from `PricingService`.
-- `GET /v1/digiflazz/products/import-template` — generated xlsx (sheet "Produk" + "Petunjuk" with live category codes). **Binary response — intentional deviation from the ApiResponse envelope.**
-- `GET/POST /v1/digiflazz/price-alerts...` — paginated alert list, `{id}/acknowledge` (idempotent), `acknowledge-all`.
+- `GET /v1/uxiotopup/sku-preview` — previews a service from the cached price list (name/category/cost/availability, `already_mapped`, `suggested_prices` from `PricingService`).
+- `POST /v1/uxiotopup/products` — `CreateUxiotopupProductAction`: creates Product (price_modal = uxiotopup tier cost) + SupplierProduct mapping; admin supplies all 4 selling prices. Business-rule failures throw `App\Exceptions\UxiotopupProductException` → 422.
+- `POST /v1/uxiotopup/products/import` — Excel bulk import (`ImportUxiotopupProductsAction`, PhpSpreadsheet): headers matched by NAME on row 1 (`buyer_sku_code, category_code, name, code, price_member..price_agent, status`), max 500 rows, per-row validation + transaction so bad rows never abort the batch; blank prices default from `PricingService`.
+- `GET /v1/uxiotopup/products/import-template` — generated xlsx (sheet "Produk" + "Petunjuk" with live category codes). **Binary response — intentional deviation from the ApiResponse envelope.**
+- `GET/POST /v1/uxiotopup/price-alerts...` — paginated alert list, `{id}/acknowledge` (idempotent), `acknowledge-all`.
 
-`products.auto_price` was **dropped**; `config/digiflazz.php` (brand→category map) was **deleted** — category is always explicit admin input. `PricingService` + `pricing-rules` CRUD remain for suggested/default prices only (member 20 / vip 15 / reseller 10 / agent 5 % built-in fallback).
+`products.auto_price` was **dropped** — category is always explicit admin input. `PricingService` + `pricing-rules` CRUD remain for suggested/default prices only (member 20 / vip 15 / reseller 10 / agent 5 % built-in fallback).
 
 ---
 
-## Async Job: `ProcessDigiflazzTopup`
+## Async Job: `ProcessUxiotopupTopup`
 
 Dispatched by `HandleMonetapayCallbackAction` after a successful Monetapay payment. Configured with `$tries = 3`, `$backoff = 30` seconds.
 
 Flow inside the job:
 1. Sets Transaction → `PROCESSING`.
-2. Calls `ProcessDigiflazzTransactionAction::execute(Transaction)`.
-3. The action updates the Transaction status based on the Digiflazz sync response.
-4. On infrastructure exception: marks `FAILED_PROVIDER` and **re-throws** so the queue can retry.
+2. Calls `ProcessUxiotopupTransactionAction::execute(Transaction)` — places the `/order`, persists `supplier_trx_id`; a duplicate-idtrx reject is settled to PROCESSING (never retried/refunded, the callback finalises it).
+3. On infrastructure exception: re-throws so the queue retries; `failed()` marks `FAILED_PROVIDER` + refunds after all retries are exhausted.
 
 Queue driver is `database` by default (`QUEUE_CONNECTION=database`). Tests run with `sync`.
 
@@ -293,7 +295,7 @@ users (nullable) ──── transactions ──── payments ──── pa
 
 Three tiers, all under `/api/v1`:
 
-1. **Public** — the customer-facing storefront plus the gateway callbacks. `POST /v1/checkout`, `POST /v1/payment/callback` and `POST /v1/digiflazz/callback` were always public; the storefront read endpoints below joined them.
+1. **Public** — the customer-facing storefront plus the gateway callbacks. `POST /v1/checkout`, `POST /v1/payment/callback` and `POST /v1/uxiotopup/callback` were always public; the storefront read endpoints below joined them.
 2. **`auth:sanctum`** — `GET /v1/user`, `PATCH /v1/users/sync-timezone` and the whole `/v1/me/*` group. Any authenticated user.
 3. **`auth:sanctum` + `admin`** — everything else (the back-office CRUD).
 
@@ -350,10 +352,11 @@ WITHDRAWAL_FEE_FLAT=1500          # withdraw fee = flat + round(amount * percent
 WITHDRAWAL_FEE_PERCENT=11
 WITHDRAWAL_MIN_AMOUNT=10000       # floor on the requested amount so nett stays positive
 
-DIGIFLAZZ_USERNAME=
-DIGIFLAZZ_KEY=
-DIGIFLAZZ_BASE_URL=https://api.digiflazz.com/v1
-DIGIFLAZZ_WEBHOOK_SECRET=
+UXIOTOPUP_API_KEY=
+UXIOTOPUP_BASE_URL=https://api.uxiotopup.id
+UXIOTOPUP_CALLBACK_URL=        # points at {app}/api/v1/uxiotopup/callback; sent on every /order
+UXIOTOPUP_PRICE_TIER=harga     # harga | harga_gold | harga_silver | harga_pro
+UXIOTOPUP_CALLBACK_IP=103.146.202.50   # webhook source-IP allowlist (comma-separated)
 
 DISCORD_WEBHOOK_LOG_URL=   # optional
 ```

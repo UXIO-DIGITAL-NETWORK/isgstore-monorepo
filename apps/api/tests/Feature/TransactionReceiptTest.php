@@ -32,9 +32,9 @@ class TransactionReceiptTest extends TestCase
     public function test_receipt_is_queued_when_a_balance_checkout_completes(): void
     {
         Mail::fake();
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Sukses', 'sn' => 'SN-1', 'trx_id' => 'DF1']])]);
+        Http::fake(['*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'success', 'keterangan' => 'SN-1', 'id' => 'UX1']])]);
 
-        config(['services.digiflazz.username' => 'u', 'services.digiflazz.key' => 'k']);
+        config(['services.uxiotopup.api_key' => 'test-api-key']);
         $product = Product::factory()->create(['price_member' => 12000]);
         SupplierProduct::factory()->for($product)->create(['price' => 10000]);
         $channel = PaymentChannel::factory()->balance()->create();

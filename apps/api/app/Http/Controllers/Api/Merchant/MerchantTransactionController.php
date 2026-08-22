@@ -65,7 +65,7 @@ class MerchantTransactionController extends Controller
 
     /**
      * CSV of the filtered set (no pagination). Binary/stream response — an
-     * intentional deviation from the ApiResponse envelope, like the Digiflazz
+     * intentional deviation from the ApiResponse envelope, like the uxiotopup
      * import template. Same narrow projection: no platform figures.
      */
     public function export(Request $request): StreamedResponse

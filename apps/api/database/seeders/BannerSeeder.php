@@ -21,7 +21,7 @@ class BannerSeeder extends Seeder
             ['category_id' => 3, 'name' => 'Free Fire OB48', 'image_path' => '/banners/ff-ob48.jpg', 'link' => null, 'created_at' => $now, 'updated_at' => $now],
             ['category_id' => 9, 'name' => 'Valorant Champions 2026', 'image_path' => '/banners/val-champs.jpg', 'link' => 'https://uxio.id/valorant/champs', 'created_at' => $now, 'updated_at' => $now],
 
-            // Diubah menjadi null karena kategori gamenya tidak ada di Digiflazz saat ini
+            // Diubah menjadi null karena kategori gamenya tidak ada di uxiotopup saat ini
             ['category_id' => null, 'name' => 'Genshin 5.0 Update', 'image_path' => '/banners/genshin-50.jpg', 'link' => 'https://uxio.id/genshin/update', 'created_at' => $now, 'updated_at' => $now],
             ['category_id' => null, 'name' => 'PUBG Mobile x Dragon Ball', 'image_path' => '/banners/pubg-db.jpg', 'link' => null, 'created_at' => $now, 'updated_at' => $now],
 

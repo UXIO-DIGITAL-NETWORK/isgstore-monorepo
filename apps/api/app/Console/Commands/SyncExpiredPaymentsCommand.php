@@ -4,8 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\PaymentStatus;
 use App\Enums\TransactionStatus;
-use App\Jobs\ProcessDigiflazzBillPayment;
-use App\Jobs\ProcessDigiflazzTopup;
+use App\Jobs\ProcessUxiotopupTopup;
 use App\Models\Payment;
 use App\Services\Payment\MonetapayService;
 use App\Support\Payment\PaymentExpiry;
@@ -144,12 +143,7 @@ class SyncExpiredPaymentsCommand extends Command
             });
 
             if ($dispatched) {
-                $fresh = $payment->transaction->fresh();
-                if ($fresh->transaction_type === 'postpaid') {
-                    ProcessDigiflazzBillPayment::dispatch($fresh);
-                } else {
-                    ProcessDigiflazzTopup::dispatch($fresh);
-                }
+                ProcessUxiotopupTopup::dispatch($payment->transaction->fresh());
             }
 
             Log::info('payments:sync-expired updated', [

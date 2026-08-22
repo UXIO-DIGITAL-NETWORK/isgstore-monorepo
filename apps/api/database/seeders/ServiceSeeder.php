@@ -26,8 +26,8 @@ class ServiceSeeder extends Seeder
 
         $services = [
             [
-                'code' => 'digiflazz',
-                'name' => 'Digiflazz',
+                'code' => 'uxiotopup',
+                'name' => 'Uxiotopup',
                 'category' => ServiceCategory::SUPPLIER->value,
                 'description' => 'Integrasi supplier produk digital: sinkronisasi harga, stok, dan callback transaksi.',
                 'features' => ['Sinkronisasi harga otomatis', 'Callback status transaksi', 'Cek & bayar tagihan pascabayar'],

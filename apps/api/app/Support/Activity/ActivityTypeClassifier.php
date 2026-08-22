@@ -24,8 +24,8 @@ final class ActivityTypeClassifier
             return 'login';
         }
 
-        // Note: no bare "Digiflazz"/supplier names here — those collide with admin
-        // data changes ("Deleted Supplier: Digiflazz"). Digiflazz webhook logs carry
+        // Note: no bare "Uxiotopup"/supplier names here — those collide with admin
+        // data changes ("Deleted Supplier: Uxiotopup"). Uxiotopup webhook logs carry
         // an INV- reference, so they still classify as transactions.
         if ($transactionId !== null
             || self::has($message, ['INV-', 'SINV-', 'Checkout', 'checkout', 'Transaction', 'pembayaran', 'isi saldo', 'refund', 'Refund', 'callback', 'receipt', 'Rating', 'Point history', 'spending'])) {

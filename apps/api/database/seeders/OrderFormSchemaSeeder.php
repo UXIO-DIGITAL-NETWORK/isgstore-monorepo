@@ -12,7 +12,7 @@ use Illuminate\Database\Seeder;
  *
  * Idempotent and keyed on categories.code, so it is safe to re-run on production.
  * A category not listed here keeps order_form_fields = NULL and therefore keeps
- * the legacy behaviour (uid required, server optional, bare concatenation).
+ * the legacy behaviour (uid required, server optional, pipe-joined uid|server).
  *
  * NOTE ON MLBB: the zone is a free-text numeric field on purpose. The seeded
  * server_category_options ("Zone 1".."Zone 5" → 2001..2005) are not real MLBB
@@ -66,7 +66,8 @@ class OrderFormSchemaSeeder extends Seeder
             // between accounts and regions, so only "required" and digits-only are
             // enforced. Fixed-format fields further down (phone, meter) keep theirs.
             'mlbb' => [
-                'customer_no_template' => '{user_id}{zone_id}',
+                // uxiotopup targets are pipe-joined: "dataId|zoneId".
+                'customer_no_template' => '{user_id}|{zone_id}',
                 'fields' => [
                     [
                         'key' => 'user_id',

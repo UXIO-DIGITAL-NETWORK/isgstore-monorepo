@@ -26,13 +26,10 @@ class DefaultMerchantAttributionTest extends TestCase
     {
         parent::setUp();
 
-        config([
-            'services.digiflazz.username' => 'testuser',
-            'services.digiflazz.key' => 'testkey',
-        ]);
+        config(['services.uxiotopup.api_key' => 'test-api-key']);
 
         Http::fake([
-            '*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']]),
+            '*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']]),
         ]);
     }
 

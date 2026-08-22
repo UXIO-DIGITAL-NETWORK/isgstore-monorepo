@@ -14,7 +14,7 @@ Every incoming HTTP request must follow this exact pipeline:
 2. **FormRequest** validates the raw incoming data.
 3. **Controller** maps the validated array into a strongly-typed **DTO (Data Transfer Object)**.
 4. **Controller** injects the **Action Class** and passes the DTO to it.
-5. **Action Class** executes the core business logic (e.g., DB transactions, external API calls to Digiflazz).
+5. **Action Class** executes the core business logic (e.g., DB transactions, external API calls to uxiotopup).
 6. **Controller** returns a standardized JSON format using the `ApiResponse` trait or an `API Resource`.
 
 ---
@@ -25,7 +25,7 @@ We introduce custom directories to handle the decoupled logic:
 
 ```text
 app/
-├── Actions/       # Core business logic. 1 Class = 1 Task (e.g., ProcessDigiflazzOrderAction)
+├── Actions/       # Core business logic. 1 Class = 1 Task (e.g., ProcessUxiotopupTransactionAction)
 ├── DTOs/          # Readonly classes to ensure Type Safety from HTTP to Action.
 ├── Enums/         # Native PHP 8.1+ Enums for Statuses and Roles.
 ├── Http/
@@ -92,7 +92,7 @@ Every incoming HTTP request must follow this exact pipeline:
 2. **FormRequest** validates the raw incoming data.
 3. **Controller** maps the validated array into a strongly-typed **DTO (Data Transfer Object)**.
 4. **Controller** injects the **Action Class** and passes the DTO to it.
-5. **Action Class** executes the core business logic (e.g., DB transactions, external API calls to Digiflazz).
+5. **Action Class** executes the core business logic (e.g., DB transactions, external API calls to uxiotopup).
 6. **Controller** returns a standardized JSON format using the `ApiResponse` trait or an `API Resource`.
 
 ---
@@ -103,7 +103,7 @@ We introduce custom directories to handle the decoupled logic:
 
 ```text
 app/
-├── Actions/       # Core business logic. 1 Class = 1 Task (e.g., ProcessDigiflazzOrderAction)
+├── Actions/       # Core business logic. 1 Class = 1 Task (e.g., ProcessUxiotopupTransactionAction)
 ├── DTOs/          # Readonly classes to ensure Type Safety from HTTP to Action.
 ├── Enums/         # Native PHP 8.1+ Enums for Statuses and Roles.
 ├── Http/

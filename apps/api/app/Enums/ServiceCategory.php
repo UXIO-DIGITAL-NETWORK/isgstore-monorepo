@@ -12,7 +12,7 @@ namespace App\Enums;
 enum ServiceCategory: string
 {
     case PAYMENT_GATEWAY = 'payment-gateway'; // Monetapay and friends.
-    case SUPPLIER = 'supplier';               // Digiflazz and other product suppliers.
+    case SUPPLIER = 'supplier';               // uxiotopup and other product suppliers.
     case COMMUNICATION = 'communication';     // Email, WhatsApp API.
     case INFRASTRUCTURE = 'infrastructure';   // Domain, hosting.
     case OTHER = 'other';

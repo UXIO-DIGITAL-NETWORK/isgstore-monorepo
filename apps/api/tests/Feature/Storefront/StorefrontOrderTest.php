@@ -198,91 +198,45 @@ class StorefrontOrderTest extends TestCase
             ->assertJsonPath('data.nickname', null);
     }
 
-    public function test_validate_id_uses_the_digiflazz_cek_username_sku(): void
-    {
-        Category::factory()->create([
-            'slug' => 'free-fire',
-            'validasi_nickname' => 'digiflazz:ffusername',
-        ]);
-
-        // A Digiflazz cek-username SKU returns the account name in `sn`.
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Sukses', 'sn' => 'ProPlayerFF', 'trx_id' => 'X1']])]);
-
-        $this->postJson('/api/v1/games/free-fire/validate-id', ['target_uid' => '337850017'])
-            ->assertOk()
-            ->assertJsonPath('data.nickname', 'ProPlayerFF')
-            ->assertJsonPath('data.validated', true)
-            ->assertJsonPath('data.supported', true);
-    }
-
-    public function test_validate_id_digiflazz_check_is_charged_once_then_cached(): void
-    {
-        Category::factory()->create(['slug' => 'free-fire', 'validasi_nickname' => 'digiflazz:ffusername']);
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Sukses', 'sn' => 'ProPlayerFF']])]);
-
-        $payload = ['target_uid' => '337850017'];
-        $this->postJson('/api/v1/games/free-fire/validate-id', $payload)->assertOk();
-        $this->postJson('/api/v1/games/free-fire/validate-id', $payload)
-            ->assertOk()
-            ->assertJsonPath('data.nickname', 'ProPlayerFF');
-
-        // Second lookup for the same id must hit the cache, not re-charge Digiflazz.
-        Http::assertSentCount(1);
-    }
-
-    public function test_validate_id_digiflazz_failure_never_blocks_checkout(): void
+    /**
+     * uxiotopup has no cek-username endpoint, so the legacy supplier-backed
+     * providers (`digiflazz:{sku}` / `product:{id}`) resolve to "unsupported"
+     * — nickname null, HTTP 200, no supplier call. A stale prod value must
+     * degrade exactly like an unconfigured game, never error.
+     */
+    public function test_validate_id_treats_legacy_supplier_providers_as_unsupported(): void
     {
         Category::factory()->create(['slug' => 'free-fire', 'validasi_nickname' => 'digiflazz:ffusername']);
 
-        // A bad id comes back "Gagal" — that is "no nickname", not a name.
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Gagal', 'sn' => '']])]);
-
-        $this->postJson('/api/v1/games/free-fire/validate-id', ['target_uid' => '000'])
-            ->assertOk()
-            ->assertJsonPath('data.nickname', null)
-            ->assertJsonPath('data.supported', true);
-    }
-
-    public function test_validate_id_resolves_a_username_from_a_selected_product(): void
-    {
-        // Admin picked a cek-username product; its active supplier SKU is used.
         $product = Product::factory()->create();
         SupplierProduct::factory()->for($product)->create(['buyer_sku_code' => 'ffusername', 'is_active' => true]);
-        Category::factory()->create(['slug' => 'free-fire', 'validasi_nickname' => 'product:'.$product->id]);
-
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Sukses', 'sn' => 'ProPlayerFF']])]);
-
-        $this->postJson('/api/v1/games/free-fire/validate-id', ['target_uid' => '337850017'])
-            ->assertOk()
-            ->assertJsonPath('data.nickname', 'ProPlayerFF')
-            ->assertJsonPath('data.validated', true);
-    }
-
-    public function test_validate_id_product_without_an_active_mapping_degrades_gracefully(): void
-    {
-        $product = Product::factory()->create(); // no active supplier mapping
-        Category::factory()->create(['slug' => 'free-fire', 'validasi_nickname' => 'product:'.$product->id]);
+        Category::factory()->create(['slug' => 'other-game', 'validasi_nickname' => 'product:'.$product->id]);
 
         Http::fake();
 
         $this->postJson('/api/v1/games/free-fire/validate-id', ['target_uid' => '337850017'])
             ->assertOk()
             ->assertJsonPath('data.nickname', null)
-            ->assertJsonPath('data.supported', true);
+            ->assertJsonPath('data.supported', false);
+
+        $this->postJson('/api/v1/games/other-game/validate-id', ['target_uid' => '337850017'])
+            ->assertOk()
+            ->assertJsonPath('data.nickname', null)
+            ->assertJsonPath('data.supported', false);
 
         Http::assertNothingSent();
     }
 
     public function test_game_detail_flags_when_a_username_check_is_available(): void
     {
-        Category::factory()->create(['slug' => 'free-fire', 'status' => true, 'validasi_nickname' => 'digiflazz:ffusername']);
+        Category::factory()->create(['slug' => 'free-fire', 'status' => true, 'validasi_nickname' => 'https://api.example.com/validate/ff']);
         Category::factory()->create(['slug' => 'plain-game', 'status' => true, 'validasi_nickname' => null]);
         // Provider configured but the operator switched the check off — the master
         // toggle wins, so the storefront must not offer the button.
         Category::factory()->create([
             'slug' => 'disabled-game',
             'status' => true,
-            'validasi_nickname' => 'digiflazz:ffusername',
+            'validasi_nickname' => 'https://api.example.com/validate/ff',
             'nickname_check_enabled' => false,
         ]);
 
@@ -293,11 +247,8 @@ class StorefrontOrderTest extends TestCase
 
     public function test_checkout_recognises_a_member_from_their_bearer_token(): void
     {
-        config([
-            'services.digiflazz.username' => 'testuser',
-            'services.digiflazz.key' => 'testkey',
-        ]);
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']])]);
+        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        Http::fake(['*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']])]);
 
         $product = Product::factory()->create(['status' => true, 'price_member' => 25000]);
         SupplierProduct::factory()->for($product)->create(['is_active' => true, 'price' => 19000]);
@@ -331,11 +282,8 @@ class StorefrontOrderTest extends TestCase
 
     public function test_checkout_stores_the_confirmed_nickname(): void
     {
-        config([
-            'services.digiflazz.username' => 'testuser',
-            'services.digiflazz.key' => 'testkey',
-        ]);
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']])]);
+        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        Http::fake(['*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']])]);
 
         $game = Category::factory()->create();
         $product = Product::factory()->create(['category_id' => $game->id, 'status' => true, 'price_member' => 25000]);

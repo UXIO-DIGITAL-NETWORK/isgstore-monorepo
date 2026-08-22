@@ -9,11 +9,11 @@ use App\Support\OrderForm\OrderFormSchema;
 use RuntimeException;
 
 /**
- * Composes the customer_no sent to the supplier.
+ * Composes the target sent to the supplier.
  *
  * This is the single place that decides how target_uid and target_server are
- * joined. It replaced the hardcoded `$uid.$server` that was duplicated across
- * the Digiflazz actions — do not reintroduce that expression anywhere.
+ * joined — do not hardcode that expression anywhere else. uxiotopup expects
+ * the pipe form "dataId|zoneId" (templates like `{user_id}|{zone_id}`).
  */
 class CustomerNumberFormatter
 {
@@ -35,9 +35,10 @@ class CustomerNumberFormatter
         $schema = OrderFormSchema::forCategory($category);
         $values = [trim((string) $targetUid), trim((string) $targetServer)];
 
-        // Unconfigured category → byte-for-byte the previous behaviour.
+        // Unconfigured category → uxiotopup's default "dataId|zoneId" shape
+        // (just dataId when there is no zone/server component).
         if (! $schema) {
-            return $values[0].$values[1];
+            return $values[1] === '' ? $values[0] : $values[0].'|'.$values[1];
         }
 
         $bindings = [];

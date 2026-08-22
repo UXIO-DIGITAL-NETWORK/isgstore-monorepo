@@ -2,21 +2,25 @@
 
 namespace App\Actions\Transaction;
 
-use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Uxiotopup\ProcessUxiotopupTransactionAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * "Retry Invoice" — re-dispatches a fresh Digiflazz fulfilment request for a
+ * "Retry Invoice" — re-dispatches a fresh uxiotopup fulfilment request for a
  * failed transaction, distinguished in the audit log from an automatic
  * (queue-driven) retry.
+ *
+ * If the original order actually reached uxiotopup, the retry hits their
+ * duplicate-idtrx guard and the action settles the row back to PROCESSING to
+ * await the callback — a retry can never double-order.
  */
 class AdminRetryTransactionAction
 {
     public function __construct(
-        private ProcessDigiflazzTransactionAction $processAction,
+        private ProcessUxiotopupTransactionAction $processAction,
         private CreateActivityLogAction $activityLogAction
     ) {}
 

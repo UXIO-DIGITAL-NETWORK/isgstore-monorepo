@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Actions\Uxiotopup;
+
+use App\Actions\Payment\RefundFailedTransactionAction;
+use App\Actions\Transaction\SendTransactionReceiptAction;
+use App\Enums\TransactionStatus;
+use App\Models\Transaction;
+use App\Services\UxiotopupService;
+use App\Traits\MapsUxiotopupStatus;
+use Exception;
+
+class CheckUxiotopupTransactionStatusAction
+{
+    use MapsUxiotopupStatus;
+
+    public function __construct(
+        private readonly UxiotopupService $uxiotopupService,
+        private readonly RefundFailedTransactionAction $refundAction,
+        private readonly SendTransactionReceiptAction $receiptAction,
+    ) {}
+
+    public function execute(string $invoiceNumber): Transaction
+    {
+        $transaction = Transaction::where('invoice_number', $invoiceNumber)
+            ->where('status', TransactionStatus::PROCESSING->value)
+            ->firstOrFail();
+
+        // /status only accepts uxiotopup's own invoice id. Without one (the
+        // order response was lost mid-flight) there is nothing to poll — the
+        // callback, which carries our idtrx, is the only path that can resolve
+        // this transaction.
+        if (! $transaction->supplier_trx_id) {
+            throw new Exception('Transaksi belum memiliki ID order uxiotopup — menunggu callback dari supplier.');
+        }
+
+        $response = $this->uxiotopupService->checkTransactionStatus($transaction->supplier_trx_id);
+
+        $newStatus = $this->mapUxiotopupStatus($response['status'] ?? 'pending');
+        $sn = (string) ($response['keterangan'] ?? '');
+
+        $transaction->update([
+            'sn' => $sn !== '' ? $sn : $transaction->sn,
+            'supplier_status' => $response['status'] ?? $transaction->supplier_status,
+            'status' => $newStatus,
+        ]);
+
+        $fresh = $transaction->fresh();
+
+        // Mirror the webhook's terminal side effects: once this poll marks the
+        // row terminal, the callback's idempotency guard will skip it — so the
+        // refund/receipt must happen here or never. Both actions are idempotent.
+        if ($newStatus === TransactionStatus::FAILED_PROVIDER) {
+            $this->refundAction->execute($fresh);
+        }
+
+        if ($newStatus === TransactionStatus::COMPLETED) {
+            $this->receiptAction->execute($fresh);
+        }
+
+        return $fresh;
+    }
+}

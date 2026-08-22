@@ -74,26 +74,26 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           # Mengambil data .env dari GitHub Secrets
-          ENV_FILE_CONTENT: ${{ secrets.PROD_ENV_FILE }}
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
         with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USERNAME }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          port: ${{ secrets.PROD_PORT }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
           envs: ENV_FILE_CONTENT
           script: |
             # 0. Bootstrap: clone repo on first deploy if prod dir isn't a git repo yet
-            # Updated to uxioserver1 path
-            PROD_DIR="/home/uxioserver1/web-topup/api/prod"
+            # Deploy target: server baru uxiotopup-provider
+            PROD_DIR="/home/uxioserver1/web-topup-uxiotopup-provider/api"
             if [ ! -d "$PROD_DIR/.git" ]; then
               echo "First-time setup: removing stale dir and cloning repo into $PROD_DIR..."
               rm -rf "$PROD_DIR"
-              git clone git@github.com:UXIO-DIGITAL-NETWORK/web-topup-api.git "$PROD_DIR"
+              git clone git@github.com:UXIO-DIGITAL-NETWORK/uxiotopup-api.git "$PROD_DIR"
               git -C "$PROD_DIR" checkout main
             fi
 
             # 1. Masuk ke direktori production yang tepat
-            cd /home/uxioserver1/web-topup/api/prod
+            cd /home/uxioserver1/web-topup-uxiotopup-provider/api
 
             # 2. Tarik kode terbaru dari branch main
             git pull origin main || { echo "::error::git pull gagal — deploy dibatalkan sebelum kode lama ter-cache ulang."; exit 1; }
@@ -117,9 +117,9 @@ jobs:
 
             # 8. Pastikan permission tetap aman setelah file baru turun
             # Updated user/group and paths to uxioserver1
-            sudo chown -R uxioserver1:www-data /home/uxioserver1/web-topup/api/prod
-            sudo chmod -R 775 /home/uxioserver1/web-topup/api/prod/storage
-            sudo chmod -R 775 /home/uxioserver1/web-topup/api/prod/bootstrap/cache
+            sudo chown -R uxioserver1:www-data /home/uxioserver1/web-topup-uxiotopup-provider/api
+            sudo chmod -R 775 /home/uxioserver1/web-topup-uxiotopup-provider/api/storage
+            sudo chmod -R 775 /home/uxioserver1/web-topup-uxiotopup-provider/api/bootstrap/cache
 
             # 8b. Reload PHP-FPM agar proses web memuat kode yang baru turun.
             # Langkah 12-14 hanya me-restart queue worker; pool PHP-FPM yang melayani
@@ -138,8 +138,8 @@ jobs:
 
             # 9. Pasang cron Laravel scheduler (idempotent, spesifik per environment).
             # Updated cron path to uxioserver1
-            CRON_ENTRY="* * * * * cd /home/uxioserver1/web-topup/api/prod && php artisan schedule:run >> /dev/null 2>&1"
-            ( crontab -l 2>/dev/null | grep -vF "web-topup/api/prod && php artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
+            CRON_ENTRY="* * * * * cd /home/uxioserver1/web-topup-uxiotopup-provider/api && php artisan schedule:run >> /dev/null 2>&1"
+            ( crontab -l 2>/dev/null | grep -vF "web-topup-uxiotopup-provider/api && php artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
             echo "Scheduler cron installed:"
             crontab -l | grep "schedule:run"
 
@@ -161,7 +161,7 @@ jobs:
             # (dilakukan sebelum daemon start/health-check di bawah — config yang salah
             # di conf.d bisa membuat seluruh supervisord gagal start, jadi config terbaru
             # harus sudah ter-copy sebelum kita mencoba (re)start daemonnya)
-            sudo cp /home/uxioserver1/web-topup/api/prod/supervisor/api-prod-worker.conf \
+            sudo cp /home/uxioserver1/web-topup-uxiotopup-provider/api/supervisor/api-prod-worker.conf \
                     /etc/supervisor/conf.d/api-prod-worker.conf
 
             # 12b. Cleanup program lama dari penamaan sebelumnya (one-time, idempotent).
@@ -195,7 +195,7 @@ jobs:
             # queue:work meng-cache kode di memory, jadi harus di-reload tiap deploy.
             # queue:restart menyuruh worker menyelesaikan job yang sedang jalan lalu exit;
             # supervisor (autorestart) langsung menghidupkannya lagi dengan kode baru —
-            # tidak memutus ProcessDigiflazzTopup/refund di tengah seperti hard-restart.
+            # tidak memutus ProcessUxiotopupTopup/refund di tengah seperti hard-restart.
             sudo supervisorctl start api-prod-worker:* 2>/dev/null || true
             php artisan queue:restart
             sudo supervisorctl status api-prod-worker:* || true

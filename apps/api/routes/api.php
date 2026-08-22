@@ -17,17 +17,6 @@ use App\Http\Controllers\Api\Content\PageController;
 use App\Http\Controllers\Api\Content\SettingController;
 use App\Http\Controllers\Api\Content\TestimonialController;
 use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzBalanceController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzCekUsernameSkuController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzPostpaidController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzPriceListController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzProductController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzProductImportController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzSkuLookupController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzSyncController;
-use App\Http\Controllers\Api\Digiflazz\DigiflazzTransactionStatusController;
-use App\Http\Controllers\Api\Digiflazz\PriceAlertController;
-use App\Http\Controllers\Api\Digiflazz\WebhookDigiflazzController;
 use App\Http\Controllers\Api\Finance\ChannelFeeController;
 use App\Http\Controllers\Api\Finance\FinanceDashboardController;
 use App\Http\Controllers\Api\Finance\FinanceMerchantController;
@@ -92,6 +81,15 @@ use App\Http\Controllers\Api\Supplier\SupplierController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\User\SyncTimezoneController;
 use App\Http\Controllers\Api\User\UserController;
+use App\Http\Controllers\Api\Uxiotopup\PriceAlertController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupBalanceController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupPriceListController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupProductController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupProductImportController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupSkuLookupController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupSyncController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupTransactionStatusController;
+use App\Http\Controllers\Api\Uxiotopup\WebhookUxiotopupController;
 use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -123,7 +121,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/monetapay/subscription/callback/active', [MonetapaySubscriptionCallbackController::class, 'active']);
         Route::post('/monetapay/subscription/callback/deduct/before', [MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
         Route::post('/monetapay/subscription/callback/deduct/after', [MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
-        Route::post('/digiflazz/callback', [WebhookDigiflazzController::class, 'handle']);
+        Route::post('/uxiotopup/callback', [WebhookUxiotopupController::class, 'handle']);
         // Payout (disbursement) result callback (7.4.2) — drives a withdrawal to
         // SETTLED/FAILED. Point Monetapay's disbursement callback URL here.
         Route::post('/disbursement/merchant/callback', DisbursementCallbackController::class);
@@ -137,8 +135,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/games/{game}', [StorefrontGameController::class, 'show']);
     Route::get('/games/{game}/products', [StorefrontGameController::class, 'products']);
     Route::get('/games/{game}/reviews', [GameReviewController::class, 'index']);
-    // Throttled: for some games this runs a paid Digiflazz "cek username" call,
-    // so it must not be hammerable from the client.
+    // Throttled: keeps third-party nickname lookups from being hammered
+    // from the client.
     Route::post('/games/{game}/validate-id', ValidateGameIdController::class)->middleware('throttle:checkout');
 
     Route::get('/price-list', [PriceListController::class, 'index']);
@@ -194,10 +192,6 @@ Route::prefix('v1')->group(function () {
         // Takes a phone number as input, so it is throttled like checkout
         // rather than left on the global limiter.
         Route::get('/orders/track', OrderTrackController::class);
-
-        // Postpaid — public (guests can inquire/pay bills)
-        Route::post('/digiflazz/check-bill', [DigiflazzPostpaidController::class, 'checkBill']);
-        Route::post('/digiflazz/pay-bill', [DigiflazzPostpaidController::class, 'payBill']);
 
         // Guest feedback: reviews a guest's own completed order by invoice number
         // (the member equivalent is POST /v1/me/transactions/{invoiceNumber}/rating).
@@ -386,7 +380,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/bulk/lock-price', [ProductController::class, 'bulkLockPrice']);
         Route::post('/bulk/show-price', [ProductController::class, 'bulkShowPrice']);
         Route::post('/bulk/deactivate', [ProductController::class, 'bulkDeactivate']);
-        Route::post('/bulk/digiflazz-update', [ProductController::class, 'bulkDigiflazzUpdate']);
+        Route::post('/bulk/uxiotopup-update', [ProductController::class, 'bulkUxiotopupUpdate']);
         Route::post('/bulk/delete', [ProductController::class, 'bulkDelete']);
         Route::get('/{product}', [ProductController::class, 'show']);
         Route::put('/{product}', [ProductController::class, 'update']);
@@ -409,7 +403,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/{supplierProduct}/profit-margin', [SupplierProductController::class, 'setMargin']);
     });
 
-    // Pricing Rules (markup config used by the daily Digiflazz price sync)
+    // Pricing Rules (markup config used by the uxiotopup price sync)
     Route::apiResource('pricing-rules', PricingRuleController::class);
 
     // Membership plans (loyalty tiers) — admin CRUD; storefront reads its own
@@ -434,28 +428,25 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/settings', [SettingController::class, 'update']);
     Route::post('/settings/upload', [SettingController::class, 'upload']);
 
-    // Digiflazz Admin Tools
-    Route::get('/digiflazz/balance', [DigiflazzBalanceController::class, 'index']);
-    Route::post('/digiflazz/check-status', [DigiflazzTransactionStatusController::class, 'check']);
-    Route::post('/digiflazz/sync-products', [DigiflazzSyncController::class, 'sync']);
+    // Uxiotopup Admin Tools
+    Route::get('/uxiotopup/balance', [UxiotopupBalanceController::class, 'index']);
+    Route::post('/uxiotopup/check-status', [UxiotopupTransactionStatusController::class, 'check']);
+    Route::post('/uxiotopup/sync-products', [UxiotopupSyncController::class, 'sync']);
 
-    // Digiflazz Manual Product Management (products are never auto-created)
-    // Browse the whole Digiflazz price list (Product Provider tab) — reads the
-    // shared 5-min cache, so paging/searching never hits Digiflazz upstream.
-    Route::get('/digiflazz/price-list', [DigiflazzPriceListController::class, 'index']);
-    Route::get('/digiflazz/sku-preview', [DigiflazzSkuLookupController::class, 'show']);
-    // Cek-username / account-inquiry SKUs, for the category form's nickname-check
-    // picker (stored as `digiflazz:{sku}` in categories.validasi_nickname).
-    Route::get('/digiflazz/cek-username-skus', [DigiflazzCekUsernameSkuController::class, 'index']);
-    Route::post('/digiflazz/products', [DigiflazzProductController::class, 'store']);
-    Route::post('/digiflazz/products/bulk', [DigiflazzProductController::class, 'bulkStore']);
-    Route::get('/digiflazz/products/import-template', [DigiflazzProductImportController::class, 'template']);
-    Route::post('/digiflazz/products/import', [DigiflazzProductImportController::class, 'import']);
+    // Uxiotopup Manual Product Management (products are never auto-created)
+    // Browse the whole uxiotopup price list (Product Provider tab) — reads the
+    // shared 5-min cache, so paging/searching never hits uxiotopup upstream.
+    Route::get('/uxiotopup/price-list', [UxiotopupPriceListController::class, 'index']);
+    Route::get('/uxiotopup/sku-preview', [UxiotopupSkuLookupController::class, 'show']);
+    Route::post('/uxiotopup/products', [UxiotopupProductController::class, 'store']);
+    Route::post('/uxiotopup/products/bulk', [UxiotopupProductController::class, 'bulkStore']);
+    Route::get('/uxiotopup/products/import-template', [UxiotopupProductImportController::class, 'template']);
+    Route::post('/uxiotopup/products/import', [UxiotopupProductImportController::class, 'import']);
 
-    // Digiflazz Price Change Alerts (raised by the 5-minute checker)
-    Route::get('/digiflazz/price-alerts', [PriceAlertController::class, 'index']);
-    Route::post('/digiflazz/price-alerts/acknowledge-all', [PriceAlertController::class, 'acknowledgeAll']);
-    Route::post('/digiflazz/price-alerts/{priceChangeAlert}/acknowledge', [PriceAlertController::class, 'acknowledge']);
+    // Uxiotopup Price Change Alerts (raised by the 5-minute checker)
+    Route::get('/uxiotopup/price-alerts', [PriceAlertController::class, 'index']);
+    Route::post('/uxiotopup/price-alerts/acknowledge-all', [PriceAlertController::class, 'acknowledgeAll']);
+    Route::post('/uxiotopup/price-alerts/{priceChangeAlert}/acknowledge', [PriceAlertController::class, 'acknowledge']);
 
     // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.
     // Outbound signed calls to Monetapay; mirror the spec's query endpoints.

@@ -19,8 +19,8 @@ class FeeBreakdownTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['services.digiflazz.username' => 'testuser', 'services.digiflazz.key' => 'testkey']);
-        Http::fake(['*/transaction' => Http::response(['data' => ['status' => 'Pending', 'trx_id' => 'DF1']])]);
+        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        Http::fake(['*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']])]);
     }
 
     private function checkout(): array

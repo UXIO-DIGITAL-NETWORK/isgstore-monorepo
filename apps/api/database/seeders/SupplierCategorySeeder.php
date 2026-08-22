@@ -12,14 +12,14 @@ class SupplierCategorySeeder extends Seeder
         $now = now();
         $items = [];
 
-        // Game categories mapped to Digiflazz (supplier_id = 1).
-        $digiflazzCategories = [
+        // Game categories mapped to Uxiotopup (supplier_id = 1).
+        $uxiotopupCategories = [
             1 => 'mlbb',
             3 => 'freefire',
             9 => 'valorant',
         ];
 
-        foreach ($digiflazzCategories as $catId => $code) {
+        foreach ($uxiotopupCategories as $catId => $code) {
             $items[] = [
                 'category_id' => $catId,
                 'supplier_id' => 1,

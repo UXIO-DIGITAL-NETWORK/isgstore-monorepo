@@ -44,9 +44,9 @@ class ProviderProductActionsTest extends TestCase
     {
         $this->actingAsAdmin();
         $system = Supplier::factory()->create(['is_system' => true]);
-        $digiflazz = Supplier::factory()->create(['is_system' => false]);
+        $uxiotopup = Supplier::factory()->create(['is_system' => false]);
         $this->providerFor($system);
-        $this->providerFor($digiflazz);
+        $this->providerFor($uxiotopup);
 
         $this->getJson("/api/v1/supplier-products?supplier_id={$system->id}")
             ->assertOk()

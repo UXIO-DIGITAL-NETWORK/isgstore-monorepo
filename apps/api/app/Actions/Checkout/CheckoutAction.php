@@ -2,11 +2,11 @@
 
 namespace App\Actions\Checkout;
 
-use App\Actions\Digiflazz\ProcessDigiflazzTransactionAction;
 use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Settlement\SettleMerchantTransactionAction;
 use App\Actions\Storefront\ValidateGameIdAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
+use App\Actions\Uxiotopup\ProcessUxiotopupTransactionAction;
 use App\DTOs\Checkout\CheckoutDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\PaymentStatus;
@@ -30,7 +30,7 @@ use Illuminate\Support\Str;
 class CheckoutAction
 {
     public function __construct(
-        private readonly ProcessDigiflazzTransactionAction $digiflazzAction,
+        private readonly ProcessUxiotopupTransactionAction $uxiotopupAction,
         private readonly CreateActivityLogAction $logAction,
         private readonly MonetapayService $monetapayService,
         private readonly SendTransactionReceiptAction $sendReceiptAction,
@@ -388,13 +388,13 @@ class CheckoutAction
                 // and record kita's markup — no-op if platform-owned.
                 $this->settleAction->execute($transaction);
 
-                // Digiflazz fulfilment stays inside the transaction so an
+                // uxiotopup fulfilment stays inside the transaction so an
                 // infrastructure *exception* rolls the wallet charge back with
                 // it; the lock held is the buyer's own row (per-user contention),
-                // not the shared promo row. (A FAILED_PROVIDER *result* — Digiflazz
-                // "Gagal" — is a normal return, not an exception, so it commits;
-                // refunding that case is unchanged by this refactor.)
-                $transaction = $this->digiflazzAction->execute($transaction);
+                // not the shared promo row. (A FAILED_PROVIDER *result* — uxiotopup
+                // "cancel"/"refund" — is a normal return, not an exception, so it
+                // commits; refunding that case is unchanged by this refactor.)
+                $transaction = $this->uxiotopupAction->execute($transaction);
                 $transactionStatus = $transaction->status; // COMPLETED / PROCESSING / FAILED_PROVIDER
 
                 // Fulfilled synchronously from balance — email the receipt now.

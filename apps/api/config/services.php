@@ -53,15 +53,18 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-    'digiflazz' => [
-        'username' => env('DIGIFLAZZ_USERNAME'),
-        // apiKey is bound to the account's API mode. Legacy DIGIFLAZZ_KEY is kept
-        // as the fallback for both so existing dev/staging envs keep working.
-        'production' => env('DIGIFLAZZ_PRODUCTION', false),
-        'dev_key' => env('DIGIFLAZZ_DEV_KEY', env('DIGIFLAZZ_KEY')),
-        'prod_key' => env('DIGIFLAZZ_PROD_KEY', env('DIGIFLAZZ_KEY')),
-        'base_url' => env('DIGIFLAZZ_BASE_URL', 'https://api.digiflazz.com/v1'),
-        'webhook_secret' => env('DIGIFLAZZ_WEBHOOK_SECRET'),
+    'uxiotopup' => [
+        'api_key' => env('UXIOTOPUP_API_KEY'),
+        'base_url' => env('UXIOTOPUP_BASE_URL', 'https://api.uxiotopup.id'),
+        // Sent as the `callback` field on every /order so uxiotopup knows where
+        // to POST status updates (should point at /api/v1/uxiotopup/callback).
+        'callback_url' => env('UXIOTOPUP_CALLBACK_URL'),
+        // Which price tier from /service is booked as our supplier cost:
+        // harga | harga_gold | harga_silver | harga_pro.
+        'price_tier' => env('UXIOTOPUP_PRICE_TIER', 'harga'),
+        // The webhook carries no signature — the only authentication is the
+        // source IP. Comma-separated to allow extra IPs without a deploy.
+        'callback_ips' => env('UXIOTOPUP_CALLBACK_IP', '103.146.202.50'),
     ],
 
     'discord' => [

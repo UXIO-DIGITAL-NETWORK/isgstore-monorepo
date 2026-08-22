@@ -13,8 +13,7 @@ use App\DTOs\Withdrawal\DisbursementCallbackDTO;
 use App\Enums\PaymentStatus;
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\TransactionStatus;
-use App\Jobs\ProcessDigiflazzBillPayment;
-use App\Jobs\ProcessDigiflazzTopup;
+use App\Jobs\ProcessUxiotopupTopup;
 use App\Models\BalanceTopup;
 use App\Models\Payment;
 use App\Models\ServiceInvoicePayment;
@@ -150,7 +149,7 @@ class HandleMonetapayCallbackAction
             }
         });
 
-        // ── Dispatch Digiflazz job after commit ──────────────────────────────
+        // ── Dispatch uxiotopup job after commit ──────────────────────────────
         // At this point DB::transaction() has returned, meaning the commit is done.
         // The queue worker will always see the PAID rows when it picks up the job.
         if ($paidTransaction) {
@@ -158,11 +157,7 @@ class HandleMonetapayCallbackAction
             // confirmed. No-op for platform-owned sales (merchant_id = null).
             $this->settleAction->execute($paidTransaction);
 
-            if ($paidTransaction->transaction_type === 'postpaid') {
-                ProcessDigiflazzBillPayment::dispatch($paidTransaction);
-            } else {
-                ProcessDigiflazzTopup::dispatch($paidTransaction);
-            }
+            ProcessUxiotopupTopup::dispatch($paidTransaction);
         }
     }
 

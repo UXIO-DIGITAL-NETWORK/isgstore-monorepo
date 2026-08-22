@@ -17,10 +17,10 @@ class MasterDataSeeder extends Seeder
 
         // 1. SUPPLIERS
         DB::table('suppliers')->updateOrInsert(
-            ['name' => 'Digiflazz'],
+            ['name' => 'Uxiotopup'],
             ['status' => true, 'created_at' => $now, 'updated_at' => $now]
         );
-        $digiflazzId = DB::table('suppliers')->where('name', 'Digiflazz')->value('id');
+        $uxiotopupId = DB::table('suppliers')->where('name', 'Uxiotopup')->value('id');
 
         // 2. CATEGORY TYPES (games only)
         DB::table('category_types')->updateOrInsert(
@@ -61,11 +61,11 @@ class MasterDataSeeder extends Seeder
 
         // 6. SUPPLIER PRODUCTS (Mapping)
         DB::table('supplier_products')->updateOrInsert(
-            ['buyer_sku_code' => 'mlbb86', 'supplier_id' => $digiflazzId],
+            ['buyer_sku_code' => 'mlbb86', 'supplier_id' => $uxiotopupId],
             ['product_id' => $mlbb86Id, 'price' => 12000, 'buyer_product_status' => true, 'seller_product_status' => true, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]
         );
         DB::table('supplier_products')->updateOrInsert(
-            ['buyer_sku_code' => 'mlbb172', 'supplier_id' => $digiflazzId],
+            ['buyer_sku_code' => 'mlbb172', 'supplier_id' => $uxiotopupId],
             ['product_id' => $mlbb172Id, 'price' => 24000, 'buyer_product_status' => true, 'seller_product_status' => true, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]
         );
     }
