@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Content\SettingController;
 use App\Http\Controllers\Api\Content\TestimonialController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzBalanceController;
+use App\Http\Controllers\Api\Digiflazz\DigiflazzCekUsernameSkuController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzPostpaidController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzPriceListController;
 use App\Http\Controllers\Api\Digiflazz\DigiflazzProductController;
@@ -443,6 +444,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     // shared 5-min cache, so paging/searching never hits Digiflazz upstream.
     Route::get('/digiflazz/price-list', [DigiflazzPriceListController::class, 'index']);
     Route::get('/digiflazz/sku-preview', [DigiflazzSkuLookupController::class, 'show']);
+    // Cek-username / account-inquiry SKUs, for the category form's nickname-check
+    // picker (stored as `digiflazz:{sku}` in categories.validasi_nickname).
+    Route::get('/digiflazz/cek-username-skus', [DigiflazzCekUsernameSkuController::class, 'index']);
     Route::post('/digiflazz/products', [DigiflazzProductController::class, 'store']);
     Route::post('/digiflazz/products/bulk', [DigiflazzProductController::class, 'bulkStore']);
     Route::get('/digiflazz/products/import-template', [DigiflazzProductImportController::class, 'template']);
