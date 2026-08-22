@@ -4,24 +4,28 @@ import { Box } from "@/components/common/Box";
 import { FieldLabel } from "@/components/common/FieldLabel";
 import { SelectField } from "@/components/common/SelectField";
 import { Input } from "@/components/ui/input";
+import { useCekUsernameSkuOptions } from "@/hooks/useCekUsernameSkuOptions";
 import { useProductOptions } from "@/hooks/useProductOptions";
 
-type Mode = "none" | "product" | "url";
+type Mode = "none" | "product" | "digiflazz" | "url";
 
 const MODE_OPTIONS = [
   { value: "none", label: "None (no check)" },
   { value: "product", label: "Pick a product" },
+  { value: "digiflazz", label: "Digiflazz cek-username SKU" },
   { value: "url", label: "Custom URL (free API)" },
 ];
 
 const TOOLTIP =
   "Turns on the “Cek Username” button on the storefront for this game. " +
   "“Pick a product” resolves the player's name through that product's Digiflazz cek-username SKU (recommended). " +
+  "“Digiflazz cek-username SKU” picks a paid Digiflazz inquiry SKU directly. " +
   "“Custom URL” calls a free third-party lookup API instead. Leave “None” if the game has no username check.";
 
 function detectMode(value: string): Mode {
   if (value.startsWith("product:")) return "product";
-  if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("digiflazz:")) return "url";
+  if (value.startsWith("digiflazz:")) return "digiflazz";
+  if (value.startsWith("http://") || value.startsWith("https://")) return "url";
   return "none";
 }
 
@@ -33,6 +37,7 @@ function detectMode(value: string): Mode {
 export function NicknameCheckField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [mode, setMode] = useState<Mode>(() => detectMode(value));
   const { options, isLoading } = useProductOptions(mode === "product");
+  const { options: skuOptions, isLoading: skusLoading } = useCekUsernameSkuOptions(mode === "digiflazz");
 
   const handleModeChange = (next: string) => {
     const nextMode = next as Mode;
@@ -41,6 +46,7 @@ export function NicknameCheckField({ value, onChange }: { value: string; onChang
     // so we never leave a product id behind when switching to URL and back.
     if (nextMode === "none") onChange("");
     else if (nextMode === "product" && !value.startsWith("product:")) onChange("");
+    else if (nextMode === "digiflazz" && !value.startsWith("digiflazz:")) onChange("");
     else if (nextMode === "url" && detectMode(value) !== "url") onChange("");
   };
 
@@ -69,11 +75,25 @@ export function NicknameCheckField({ value, onChange }: { value: string; onChang
         />
       )}
 
+      {mode === "digiflazz" && (
+        <SelectField
+          id="cek-username-sku"
+          label="Digiflazz SKU"
+          tooltip="A Digiflazz cek-username / inquiry SKU. The player's in-game name comes back in the transaction “sn”. Pulled live from the Digiflazz price list."
+          options={skuOptions}
+          value={value.startsWith("digiflazz:") ? value : ""}
+          onChange={onChange}
+          disabled={skusLoading}
+          emptyLabel={skusLoading ? "Loading SKUs..." : "No cek-username SKUs found"}
+          placeholder="Select a SKU"
+        />
+      )}
+
       {mode === "url" && (
         <Box className="flex flex-col gap-1.5">
           <FieldLabel
             htmlFor="cek-username-url"
-            tooltip="A third-party lookup endpoint. Use {user_id}, {server_id} or {customer_no} placeholders, e.g. https://api.example.com/check?id={user_id}. A legacy digiflazz:sku value can also be entered here."
+            tooltip="A third-party lookup endpoint. Use {user_id}, {server_id} or {customer_no} placeholders, e.g. https://api.example.com/check?id={user_id}."
           >
             Lookup URL
           </FieldLabel>
