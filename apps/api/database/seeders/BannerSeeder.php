@@ -16,12 +16,12 @@ class BannerSeeder extends Seeder
             ['category_id' => null, 'name' => 'Flash Sale Weekend', 'image_path' => '/banners/flash-sale.jpg', 'link' => 'https://uxio.id/flash-sale', 'created_at' => $now, 'updated_at' => $now],
             ['category_id' => null, 'name' => 'Referral Bonus 50%', 'image_path' => '/banners/referral.jpg', 'link' => 'https://uxio.id/referral', 'created_at' => $now, 'updated_at' => $now],
 
-            // Kategori Game yang Valid (1: MLBB, 3: FF, 9: Valorant)
+            // Kategori Game yang Valid (1: MLBB) — hanya Mobile Legends yang di-seed.
             ['category_id' => 1, 'name' => 'MLBB New Skin Release', 'image_path' => '/banners/mlbb-skin.jpg', 'link' => 'https://uxio.id/mlbb/new-skin', 'created_at' => $now, 'updated_at' => $now],
-            ['category_id' => 3, 'name' => 'Free Fire OB48', 'image_path' => '/banners/ff-ob48.jpg', 'link' => null, 'created_at' => $now, 'updated_at' => $now],
-            ['category_id' => 9, 'name' => 'Valorant Champions 2026', 'image_path' => '/banners/val-champs.jpg', 'link' => 'https://uxio.id/valorant/champs', 'created_at' => $now, 'updated_at' => $now],
 
-            // Diubah menjadi null karena kategori gamenya tidak ada di uxiotopup saat ini
+            // Kategori game selain MLBB belum di-seed → category_id null (banner umum).
+            ['category_id' => null, 'name' => 'Free Fire OB48', 'image_path' => '/banners/ff-ob48.jpg', 'link' => null, 'created_at' => $now, 'updated_at' => $now],
+            ['category_id' => null, 'name' => 'Valorant Champions 2026', 'image_path' => '/banners/val-champs.jpg', 'link' => 'https://uxio.id/valorant/champs', 'created_at' => $now, 'updated_at' => $now],
             ['category_id' => null, 'name' => 'Genshin 5.0 Update', 'image_path' => '/banners/genshin-50.jpg', 'link' => 'https://uxio.id/genshin/update', 'created_at' => $now, 'updated_at' => $now],
             ['category_id' => null, 'name' => 'PUBG Mobile x Dragon Ball', 'image_path' => '/banners/pubg-db.jpg', 'link' => null, 'created_at' => $now, 'updated_at' => $now],
 

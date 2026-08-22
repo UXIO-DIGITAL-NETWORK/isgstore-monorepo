@@ -15,12 +15,6 @@ class ServerCategorySeeder extends Seeder
             // 🎮 Mobile Legends (Category ID: 1)
             ['id' => 1, 'category_id' => 1, 'name' => 'User ID', 'created_at' => $now, 'updated_at' => $now],
             ['id' => 2, 'category_id' => 1, 'name' => 'Zone ID', 'created_at' => $now, 'updated_at' => $now],
-
-            // 🎮 Free Fire (Category ID: 3)
-            ['id' => 3, 'category_id' => 3, 'name' => 'Player ID', 'created_at' => $now, 'updated_at' => $now],
-
-            // 🎮 Valorant (Category ID: 9)
-            ['id' => 4, 'category_id' => 9, 'name' => 'Riot ID', 'created_at' => $now, 'updated_at' => $now],
         ];
 
         DB::table('server_categories')->insert($items);

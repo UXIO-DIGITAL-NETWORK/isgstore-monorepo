@@ -11,28 +11,31 @@ class SupplierProductSeeder extends Seeder
     public function run(): void
     {
         $now = now();
+
+        // Cost + availability live in ProductSeeder::services() (single source of
+        // truth), keyed by service id = product code = buyer_sku_code.
+        $byCode = collect(ProductSeeder::services())->keyBy('id');
+
         $items = [];
+        foreach (Product::all() as $product) {
+            $service = $byCode->get($product->code);
+            $available = (bool) ($service['available'] ?? true);
 
-        // Ambil semua produk yang baru saja di-seed
-        $products = Product::all();
-
-        foreach ($products as $product) {
             $items[] = [
                 'product_id' => $product->id,
-                // Data produk lama diassign ke supplier 1 (Uxiotopup)
-                'supplier_id' => 1,
-                // buyer_sku_code diisi otomatis menggunakan property code produk
-                'buyer_sku_code' => $product->code,
-                'price' => $product->price_modal,
-                'buyer_product_status' => true,
-                'seller_product_status' => true,
-                'is_active' => true,
+                'supplier_id' => 1, // Uxiotopup
+                'buyer_sku_code' => $product->code, // uxiotopup service id
+                'price' => $service['cost'] ?? $product->price_modal,
+                // uxiotopup "Unavailable" ⇒ seeded inactive; the 5-minute price
+                // checker flips it back on when the service returns to "aktif".
+                'buyer_product_status' => $available,
+                'seller_product_status' => $available,
+                'is_active' => $available,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
         }
 
-        // Insert menggunakan chunk agar tidak membebani memory
         foreach (array_chunk($items, 100) as $chunk) {
             DB::table('supplier_products')->insert($chunk);
         }

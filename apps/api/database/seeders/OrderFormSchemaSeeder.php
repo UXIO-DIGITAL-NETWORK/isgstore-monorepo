@@ -88,38 +88,6 @@ class OrderFormSchemaSeeder extends Seeder
                 ],
             ],
 
-            'freefire' => [
-                'customer_no_template' => '{user_id}',
-                'fields' => [
-                    [
-                        'key' => 'user_id',
-                        'label' => 'Player ID',
-                        'type' => 'number',
-                        'required' => true,
-                        'placeholder' => '123456789',
-                        'help' => 'Player ID ada di halaman profil Free Fire kamu.',
-                    ],
-                ],
-            ],
-
-            'valorant' => [
-                'customer_no_template' => '{riot_id}',
-                'fields' => [
-                    [
-                        'key' => 'riot_id',
-                        'label' => 'Riot ID',
-                        'type' => 'text',
-                        'required' => true,
-                        'min_length' => 3,
-                        'max_length' => 30,
-                        // Riot IDs are Name#Tag.
-                        'pattern' => '^[A-Za-z0-9 ._-]{3,20}#[A-Za-z0-9]{3,5}$',
-                        'placeholder' => 'NamaKamu#1234',
-                        'help' => 'Tulis lengkap dengan tag, contoh: NamaKamu#1234.',
-                    ],
-                ],
-            ],
-
             'pulsa' => self::phoneSchema('Nomor HP', 'Nomor tujuan pengisian pulsa.'),
             'data' => self::phoneSchema('Nomor HP', 'Nomor tujuan paket data.'),
             'telkomsel' => self::phoneSchema('Nomor HP', 'Nomor Telkomsel tujuan.'),

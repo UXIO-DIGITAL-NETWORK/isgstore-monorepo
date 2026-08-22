@@ -16,8 +16,6 @@ class SubCategorySeeder extends Seeder
         $subs = [
             ['id' => 1, 'category_id' => 1, 'name' => 'Diamond', 'currency_name' => 'Diamond', 'description' => null, 'status' => true, 'created_at' => $now, 'updated_at' => $now],
             ['id' => 2, 'category_id' => 1, 'name' => 'Membership', 'currency_name' => 'Pass', 'description' => null, 'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 8, 'category_id' => 3, 'name' => 'Diamond', 'currency_name' => 'Diamond', 'description' => null, 'status' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['id' => 14, 'category_id' => 9, 'name' => 'Valorant Points', 'currency_name' => 'VP', 'description' => null, 'status' => true, 'created_at' => $now, 'updated_at' => $now],
         ];
 
         DB::table('sub_categories')->insert($subs);

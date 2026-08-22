@@ -15,8 +15,6 @@ class SupplierCategorySeeder extends Seeder
         // Game categories mapped to Uxiotopup (supplier_id = 1).
         $uxiotopupCategories = [
             1 => 'mlbb',
-            3 => 'freefire',
-            9 => 'valorant',
         ];
 
         foreach ($uxiotopupCategories as $catId => $code) {
