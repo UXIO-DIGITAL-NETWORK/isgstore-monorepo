@@ -24,6 +24,8 @@ export interface Category {
   name: string;
   sub_name?: string;
   account_nickname_validation?: string;
+  /** Master on/off for the nickname check; defaults to enabled. */
+  account_nickname_check_enabled?: boolean;
   region?: string;
   code: string;
   slug: string;

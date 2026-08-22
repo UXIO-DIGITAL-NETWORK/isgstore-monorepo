@@ -27,6 +27,7 @@ interface CategoryApiRow {
   slug: string | null;
   uid_parser: string | null;
   validasi_nickname: string | null;
+  nickname_check_enabled?: boolean;
   region: string | null;
   logo_url: string | null;
   thumbnail_url: string | null;
@@ -61,6 +62,7 @@ const toCategory = (row: CategoryApiRow): Category => ({
   name: row.name,
   sub_name: row.sub_name ?? undefined,
   account_nickname_validation: row.validasi_nickname ?? undefined,
+  account_nickname_check_enabled: row.nickname_check_enabled ?? true,
   region: row.region ?? undefined,
   code: row.code,
   slug: row.slug ?? "",
@@ -103,6 +105,9 @@ const toFormData = (
   appendIf(form, "code", input.code);
   appendIf(form, "slug", input.slug);
   appendIf(form, "validasi_nickname", input.account_nickname_validation);
+  if (input.account_nickname_check_enabled !== undefined) {
+    form.append("nickname_check_enabled", input.account_nickname_check_enabled ? "1" : "0");
+  }
   appendIf(form, "region", input.region);
   appendIf(form, "description", input.description);
   appendIf(form, "meta_title", input.meta_title);

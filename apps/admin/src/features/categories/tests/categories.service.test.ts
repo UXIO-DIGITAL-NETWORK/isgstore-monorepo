@@ -91,6 +91,18 @@ describe("categoriesService.list", () => {
 
     expect(result.data[0].type).toBe("2");
   });
+
+  it("maps nickname_check_enabled, defaulting to enabled when the API omits it", async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      paginated([apiRow({ nickname_check_enabled: false }), apiRow({ id: 2, nickname_check_enabled: undefined })]),
+    );
+
+    const result = await categoriesService.list();
+
+    expect(result.data[0].account_nickname_check_enabled).toBe(false);
+    // Absent on an older row → treated as enabled so behaviour is unchanged.
+    expect(result.data[1].account_nickname_check_enabled).toBe(true);
+  });
 });
 
 describe("categoriesService.update", () => {
@@ -119,6 +131,15 @@ describe("categoriesService.update", () => {
     await categoriesService.update("1", { name: "MLBB" });
 
     expect((vi.mocked(api.post).mock.calls[0][1] as FormData).get("_method")).toBe("PUT");
+  });
+
+  it("sends nickname_check_enabled as 1/0 for the master toggle", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow()));
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow()));
+
+    await categoriesService.update("1", { account_nickname_check_enabled: false });
+
+    expect((vi.mocked(api.post).mock.calls[0][1] as FormData).get("nickname_check_enabled")).toBe("0");
   });
 });
 

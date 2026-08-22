@@ -24,52 +24,68 @@ vi.mock("@/hooks/useCekUsernameSkuOptions", () => ({
   }),
 }));
 
-function renderField(value: string, onChange = vi.fn()) {
+function renderField({ enabled, value }: { enabled: boolean; value: string }) {
+  const onChange = vi.fn<(value: string) => void>();
+  const onEnabledChange = vi.fn<(enabled: boolean) => void>();
   render(
     <TooltipProvider>
-      <NicknameCheckField value={value} onChange={onChange} />
+      <NicknameCheckField
+        enabled={enabled}
+        onEnabledChange={onEnabledChange}
+        value={value}
+        onChange={onChange}
+      />
     </TooltipProvider>,
   );
-  return onChange;
+  return { onChange, onEnabledChange };
 }
 
 describe("NicknameCheckField", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("renders the Digiflazz SKU dropdown for a stored digiflazz: value", () => {
-    renderField("digiflazz:mlus");
+  it("hides the provider selector when the check is disabled", () => {
+    renderField({ enabled: false, value: "digiflazz:mlus" });
 
-    expect(screen.getByRole("combobox", { name: "Cek Username" })).toHaveTextContent("Digiflazz cek-username SKU");
+    expect(screen.getByRole("switch", { name: "Cek Username" })).not.toBeChecked();
+    expect(screen.queryByRole("combobox", { name: "Metode Cek" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Digiflazz SKU" })).not.toBeInTheDocument();
+  });
+
+  it("shows the Digiflazz SKU dropdown when enabled with a digiflazz: value", () => {
+    renderField({ enabled: true, value: "digiflazz:mlus" });
+
+    expect(screen.getByRole("switch", { name: "Cek Username" })).toBeChecked();
+    expect(screen.getByRole("combobox", { name: "Metode Cek" })).toHaveTextContent("Digiflazz cek-username SKU");
     expect(screen.getByRole("combobox", { name: "Digiflazz SKU" })).toBeInTheDocument();
-    // Not the URL text box.
     expect(screen.queryByLabelText("Lookup URL")).not.toBeInTheDocument();
   });
 
-  it("renders the URL input for a genuine http(s) value, not the SKU dropdown", () => {
-    renderField("https://api.example.com/check?id={user_id}");
+  it("shows the URL input for a genuine http(s) value", () => {
+    renderField({ enabled: true, value: "https://api.example.com/check?id={user_id}" });
 
     expect(screen.getByLabelText("Lookup URL")).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Digiflazz SKU" })).not.toBeInTheDocument();
   });
 
-  it("renders the product dropdown for a product: value", () => {
-    renderField("product:5");
+  it("shows the product dropdown for a product: value", () => {
+    renderField({ enabled: true, value: "product:5" });
 
     expect(screen.getByRole("combobox", { name: "Cek Username Product" })).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Digiflazz SKU" })).not.toBeInTheDocument();
   });
 
-  it("shows no secondary control when the value is empty (None)", () => {
-    renderField("");
+  it("toggling the switch calls onEnabledChange", async () => {
+    const user = userEvent.setup();
+    const { onEnabledChange } = renderField({ enabled: false, value: "" });
 
-    expect(screen.getByRole("combobox", { name: "Cek Username" })).toHaveTextContent("None (no check)");
-    expect(screen.queryByRole("combobox", { name: "Digiflazz SKU" })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Lookup URL")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("switch", { name: "Cek Username" }));
+
+    expect(onEnabledChange).toHaveBeenCalledWith(true);
   });
 
   it("emits digiflazz:{sku} when a SKU is picked", async () => {
     const user = userEvent.setup();
-    const onChange = renderField("digiflazz:mlus");
+    const { onChange } = renderField({ enabled: true, value: "digiflazz:mlus" });
 
     await user.click(screen.getByRole("combobox", { name: "Digiflazz SKU" }));
     const listbox = await screen.findByRole("listbox");
@@ -78,14 +94,9 @@ describe("NicknameCheckField", () => {
     expect(onChange).toHaveBeenCalledWith("digiflazz:ffusername");
   });
 
-  it("resets the stored value when switching to Digiflazz mode from a URL value", async () => {
-    const user = userEvent.setup();
-    const onChange = renderField("https://api.example.com/check");
+  it("hints to pick a provider when enabled with no provider set", () => {
+    renderField({ enabled: true, value: "" });
 
-    await user.click(screen.getByRole("combobox", { name: "Cek Username" }));
-    const listbox = await screen.findByRole("listbox");
-    await user.click(within(listbox).getByText("Digiflazz cek-username SKU"));
-
-    expect(onChange).toHaveBeenCalledWith("");
+    expect(screen.getByText("Pilih provider agar pengecekan berjalan.")).toBeInTheDocument();
   });
 });

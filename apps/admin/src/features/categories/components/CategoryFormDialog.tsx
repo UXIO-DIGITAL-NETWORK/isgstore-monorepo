@@ -82,6 +82,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
       name: "",
       subName: "",
       accountNicknameValidation: "",
+      accountNicknameCheckEnabled: true,
       region: "",
       code: "",
       slug: "",
@@ -101,6 +102,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
           name: existing.name,
           subName: existing.sub_name ?? "",
           accountNicknameValidation: existing.account_nickname_validation ?? "",
+          accountNicknameCheckEnabled: existing.account_nickname_check_enabled ?? true,
           region: existing.region ?? "",
           code: existing.code,
           slug: existing.slug,
@@ -117,6 +119,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
       : undefined,
   });
 
+  const nicknameCheckEnabled = watch("accountNicknameCheckEnabled");
   const metaDescriptionLength = (watch("metaDescription") ?? "").length;
   const metaDescriptionPercent = Math.round((metaDescriptionLength / META_DESCRIPTION_MAX) * 100);
 
@@ -144,6 +147,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
       name: values.name,
       sub_name: values.subName || undefined,
       account_nickname_validation: values.accountNicknameValidation || undefined,
+      account_nickname_check_enabled: values.accountNicknameCheckEnabled,
       region: values.region || undefined,
       code: values.code,
       slug: values.slug,
@@ -244,6 +248,10 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     name="accountNicknameValidation"
                     render={({ field }) => (
                       <NicknameCheckField
+                        enabled={nicknameCheckEnabled}
+                        onEnabledChange={(next) =>
+                          setValue("accountNicknameCheckEnabled", next, { shouldDirty: true })
+                        }
                         value={field.value ?? ""}
                         onChange={field.onChange}
                       />

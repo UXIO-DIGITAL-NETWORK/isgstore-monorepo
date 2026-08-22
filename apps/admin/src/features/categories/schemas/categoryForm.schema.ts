@@ -35,6 +35,10 @@ export const categoryFormSchema = z.object({
   name: z.string().min(1, "Category Name is required"),
   subName: z.string().optional(),
   accountNicknameValidation: z.string().optional(),
+  // Master on/off for the "Cek Username" check; the provider above is the "how".
+  // No `.default()` — `defaultValues`/`values` always supply it, and a default
+  // would split the schema's input/output types and break the form's Control type.
+  accountNicknameCheckEnabled: z.boolean(),
   region: z.string().optional(),
   code: z.string().min(1, "Category Code is required"),
   slug: z.string().min(1, "Category Slug is required"),
