@@ -16,8 +16,8 @@ use Illuminate\Support\Facades\DB;
  * ("kita"), once, when payment is confirmed.
  *
  *   - the merchant is credited `amount_base` (their product's net price);
- *   - the platform keeps the admin fee net of Monetapay's real fee, i.e.
- *     `amount_fee - payments.gateway_fee`.
+ *   - the platform keeps the admin fee net of Monetapay's real fee and the tax
+ *     (PPN) on that fee, i.e. `amount_fee - payments.gateway_fee - payments.tax_amount`.
  *
  * Only merchant-attributed transactions settle here — platform-owned sales
  * (merchant_id = null, e.g. the original top-up catalogue) are left untouched,
@@ -61,6 +61,10 @@ class SettleMerchantTransactionAction
             // would silently under-report profit already booked to the ledger.
             $adminFee = (int) $transaction->amount_fee;
             $gatewayFee = (int) ($transaction->payment?->gateway_fee ?? 0);
+            // Tax (PPN) on the admin fee is kita's expense — read the frozen
+            // amount off the payment (like the gateway fee) so a later rate
+            // change never rewrites already-booked profit.
+            $taxAmount = (int) ($transaction->payment?->tax_amount ?? 0);
 
             // Credit the merchant their net sale price.
             if ($amountBase > 0) {
@@ -73,10 +77,11 @@ class SettleMerchantTransactionAction
                 );
             }
 
-            // Keep kita's admin fee net of Monetapay's actual fee. Can be zero
-            // (or negative if the gateway fee exceeds it); only a non-zero
-            // movement is recorded, since a ledger entry of 0 is meaningless.
-            $platformProfit = $adminFee - $gatewayFee;
+            // Keep kita's admin fee net of Monetapay's actual fee and the tax on
+            // it. Can be zero (or negative if gateway fee + tax exceed it); only
+            // a non-zero movement is recorded, since a ledger entry of 0 is
+            // meaningless.
+            $platformProfit = $adminFee - $gatewayFee - $taxAmount;
             if ($platformProfit !== 0) {
                 PlatformLedger::record(
                     amount: $platformProfit,

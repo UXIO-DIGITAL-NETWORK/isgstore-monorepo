@@ -31,12 +31,16 @@ class FinanceDashboardController extends Controller
             ->whereIn('status', TransactionStatus::paidStates());
 
         return $this->successResponse([
-            // Kita's profit balance = accumulated (admin_fee - gateway_fee).
+            // Kita's profit balance = accumulated (admin_fee - gateway_fee - tax).
             'saldo' => (int) ($account?->balance ?? 0),
             'total_admin_fee' => (int) $paid->clone()->sum('amount_fee'),
             'total_gateway_fee' => (int) Payment::whereIn(
                 'transaction_id', $paid->clone()->select('id')
             )->sum('gateway_fee'),
+            // Total PPN levied on the admin fee across paid transactions.
+            'total_tax' => (int) Payment::whereIn(
+                'transaction_id', $paid->clone()->select('id')
+            )->sum('tax_amount'),
             'total_settled_to_merchants' => (int) $paid->clone()->sum('amount_base'),
             // Headline transaction volume across every merchant: how many, and
             // the paid nominal (amount_base) they represent.

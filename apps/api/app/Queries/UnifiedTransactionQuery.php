@@ -156,7 +156,9 @@ final class UnifiedTransactionQuery
                 't.amount_total as amount_total',
                 't.channel_fee as admin_fee',
                 DB::raw('COALESCE(pay.gateway_fee, 0) as gateway_fee'),
-                DB::raw('(t.amount_fee - COALESCE(pay.gateway_fee, 0)) as platform_profit'),
+                // Profit Kita = admin fee − gateway cut − tax (PPN) on the fee;
+                // matches the ledger booked in SettleMerchantTransactionAction.
+                DB::raw('(t.amount_fee - COALESCE(pay.gateway_fee, 0) - COALESCE(pay.tax_amount, 0)) as platform_profit'),
             ]);
         }
 

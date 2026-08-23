@@ -42,6 +42,9 @@ class ChannelFeeController extends Controller
             // percent for QRIS/e-wallet.
             'gateway_fee_flat' => ['sometimes', 'integer', 'min:0'],
             'gateway_fee_percent' => ['sometimes', 'numeric', 'between:0,100'],
+            // PPN on the channel fee — kita's expense, netted from profit at
+            // settlement (see SettleMerchantTransactionAction).
+            'tax_percent' => ['sometimes', 'numeric', 'between:0,100'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
@@ -90,6 +93,7 @@ class ChannelFeeController extends Controller
             'fee_percent' => (float) $c->fee_percent,
             'gateway_fee_flat' => (int) $c->gateway_fee_flat,
             'gateway_fee_percent' => (float) $c->gateway_fee_percent,
+            'tax_percent' => (float) $c->tax_percent,
             'is_active' => (bool) $c->is_active,
             // Lets the finance UI flag a channel whose gateway fee no longer
             // matches Monetapay's contracted rate (or an unlisted channel).

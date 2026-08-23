@@ -20,6 +20,9 @@ class PaymentChannelFactory extends Factory
             'fee_flat' => 0,
             'fee_percent' => 0,
             'gateway_fee_percent' => 0.70,
+            // 0 keeps existing checkout/settlement tests deterministic; tests that
+            // exercise tax set this explicitly.
+            'tax_percent' => 0,
             'is_active' => true,
         ];
     }

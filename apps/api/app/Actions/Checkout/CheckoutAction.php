@@ -155,6 +155,13 @@ class CheckoutAction
         $gatewayPercent = max(0, min(100, (float) $channel->gateway_fee_percent));
         $gatewayFee = (int) $channel->gateway_fee_flat + (int) round($grossAmount * ($gatewayPercent / 100));
 
+        // Tax (PPN) is levied on the channel fee only and is kita's expense — it
+        // reduces the platform profit at settlement, it is NOT added to what the
+        // customer pays, so $grossAmount is deliberately left unchanged. Frozen
+        // here so a later rate change never rewrites a booked transaction.
+        $taxPercent = max(0, min(100, (float) $channel->tax_percent));
+        $taxAmount = $channelFee > 0 ? (int) round($channelFee * ($taxPercent / 100)) : 0;
+
         if ($grossAmount < $channel->min_amount) {
             throw new Exception(
                 'Total tagihan Rp '.number_format($grossAmount).
@@ -278,7 +285,7 @@ class CheckoutAction
         DB::transaction(function () use (
             $dto, $user, $product, $channel, $activeSupplier, $invoiceNumber, $referenceId,
             $targetNickname, $discount, $sellingPrice, $adminFee, $channelFee, $gatewayFee,
-            $margin, $grossAmount, $callGateway, $gatewayInsideTx,
+            $taxAmount, $taxPercent, $margin, $grossAmount, $callGateway, $gatewayInsideTx,
             &$paymentInstructions, &$pgTransactionId, &$transactionStatus,
         ) {
             // Promo: lock the row so two concurrent redemptions cannot both slip
@@ -327,6 +334,8 @@ class CheckoutAction
                 'promo_id' => $promo?->id,
                 'amount_base' => $sellingPrice,
                 'amount_fee' => $adminFee,
+                'tax_amount' => $taxAmount,
+                'tax_percent' => $taxPercent,
                 'channel_fee' => $channelFee,
                 // Always 0 now. The column is kept so historical rows — written
                 // while a global markup existed — stay reconstructable.
@@ -360,6 +369,8 @@ class CheckoutAction
                 'channel_fee' => $channelFee,
                 'admin_markup' => 0,
                 'gateway_fee' => $gatewayFee,
+                'tax_amount' => $taxAmount,
+                'tax_percent' => $taxPercent,
                 // Instructions/reference already obtained from the gateway above
                 // (null for the balance path). Persisted so the invoice page can
                 // re-render the QR/VA/link after a refresh.
