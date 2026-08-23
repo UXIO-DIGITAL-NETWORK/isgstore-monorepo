@@ -4,6 +4,8 @@ export interface FinanceDashboard {
   saldo: number;
   total_admin_fee: number;
   total_gateway_fee: number;
+  /** Total PPN levied on admin fees across paid transactions. */
+  total_tax: number;
   total_settled_to_merchants: number;
   /** How many merchant-attributed transactions exist, all statuses. */
   total_transactions_count: number;
@@ -26,6 +28,8 @@ export interface ChannelFee {
   gateway_fee_flat: number;
   /** Percent gateway fee for QRIS/e-wallet channels. */
   gateway_fee_percent: number;
+  /** PPN rate on the channel fee — kita's expense, netted from profit at settlement. */
+  tax_percent: number;
   is_active: boolean;
 }
 

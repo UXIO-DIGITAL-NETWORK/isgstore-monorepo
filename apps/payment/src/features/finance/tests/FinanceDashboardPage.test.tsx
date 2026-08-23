@@ -37,6 +37,7 @@ beforeEach(() => {
       saldo: 100000,
       total_admin_fee: 50000,
       total_gateway_fee: 10000,
+      total_tax: 5500,
       total_settled_to_merchants: 200000,
       pending_withdrawals: 1,
       pending_withdrawals_amount: 40000,
@@ -67,6 +68,18 @@ describe("FinanceDashboardPage", () => {
 
     expect(screen.getByText("Total Biaya Admin")).toBeInTheDocument();
     expect(screen.queryByText("Total Markup")).not.toBeInTheDocument();
+  });
+
+  it("shows the total tax card", () => {
+    vi.spyOn(hooks, "useFinanceTransactions").mockReturnValue({
+      data: { rows: [], page: 1, lastPage: 1, total: 0, perPage: 5 },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof hooks.useFinanceTransactions>);
+
+    renderPage();
+
+    expect(screen.getByText("Total Pajak")).toBeInTheDocument();
   });
 
   it("lists the most recent transactions", () => {

@@ -92,6 +92,7 @@ export const useUpdateChannelFee = () => {
         fee_percent?: number;
         gateway_fee_flat?: number;
         gateway_fee_percent?: number;
+        tax_percent?: number;
         is_active?: boolean;
       };
     }) => financeService.updateChannel(id, payload),

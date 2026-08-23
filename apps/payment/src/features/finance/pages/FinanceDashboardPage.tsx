@@ -37,13 +37,16 @@ export default function FinanceDashboardPage() {
 
       <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          data={{ id: "saldo", label: "Saldo (Profit)", value: data?.saldo ?? 0, caption: "Akumulasi biaya admin − fee gateway" }}
+          data={{ id: "saldo", label: "Saldo (Profit)", value: data?.saldo ?? 0, caption: "Akumulasi biaya admin − fee gateway − pajak" }}
         />
         <StatCard
           data={{ id: "admin-fee", label: "Total Biaya Admin", value: data?.total_admin_fee ?? 0, caption: "Biaya admin (fee metode pembayaran) seluruh transaksi" }}
         />
         <StatCard
           data={{ id: "gateway", label: "Total Fee Gateway", value: data?.total_gateway_fee ?? 0, caption: "Fee Monetapay" }}
+        />
+        <StatCard
+          data={{ id: "tax", label: "Total Pajak", value: data?.total_tax ?? 0, caption: "PPN atas biaya admin seluruh transaksi" }}
         />
         <StatCard
           data={{ id: "settled", label: "Disetorkan ke Merchant", value: data?.total_settled_to_merchants ?? 0, caption: "Penjualan bersih merchant" }}
