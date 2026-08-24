@@ -267,7 +267,7 @@ replacement for `$file->store($dir, 'public')`. It returns the same relative pat
 - Behaviour is pinned in `tests/Unit/ImageOptimizerTest.php`; the endpoint wiring in
   `tests/Feature/ImageUploadWebpTest.php`.
 
-The browsers help but do not guarantee: `web-admin-topup-fe` and `web-topup-fe` re-encode to WebP client-side
+The browsers help but do not guarantee: `uxiotopup-admin` and `uxiotopup-fe` re-encode to WebP client-side
 before uploading (same rules, same skips) so a phone photo does not have to travel as several MB. Anything
 they skip is still handled here.
 
@@ -286,7 +286,19 @@ users (nullable) ──── transactions ──── payments ──── pa
 - `transactions.user_id` is nullable — guest checkouts are supported.
 - `transactions.guest_contact` stores the WhatsApp/phone number for guests.
 - `products` has five price columns: `price_modal` (cost), `price_member`, `price_vip`, `price_reseller`, `price_agent`.
-- `payment_channels` has `fee_flat` and `fee_percent` columns in the schema but `CheckoutAction` currently hardcodes `$adminFee = 0`. Extend there when fee logic is needed.
+- `payment_channels` carries three independent rates, all applied by `CheckoutAction` and all
+  **frozen onto the transaction and payment rows at checkout** so a later rate change never
+  rewrites a booked order:
+  - `fee_flat` + `fee_percent` → the channel fee. This **is** the "Biaya Admin" the customer
+    is charged (`amount_fee`/`channel_fee`); there is no second global markup. `admin_markup`
+    is always written as `0` and is kept only so historical rows stay reconstructable.
+  - `gateway_fee_flat` + `gateway_fee_percent` → Monetapay's own cut of the gross, recorded on
+    `payments.gateway_fee` rather than read back from the callback. Settlement
+    (`SettleMerchantTransactionAction`) reads it straight off the payment row.
+  - `tax_percent` → PPN levied **on the channel fee only**. It is kita's expense, so it reduces
+    platform profit at settlement and is deliberately **not** added to what the customer pays
+    (`amount_total` is unchanged by it).
+  So: customer pays `selling_price + channel_fee`; kita keeps `channel_fee - gateway_fee - tax_amount`.
 - `supplier_products.is_active` is the gate — only the first active record is used per product.
 
 ---
@@ -301,7 +313,7 @@ Three tiers, all under `/api/v1`:
 
 ### Storefront API (public)
 
-Consumed by the React client in `web-topup-fe`. Handlers resolve the caller with `$request->user('sanctum')` so a signed-in member gets their tier price, while guests still work.
+Consumed by the React client in `uxiotopup-fe`. Handlers resolve the caller with `$request->user('sanctum')` so a signed-in member gets their tier price, while guests still work.
 
 | Endpoint | Notes |
 |---|---|
