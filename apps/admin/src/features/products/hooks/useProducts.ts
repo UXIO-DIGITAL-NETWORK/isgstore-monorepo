@@ -72,19 +72,22 @@ export const useUpdateProduct = () => {
   });
 };
 
-/** One mutation for both deactivate paths — the row menu passes `[id]`, the
- * bulk menu passes the selection. Backed by the real bulk endpoint. */
-export const useDeactivateProducts = () => {
+/** One mutation for every lifecycle path — the row menu passes `[id]` with the
+ * direction its label promised, the bulk menu passes the selection. Backed by
+ * the real bulk endpoint. */
+export const useSetProductStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ids: string[]) => productsService.bulkDeactivate(ids),
-    onSuccess: (_result, ids) => {
+    mutationFn: ({ ids, active }: { ids: string[]; active: boolean }) => productsService.bulkSetStatus(ids, active),
+    onSuccess: (_result, { ids, active }) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success(ids.length === 1 ? "Product deactivated" : `${ids.length} products deactivated`);
+      const verb = active ? "activated" : "deactivated";
+      toast.success(ids.length === 1 ? `Product ${verb}` : `${ids.length} products ${verb}`);
     },
-    onError: (_error, ids) => {
-      toast.error(ids.length === 1 ? "Failed to deactivate product" : "Failed to deactivate products");
+    onError: (_error, { ids, active }) => {
+      const verb = active ? "activate" : "deactivate";
+      toast.error(ids.length === 1 ? `Failed to ${verb} product` : `Failed to ${verb} products`);
     },
   });
 };

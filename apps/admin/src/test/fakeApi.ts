@@ -148,6 +148,8 @@ const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
     price_agent: variant?.prices.agent ?? 0,
     status: row.status === "active",
     is_available: row.is_available,
+    is_price_locked: row.is_price_locked ?? false,
+    is_price_hidden: row.is_price_hidden ?? false,
     category: { id: categoryId, name: row.game_name },
     sub_category: { id: 1, name: row.category_name },
     created_at: row.created_at,

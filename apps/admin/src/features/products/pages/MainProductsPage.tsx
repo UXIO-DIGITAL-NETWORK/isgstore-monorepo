@@ -10,11 +10,11 @@ import { mainProductColumns } from "../components/mainProductColumns";
 import { MainProductFormDialog } from "../components/MainProductFormDialog";
 import { MainProductToolbar } from "../components/MainProductToolbar";
 import {
-  useDeactivateProducts,
   useDeleteProducts,
   useUxiotopupUpdateProducts,
   useLockProducts,
   useProductList,
+  useSetProductStatus,
   useShowProducts,
 } from "../hooks/useProducts";
 
@@ -50,7 +50,7 @@ export default function MainProductsPage() {
   );
   const { data, isLoading, isError, refetch } = useProductList(params);
   const deleteProducts = useDeleteProducts();
-  const deactivateProducts = useDeactivateProducts();
+  const setProductStatus = useSetProductStatus();
   const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
   const uxiotopupUpdate = useUxiotopupUpdateProducts();
@@ -143,7 +143,11 @@ export default function MainProductsPage() {
 
       {/* Deactivating is reversible, so the copy says what changes rather than
           warning it cannot be undone — but it is still a status override, so it
-          goes through the same confirmation (`.claude/rules/rbac-security.md`). */}
+          goes through the same confirmation (`.claude/rules/rbac-security.md`).
+
+          Deactivate-only on purpose, unlike the row menu's toggle: a selection
+          can hold both active and inactive rows, so there is no single status
+          to invert. */}
       <DeleteConfirmDialog
         open={bulkDeactivateOpen}
         onOpenChange={setBulkDeactivateOpen}
@@ -155,7 +159,7 @@ export default function MainProductsPage() {
             ? "This product will be marked inactive and hidden from the storefront. You can activate it again at any time."
             : `These ${selectedIds.length} products will be marked inactive and hidden from the storefront. You can activate them again at any time.`
         }
-        onConfirm={() => deactivateProducts.mutate(selectedIds)}
+        onConfirm={() => setProductStatus.mutate({ ids: selectedIds, active: false })}
       />
 
       <DeleteConfirmDialog

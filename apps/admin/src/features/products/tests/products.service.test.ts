@@ -111,19 +111,6 @@ describe("productsService.update", () => {
   });
 });
 
-describe("productsService.deactivate", () => {
-  it("changes lifecycle status only, leaving storefront visibility alone", async () => {
-    vi.mocked(api.get).mockResolvedValue(envelope(apiRow({ is_available: true })));
-    vi.mocked(api.post).mockResolvedValue(envelope(apiRow({ status: false, is_available: true })));
-
-    await productsService.deactivate("21");
-
-    const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
-    expect(form.get("status")).toBe("0");
-    expect(form.get("is_available")).toBe("1");
-  });
-});
-
 describe("productsService.remove", () => {
   it("deletes by id", async () => {
     vi.mocked(api.delete).mockResolvedValue(envelope(null));

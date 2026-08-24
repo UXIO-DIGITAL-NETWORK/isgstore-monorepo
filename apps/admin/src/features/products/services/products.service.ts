@@ -181,12 +181,6 @@ export const productsService = {
     return toProduct(response.data);
   },
 
-  /** The selection bar's "Deactive" — lifecycle only, so `is_available` is
-   * left untouched and reactivating restores the previous visibility. */
-  deactivate: async (id: string): Promise<void> => {
-    await productsService.update(id, { status: "inactive" });
-  },
-
   remove: async (id: string): Promise<void> => {
     await api.delete(`${BASE}/${id}`);
   },
@@ -205,8 +199,8 @@ export const productsService = {
     await api.post(`${BASE}/bulk/show-price`, { ids: ids.map(toFk), hidden });
   },
 
-  bulkDeactivate: async (ids: string[]): Promise<void> => {
-    await api.post(`${BASE}/bulk/deactivate`, { ids: ids.map(toFk) });
+  bulkSetStatus: async (ids: string[], active: boolean): Promise<void> => {
+    await api.post(`${BASE}/bulk/status`, { ids: ids.map(toFk), active });
   },
 
   bulkUxiotopupUpdate: async (ids: string[]): Promise<void> => {

@@ -44,7 +44,7 @@ describe("Main Products bulk actions", () => {
   });
 
   it("deactivates nothing until the confirmation is accepted", async () => {
-    const spy = vi.spyOn(productsService, "bulkDeactivate").mockResolvedValue(undefined);
+    const spy = vi.spyOn(productsService, "bulkSetStatus").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
@@ -57,8 +57,10 @@ describe("Main Products bulk actions", () => {
     expect(spy).not.toHaveBeenCalled();
 
     await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
-    expect(spy).toHaveBeenCalledWith(expect.arrayContaining([expect.any(String)]));
+    expect(spy).toHaveBeenCalledWith(expect.arrayContaining([expect.any(String)]), false);
     expect(spy.mock.calls[0][0]).toHaveLength(2);
+    // Bulk stays one-directional: a mixed selection has no status to invert.
+    expect(spy.mock.calls[0][1]).toBe(false);
   });
 
   it("confirms and fires a bulk Uxiotopup update", async () => {
@@ -75,7 +77,7 @@ describe("Main Products bulk actions", () => {
   });
 
   it("cancelling the confirmation deactivates nothing", async () => {
-    const spy = vi.spyOn(productsService, "bulkDeactivate").mockResolvedValue(undefined);
+    const spy = vi.spyOn(productsService, "bulkSetStatus").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
@@ -88,7 +90,7 @@ describe("Main Products bulk actions", () => {
   });
 
   it("marks a single-row deactivation in the singular", async () => {
-    vi.spyOn(productsService, "bulkDeactivate").mockResolvedValue(undefined);
+    vi.spyOn(productsService, "bulkSetStatus").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 

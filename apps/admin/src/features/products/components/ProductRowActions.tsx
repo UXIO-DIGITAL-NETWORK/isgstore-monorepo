@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Eye, Lock, MoreHorizontal, Pencil, Power, RefreshCcw, SlidersHorizontal, Trash2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  MoreHorizontal,
+  Pencil,
+  Power,
+  PowerOff,
+  RefreshCcw,
+  SlidersHorizontal,
+  Trash2,
+  Unlock,
+} from "lucide-react";
 
 import { Can } from "@/components/common/Can";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
@@ -13,10 +25,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  useDeactivateProducts,
   useDeleteProducts,
   useUxiotopupUpdateProducts,
   useLockProducts,
+  useSetProductStatus,
   useShowProducts,
 } from "../hooks/useProducts";
 import type { Product } from "../types/product.type";
@@ -29,22 +41,34 @@ interface ProductRowActionsProps {
 /**
  * Row menu for the Main Products list, in the reference's order. Each action is
  * wired: Uxiotopup Update / Show Price / Lock Price go through a confirm dialog,
- * Set Price Limit opens its page, and Deactive / Edit / Delete are unchanged.
+ * Set Price Limit opens its page, and the lifecycle toggle / Edit / Delete are
+ * unchanged.
  * The single-row paths reuse the bulk hooks with a one-id selection.
+ *
+ * The three reversible items — lifecycle, price lock, price visibility — each
+ * read the row's own state and offer the direction that would change something.
+ * An inactive row is offered "Activate", never a "Deactive" that would be a
+ * no-op against the Inactive badge one column to its left; a locked row is
+ * offered "Unlock Price", matching how the Provider list's menu already works.
  */
 export function ProductRowActions({ product }: ProductRowActionsProps) {
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [lockOpen, setLockOpen] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
   const [uxiotopupOpen, setUxiotopupOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteProducts = useDeleteProducts();
-  const deactivateProducts = useDeactivateProducts();
+  const setProductStatus = useSetProductStatus();
   const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
   const uxiotopupUpdate = useUxiotopupUpdateProducts();
+
+  // Each toggle names what the click would do, not what the row currently is.
+  const nextActive = product.status !== "active";
+  const nextLocked = !product.is_price_locked;
+  const nextHidden = !product.is_price_hidden;
 
   return (
     <>
@@ -68,12 +92,12 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
               Uxiotopup Update
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setShowOpen(true)}>
-              <Eye />
-              Show Price
+              {nextHidden ? <EyeOff /> : <Eye />}
+              {nextHidden ? "Hide Price" : "Show Price"}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setLockOpen(true)}>
-              <Lock />
-              Lock Price
+              {nextLocked ? <Lock /> : <Unlock />}
+              {nextLocked ? "Lock Price" : "Unlock Price"}
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() =>
@@ -83,9 +107,9 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
               <SlidersHorizontal />
               Set Price Limit
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setDeactivateOpen(true)}>
-              <Power />
-              Deactive
+            <DropdownMenuItem onSelect={() => setStatusOpen(true)}>
+              {nextActive ? <Power /> : <PowerOff />}
+              {nextActive ? "Activate" : "Deactive"}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               <Pencil />
@@ -118,21 +142,29 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
       <DeleteConfirmDialog
         open={showOpen}
         onOpenChange={setShowOpen}
-        icon={<Eye />}
-        confirmLabel="Show"
-        title="Show price for this product?"
-        description="The price will be visible on the storefront."
-        onConfirm={() => showProducts.mutate({ ids: [product.id], hidden: false })}
+        icon={nextHidden ? <EyeOff /> : <Eye />}
+        confirmLabel={nextHidden ? "Hide" : "Show"}
+        title={nextHidden ? "Hide price for this product?" : "Show price for this product?"}
+        description={
+          nextHidden
+            ? "The price will be hidden on the storefront. The product itself stays listed."
+            : "The price will be visible on the storefront."
+        }
+        onConfirm={() => showProducts.mutate({ ids: [product.id], hidden: nextHidden })}
       />
 
       <DeleteConfirmDialog
         open={lockOpen}
         onOpenChange={setLockOpen}
-        icon={<Lock />}
-        confirmLabel="Lock"
-        title="Lock this price?"
-        description="The supplier sync will stop overwriting this product's price until it is unlocked."
-        onConfirm={() => lockProducts.mutate({ ids: [product.id], locked: true })}
+        icon={nextLocked ? <Lock /> : <Unlock />}
+        confirmLabel={nextLocked ? "Lock" : "Unlock"}
+        title={nextLocked ? "Lock this price?" : "Unlock this price?"}
+        description={
+          nextLocked
+            ? "The supplier sync will stop overwriting this product's price until it is unlocked."
+            : "The supplier sync will resume overwriting this product's price from its cost."
+        }
+        onConfirm={() => lockProducts.mutate({ ids: [product.id], locked: nextLocked })}
       />
 
       {/* Same shared dialog and same mutation as the toolbar's bulk delete —
@@ -148,13 +180,17 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
       />
 
       <DeleteConfirmDialog
-        open={deactivateOpen}
-        onOpenChange={setDeactivateOpen}
-        icon={<Power />}
-        confirmLabel="Deactivate"
-        title="Deactivate this product?"
-        description="This product will be marked inactive and hidden from the storefront. You can activate it again at any time."
-        onConfirm={() => deactivateProducts.mutate([product.id])}
+        open={statusOpen}
+        onOpenChange={setStatusOpen}
+        icon={nextActive ? <Power /> : <PowerOff />}
+        confirmLabel={nextActive ? "Activate" : "Deactivate"}
+        title={nextActive ? "Activate this product?" : "Deactivate this product?"}
+        description={
+          nextActive
+            ? "This product will be marked active and sellable on the storefront again. Its price visibility is left as it was."
+            : "This product will be marked inactive and hidden from the storefront. You can activate it again at any time."
+        }
+        onConfirm={() => setProductStatus.mutate({ ids: [product.id], active: nextActive })}
       />
 
       <MainProductFormDialog
