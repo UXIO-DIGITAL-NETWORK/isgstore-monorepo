@@ -24,6 +24,7 @@ import { NicknameCheckField } from "./NicknameCheckField";
 import { META_ROBOTS_OPTIONS, REGION_OPTIONS } from "../data/select-options.data";
 import { useCategory, useCreateCategory, useUpdateCategory } from "../hooks/useCategories";
 import { useCategoryTypeOptions } from "../hooks/useCategoryTypeOptions";
+import { slugify } from "../lib/slugify";
 import {
   categoryFormSchema,
   META_DESCRIPTION_MAX,
@@ -48,14 +49,6 @@ const DETAIL_FIELDS = [
   "accountNicknameValidation",
   "orderFormFields",
 ] as const;
-
-function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 /**
  * Add / Edit Category (product_requirements.md §4.5), as a modal. Split into two

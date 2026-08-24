@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { InlineCategoryCreate } from "./InlineCategoryCreate";
 import { useSupplierOptions } from "../hooks/useSupplierOptions";
 import { useProviderCategoryOptions } from "../hooks/useProviderCategoryOptions";
 import { useCategoryList } from "../hooks/useCategories";
@@ -32,16 +33,21 @@ import {
   useUpdateCategoryProvider,
 } from "../hooks/useCategoryProviders";
 import { categoryProviderFormSchema, type CategoryProviderFormValues } from "../schemas/categoryProviderForm.schema";
+import type { Category } from "../types/category.type";
 
 const CATEGORY_OPTIONS_PAGE_SIZE = 100;
 const EMPTY_VALUES: CategoryProviderFormValues = { supplierId: "", categoryId: "", providerCategory: "" };
 
 /**
- * The only supplier with a live catalogue integration. Matched on the name
+ * Suppliers with a live catalogue integration, lower-cased. Matched on the name
  * because that is how the whole provider pipeline resolves it server-side
- * (`Supplier::where('name', 'Uxiotopup')`).
+ * (`Supplier::where('name', 'Uxiotopup')`), and `suppliers` carries no
+ * "integrated" flag to key on — `is_system` marks the internal supplier, not this.
+ *
+ * The Provider select offers only these. A second integrated supplier is a
+ * one-line addition here, not a rework.
  */
-const INTEGRATED_PROVIDER = "uxiotopup";
+const INTEGRATED_PROVIDERS = ["uxiotopup"];
 
 interface CategoryProviderFormDialogProps {
   open: boolean;
@@ -79,6 +85,8 @@ export function CategoryProviderFormDialog({
 }: CategoryProviderFormDialogProps) {
   const isEdit = Boolean(categoryProviderId);
 
+  const [creatingCategory, setCreatingCategory] = useState(false);
+
   const { data: categories } = useCategoryList({ per_page: CATEGORY_OPTIONS_PAGE_SIZE });
   const { data: existing } = useCategoryProvider(open ? categoryProviderId : undefined);
 
@@ -91,6 +99,7 @@ export function CategoryProviderFormDialog({
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CategoryProviderFormValues>({
     resolver: zodResolver(categoryProviderFormSchema),
@@ -107,9 +116,40 @@ export function CategoryProviderFormDialog({
   });
 
   const selectedSupplierId = watch("supplierId");
+
+  // Only suppliers with a catalogue are offerable. The others could be selected
+  // before, but the field below would then refuse to load anything for them —
+  // a choice whose only outcome was a dead end.
+  const providerOptions = useMemo(() => {
+    const offerable = supplierOptions
+      .filter((option) => INTEGRATED_PROVIDERS.includes(option.label.toLowerCase()))
+      .map((option) => ({ ...option, disabled: false }));
+
+    // An existing row may point at a supplier that is no longer offerable. Keep it
+    // in the list, disabled, so editing that row shows what it actually maps to
+    // instead of rendering an empty select that reads as lost data.
+    const stored = supplierOptions.find((option) => option.value === existing?.supplier_id);
+    if (stored && !offerable.some((option) => option.value === stored.value)) {
+      return [...offerable, { ...stored, disabled: true }];
+    }
+
+    return offerable;
+  }, [supplierOptions, existing?.supplier_id]);
+
+  // With one offerable provider, making the admin open the select to pick it is a
+  // click that carries no decision. Add mode only — on edit the stored value wins.
+  useEffect(() => {
+    if (!open || isEdit || selectedSupplierId) return;
+
+    const [only] = providerOptions.filter((option) => !option.disabled);
+    if (only && providerOptions.filter((option) => !option.disabled).length === 1) {
+      setValue("supplierId", only.value);
+    }
+  }, [open, isEdit, selectedSupplierId, providerOptions, setValue]);
+
   const selectedProviderName =
     supplierOptions.find((option) => option.value === selectedSupplierId)?.label ?? "";
-  const isIntegratedProvider = selectedProviderName.toLowerCase() === INTEGRATED_PROVIDER;
+  const isIntegratedProvider = INTEGRATED_PROVIDERS.includes(selectedProviderName.toLowerCase());
 
   // Only fetch once a provider that actually has a catalogue is chosen — the
   // endpoint is uxiotopup's, and its "already mapped" answers are computed
@@ -197,12 +237,22 @@ export function CategoryProviderFormDialog({
                     <SelectValue placeholder="Select a provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    {supplierOptions.map((option) => (
+                    {providerOptions.map((option) => (
                       <SelectItem
                         key={option.value}
                         value={option.value}
+                        disabled={option.disabled}
                       >
                         {option.label}
+                        {option.disabled && (
+                          <Text
+                            as="span"
+                            variant="small"
+                            className="text-muted-foreground"
+                          >
+                            no catalogue integration
+                          </Text>
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -217,7 +267,22 @@ export function CategoryProviderFormDialog({
             name="categoryId"
             render={({ field }) => (
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="category-provider-category">Category</Label>
+                {/* The button sits beside the Label, never inside it — putting it
+                    within would change the select's accessible name. */}
+                <Box className="flex items-center justify-between gap-2">
+                  <Label htmlFor="category-provider-category">Category</Label>
+                  {!creatingCategory && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 rounded-lg"
+                      onClick={() => setCreatingCategory(true)}
+                    >
+                      + New category
+                    </Button>
+                  )}
+                </Box>
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
@@ -239,6 +304,19 @@ export function CategoryProviderFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
+
+                {creatingCategory && (
+                  <InlineCategoryCreate
+                    onCreated={(category: Category) => {
+                      // Select it straight away: the admin opened this panel because
+                      // this is the category they were about to map.
+                      field.onChange(category.id);
+                      setCreatingCategory(false);
+                    }}
+                    onCancel={() => setCreatingCategory(false)}
+                  />
+                )}
+
                 <FieldError message={errors.categoryId?.message} />
               </Box>
             )}

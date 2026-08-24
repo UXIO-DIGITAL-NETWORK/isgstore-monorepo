@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { categoriesService } from "../services/categories.service";
+import { categoriesService, type CategoryQuickCreateInput } from "../services/categories.service";
 import type { Category, CategoryListParams } from "../types/category.type";
 
 export const useCategoryList = (params: CategoryListParams) =>
@@ -17,6 +17,26 @@ export const useCategory = (id?: string) =>
     // route, and an unguarded query would request `/categories/` and throw.
     enabled: Boolean(id),
   });
+
+/**
+ * Quick-create used by the Category Provider dialog, so a missing category does
+ * not send an admin off to another tab mid-mapping. Same invalidation as the full
+ * create, so every open category list — including the select that triggered it —
+ * repopulates.
+ */
+export const useQuickCreateCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CategoryQuickCreateInput) => categoriesService.quickCreate(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Category created");
+    },
+    // No onError toast: the dialog renders the failure inline, next to the fields
+    // that caused it — a duplicate code has to be fixable where it was typed.
+  });
+};
 
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();

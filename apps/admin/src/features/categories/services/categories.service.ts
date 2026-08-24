@@ -88,6 +88,14 @@ export type CategoryInput = Omit<Category, "id" | "created_at" | "updated_at"> &
   banner?: File | null;
 };
 
+/** The minimum `POST /v1/categories` accepts: type, name, code (+ optional slug). */
+export interface CategoryQuickCreateInput {
+  type_id: string;
+  name: string;
+  code: string;
+  slug?: string;
+}
+
 const appendIf = (form: FormData, key: string, value: string | undefined | null) => {
   if (value !== undefined && value !== null) form.append(key, value);
 };
@@ -143,6 +151,31 @@ export const categoriesService = {
 
   getById: async (id: string): Promise<Category> => {
     const response: ApiResponse<CategoryApiRow> = await api.get(`${BASE}/${id}`);
+    return toCategory(response.data);
+  },
+
+  /**
+   * Create a category from the minimum the API actually requires.
+   *
+   * `CategoryInput` is `Omit<Category, ...>`, so it demands `type`, `uid_parser`,
+   * `order_form_fields` and the rest — fields the quick-create form does not model,
+   * which is why the full dialog resorts to an `as never` cast. Narrowing the input
+   * here means the second caller does not repeat that cast, and `toFormData` only
+   * appends what is present, so nothing empty is sent.
+   */
+  quickCreate: async (input: CategoryQuickCreateInput): Promise<Category> => {
+    const response: ApiResponse<CategoryApiRow> = await api.post(
+      BASE,
+      toFormData({
+        type_id: input.type_id,
+        name: input.name,
+        code: input.code,
+        slug: input.slug,
+        // `status` is `required|boolean` server-side; a quick-created category is
+        // meant to be mapped straight away, so it starts active.
+        status: "active",
+      }),
+    );
     return toCategory(response.data);
   },
 

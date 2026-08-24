@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { waitForElementToBeRemoved } from "@testing-library/react";
+import { waitFor, waitForElementToBeRemoved } from "@testing-library/react";
 
 import { renderRoute, screen, within } from "@/test/test-utils";
+import { categoriesService } from "../services/categories.service";
 import { categoryProvidersService } from "../services/categoryProviders.service";
 
 const LIST_PATH = "/admin/categories-preview/category-provider";
@@ -45,8 +46,12 @@ describe("AddCategoryProviderDialog", () => {
     expect(within(dialog).getByLabelText("Category")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Provider Category")).toBeInTheDocument();
 
-    for (const hint of ["Select a provider", "Select a category", "Select a provider first"]) {
-      expect(within(dialog).getByText(hint)).toBeInTheDocument();
+    // Provider is preselected — with one integrated supplier there is no choice to
+    // make, so its placeholder never appears. Asserted on the trigger itself:
+    // Radix also renders a hidden native select carrying the same text.
+    await waitFor(() => expect(within(dialog).getByLabelText("Provider")).toHaveTextContent("Uxiotopup"));
+    for (const hint of ["Select a category", "Select a provider category"]) {
+      expect(await within(dialog).findByText(hint)).toBeInTheDocument();
     }
   });
 
@@ -57,7 +62,8 @@ describe("AddCategoryProviderDialog", () => {
 
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await within(dialog).findByText("Provider is required")).toBeInTheDocument();
+    // Provider is preselected, so Category is now the first thing left unchosen.
+    expect(await within(dialog).findByText("Category is required")).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
@@ -116,17 +122,61 @@ describe("AddCategoryProviderDialog", () => {
     expect(mapped).toHaveAttribute("aria-disabled", "true");
   });
 
-  it("cannot map a provider that has no catalogue integration", async () => {
+  it("only offers providers that have a catalogue integration", async () => {
     const user = userEvent.setup();
     const dialog = await openAdd(user);
 
     await user.click(within(dialog).getByLabelText("Provider"));
-    await user.click(await screen.findByRole("option", { name: "Zelpoint" }));
 
-    expect(within(dialog).getByLabelText("Provider Category")).toBeDisabled();
-    expect(
-      within(dialog).getByText(/Only Uxiotopup exposes a catalogue today/i),
-    ).toBeInTheDocument();
+    // Zelpoint and Topupkuy have no catalogue, so mapping one could only ever dead-end.
+    expect(await screen.findByRole("option", { name: "Uxiotopup" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Zelpoint" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Topupkuy" })).not.toBeInTheDocument();
+  });
+
+  it("creates a category from inside the dialog and selects it", async () => {
+    const quickCreateSpy = vi.spyOn(categoriesService, "quickCreate");
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+
+    await user.click(within(dialog).getByRole("button", { name: "+ New category" }));
+
+    await user.click(within(dialog).getByLabelText("Category Type"));
+    await user.click(await screen.findByRole("option", { name: "Mobile Game" }));
+    await user.type(within(dialog).getByLabelText("Category Name"), "Blood Strike");
+    await user.type(within(dialog).getByLabelText("Category Code"), "blood-strike");
+    await user.click(within(dialog).getByRole("button", { name: "Create category" }));
+
+    // Only the four fields the API requires — slug derived, nothing else invented.
+    expect(quickCreateSpy).toHaveBeenCalledWith({
+      type_id: expect.stringMatching(/^\d+$/),
+      name: "Blood Strike",
+      code: "blood-strike",
+      slug: "blood-strike",
+    });
+
+    // The new category is chosen for you: it is the one you opened the panel for.
+    expect(await within(dialog).findByText("Blood Strike")).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("Category Name")).not.toBeInTheDocument();
+  });
+
+  it("an untouched new-category panel never blocks saving the mapping", async () => {
+    const createSpy = vi.spyOn(categoryProvidersService, "create");
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+
+    await user.click(within(dialog).getByLabelText("Category"));
+    await user.click(await screen.findByRole("option", { name: "Genshin Impact" }));
+
+    await user.click(within(dialog).getByLabelText("Provider Category"));
+    await user.click(await screen.findByRole("option", { name: /Valorant/ }));
+
+    // Opened, left entirely blank — this panel is optional, and its emptiness must
+    // not leak into the dialog's own validation.
+    await user.click(within(dialog).getByRole("button", { name: "+ New category" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    expect(createSpy).toHaveBeenCalledTimes(1);
   });
 
   it("Cancel closes the modal without saving", async () => {
