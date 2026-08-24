@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    name: Build & deploy to production VPS
+    name: Test, build & deploy to production VPS
     runs-on: ubuntu-latest
 
     steps:
@@ -19,6 +19,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Gate the deploy on the suite. ci.yml already runs this on pull requests,
+      # but a push straight to main (or a merge that raced another) never passes
+      # through it — without this step those reach the VPS untested. A failing
+      # step aborts the job, so the rsync below never runs.
+      - name: Test
+        run: npm run test
 
       - name: Build
         run: npm run build
@@ -39,6 +46,41 @@ jobs:
           remote_port: ${{ secrets.SSH_PORT }}
           remote_user: ${{ secrets.SSH_USERNAME }}
           remote_key: ${{ secrets.SSH_KEY }}
+
+      # Both notifications are best-effort: `continue-on-error` plus the trailing
+      # `|| true` keep a Discord outage from turning a good deploy red, and an
+      # unset webhook URL simply no-ops (dev forks have no secret).
+      - name: Notify Discord — deploy succeeded
+        if: success()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_REF: ${{ github.ref_name }}
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"✅ Admin Dashboard Deploy Succeeded\",\"description\":\"**${GH_SHA:0:7}** on **${GH_REF}** deployed by **${GH_ACTOR}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":5763719,\"footer\":{\"text\":\"Uxio System Auto-Log\"}}]}" || true
+
+      - name: Notify Discord — deploy failed
+        if: failure()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_REF: ${{ github.ref_name }}
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"❌ Admin Dashboard Deploy Failed\",\"description\":\"**${GH_ACTOR}** — deploy of **${GH_SHA:0:7}** on **${GH_REF}** failed!\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":15548997,\"footer\":{\"text\":\"Uxio System Auto-Log\"}}]}" || true
 
 # nginx config reference (apply once on the VPS — not managed by this workflow):
 #
