@@ -1,35 +1,45 @@
 # CLAUDE.md — Uxio Payment Page
 
-Master brief for Claude Code in this repo. It points at the deeper specs; it does **not** duplicate them.
+Master brief for Claude Code in this repo. This file is the spec — the `.agents/`/`.claude/` layer it was
+written against was never carried over (see "Authoritative documents").
 
 ## What this is
 
 The **payment page** SPA for Uxio — a merchant-settlement dashboard on top of the
 existing top-up platform, modelled on FastQR/Monetapay. It serves **two roles from one
-app**, chosen by the signed-in user's role name:
+app**, chosen by the signed-in user's role name (the values are the API's
+`App\Enums\RoleType` cases, lower-cased):
 
-- **`finance`** = "kita" (platform operator): every merchant, all transactions, the
+- **`payment-internal`** = "kita" (platform operator): every merchant, all transactions, the
   platform's own profit balance, and withdrawal approval.
-- **`finance-developer`** = "client" (merchant): its own balance, transactions, mutasi
+- **`payment-admin`** = "client" (merchant): its own balance, transactions, mutasi
   (ledger), and withdrawal requests.
 
-It was scaffolded from `web-admin-topup-fe` and deliberately mirrors its structure,
-config, and conventions. It talks to the **same** Laravel API (`web-topup-api`) under the
-`/v1/merchant/*` and `/v1/finance/*` route groups; deploy behind a subdomain.
+It was scaffolded from the admin dashboard repo (`uxiotopup-admin`, formerly
+`web-admin-topup-fe`) and deliberately mirrors its structure, config, and conventions.
+It talks to the **same** Laravel API as the storefront and admin (`uxiotopup-api`), under
+the `/v1/payment-admin/*` (merchant) and `/v1/payment-internal/*` (kita) route groups;
+deploy behind a subdomain.
 
 **Monochrome** (shadcn `neutral`), **Inter**, **light + dark (dark default)**. Stack:
 **React 19 + Vite + TypeScript (strict) + Tailwind v4 + shadcn/ui (`new-york`) + TanStack
 Router/Query/Table + Zustand + React Hook Form + Zod + Axios + sonner + next-themes**.
 Testing: **Vitest + React Testing Library**.
 
-## Authoritative documents (read before any task)
+## Authoritative documents
 
-Precedence when they conflict:
+**This repo has no `.agents/` or `.claude/` directory.** Earlier revisions of this file
+listed `.agents/context/{system_architecture,product_requirements,design_system}.md` as
+higher precedence than itself — those files were never carried over when this repo was
+scaffolded from `uxiotopup-admin`. Do not go looking for them, and do not treat a
+reference to them elsewhere as a pointer to something on disk here.
 
-1. `.agents/context/system_architecture.md` — **how** we build (highest precedence)
-2. `.agents/context/product_requirements.md` — **what** we build (scope/content)
-3. `.agents/context/design_system.md` — the **look** (tokens, components)
-4. this `CLAUDE.md` — operating rules that tie it together
+So, in order:
+
+1. **The code** — it is live and integrated; when this file and the code disagree, the code wins and this file gets fixed.
+2. **this `CLAUDE.md`** — the operating rules for this repo.
+3. `uxiotopup-api`'s `CLAUDE.md` — the contract behind every `/v1/payment-admin/*` and `/v1/payment-internal/*` call, including the fee/tax and withdrawal rules this UI only renders.
+4. The admin repo's `.agents/context/*` — useful for the **shared** conventions the two repos genuinely have in common (design tokens, feature isolation), but it describes the admin's scope, not this one.
 
 ## Project reality (important)
 
@@ -38,64 +48,76 @@ Precedence when they conflict:
   `unwrapList` to normalise the two pagination shapes (Resource collection vs raw
   paginator).
 - **Two roles, role-name based.** Permissions come from the role NAME, not `role_id`
-  (`@/constants/roles`): `finance` → `["finance"]`, `finance-developer` → `["merchant"]`.
-  Routes guard with `requireFinance` / `requireMerchant` in `beforeLoad`; the sidebar
-  (`features/dashboard/components/DashboardSidebar.tsx`) switches nav on the role.
+  (`@/constants/roles`): `payment-internal` → `["payment-internal"]`, `payment-admin` →
+  `["payment-admin"]`. Routes guard with `requirePaymentInternal` / `requirePaymentAdmin`
+  (thin wrappers over `requirePermission`, in `@/middlewares/authMiddleware`) inside
+  `beforeLoad`; the sidebar (`features/dashboard/components/DashboardSidebar.tsx`) switches
+  nav on `user?.role === ROLES.INTERNAL`.
 - **Feature slices**: `merchant` (client view) and `finance` (kita view); `dashboard`
   holds the shared shell (layout, sidebar, navbar); `auth` is login. Shared table/badge/
   pager primitives live in `components/common`.
-- **UI-first anywhere the API is missing** — build typed screens behind the service
-  interface; a swap is one file per service.
+- **Where an endpoint is genuinely missing**, keep the screen behind the same typed service
+  interface and say so in the service — do not scatter placeholder data through components.
 - **Style by token _name_** (monochrome; color only via `text-success`/`text-destructive`);
   numbers use `tabular-nums`; money via `@/utils/currency`.
-- **Prefer TDD** for new features: test cases → failing tests → green. Colocated
-  `*.test.tsx`, Vitest + React Testing Library.
-- The `.agents/` / `.claude/` specs and some sections below are inherited from the admin
-  repo and may still reference admin-only scope — treat this file's top sections as
-  authoritative for the payment page.
+- **Prefer TDD** for new features: test cases → failing tests → green. Vitest + React
+  Testing Library; feature tests live in `features/<f>/tests/`.
+- **Some wording here is inherited from the admin repo.** This file was copied along with
+  the scaffold; anything that still reads as admin-only scope is drift, not instruction.
+  The `README.md` is still the admin's verbatim — it has not been rewritten for this app.
 
-## Workflow (non-negotiable)
+## Workflow
 
-**Plan -> Approve -> Build.**
+**Plan -> Approve -> Build.** The `/plan-feature` and `/build-feature` slash commands this
+section used to invoke live in the admin repo's `.claude/commands/` and **do not exist here**
+— the workflow is the same, just run by hand:
 
-1. `/plan-feature` — @pm reads the context docs, writes **`PLAN.md`** (whole-scope), lists open decisions with recommended defaults, then **STOPS for your approval**. No implementation code in this stage.
-2. `/build-feature <feature>` — @frontend + @api build **one** feature/screen **test-first** (write the test cases, write the failing tests, then implement until green — `system_architecture.md §4.11`), QA it, commit — then **STOP for approval** before the next. Planning is whole-scope; execution is per-feature.
-3. Never invent business rules. Finance settlement/fees are deliberately **TBD** — surface them, don't guess. When unsure about design/architecture, present 2 options with a recommended default.
+1. **Plan the whole scope first.** Write the plan out, list the open decisions with a recommended default for each, and stop for approval before writing implementation code.
+2. **Build one feature at a time, test-first:** test cases → failing tests → implement until green. Then stop for approval before starting the next one. Planning is whole-scope; execution is per-feature.
+3. **Never invent business rules.** Fees, tax and settlement are decided by the API (`CheckoutAction`, `SettleMerchantTransactionAction`) and this UI only renders them — if a number here disagrees with the server's, the server is right. When unsure about design/architecture, present 2 options with a recommended default.
 
 ## Where things live
 
-- `.agents/` — portable, agent-agnostic spec: `context/` (the 3 docs), `roles/` (pm, frontend, api_integrator, qa), `rules/`, `workflows/`, `skills/`, `agents.md` (roster/index).
-- `.claude/` — Claude Code native layer: `agents/` (subagents), `agent-memory/` (per-agent MEMORY.md — read before, update after), `commands/`, `rules/` (always-on enforcement mirrors), `skills/` (incl. vendored **impeccable**), `output-styles/custom-components.md`, `hooks/format.sh`, `settings.json`.
-- `src/` (per `system_architecture.md §3`): `features/*` (the app — isolated slices), `components/{ui,common,layouts}`, `routes/` (registry-only), `middlewares/authMiddleware.ts`, `store/`, `lib/{axios,react-query,utils}`, `types/{api.type,models}`, `config/env.ts`, `utils/`, `test/` (Vitest harness — `setup.ts`, `test-utils.tsx`), `index.css`. `routeTree.gen.ts` is generated — never hand-edit.
+- `src/features/*` — the app, as isolated slices: `merchant` (client view), `finance` (kita view), `dashboard` (shared shell: layout, sidebar, navbar), `auth` (login).
+- `src/components/{ui,common,layouts}` — `ui` is shadcn primitives; `common` holds the custom primitives (`Box`, `Container`, `Text`, `Heading`, `Image`, `Link`) plus the shared `DataTable`, `Can`, `ImageDropzone`, `ExportButton`, pager and badge pieces.
+- `src/routes/` — registry-only; `routeTree.gen.ts` is generated, never hand-edit.
+- `src/middlewares/authMiddleware.ts` — `requireAuth`, `requireGuest`, `requirePermission` and the two role wrappers.
+- `src/lib/` — `axios.ts` (envelope + shared token refresh), `list.ts` (`unwrapList`), `utils.ts`; `src/utils/currency.ts` for money.
+- `src/{store,types,config,constants}` — Zustand stores, `api.type`/`models`, `config/env.ts`, `constants/roles.ts`.
+- `src/test/` — Vitest harness (`setup.ts`, `test-utils.tsx`, `fakeApi.ts`).
+- `logs/feature-changes/` — one entry per shipped feature; `TEMPLATE.md` is the shape.
+- There is **no** `.agents/` or `.claude/` directory in this repo.
 
 ## Commands
 
-| Command                       | Does                                                                        |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| `/plan-feature [focus]`       | Whole-scope plan -> `PLAN.md`, then STOP for approval                       |
-| `/build-feature <feature>`    | Build one feature TDD-first (tests before code), QA, then STOP for approval |
-| `/qa-audit [feature\|global]` | Definition of Done -> `.artifacts/qa-log.md`                                |
-| `/add-shadcn <component>`     | Add a shadcn primitive, restyle with neutral tokens                         |
-| `/commit [scope]`             | One Conventional Commit + its log entry                                     |
-| `/typecheck`                  | `tsc -b --force` + `eslint`, summarized                                       |
-| `/log-change <slug>`          | Append a `logs/feature-changes/` entry                                      |
-| `/update-memory <agent>`      | Refresh an agent's `MEMORY.md`                                              |
-| `/impeccable <mode> [target]` | Production-grade UI craft/critique (run `/impeccable init` first use)       |
+The slash commands and subagents this section used to list belong to the admin repo's
+`.claude/` layer and **do not exist here**. The real commands are the npm scripts:
 
-## Subagents (keep the main context clean)
+```bash
+npm run dev        # Vite dev server
+npm run build      # tsc -b && vite build  (typecheck is part of the build)
+npm run lint       # ESLint
+npm run test       # Vitest, single run — gates the production deploy
+npm run test:watch # Vitest, watch mode
+npm run preview    # Preview the production build
+```
 
-`frontend-engineer` (screens/components), `api-integrator` (typed data layer + mock-swap seam), `qa-auditor` (read-only Definition of Done). Each reads its `.claude/agent-memory/<agent>/MEMORY.md` first and updates it after. Output styles don't reach subagents, so the custom-primitive rules are also in `.claude/rules/custom-components.md`.
+CI runs typecheck + lint + test on every PR (`.github/workflows/ci.yml`); the production
+deploy re-runs the suite before it builds and rsyncs (`.github/workflows/deploy-prod.yml`),
+then reports the outcome to Discord. A shipped feature still earns a
+`logs/feature-changes/` entry — copy `TEMPLATE.md`.
 
-## Always-on rules (`.claude/rules/`)
+## Conventions
 
-`project`, `react-typescript`, `tailwind-styling`, `custom-components`, `feature-isolation`, `rbac-security`, `accessibility`, `logging`, `memory-context`, `commit`, `testing-strategy`. Digest:
+These were mirrored from the admin repo's `.claude/rules/` (not present here) — they are
+still how this repo is written:
 
 - **Feature isolation** — no cross-feature imports; promote shared code up.
 - **Custom primitives only** in feature TSX (`Box`/`Container`/`Text`/`Heading`/`Link`/`Image`); interactive controls -> shadcn/ui.
 - **Tokens only** — no raw hex / palette classes; monochrome; color only via `text-success`/`text-destructive`/`chart-*`; numbers use `tabular-nums`.
 - **Routing is registry-only**; guards (`requireAuth`/`requirePermission`) in `beforeLoad`, never in components.
-- **Server data via TanStack Query only**; global client state via Zustand; mocks behind the service boundary.
-- **TDD, always:** test cases → failing tests → implementation to green. Colocated `*.test.tsx`, Vitest + React Testing Library. Never loosen/delete a test to pass it.
+- **Server data via TanStack Query only**; global client state via Zustand. The API is live, so a service wraps real HTTP — if an endpoint is genuinely missing, keep the typed service interface and say so there rather than scattering placeholder data through components.
+- **TDD, always:** test cases → failing tests → implementation to green. Vitest + React Testing Library. Feature tests live in `features/<f>/tests/`; tests for shared code (`components/common`, `lib`, `utils`, `hooks`) sit next to the file. Never loosen/delete a test to pass it.
 - TS strict, no `any`. Green (`tsc` + `lint` + `test`) before commit. Never `Read`/commit `.env*`.
 
 ## Service billing
@@ -128,10 +150,17 @@ bukti-transfer upload any more.
 
 `context7` (live TanStack/Tailwind v4/shadcn/Zod docs), `shadcn` (browse/install primitives), `chrome-devtools` (QA screenshots/console/perf), `figma` (pull frames/tokens from file `l7izBcDr0PtS2FUdMdHFk3` — Dashboard node `22011-2008`, components `22078-1614`).
 
-## Hooks / formatting
+## Formatting
 
-A `PostToolUse` hook (`.claude/hooks/format.sh`) prettier-formats every `Edit`/`Write` on `.ts/.tsx/.css/.json`.
+`.prettierrc` sets the house style (`singleAttributePerLine`, `tabWidth: 2`,
+`printWidth: 120`), but **prettier is not a dependency here and no formatting hook runs** —
+the admin repo's `PostToolUse` hook (`.claude/hooks/format.sh`) was not carried over. Match
+the surrounding file by hand, or run prettier via `npx` with the config above.
 
 ## Definition of Done
 
-See `system_architecture.md §9` and `.agents/workflows/qa.md`. A feature is done only when it's built **TDD-first** with `npm run test` passing, isolated, tokens-only, both-theme correct, Figma-reconciled, type/lint-clean, `<Can>`-gated where privileged, tables have loading/empty/error states, and it carries a `logs/feature-changes/` entry.
+(The `system_architecture.md §9` / `.agents/workflows/qa.md` this used to defer to are not in
+this repo — the checklist itself is below.) A feature is done only when it is built
+**test-first** with `npm run test` passing, feature-isolated, tokens-only, correct in both
+themes, type/lint-clean, `<Can>`-gated where privileged, its tables have loading/empty/error
+states, and it carries a `logs/feature-changes/` entry.
