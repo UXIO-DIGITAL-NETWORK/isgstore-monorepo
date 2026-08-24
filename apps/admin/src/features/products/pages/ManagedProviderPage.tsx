@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowUpCircle, Lock, Plus, RefreshCw, Rocket, SlidersHorizontal, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { managedProviderColumns } from "../components/managedProviderColumns";
-import { PoolCandidatesPanel } from "../components/PoolCandidatesPanel";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
 import { usePoolSummary, usePromoteProviderProducts, usePublishProviderProducts } from "../hooks/useProviderPool";
 import {
@@ -40,7 +39,6 @@ export default function ManagedProviderPage() {
   const [poolState, setPoolState] = useState(ALL);
   const [availability, setAvailability] = useState(ALL);
   const [categoryId, setCategoryId] = useState(ALL);
-  const [addOpen, setAddOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -186,25 +184,23 @@ export default function ManagedProviderPage() {
           </Button>
           <Box className="ml-auto">
             <Can permission="products.create">
-              <Button
-                type="button"
-                className="rounded-xl"
-                onClick={() => setAddOpen((open) => !open)}
-              >
-                <Plus className="size-4" />
-                Add Product Provider
-                {(poolSummary?.new_count ?? 0) > 0 && (
-                  <Badge variant="secondary" className="ml-1.5 tabular-nums">
-                    {poolSummary?.new_count}
-                  </Badge>
-                )}
+              <Button asChild className="rounded-xl">
+                <Link to="/admin/products/provider/add">
+                  <Plus className="size-4" />
+                  Add Product Provider
+                  {/* How many SKUs the provider publishes that are not pooled yet —
+                      the only prompt that new catalogue has appeared upstream. */}
+                  {(poolSummary?.new_count ?? 0) > 0 && (
+                    <Badge variant="secondary" className="ml-1.5 tabular-nums">
+                      {poolSummary?.new_count}
+                    </Badge>
+                  )}
+                </Link>
               </Button>
             </Can>
           </Box>
         </Box>
       </Box>
-
-      {addOpen && <PoolCandidatesPanel onClose={() => setAddOpen(false)} />}
 
       {selectedIds.length > 0 && (
         <Box className="flex justify-end">

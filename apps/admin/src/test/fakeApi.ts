@@ -109,11 +109,29 @@ const toApiSupplierCategory = (row: (typeof CATEGORY_PROVIDERS)[number], index: 
   updated_at: row.updated_at,
 });
 
+/**
+ * The product fixtures name their game ("Mobile Legends: Bang Bang") while the
+ * category fixtures name the category ("Mobile Legends"), so the two cannot be
+ * matched on the string. Mapped explicitly, in the categories fixture's own
+ * order — its ids are assigned by index, so this is the id.
+ */
+const CATEGORY_ID_BY_GAME: Record<string, number> = {
+  "Mobile Legends: Bang Bang": 1,
+  "Free Fire": 2,
+  "Genshin Impact": 3,
+  "PUBG Mobile": 4,
+  "Valorant": 5,
+  "Honkai: Star Rail": 7,
+};
+
 const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
   const variant = row.variants[0];
+  // Every product used to be category_id 1, which made a category filter either
+  // return everything or nothing — the filter could not be tested at all.
+  const categoryId = CATEGORY_ID_BY_GAME[row.game_name] ?? 1;
   return {
     id: index + 1,
-    category_id: 1,
+    category_id: categoryId,
     sub_category_id: 1,
     name: row.name,
     sub_name: row.sub_name ?? null,
@@ -130,7 +148,7 @@ const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
     price_agent: variant?.prices.agent ?? 0,
     status: row.status === "active",
     is_available: row.is_available,
-    category: { id: 1, name: row.game_name },
+    category: { id: categoryId, name: row.game_name },
     sub_category: { id: 1, name: row.category_name },
     created_at: row.created_at,
     updated_at: row.updated_at,

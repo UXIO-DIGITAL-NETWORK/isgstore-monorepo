@@ -1,15 +1,17 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { requirePermission } from "@/middlewares/authMiddleware";
+import { PoolCandidatesPage } from "@/features/products";
 
 /**
- * "Add Product Provider" used to be a route of its own that browsed the
- * provider's entire price list. It is an in-page panel now — the pool page owns
- * it, filtered to the games mapped under Category Provider.
+ * "Add Product Provider" — a page of its own, so the pool page is never two
+ * tables at once. `ProductTabsLayout` hides the tab bar for any path ending in
+ * `/add`, so this renders standalone with no layout change.
  *
- * Kept as a redirect for one release so existing links and bookmarks land
- * somewhere sensible instead of 404ing.
+ * Gated on `products.create`: the entry button carried that check, and the
+ * parent route only requires `products.view` — without this the gate would be
+ * lost the moment it stopped being a button.
  */
 export const Route = createFileRoute("/admin/_protected/products/provider/add/")({
-  beforeLoad: () => {
-    throw redirect({ to: "/admin/products/provider" });
-  },
+  beforeLoad: () => requirePermission("products.create"),
+  component: PoolCandidatesPage,
 });

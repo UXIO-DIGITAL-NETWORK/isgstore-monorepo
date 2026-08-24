@@ -17,9 +17,13 @@ const rupiah = (value: number) => formatCurrency(value, { fractionDigits: 0 });
 
 /**
  * Price breakdown for one variant: the upstream cost, then each customer
- * tier's selling price with its margin in rupiah and as a share of that
- * selling price (the reference's two badges — 62.857 over a 58.745 cost is
- * Rp 4.112 at 6.5%).
+ * tier's selling price with its margin in rupiah and as a markup over cost
+ * (the reference's two badges — 62.857 over a 58.745 cost is Rp 4.112 at
+ * 7.0%).
+ *
+ * The percentage is deliberately markup (margin / cost), not gross margin
+ * (margin / price), so the badge reads back the same number an admin typed
+ * into the margin field — PricingService prices a tier as cost * (1 + markup).
  *
  * Colour is functional only per design_system.md §3.2 — `success` for money
  * earned, `chart-1` for the percentage, and hairline `border-border` rows
@@ -73,7 +77,9 @@ function VariantPriceCard({ variant }: { variant: ProductVariant }) {
                 variant="outline"
                 className="border-chart-1/30 bg-chart-1/10 text-chart-1 tabular-nums"
               >
-                {price > 0 ? `${((margin / price) * 100).toFixed(1)}%` : "—"}
+                {variant.cost_price > 0
+                  ? `${((margin / variant.cost_price) * 100).toFixed(1)}%`
+                  : "—"}
               </Badge>
               <Text
                 as="span"

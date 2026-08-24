@@ -22,31 +22,28 @@ describe("Provider pool", () => {
     useAuthStore.setState({ token: null, permissions: [] });
   });
 
-  it("opens Add Product Provider in place, without leaving the pool", async () => {
+  it("Add Product Provider leads to its own page, not a second table on this one", async () => {
     const user = userEvent.setup();
     await renderRoute(POOL_PATH);
 
-    await user.click(await screen.findByRole("button", { name: /Add Product Provider/ }));
+    await user.click(await screen.findByRole("link", { name: /Add Product Provider/ }));
 
-    // The panel is part of the page — the pool table is still on screen.
     expect(await screen.findByRole("heading", { name: "Add Product Provider" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
-    // Still the pool page's own toolbar, not a route the panel navigated to.
-    expect(screen.getByPlaceholderText("Search provider product")).toBeInTheDocument();
+    // The pool page is gone — one screen, one table.
+    expect(screen.queryByRole("heading", { name: "Product Provider" })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Search provider product")).not.toBeInTheDocument();
   });
 
   it("offers only SKUs whose game is mapped under Category Provider", async () => {
     const user = userEvent.setup();
     await renderRoute(POOL_PATH);
 
-    await user.click(await screen.findByRole("button", { name: /Add Product Provider/ }));
+    await user.click(await screen.findByRole("link", { name: /Add Product Provider/ }));
 
-    // Scoped to the panel: the pool table behind it lists some of the same names.
-    const panel = within(await screen.findByRole("region", { name: "Add Product Provider" }));
     // "Valorant" is a configured Category Provider; "Pulsa" is not, so its SKUs
     // are never offered however many the provider publishes.
-    expect(await panel.findByText("Valorant 120 Points")).toBeInTheDocument();
-    expect(panel.queryByText("Telkomsel Pulsa 5.000")).not.toBeInTheDocument();
+    expect(await screen.findByText("Valorant 120 Points")).toBeInTheDocument();
+    expect(screen.queryByText("Telkomsel Pulsa 5.000")).not.toBeInTheDocument();
   });
 
   it("adds the selected SKUs to the pool", async () => {
@@ -54,16 +51,17 @@ describe("Provider pool", () => {
     const user = userEvent.setup();
     await renderRoute(POOL_PATH);
 
-    await user.click(await screen.findByRole("button", { name: /Add Product Provider/ }));
+    await user.click(await screen.findByRole("link", { name: /Add Product Provider/ }));
 
-    const panelEl = await screen.findByRole("region", { name: "Add Product Provider" });
-    const panel = within(panelEl);
-    const row = (await panel.findByText("Valorant 120 Points")).closest("tr") as HTMLElement;
+    const row = (await screen.findByText("Valorant 120 Points")).closest("tr") as HTMLElement;
     await user.click(within(row).getByLabelText("Select row"));
     // Selection is reported upward by an effect, so wait for the count to land.
-    await user.click(await panel.findByRole("button", { name: "Add 1 to pool" }));
+    await user.click(await screen.findByRole("button", { name: "Add 1 to pool" }));
 
     expect(poolSpy).toHaveBeenCalledWith(["VAL120"]);
+
+    // Adding ends the flow: back to the pool, where the new rows now live.
+    expect(await screen.findByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
   });
 
   it("will not promote a pooled SKU whose margin has not been set, and says why", async () => {

@@ -15,7 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CATEGORY_OPTIONS, PRICE_RANGE_OPTIONS } from "../data/select-options.data";
+import { PRICE_RANGE_OPTIONS } from "../data/select-options.data";
+import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
 
 const CLEAR_VALUE = "all";
 
@@ -64,6 +65,10 @@ export function MainProductToolbar({
   onBulkDeactivate,
   onBulkDelete,
 }: MainProductToolbarProps) {
+  // The same source the product form, bulk-add and provider pool already read,
+  // so every category select in this feature agrees on what exists.
+  const { categoryOptions } = useProductSelectOptions();
+
   const navigate = useNavigate();
   // Edit Logo (bulk) still waits on the product image endpoint (§5); it says so
   // rather than guessing a mutation.
@@ -103,7 +108,7 @@ export function MainProductToolbar({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={CLEAR_VALUE}>All categories</SelectItem>
-                {CATEGORY_OPTIONS.map((option) => (
+                {categoryOptions.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}

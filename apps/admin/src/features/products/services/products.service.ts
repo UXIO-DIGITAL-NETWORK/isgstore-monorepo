@@ -145,9 +145,17 @@ const priceBucketParams = (bucket?: string) => {
 
 export const productsService = {
   list: async (params: ProductListParams = {}): Promise<PaginatedResponse<Product>> => {
-    const { price, category, ...rest } = params;
+    const { price, category_id, ...rest } = params;
     const response: ApiResponse<PaginatedResponse<ProductApiRow>> = await api.get(BASE, {
-      params: { ...rest, ...priceBucketParams(price), ...(category ? { search: category } : {}) },
+      // `category_id` is a real API filter. It used to be passed as `search`,
+      // which the API only matches against name/code — so picking a category
+      // returned almost nothing, and because it was spread last it also wiped
+      // out whatever the user had typed into the search box.
+      params: {
+        ...rest,
+        ...priceBucketParams(price),
+        ...(category_id ? { category_id: toFk(category_id) } : {}),
+      },
     });
     return unwrapPaginated(response, toProduct);
   },

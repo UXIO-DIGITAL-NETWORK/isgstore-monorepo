@@ -74,8 +74,9 @@ export interface Product {
 
 export interface ProductListParams {
   search?: string;
-  /** Matches `category_name` — the toolbar's "Type to search category". */
-  category?: string;
+  /** A real `categories.id`. Was the category *name*, matched through `search`,
+   * which could only ever hit a product whose own name contained it. */
+  category_id?: string;
   /** A `PRICE_RANGE_OPTIONS` value — the toolbar's "All Price". */
   price?: string;
   page?: number;

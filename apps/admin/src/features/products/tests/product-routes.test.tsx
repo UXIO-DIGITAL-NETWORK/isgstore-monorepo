@@ -42,10 +42,11 @@ describe("products routes", () => {
     expect(await screen.findByPlaceholderText("Search provider product")).toBeInTheDocument();
   });
 
-  it("redirects the retired /provider/add route back to the pool", async () => {
-    // Adding is an in-page panel now; the old route is kept as a redirect so
-    // existing links land somewhere sensible instead of 404ing.
+  it("serves Add Product Provider as its own page, with no tab bar", async () => {
     await renderRoute("/admin/products/provider/add");
-    expect(await screen.findByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
+
+    expect(await screen.findByRole("heading", { name: "Add Product Provider" })).toBeInTheDocument();
+    // ProductTabsLayout hides the tabs for any /add route, so the page stands alone.
+    expect(screen.queryByRole("tab", { name: "Main Products" })).not.toBeInTheDocument();
   });
 });

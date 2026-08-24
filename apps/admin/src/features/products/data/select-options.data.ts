@@ -1,23 +1,4 @@
-import type { CategoryOption, PriceRangeOption, SelectOption } from "../types/product.type";
-
-/** Sources the toolbar's "Type to search category" select and the Add form's
- * Category field. Values are the `category_name` stored on each product — a
- * contract test pins that every fixture's category is reachable here, so a
- * typo can't produce a filter that silently matches nothing. Each entry also
- * carries its game, which is what a product created from the form inherits. */
-export const CATEGORY_OPTIONS: CategoryOption[] = [
-  {
-    value: "Mobile Legends: Indonesia",
-    label: "Mobile Legends: Indonesia",
-    game_id: "game-mlbb",
-    game_name: "Mobile Legends: Bang Bang",
-  },
-  { value: "Free Fire Indonesia", label: "Free Fire Indonesia", game_id: "game-ff", game_name: "Free Fire" },
-  { value: "Genshin Impact", label: "Genshin Impact", game_id: "game-genshin", game_name: "Genshin Impact" },
-  { value: "PUBG Mobile", label: "PUBG Mobile", game_id: "game-pubgm", game_name: "PUBG Mobile" },
-  { value: "Valorant", label: "Valorant", game_id: "game-valorant", game_name: "Valorant" },
-  { value: "Honkai: Star Rail", label: "Honkai: Star Rail", game_id: "game-hsr", game_name: "Honkai: Star Rail" },
-];
+import type { PriceRangeOption, SelectOption } from "../types/product.type";
 
 /**
  * Sub Category options per category — the Add form's Sub Category select lists

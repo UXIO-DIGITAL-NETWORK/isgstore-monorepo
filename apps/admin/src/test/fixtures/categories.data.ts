@@ -112,4 +112,22 @@ export const CATEGORIES: Category[] = [
     created_at: "2026-05-10T02:00:00Z",
     updated_at: "2026-06-05T16:20:00Z",
   },
+  {
+    // The product fixtures sell Honkai nominals, so the category has to exist —
+    // otherwise those rows have no category to be filtered by.
+    id: "cat-7",
+    type_id: "1",
+    type: "Mobile Game",
+    uid_parser: "UID",
+    name: "Honkai: Star Rail",
+    sub_name: "Oneiric Shard",
+    account_nickname_validation: "None",
+    region: "Southeast Asia",
+    code: "HSR",
+    slug: "honkai-star-rail",
+    status: "active",
+    order_form_fields: [],
+    created_at: "2026-05-12T02:00:00Z",
+    updated_at: "2026-06-08T10:00:00Z",
+  },
 ];

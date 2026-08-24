@@ -1,7 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { waitFor } from "@testing-library/react";
 
 import { renderRoute, screen, within } from "@/test/test-utils";
+import { productsService } from "../services/products.service";
 
 const LIST_PATH = "/admin/products-preview/main";
 
@@ -93,17 +95,18 @@ describe("MainProductsPage", () => {
     expect((await screen.findAllByText("Rp 27.788")).length).toBeGreaterThan(0);
   });
 
-  it("breaks each variant's price down by tier, with margin and margin percent", async () => {
+  it("breaks each variant's price down by tier, with margin and markup percent", async () => {
     await renderRoute(LIST_PATH);
     const table = await screen.findByRole("table");
 
     for (const label of ["Cost", "Public", "VIP", "Reseller", "Agent"]) {
       expect((await within(table).findAllByText(label)).length).toBeGreaterThan(0);
     }
-    // prod-1-var-1: cost Rp 25.970 -> public Rp 27.788, so Rp 1.818 at 6.5%.
+    // prod-1-var-1: cost Rp 25.970 -> public Rp 27.788, so Rp 1.818 — 7.0% of
+    // cost, the markup an admin types, not the 6.5% share of the selling price.
     expect(within(table).getAllByText("Rp 25.970").length).toBeGreaterThan(0);
     expect(within(table).getAllByText("Rp 1.818").length).toBeGreaterThan(0);
-    expect(within(table).getAllByText("6.5%").length).toBeGreaterThan(0);
+    expect(within(table).getAllByText("7.0%").length).toBeGreaterThan(0);
   });
 
   it("stacks both status axes as separate badges", async () => {
@@ -167,5 +170,35 @@ describe("MainProductsPage", () => {
       "Edit Product",
       "Delete",
     ]);
+  });
+
+  it("offers the real categories, not a hardcoded list", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await user.click(await screen.findByLabelText("Category"));
+
+    // Names as the Category tab actually stores them. The old hardcoded list said
+    // "Mobile Legends: Indonesia" and "Free Fire Indonesia" — neither exists.
+    expect(await screen.findByRole("option", { name: "Mobile Legends" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Free Fire" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Free Fire Indonesia" })).not.toBeInTheDocument();
+  });
+
+  it("filters by category id, and leaves the search term alone", async () => {
+    const listSpy = vi.spyOn(productsService, "list");
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await user.type(await screen.findByPlaceholderText("Search product name"), "diamond");
+    await user.click(screen.getByLabelText("Category"));
+    await user.click(await screen.findByRole("option", { name: "Mobile Legends" }));
+
+    await waitFor(() => {
+      const params = listSpy.mock.calls.at(-1)?.[0];
+      // The category used to be sent as `search`, spread last — which both failed
+      // to filter and wiped out whatever had been typed.
+      expect(params).toMatchObject({ category_id: expect.stringMatching(/^\d+$/), search: "diamond" });
+    });
   });
 });

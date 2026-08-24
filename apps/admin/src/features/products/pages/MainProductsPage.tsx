@@ -31,7 +31,8 @@ const DEFAULT_PAGE_SIZE = 10;
  */
 export default function MainProductsPage() {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string | undefined>(undefined);
+  // A real category id now, not its name — see products.service `list()`.
+  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [price, setPrice] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -44,8 +45,8 @@ export default function MainProductsPage() {
   const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
-    () => ({ search: search || undefined, category, price, page, per_page: pageSize }),
-    [search, category, price, page, pageSize],
+    () => ({ search: search || undefined, category_id: categoryId, price, page, per_page: pageSize }),
+    [search, categoryId, price, page, pageSize],
   );
   const { data, isLoading, isError, refetch } = useProductList(params);
   const deleteProducts = useDeleteProducts();
@@ -60,7 +61,7 @@ export default function MainProductsPage() {
   };
 
   const handleCategoryChange = (value: string | undefined) => {
-    setCategory(value);
+    setCategoryId(value);
     setPage(1);
   };
 
@@ -91,7 +92,7 @@ export default function MainProductsPage() {
         <MainProductToolbar
           search={search}
           onSearchChange={handleSearchChange}
-          category={category}
+          category={categoryId}
           onCategoryChange={handleCategoryChange}
           price={price}
           onPriceChange={handlePriceChange}
