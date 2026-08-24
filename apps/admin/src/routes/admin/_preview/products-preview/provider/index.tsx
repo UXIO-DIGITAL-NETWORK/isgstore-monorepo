@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ProductProviderPage } from "@/features/products";
+import { ManagedProviderPage } from "@/features/products";
 
 export const Route = createFileRoute("/admin/_preview/products-preview/provider/")({
-  component: ProductProviderPage,
+  component: ManagedProviderPage,
 });

@@ -9,6 +9,7 @@ import { CategoryProviderToolbar } from "../components/CategoryProviderToolbar";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { categoryProviderColumns } from "../components/categoryProviderColumns";
 import { useCategoryList } from "../hooks/useCategories";
+import { useProviderCategoryOptions } from "../hooks/useProviderCategoryOptions";
 import { useCategoryProviderList, useDeleteCategoryProviders } from "../hooks/useCategoryProviders";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -47,9 +48,19 @@ export default function CategoryProviderPage() {
   // Category tab's own records. ponytail: one page is plenty against mock
   // data — swap to a batched lookup if the real list grows.
   const { data: categories } = useCategoryList({ per_page: CATEGORY_OPTIONS_PAGE_SIZE });
+
+  // Reconciles each row's provider category against the provider's live
+  // catalogue, so a mapping that matches nothing upstream is flagged rather
+  // than quietly returning an empty pool.
+  const { options: providerCategories } = useProviderCategoryOptions();
+
   const columns = useMemo(
-    () => categoryProviderColumns(new Map((categories?.data ?? []).map((category) => [category.id, category.name]))),
-    [categories],
+    () =>
+      categoryProviderColumns(
+        new Map((categories?.data ?? []).map((category) => [category.id, category.name])),
+        new Map(providerCategories.map((option) => [option.value, option])),
+      ),
+    [categories, providerCategories],
   );
 
   const handleSearchChange = (value: string) => {

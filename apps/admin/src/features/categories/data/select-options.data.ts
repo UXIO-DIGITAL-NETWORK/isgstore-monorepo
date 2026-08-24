@@ -24,21 +24,6 @@ export const PROVIDER_OPTIONS: SelectOption[] = [
   { value: "Topupkuy", label: "Topupkuy" },
 ];
 
-/**
- * **Invented — not confirmed anywhere.** `provider_template` has no defined
- * value set in the PRD or any reference; §4.5 only names the field. Seeded
- * with the two values visible in the reference's table, extended to cover the
- * other fixtured categories. Replace once the real integration templates land.
- */
-export const PROVIDER_TEMPLATE_OPTIONS: SelectOption[] = [
-  { value: "Games-Mobile Legends", label: "Games-Mobile Legends" },
-  { value: "Free Fire Indonesia", label: "Free Fire Indonesia" },
-  { value: "Games-Genshin Impact", label: "Games-Genshin Impact" },
-  { value: "Games-PUBG Mobile", label: "Games-PUBG Mobile" },
-  { value: "Games-Valorant", label: "Games-Valorant" },
-  { value: "Voucher-Steam Wallet", label: "Voucher-Steam Wallet" },
-];
-
 export const META_ROBOTS_OPTIONS: SelectOption[] = [
   { value: "Index, Follow", label: "Index, Follow" },
   { value: "No Index, No Follow", label: "No Index, No Follow" },

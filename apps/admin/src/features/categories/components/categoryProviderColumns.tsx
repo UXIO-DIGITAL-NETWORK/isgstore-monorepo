@@ -1,22 +1,30 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
+import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
+import { Badge } from "@/components/ui/badge";
 import { CategoryProviderRowActions } from "./CategoryProviderRowActions";
+import type { ProviderCategoryOption } from "../hooks/useProviderCategoryOptions";
 import type { CategoryProvider } from "../types/categoryProvider.type";
 
+/** Matched on the name, as the provider pipeline itself does. */
+const INTEGRATED_PROVIDER = "uxiotopup";
+
 /**
- * Columns for the Category Provider list (product_requirements.md §4.5,
- * line 241): Provider, Category, Provider Template, Created At, Action.
- * **No Status column** — none of the five reference images shows one, and §6
- * line 286 confirms the entity has no status field.
+ * Columns for the Category Provider list: Provider, Category, Provider Category,
+ * Created At, Action. **No Status column** — the entity has no status field.
  *
- * Unlike every sibling tab this is a factory, not a const array: the Category
- * column holds a `category_id` that has to be resolved against the Category
- * tab's own records, so the page passes the lookup in. `No.` and the selection
- * checkbox are injected by the shared `DataTable`, not declared here.
+ * A factory, not a const array: the Category column resolves a `category_id`
+ * against the Category tab's records, and the Provider Category column is
+ * reconciled against the provider's live catalogue so a mapping that no longer
+ * matches anything is visible rather than silently dead. `No.` and the selection
+ * checkbox are injected by the shared `DataTable`.
  */
-export const categoryProviderColumns = (categoryNameById: Map<string, string>): ColumnDef<CategoryProvider>[] => [
+export const categoryProviderColumns = (
+  categoryNameById: Map<string, string>,
+  providerCategoryMeta: Map<string, ProviderCategoryOption> = new Map(),
+): ColumnDef<CategoryProvider>[] => [
   {
     accessorKey: "provider_name",
     header: "Provider",
@@ -39,9 +47,40 @@ export const categoryProviderColumns = (categoryNameById: Map<string, string>): 
     ),
   },
   {
-    accessorKey: "provider_template",
-    header: "Provider Template",
-    cell: ({ row }) => <Text as="span">{row.original.provider_template}</Text>,
+    accessorKey: "provider_category",
+    header: "Provider Category",
+    cell: ({ row }) => {
+      const meta = providerCategoryMeta.get(row.original.provider_category);
+      // Only reconcile rows whose provider actually has a catalogue; anything
+      // else would be flagged unmatched purely for having no list to match against.
+      const isIntegrated = row.original.provider_name.toLowerCase() === INTEGRATED_PROVIDER;
+      const canReconcile = isIntegrated && providerCategoryMeta.size > 0;
+
+      return (
+        <Box className="flex flex-col gap-1">
+          <Text as="span">{row.original.provider_category}</Text>
+
+          {meta && (
+            <Text
+              as="span"
+              variant="small"
+              className="text-muted-foreground tabular-nums"
+            >
+              {meta.available_count} of {meta.sku_count} SKUs active
+            </Text>
+          )}
+
+          {canReconcile && !meta && (
+            <Badge
+              variant="destructive"
+              className="w-fit"
+            >
+              Unmatched
+            </Badge>
+          )}
+        </Box>
+      );
+    },
   },
   {
     accessorKey: "created_at",

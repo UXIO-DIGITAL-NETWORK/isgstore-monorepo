@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Lock, Plus, RefreshCw, SlidersHorizontal, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowUpCircle, Lock, Plus, RefreshCw, Rocket, SlidersHorizontal, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { BulkActionsMenu } from "@/components/common/BulkActionsMenu";
@@ -12,7 +12,11 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { managedProviderColumns } from "../components/managedProviderColumns";
+import { PoolCandidatesPanel } from "../components/PoolCandidatesPanel";
+import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
+import { usePoolSummary, usePromoteProviderProducts, usePublishProviderProducts } from "../hooks/useProviderPool";
 import {
   useBulkDeleteProviderProducts,
   useBulkLockProviderPrice,
@@ -33,6 +37,10 @@ export default function ManagedProviderPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(ALL);
   const [mode, setMode] = useState(ALL);
+  const [poolState, setPoolState] = useState(ALL);
+  const [availability, setAvailability] = useState(ALL);
+  const [categoryId, setCategoryId] = useState(ALL);
+  const [addOpen, setAddOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -41,16 +49,23 @@ export default function ManagedProviderPage() {
   const navigate = useNavigate();
   const bulkLock = useBulkLockProviderPrice();
   const bulkDelete = useBulkDeleteProviderProducts();
+  const promote = usePromoteProviderProducts();
+  const publish = usePublishProviderProducts();
+  const { data: poolSummary } = usePoolSummary();
+  const { categoryOptions } = useProductSelectOptions();
 
   const params = useMemo(
     () => ({
       search: search || undefined,
       status: status === ALL ? undefined : status,
       mode: mode === ALL ? undefined : mode,
+      pool_state: poolState === ALL ? undefined : poolState,
+      availability: availability === ALL ? undefined : availability,
+      category_id: categoryId === ALL ? undefined : categoryId,
       page,
       per_page: pageSize,
     }),
-    [search, status, mode, page, pageSize],
+    [search, status, mode, poolState, availability, categoryId, page, pageSize],
   );
   const { data, isLoading, isError, refetch } = useProviderProductList(params);
 
@@ -113,21 +128,83 @@ export default function ManagedProviderPage() {
               <SelectItem value="manual">Manual</SelectItem>
             </SelectContent>
           </Select>
+          <Select
+            value={poolState}
+            onValueChange={(v) => {
+              setPoolState(v);
+              resetToFirstPage();
+            }}
+          >
+            <SelectTrigger className="w-40 rounded-xl" aria-label="Pipeline stage">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All stages</SelectItem>
+              <SelectItem value="needs_margin">Needs margin</SelectItem>
+              <SelectItem value="ready">Ready</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={categoryId}
+            onValueChange={(v) => {
+              setCategoryId(v);
+              resetToFirstPage();
+            }}
+          >
+            <SelectTrigger className="w-44 rounded-xl" aria-label="Category">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All categories</SelectItem>
+              {categoryOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={availability}
+            onValueChange={(v) => {
+              setAvailability(v);
+              resetToFirstPage();
+            }}
+          >
+            <SelectTrigger className="w-44 rounded-xl" aria-label="Provider availability">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Any availability</SelectItem>
+              <SelectItem value="available">Available upstream</SelectItem>
+              <SelectItem value="unavailable">Unavailable upstream</SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="outline" size="icon" className="rounded-xl" aria-label="Refresh" onClick={() => refetch()}>
             <RefreshCw className="size-4" />
           </Button>
           <Box className="ml-auto">
             <Can permission="products.create">
-              <Button asChild className="rounded-xl">
-                <Link to="/admin/products/provider/add">
-                  <Plus className="size-4" />
-                  Add Product Provider
-                </Link>
+              <Button
+                type="button"
+                className="rounded-xl"
+                onClick={() => setAddOpen((open) => !open)}
+              >
+                <Plus className="size-4" />
+                Add Product Provider
+                {(poolSummary?.new_count ?? 0) > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 tabular-nums">
+                    {poolSummary?.new_count}
+                  </Badge>
+                )}
               </Button>
             </Can>
           </Box>
         </Box>
       </Box>
+
+      {addOpen && <PoolCandidatesPanel onClose={() => setAddOpen(false)} />}
 
       {selectedIds.length > 0 && (
         <Box className="flex justify-end">
@@ -143,6 +220,16 @@ export default function ManagedProviderPage() {
                     to: "/admin/products/provider/set-profit-margin",
                     search: { ids: selectedIds.join(",") },
                   }),
+              },
+              {
+                label: "Promote to Main Product",
+                icon: <ArrowUpCircle className="size-4" />,
+                onSelect: () => promote.mutate(selectedIds),
+              },
+              {
+                label: "Publish",
+                icon: <Rocket className="size-4" />,
+                onSelect: () => publish.mutate(selectedIds),
               },
               {
                 label: "Delete",

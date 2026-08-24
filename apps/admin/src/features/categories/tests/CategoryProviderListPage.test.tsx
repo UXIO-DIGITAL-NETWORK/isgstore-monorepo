@@ -60,7 +60,7 @@ describe("CategoryProviderListPage", () => {
     await renderRoute(LIST_PATH);
 
     const table = await screen.findByRole("table");
-    for (const header of ["No.", "Provider", "Category", "Provider Template", "Created At", "Action"]) {
+    for (const header of ["No.", "Provider", "Category", "Provider Category", "Created At", "Action"]) {
       expect(within(table).getByRole("columnheader", { name: header })).toBeInTheDocument();
     }
     expect(within(table).queryByRole("columnheader", { name: "Status" })).not.toBeInTheDocument();
@@ -73,10 +73,9 @@ describe("CategoryProviderListPage", () => {
     // (§4.5 line 239) — not invented ones, and not the shadcn demo dataset.
     expect(await screen.findByText("Uxiotopup")).toBeInTheDocument();
     expect(screen.getAllByText("Zelpoint").length).toBeGreaterThan(0);
-    expect(screen.getByText("Games-Mobile Legends")).toBeInTheDocument();
-    // category_id resolved against the Category tab's own records, so this is
-    // "Mobile Legends" (cat-1), not the reference's "Mobile Legends Indonesia".
+    // The provider's own category string, reconciled against its live catalogue.
     expect(screen.getAllByText("Mobile Legends").length).toBeGreaterThan(0);
+    expect(screen.getByText("1 of 1 SKUs active")).toBeInTheDocument();
     for (const banned of ["Cover Page", "Table of Contents", "Jamik Tashpulatov", "Reviewer"]) {
       expect(screen.queryByText(banned)).not.toBeInTheDocument();
     }

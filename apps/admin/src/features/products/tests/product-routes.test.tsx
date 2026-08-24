@@ -42,8 +42,10 @@ describe("products routes", () => {
     expect(await screen.findByPlaceholderText("Search provider product")).toBeInTheDocument();
   });
 
-  it("reaches the Uxiotopup price list under Add Product Provider", async () => {
+  it("redirects the retired /provider/add route back to the pool", async () => {
+    // Adding is an in-page panel now; the old route is kept as a redirect so
+    // existing links land somewhere sensible instead of 404ing.
     await renderRoute("/admin/products/provider/add");
-    expect(await screen.findByPlaceholderText("Search product, SKU or category")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
   });
 });

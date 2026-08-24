@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
-import type { ProviderProduct } from "../types/product.type";
+import { POOL_STATE_LABELS, type ProviderProduct } from "../types/product.type";
 import { ProductPriceCell } from "./ProductPriceCell";
 import { ProviderRowActions } from "./ProviderRowActions";
 
@@ -38,7 +38,16 @@ export const managedProviderColumns: ColumnDef<ProviderProduct>[] = [
   {
     id: "price",
     header: "Price",
-    cell: ({ row }) => <ProductPriceCell variants={[row.original.variant]} />,
+    cell: ({ row }) => (
+      <Box className="flex flex-col gap-1">
+        <ProductPriceCell variants={[row.original.variant]} />
+        {row.original.is_price_preview && (
+          <Text as="span" variant="small" className="text-muted-foreground">
+            Projected from the margin — nothing is stored until this SKU is promoted.
+          </Text>
+        )}
+      </Box>
+    ),
   },
   {
     accessorKey: "created_at",
@@ -54,21 +63,27 @@ export const managedProviderColumns: ColumnDef<ProviderProduct>[] = [
     header: "Status",
     cell: ({ row }) => {
       const p = row.original;
+      // The pipeline stage replaces the bare active/inactive pill: "Inactive"
+      // was true of a pooled row, a draft and a retired product alike, which
+      // told an admin nothing about what to do next.
+      const stageClass =
+        p.pool_state === "published"
+          ? "border-success/30 bg-success/10 text-success"
+          : p.pool_state === "ready"
+            ? "border-chart-1/30 bg-chart-1/10 text-chart-1"
+            : "text-muted-foreground";
+
       return (
         <Box className="flex flex-col items-start gap-1">
-          <Badge
-            variant="outline"
-            className={
-              p.is_active ? "border-success/30 bg-success/10 text-success" : "text-muted-foreground"
-            }
-          >
-            {p.is_active ? "Active" : "Inactive"}
+          <Badge variant="outline" className={stageClass}>
+            {POOL_STATE_LABELS[p.pool_state]}
           </Badge>
           {p.is_price_locked && (
             <Badge variant="outline" className="text-muted-foreground">
               Locked
             </Badge>
           )}
+          {!p.is_available && <Badge variant="destructive">Unavailable</Badge>}
         </Box>
       );
     },

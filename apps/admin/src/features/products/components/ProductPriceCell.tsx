@@ -73,7 +73,7 @@ function VariantPriceCard({ variant }: { variant: ProductVariant }) {
                 variant="outline"
                 className="border-chart-1/30 bg-chart-1/10 text-chart-1 tabular-nums"
               >
-                {((margin / price) * 100).toFixed(1)}%
+                {price > 0 ? `${((margin / price) * 100).toFixed(1)}%` : "—"}
               </Badge>
               <Text
                 as="span"

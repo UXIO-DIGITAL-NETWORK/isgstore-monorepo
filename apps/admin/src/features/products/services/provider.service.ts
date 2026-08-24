@@ -4,6 +4,7 @@ import { toFk, unwrapPaginated } from "@/lib/apiMappers";
 import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type {
   AddUxiotopupProductInput,
+  PoolState,
   BulkAddUxiotopupInput,
   BulkAddUxiotopupResult,
   ProviderProduct,
@@ -29,11 +30,28 @@ type PriceListApiRow = Omit<UxiotopupPriceListItem, "id">;
 /** The `/supplier-products` row shape (SupplierProductResource + product/supplier). */
 interface SupplierProductApiRow {
   id: number;
+  product_id: number | null;
   buyer_sku_code: string;
+  provider_name: string | null;
   price: number;
   is_active: boolean;
   is_price_locked: boolean;
   is_system: boolean;
+  buyer_product_status: boolean;
+  pool_state: PoolState;
+  can_promote: boolean;
+  promote_blocked_reason: string | null;
+  price_min: number | null;
+  price_max: number | null;
+  pool_category?: { id: number; name: string } | null;
+  /** Projected prices for a pooled row, which has no product to read real ones from. */
+  preview_prices?: {
+    price_modal: number;
+    price_member: number;
+    price_vip: number;
+    price_reseller: number;
+    price_agent: number;
+  } | null;
   margins: { member: number | null; vip: number | null; reseller: number | null; agent: number | null };
   product?: {
     id: number;
@@ -54,6 +72,8 @@ interface SupplierProductApiRow {
 /** Flatten the nested API row into the view model the managed table renders. */
 const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
   const product = row.product;
+  const pooled = row.product_id === null;
+  const preview = row.preview_prices;
   return {
     id: String(row.id),
     buyer_sku_code: row.buyer_sku_code,
@@ -61,10 +81,19 @@ const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
     is_active: Boolean(row.is_active),
     is_price_locked: Boolean(row.is_price_locked),
     is_system: Boolean(row.is_system),
+    is_available: Boolean(row.buyer_product_status),
+    pool_state: row.pool_state,
+    can_promote: Boolean(row.can_promote),
+    promote_blocked_reason: row.promote_blocked_reason ?? null,
+    is_price_preview: pooled,
+    price_min: row.price_min ?? null,
+    price_max: row.price_max ?? null,
     supplier_name: row.supplier?.name ?? "—",
-    category_name: product?.category?.name ?? "—",
-    product_name: product?.name ?? "—",
-    product_code: product?.code ?? "—",
+    // A pooled row has no product, so it falls back to the category it was
+    // pooled for and to the provider's own name for the SKU.
+    category_name: product?.category?.name ?? row.pool_category?.name ?? "—",
+    product_name: product?.name ?? row.provider_name ?? row.buyer_sku_code,
+    product_code: product?.code ?? row.buyer_sku_code,
     margins: {
       public: row.margins?.member ?? null,
       vip: row.margins?.vip ?? null,
@@ -72,16 +101,19 @@ const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
       agent: row.margins?.agent ?? null,
     },
     variant: {
-      id: String(product?.id ?? row.id),
-      name: product?.name ?? row.buyer_sku_code,
+      // Prefixed by origin: a product id and a supplier_product id are different
+      // counters, and an unprefixed String() lets two rows collide on one React key.
+      id: pooled ? `sp-${row.id}` : `p-${product?.id ?? row.id}`,
+      name: product?.name ?? row.provider_name ?? row.buyer_sku_code,
       cost_price: product?.price_modal ?? row.price,
       prices: {
-        public: product?.price_member ?? 0,
-        vip: product?.price_vip ?? 0,
-        reseller: product?.price_reseller ?? 0,
-        agent: product?.price_agent ?? 0,
+        public: pooled ? (preview?.price_member ?? 0) : (product?.price_member ?? 0),
+        vip: pooled ? (preview?.price_vip ?? 0) : (product?.price_vip ?? 0),
+        reseller: pooled ? (preview?.price_reseller ?? 0) : (product?.price_reseller ?? 0),
+        agent: pooled ? (preview?.price_agent ?? 0) : (product?.price_agent ?? 0),
       },
-      status: product?.status ? "active" : "inactive",
+      // A pooled row sells nothing, so it is never "active" whatever the mapping says.
+      status: !pooled && product?.status ? "active" : "inactive",
     },
     created_at: row.created_at,
   };
@@ -140,6 +172,11 @@ export const providerService = {
       ...(params.category_id ? { category_id: toFk(params.category_id) } : {}),
       ...(params.status ? { status: params.status } : {}),
       ...(params.mode ? { mode: params.mode } : {}),
+      ...(params.ids ? { ids: params.ids } : {}),
+      ...(params.pool_state ? { pool_state: params.pool_state } : {}),
+      ...(params.availability ? { availability: params.availability } : {}),
+      ...(params.min_cost !== undefined ? { min_cost: params.min_cost } : {}),
+      ...(params.max_cost !== undefined ? { max_cost: params.max_cost } : {}),
       page: params.page,
       per_page: params.per_page,
     };

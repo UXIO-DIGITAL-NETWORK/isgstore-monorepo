@@ -7,8 +7,8 @@ import type { CategoryProvider, CategoryProviderListParams } from "../types/cate
 /**
  * "Category Provider" is this feature's user-facing name for what the API
  * calls a **supplier category** — the mapping of which upstream supplier
- * fulfils which category, and under which integration template. Only the URL
- * and field names differ; the entity is the same. The translation is confined
+ * fulfils which category, and which of that supplier's own categories its SKUs
+ * come from. Only the URL and field names differ; the entity is the same. The translation is confined
  * to this file so neither side has to be renamed.
  */
 const BASE = `${API_VERSION}/supplier-categories`;
@@ -17,7 +17,7 @@ interface SupplierCategoryApiRow {
   id: number;
   category_id: number;
   supplier_id: number;
-  template_code: string;
+  provider_category: string;
   supplier?: { id: number; name: string } | null;
   created_at: string;
   updated_at: string;
@@ -30,7 +30,7 @@ const toCategoryProvider = (row: SupplierCategoryApiRow): CategoryProvider => ({
   provider_name: row.supplier?.name ?? String(row.supplier_id),
   supplier_id: toRowId(row.supplier_id),
   category_id: toRowId(row.category_id),
-  provider_template: row.template_code,
+  provider_category: row.provider_category,
   created_at: row.created_at,
   updated_at: row.updated_at,
 });
@@ -43,7 +43,7 @@ export type CategoryProviderInput = Omit<CategoryProvider, "id" | "created_at" |
 const toPayload = (input: Partial<CategoryProviderInput>) => ({
   ...(input.category_id !== undefined && { category_id: toFk(input.category_id) }),
   ...(input.supplier_id !== undefined && { supplier_id: toFk(input.supplier_id) }),
-  ...(input.provider_template !== undefined && { template_code: input.provider_template }),
+  ...(input.provider_category !== undefined && { provider_category: input.provider_category }),
 });
 
 export const categoryProvidersService = {

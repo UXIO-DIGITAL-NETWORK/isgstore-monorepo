@@ -33,13 +33,18 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
     reseller: "",
     agent: "",
   });
+  // The selling-price window travels with the margin: both are decided here,
+  // and promote carries them onto the product together.
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
 
-  // The list has no id filter, so pull a page and narrow to the selection.
-  const { data } = useProviderProductList({ per_page: 100 });
-  const selected = useMemo(
-    () => (data?.data ?? []).filter((row) => ids.includes(row.id)),
-    [data, ids],
-  );
+  // Ask for exactly the selection. This used to pull one page and filter it in
+  // the browser, which silently dropped any row that fell outside the first 100.
+  const { data } = useProviderProductList({
+    ids: ids.join(","),
+    per_page: Math.max(ids.length, 1),
+  });
+  const selected = useMemo(() => data?.data ?? [], [data]);
 
   const parse = (raw: string): number | null => {
     const trimmed = raw.trim();
@@ -59,6 +64,8 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
           margin_vip: parse(values.vip),
           margin_reseller: parse(values.reseller),
           margin_agent: parse(values.agent),
+          price_min: parse(priceMin),
+          price_max: parse(priceMax),
         },
       },
       { onSuccess: backToList },
@@ -71,8 +78,8 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
           Set Profit Margin
         </Heading>
         <Text variant="muted">
-          Apply per-tier margins to {ids.length} selected provider product{ids.length === 1 ? "" : "s"}. Leave a field
-          empty to use the pricing rules.
+          Set the selling price for {ids.length} provider product{ids.length === 1 ? "" : "s"}. Leave a margin empty to
+          use the pricing rules. Saving here is what unlocks Promote — a SKU cannot reach the catalogue unpriced.
         </Text>
       </Box>
 
@@ -114,6 +121,37 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
               </Box>
             ))}
           </Box>
+          <Box className="mt-4 grid grid-cols-1 gap-4 border-t border-border pt-4">
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="price-min">Lower Price Limit (Min)</Label>
+              <Input
+                id="price-min"
+                type="number"
+                min="0"
+                value={priceMin}
+                onChange={(e) => setPriceMin(e.target.value)}
+                placeholder="Rp 0"
+              />
+              <Text variant="small" className="text-muted-foreground">
+                0 = no limit
+              </Text>
+            </Box>
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="price-max">Upper Price Limit (Max)</Label>
+              <Input
+                id="price-max"
+                type="number"
+                min="0"
+                value={priceMax}
+                onChange={(e) => setPriceMax(e.target.value)}
+                placeholder="Rp 0"
+              />
+              <Text variant="small" className="text-muted-foreground">
+                0 = no limit
+              </Text>
+            </Box>
+          </Box>
+
           <Box className="mt-6 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={backToList}>
               Cancel

@@ -186,6 +186,26 @@ export interface BulkAddUxiotopupResult {
  * supplier, and the flags bulk/row actions act on. `is_system` rows come from
  * the Internal System supplier and are protected (not selectable, no delete).
  */
+/**
+ * Where a mapping sits in the provider pipeline. Mirrors the API's own
+ * `SupplierProduct::poolState()` — never re-derive it here, or a badge and the
+ * promote guard will eventually disagree.
+ *
+ * - `needs_margin` pooled, no price decided yet
+ * - `ready`        pooled and priced, promotable
+ * - `draft`        promoted to a product that has never been published
+ * - `published`    live on the storefront
+ */
+export const POOL_STATES = ["needs_margin", "ready", "draft", "published"] as const;
+export type PoolState = (typeof POOL_STATES)[number];
+
+export const POOL_STATE_LABELS: Record<PoolState, string> = {
+  needs_margin: "Needs margin",
+  ready: "Ready",
+  draft: "Draft",
+  published: "Published",
+};
+
 export interface ProviderProduct {
   id: string;
   buyer_sku_code: string;
@@ -198,6 +218,17 @@ export interface ProviderProduct {
   category_name: string;
   product_name: string;
   product_code: string;
+  /** Pipeline stage, and the promote gate as the server decides it. */
+  pool_state: PoolState;
+  can_promote: boolean;
+  promote_blocked_reason: string | null;
+  /** True while the row is still pooled — its prices are a projection, not stored. */
+  is_price_preview: boolean;
+  /** Whether the SKU is still active upstream. */
+  is_available: boolean;
+  /** Selling-price window carried onto the product at promote. 0/null = no limit. */
+  price_min: number | null;
+  price_max: number | null;
   /** Per-tier margin overrides in percent; null = derived from pricing rules. */
   margins: Record<PriceTier, number | null>;
   /** The product's price breakdown, ready for `ProductPriceCell`. */
@@ -213,6 +244,14 @@ export interface ProviderProductListParams {
   status?: string;
   /** "auto" | "manual" | undefined — locked mappings are "manual". */
   mode?: string;
+  /** Comma-joined ids, so the margin page can address an exact selection. */
+  ids?: string;
+  /** One of PoolState, or undefined for all. */
+  pool_state?: string;
+  /** "available" | "unavailable" | undefined — upstream availability. */
+  availability?: string;
+  min_cost?: number;
+  max_cost?: number;
   page?: number;
   per_page?: number;
 }
@@ -223,6 +262,63 @@ export interface SetProviderMarginInput {
   margin_vip?: number | null;
   margin_reseller?: number | null;
   margin_agent?: number | null;
+  /** Sent only when the form actually carries the limit fields — omitting them
+   * leaves an existing window alone rather than clearing it. */
+  price_min?: number | null;
+  price_max?: number | null;
+}
+
+/* ── Provider pool ─────────────────────────────────────────────────────────── */
+
+/** One provider SKU offered by the Add panel, already filtered to a configured
+ * Category Provider. */
+export interface PoolCandidate {
+  id: string;
+  buyer_sku_code: string;
+  name: string;
+  /** The provider's own category string. */
+  provider_category: string;
+  /** Our category, resolved through the Category Provider mapping. */
+  mapped_category_name: string | null;
+  cost: number;
+  available: boolean;
+  already_pooled: boolean;
+  already_promoted: boolean;
+  is_new: boolean;
+}
+
+export interface PoolCandidateListParams {
+  search?: string;
+  provider_category?: string;
+  category_id?: string;
+  /** "new" (default) | "not_pooled" | "all". */
+  pool_state?: string;
+  /** "available" (default) | "unavailable" | "all". */
+  availability?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface PoolSummary {
+  configured_categories: number;
+  total_candidates: number;
+  pooled_count: number;
+  new_count: number;
+}
+
+export interface PoolResult {
+  pooled: number;
+  skipped: { buyer_sku_code: string; reason: string }[];
+}
+
+export interface PromoteResult {
+  promoted: number;
+  skipped: { id: number; buyer_sku_code: string; reason: string }[];
+}
+
+export interface PublishResult {
+  published: number;
+  skipped: { id: number; buyer_sku_code: string; reason: string }[];
 }
 
 /* ── Add Product (Bulk) ─────────────────────────────────────────────────────── */

@@ -43,9 +43,9 @@ describe("AddCategoryProviderDialog", () => {
 
     expect(within(dialog).getByLabelText("Provider")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Category")).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Provider Template")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Provider Category")).toBeInTheDocument();
 
-    for (const hint of ["Select a provider", "Select a category", "Select a template"]) {
+    for (const hint of ["Select a provider", "Select a category", "Select a provider first"]) {
       expect(within(dialog).getByText(hint)).toBeInTheDocument();
     }
   });
@@ -61,19 +61,19 @@ describe("AddCategoryProviderDialog", () => {
     expect(createSpy).not.toHaveBeenCalled();
   });
 
-  it("saves the chosen provider, category and template", async () => {
+  it("saves the chosen provider, category and provider category", async () => {
     const createSpy = vi.spyOn(categoryProvidersService, "create");
     const user = userEvent.setup();
     const dialog = await openAdd(user);
 
     await user.click(within(dialog).getByLabelText("Provider"));
-    await user.click(await screen.findByRole("option", { name: "Zelpoint" }));
+    await user.click(await screen.findByRole("option", { name: "Uxiotopup" }));
 
     await user.click(within(dialog).getByLabelText("Category"));
     await user.click(await screen.findByRole("option", { name: "Genshin Impact" }));
 
-    await user.click(within(dialog).getByLabelText("Provider Template"));
-    await user.click(await screen.findByRole("option", { name: "Games-Mobile Legends" }));
+    await user.click(within(dialog).getByLabelText("Provider Category"));
+    await user.click(await screen.findByRole("option", { name: /Valorant/ }));
 
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
@@ -81,8 +81,52 @@ describe("AddCategoryProviderDialog", () => {
       // The select submits the API's supplier_id, not the display name.
       supplier_id: expect.stringMatching(/^\d+$/),
       category_id: expect.stringMatching(/^\d+$/),
-      provider_template: "Games-Mobile Legends",
+      provider_category: "Valorant",
     });
+  });
+
+  it("groups the provider's catalogue by category, once each, with its SKU counts", async () => {
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+
+    await user.click(within(dialog).getByLabelText("Provider"));
+    await user.click(await screen.findByRole("option", { name: "Uxiotopup" }));
+    await user.click(within(dialog).getByLabelText("Provider Category"));
+
+    // Two Valorant SKUs upstream (one inactive) collapse into a single option.
+    const valorant = await screen.findAllByRole("option", { name: /Valorant/ });
+    expect(valorant).toHaveLength(1);
+    expect(valorant[0]).toHaveTextContent("1 of 2 SKUs active");
+  });
+
+  it("marks an already-mapped provider category as added and blocks picking it twice", async () => {
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+
+    await user.click(within(dialog).getByLabelText("Provider"));
+    await user.click(await screen.findByRole("option", { name: "Uxiotopup" }));
+    await user.click(within(dialog).getByLabelText("Provider Category"));
+
+    expect(await screen.findByText("Already added")).toBeInTheDocument();
+
+    // "Mobile Legends" is already mapped by a fixtured Category Provider, so it
+    // is listed for context but cannot be chosen again.
+    const mapped = await screen.findByRole("option", { name: /Mobile Legends/ });
+    expect(mapped).toHaveTextContent("already mapped to");
+    expect(mapped).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("cannot map a provider that has no catalogue integration", async () => {
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+
+    await user.click(within(dialog).getByLabelText("Provider"));
+    await user.click(await screen.findByRole("option", { name: "Zelpoint" }));
+
+    expect(within(dialog).getByLabelText("Provider Category")).toBeDisabled();
+    expect(
+      within(dialog).getByText(/Only Uxiotopup exposes a catalogue today/i),
+    ).toBeInTheDocument();
   });
 
   it("Cancel closes the modal without saving", async () => {

@@ -7,7 +7,7 @@ export const categoryProviderFormSchema = z.object({
   // value is an id, not the display name.
   supplierId: z.string().min(1, "Provider is required"),
   categoryId: z.string().min(1, "Category is required"),
-  providerTemplate: z.string().min(1, "Provider Template is required"),
+  providerCategory: z.string().min(1, "Provider Category is required"),
 });
 
 export type CategoryProviderFormValues = z.infer<typeof categoryProviderFormSchema>;

@@ -37,7 +37,7 @@ describe("ManagedProviderPage", () => {
 
     await user.click(within(systemRow).getByRole("button", { name: /Actions for Membership VIP/ }));
     expect(screen.queryByRole("menuitem", { name: "Delete" })).not.toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Edit Profit Margin" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Set Profit Margin" })).toBeInTheDocument();
   });
 
   it("lets a non-System row be selected and deleted", async () => {

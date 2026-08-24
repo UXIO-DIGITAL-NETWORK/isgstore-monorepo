@@ -1,12 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ProductProviderPage } from "@/features/products";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 /**
- * "Add Product Provider" — the Uxiotopup price list, the source for mapping a
- * new provider product into the catalog. Lives under `/provider/add` so the
- * tabs layout hides the tab bar (an `/add` form route) while the managed list
- * stays at `/provider`.
+ * "Add Product Provider" used to be a route of its own that browsed the
+ * provider's entire price list. It is an in-page panel now — the pool page owns
+ * it, filtered to the games mapped under Category Provider.
+ *
+ * Kept as a redirect for one release so existing links and bookmarks land
+ * somewhere sensible instead of 404ing.
  */
 export const Route = createFileRoute("/admin/_protected/products/provider/add/")({
-  component: ProductProviderPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/products/provider" });
+  },
 });

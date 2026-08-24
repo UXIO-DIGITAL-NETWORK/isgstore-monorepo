@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Lock, MoreHorizontal, SlidersHorizontal, Trash2, Unlock } from "lucide-react";
+import { ArrowUpCircle, Lock, MoreHorizontal, Rocket, SlidersHorizontal, Trash2, Unlock } from "lucide-react";
 
+import { Box } from "@/components/common/Box";
 import { Can } from "@/components/common/Can";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -11,28 +12,38 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNavigate } from "@tanstack/react-router";
+
+import { Text } from "@/components/common/Text";
 import { useDeleteProviderProducts, useLockProviderPrice } from "../hooks/useProviderProducts";
+import { usePromoteProviderProducts, usePublishProviderProducts } from "../hooks/useProviderPool";
 import type { ProviderProduct } from "../types/product.type";
-import { ProviderMarginDialog } from "./ProviderMarginDialog";
 
 interface ProviderRowActionsProps {
   provider: ProviderProduct;
 }
 
 /**
- * Row menu for the managed Product Provider list. Lock Price and Edit Profit
- * Margin are always available; Delete only for non-System rows — a System
- * provider (the Internal System supplier) is protected, matching the API which
- * rejects its deletion with a 403.
+ * Row menu for the Product Provider pool. Lock Price and Edit Profit Margin are
+ * always available; Delete only for non-System rows — a System provider (the
+ * Internal System supplier) is protected, matching the API's 403.
+ *
+ * Promote carries its blocking reason inside the disabled item rather than in a
+ * tooltip: a disabled `DropdownMenuItem` swallows pointer events, so a tooltip on
+ * it would never fire. The reason comes from the API, so the menu and the 422 can
+ * never tell the admin different things.
  */
 export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [lockOpen, setLockOpen] = useState(false);
-  const [marginOpen, setMarginOpen] = useState(false);
   const lockPrice = useLockProviderPrice();
   const deleteProviders = useDeleteProviderProducts();
+  const promote = usePromoteProviderProducts();
+  const publish = usePublishProviderProducts();
+  const navigate = useNavigate();
 
   const nextLocked = !provider.is_price_locked;
+  const isPooled = provider.pool_state === "needs_margin" || provider.pool_state === "ready";
 
   return (
     <>
@@ -48,10 +59,39 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
               {provider.is_price_locked ? <Unlock /> : <Lock />}
               {provider.is_price_locked ? "Unlock Price" : "Lock Price"}
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setMarginOpen(true)}>
+            <DropdownMenuItem
+              onSelect={() =>
+                navigate({
+                  to: "/admin/products/provider/set-profit-margin",
+                  search: { ids: provider.id },
+                })
+              }
+            >
               <SlidersHorizontal />
-              Edit Profit Margin
+              Set Profit Margin
             </DropdownMenuItem>
+            {isPooled && (
+              <DropdownMenuItem
+                disabled={!provider.can_promote}
+                onSelect={() => promote.mutate([provider.id])}
+              >
+                <ArrowUpCircle />
+                <Box className="flex flex-col items-start">
+                  Promote to Main Product
+                  {!provider.can_promote && provider.promote_blocked_reason && (
+                    <Text as="span" variant="small" className="text-muted-foreground">
+                      {provider.promote_blocked_reason}
+                    </Text>
+                  )}
+                </Box>
+              </DropdownMenuItem>
+            )}
+            {provider.pool_state === "draft" && (
+              <DropdownMenuItem onSelect={() => publish.mutate([provider.id])}>
+                <Rocket />
+                Publish
+              </DropdownMenuItem>
+            )}
           </Can>
           {!provider.is_system && (
             <Can permission="products.delete">
@@ -78,8 +118,6 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
         }
         onConfirm={() => lockPrice.mutate({ id: provider.id, locked: nextLocked })}
       />
-
-      <ProviderMarginDialog provider={provider} open={marginOpen} onOpenChange={setMarginOpen} />
 
       <DeleteConfirmDialog
         open={deleteOpen}

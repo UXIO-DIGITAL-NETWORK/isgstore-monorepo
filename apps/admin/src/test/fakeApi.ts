@@ -103,7 +103,7 @@ const toApiSupplierCategory = (row: (typeof CATEGORY_PROVIDERS)[number], index: 
   id: index + 1,
   category_id: Number(row.category_id.replace(/\D/g, "")) || 1,
   supplier_id: index + 1,
-  template_code: row.provider_template,
+  provider_category: row.provider_category,
   supplier: { id: index + 1, name: row.provider_name },
   created_at: row.created_at,
   updated_at: row.updated_at,
@@ -262,11 +262,21 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
   return [
     {
       id: 1,
+      product_id: 101,
       buyer_sku_code: "MEMBERSHIP_VIP",
+      provider_name: "Membership VIP",
       price: 58745,
       is_active: true,
       is_price_locked: false,
       is_system: true,
+      buyer_product_status: true,
+      pool_state: "published",
+      can_promote: false,
+      promote_blocked_reason: "SKU sudah dipromosikan ke produk utama.",
+      price_min: null,
+      price_max: null,
+      pool_category: { id: 1, name: "Membership" },
+      preview_prices: null,
       margins: { member: null, vip: null, reseller: null, agent: null },
       product: {
         id: 101,
@@ -281,11 +291,21 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
     },
     {
       id: 2,
+      product_id: 102,
       buyer_sku_code: "MLID_19_S1",
+      provider_name: "MOBILELEGEND - 19 Diamond",
       price: 4865,
       is_active: true,
       is_price_locked: false,
       is_system: false,
+      buyer_product_status: true,
+      pool_state: "published",
+      can_promote: false,
+      promote_blocked_reason: "SKU sudah dipromosikan ke produk utama.",
+      price_min: null,
+      price_max: null,
+      pool_category: { id: 2, name: "Mobile Legends Indonesia" },
+      preview_prices: null,
       margins: { member: null, vip: null, reseller: null, agent: null },
       product: {
         id: 102,
@@ -297,6 +317,53 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
       },
       supplier: { id: 1, name: "Uxiotopup", is_system: false },
       created_at: "2026-03-10T21:58:00.000000Z",
+    },
+    // A pooled row: no product behind it, prices are a projection, and it is
+    // blocked from promotion until a margin is decided.
+    {
+      id: 3,
+      product_id: null,
+      buyer_sku_code: "VAL120",
+      provider_name: "Valorant 120 Points",
+      price: 15000,
+      is_active: false,
+      is_price_locked: false,
+      is_system: false,
+      buyer_product_status: true,
+      pool_state: "needs_margin",
+      can_promote: false,
+      promote_blocked_reason: "Set profit margin terlebih dahulu sebelum promote.",
+      price_min: null,
+      price_max: null,
+      pool_category: { id: 3, name: "Valorant" },
+      preview_prices: priced(15000),
+      margins: { member: null, vip: null, reseller: null, agent: null },
+      product: null,
+      supplier: { id: 1, name: "Uxiotopup", is_system: false },
+      created_at: "2026-08-24T10:00:00.000000Z",
+    },
+    // Pooled and priced — the one row Promote will accept.
+    {
+      id: 4,
+      product_id: null,
+      buyer_sku_code: "VAL420",
+      provider_name: "Valorant 420 Points",
+      price: 50000,
+      is_active: false,
+      is_price_locked: false,
+      is_system: false,
+      buyer_product_status: true,
+      pool_state: "ready",
+      can_promote: true,
+      promote_blocked_reason: null,
+      price_min: null,
+      price_max: null,
+      pool_category: { id: 3, name: "Valorant" },
+      preview_prices: priced(50000),
+      margins: { member: 20, vip: 15, reseller: 10, agent: 5 },
+      product: null,
+      supplier: { id: 1, name: "Uxiotopup", is_system: false },
+      created_at: "2026-08-24T10:05:00.000000Z",
     },
   ];
 };
@@ -576,9 +643,9 @@ const SEARCHABLE: Record<string, string[]> = {
   "sub-categories": ["name", "currency_name"],
   "category-types": ["name"],
   "server-categories": ["name"],
-  "supplier-categories": ["template_code"],
+  "supplier-categories": ["provider_category"],
   "products": ["name", "code"],
-  "supplier-products": ["buyer_sku_code"],
+  "supplier-products": ["buyer_sku_code", "provider_name"],
   "transactions": ["invoice_number"],
   "articles": ["title"],
   "article-categories": ["name"],
@@ -626,7 +693,112 @@ const UXIOTOPUP_PRICE_LIST: Row[] = [
     available: true,
     already_mapped: false,
   },
+  {
+    buyer_sku_code: "ML86",
+    name: "Mobile Legends 86 Diamond",
+    category: "Mobile Legends",
+    cost: 20000,
+    harga: 20000,
+    harga_gold: 19800,
+    harga_silver: 19900,
+    harga_pro: 19700,
+    available: true,
+    already_mapped: true,
+  },
+  {
+    buyer_sku_code: "VAL120",
+    name: "Valorant 120 Points",
+    category: "Valorant",
+    cost: 15000,
+    harga: 15000,
+    harga_gold: 14800,
+    harga_silver: 14900,
+    harga_pro: 14700,
+    available: true,
+    already_mapped: false,
+  },
+  {
+    buyer_sku_code: "VAL420",
+    name: "Valorant 420 Points",
+    category: "Valorant",
+    cost: 50000,
+    harga: 50000,
+    harga_gold: 49800,
+    harga_silver: 49900,
+    harga_pro: 49700,
+    available: false,
+    already_mapped: false,
+  },
 ];
+
+/**
+ * The provider's categories, grouped and de-duplicated the way the API does it:
+ * one row per distinct `category`, however many SKUs share it, annotated with
+ * whether a Category Provider already maps it.
+ */
+const uxiotopupCategories = (): Row[] => {
+  const groups = new Map<string, { sku_count: number; available_count: number }>();
+
+  for (const row of UXIOTOPUP_PRICE_LIST) {
+    const key = String(row.category);
+    const group = groups.get(key) ?? { sku_count: 0, available_count: 0 };
+    group.sku_count += 1;
+    if (row.available) group.available_count += 1;
+    groups.set(key, group);
+  }
+
+  const mapped = new Map(CATEGORY_PROVIDERS.map((row, index) => [row.provider_category, index + 1]));
+
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([value, counts]) => ({
+      value,
+      sku_count: counts.sku_count,
+      available_count: counts.available_count,
+      mapped_category_id: mapped.get(value) ?? null,
+      mapped_category_name: mapped.has(value) ? `Mapped ${value}` : null,
+    }));
+};
+
+/**
+ * Add-panel feed. Only categories with a Category Provider mapping are offered —
+ * the rule that makes adding a Category Provider the act that surfaces a game's
+ * catalogue — and the defaults match the API's (`new` + `available`).
+ */
+const uxiotopupPoolCandidates = (params: Record<string, unknown>): Row[] => {
+  // Which provider categories have a Category Provider mapping, as the API
+  // resolves it from `supplier_categories`. Deliberately independent of the
+  // admin-list fixture: that one exists to exercise the table, and coupling the
+  // two made every added mapping shift unrelated tests.
+  const configured = new Set(["Mobile Legends", "Valorant"]);
+  const poolState = (params.pool_state as string | undefined) ?? "new";
+  const availability = (params.availability as string | undefined) ?? "available";
+  const search = (params.search as string | undefined)?.toLowerCase();
+
+  return UXIOTOPUP_PRICE_LIST.filter((row) => configured.has(String(row.category)))
+    .map((row) => ({
+      buyer_sku_code: row.buyer_sku_code,
+      name: row.name,
+      provider_category: row.category,
+      mapped_category_name: `Mapped ${row.category}`,
+      cost: row.cost,
+      available: row.available,
+      already_pooled: Boolean(row.already_mapped),
+      already_promoted: Boolean(row.already_mapped),
+      is_new: !row.already_mapped,
+    }))
+    .filter((row) => {
+      if (poolState === "new" && (!row.is_new || row.already_pooled)) return false;
+      if (poolState === "not_pooled" && row.already_pooled) return false;
+      if (availability === "available" && !row.available) return false;
+      if (availability === "unavailable" && row.available) return false;
+      if (search) {
+        const haystack = [row.name, row.buyer_sku_code, row.provider_category].join(" ").toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
+      return true;
+    });
+};
 
 const uxiotopupPriceList = (params: Record<string, unknown>): Row[] => {
   const search = (params.search as string | undefined)?.toLowerCase();
@@ -712,7 +884,22 @@ export function createFakeApi() {
       const haystack = fields.map((field) => String(row[field] ?? "")).join(" ").toLowerCase();
       if (!haystack.includes(search.toLowerCase())) return false;
     }
-    if (params.category_id && String(row.category_id) !== String(params.category_id)) return false;
+    // Comma-joined id selection, as the Set Profit Margin page sends it.
+    if (params.ids) {
+      const wanted = String(params.ids).split(",").filter(Boolean);
+      if (!wanted.includes(String(row.id))) return false;
+    }
+    if (params.pool_state && String(row.pool_state) !== String(params.pool_state)) return false;
+    if (params.availability) {
+      const wantAvailable = params.availability === "available";
+      if (Boolean(row.buyer_product_status) !== wantAvailable) return false;
+    }
+    // A pooled row has no product, so its category lives on `pool_category`.
+    if (params.category_id) {
+      const own = row.category_id ?? (row.pool_category as { id?: unknown } | undefined)?.id;
+      if (String(own ?? "") !== String(params.category_id)) return false;
+      return true;
+    }
     if (params.transaction_id && String(row.transaction_id) !== String(params.transaction_id)) return false;
     if (params.type && String(row.type) !== String(params.type)) return false;
     if (params.article_category_id && String(row.article_category_id) !== String(params.article_category_id)) {
@@ -730,6 +917,22 @@ export function createFakeApi() {
       // Uxiotopup endpoints are documents, not CRUD collections.
       if (url === "/v1/uxiotopup/price-list") {
         return paginate(uxiotopupPriceList(config?.params ?? {}), config?.params ?? {});
+      }
+      if (url === "/v1/uxiotopup/pool-candidates") {
+        return paginate(uxiotopupPoolCandidates(config?.params ?? {}), config?.params ?? {});
+      }
+      if (url === "/v1/uxiotopup/pool-summary") {
+        const all = uxiotopupPoolCandidates({ pool_state: "all", availability: "all" });
+        return envelope({
+          configured_categories: new Set(all.map((row) => row.provider_category)).size,
+          total_candidates: all.length,
+          pooled_count: all.filter((row) => row.already_pooled).length,
+          new_count: all.filter((row) => !row.already_pooled && row.is_new).length,
+        });
+      }
+      if (url === "/v1/uxiotopup/categories") {
+        const rows = uxiotopupCategories();
+        return envelope(config?.params?.unmapped ? rows.filter((row) => !row.mapped_category_id) : rows);
       }
       if (url === "/v1/uxiotopup/sku-preview") {
         const sku = String(config?.params?.buyer_sku_code ?? "");
@@ -762,6 +965,24 @@ export function createFakeApi() {
     }),
 
     post: vi.fn(async (url: string, body?: unknown) => {
+      // Pool actions are commands, not collection writes — answer them before
+      // the generic create/update path tries to parse them as one.
+      if (url === "/v1/uxiotopup/pool") {
+        const codes = ((body as { buyer_sku_codes?: string[] })?.buyer_sku_codes ?? []) as string[];
+        return envelope({ pooled: codes.length, skipped: [] });
+      }
+      if (url === "/v1/supplier-products/bulk/promote") {
+        const ids = ((body as { ids?: unknown[] })?.ids ?? []) as unknown[];
+        return envelope({ promoted: ids.length, skipped: [] });
+      }
+      if (url === "/v1/supplier-products/bulk/publish") {
+        const ids = ((body as { ids?: unknown[] })?.ids ?? []) as unknown[];
+        return envelope({ published: ids.length, skipped: [] });
+      }
+      if (/^\/v1\/supplier-products\/\d+\/(promote|publish)$/.test(url)) {
+        return envelope(null);
+      }
+
       const [collection, id] = parsePath(url);
       const rows = store[collection] ?? (store[collection] = []);
       const payload = readForm(body);

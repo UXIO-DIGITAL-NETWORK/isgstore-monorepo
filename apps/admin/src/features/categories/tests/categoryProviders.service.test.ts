@@ -12,7 +12,7 @@ const apiRow = (over: Record<string, unknown> = {}) => ({
   id: 9,
   category_id: 1,
   supplier_id: 4,
-  template_code: "mlbb",
+  provider_category: "mlbb",
   supplier: { id: 4, name: "Uxiotopup" },
   created_at: "2026-07-01T00:00:00.000000Z",
   updated_at: "2026-07-01T00:00:00.000000Z",
@@ -37,7 +37,7 @@ describe("categoryProvidersService.list", () => {
       id: "9",
       category_id: "1",
       provider_name: "Uxiotopup",
-      provider_template: "mlbb",
+      provider_category: "mlbb",
     });
   });
 
@@ -61,29 +61,29 @@ describe("categoryProvidersService.list", () => {
 });
 
 describe("categoryProvidersService mutations", () => {
-  it("create maps provider_template onto template_code and sends numeric FKs", async () => {
+  it("create maps provider_category onto provider_category and sends numeric FKs", async () => {
     vi.mocked(api.post).mockResolvedValue(envelope(apiRow()));
 
     await categoryProvidersService.create({
       category_id: "1",
       supplier_id: "4",
       provider_name: "Uxiotopup",
-      provider_template: "mlbb",
+      provider_category: "mlbb",
     });
 
     expect(api.post).toHaveBeenCalledWith("/v1/supplier-categories", {
       category_id: 1,
       supplier_id: 4,
-      template_code: "mlbb",
+      provider_category: "mlbb",
     });
   });
 
   it("update sends only the mapped fields it was given", async () => {
-    vi.mocked(api.put).mockResolvedValue(envelope(apiRow({ template_code: "ff" })));
+    vi.mocked(api.put).mockResolvedValue(envelope(apiRow({ provider_category: "ff" })));
 
-    await categoryProvidersService.update("9", { provider_template: "ff" });
+    await categoryProvidersService.update("9", { provider_category: "ff" });
 
-    expect(api.put).toHaveBeenCalledWith("/v1/supplier-categories/9", { template_code: "ff" });
+    expect(api.put).toHaveBeenCalledWith("/v1/supplier-categories/9", { provider_category: "ff" });
   });
 
   it("remove deletes by id", async () => {
