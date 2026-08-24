@@ -138,17 +138,38 @@ class UxiotopupService
     }
 
     /**
+     * The cached price list indexed by service id.
+     *
+     * Built per call rather than cached: the list is MB-sized and the index is
+     * cheap, while a second cache entry would double the memory and could drift
+     * from the list it indexes. Callers that look up many SKUs (pooling a batch,
+     * a 500-row Excel import) must build it ONCE and reuse it — repeatedly
+     * scanning the list per SKU is what this exists to avoid.
+     *
+     * Keys are cast to string so a numeric service id ("86") does not become an
+     * int array key and miss a string lookup.
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    public function keyedPriceListCached(): array
+    {
+        $keyed = [];
+
+        foreach ($this->getPriceListCached() as $item) {
+            if (is_array($item) && isset($item['id'])) {
+                $keyed[(string) $item['id']] = $item;
+            }
+        }
+
+        return $keyed;
+    }
+
+    /**
      * @return array<string,mixed>|null
      */
     public function findServiceInPriceList(string $serviceId): ?array
     {
-        foreach ($this->getPriceListCached() as $item) {
-            if (($item['id'] ?? null) === $serviceId) {
-                return $item;
-            }
-        }
-
-        return null;
+        return $this->keyedPriceListCached()[$serviceId] ?? null;
     }
 
     public function getBalance(): array

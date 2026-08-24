@@ -19,7 +19,7 @@ class SupplierCategoryResource extends JsonResource
             'id' => $this->id,
             'category_id' => $this->category_id,
             'supplier_id' => $this->supplier_id,
-            'template_code' => $this->template_code,
+            'provider_category' => $this->provider_category,
             'category' => new CategoryResource($this->whenLoaded('category')),
             'supplier' => new SupplierResource($this->whenLoaded('supplier')),
             'created_at' => $this->created_at,

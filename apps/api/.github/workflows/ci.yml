@@ -1,0 +1,44 @@
+name: CI
+
+# The deploy workflow runs the suite, but only on a push to main — by which point
+# an unverified change has already reached the branch that deploys. This runs the
+# same suite on feature branches and pull requests, so work is checked before it
+# can get anywhere near production.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          # Mirrors deploy-prod.yml: gd + exif back App\Services\ImageOptimizer,
+          # and UploadedFile::fake()->image() in the suite needs GD to exist.
+          extensions: sqlite3, pdo_sqlite, gd, exif
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # Test suite uses in-memory SQLite (phpunit.xml) — no services needed.
+      - name: Run tests
+        run: php artisan test
+
+      - name: Check code style
+        run: ./vendor/bin/pint --test

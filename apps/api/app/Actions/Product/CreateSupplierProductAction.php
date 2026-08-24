@@ -14,8 +14,14 @@ class CreateSupplierProductAction
 
     public function execute(CreateSupplierProductDTO $dto): SupplierProduct
     {
-        // If this product is set to active, ensure others for the same product are inactive
-        if ($dto->isActive) {
+        // If this product is set to active, ensure others for the same product are inactive.
+        //
+        // The null check is load-bearing, not defensive: `product_id` is nullable now
+        // (pooled rows have no product yet), and Illuminate's query builder rewrites
+        // `where($column, null)` into `whereNull($column)`. A null `productId` here
+        // would therefore match *every pooled row at once* and deactivate the whole
+        // pool in a single statement.
+        if ($dto->isActive && $dto->productId !== null) {
             SupplierProduct::where('product_id', $dto->productId)
                 ->update(['is_active' => false]);
         }

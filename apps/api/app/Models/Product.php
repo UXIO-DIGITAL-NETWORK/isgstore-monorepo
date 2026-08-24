@@ -16,7 +16,14 @@ class Product extends Model
         'is_price_hidden' => 'boolean',
         'price_min' => 'integer',
         'price_max' => 'integer',
+        'published_at' => 'datetime',
     ];
+
+    /** Never published, as opposed to published-then-deactivated. */
+    public function isDraft(): bool
+    {
+        return ! $this->status && $this->published_at === null;
+    }
 
     /** The "client" (merchant) that sells this product; null for platform-owned catalogue. */
     public function merchant()

@@ -14,8 +14,10 @@ class UpdateSupplierProductAction
 
     public function execute(SupplierProduct $supplierProduct, UpdateSupplierProductDTO $dto): SupplierProduct
     {
-        // If this product is set to active, ensure others for the same product are inactive
-        if ($dto->isActive && ! $supplierProduct->is_active) {
+        // If this product is set to active, ensure others for the same product are inactive.
+        // See CreateSupplierProductAction for why the null check matters: a null
+        // `productId` becomes `whereNull`, which would sweep the entire pool.
+        if ($dto->isActive && ! $supplierProduct->is_active && $dto->productId !== null) {
             SupplierProduct::where('product_id', $dto->productId)
                 ->where('id', '!=', $supplierProduct->id)
                 ->update(['is_active' => false]);

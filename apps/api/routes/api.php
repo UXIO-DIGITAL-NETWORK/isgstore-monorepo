@@ -83,6 +83,8 @@ use App\Http\Controllers\Api\User\SyncTimezoneController;
 use App\Http\Controllers\Api\User\UserController;
 use App\Http\Controllers\Api\Uxiotopup\PriceAlertController;
 use App\Http\Controllers\Api\Uxiotopup\UxiotopupBalanceController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupCategoryController;
+use App\Http\Controllers\Api\Uxiotopup\UxiotopupPoolController;
 use App\Http\Controllers\Api\Uxiotopup\UxiotopupPriceListController;
 use App\Http\Controllers\Api\Uxiotopup\UxiotopupProductController;
 use App\Http\Controllers\Api\Uxiotopup\UxiotopupProductImportController;
@@ -396,11 +398,17 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/bulk/lock-price', [SupplierProductController::class, 'bulkLockPrice']);
         Route::post('/bulk/profit-margin', [SupplierProductController::class, 'bulkSetMargin']);
         Route::post('/bulk/delete', [SupplierProductController::class, 'bulkDelete']);
+        // Pool pipeline: a priced pool row becomes a DRAFT product, and publishing
+        // it is a separate, deliberate act.
+        Route::post('/bulk/promote', [SupplierProductController::class, 'bulkPromote']);
+        Route::post('/bulk/publish', [SupplierProductController::class, 'bulkPublish']);
         Route::get('/{supplierProduct}', [SupplierProductController::class, 'show']);
         Route::put('/{supplierProduct}', [SupplierProductController::class, 'update']);
         Route::delete('/{supplierProduct}', [SupplierProductController::class, 'destroy']);
         Route::post('/{supplierProduct}/lock-price', [SupplierProductController::class, 'lockPrice']);
         Route::post('/{supplierProduct}/profit-margin', [SupplierProductController::class, 'setMargin']);
+        Route::post('/{supplierProduct}/promote', [SupplierProductController::class, 'promote']);
+        Route::post('/{supplierProduct}/publish', [SupplierProductController::class, 'publish']);
     });
 
     // Pricing Rules (markup config used by the uxiotopup price sync)
@@ -437,6 +445,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     // Browse the whole uxiotopup price list (Product Provider tab) — reads the
     // shared 5-min cache, so paging/searching never hits uxiotopup upstream.
     Route::get('/uxiotopup/price-list', [UxiotopupPriceListController::class, 'index']);
+    // The provider's own `kategori` values, for the Category Provider dropdown.
+    // Free text upstream, so offering the live list is what stops an admin
+    // mapping a category that matches nothing.
+    Route::get('/uxiotopup/categories', [UxiotopupCategoryController::class, 'index']);
+    // The Add-panel feed: SKUs whose kategori has a configured Category Provider.
+    Route::get('/uxiotopup/pool-candidates', [UxiotopupPoolController::class, 'candidates']);
+    Route::get('/uxiotopup/pool-summary', [UxiotopupPoolController::class, 'summary']);
+    Route::post('/uxiotopup/pool', [UxiotopupPoolController::class, 'store']);
     Route::get('/uxiotopup/sku-preview', [UxiotopupSkuLookupController::class, 'show']);
     Route::post('/uxiotopup/products', [UxiotopupProductController::class, 'store']);
     Route::post('/uxiotopup/products/bulk', [UxiotopupProductController::class, 'bulkStore']);

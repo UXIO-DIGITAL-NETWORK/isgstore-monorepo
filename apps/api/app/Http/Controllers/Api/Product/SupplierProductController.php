@@ -7,13 +7,19 @@ use App\Actions\Product\CreateSupplierProductAction;
 use App\Actions\Product\DeleteSupplierProductAction;
 use App\Actions\Product\GetSupplierProductsAction;
 use App\Actions\Product\LockSupplierProductPriceAction;
+use App\Actions\Product\PromoteSupplierProductAction;
+use App\Actions\Product\PublishSupplierProductAction;
 use App\Actions\Product\SetSupplierProductMarginAction;
 use App\Actions\Product\UpdateSupplierProductAction;
+use App\Exceptions\SupplierProductPoolException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\BulkDeleteSupplierProductsRequest;
 use App\Http\Requests\Product\BulkLockSupplierProductPriceRequest;
+use App\Http\Requests\Product\BulkPromoteSupplierProductsRequest;
+use App\Http\Requests\Product\BulkPublishSupplierProductsRequest;
 use App\Http\Requests\Product\BulkSetSupplierProductMarginRequest;
 use App\Http\Requests\Product\LockSupplierProductPriceRequest;
+use App\Http\Requests\Product\PromoteSupplierProductRequest;
 use App\Http\Requests\Product\SetSupplierProductMarginRequest;
 use App\Http\Requests\Product\StoreSupplierProductRequest;
 use App\Http\Requests\Product\UpdateSupplierProductRequest;
@@ -29,7 +35,10 @@ class SupplierProductController extends Controller
     public function index(Request $request, GetSupplierProductsAction $action)
     {
         $perPage = min(100, max(1, (int) $request->query('per_page', 15)));
-        $products = $action->execute($perPage, $request->only(['search', 'supplier_id', 'category_id', 'status', 'mode']));
+        $products = $action->execute($perPage, $request->only([
+            'ids', 'search', 'supplier_id', 'category_id', 'status', 'mode',
+            'pool_state', 'availability', 'min_cost', 'max_cost',
+        ]));
 
         return $this->paginatedResponse(SupplierProductResource::collection($products), 'Supplier Products retrieved successfully');
     }
@@ -86,7 +95,13 @@ class SupplierProductController extends Controller
 
     public function setMargin(SetSupplierProductMarginRequest $request, SupplierProduct $supplierProduct, SetSupplierProductMarginAction $action)
     {
-        $updated = $action->execute($supplierProduct, $request->margins());
+        $updated = $action->execute(
+            $supplierProduct,
+            $request->margins(),
+            $request->priceMin(),
+            $request->priceMax(),
+            $request->limitsProvided(),
+        );
 
         return $this->successResponse(
             new SupplierProductResource($updated->load(['product', 'supplier'])),
@@ -103,7 +118,13 @@ class SupplierProductController extends Controller
 
     public function bulkSetMargin(BulkSetSupplierProductMarginRequest $request, BulkSupplierProductAction $action)
     {
-        $result = $action->setMargin($request->validated('ids'), $request->margins());
+        $result = $action->setMargin(
+            $request->validated('ids'),
+            $request->margins(),
+            $request->priceMin(),
+            $request->priceMax(),
+            $request->limitsProvided(),
+        );
 
         return $this->successResponse($result, 'Profit margins updated successfully');
     }
@@ -113,6 +134,63 @@ class SupplierProductController extends Controller
         $result = $action->delete($request->validated('ids'));
 
         return $this->successResponse($result, 'Provider products deleted successfully');
+    }
+
+    /**
+     * Pool row -> draft product. 422 (not 500) when the pipeline's own rules say no,
+     * so the admin sees the reason rather than a stack trace.
+     */
+    public function promote(PromoteSupplierProductRequest $request, SupplierProduct $supplierProduct, PromoteSupplierProductAction $action)
+    {
+        try {
+            $product = $action->execute(
+                $supplierProduct,
+                $request->validated('category_id'),
+                $request->validated('sub_category_id'),
+                $request->validated('name'),
+                $request->validated('code'),
+            );
+        } catch (SupplierProductPoolException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        return $this->successResponse(
+            new SupplierProductResource($supplierProduct->fresh()->load(['product', 'supplier', 'poolCategory'])),
+            "Produk draft {$product->code} dibuat dari SKU {$supplierProduct->buyer_sku_code}",
+            201
+        );
+    }
+
+    public function publish(SupplierProduct $supplierProduct, PublishSupplierProductAction $action)
+    {
+        try {
+            $action->execute($supplierProduct);
+        } catch (SupplierProductPoolException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        return $this->successResponse(
+            new SupplierProductResource($supplierProduct->fresh()->load(['product', 'supplier', 'poolCategory'])),
+            'Produk berhasil dipublish'
+        );
+    }
+
+    public function bulkPromote(BulkPromoteSupplierProductsRequest $request, BulkSupplierProductAction $action)
+    {
+        $result = $action->promote(
+            $request->validated('ids'),
+            $request->validated('category_id'),
+            $request->validated('sub_category_id'),
+        );
+
+        return $this->successResponse($result, "{$result['promoted']} SKU dipromosikan ke produk draft");
+    }
+
+    public function bulkPublish(BulkPublishSupplierProductsRequest $request, BulkSupplierProductAction $action)
+    {
+        $result = $action->publish($request->validated('ids'));
+
+        return $this->successResponse($result, "{$result['published']} produk dipublish");
     }
 
     private function isSystem(SupplierProduct $supplierProduct): bool

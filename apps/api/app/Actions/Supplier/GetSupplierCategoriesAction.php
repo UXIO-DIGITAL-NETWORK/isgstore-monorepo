@@ -17,9 +17,9 @@ class GetSupplierCategoriesAction
             ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
             ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
             // The admin list shows the supplier's name, so a search that only
-            // matched template_code would miss the column people actually read.
+            // matched provider_category would miss the column people actually read.
             ->when($search, fn ($query) => $query->where(
-                fn ($query) => $query->where('template_code', 'like', "%{$search}%")
+                fn ($query) => $query->where('provider_category', 'like', "%{$search}%")
                     ->orWhereHas('supplier', fn ($q) => $q->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('category', fn ($q) => $q->where('name', 'like', "%{$search}%"))
             ))
