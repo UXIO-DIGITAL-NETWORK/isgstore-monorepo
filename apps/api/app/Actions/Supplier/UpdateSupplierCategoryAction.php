@@ -17,14 +17,14 @@ class UpdateSupplierCategoryAction
         $supplierCategory->update([
             'category_id' => $dto->categoryId,
             'supplier_id' => $dto->supplierId,
-            'template_code' => $dto->templateCode,
+            'provider_category' => $dto->providerCategory,
         ]);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Updated Supplier Category: {$supplierCategory->template_code}"
+            message: "Updated Category Provider: {$supplierCategory->provider_category}"
         ));
 
         return $supplierCategory->fresh();

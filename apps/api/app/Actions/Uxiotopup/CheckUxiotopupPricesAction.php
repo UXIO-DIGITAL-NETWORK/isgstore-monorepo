@@ -9,6 +9,7 @@ use App\Enums\PriceAlertStatus;
 use App\Models\PriceChangeAlert;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
+use App\Models\SupplierSkuSighting;
 use App\Services\UxiotopupService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -90,6 +91,8 @@ class CheckUxiotopupPricesAction
             ->get()
             ->keyBy('supplier_product_id');
 
+        $this->recordSightings($supplierId, $items);
+
         $deactivated = [];
         $reactivated = [];
         $unknownCount = 0;
@@ -146,7 +149,12 @@ class CheckUxiotopupPricesAction
 
             if ($costChanged) {
                 $priceChanged++;
+            }
 
+            // A price alert says "your selling price is now wrong". A pooled row has
+            // no selling price yet, so alerting on it is pure noise — its cost is
+            // still updated below, and its preview prices move with it.
+            if ($costChanged && $existing->product_id !== null) {
                 // Alert dedupe: one pending alert per mapping. old_price stays at
                 // the cost from when the alert was first raised; new_price tracks
                 // the latest. A revert back to old_price dissolves the alert.
@@ -174,7 +182,20 @@ class CheckUxiotopupPricesAction
                 }
             }
 
-            if (! $costChanged && ! $statusChanged) {
+            // A pooled row renders from this snapshot (it has no product to read a
+            // name from), so keep it in step with the provider. Once promoted, the
+            // product owns the name and this is left as the record of what it was
+            // pooled as.
+            $providerName = $existing->product_id === null
+                ? (string) ($item['nama_layanan'] ?? $existing->provider_name)
+                : $existing->provider_name;
+
+            $metaChanged = $providerName !== $existing->provider_name;
+
+            // Nothing to write unless something actually moved. `$metaChanged` has to
+            // be part of this test AND of the upsert column list below, or the
+            // refresh silently never lands.
+            if (! $costChanged && ! $statusChanged && ! $metaChanged) {
                 continue;
             }
 
@@ -182,6 +203,8 @@ class CheckUxiotopupPricesAction
                 'supplier_id' => $supplierId,
                 'buyer_sku_code' => $sku,
                 'product_id' => $existing->product_id,
+                'pool_category_id' => $existing->pool_category_id,
+                'provider_name' => $providerName,
                 'price' => $cost,
                 'admin_fee' => $existing->admin_fee,
                 'commission' => $existing->commission,
@@ -198,7 +221,7 @@ class CheckUxiotopupPricesAction
             SupplierProduct::upsert(
                 $chunk,
                 ['supplier_id', 'buyer_sku_code'],
-                ['price', 'admin_fee', 'commission', 'buyer_product_status', 'seller_product_status', 'is_active', 'sync_deactivated_at', 'updated_at']
+                ['price', 'provider_name', 'admin_fee', 'commission', 'buyer_product_status', 'seller_product_status', 'is_active', 'sync_deactivated_at', 'updated_at']
             );
         }
 
@@ -216,8 +239,63 @@ class CheckUxiotopupPricesAction
     }
 
     /**
+     * Stamps the first time each SKU was seen upstream, so the Add panel can tell
+     * "the provider just added this" from "we have simply never pooled it".
+     *
+     * Steady state is one pluck and no writes: only SKUs we have never recorded are
+     * inserted. On the very first run every SKU is unseen, so the whole catalogue is
+     * backdated instead — otherwise the pipeline would open with thousands of rows
+     * all flagged New, which is the same as flagging none.
+     *
+     * @param  array<int,array<string,mixed>>  $items
+     */
+    private function recordSightings(int $supplierId, array $items): void
+    {
+        $known = SupplierSkuSighting::where('supplier_id', $supplierId)
+            ->pluck('buyer_sku_code')
+            ->flip();
+
+        $isFirstRun = $known->isEmpty();
+        $seenAt = $isFirstRun
+            ? now()->subDays(SupplierSkuSighting::NEW_FOR_DAYS + 1)
+            : now();
+
+        $rows = [];
+
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $sku = (string) ($item['id'] ?? '');
+
+            if ($sku === '' || $known->has($sku)) {
+                continue;
+            }
+
+            $known->put($sku, true);
+
+            $rows[] = [
+                'supplier_id' => $supplierId,
+                'buyer_sku_code' => $sku,
+                'provider_category' => trim((string) ($item['kategori'] ?? '')) ?: null,
+                'first_seen_at' => $seenAt,
+            ];
+        }
+
+        foreach (array_chunk($rows, self::UPSERT_CHUNK) as $chunk) {
+            // insertOrIgnore: two overlapping runs must not collide on the unique key.
+            SupplierSkuSighting::insertOrIgnore($chunk);
+        }
+    }
+
+    /**
      * Products whose member price is now below the active supplier cost —
      * these fail checkout's margin guard until repriced, so surface them.
+     *
+     * The INNER JOIN on `products` is load-bearing: a pooled mapping has a null
+     * `product_id` and therefore no selling price to compare, so it drops out here
+     * for free. Do not "fix" this into a left join.
      *
      * @return array<int,array{sku:string,product:string,cost:int,price_member:int}>
      */

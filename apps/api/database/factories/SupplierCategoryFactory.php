@@ -17,7 +17,8 @@ class SupplierCategoryFactory extends Factory
         return [
             'category_id' => Category::factory(),
             'supplier_id' => Supplier::factory(),
-            'template_code' => fake()->unique()->slug(2),
+            // The provider's own free-text `kategori` string, e.g. "Mobile Legends".
+            'provider_category' => fake()->unique()->words(2, true),
         ];
     }
 }

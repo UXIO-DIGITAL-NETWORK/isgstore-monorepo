@@ -13,7 +13,7 @@ class DeleteSupplierCategoryAction
 
     public function execute(SupplierCategory $supplierCategory): bool
     {
-        $templateCode = $supplierCategory->template_code;
+        $providerCategory = $supplierCategory->provider_category;
         $deleted = $supplierCategory->delete();
 
         if ($deleted) {
@@ -21,7 +21,7 @@ class DeleteSupplierCategoryAction
                 userId: Auth::id(),
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                message: "Deleted Supplier Category: {$templateCode}"
+                message: "Deleted Category Provider: {$providerCategory}"
             ));
         }
 

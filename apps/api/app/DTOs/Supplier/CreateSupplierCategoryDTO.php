@@ -7,6 +7,6 @@ readonly class CreateSupplierCategoryDTO
     public function __construct(
         public int $categoryId,
         public int $supplierId,
-        public string $templateCode
+        public string $providerCategory
     ) {}
 }

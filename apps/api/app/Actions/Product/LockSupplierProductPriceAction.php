@@ -8,8 +8,17 @@ use App\Models\SupplierProduct;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Toggles the price lock on a provider mapping. A locked mapping is skipped by
- * the uxiotopup price sync, so an admin-set price is never overwritten.
+ * Toggles the price lock on a provider mapping.
+ *
+ * The lock guards the *selling* price, not the supplier cost. `ProductPriceControlAction`
+ * reads it (via `products.is_price_locked`) and refuses to re-derive a product's four
+ * selling prices from a changed cost. `CheckUxiotopupPricesAction` deliberately does NOT
+ * read it: the 5-minute sync only ever writes `supplier_products.price`, which is the
+ * supplier's own cost — a fact, not a decision. Freezing that would leave a stale cost
+ * behind checkout's margin guard and silently sell below cost.
+ *
+ * (An earlier version of this docblock claimed the sync skips locked mappings. It never
+ * did, and it should not.)
  */
 class LockSupplierProductPriceAction
 {

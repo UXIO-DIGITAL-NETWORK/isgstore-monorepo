@@ -34,9 +34,9 @@ class SupplierCategoryCrudTest extends TestCase
         $created = $this->postJson('/api/v1/supplier-categories', [
             'category_id' => $category->id,
             'supplier_id' => $supplier->id,
-            'template_code' => 'ml-diamonds-tpl',
+            'provider_category' => 'Mobile Legends',
         ])->assertCreated()
-            ->assertJsonPath('data.template_code', 'ml-diamonds-tpl')
+            ->assertJsonPath('data.provider_category', 'Mobile Legends')
             ->assertJsonPath('data.category.id', $category->id)
             ->assertJsonPath('data.supplier.id', $supplier->id)
             ->json('data');
@@ -48,10 +48,46 @@ class SupplierCategoryCrudTest extends TestCase
         $this->putJson("/api/v1/supplier-categories/{$created['id']}", [
             'category_id' => $category->id,
             'supplier_id' => $supplier->id,
-            'template_code' => 'ml-diamonds-tpl-v2',
-        ])->assertOk()->assertJsonPath('data.template_code', 'ml-diamonds-tpl-v2');
+            'provider_category' => 'Mobile Legends Global',
+        ])->assertOk()->assertJsonPath('data.provider_category', 'Mobile Legends Global');
 
         $this->deleteJson("/api/v1/supplier-categories/{$created['id']}")->assertOk();
         $this->assertDatabaseCount('supplier_categories', 0);
+    }
+
+    public function test_provider_category_is_unique_per_supplier(): void
+    {
+        $this->actingAsAdmin();
+        $supplier = Supplier::factory()->create();
+
+        $this->postJson('/api/v1/supplier-categories', [
+            'category_id' => Category::factory()->create()->id,
+            'supplier_id' => $supplier->id,
+            'provider_category' => 'Mobile Legends',
+        ])->assertCreated();
+
+        // The same provider kategori cannot resolve to a second category of ours —
+        // promote reads this mapping in one direction and needs one answer.
+        $this->postJson('/api/v1/supplier-categories', [
+            'category_id' => Category::factory()->create()->id,
+            'supplier_id' => $supplier->id,
+            'provider_category' => 'Mobile Legends',
+        ])->assertStatus(422)->assertJsonValidationErrors('provider_category');
+    }
+
+    public function test_the_same_provider_category_may_be_reused_by_another_supplier(): void
+    {
+        $this->actingAsAdmin();
+        $category = Category::factory()->create();
+
+        foreach ([Supplier::factory()->create(), Supplier::factory()->create()] as $supplier) {
+            $this->postJson('/api/v1/supplier-categories', [
+                'category_id' => $category->id,
+                'supplier_id' => $supplier->id,
+                'provider_category' => 'Mobile Legends',
+            ])->assertCreated();
+        }
+
+        $this->assertDatabaseCount('supplier_categories', 2);
     }
 }

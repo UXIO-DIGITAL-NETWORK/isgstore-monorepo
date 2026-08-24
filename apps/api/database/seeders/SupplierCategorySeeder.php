@@ -12,16 +12,17 @@ class SupplierCategorySeeder extends Seeder
         $now = now();
         $items = [];
 
-        // Game categories mapped to Uxiotopup (supplier_id = 1).
+        // Our category id => the provider's own `kategori` string. This mapping is
+        // what decides which uxiotopup SKUs are offered for the category.
         $uxiotopupCategories = [
-            1 => 'mlbb',
+            1 => 'Mobile Legends',
         ];
 
         foreach ($uxiotopupCategories as $catId => $code) {
             $items[] = [
                 'category_id' => $catId,
                 'supplier_id' => 1,
-                'template_code' => $code,
+                'provider_category' => $code,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
