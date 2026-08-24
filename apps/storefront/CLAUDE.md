@@ -61,13 +61,23 @@ Before writing code, before answering an architectural question, before making a
 ## Commands
 
 ```bash
-npm run dev       # Start Vite dev server
-npm run build     # TypeScript check + Vite production build
-npm run lint      # ESLint
-npm run preview   # Preview the production build locally
+npm run dev        # Start Vite dev server
+npm run build      # TypeScript check + Vite production build
+npm run lint       # ESLint
+npm run test       # Vitest, single run
+npm run test:watch # Vitest, watch mode
+npm run preview    # Preview the production build locally
 ```
 
-There are no test scripts configured. Environment variable `VITE_API_BASE_URL` sets the backend URL, **including the `/api` prefix but not `/v1`** (default: `http://localhost:8000/api`). Copy `.env.example` to `.env` for local work; production injects it from the repository secret of the same name in `.github/workflows/production.yml`.
+`vitest.config.ts` is deliberately separate from `vite.config.ts` so the TanStack Router
+plugin does not run during tests — it would regenerate `routeTree.gen.ts` and make a test
+run mutate tracked source. It runs on the `node` environment and only picks up
+`src/**/*.test.ts` (note: **not** `.tsx` — there is no DOM/canvas here, so the suite covers
+pure logic: checkout mappers, nickname parsing, order-form validation, invoice review,
+article helpers). `npm run test` gates the production deploy in
+`.github/workflows/production.yml`.
+
+Environment variable `VITE_API_BASE_URL` sets the backend URL, **including the `/api` prefix but not `/v1`** (default: `http://localhost:8000/api`). Copy `.env.example` to `.env` for local work; production injects it from the repository secret of the same name in `.github/workflows/production.yml`.
 
 ## Architecture Overview
 
@@ -402,9 +412,15 @@ Frontend  →  Backend (our API)  →  Monetapay
                 └─── webhook ──────────┘
 ```
 
-- `GET /api/payment-methods?product_id={id}` — backend returns Monetapay-supported methods.
-- `POST /api/transactions` — backend creates the local transaction, initializes the Monetapay session, returns payment instructions (VA, QRIS payload, e-wallet deeplink).
-- Webhook → backend updates `transactions.status`. Frontend learns via 5s polling on `GET /api/invoices/{invoice_number}` (see "Live Invoice Polling Pattern" above).
+- `GET /v1/storefront/payment-channels` — the selectable methods. Prefixed with `/storefront`
+  because `/v1/payment-channels` is the admin CRUD route; `balance` is omitted for guests.
+- `POST /v1/checkout` — backend creates the transaction *and* the payment, calls Monetapay, and
+  returns `payment.instructions` (`qr_string`, `virtual_account`, or `checkout_url`). The same
+  instructions are persisted to `payments.payment_data`, so a page refresh can re-render the
+  QR/VA instead of leaving the customer with nothing to pay against.
+- Webhook → backend updates `transactions.status`. Frontend learns via 5s polling on
+  `GET /v1/invoices/{invoice_number}`, stopping on the `is_terminal` flag the API returns
+  (see "Live Invoice Polling Pattern" above).
 
 ## Provider Stack (`main.tsx`)
 
@@ -435,7 +451,7 @@ actually gets uploaded.
 and a result that came out bigger all return the input file untouched. The API re-encodes everything it
 receives anyway (`App\Services\ImageOptimizer`), so this is the shortcut, not the guarantee.
 
-The file is a byte-identical copy of the one in `web-admin-topup-fe`, where it carries its unit tests (this
+The file is a byte-identical copy of the one in `uxiotopup-admin`, where it carries its unit tests (this
 repo's vitest runs on `node`, with no canvas to exercise). Change one, change both.
 
 ## Definition of Done (Per Feature)
