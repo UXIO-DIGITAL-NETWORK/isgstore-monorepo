@@ -9,10 +9,19 @@
 
 ## 1. The Bridge (Frontend ↔ Backend Contract)
 
-- **Topology:** The admin frontend is a standalone React SPA talking to a **dedicated admin backend** (assumed Laravel) that is **separate from the consumer platform**. There is no shared codebase or DB with the consumer app.
-- **Backend status:** the API does **not exist yet**. This phase is **UI-first**; the FE is built against typed mock fixtures behind a stable service interface (see §6), so switching to real HTTP is a one-file change per service.
+- **Topology:** The admin frontend is a standalone React SPA talking to the **same Laravel API as the
+  consumer storefront** (`uxiotopup-api`) — not a separate admin backend. It consumes the admin route
+  group there: `/api/v1/*` behind `auth:sanctum` + the `admin` middleware, alongside the storefront's
+  public routes and the payment page's `/v1/payment-*` groups. The database **is** shared with the
+  consumer platform, which is why entities like `balance`/`point` show up on the user model.
+- **Backend status:** the API is **live and integrated**. All 25 feature services call it through
+  `src/lib/axios.ts`; the UI-first mock phase described in §6 is finished. Keep the typed service
+  interface — it is still the boundary hooks depend on — but there is no mock body left to swap.
 - **Base URL:** read from `import.meta.env.VITE_API_BASE_URL` via `src/config/env.ts` (`ENV.API_BASE_URL`). Current default targets a Laravel dev server (`http://127.0.0.1:8000/api/`).
-- **HTTP client:** a single configured Axios instance in `src/lib/axios.ts` (`api`). Its response interceptor **unwraps `response.data`**, so service methods return the API payload directly (not the raw Axios response). Its request interceptor injects `Authorization: Bearer <token>` from `useAuthStore`. On `401` (except from `/login`) it clears auth and hard-redirects to `/login`.
+- **HTTP client:** a single configured Axios instance in `src/lib/axios.ts` (`api`). Its response interceptor **unwraps `response.data`**, so service methods return the API payload directly (not the raw Axios response). Its request interceptor injects `Authorization: Bearer <token>` from `useAuthStore`. On `401` outside
+  `/v1/auth/*` it attempts **one** token refresh, replays the original request, and only clears auth +
+  redirects if that fails. The in-flight refresh is shared across concurrent 401s, so a dashboard
+  firing several queries at once rotates the token once instead of racing itself into a logout.
 - **Auth:** token-based (Bearer). The token is persisted in a **cookie** (`access_token`) via `js-cookie` in `useAuthStore`. "Remember me" controls cookie expiry (persistent up to 30 days vs. session cookie).
 
 ### 1.1 Response envelopes (the two shapes)
@@ -95,7 +104,7 @@ src/
 │       ├── hooks/              # TanStack Query hooks + non-API hooks
 │       ├── schemas/            # Zod runtime schemas (filters, action forms)
 │       ├── types/              # feature-specific TS types (often z.infer<…>)
-│       ├── data/               # typed mock fixtures for UI-first phase
+│       ├── data/               # static select-option lists + legacy fixtures (tests only)
 │       ├── pages/              # "smart" components (fetch + compose)
 │       └── index.ts            # barrel (public surface)
 ├── hooks/                      # Global hooks (useMobile, useTheme, …)
@@ -238,16 +247,17 @@ Only **`super-admin`** exists in MVP and holds **all permissions**, but the plum
 
 ---
 
-## 6. UI-First Strategy (API not built yet)
+## 6. Service Boundary (the UI-first phase is over)
 
-The switch from mock → real API must cost one edit per service. Pattern:
+The mock→real swap this section prescribed has **already happened**: every service now calls the
+real API. What survives is the boundary that made the swap cheap, and it still governs new code:
 
-- Each feature service exposes a **typed interface** the hooks depend on (e.g. `transactionsService.list(params): Promise<PaginatedResponse<Transaction>>`).
-- **This phase:** the service returns data from **typed mock fixtures** in `features/<f>/data/` (optionally with a small artificial delay). TanStack Query hooks, components, and types are written as if the data were real.
-- **Later:** replace the mock body with the real `api.get/post(...)` call. The interface, hooks, and UI stay untouched.
-- Keep an `ENV`/flag seam (e.g. `ENV.USE_MOCKS`) if you want mock/real toggling, but the interface boundary is what guarantees a clean swap.
+- Each feature service exposes a **typed interface** the hooks depend on (e.g. `transactionsService.list(params): Promise<PaginatedResponse<Transaction>>`). Hooks and components depend on that interface, never on Axios directly.
+- **Today:** the service body is the real `api.get/post(...)` call, mapping the envelope through `@/lib/apiMappers`. Components and hooks were not touched when the mocks came out — that was the point.
+- `features/<f>/data/` no longer backs any service. It holds static select-option lists and legacy fixtures that only the colocated `tests/` import. Do not wire a screen to them, and do not add new mock bodies to services.
+- If an endpoint genuinely does not exist yet, keep the screen behind the same typed interface and say so in the service — do not scatter placeholder data through components.
 
-> Agents MUST NOT scatter mock data inside components. Mocks belong in `data/` behind the service boundary.
+> Agents MUST NOT scatter mock data inside components. Test fixtures belong in `data/` or `src/test/`, behind the service boundary.
 
 ---
 

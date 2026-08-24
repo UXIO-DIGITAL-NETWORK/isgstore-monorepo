@@ -8,10 +8,10 @@
 ## 0. Document Status & Scope Guardrails
 
 - **Product:** UDN Admin Dashboard — an internal back-office SPA for operators to manage the UDN multi-game top-up platform (data management, financial oversight, transaction operations).
-- **Relationship to the consumer platform:** This admin app runs against a **separate backend/service** from the public "UDN Top Up Website". It does **not** share the consumer frontend, and the two apps are decoupled. Do **not** assume a shared database or import consumer code.
-- **Backend status:** The admin API is **not built yet**. This phase is **UI-first** — we build fully typed screens backed by local, typed mock fixtures behind a stable service interface, so the swap to real HTTP calls later is a one-file change per service (see `system_architecture.md §6`).
+- **Relationship to the consumer platform:** This admin app runs against the **same backend** as the public "UDN Top Up Website" (`uxiotopup-api`), on that API's admin route group. The **frontends** are decoupled — never import consumer code — but the **database is shared**, which is why the user model carries consumer-side fields like `balance` and `point`.
+- **Backend status:** The admin API is **live and integrated** — every feature service calls it. The UI-first mock phase is finished; the typed service interface it left behind is still the boundary hooks depend on (see `system_architecture.md §6`).
 - **Language:** English-only for MVP. No i18n layer is installed (`react-i18next` is intentionally absent). This may be revisited post-MVP.
-- **Non-goals this phase:** Real API integration, 2FA, multi-role RBAC UIs, S3/cloud uploads, websockets/real-time push, content/promo CRUD. (Product CRUD was a non-goal until 2026-07-28, when the Main Products list was promoted to active scope — see §4.6. Product **create/update** remains out of scope pending a reference frame.)
+- **Non-goals this phase:** 2FA, multi-role RBAC UIs, S3/cloud uploads. (Real API integration, real-time push and content/promo CRUD have all since shipped — the API is live, `src/lib/echo.ts` drives Pusher-backed transaction updates, and the `content` + `marketing` slices own CMS and promo CRUD.) (Product CRUD was a non-goal until 2026-07-28, when the Main Products list was promoted to active scope — see §4.6. Product **create/update** remains out of scope pending a reference frame.)
 
 ---
 
@@ -297,7 +297,7 @@ Documented so architecture and navigation accommodate them; **not built this pha
 
 ## 6. Core Data Entities (Provisional)
 
-Backend is not built; these are **FE-facing entity briefs** to shape typed models and mock fixtures. They live in `src/types/models/` (global) or the owning feature's `types/` (feature-specific). Treat all fields as provisional and revise when the API contract lands.
+These are **FE-facing entity briefs** shaping the typed models. They live in `src/types/models/` (global) or the owning feature's `types/` (feature-specific). The API is live, so the contract is now observable: verify a field against the real response (or `uxiotopup-api`'s Resource/migration) before trusting a brief marked provisional here.
 
 - **User** (renamed from "AdminUser" — 2026-07-11, confirmed against the real login response) — `id`, `role_id: number` (see the RBAC revision in `system_architecture.md §5` — this replaces the speculated `roles`/`permissions` arrays), `name`, `email`, `phone`, `balance`, `point`, `locale`, `timezone`, `email_verified_at`, `two_factor_confirmed_at?` (still not in the real response, kept optional/reserved for when 2FA lands), `created_at`, `updated_at`. `balance`/`point`/`locale` are evidently shared with the consumer platform's user model (not admin-specific concepts) — type them for accuracy, don't build any admin UI around them. No `avatar_url` field exists — the navbar/sidebar user menu needs an initials-based fallback, not an image, until/unless one is added.
 - **Transaction** — `id`, `invoice_no`, `invoice_ref?` (the sub-code shown under the invoice number), `payment_status` and `invoice_status` (confirmed as **two separate fields**, not one — `pending | processing | success | failed | partial_refund | partial_success | …`), `customer` (user ref or guest snapshot, `user_id: number | null`), `game` ref, `product` ref (nominal), `cost`, `profit?`, `admin_fee?`, `target_ref?` (provider/destination account reference), `payment_method`, `serial_number?`, `proof_url?` (from the edit-modal upload), `created_at`, `resolved_at?`, `status_history[]`, `activity_log: ActivityLogEntry[]` (§4.3's Activity Log modal — `{ id, actor: { name, phone? } | "system", action: string, description: string, created_at }`), `updated_at`.
@@ -319,7 +319,7 @@ Shared API envelopes (single vs. list) are defined in `system_architecture.md §
 
 ## 7. Non-Functional Requirements & Constraints
 
-- **UI-first, swappable data:** components consume typed service hooks (TanStack Query); services are backed by mock fixtures now and real HTTP later, behind an unchanged interface.
+- **Typed service boundary:** components consume typed service hooks (TanStack Query); services wrap real HTTP behind that interface. The boundary stays even though the mock phase is over — it is what keeps a contract change from reaching components.
 - **Server-side tables:** every large list (transactions, ledger) is paginated/filtered/sorted server-side (params → API), typed against the Laravel-paginator response shape.
 - **Uploads:** later modules use **multipart to the backend** (no S3 yet).
 - **Real-time:** where freshness matters (e.g. transaction status), use **TanStack Query polling** (`refetchInterval`) that stops on terminal states — no websockets this phase.

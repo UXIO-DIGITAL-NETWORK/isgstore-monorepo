@@ -17,10 +17,25 @@ Precedence when they conflict:
 
 ## Project reality (important)
 
-- **Backend is separate and NOT built yet -> UI-first.** Build typed screens on **mock fixtures** behind a stable service interface; the real-API swap is one file per service (`system_architecture.md §6`).
-- **MVP = Dashboard, Financial, Transaction**, built in that order. Everything else is roadmap (`product_requirements.md §5`).
-- **Only `auth` is a real feature.** `dashboard` currently holds template/demo widgets that MUST be **replaced** with the real UDN dashboard.
-- **The shipped `src/index.css` is blue-tinted;** the true-neutral retune + `--success` token are in `design_system.md §3.1`. **Style by token _name_** so the retune is a one-file change.
+- **Backend is live — the UI-first phase is over.** Every one of the 25 services under
+  `features/*/services/` calls the real API through `@/lib/axios`; there is no mock-swap seam
+  left to flip. `system_architecture.md §6` and `product_requirements.md §0` still describe
+  that phase in the past tense — read them for the *service-interface* shape, not for
+  "the API does not exist yet".
+- **The feature set is built, not a roadmap.** All 16 slices ship with routes:
+  `activity`, `administration`, `auth`, `categories`, `content`, `dashboard`, `feedback`,
+  `financial`, `home`, `integration`, `marketing`, `membership`, `pricing`, `products`,
+  `reports`, `transactions`. Treat `product_requirements.md §5`'s MVP ordering as history.
+- **`dashboard` is real** — `dashboard.service.ts` reads `/v1/dashboard/stats` and
+  `/v1/dashboard/performance`. The files left in `features/*/data/` are **no longer the
+  service backing**: they are either static select-option lists (`select-options.data.ts`,
+  imported by `products.service.ts`) or fixtures now consumed only by the colocated
+  `tests/`. Do not wire a screen to them.
+- **`src/index.css` is already retuned** — the greys are true neutral (every one is
+  `oklch(L 0 0)`, chroma zero, no blue tint) and `--success`/`--success-foreground` ship in
+  both themes. Non-zero chroma is confined to `--success`, `--destructive` and `--chart-*`,
+  which are meant to carry colour. **Style by token _name_** so a future retune stays a
+  one-file change.
 - **Only role = `super-admin`** (all permissions = `["*"]`), but build the `<Can>` / `useCan` / `requirePermission` scaffold now.
 - Admin is **English-only** (no i18n).
 - **Every feature is built TDD-first:** test cases → failing tests → implementation to green (`system_architecture.md §4.11`). No exceptions, not a per-feature decision.
