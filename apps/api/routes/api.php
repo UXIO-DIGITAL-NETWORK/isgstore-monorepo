@@ -381,7 +381,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/bulk-create', [ProductController::class, 'bulkCreate']);
         Route::post('/bulk/lock-price', [ProductController::class, 'bulkLockPrice']);
         Route::post('/bulk/show-price', [ProductController::class, 'bulkShowPrice']);
-        Route::post('/bulk/deactivate', [ProductController::class, 'bulkDeactivate']);
+        Route::post('/bulk/status', [ProductController::class, 'bulkSetStatus']);
         Route::post('/bulk/uxiotopup-update', [ProductController::class, 'bulkUxiotopupUpdate']);
         Route::post('/bulk/delete', [ProductController::class, 'bulkDelete']);
         Route::get('/{product}', [ProductController::class, 'show']);

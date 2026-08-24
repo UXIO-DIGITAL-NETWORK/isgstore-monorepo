@@ -49,15 +49,23 @@ class ProductBulkActionsTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $a->id, 'is_price_hidden' => true]);
     }
 
-    public function test_bulk_deactivate_and_delete(): void
+    public function test_bulk_status_toggles_both_ways_and_delete(): void
     {
         $this->actingAsAdmin();
-        $a = $this->product(['status' => true]);
+        $a = $this->product(['status' => true, 'is_available' => true]);
         $b = $this->product(['status' => true]);
 
-        $this->postJson('/api/v1/products/bulk/deactivate', ['ids' => [$a->id]])
+        // Lifecycle only: storefront visibility is a separate switch, so
+        // reactivating restores the row exactly as it was.
+        $this->postJson('/api/v1/products/bulk/status', ['ids' => [$a->id], 'active' => false])
             ->assertOk()->assertJsonPath('data.updated', 1);
-        $this->assertDatabaseHas('products', ['id' => $a->id, 'status' => false]);
+        $this->assertDatabaseHas('products', ['id' => $a->id, 'status' => false, 'is_available' => true]);
+
+        // The row menu offers "Activate" once a row reads Inactive, so the same
+        // endpoint has to bring it back.
+        $this->postJson('/api/v1/products/bulk/status', ['ids' => [$a->id], 'active' => true])
+            ->assertOk()->assertJsonPath('data.updated', 1);
+        $this->assertDatabaseHas('products', ['id' => $a->id, 'status' => true]);
 
         $this->postJson('/api/v1/products/bulk/delete', ['ids' => [$a->id, $b->id]])
             ->assertOk()->assertJsonPath('data.deleted', 2);

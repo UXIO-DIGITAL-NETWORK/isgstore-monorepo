@@ -37,9 +37,9 @@ class BulkProductAction
      * @param  int[]  $ids
      * @return array{updated:int}
      */
-    public function deactivate(array $ids): array
+    public function setStatus(array $ids, bool $active): array
     {
-        return $this->each($ids, fn (Product $p) => $p->update(['status' => false]));
+        return $this->each($ids, fn (Product $p) => $p->update(['status' => $active]));
     }
 
     /**

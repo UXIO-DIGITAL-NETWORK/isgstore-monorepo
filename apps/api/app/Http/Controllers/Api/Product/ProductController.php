@@ -111,11 +111,13 @@ class ProductController extends Controller
         );
     }
 
-    public function bulkDeactivate(BulkProductActionRequest $request, BulkProductAction $action)
+    public function bulkSetStatus(BulkProductActionRequest $request, BulkProductAction $action)
     {
+        // The client sends `active`: "Activate" posts true, "Deactive" posts
+        // false. Absent means false, so the pre-toggle callers still deactivate.
         return $this->successResponse(
-            $action->deactivate($request->validated('ids')),
-            'Products deactivated successfully'
+            $action->setStatus($request->validated('ids'), $request->boolean('active')),
+            'Product statuses updated successfully'
         );
     }
 
