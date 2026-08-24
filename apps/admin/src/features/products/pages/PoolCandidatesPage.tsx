@@ -31,7 +31,14 @@ export default function PoolCandidatesPage() {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
-  const [poolState, setPoolState] = useState("new");
+  // "All", not "New only".
+  //
+  // `is_new` means the provider published it recently, and the price checker
+  // backdates the whole catalogue on its first run so that badge means something.
+  // The side effect is that on any established install nothing is "new" — so a
+  // "New only" default opened this page onto an empty table and hid the very
+  // catalogue it exists to offer.
+  const [poolState, setPoolState] = useState(ALL);
   const [availability, setAvailability] = useState("available");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);

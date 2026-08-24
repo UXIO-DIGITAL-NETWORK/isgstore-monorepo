@@ -34,6 +34,22 @@ describe("Provider pool", () => {
     expect(screen.queryByPlaceholderText("Search provider product")).not.toBeInTheDocument();
   });
 
+  it("opens showing the whole mapped catalogue, not just what is new", async () => {
+    const user = userEvent.setup();
+    await renderRoute(POOL_PATH);
+
+    await user.click(await screen.findByRole("link", { name: /Add Product Provider/ }));
+
+    // The checker backdates every SKU on its first run so the "New" badge means
+    // something — which leaves nothing "new" on an established install. Defaulting
+    // this filter to "New only" therefore opened the page onto an empty table.
+    expect(await screen.findByLabelText("Filter by pool state")).toHaveTextContent("All");
+    expect(await screen.findByText("Valorant 120 Points")).toBeInTheDocument();
+    // Already-pooled SKUs are visible too, so the catalogue reads as covered
+    // rather than missing — they just cannot be selected again.
+    expect(screen.getByText("Mobile Legends 86 Diamond")).toBeInTheDocument();
+  });
+
   it("offers only SKUs whose game is mapped under Category Provider", async () => {
     const user = userEvent.setup();
     await renderRoute(POOL_PATH);
