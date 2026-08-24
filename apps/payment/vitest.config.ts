@@ -2,6 +2,18 @@ import path from "path";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
+// Pin the timezone before anything reads a Date.
+//
+// `formatDate`/`formatDateTime` (src/utils/date.ts) render in the *runtime's*
+// zone, and the subscription fixtures are written as WIB instants
+// ("2026-08-15T00:00:00+07:00"). On a UTC machine — every CI runner — midnight
+// WIB is the 14th at 17:00, so a period renders a day early and three merchant
+// tests fail while passing on any developer machine at UTC+7 or later.
+//
+// Set here rather than in setupFiles: workers inherit the parent env at spawn,
+// and Node caches the zone on first Date use, so a later assignment is too late.
+process.env.TZ = "Asia/Jakarta";
+
 // Separate from vite.config.ts: no TanStack Router codegen plugin, no Tailwind
 // plugin — unnecessary overhead for unit tests. routeTree.gen.ts is already
 // generated on disk and imported directly by test-utils.
