@@ -92,8 +92,10 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
           {isLoading ? (
             Array.from({ length: skeletonCount }).map((_, index) => (
               <Box key={`skeleton-${index}`} className="rounded-2xl border border-border bg-card p-4">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="mt-2 h-4 w-56" />
+                <Box className="flex flex-col gap-1.5">
+                  <Skeleton className="h-3.5 w-40" />
+                  <Skeleton className="h-4 w-56" />
+                </Box>
                 <Skeleton className="mt-3 h-12 w-full" />
               </Box>
             ))
@@ -104,12 +106,14 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
           ) : (
             selected.map((row) => (
               <Box key={row.id} className="rounded-2xl border border-border bg-card p-4">
-                <Text as="span" variant="muted">
-                  {row.category_name} · {row.product_code}
-                </Text>
-                <Text as="span" className="font-medium">
-                  {row.product_name}
-                </Text>
+                <Box className="flex flex-col gap-0.5">
+                  <Text as="span" variant="small">
+                    {row.category_name} · {row.product_code}
+                  </Text>
+                  <Text as="span" className="font-medium">
+                    {row.product_name}
+                  </Text>
+                </Box>
                 <Box className="mt-3">
                   <ProductPriceCell variants={[row.variant]} />
                 </Box>
