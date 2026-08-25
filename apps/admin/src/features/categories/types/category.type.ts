@@ -33,6 +33,10 @@ export interface Category {
   order_form_fields: CategoryOrderFormField[];
   // Media & description + SEO (§4.5, added 2026-07-11). All optional/provisional.
   logo_url?: string;
+  /** Portrait artwork that fills the storefront card background. */
+  thumbnail_url?: string;
+  /** Wide header shown on the checkout page. */
+  banner_url?: string;
   description?: string;
   meta_title?: string;
   meta_description?: string;

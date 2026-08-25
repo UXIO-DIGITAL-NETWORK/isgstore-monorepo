@@ -150,6 +150,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
       meta_title: values.metaTitle || undefined,
       meta_description: values.metaDescription || undefined,
       logo: values.logo,
+      thumbnail: values.thumbnail,
+      banner: values.banner,
       og_image: values.ogImage,
       meta_keywords: metaKeywords.length ? metaKeywords : undefined,
       meta_robots: values.metaRobots || undefined,
@@ -394,10 +396,40 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     <ImageDropzone
                       id="category-logo"
                       label="Category Logo"
-                      caption="3:4 ratio recommended · max display 800×600 px"
+                      caption="Small logo shown over the card · 3:4 ratio recommended"
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.logo?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="thumbnail"
+                  render={({ field }) => (
+                    <ImageDropzone
+                      id="category-thumbnail"
+                      label="Card Background"
+                      caption="Fills the whole storefront card · portrait 3:4 (e.g. 600×800 px)"
+                      value={field.value}
+                      onChange={field.onChange}
+                      error={errors.thumbnail?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="banner"
+                  render={({ field }) => (
+                    <ImageDropzone
+                      id="category-banner"
+                      label="Checkout Banner"
+                      caption="Wide header on the checkout page · ~16:5 (e.g. 1600×500 px)"
+                      value={field.value}
+                      onChange={field.onChange}
+                      error={errors.banner?.message}
                     />
                   )}
                 />

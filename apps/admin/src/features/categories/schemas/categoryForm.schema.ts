@@ -45,6 +45,11 @@ export const categoryFormSchema = z.object({
   orderFormFields: z.array(orderFormFieldSchema),
   // Media & description
   logo: imageFileSchema,
+  // Card background (portrait) and checkout header (wide). Separate from the
+  // square logo overlay — the storefront reads these as the card's background
+  // and the checkout page's banner.
+  thumbnail: imageFileSchema,
+  banner: imageFileSchema,
   description: z.string().optional(),
   // SEO
   metaTitle: z.string().optional(),

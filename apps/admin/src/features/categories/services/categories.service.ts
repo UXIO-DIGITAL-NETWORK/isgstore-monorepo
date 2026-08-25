@@ -69,6 +69,8 @@ const toCategory = (row: CategoryApiRow): Category => ({
   status: toStatusUnion(row.status),
   order_form_fields: readFields(row.order_form_fields),
   logo_url: row.logo_url ?? undefined,
+  thumbnail_url: row.thumbnail_url ?? undefined,
+  banner_url: row.banner_url ?? undefined,
   description: row.description ?? undefined,
   meta_title: row.meta_title ?? undefined,
   meta_description: row.meta_description ?? undefined,

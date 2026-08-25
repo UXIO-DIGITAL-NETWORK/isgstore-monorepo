@@ -170,6 +170,8 @@ describe("AddCategoryDialog", () => {
 
     for (const label of [
       "Category Logo",
+      "Card Background",
+      "Checkout Banner",
       "Description",
       "Meta Title",
       "Meta Description",

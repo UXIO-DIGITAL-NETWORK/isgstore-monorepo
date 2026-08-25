@@ -92,6 +92,22 @@ describe("categoriesService.list", () => {
     expect(result.data[0].type).toBe("2");
   });
 
+  it("maps the card background and checkout banner URLs onto the view type", async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      paginated([
+        apiRow({
+          thumbnail_url: "http://localhost:8000/storage/categories/thumbnails/mlbb.webp",
+          banner_url: "http://localhost:8000/storage/categories/banners/mlbb.webp",
+        }),
+      ]),
+    );
+
+    const result = await categoriesService.list();
+
+    expect(result.data[0].thumbnail_url).toBe("http://localhost:8000/storage/categories/thumbnails/mlbb.webp");
+    expect(result.data[0].banner_url).toBe("http://localhost:8000/storage/categories/banners/mlbb.webp");
+  });
+
   it("maps nickname_check_enabled, defaulting to enabled when the API omits it", async () => {
     vi.mocked(api.get).mockResolvedValue(
       paginated([apiRow({ nickname_check_enabled: false }), apiRow({ id: 2, nickname_check_enabled: undefined })]),
@@ -140,6 +156,19 @@ describe("categoriesService.update", () => {
     await categoriesService.update("1", { account_nickname_check_enabled: false });
 
     expect((vi.mocked(api.post).mock.calls[0][1] as FormData).get("nickname_check_enabled")).toBe("0");
+  });
+
+  it("appends the card background and banner files as multipart parts", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow()));
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow()));
+
+    const thumbnail = new File(["bg"], "card.webp", { type: "image/webp" });
+    const banner = new File(["wide"], "header.webp", { type: "image/webp" });
+    await categoriesService.update("1", { thumbnail, banner });
+
+    const body = vi.mocked(api.post).mock.calls[0][1] as FormData;
+    expect(body.get("thumbnail")).toBe(thumbnail);
+    expect(body.get("banner")).toBe(banner);
   });
 });
 
