@@ -33,15 +33,17 @@ export function SearchResultRow({ game, onClose }: Props): React.JSX.Element {
           objectFit="cover"
           className="absolute inset-0 w-full h-full"
         />
-        {/* Mini logo overlay */}
-        <Box className="absolute inset-0 flex items-center justify-center bg-black/30">
-          <Image
-            src={game.logoImage}
-            alt={`${game.title} logo`}
-            objectFit="contain"
-            className="w-9 h-5"
-          />
-        </Box>
+        {/* Mini logo overlay — only when the category has a logo */}
+        {game.logoImage && (
+          <Box className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <Image
+              src={game.logoImage}
+              alt={`${game.title} logo`}
+              objectFit="contain"
+              className="w-9 h-5"
+            />
+          </Box>
+        )}
       </Box>
 
       {/* Title & region */}

@@ -38,15 +38,17 @@ export function SearchPopularCard({ game, onClose }: Props): React.JSX.Element {
         {/* Bottom scrim for logo + pill legibility */}
         <Box className="absolute inset-x-0 bottom-0 h-20 bg-linear-to-b from-transparent to-black/80 pointer-events-none" />
 
-        {/* Game logo — sits above the region pill */}
-        <Box className="absolute inset-x-0 bottom-10 flex items-center justify-center px-2">
-          <Image
-            src={game.logoImage}
-            alt={`${game.title} logo`}
-            objectFit="contain"
-            className="w-16 h-7"
-          />
-        </Box>
+        {/* Game logo — sits above the region pill; only when the category has one */}
+        {game.logoImage && (
+          <Box className="absolute inset-x-0 bottom-10 flex items-center justify-center px-2">
+            <Image
+              src={game.logoImage}
+              alt={`${game.title} logo`}
+              objectFit="contain"
+              className="w-16 h-7"
+            />
+          </Box>
+        )}
 
         {/* Region pill — gradient border */}
         <Box className="absolute inset-x-2 bottom-2 p-px rounded-md bg-linear-to-r from-[#9333EA] to-[#3B82F6]">

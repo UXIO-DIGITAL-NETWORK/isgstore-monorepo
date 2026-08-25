@@ -98,15 +98,17 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
                 <Box className="absolute inset-0 bg-[#9333EA]/10 pointer-events-none" />
               )}
 
-              {/* Game logo — positioned above region pill */}
-              <Box className="absolute inset-x-0 bottom-13 h-14 flex items-center justify-center px-4">
-                <Image
-                  src={game.logoImage}
-                  alt={`${game.title} logo`}
-                  objectFit="contain"
-                  className="w-20 h-8 md:w-24 md:h-9"
-                />
-              </Box>
+              {/* Game logo — positioned above region pill; only when the category has one */}
+              {game.logoImage && (
+                <Box className="absolute inset-x-0 bottom-13 h-14 flex items-center justify-center px-4">
+                  <Image
+                    src={game.logoImage}
+                    alt={`${game.title} logo`}
+                    objectFit="contain"
+                    className="w-20 h-8 md:w-24 md:h-9"
+                  />
+                </Box>
+              )}
 
               {/* Region pill — gradient border */}
               <Box className="absolute inset-x-2 bottom-3 p-px rounded-lg bg-linear-to-r from-[#9333EA] to-[#3B82F6]">

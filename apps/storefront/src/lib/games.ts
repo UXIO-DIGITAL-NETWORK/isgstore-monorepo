@@ -1,5 +1,4 @@
 import placeholderArt from "@/assets/images/popular_games/popular_games_1.png";
-import placeholderLogo from "@/assets/images/game_logo/mobile_legends.png";
 import type { Game } from "@/types/game.type";
 import type { GameModel } from "@/types/models/game.model";
 
@@ -19,7 +18,9 @@ export function toGame(model: GameModel, index: number): Game {
     title: model.name,
     region: model.region ?? model.sub_name ?? "",
     bgImage: model.thumbnail_url ?? placeholderArt,
-    logoImage: model.logo_url ?? placeholderLogo,
+    // Null when the category has no logo, so the card renders the background
+    // alone rather than a wrong stand-in logo over someone else's artwork.
+    logoImage: model.logo_url ?? null,
     category: normaliseCategory(model.category_type?.name),
     borderColor: index % 2 === 0 ? "azure" : "violet",
   };
