@@ -12,7 +12,7 @@ interface MembershipPlanApiRow {
   name: string;
   benefits: string[] | null;
   price: number;
-  duration_days: number;
+  duration_days: number | null;
   role_id: number | null;
   is_popular: boolean;
   is_active: boolean;

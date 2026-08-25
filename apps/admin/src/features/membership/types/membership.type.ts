@@ -7,8 +7,8 @@ export interface MembershipPlan {
   benefits: string[];
   /** Plan price in IDR. */
   price: number;
-  /** How long the plan lasts once subscribed. */
-  duration_days: number;
+  /** How long the plan lasts once subscribed. `null` = lifetime, never expires. */
+  duration_days: number | null;
   role_id: number | null;
   is_popular: boolean;
   is_active: boolean;
@@ -23,7 +23,8 @@ export interface MembershipPlanInput {
   name: string;
   benefits?: string[];
   price: number;
-  duration_days: number;
+  /** `null` sells a lifetime plan. */
+  duration_days: number | null;
   role_id?: number | null;
   is_popular?: boolean;
   is_active?: boolean;

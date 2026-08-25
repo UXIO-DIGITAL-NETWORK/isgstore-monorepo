@@ -88,12 +88,14 @@ export function MembershipListPage() {
       {
         id: "duration",
         header: "Duration",
+        // A null duration is a plan that never expires — printing "null days"
+        // (or the 0 the API used to coerce it to) reads as a broken row.
         cell: ({ row }) => (
           <Text
             as="span"
             className="tabular-nums"
           >
-            {row.original.duration_days} days
+            {row.original.duration_days === null ? "Lifetime" : `${row.original.duration_days} days`}
           </Text>
         ),
       },

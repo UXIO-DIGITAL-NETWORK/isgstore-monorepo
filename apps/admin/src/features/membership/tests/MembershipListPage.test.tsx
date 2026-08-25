@@ -46,7 +46,19 @@ describe("MembershipListPage", () => {
     expect(screen.getByText("30 days")).toBeInTheDocument();
   });
 
-  it("creates a plan through the Add modal", async () => {
+  // A null duration is the API's "never expires". Printing it raw would read as
+  // a broken row, and the 0 the API used to coerce it to read as broken too.
+  it("shows a plan with no duration as Lifetime", async () => {
+    vi.spyOn(membershipService, "list").mockResolvedValue(paginated([plan({ duration_days: null })]));
+
+    await renderRoute("/admin/memberships");
+
+    expect(await screen.findByText("Gold")).toBeInTheDocument();
+    expect(screen.getByText("Lifetime")).toBeInTheDocument();
+    expect(screen.queryByText(/days/)).not.toBeInTheDocument();
+  });
+
+  it("creates a lifetime plan by default", async () => {
     vi.spyOn(membershipService, "list").mockResolvedValue(paginated([]));
     const createSpy = vi.spyOn(membershipService, "create").mockResolvedValue(plan());
     const user = userEvent.setup();
@@ -58,11 +70,34 @@ describe("MembershipListPage", () => {
     await user.type(within(dialog).getByLabelText("Name"), "Gold");
     await user.clear(within(dialog).getByLabelText("Price"));
     await user.type(within(dialog).getByLabelText("Price"), "50000");
+    // Lifetime is on out of the box, so the duration input is not reachable.
+    expect(within(dialog).getByLabelText("Duration (days)")).toBeDisabled();
     await user.click(within(dialog).getByRole("button", { name: "Add Plan" }));
 
     expect(createSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ code: "gold", name: "Gold", price: 50000, duration_days: 30 }),
+      expect.objectContaining({ code: "gold", name: "Gold", price: 50000, duration_days: null }),
     );
+    // Form-only state must not reach the API.
+    expect(createSpy.mock.calls[0][0]).not.toHaveProperty("is_lifetime");
+  });
+
+  it("sends a real duration once Lifetime is switched off", async () => {
+    vi.spyOn(membershipService, "list").mockResolvedValue(paginated([]));
+    const createSpy = vi.spyOn(membershipService, "create").mockResolvedValue(plan());
+    const user = userEvent.setup();
+    await renderRoute("/admin/memberships");
+
+    await user.click(await screen.findByRole("button", { name: /Add Plan/ }));
+    const dialog = await screen.findByRole("dialog", { name: "Add Plan" });
+    await user.type(within(dialog).getByLabelText("Code"), "gold");
+    await user.type(within(dialog).getByLabelText("Name"), "Gold");
+    await user.clear(within(dialog).getByLabelText("Price"));
+    await user.type(within(dialog).getByLabelText("Price"), "50000");
+    await user.click(within(dialog).getByLabelText("Lifetime"));
+    await user.type(within(dialog).getByLabelText("Duration (days)"), "30");
+    await user.click(within(dialog).getByRole("button", { name: "Add Plan" }));
+
+    expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ duration_days: 30 }));
   });
 
   it("deletes a plan only after confirmation", async () => {

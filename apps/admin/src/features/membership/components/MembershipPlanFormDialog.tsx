@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Box } from "@/components/common/Box";
@@ -17,18 +17,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { membershipPlanSchema, type MembershipPlanFormValues } from "../schemas/membershipPlan.schema";
-import type { MembershipPlan } from "../types/membership.type";
+import type { MembershipPlan, MembershipPlanInput } from "../types/membership.type";
 
 interface MembershipPlanFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Present = edit mode; absent = add mode. */
   plan?: MembershipPlan | null;
-  onSubmit: (values: MembershipPlanFormValues) => void;
+  onSubmit: (values: MembershipPlanInput) => void;
   isPending?: boolean;
 }
 
-const EMPTY: MembershipPlanFormValues = { code: "", name: "", price: 0, duration_days: 30, is_active: true };
+// Lifetime is the default: every plan sold today is one, and a new plan that
+// silently expires after 30 days would be the surprising outcome.
+const EMPTY: MembershipPlanFormValues = {
+  code: "",
+  name: "",
+  price: 0,
+  is_lifetime: true,
+  duration_days: null,
+  is_active: true,
+};
 
 export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, isPending = false }: MembershipPlanFormDialogProps) {
   const {
@@ -50,6 +59,7 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
             code: plan.code,
             name: plan.name,
             price: plan.price,
+            is_lifetime: plan.duration_days === null,
             duration_days: plan.duration_days,
             is_active: plan.is_active,
           }
@@ -57,8 +67,12 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
     );
   }, [open, plan, reset]);
 
-  const submit = (values: MembershipPlanFormValues) => {
-    onSubmit(values);
+  // useWatch, not watch(): the subscription is scoped to this one field, and
+  // React Compiler cannot memoize around watch()'s returned function.
+  const isLifetime = useWatch({ control, name: "is_lifetime" });
+
+  const submit = ({ is_lifetime, duration_days, ...rest }: MembershipPlanFormValues) => {
+    onSubmit({ ...rest, duration_days: is_lifetime ? null : duration_days });
     onOpenChange(false);
   };
 
@@ -140,7 +154,13 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
                 type="number"
                 className="rounded-xl"
                 placeholder="e.g. 30"
-                {...register("duration_days", { valueAsNumber: true })}
+                disabled={isLifetime}
+                {...register("duration_days", {
+                  // A cleared or disabled number input reads back NaN, which is
+                  // not the same thing as "no expiry" — normalise it to null so
+                  // the schema and the API agree.
+                  setValueAs: (value) => (value === "" || Number.isNaN(Number(value)) ? null : Number(value)),
+                })}
               />
               {errors.duration_days && (
                 <Text
@@ -152,6 +172,29 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
               )}
             </Box>
           </Box>
+
+          <Controller
+            control={control}
+            name="is_lifetime"
+            render={({ field }) => (
+              <Box className="flex items-center gap-3">
+                <Switch
+                  id="plan-lifetime"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                <Box className="flex flex-col">
+                  <Label htmlFor="plan-lifetime">Lifetime</Label>
+                  <Text
+                    variant="small"
+                    className="text-muted-foreground"
+                  >
+                    Bought once and never expires — the duration above is ignored.
+                  </Text>
+                </Box>
+              </Box>
+            )}
+          />
 
           <Controller
             control={control}
