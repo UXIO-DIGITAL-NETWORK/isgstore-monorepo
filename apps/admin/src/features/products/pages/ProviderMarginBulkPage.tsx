@@ -7,6 +7,7 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ProductPriceCell } from "../components/ProductPriceCell";
 import { useBulkSetProviderMargin, useProviderProductList } from "../hooks/useProviderProducts";
 import { PRICE_TIERS, type PriceTier } from "../types/product.type";
@@ -40,11 +41,14 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
 
   // Ask for exactly the selection. This used to pull one page and filter it in
   // the browser, which silently dropped any row that fell outside the first 100.
-  const { data } = useProviderProductList({
+  const { data, isLoading } = useProviderProductList({
     ids: ids.join(","),
     per_page: Math.max(ids.length, 1),
   });
   const selected = useMemo(() => data?.data ?? [], [data]);
+  // The selection size is known from the URL, so show exactly that many skeleton
+  // cards (clamped) — a large bulk selection shouldn't stretch the column.
+  const skeletonCount = Math.min(Math.max(ids.length, 1), 8);
 
   const parse = (raw: string): number | null => {
     const trimmed = raw.trim();
@@ -85,23 +89,32 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
 
       <Box className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Box className="flex flex-col gap-3">
-          {selected.map((row) => (
-            <Box key={row.id} className="rounded-2xl border border-border bg-card p-4">
-              <Text as="span" variant="muted">
-                {row.category_name} · {row.product_code}
-              </Text>
-              <Text as="span" className="font-medium">
-                {row.product_name}
-              </Text>
-              <Box className="mt-3">
-                <ProductPriceCell variants={[row.variant]} />
+          {isLoading ? (
+            Array.from({ length: skeletonCount }).map((_, index) => (
+              <Box key={`skeleton-${index}`} className="rounded-2xl border border-border bg-card p-4">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="mt-2 h-4 w-56" />
+                <Skeleton className="mt-3 h-12 w-full" />
               </Box>
-            </Box>
-          ))}
-          {selected.length === 0 && (
+            ))
+          ) : selected.length === 0 ? (
             <Box className="rounded-2xl border border-border bg-card p-6">
               <Text variant="muted">No selected products to show.</Text>
             </Box>
+          ) : (
+            selected.map((row) => (
+              <Box key={row.id} className="rounded-2xl border border-border bg-card p-4">
+                <Text as="span" variant="muted">
+                  {row.category_name} · {row.product_code}
+                </Text>
+                <Text as="span" className="font-medium">
+                  {row.product_name}
+                </Text>
+                <Box className="mt-3">
+                  <ProductPriceCell variants={[row.variant]} />
+                </Box>
+              </Box>
+            ))
           )}
         </Box>
 
