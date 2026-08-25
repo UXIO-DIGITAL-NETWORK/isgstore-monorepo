@@ -73,8 +73,11 @@ class GetSupplierProductsAction
             SupplierProduct::STATE_NEEDS_MARGIN => $query->whereNull('product_id')->whereNull('margin_set_at'),
             SupplierProduct::STATE_READY => $query->whereNull('product_id')->whereNotNull('margin_set_at'),
             SupplierProduct::STATE_DRAFT => $query->whereNotNull('product_id')
-                ->whereHas('product', fn ($p) => $p->where('status', false)),
+                ->where(fn ($draft) => $draft
+                    ->where('is_active', false)
+                    ->orWhereHas('product', fn ($p) => $p->where('status', false))),
             SupplierProduct::STATE_PUBLISHED => $query->whereNotNull('product_id')
+                ->where('is_active', true)
                 ->whereHas('product', fn ($p) => $p->where('status', true)),
             default => null,
         };

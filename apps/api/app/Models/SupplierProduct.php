@@ -60,8 +60,16 @@ class SupplierProduct extends Model
      * The single definition of where this mapping sits in the pipeline.
      *
      * Derived from `product_id` (pooled vs promoted), `margin_set_at` (priced or
-     * not) and the product's own `status` (draft vs published). Never re-derive
-     * these inline — the promote/publish guards and the admin badges must agree.
+     * not) and both halves of "live" (draft vs published). Never re-derive these
+     * inline — the promote/publish guards and the admin badges must agree.
+     *
+     * PUBLISHED means exactly what `Catalog::sellableProducts()` means: the
+     * product is active AND this mapping is the active one. Reading `status`
+     * alone stranded rows — flipping a draft product active from the Main
+     * Products list made this report PUBLISHED while the storefront still could
+     * not see it, and the row menu hides Publish on anything not DRAFT, so there
+     * was no way back. A promoted-but-not-live mapping is a draft, whether it is
+     * waiting for its first publish or was superseded by a sibling supplier.
      */
     public function poolState(): string
     {
@@ -69,7 +77,9 @@ class SupplierProduct extends Model
             return $this->margin_set_at === null ? self::STATE_NEEDS_MARGIN : self::STATE_READY;
         }
 
-        return $this->product?->status ? self::STATE_PUBLISHED : self::STATE_DRAFT;
+        return $this->product?->status && $this->is_active
+            ? self::STATE_PUBLISHED
+            : self::STATE_DRAFT;
     }
 
     /** Null when the SKU may be promoted; otherwise the reason it may not be. */
