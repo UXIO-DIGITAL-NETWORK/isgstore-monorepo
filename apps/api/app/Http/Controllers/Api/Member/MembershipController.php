@@ -30,7 +30,8 @@ class MembershipController extends Controller
                 'name' => $plan->localizedName($locale),
                 'benefits' => $plan->localizedBenefits($locale),
                 'price' => (int) $plan->price,
-                'duration_days' => (int) $plan->duration_days,
+                // NULL, not 0 — the storefront reads NULL as "lifetime".
+                'duration_days' => $plan->isLifetime() ? null : (int) $plan->duration_days,
                 'is_popular' => (bool) $plan->is_popular,
             ]);
 
@@ -42,8 +43,7 @@ class MembershipController extends Controller
     {
         $subscription = MembershipSubscription::with('membershipPlan')
             ->where('user_id', $request->user()->id)
-            ->where('status', 'active')
-            ->where('ends_at', '>', now())
+            ->currentlyActive()
             ->latest('ends_at')
             ->first();
 
@@ -96,23 +96,26 @@ class MembershipController extends Controller
                 // renewing early must not cost the member the days they have
                 // already paid for.
                 $active = MembershipSubscription::where('user_id', $user->id)
-                    ->where('status', 'active')
-                    ->where('ends_at', '>', now())
+                    ->currentlyActive()
                     ->latest('ends_at')
                     ->first();
 
+                // A lifetime membership has no end to stack onto, so the new one
+                // simply starts now.
                 $startsAt = $active?->ends_at ?? now();
 
                 $subscription = MembershipSubscription::create([
                     'user_id' => $user->id,
                     'membership_plan_id' => $plan->id,
                     'starts_at' => $startsAt,
-                    'ends_at' => $startsAt->copy()->addDays($plan->duration_days),
+                    'ends_at' => $plan->isLifetime() ? null : $startsAt->copy()->addDays($plan->duration_days),
                     'status' => 'active',
                 ]);
 
                 // The role is what actually prices the member's orders —
                 // without it the plan would grant nothing.
+                // `membership_expires_at` is a display cache, NULL for lifetime.
+                // Entitlement rides on role_id — see App\Support\Pricing\RolePrice.
                 $user->forceFill([
                     'role_id' => $plan->role_id ?? $user->role_id,
                     'membership_expires_at' => $subscription->ends_at,

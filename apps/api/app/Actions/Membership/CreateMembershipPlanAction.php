@@ -17,7 +17,7 @@ class CreateMembershipPlanAction
             'name' => ['id' => $data['name']],
             'benefits' => isset($data['benefits']) ? ['id' => $data['benefits']] : null,
             'price' => $data['price'],
-            'duration_days' => $data['duration_days'],
+            'duration_days' => $data['duration_days'] ?? null,
             'role_id' => $data['role_id'] ?? null,
             'is_popular' => $data['is_popular'] ?? false,
             'is_active' => $data['is_active'] ?? true,

@@ -19,7 +19,9 @@ class StoreMembershipPlanRequest extends FormRequest
             'benefits' => ['nullable', 'array'],
             'benefits.*' => ['string', 'max:255'],
             'price' => ['required', 'integer', 'min:0'],
-            'duration_days' => ['required', 'integer', 'min:1'],
+            // NULL = lifetime. `present` keeps the field a deliberate choice
+            // rather than something an incomplete payload omits by accident.
+            'duration_days' => ['present', 'nullable', 'integer', 'min:1'],
             'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'is_popular' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],

@@ -17,7 +17,7 @@ class BannerSeeder extends Seeder
             ['category_id' => null, 'name' => 'Referral Bonus 50%', 'image_path' => '/banners/referral.jpg', 'link' => 'https://uxio.id/referral', 'created_at' => $now, 'updated_at' => $now],
 
             // Kategori Game yang Valid (1: MLBB) — hanya Mobile Legends yang di-seed.
-            ['category_id' => 1, 'name' => 'MLBB New Skin Release', 'image_path' => '/banners/mlbb-skin.jpg', 'link' => 'https://uxio.id/mlbb/new-skin', 'created_at' => $now, 'updated_at' => $now],
+            ['category_id' => null, 'name' => 'MLBB New Skin Release', 'image_path' => '/banners/mlbb-skin.jpg', 'link' => 'https://uxio.id/mlbb/new-skin', 'created_at' => $now, 'updated_at' => $now],
 
             // Kategori game selain MLBB belum di-seed → category_id null (banner umum).
             ['category_id' => null, 'name' => 'Free Fire OB48', 'image_path' => '/banners/ff-ob48.jpg', 'link' => null, 'created_at' => $now, 'updated_at' => $now],

@@ -22,7 +22,8 @@ class UpdateMembershipPlanRequest extends FormRequest
             'benefits' => ['nullable', 'array'],
             'benefits.*' => ['string', 'max:255'],
             'price' => ['sometimes', 'integer', 'min:0'],
-            'duration_days' => ['sometimes', 'integer', 'min:1'],
+            // NULL = lifetime.
+            'duration_days' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'is_popular' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],

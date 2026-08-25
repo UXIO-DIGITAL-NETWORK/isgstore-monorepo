@@ -9,12 +9,27 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * One example user per role, plus a second general (member) user. No random
- * bulk users — every account here is a known, purposeful login. All share the
- * password `password`.
+ * The three operator logins, and nothing else.
+ *
+ * Not one account per role: the tier roles (member/vip/reseller/agent) belong to
+ * real customers who sign up, and seeding stand-ins for them left example
+ * accounts on a live install. What remains is the staff side — the admin who
+ * runs the catalogue, plus the two halves of the payment page: `internal`
+ * (kita — verifies withdrawals, sets fees) and `client` (the merchant).
+ *
+ * The `client` row is load-bearing beyond its own login: `DefaultMerchant::id()`
+ * falls back to the first payment-admin user, and `CheckoutAction` reads it to
+ * attribute a sale. Without it every sale is booked as platform-owned and
+ * settlement returns early.
+ *
+ * RoleSeeder still seeds all seven roles — `member` in particular, or public
+ * registration throws (RegisterAction).
  */
 class UserSeeder extends Seeder
 {
+    /** Shared starting password. Change it from the profile page after first login. */
+    private const PASSWORD = 'uxiotopupJaya123';
+
     public function run(): void
     {
         // Every account starts with balance 0 — no seeded "free" saldo. For a
@@ -22,15 +37,10 @@ class UserSeeder extends Seeder
         // sales (see App\Support\Wallet\MerchantBalance), not this column.
         $users = [
             // role, name, username, email, phone, balance
-            [RoleType::ADMIN, 'Super Admin', 'superadmin', 'admin@example.com', '6281200000001', 0],
-            [RoleType::MEMBER, 'Member Satu', 'member1', 'member1@example.com', '6281200000002', 0],
-            [RoleType::MEMBER, 'Member Dua', 'member2', 'member2@example.com', '6281200000003', 0],
-            [RoleType::VIP, 'VIP User', 'vipuser', 'vip@example.com', '6281200000004', 0],
-            [RoleType::RESELLER, 'Reseller User', 'reseller', 'reseller@example.com', '6281200000005', 0],
-            [RoleType::AGENT, 'Agent User', 'agentuser', 'agent@example.com', '6281200000006', 0],
-            // Payment page: client (requests withdrawals) and internal team (verifies).
-            [RoleType::PAYMENT_ADMIN, 'Client Merchant', 'client', 'client@example.com', '6281200000007', 0],
-            [RoleType::PAYMENT_INTERNAL, 'Internal Finance', 'internal', 'internal@example.com', '6281200000008', 0],
+            [RoleType::ADMIN, 'Super Admin', 'superadmin', 'admin@uxiotopup.id', '6281200000001', 0],
+            // Payment page: internal team (verifies) and client (requests withdrawals).
+            [RoleType::PAYMENT_INTERNAL, 'Internal Finance', 'internal', 'internal@uxiotopup.id', '6281200000002', 0],
+            [RoleType::PAYMENT_ADMIN, 'Client Merchant', 'client', 'client@uxiotopup.id', '6281200000003', 0],
         ];
 
         foreach ($users as [$role, $name, $username, $email, $phone, $balance]) {
@@ -41,7 +51,7 @@ class UserSeeder extends Seeder
                     'name' => $name,
                     'username' => $username,
                     'avatar' => null,
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make(self::PASSWORD),
                     'phone' => $phone,
                     'balance' => $balance,
                     'point' => 0,

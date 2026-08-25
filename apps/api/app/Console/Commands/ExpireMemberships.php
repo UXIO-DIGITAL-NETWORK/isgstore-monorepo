@@ -32,8 +32,13 @@ class ExpireMemberships extends Command
             return self::FAILURE;
         }
 
+        // whereNotNull first: a lifetime subscription has no `ends_at`, and
+        // `ends_at <= now()` on NULL is not just false in SQL — it is the whole
+        // reason this guard is explicit. Without it every lifetime buyer would be
+        // reverted to MEMBER the first time this runs after their purchase.
         $lapsed = MembershipSubscription::with('user')
             ->where('status', 'active')
+            ->whereNotNull('ends_at')
             ->where('ends_at', '<=', now())
             ->get();
 
@@ -53,9 +58,8 @@ class ExpireMemberships extends Command
             // only this particular row is. Closing it must not strip the role
             // their current plan still grants.
             $stillCovered = $user && MembershipSubscription::where('user_id', $user->id)
-                ->where('status', 'active')
+                ->currentlyActive()
                 ->whereKeyNot($subscription->id)
-                ->where('ends_at', '>', now())
                 ->exists();
 
             if ($dryRun) {

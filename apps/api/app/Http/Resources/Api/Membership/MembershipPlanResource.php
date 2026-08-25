@@ -20,7 +20,8 @@ class MembershipPlanResource extends JsonResource
             'name' => $this->localizedName(),
             'benefits' => $this->localizedBenefits(),
             'price' => (int) $this->price,
-            'duration_days' => (int) $this->duration_days,
+            // NULL, not 0 — the admin table renders it as "Lifetime".
+            'duration_days' => $this->duration_days === null ? null : (int) $this->duration_days,
             'role_id' => $this->role_id,
             'is_popular' => (bool) $this->is_popular,
             'is_active' => (bool) $this->is_active,

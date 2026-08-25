@@ -59,7 +59,7 @@ login_req = {
     "event":[{"listen":"test","script":{"exec":["var jsonData = pm.response.json();","if (jsonData.status === 'success') {","    pm.environment.set('access_token', jsonData.data.access_token);","    pm.environment.set('refresh_token', jsonData.data.refresh_token);","}"],"type":"text/javascript"}}],
     "request":{
         "method":"POST","header":hdr(),
-        "body":body({"email":"admin@example.com","password":"password"}),
+        "body":body({"email":"admin@uxiotopup.id","password":"uxiotopupJaya123"}),  # UserSeeder's admin
         "url":url("v1/auth/login")
     }
 }

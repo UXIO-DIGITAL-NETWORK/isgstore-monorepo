@@ -14,6 +14,10 @@ use Illuminate\Database\Seeder;
  * member — a plan without one would sell nothing. `basic` maps to VIP rather
  * than MEMBER: MEMBER is the free default every registration already gets, so
  * a paid plan granting it would charge for nothing.
+ *
+ * All three are lifetime (`duration_days` NULL): bought once, never renewed and
+ * never expired by `memberships:expire`. The benefit lists say so first — the
+ * upgrade page renders them, and nothing else on it mentions a period.
  */
 class MembershipPlanSeeder extends Seeder
 {
@@ -28,17 +32,19 @@ class MembershipPlanSeeder extends Seeder
                 'code' => 'basic',
                 'role' => RoleType::VIP->value,
                 'price' => 50000,
-                'duration_days' => 30,
+                'duration_days' => null, // lifetime
                 'is_popular' => false,
                 'sort_order' => 0,
                 'name' => ['id' => 'Basic', 'en' => 'Basic'],
                 'benefits' => [
                     'id' => [
+                        'Berlaku selamanya, tanpa perpanjangan',
                         'Harga VIP untuk semua produk',
                         'Riwayat transaksi tanpa batas',
                         'Dukungan pelanggan prioritas',
                     ],
                     'en' => [
+                        'Lifetime access, no renewal',
                         'VIP pricing on every product',
                         'Unlimited transaction history',
                         'Priority customer support',
@@ -49,18 +55,20 @@ class MembershipPlanSeeder extends Seeder
                 'code' => 'platinum',
                 'role' => RoleType::RESELLER->value,
                 'price' => 150000,
-                'duration_days' => 90,
+                'duration_days' => null, // lifetime
                 'is_popular' => true,
                 'sort_order' => 1,
                 'name' => ['id' => 'Platinum', 'en' => 'Platinum'],
                 'benefits' => [
                     'id' => [
+                        'Berlaku selamanya, tanpa perpanjangan',
                         'Harga reseller untuk semua produk',
                         'Riwayat transaksi tanpa batas',
                         'Dukungan pelanggan prioritas',
                         'Akses API untuk integrasi',
                     ],
                     'en' => [
+                        'Lifetime access, no renewal',
                         'Reseller pricing on every product',
                         'Unlimited transaction history',
                         'Priority customer support',
@@ -72,12 +80,13 @@ class MembershipPlanSeeder extends Seeder
                 'code' => 'gold',
                 'role' => RoleType::AGENT->value,
                 'price' => 300000,
-                'duration_days' => 180,
+                'duration_days' => null, // lifetime
                 'is_popular' => false,
                 'sort_order' => 2,
                 'name' => ['id' => 'Gold', 'en' => 'Gold'],
                 'benefits' => [
                     'id' => [
+                        'Berlaku selamanya, tanpa perpanjangan',
                         'Harga agen, yang termurah',
                         'Riwayat transaksi tanpa batas',
                         'Dukungan pelanggan prioritas 24/7',
@@ -85,6 +94,7 @@ class MembershipPlanSeeder extends Seeder
                         'Manajer akun khusus',
                     ],
                     'en' => [
+                        'Lifetime access, no renewal',
                         'Agent pricing — the lowest tier',
                         'Unlimited transaction history',
                         '24/7 priority customer support',

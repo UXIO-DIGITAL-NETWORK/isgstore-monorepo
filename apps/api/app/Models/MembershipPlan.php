@@ -20,6 +20,18 @@ class MembershipPlan extends Model
         return $this->belongsTo(Role::class);
     }
 
+    /**
+     * A plan with no duration never expires.
+     *
+     * The single definition of the NULL sentinel — subscribe(), the expiry cron
+     * and the resources all go through here rather than comparing to null
+     * inline, so "lifetime" cannot come to mean two different things.
+     */
+    public function isLifetime(): bool
+    {
+        return $this->duration_days === null;
+    }
+
     /** Locale-keyed name, falling back to Indonesian then to the code. */
     public function localizedName(string $locale = 'id'): string
     {

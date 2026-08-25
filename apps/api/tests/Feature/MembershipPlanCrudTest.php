@@ -43,6 +43,37 @@ class MembershipPlanCrudTest extends TestCase
         $this->assertSame(['id' => 'Gold'], MembershipPlan::first()->name);
     }
 
+    public function test_admin_can_create_a_lifetime_plan(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/v1/membership-plans', [
+            'code' => 'lifetime',
+            'name' => 'Lifetime',
+            'price' => 300000,
+            'duration_days' => null,
+        ])->assertCreated()
+            // NULL, not 0 — the admin table branches on it to print "Lifetime",
+            // and a 0 would read as a plan that expires immediately.
+            ->assertJsonPath('data.duration_days', null);
+
+        $this->assertNull(MembershipPlan::first()->duration_days);
+    }
+
+    public function test_a_duration_must_still_be_at_least_a_day_when_given(): void
+    {
+        $this->actingAsAdmin();
+
+        // Nullable is not "anything goes": 0 days would be swept by
+        // memberships:expire on the next run.
+        $this->postJson('/api/v1/membership-plans', [
+            'code' => 'zero',
+            'name' => 'Zero',
+            'price' => 1000,
+            'duration_days' => 0,
+        ])->assertStatus(422)->assertJsonValidationErrors('duration_days');
+    }
+
     public function test_admin_can_update_and_delete_a_plan(): void
     {
         $this->actingAsAdmin();

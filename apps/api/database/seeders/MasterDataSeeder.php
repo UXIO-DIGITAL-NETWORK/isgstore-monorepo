@@ -9,39 +9,27 @@ use Illuminate\Support\Facades\DB;
 class MasterDataSeeder extends Seeder
 {
     /**
-     * Idempotent safety net for the core master data (supplier, game type,
-     * mlbb category + its Diamond sub-category). Products and their supplier
-     * mappings are owned by ProductSeeder / SupplierProductSeeder using the real
-     * uxiotopup Mobile Legends catalogue — nothing is seeded here.
+     * Idempotent safety net for the master data the integration cannot run
+     * without — currently just the Uxiotopup supplier.
+     *
+     * `CreateUxiotopupProductAction` and `CheckUxiotopupPricesAction` both
+     * resolve it with `Supplier::where('name', 'Uxiotopup')->firstOrFail()`, so a
+     * missing row is a 500 on the price checker and on every SKU import. It is
+     * repeated here rather than left to SupplierSeeder because SupplierSeeder
+     * uses a raw insert with fixed ids — it cannot run twice, and it does not run
+     * at all on an install that was seeded before Digiflazz was renamed.
+     *
+     * Catalogue master data (game type, category, sub-category) used to be
+     * re-created here as a safety net. It is not any more: it would have put back
+     * the Mobile Legends rows the seeder now deliberately leaves out.
      */
     public function run(): void
     {
         $now = Carbon::now();
 
-        // 1. SUPPLIER
         DB::table('suppliers')->updateOrInsert(
             ['name' => 'Uxiotopup'],
             ['status' => true, 'created_at' => $now, 'updated_at' => $now]
-        );
-
-        // 2. CATEGORY TYPE (games only)
-        DB::table('category_types')->updateOrInsert(
-            ['name' => 'Mobile Game'],
-            ['is_voucher' => false, 'status' => true, 'created_at' => $now, 'updated_at' => $now]
-        );
-        $gameTypeId = DB::table('category_types')->where('name', 'Mobile Game')->value('id');
-
-        // 3. CATEGORY — updateOrInsert keeps the slug/fields seeded by CategorySeeder.
-        DB::table('categories')->updateOrInsert(
-            ['code' => 'mlbb'],
-            ['type_id' => $gameTypeId, 'name' => 'Mobile Legends', 'status' => true, 'updated_at' => $now]
-        );
-        $mlbbCatId = DB::table('categories')->where('code', 'mlbb')->value('id');
-
-        // 4. SUB CATEGORY
-        DB::table('sub_categories')->updateOrInsert(
-            ['category_id' => $mlbbCatId, 'name' => 'Diamond'],
-            ['status' => true, 'updated_at' => $now]
         );
     }
 }

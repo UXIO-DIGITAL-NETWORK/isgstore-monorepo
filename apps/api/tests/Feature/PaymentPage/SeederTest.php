@@ -27,11 +27,13 @@ class SeederTest extends TestCase
             );
         }
 
-        // Exactly the 8 example accounts: 1 per role + a second member.
-        $this->assertSame(8, User::count());
-        $this->assertSame(2, User::whereHas('role', fn ($q) => $q->whereRaw('LOWER(name) = ?', ['member']))->count());
+        // Exactly the three operator logins. The tier roles stay seeded because
+        // registration and pricing need them, but nobody is seeded INTO them —
+        // member/vip/reseller/agent belong to real customers who sign up.
+        $this->assertSame(3, User::count());
+        $this->assertSame(0, User::whereHas('role', fn ($q) => $q->whereRaw('LOWER(name) = ?', ['member']))->count());
 
-        foreach (['payment-admin', 'payment-internal'] as $role) {
+        foreach (['admin', 'payment-admin', 'payment-internal'] as $role) {
             $this->assertSame(
                 1,
                 User::whereHas('role', fn ($q) => $q->whereRaw('LOWER(name) = ?', [$role]))->count(),

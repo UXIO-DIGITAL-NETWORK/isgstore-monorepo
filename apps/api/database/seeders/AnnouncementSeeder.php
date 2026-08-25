@@ -16,7 +16,7 @@ class AnnouncementSeeder extends Seeder
             ['category_id' => null, 'content' => 'Selamat datang di Uxio Digital Network! Platform top-up game & voucher terpercaya dengan harga terbaik.', 'image_path' => '/announcements/welcome.jpg', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
 
             // Kategori Game yang Valid (1: MLBB)
-            ['category_id' => 1, 'content' => 'Promo spesial MLBB! Diskon 10% untuk pembelian Diamond 240 ke atas. Berlaku hingga 30 April 2026.', 'image_path' => '/announcements/mlbb-promo.jpg', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['category_id' => null, 'content' => 'Promo spesial MLBB! Diskon 10% untuk pembelian Diamond 240 ke atas. Berlaku hingga 30 April 2026.', 'image_path' => '/announcements/mlbb-promo.jpg', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
 
             // Diubah menjadi null karena kategori Genshin sudah tidak aktif
             ['category_id' => null, 'content' => 'Genshin Impact versi 5.0 sudah rilis! Top up Genesis Crystal sekarang dan dapatkan bonus 10%.', 'image_path' => '/announcements/genshin-50.jpg', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],

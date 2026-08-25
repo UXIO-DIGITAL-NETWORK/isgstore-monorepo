@@ -21,17 +21,78 @@ class ExpireMembershipsTest extends TestCase
         ];
     }
 
-    private function plan(int $roleId): MembershipPlan
+    private function plan(int $roleId, ?int $durationDays = 30): MembershipPlan
     {
         return MembershipPlan::create([
             'code' => 'basic-'.uniqid(),
             'name' => ['id' => 'Basic'],
             'benefits' => ['id' => []],
             'price' => 50000,
-            'duration_days' => 30,
+            'duration_days' => $durationDays,
             'role_id' => $roleId,
             'is_active' => true,
         ]);
+    }
+
+    /**
+     * The whole point of a lifetime plan. `ends_at` is NULL, and a plain
+     * `ends_at <= now()` sweep would have demoted the buyer on the first nightly
+     * run after their purchase — money taken, tier taken back.
+     */
+    public function test_it_never_expires_a_lifetime_membership(): void
+    {
+        ['member' => $memberRole, 'vip' => $vipRole] = $this->roles();
+
+        $user = User::factory()->create(['role_id' => $vipRole, 'membership_expires_at' => null]);
+
+        MembershipSubscription::create([
+            'user_id' => $user->id,
+            'membership_plan_id' => $this->plan($vipRole, null)->id,
+            'starts_at' => now()->subYears(3),
+            'ends_at' => null,
+            'status' => 'active',
+        ]);
+
+        $this->travel(10)->years();
+        $this->artisan('memberships:expire')->assertSuccessful();
+
+        $user->refresh();
+        $this->assertSame($vipRole, $user->role_id, 'A lifetime member keeps their tier forever.');
+        $this->assertSame('active', MembershipSubscription::first()->status);
+    }
+
+    /**
+     * A lifetime row also has to COUNT as cover: closing an old finite plan must
+     * not strip the tier the lifetime plan still grants.
+     */
+    public function test_a_lifetime_membership_covers_a_lapsed_one(): void
+    {
+        ['member' => $memberRole, 'vip' => $vipRole] = $this->roles();
+
+        $user = User::factory()->create(['role_id' => $vipRole]);
+
+        $lapsed = MembershipSubscription::create([
+            'user_id' => $user->id,
+            'membership_plan_id' => $this->plan($vipRole)->id,
+            'starts_at' => now()->subDays(31),
+            'ends_at' => now()->subDay(),
+            'status' => 'active',
+        ]);
+
+        MembershipSubscription::create([
+            'user_id' => $user->id,
+            'membership_plan_id' => $this->plan($vipRole, null)->id,
+            'starts_at' => now()->subDay(),
+            'ends_at' => null,
+            'status' => 'active',
+        ]);
+
+        $this->artisan('memberships:expire')->assertSuccessful();
+
+        $user->refresh();
+        $this->assertSame($vipRole, $user->role_id);
+        $this->assertNotSame($memberRole, $user->role_id);
+        $this->assertSame('expired', $lapsed->fresh()->status);
     }
 
     public function test_it_reverts_a_lapsed_member_to_the_default_role(): void
