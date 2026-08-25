@@ -189,24 +189,58 @@ class ArchiveProductTest extends TestCase
     }
 
     /**
-     * `products.code` is UNIQUE and an archived row still holds its code, so the
-     * duplicate check has to see through the soft-delete scope — otherwise it
-     * passes and the INSERT dies on the constraint instead.
+     * `products.code` is a stable catalogue identity: an archived product still
+     * holds its code, and archiving freed this very SKU back to the pool. So
+     * promoting the SKU whose code belongs to that archived product is the admin
+     * asking for it back — it RESTORES the product (unpublished, SKU reattached)
+     * rather than refusing and stranding the admin on the pool screen. There is
+     * no second draft and no unique-index clash.
      */
-    public function test_re_promoting_the_sku_is_refused_while_the_old_product_is_archived(): void
+    public function test_re_promoting_the_sku_restores_the_archived_product(): void
     {
         $this->actingAsAdmin();
         $product = $this->product();
         $mapping = $this->mappingFor($product);
-        $product->update(['code' => $mapping->buyer_sku_code]);
+        $product->update(['code' => $mapping->buyer_sku_code, 'published_at' => now()]);
 
         $this->deleteJson("/api/v1/products/{$product->id}")->assertOk();
+        $this->assertSoftDeleted('products', ['id' => $product->id]);
+
+        $this->postJson("/api/v1/supplier-products/{$mapping->id}/promote")->assertStatus(201);
+
+        // The same product is back — not a duplicate — and never straight on sale.
+        $this->assertNotSoftDeleted('products', ['id' => $product->id]);
+        $this->assertSame(1, Product::withTrashed()->where('code', $mapping->buyer_sku_code)->count());
+        $this->assertSame(Product::STATE_UNPUBLISHED, $product->fresh()->load('supplierProducts')->publishState());
+        $this->assertDatabaseHas('supplier_products', [
+            'id' => $mapping->id, 'product_id' => $product->id, 'is_active' => false,
+        ]);
+    }
+
+    /**
+     * Restore only reuses an ARCHIVED product's code. A live (or draft) product
+     * already owning the code is a genuine clash the admin has to resolve.
+     */
+    public function test_promoting_onto_a_live_products_code_is_still_refused(): void
+    {
+        $this->actingAsAdmin();
+        $live = $this->product();
+        $live->update(['code' => 'VAL_475_S1']);
+
+        $mapping = SupplierProduct::factory()->create([
+            'product_id' => null,
+            'pool_category_id' => $live->category_id,
+            'supplier_id' => Supplier::factory()->create()->id,
+            'buyer_sku_code' => 'VAL_475_S1',
+            'price' => 10000,
+            'margin_member' => 20,
+            'margin_set_at' => now(),
+            'is_active' => false,
+            'buyer_product_status' => true,
+        ]);
 
         $this->postJson("/api/v1/supplier-products/{$mapping->id}/promote")
             ->assertStatus(422)
-            ->assertJsonPath(
-                'message',
-                "Kode produk '{$mapping->buyer_sku_code}' sudah dipakai produk lain atau produk yang diarsipkan."
-            );
+            ->assertJsonPath('message', "Kode produk 'VAL_475_S1' sudah dipakai produk lain.");
     }
 }

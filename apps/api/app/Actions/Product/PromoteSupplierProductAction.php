@@ -30,6 +30,7 @@ class PromoteSupplierProductAction
     public function __construct(
         private readonly PricingService $pricing,
         private readonly CreateActivityLogAction $activityLogAction,
+        private readonly RestoreProductAction $restoreAction,
     ) {}
 
     /**
@@ -55,10 +56,22 @@ class PromoteSupplierProductAction
         }
 
         // withTrashed: an archived product still holds its code — the unique
-        // index does not forget, so neither may this check. Re-promoting a SKU
-        // whose old product was archived is exactly how you would hit it.
-        if (Product::withTrashed()->where('code', $code)->exists()) {
-            throw new SupplierProductPoolException("Kode produk '{$code}' sudah dipakai produk lain atau produk yang diarsipkan.");
+        // index does not forget, so neither may this check.
+        $existing = Product::withTrashed()->where('code', $code)->first();
+
+        if ($existing) {
+            // A live (or draft) product already owns this code — a genuine clash
+            // the admin has to resolve. Nothing to reuse.
+            if (! $existing->trashed()) {
+                throw new SupplierProductPoolException("Kode produk '{$code}' sudah dipakai produk lain.");
+            }
+
+            // The code belongs to a product that was archived. Same code = same
+            // catalogue identity, and archiving freed this very SKU back to the
+            // pool — so promoting it is the admin asking for that product back.
+            // Restore re-attaches the SKU and returns it unpublished; no second
+            // draft, no unique-index clash. Matches what "promote it back" means.
+            return $this->restoreAction->execute($existing);
         }
 
         return DB::transaction(function () use ($supplierProduct, $categoryId, $subCategoryId, $name, $code) {
