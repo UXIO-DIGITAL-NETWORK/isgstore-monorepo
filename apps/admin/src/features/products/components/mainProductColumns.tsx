@@ -81,7 +81,9 @@ export const mainProductColumns: ColumnDef<Product>[] = [
               >
                 {formatCurrency(variant.prices.public, { fractionDigits: 0 })}
               </Text>
-              <ProductStatusBadge status={variant.status} />
+              {/* An API product row IS its denomination, so the variant's
+                  lifecycle is the product's — there is nothing else it could be. */}
+              <ProductStatusBadge state={row.original.publish_state} />
             </Box>
           </Box>
         ))}
@@ -110,7 +112,7 @@ export const mainProductColumns: ColumnDef<Product>[] = [
     header: "Status",
     cell: ({ row }) => (
       <Box className="flex flex-col items-start gap-1">
-        <ProductStatusBadge status={row.original.status} />
+        <ProductStatusBadge state={row.original.publish_state} />
         <ProductAvailabilityBadge isAvailable={row.original.is_available} />
       </Box>
     ),

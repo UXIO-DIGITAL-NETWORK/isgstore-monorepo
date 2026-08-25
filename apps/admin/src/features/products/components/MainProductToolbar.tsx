@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Eye, ImageIcon, Lock, Plus, Power, RefreshCcw, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Archive, ChevronDown, Eye, ImageIcon, Lock, Plus, RefreshCcw, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { Box } from "@/components/common/Box";
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRICE_RANGE_OPTIONS } from "../data/select-options.data";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
+import { PUBLISH_STATE_LABELS, PUBLISH_STATES } from "../types/product.type";
 
 const CLEAR_VALUE = "all";
 
@@ -24,6 +25,7 @@ interface MainProductToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
   category?: string;
+  publishState?: string;
   onCategoryChange: (value: string | undefined) => void;
   price?: string;
   onPriceChange: (value: string | undefined) => void;
@@ -33,26 +35,30 @@ interface MainProductToolbarProps {
   onBulkUxiotopup: () => void;
   onBulkShowPrice: () => void;
   onBulkLock: () => void;
-  onBulkDeactivate: () => void;
+  onPublishStateChange: (value?: string) => void;
+  onBulkUnpublish: () => void;
   onBulkDelete: () => void;
 }
 
 /**
  * Toolbar for the Main Products list (product_requirements.md §4.6) — search,
- * a category filter, a price filter, refresh, and "+ Add Main Products",
+ * a category filter, a status filter, a price filter, refresh, and "+ Add Main Products",
  * matching the reference left to right, with the selection action bar
- * (Uxiotopup / Logo / Deactive / Delete) on its own right-aligned row below.
+ * (Uxiotopup / Logo / Unpublish / Archive) on its own right-aligned row below.
  *
  * The add link derives its target from the current pathname rather than a
  * hardcoded absolute path, so the same component works under both the real
  * route and the unauthenticated preview twin.
  *
- * "Deactive" keeps the reference's label; the confirmation says "Deactivate".
+ * The lifecycle entry is "Unpublish" — one verb for taking a product off sale,
+ * matching the row menu. It was "Deactive", which only moved half of what makes
+ * a product sellable.
  */
 export function MainProductToolbar({
   search,
   onSearchChange,
   category,
+  publishState,
   onCategoryChange,
   price,
   onPriceChange,
@@ -62,7 +68,8 @@ export function MainProductToolbar({
   onBulkUxiotopup,
   onBulkShowPrice,
   onBulkLock,
-  onBulkDeactivate,
+  onPublishStateChange,
+  onBulkUnpublish,
   onBulkDelete,
 }: MainProductToolbarProps) {
   // The same source the product form, bulk-add and provider pool already read,
@@ -114,6 +121,35 @@ export function MainProductToolbar({
                     value={option.value}
                   >
                     {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Box>
+
+          <Box className="flex flex-col gap-1.5">
+            <Label htmlFor="product-state-filter">Status</Label>
+            {/* Archived products are excluded by default — the row is kept only
+                so its order history keeps resolving, not to clutter the
+                catalogue. This select is the one way back to them. */}
+            <Select
+              value={publishState ?? ""}
+              onValueChange={(next) => onPublishStateChange(next === CLEAR_VALUE ? undefined : next)}
+            >
+              <SelectTrigger
+                id="product-state-filter"
+                className="w-44 rounded-xl"
+              >
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={CLEAR_VALUE}>All statuses</SelectItem>
+                {PUBLISH_STATES.map((state) => (
+                  <SelectItem
+                    key={state}
+                    value={state}
+                  >
+                    {PUBLISH_STATE_LABELS[state]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -205,8 +241,8 @@ export function MainProductToolbar({
               { label: "Uxiotopup Update", icon: <RefreshCcw className="size-4" />, onSelect: onBulkUxiotopup },
               { label: "Show Price", icon: <Eye className="size-4" />, onSelect: onBulkShowPrice },
               { label: "Lock Price", icon: <Lock className="size-4" />, onSelect: onBulkLock },
-              { label: "Deactive", icon: <Power className="size-4" />, onSelect: onBulkDeactivate },
-              { label: "Delete", icon: <Trash2 className="size-4" />, destructive: true, onSelect: onBulkDelete },
+              { label: "Unpublish", icon: <Archive className="size-4" />, onSelect: onBulkUnpublish },
+              { label: "Archive", icon: <Archive className="size-4" />, destructive: true, onSelect: onBulkDelete },
             ]}
           />
         </Box>

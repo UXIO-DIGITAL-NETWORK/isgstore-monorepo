@@ -6,6 +6,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { providerPoolService } from "../services/providerPool.service";
 
 const POOL_PATH = "/admin/products/provider";
+/** The fixture row that is pooled and already priced — promotable. */
+const READY_ROW = "Valorant 420 Points";
 
 /**
  * The provider pool: SKUs are pulled in, priced, promoted to a draft product and
@@ -78,6 +80,34 @@ describe("Provider pool", () => {
 
     // Adding ends the flow: back to the pool, where the new rows now live.
     expect(await screen.findByRole("heading", { name: "Product Provider" })).toBeInTheDocument();
+  });
+
+  /**
+   * The pool is the waiting room, not the catalogue. A SKU that has been
+   * promoted lives on the Main Products list — leaving it visible in both is
+   * what made "where does this product live?" unanswerable, and stranded a
+   * Publish action on a row the admin had already moved past.
+   */
+  it("lists only SKUs that are still in the pool", async () => {
+    await renderRoute(POOL_PATH);
+    const table = await screen.findByRole("table");
+
+    expect(await within(table).findAllByText(/Needs margin|Ready/)).not.toHaveLength(0);
+    expect(within(table).queryByText("Published")).not.toBeInTheDocument();
+    expect(within(table).queryByText("Draft")).not.toBeInTheDocument();
+  });
+
+  it("promotes and publishes in one step from the row menu", async () => {
+    const spy = vi
+      .spyOn(providerPoolService, "bulkPromoteAndPublish")
+      .mockResolvedValue({ promoted: 1, published: 1, skipped: [] });
+    const user = userEvent.setup();
+    await renderRoute(POOL_PATH);
+
+    await user.click(await screen.findByRole("button", { name: `Actions for ${READY_ROW}` }));
+    await user.click(await screen.findByRole("menuitem", { name: /Promote & Publish/ }));
+
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it("will not promote a pooled SKU whose margin has not been set, and says why", async () => {

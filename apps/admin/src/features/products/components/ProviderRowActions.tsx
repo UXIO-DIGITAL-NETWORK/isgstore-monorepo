@@ -16,7 +16,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { Text } from "@/components/common/Text";
 import { useDeleteProviderProducts, useLockProviderPrice } from "../hooks/useProviderProducts";
-import { usePromoteProviderProducts, usePublishProviderProducts } from "../hooks/useProviderPool";
+import { usePromoteAndPublishProviderProducts, usePromoteProviderProducts } from "../hooks/useProviderPool";
 import type { ProviderProduct } from "../types/product.type";
 
 interface ProviderRowActionsProps {
@@ -32,6 +32,12 @@ interface ProviderRowActionsProps {
  * tooltip: a disabled `DropdownMenuItem` swallows pointer events, so a tooltip on
  * it would never fire. The reason comes from the API, so the menu and the 422 can
  * never tell the admin different things.
+ *
+ * There is no Publish here any more. A promoted SKU leaves the pool — it is a
+ * Main Product now, and that is where it is published, unpublished and archived.
+ * Publishing from both screens is what made "where does this product live?"
+ * unanswerable. What remains is the shortcut: Promote & Publish, so onboarding a
+ * priced category does not need a trip through the other list.
  */
 export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -39,7 +45,7 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
   const lockPrice = useLockProviderPrice();
   const deleteProviders = useDeleteProviderProducts();
   const promote = usePromoteProviderProducts();
-  const publish = usePublishProviderProducts();
+  const promoteAndPublish = usePromoteAndPublishProviderProducts();
   const navigate = useNavigate();
 
   const nextLocked = !provider.is_price_locked;
@@ -86,10 +92,13 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
                 </Box>
               </DropdownMenuItem>
             )}
-            {provider.pool_state === "draft" && (
-              <DropdownMenuItem onSelect={() => publish.mutate([provider.id])}>
+            {isPooled && (
+              <DropdownMenuItem
+                disabled={!provider.can_promote}
+                onSelect={() => promoteAndPublish.mutate([provider.id])}
+              >
                 <Rocket />
-                Publish
+                Promote &amp; Publish
               </DropdownMenuItem>
             )}
           </Can>

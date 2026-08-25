@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Eye, Lock, Power, RefreshCcw } from "lucide-react";
+import { Archive, Eye, Lock, RefreshCcw } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { DataTable } from "@/components/common/DataTable";
@@ -14,9 +14,10 @@ import {
   useUxiotopupUpdateProducts,
   useLockProducts,
   useProductList,
-  useSetProductStatus,
+  useSetProductPublished,
   useShowProducts,
 } from "../hooks/useProducts";
+import type { ProductListParams } from "../types/product.type";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -36,21 +37,29 @@ export default function MainProductsPage() {
   const [price, setPrice] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [publishState, setPublishState] = useState<string | undefined>(undefined);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const [bulkDeactivateOpen, setBulkDeactivateOpen] = useState(false);
+  const [bulkUnpublishOpen, setBulkUnpublishOpen] = useState(false);
   const [bulkLockOpen, setBulkLockOpen] = useState(false);
   const [bulkShowOpen, setBulkShowOpen] = useState(false);
   const [bulkUxiotopupOpen, setBulkUxiotopupOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
-    () => ({ search: search || undefined, category_id: categoryId, price, page, per_page: pageSize }),
-    [search, categoryId, price, page, pageSize],
+    () => ({
+      search: search || undefined,
+      category_id: categoryId,
+      price,
+      publish_state: publishState as ProductListParams["publish_state"],
+      page,
+      per_page: pageSize,
+    }),
+    [search, categoryId, price, publishState, page, pageSize],
   );
   const { data, isLoading, isError, refetch } = useProductList(params);
   const deleteProducts = useDeleteProducts();
-  const setProductStatus = useSetProductStatus();
+  const setProductPublished = useSetProductPublished();
   const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
   const uxiotopupUpdate = useUxiotopupUpdateProducts();
@@ -102,7 +111,12 @@ export default function MainProductsPage() {
           onBulkUxiotopup={() => setBulkUxiotopupOpen(true)}
           onBulkShowPrice={() => setBulkShowOpen(true)}
           onBulkLock={() => setBulkLockOpen(true)}
-          onBulkDeactivate={() => setBulkDeactivateOpen(true)}
+          publishState={publishState}
+          onPublishStateChange={(next) => {
+            setPublishState(next);
+            setPage(1);
+          }}
+          onBulkUnpublish={() => setBulkUnpublishOpen(true)}
           onBulkDelete={() => setBulkDeleteOpen(true)}
         />
       </Box>
@@ -127,39 +141,40 @@ export default function MainProductsPage() {
         />
       </Box>
 
-      {/* Same dialog and same mutation as the row menu's Delete — only the set
+      {/* Same dialog and same mutation as the row menu's Archive — only the set
           of ids differs, so only the wording is count-aware. */}
       <DeleteConfirmDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
-        title={selectedIds.length <= 1 ? "Delete this product?" : `Delete ${selectedIds.length} products?`}
+        icon={<Archive />}
+        confirmLabel="Archive"
+        title={selectedIds.length <= 1 ? "Archive this product?" : `Archive ${selectedIds.length} products?`}
         description={
           selectedIds.length <= 1
-            ? "This action cannot be undone. This will permanently delete this product and remove all of its variants from the storefront."
-            : `This action cannot be undone. This will permanently delete these ${selectedIds.length} products and remove all of their variants from the storefront.`
+            ? "It leaves the storefront and the catalogue, and its provider SKU returns to the pool. Past orders keep their details, and you can restore it from the Archived filter."
+            : `These ${selectedIds.length} products leave the storefront and the catalogue, and their provider SKUs return to the pool. Past orders keep their details, and you can restore them from the Archived filter.`
         }
         onConfirm={() => deleteProducts.mutate(selectedIds)}
       />
 
-      {/* Deactivating is reversible, so the copy says what changes rather than
-          warning it cannot be undone — but it is still a status override, so it
-          goes through the same confirmation (`.claude/rules/rbac-security.md`).
+      {/* Unpublishing is reversible, so the copy says what changes rather than
+          warning it cannot be undone — but it still takes products off sale, so
+          it goes through the same confirmation (`.claude/rules/rbac-security.md`).
 
-          Deactivate-only on purpose, unlike the row menu's toggle: a selection
-          can hold both active and inactive rows, so there is no single status
-          to invert. */}
+          Unpublish-only on purpose, unlike the row menu's toggle: a selection can
+          hold rows in any state, so there is no single one to invert. */}
       <DeleteConfirmDialog
-        open={bulkDeactivateOpen}
-        onOpenChange={setBulkDeactivateOpen}
-        icon={<Power />}
-        confirmLabel="Deactivate"
-        title={selectedIds.length <= 1 ? "Deactivate this product?" : `Deactivate ${selectedIds.length} products?`}
+        open={bulkUnpublishOpen}
+        onOpenChange={setBulkUnpublishOpen}
+        icon={<Archive />}
+        confirmLabel="Unpublish"
+        title={selectedIds.length <= 1 ? "Unpublish this product?" : `Unpublish ${selectedIds.length} products?`}
         description={
           selectedIds.length <= 1
-            ? "This product will be marked inactive and hidden from the storefront. You can activate it again at any time."
-            : `These ${selectedIds.length} products will be marked inactive and hidden from the storefront. You can activate them again at any time.`
+            ? "It leaves the storefront and stops being orderable. You can publish it again at any time."
+            : `These ${selectedIds.length} products leave the storefront and stop being orderable. You can publish them again at any time.`
         }
-        onConfirm={() => setProductStatus.mutate({ ids: selectedIds, active: false })}
+        onConfirm={() => setProductPublished.mutate({ ids: selectedIds, published: false })}
       />
 
       <DeleteConfirmDialog

@@ -11,6 +11,28 @@
 export type ProductStatus = "active" | "inactive";
 
 /**
+ * Where a Main Product sits in its lifecycle — the API's `publish_state`.
+ *
+ * `status` alone could never answer this. A product is only live when an active
+ * supplier mapping backs it, which is why the row menu's old "Activate" could
+ * report a product as active that the storefront still could not see.
+ *
+ * - `draft`       promoted but never published
+ * - `published`   live: active AND served by an active supplier mapping
+ * - `unpublished` was live, taken down deliberately
+ * - `archived`    soft-deleted; kept so its order history keeps resolving
+ */
+export const PUBLISH_STATES = ["draft", "published", "unpublished", "archived"] as const;
+export type PublishState = (typeof PUBLISH_STATES)[number];
+
+export const PUBLISH_STATE_LABELS: Record<PublishState, string> = {
+  draft: "Draft",
+  published: "Published",
+  unpublished: "Unpublished",
+  archived: "Archived",
+};
+
+/**
  * Customer tiers a variant is priced for, in the reference card's order:
  * retail first, then the discounted trade tiers.
  */
@@ -60,6 +82,13 @@ export interface Product {
   description?: string;
   /** Lifecycle. First of the two stacked badges the reference shows. */
   status: ProductStatus;
+  /** Derived from `status` AND the supplier mapping — see `PublishState`. */
+  publish_state: PublishState;
+  /** False when publishing would fail; the row menu disables the item and says why. */
+  can_publish: boolean;
+  publish_blocked_reason: string | null;
+  published_at?: string | null;
+  archived_at?: string | null;
   /** §6's `is_available` — storefront visibility. The second badge. */
   is_available: boolean;
   /** Price controls (bulk feature). `0/null = no limit`. */
@@ -72,8 +101,20 @@ export interface Product {
   updated_at: string;
 }
 
+/**
+ * Publish/unpublish reports per-row skips rather than failing the batch — one
+ * SKU the provider switched off must not cost the admin the other forty-nine.
+ * Same shape the pool's bulk publish already returns.
+ */
+export interface BulkPublishResult {
+  updated: number;
+  skipped: { id: number; code: string; reason: string }[];
+}
+
 export interface ProductListParams {
   search?: string;
+  /** Lifecycle filter. Omitted = everything except archived. */
+  publish_state?: PublishState;
   /** A real `categories.id`. Was the category *name*, matched through `search`,
    * which could only ever hit a product whose own name contained it. */
   category_id?: string;
@@ -318,6 +359,17 @@ export interface PromoteResult {
 }
 
 export interface PublishResult {
+  published: number;
+  skipped: { id: number; buyer_sku_code: string; reason: string }[];
+}
+
+/**
+ * The onboarding shortcut. `promoted` can exceed `published`: a SKU the provider
+ * has switched off still becomes a draft product, it just does not go on sale —
+ * which is worth reporting rather than rolling back.
+ */
+export interface PromotePublishResult {
+  promoted: number;
   published: number;
   skipped: { id: number; buyer_sku_code: string; reason: string }[];
 }

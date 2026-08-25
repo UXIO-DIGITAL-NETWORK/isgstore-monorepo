@@ -15,7 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { managedProviderColumns } from "../components/managedProviderColumns";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
-import { usePoolSummary, usePromoteProviderProducts, usePublishProviderProducts } from "../hooks/useProviderPool";
+import {
+  usePoolSummary,
+  usePromoteAndPublishProviderProducts,
+  usePromoteProviderProducts,
+} from "../hooks/useProviderPool";
 import {
   useBulkDeleteProviderProducts,
   useBulkLockProviderPrice,
@@ -48,7 +52,7 @@ export default function ManagedProviderPage() {
   const bulkLock = useBulkLockProviderPrice();
   const bulkDelete = useBulkDeleteProviderProducts();
   const promote = usePromoteProviderProducts();
-  const publish = usePublishProviderProducts();
+  const promoteAndPublish = usePromoteAndPublishProviderProducts();
   const { data: poolSummary } = usePoolSummary();
   const { categoryOptions } = useProductSelectOptions();
 
@@ -140,8 +144,9 @@ export default function ManagedProviderPage() {
               <SelectItem value={ALL}>All stages</SelectItem>
               <SelectItem value="needs_margin">Needs margin</SelectItem>
               <SelectItem value="ready">Ready</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
+              {/* No Draft or Published here: both describe a SKU that has been
+                  promoted, and a promoted SKU has left the pool. It lives on the
+                  Main Products list, whose Status filter covers those states. */}
             </SelectContent>
           </Select>
           <Select
@@ -223,9 +228,9 @@ export default function ManagedProviderPage() {
                 onSelect: () => promote.mutate(selectedIds),
               },
               {
-                label: "Publish",
+                label: "Promote & Publish",
                 icon: <Rocket className="size-4" />,
-                onSelect: () => publish.mutate(selectedIds),
+                onSelect: () => promoteAndPublish.mutate(selectedIds),
               },
               {
                 label: "Delete",

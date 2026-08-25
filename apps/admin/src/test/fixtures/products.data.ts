@@ -35,6 +35,14 @@ function priced(publicPrice: number): Pick<ProductVariant, "cost_price" | "price
     },
   };
 }
+/**
+ * Lifecycle defaults, spread per row. A published product is one the storefront
+ * can actually sell — active AND backed by an active supplier mapping — so a
+ * fixture that is merely `status: "active"` is not automatically published.
+ */
+const LIVE = { publish_state: "published", can_publish: false, publish_blocked_reason: null } as const;
+const NOT_LIVE = { publish_state: "draft", can_publish: true, publish_blocked_reason: null } as const;
+
 export const PRODUCTS: Product[] = [
   {
     id: "prod-1",
@@ -43,6 +51,7 @@ export const PRODUCTS: Product[] = [
     game_name: "Mobile Legends: Bang Bang",
     category_name: "Mobile Legends: Indonesia",
     code: "MLBB-WDP-01",
+    ...LIVE,
     status: "active",
     is_available: true,
     variants: [
@@ -59,6 +68,7 @@ export const PRODUCTS: Product[] = [
     game_name: "Mobile Legends: Bang Bang",
     category_name: "Mobile Legends: Indonesia",
     code: "MLBB-DM-086",
+    ...LIVE,
     status: "active",
     is_available: true,
     // The one row whose price is locked and hidden — the row menu's Lock/Show
@@ -76,6 +86,7 @@ export const PRODUCTS: Product[] = [
     game_name: "Mobile Legends: Bang Bang",
     category_name: "Mobile Legends: Indonesia",
     code: "MLBB-DM-172",
+    ...LIVE,
     status: "active",
     is_available: false,
     variants: [{ id: "prod-3-var-1", name: "172 Diamonds", ...priced(42800), status: "active" }],
@@ -89,6 +100,7 @@ export const PRODUCTS: Product[] = [
     game_name: "Free Fire",
     category_name: "Free Fire Indonesia",
     code: "FF-MEM-30D",
+    ...LIVE,
     status: "active",
     is_available: true,
     variants: [
@@ -105,6 +117,7 @@ export const PRODUCTS: Product[] = [
     game_name: "Free Fire",
     category_name: "Free Fire Indonesia",
     code: "FF-DM-070",
+    ...LIVE,
     status: "active",
     is_available: true,
     variants: [{ id: "prod-5-var-1", name: "70 Diamonds", ...priced(9500), status: "active" }],
@@ -118,6 +131,7 @@ export const PRODUCTS: Product[] = [
     game_name: "Free Fire",
     category_name: "Free Fire Indonesia",
     code: "FF-DM-355",
+    ...NOT_LIVE,
     status: "inactive",
     is_available: false,
     variants: [{ id: "prod-6-var-1", name: "355 Diamonds", ...priced(48000), status: "inactive" }],
@@ -131,7 +145,12 @@ export const PRODUCTS: Product[] = [
     game_name: "Genshin Impact",
     category_name: "Genshin Impact",
     code: "GI-GC-060",
-    status: "active",
+    // Promoted, but the provider switched the SKU off: publishing it would
+    // advertise an order checkout can only fail.
+    publish_state: "draft",
+    can_publish: false,
+    publish_blocked_reason: "SKU sedang nonaktif di provider.",
+    status: "inactive",
     is_available: true,
     variants: [{ id: "prod-7-var-1", name: "60 Genesis Crystals", ...priced(16000), status: "active" }],
     created_at: "2026-03-15T08:45:00.000Z",
@@ -144,7 +163,11 @@ export const PRODUCTS: Product[] = [
     game_name: "Genshin Impact",
     category_name: "Genshin Impact",
     code: "GI-WELKIN-01",
-    status: "active",
+    // Archived: kept only so its order history keeps resolving.
+    publish_state: "archived",
+    can_publish: false,
+    publish_blocked_reason: "Produk sudah diarsipkan. Pulihkan terlebih dahulu.",
+    status: "inactive",
     is_available: true,
     variants: [{ id: "prod-8-var-1", name: "Welkin Moon 30 Hari", ...priced(79000), status: "active" }],
     created_at: "2026-03-16T19:03:00.000Z",
@@ -157,6 +180,7 @@ export const PRODUCTS: Product[] = [
     game_name: "PUBG Mobile",
     category_name: "PUBG Mobile",
     code: "PUBGM-UC-060",
+    ...LIVE,
     status: "active",
     is_available: true,
     variants: [{ id: "prod-9-var-1", name: "60 UC", ...priced(14500), status: "active" }],
@@ -170,6 +194,7 @@ export const PRODUCTS: Product[] = [
     game_name: "PUBG Mobile",
     category_name: "PUBG Mobile",
     code: "PUBGM-RP-30D",
+    ...NOT_LIVE,
     status: "inactive",
     is_available: false,
     variants: [
@@ -186,6 +211,7 @@ export const PRODUCTS: Product[] = [
     game_name: "Valorant",
     category_name: "Valorant",
     code: "VAL-VP-475",
+    ...LIVE,
     status: "active",
     is_available: true,
     variants: [{ id: "prod-11-var-1", name: "475 Valorant Points", ...priced(55000), status: "active" }],
@@ -199,6 +225,7 @@ export const PRODUCTS: Product[] = [
     game_name: "Honkai: Star Rail",
     category_name: "Honkai: Star Rail",
     code: "HSR-OS-060",
+    ...LIVE,
     status: "active",
     is_available: true,
     variants: [{ id: "prod-12-var-1", name: "60 Oneiric Shards", ...priced(16000), status: "active" }],

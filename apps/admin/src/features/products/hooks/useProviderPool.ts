@@ -68,6 +68,34 @@ export const usePromoteProviderProducts = () => {
   });
 };
 
+/**
+ * Promote and publish in one call — the pool's onboarding path.
+ *
+ * `promoted` and `published` can differ: a SKU the provider has switched off
+ * becomes a draft product but does not go on sale. Saying so beats a bare
+ * success count that quietly overstates what happened.
+ */
+export const usePromoteAndPublishProviderProducts = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => providerPoolService.bulkPromoteAndPublish(ids),
+    onSuccess: (result) => {
+      invalidatePool(queryClient);
+
+      if (result.skipped.length > 0) {
+        toast.warning(`${result.published} published, ${result.skipped.length} skipped`, {
+          description: result.skipped[0]?.reason,
+        });
+        return;
+      }
+
+      toast.success(`${result.published} promoted and published`);
+    },
+    onError: () => toast.error("Failed to promote and publish"),
+  });
+};
+
 export const usePublishProviderProducts = () => {
   const queryClient = useQueryClient();
 

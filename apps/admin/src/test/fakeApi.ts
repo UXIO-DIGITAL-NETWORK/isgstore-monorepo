@@ -150,6 +150,11 @@ const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
     is_available: row.is_available,
     is_price_locked: row.is_price_locked ?? false,
     is_price_hidden: row.is_price_hidden ?? false,
+    // Derived server-side from the product AND its supplier mapping; the fixture
+    // carries it so the row menu can offer Publish or Unpublish.
+    publish_state: row.publish_state,
+    can_publish: row.can_publish,
+    publish_blocked_reason: row.publish_blocked_reason,
     category: { id: categoryId, name: row.game_name },
     sub_category: { id: 1, name: row.category_name },
     created_at: row.created_at,
@@ -282,17 +287,17 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
   return [
     {
       id: 1,
-      product_id: 101,
+      product_id: null,
       buyer_sku_code: "MEMBERSHIP_VIP",
       provider_name: "Membership VIP",
       price: 58745,
-      is_active: true,
+      is_active: false,
       is_price_locked: false,
       is_system: true,
       buyer_product_status: true,
-      pool_state: "published",
-      can_promote: false,
-      promote_blocked_reason: "SKU sudah dipromosikan ke produk utama.",
+      pool_state: "ready",
+      can_promote: true,
+      promote_blocked_reason: null,
       price_min: null,
       price_max: null,
       pool_category: { id: 1, name: "Membership" },
@@ -311,17 +316,17 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
     },
     {
       id: 2,
-      product_id: 102,
+      product_id: null,
       buyer_sku_code: "MLID_19_S1",
       provider_name: "MOBILELEGEND - 19 Diamond",
       price: 4865,
-      is_active: true,
+      is_active: false,
       is_price_locked: false,
       is_system: false,
       buyer_product_status: true,
-      pool_state: "published",
-      can_promote: false,
-      promote_blocked_reason: "SKU sudah dipromosikan ke produk utama.",
+      pool_state: "ready",
+      can_promote: true,
+      promote_blocked_reason: null,
       price_min: null,
       price_max: null,
       pool_category: { id: 2, name: "Mobile Legends Indonesia" },
@@ -910,6 +915,20 @@ export function createFakeApi() {
       if (!wanted.includes(String(row.id))) return false;
     }
     if (params.pool_state && String(row.pool_state) !== String(params.pool_state)) return false;
+    // The pool is what is still in the pool. A promoted SKU has left it for the
+    // Main Products list; an explicit `ids` selection or a promoted `pool_state`
+    // is the deliberate way past that.
+    if (collection === "supplier-products" && !params.ids) {
+      const promoted = row.pool_state === "draft" || row.pool_state === "published";
+      const askedForPromoted = params.pool_state === "draft" || params.pool_state === "published";
+      if (promoted && !askedForPromoted) return false;
+    }
+    // Archived products are excluded unless asked for by name — the row is kept
+    // so its order history keeps resolving, not to clutter the catalogue.
+    if (collection === "products") {
+      const wanted = params.publish_state as string | undefined;
+      if (wanted ? String(row.publish_state) !== wanted : row.publish_state === "archived") return false;
+    }
     if (params.availability) {
       const wantAvailable = params.availability === "available";
       if (Boolean(row.buyer_product_status) !== wantAvailable) return false;

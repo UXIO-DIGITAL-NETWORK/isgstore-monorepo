@@ -1,7 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { productsService, type ProductInput } from "../services/products.service";
 import type { BulkCreateProductsInput, Product, ProductListParams } from "../types/product.type";
+
+/**
+ * A product's lifecycle lives in two tables: publishing flips the product AND
+ * its supplier mapping. Invalidating only `["products"]` left the pool's badges
+ * describing a state that no longer existed.
+ */
+const invalidateProductAndPool = (queryClient: ReturnType<typeof useQueryClient>) => {
+  for (const queryKey of [["products"], ["supplier-products"], ["uxiotopup", "pool-candidates"]]) {
+    queryClient.invalidateQueries({ queryKey });
+  }
+};
+
+/** The API's own refusal reason beats a generic failure message. */
+const apiErrorMessage = (error: unknown): string | undefined =>
+  isAxiosError(error) ? (error.response?.data as { message?: string } | undefined)?.message : undefined;
 
 export const useProductList = (params: ProductListParams) =>
   useQuery({
@@ -72,39 +88,72 @@ export const useUpdateProduct = () => {
   });
 };
 
-/** One mutation for every lifecycle path — the row menu passes `[id]` with the
- * direction its label promised, the bulk menu passes the selection. Backed by
- * the real bulk endpoint. */
-export const useSetProductStatus = () => {
+/**
+ * Publish or unpublish — the row menu passes `[id]` with the direction its label
+ * promised, the bulk menu passes the selection.
+ *
+ * The server skips per row rather than failing the batch, so a partial result is
+ * a warning with the first reason attached, not an error. Same contract, and the
+ * same toast shape, as the pool's bulk publish.
+ */
+export const useSetProductPublished = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ ids, active }: { ids: string[]; active: boolean }) => productsService.bulkSetStatus(ids, active),
-    onSuccess: (_result, { ids, active }) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      const verb = active ? "activated" : "deactivated";
-      toast.success(ids.length === 1 ? `Product ${verb}` : `${ids.length} products ${verb}`);
+    mutationFn: ({ ids, published }: { ids: string[]; published: boolean }) =>
+      productsService.bulkSetPublished(ids, published),
+    onSuccess: (result, { published }) => {
+      invalidateProductAndPool(queryClient);
+      const verb = published ? "published" : "unpublished";
+      const skipped = result.skipped.length;
+
+      if (skipped > 0) {
+        toast.warning(`${result.updated} ${verb}, ${skipped} skipped`, {
+          description: result.skipped[0]?.reason,
+        });
+        return;
+      }
+
+      toast.success(result.updated === 1 ? `Product ${verb}` : `${result.updated} products ${verb}`);
     },
-    onError: (_error, { ids, active }) => {
-      const verb = active ? "activate" : "deactivate";
+    onError: (_error, { ids, published }) => {
+      const verb = published ? "publish" : "unpublish";
       toast.error(ids.length === 1 ? `Failed to ${verb} product` : `Failed to ${verb} products`);
     },
   });
 };
 
-/** One mutation for both delete paths — the row menu passes `[id]`, the bulk
- * menu passes the selection. */
+/** Bring an archived product back — it returns unpublished, never straight live. */
+export const useRestoreProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => productsService.restore(id),
+    onSuccess: () => {
+      invalidateProductAndPool(queryClient);
+      toast.success("Product restored");
+    },
+    onError: (error) => {
+      toast.error(apiErrorMessage(error) ?? "Failed to restore product");
+    },
+  });
+};
+
+/**
+ * Archive, not delete. The row survives so its order history keeps resolving —
+ * `transactions.product_id` is RESTRICT, and a real delete used to 500.
+ */
 export const useDeleteProducts = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (ids: string[]) => productsService.bulkDelete(ids),
     onSuccess: (_result, ids) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success(ids.length === 1 ? "Product deleted" : `${ids.length} products deleted`);
+      invalidateProductAndPool(queryClient);
+      toast.success(ids.length === 1 ? "Product archived" : `${ids.length} products archived`);
     },
     onError: (_error, ids) => {
-      toast.error(ids.length === 1 ? "Failed to delete product" : "Failed to delete products");
+      toast.error(ids.length === 1 ? "Failed to archive product" : "Failed to archive products");
     },
   });
 };

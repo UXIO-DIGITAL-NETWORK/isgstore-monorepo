@@ -7,8 +7,12 @@ import { productsService } from "../services/products.service";
 
 const LIST_PATH = "/admin/products-preview/main";
 const FIRST_ROW = "Weekly Diamond Pass (One Week)";
-/** The one fixture row that ships `status: "inactive"`. */
+/** The one fixture row that is not live — it reads Draft. */
 const INACTIVE_ROW = "Diamond Top Up 355";
+/** Promoted, but the provider has the SKU switched off. */
+const BLOCKED_ROW = "Genesis Crystal 60";
+/** Soft-deleted; only reachable through the Archived filter. */
+const ARCHIVED_ROW = "Blessing of the Welkin Moon";
 /** The one fixture row that ships `is_price_locked` and `is_price_hidden`. */
 const LOCKED_ROW = "Diamond Top Up 86";
 
@@ -27,49 +31,82 @@ describe("Main Products row actions", () => {
     vi.restoreAllMocks();
   });
 
-  it("deactivates an active row only after the confirmation is accepted", async () => {
-    const spy = vi.spyOn(productsService, "bulkSetStatus").mockResolvedValue(undefined);
+  it("unpublishes a live row only after the confirmation is accepted", async () => {
+    const spy = vi.spyOn(productsService, "bulkSetPublished").mockResolvedValue({ updated: 1, skipped: [] });
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await openRowMenu(user);
-    await user.click(await screen.findByRole("menuitem", { name: "Deactive" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Unpublish" }));
 
     const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText("Deactivate this product?")).toBeInTheDocument();
+    expect(within(dialog).getByText("Unpublish this product?")).toBeInTheDocument();
     expect(spy).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+    await user.click(within(dialog).getByRole("button", { name: "Unpublish" }));
     // A single id, from the API row (not a hand-written fixture string).
     expect(spy.mock.calls[0][0]).toEqual([expect.stringMatching(/^\d+$/)]);
     expect(spy.mock.calls[0][1]).toBe(false);
   });
 
-  // The label has to follow the Status column: offering "Deactive" on a row that
-  // already reads Inactive is a no-op the admin cannot tell apart from a failure.
-  it("offers Activate on an inactive row, and activates it", async () => {
-    const spy = vi.spyOn(productsService, "bulkSetStatus").mockResolvedValue(undefined);
+  // The label has to follow the Status column: offering "Unpublish" on a row
+  // that already reads Draft is a no-op the admin cannot tell apart from a
+  // failure.
+  it("offers Publish on a row that is not live, and publishes it", async () => {
+    const spy = vi.spyOn(productsService, "bulkSetPublished").mockResolvedValue({ updated: 1, skipped: [] });
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await openRowMenu(user, INACTIVE_ROW);
-    expect(screen.queryByRole("menuitem", { name: "Deactive" })).not.toBeInTheDocument();
-    await user.click(await screen.findByRole("menuitem", { name: "Activate" }));
+    expect(screen.queryByRole("menuitem", { name: "Unpublish" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("menuitem", { name: "Publish" }));
 
     const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText("Activate this product?")).toBeInTheDocument();
+    expect(within(dialog).getByText("Publish this product?")).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole("button", { name: "Activate" }));
+    await user.click(within(dialog).getByRole("button", { name: "Publish" }));
     expect(spy.mock.calls[0][1]).toBe(true);
   });
 
-  it("offers Deactive, not Activate, on an active row", async () => {
+  it("offers Unpublish, not Publish, on a live row", async () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await openRowMenu(user);
-    expect(await screen.findByRole("menuitem", { name: "Deactive" })).toBeInTheDocument();
-    expect(screen.queryByRole("menuitem", { name: "Activate" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("menuitem", { name: "Unpublish" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Publish" })).not.toBeInTheDocument();
+  });
+
+  /**
+   * Publishing needs a supplier to order from. The server refuses and says why,
+   * so the menu disables the item and repeats that reason rather than letting
+   * the admin click into a 422.
+   */
+  it("disables Publish and shows the server's reason when it cannot publish", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await openRowMenu(user, BLOCKED_ROW);
+    const item = await screen.findByRole("menuitem", { name: /Publish/ });
+    expect(item).toHaveAttribute("aria-disabled", "true");
+    expect(within(item).getByText("SKU sedang nonaktif di provider.")).toBeInTheDocument();
+  });
+
+  it("an archived row offers only Restore", async () => {
+    const spy = vi.spyOn(productsService, "restore").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    // Archived rows are out of the list until the Status filter asks for them.
+    await user.click(await screen.findByLabelText("Status"));
+    await user.click(await screen.findByRole("option", { name: "Archived" }));
+
+    await openRowMenu(user, ARCHIVED_ROW);
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual(["Restore"]);
+
+    await user.click(items[0]);
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it("confirms a Lock Price and fires it for the single row", async () => {

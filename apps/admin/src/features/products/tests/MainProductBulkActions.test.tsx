@@ -38,28 +38,29 @@ describe("Main Products bulk actions", () => {
     await selectTwoRows(user);
     await openBulkMenu(user, 2);
 
-    for (const name of ["Edit Logo", "Uxiotopup Update", "Show Price", "Lock Price", "Deactive", "Delete"]) {
+    for (const name of ["Edit Logo", "Uxiotopup Update", "Show Price", "Lock Price", "Unpublish", "Archive"]) {
       expect(await screen.findByRole("menuitem", { name })).toBeInTheDocument();
     }
   });
 
-  it("deactivates nothing until the confirmation is accepted", async () => {
-    const spy = vi.spyOn(productsService, "bulkSetStatus").mockResolvedValue(undefined);
+  it("unpublishes nothing until the confirmation is accepted", async () => {
+    const spy = vi.spyOn(productsService, "bulkSetPublished").mockResolvedValue({ updated: 2, skipped: [] });
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await selectTwoRows(user);
     await openBulkMenu(user, 2);
-    await user.click(await screen.findByRole("menuitem", { name: "Deactive" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Unpublish" }));
 
     const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText("Deactivate 2 products?")).toBeInTheDocument();
+    expect(within(dialog).getByText("Unpublish 2 products?")).toBeInTheDocument();
     expect(spy).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+    await user.click(within(dialog).getByRole("button", { name: "Unpublish" }));
     expect(spy).toHaveBeenCalledWith(expect.arrayContaining([expect.any(String)]), false);
     expect(spy.mock.calls[0][0]).toHaveLength(2);
-    // Bulk stays one-directional: a mixed selection has no status to invert.
+    // Bulk stays one-directional: a selection can hold rows in any state, so
+    // there is no single one to invert.
     expect(spy.mock.calls[0][1]).toBe(false);
   });
 
@@ -76,29 +77,29 @@ describe("Main Products bulk actions", () => {
     expect(spy.mock.calls[0][0]).toHaveLength(2);
   });
 
-  it("cancelling the confirmation deactivates nothing", async () => {
-    const spy = vi.spyOn(productsService, "bulkSetStatus").mockResolvedValue(undefined);
+  it("cancelling the confirmation unpublishes nothing", async () => {
+    const spy = vi.spyOn(productsService, "bulkSetPublished").mockResolvedValue({ updated: 2, skipped: [] });
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await selectTwoRows(user);
     await openBulkMenu(user, 2);
-    await user.click(await screen.findByRole("menuitem", { name: "Deactive" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Unpublish" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancel" }));
 
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it("marks a single-row deactivation in the singular", async () => {
-    vi.spyOn(productsService, "bulkSetStatus").mockResolvedValue(undefined);
+  it("marks a single-row unpublish in the singular", async () => {
+    vi.spyOn(productsService, "bulkSetPublished").mockResolvedValue({ updated: 2, skipped: [] });
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await screen.findByText(FIRST_ROW);
     await user.click(screen.getAllByRole("checkbox", { name: "Select row" })[0]);
     await openBulkMenu(user, 1);
-    await user.click(await screen.findByRole("menuitem", { name: "Deactive" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Unpublish" }));
 
-    expect(within(await screen.findByRole("alertdialog")).getByText("Deactivate this product?")).toBeInTheDocument();
+    expect(within(await screen.findByRole("alertdialog")).getByText("Unpublish this product?")).toBeInTheDocument();
   });
 });

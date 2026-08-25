@@ -7,6 +7,7 @@ import type {
   PoolCandidateListParams,
   PoolResult,
   PoolSummary,
+  PromotePublishResult,
   PromoteResult,
   PublishResult,
 } from "../types/product.type";
@@ -75,6 +76,14 @@ export const providerPoolService = {
 
   publish: async (id: string): Promise<void> => {
     await api.post(`${SUPPLIER_PRODUCTS}/${id}/publish`, {});
+  },
+
+  bulkPromoteAndPublish: async (ids: string[]): Promise<PromotePublishResult> => {
+    const response: ApiResponse<PromotePublishResult> = await api.post(`${SUPPLIER_PRODUCTS}/bulk/promote-publish`, {
+      ids: ids.map(toFk),
+    });
+
+    return response.data;
   },
 
   bulkPublish: async (ids: string[]): Promise<PublishResult> => {

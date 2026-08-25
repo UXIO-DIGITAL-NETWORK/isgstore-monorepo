@@ -6,8 +6,10 @@ import { PRICE_RANGE_OPTIONS } from "../data/select-options.data";
 import type {
   BulkCreateProductsInput,
   BulkCreateProductsResult,
+  BulkPublishResult,
   Product,
   ProductListParams,
+  PublishState,
   SelectOption,
 } from "../types/product.type";
 
@@ -31,6 +33,11 @@ interface ProductApiRow {
   price_reseller: number;
   price_agent: number;
   status: boolean;
+  publish_state: PublishState;
+  can_publish: boolean;
+  publish_blocked_reason: string | null;
+  published_at?: string | null;
+  archived_at?: string | null;
   is_available: boolean;
   is_price_locked?: boolean;
   is_price_hidden?: boolean;
@@ -68,6 +75,14 @@ const toProduct = (row: ProductApiRow): Product => ({
   tag: row.tag ?? undefined,
   description: row.description ?? undefined,
   status: row.status ? "active" : "inactive",
+  // The API only emits these when it loaded the supplier mappings. A transaction
+  // row embeds a product too, and computing them there would cost a query per
+  // row, so the fallbacks keep the mapper honest rather than optimistic.
+  publish_state: row.publish_state ?? (row.status ? "published" : "draft"),
+  can_publish: row.can_publish ?? false,
+  publish_blocked_reason: row.publish_blocked_reason ?? null,
+  published_at: row.published_at ?? null,
+  archived_at: row.archived_at ?? null,
   is_available: Boolean(row.is_available),
   is_price_locked: Boolean(row.is_price_locked),
   is_price_hidden: Boolean(row.is_price_hidden),
@@ -199,8 +214,18 @@ export const productsService = {
     await api.post(`${BASE}/bulk/show-price`, { ids: ids.map(toFk), hidden });
   },
 
-  bulkSetStatus: async (ids: string[], active: boolean): Promise<void> => {
-    await api.post(`${BASE}/bulk/status`, { ids: ids.map(toFk), active });
+  /** Publish/unpublish. Returns what it skipped so the caller can say why. */
+  bulkSetPublished: async (ids: string[], published: boolean): Promise<BulkPublishResult> => {
+    const response: ApiResponse<BulkPublishResult> = await api.post(`${BASE}/bulk/publish`, {
+      ids: ids.map(toFk),
+      published,
+    });
+
+    return response.data;
+  },
+
+  restore: async (id: string): Promise<void> => {
+    await api.post(`${BASE}/${toFk(id)}/restore`);
   },
 
   bulkUxiotopupUpdate: async (ids: string[]): Promise<void> => {

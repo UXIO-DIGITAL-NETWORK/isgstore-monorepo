@@ -109,14 +109,17 @@ describe("MainProductsPage", () => {
     expect(within(table).getAllByText("7.0%").length).toBeGreaterThan(0);
   });
 
+  // Lifecycle and provider availability are separate axes: a Published product
+  // whose SKU the provider just switched off is Published + Unavailable, and
+  // collapsing them into one badge would hide which half needs attention.
   it("stacks both status axes as separate badges", async () => {
     await renderRoute(LIST_PATH);
     const table = await screen.findByRole("table");
 
-    expect(await within(table).findAllByText("Active")).not.toHaveLength(0);
+    expect(await within(table).findAllByText("Published")).not.toHaveLength(0);
     expect(within(table).getAllByText("Available").length).toBeGreaterThan(0);
     expect(within(table).getAllByText("Unavailable").length).toBeGreaterThan(0);
-    expect(within(table).getAllByText("Inactive").length).toBeGreaterThan(0);
+    expect(within(table).getAllByText("Draft").length).toBeGreaterThan(0);
   });
 
   it("counts the footer in products, not transactions", async () => {
@@ -169,9 +172,9 @@ describe("MainProductsPage", () => {
       "Hide Price",
       "Lock Price",
       "Set Price Limit",
-      "Deactive",
+      "Unpublish",
       "Edit Product",
-      "Delete",
+      "Archive",
     ]);
   });
 

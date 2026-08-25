@@ -8,7 +8,7 @@ const LIST_PATH = "/admin/products-preview/main";
 const FIRST_ROW = "Weekly Diamond Pass (One Week)";
 
 /**
- * Delete flow. Deletion is unreachable except through the shared confirmation;
+ * Archive flow. Archiving is unreachable except through the shared confirmation;
  * both the row menu and the bulk menu go through the same `bulkDelete` endpoint
  * (the row passes a one-id selection).
  */
@@ -23,14 +23,14 @@ describe("Main Products delete flow", () => {
     await renderRoute(LIST_PATH);
 
     await user.click(await screen.findByRole("button", { name: `Actions for ${FIRST_ROW}` }));
-    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Archive" }));
 
     const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText("Delete this product?")).toBeInTheDocument();
-    expect(within(dialog).getByText(/permanently delete this product/)).toBeInTheDocument();
+    expect(within(dialog).getByText("Archive this product?")).toBeInTheDocument();
+    expect(within(dialog).getByText(/provider SKU returns to the pool/)).toBeInTheDocument();
     expect(spy).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await user.click(within(dialog).getByRole("button", { name: "Archive" }));
 
     expect(spy.mock.calls[0][0]).toHaveLength(1);
   });
@@ -48,14 +48,14 @@ describe("Main Products delete flow", () => {
     await user.click(rowCheckboxes[1]);
 
     await user.click(await screen.findByRole("button", { name: /2 items selected/ }));
-    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Archive" }));
 
     const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText("Delete 2 products?")).toBeInTheDocument();
-    expect(within(dialog).getByText(/permanently delete these 2 products/)).toBeInTheDocument();
+    expect(within(dialog).getByText("Archive 2 products?")).toBeInTheDocument();
+    expect(within(dialog).getByText(/provider SKUs return to the pool/)).toBeInTheDocument();
     expect(spy).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await user.click(within(dialog).getByRole("button", { name: "Archive" }));
     expect(spy.mock.calls[0][0]).toHaveLength(2);
   });
 
@@ -65,7 +65,7 @@ describe("Main Products delete flow", () => {
     await renderRoute(LIST_PATH);
 
     await user.click(await screen.findByRole("button", { name: `Actions for ${FIRST_ROW}` }));
-    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Archive" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancel" }));
 
     expect(spy).not.toHaveBeenCalled();
