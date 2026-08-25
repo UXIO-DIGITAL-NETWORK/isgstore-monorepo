@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import { renderRoute, screen } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import * as providerHooks from "@/features/products/hooks/useProviderProducts";
 
 /**
  * Set Profit Margin (Bulk) page — the selection rides in `?ids=`, and the left
@@ -14,6 +15,7 @@ describe("ProviderMarginBulkPage", () => {
 
   afterEach(() => {
     useAuthStore.setState({ token: null, permissions: [] });
+    vi.restoreAllMocks();
   });
 
   it("renders the margin form and the selected items", async () => {
@@ -27,16 +29,19 @@ describe("ProviderMarginBulkPage", () => {
   });
 
   it("shows loading skeletons while the selected products load", async () => {
+    // Pin the list query to its in-flight state — the fake backend resolves on a
+    // microtask, so racing the real load is flaky (green locally, red in CI).
+    vi.spyOn(providerHooks, "useProviderProductList").mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as unknown as ReturnType<typeof providerHooks.useProviderProductList>);
+
     const { container } = await renderRoute("/admin/products/provider/set-profit-margin?ids=2");
 
-    // While the fetch is in flight, the left column shows skeleton cards instead
-    // of the empty-state copy, so the admin knows products are still loading.
+    // The left column shows skeleton cards instead of the empty-state copy, so
+    // the admin knows products are still loading rather than absent.
     expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
     expect(screen.queryByText("No selected products to show.")).not.toBeInTheDocument();
-
-    // ...and the skeletons give way to the real product once it resolves.
-    expect(await screen.findByText("MOBILELEGEND - 19 Diamond")).toBeInTheDocument();
-    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBe(0);
   });
 
   it("has nothing to save with an empty selection", async () => {
