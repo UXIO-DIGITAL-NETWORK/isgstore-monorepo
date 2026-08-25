@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const TAB_SEGMENTS = [
   { value: "main", label: "Main Products", segment: "main" },
   { value: "provider", label: "Product Provider", segment: "provider" },
+  { value: "price-log", label: "Price Change Log", segment: "price-log" },
 ];
 
 const PREVIEW_BASE = "/admin/products-preview";

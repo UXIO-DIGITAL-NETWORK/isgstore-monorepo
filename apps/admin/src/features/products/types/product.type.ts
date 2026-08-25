@@ -394,3 +394,51 @@ export interface BulkCreateProductsResult {
   created: number;
   skipped: { code: string; reason: string }[];
 }
+
+/* ── Price Change Log ───────────────────────────────────────────────────────── */
+
+/**
+ * What the 5-minute checker did to a mapping. `applied` is the routine auto-reprice;
+ * `deactivated` and `negative_margin` are the rows an admin has to act on; `locked`
+ * is a heads-up that a frozen price's margin has drifted.
+ */
+export const PRICE_CHANGE_STATUSES = ["applied", "locked", "deactivated", "negative_margin"] as const;
+export type PriceChangeStatus = (typeof PRICE_CHANGE_STATUSES)[number];
+
+export const PRICE_CHANGE_STATUS_LABELS: Record<PriceChangeStatus, string> = {
+  applied: "Repriced",
+  locked: "Locked",
+  deactivated: "Deactivated",
+  negative_margin: "Negative margin",
+};
+
+/** Old → new pair for one price field; `new` is null for events that don't reprice. */
+export interface PriceChangePair {
+  old: number | null;
+  new: number | null;
+}
+
+export interface PriceChangeLog {
+  id: string;
+  supplier_product_id: number;
+  product_id: number | null;
+  buyer_sku_code: string;
+  product_name: string;
+  status: PriceChangeStatus;
+  needs_attention: boolean;
+  reason: string | null;
+  old_cost: number;
+  new_cost: number;
+  prices: Record<"member" | "vip" | "reseller" | "agent", PriceChangePair>;
+  created_at: string;
+}
+
+export interface PriceChangeLogListParams {
+  /** A PriceChangeStatus, or "all". */
+  status?: string;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  per_page?: number;
+}

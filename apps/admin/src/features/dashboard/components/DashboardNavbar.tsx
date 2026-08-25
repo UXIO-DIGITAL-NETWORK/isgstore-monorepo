@@ -87,6 +87,7 @@ function getTransactionBreadcrumb(pathname: string): string[] | null {
 const PRODUCT_TAB_LABELS: Record<string, string> = {
   main: "Main Products",
   provider: "Product Provider",
+  "price-log": "Price Change Log",
 };
 
 function getProductBreadcrumb(pathname: string): string[] | null {
