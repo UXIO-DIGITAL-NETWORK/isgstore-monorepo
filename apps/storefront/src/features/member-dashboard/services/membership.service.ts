@@ -9,7 +9,8 @@ export interface MembershipPlanModel {
   name: string;
   benefits: string[];
   price: number;
-  duration_days: number;
+  /** `null` = lifetime; the API stopped coercing it to 0. */
+  duration_days: number | null;
   is_popular: boolean;
 }
 

@@ -5,7 +5,8 @@ export interface MembershipPlan {
   name: string;
   price: number;
   benefits: string[];
-  durationDays: number;
+  /** `null` = lifetime, never expires. */
+  durationDays: number | null;
   popular?: boolean;
 }
 
