@@ -3,14 +3,18 @@
 namespace App\Actions\Product;
 
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class GetProductsAction
 {
     /**
      * Filters mirror the admin product list's toolbar: a free-text box over
-     * name/code, the category and sub-category selects, a status filter and a
+     * name/code, the category and sub-category selects, a lifecycle filter and a
      * price band on the retail (member) price.
+     *
+     * `supplierProducts` is eager-loaded because `publish_state` is derived from
+     * it — without this the list would resolve the mapping once per row.
      */
     public function execute(
         int $perPage = 15,
@@ -20,8 +24,10 @@ class GetProductsAction
         ?bool $status = null,
         ?int $minPrice = null,
         ?int $maxPrice = null,
+        ?string $publishState = null,
     ): LengthAwarePaginator {
-        return Product::with(['category', 'subCategory'])
+        return Product::with(['category', 'subCategory', 'supplierProducts'])
+            ->when($publishState !== null, fn ($query) => $this->scopeToState($query, $publishState))
             ->when($search, fn ($query) => $query->where(
                 fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")
             ))
@@ -34,5 +40,27 @@ class GetProductsAction
             ->when($maxPrice, fn ($query) => $query->where('price_member', '<=', $maxPrice))
             ->latest()
             ->paginate($perPage);
+    }
+
+    /**
+     * The SQL mirror of `Product::publishState()`. The two must agree, or a
+     * filter would hide rows whose badge says they are there.
+     */
+    private function scopeToState(Builder $query, string $state): Builder
+    {
+        $live = fn (Builder $q) => $q
+            ->where('status', true)
+            ->whereHas('supplierProducts', fn (Builder $m) => $m->where('is_active', true));
+
+        return match ($state) {
+            Product::STATE_ARCHIVED => $query->onlyTrashed(),
+            Product::STATE_PUBLISHED => $live($query),
+            // Not live, but it has been before.
+            Product::STATE_UNPUBLISHED => $query
+                ->whereNotNull('published_at')
+                ->whereNot($live),
+            Product::STATE_DRAFT => $query->whereNull('published_at')->where('status', false),
+            default => $query,
+        };
     }
 }

@@ -31,7 +31,8 @@ class BulkCreateProductsAction
         foreach ($items as $item) {
             $code = (string) ($item['code'] ?? '');
 
-            if ($code === '' || Product::where('code', $code)->exists()) {
+            // withTrashed: an archived product still occupies its code.
+            if ($code === '' || Product::withTrashed()->where('code', $code)->exists()) {
                 $skipped[] = ['code' => $code, 'reason' => $code === '' ? 'Missing code' : 'Code already exists'];
 
                 continue;

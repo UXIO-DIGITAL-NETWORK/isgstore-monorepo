@@ -32,9 +32,20 @@ class Transaction extends Model
         return $this->belongsTo(User::class, 'merchant_id');
     }
 
+    /**
+     * withTrashed on purpose: an archived product must keep resolving here or
+     * the history it was archived to protect breaks instead.
+     *
+     * Without it, `ProductResource` (which dereferences `$this->id` on a null
+     * resource) 500s the admin transaction list and the dashboard,
+     * `GetDashboardPerformanceAction`'s inner join silently drops the row and
+     * its revenue, and `ProcessUxiotopupTransactionAction` — which reaches
+     * `$transaction->product->` with no null-safe operator — cannot fulfil an
+     * order that was already paid for.
+     */
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 
     public function supplier()

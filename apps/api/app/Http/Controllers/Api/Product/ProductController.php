@@ -8,7 +8,9 @@ use App\Actions\Product\CreateProductAction;
 use App\Actions\Product\DeleteProductAction;
 use App\Actions\Product\GetProductsAction;
 use App\Actions\Product\ProductPriceControlAction;
+use App\Actions\Product\RestoreProductAction;
 use App\Actions\Product\UpdateProductAction;
+use App\Exceptions\SupplierProductPoolException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\BulkCreateProductsRequest;
 use App\Http\Requests\Product\BulkProductActionRequest;
@@ -41,6 +43,7 @@ class ProductController extends Controller
             $status !== null ? filter_var($status, FILTER_VALIDATE_BOOLEAN) : null,
             $minPrice !== null ? (int) $minPrice : null,
             $maxPrice !== null ? (int) $maxPrice : null,
+            $request->query('publish_state'),
         );
 
         return $this->paginatedResponse(ProductResource::collection($products), 'Products retrieved successfully');
@@ -60,7 +63,7 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         return $this->successResponse(
-            new ProductResource($product->load(['category', 'subCategory'])),
+            new ProductResource($product->load(['category', 'subCategory', 'supplierProducts'])),
             'Product retrieved successfully'
         );
     }
@@ -70,7 +73,7 @@ class ProductController extends Controller
         $updatedProduct = $action->execute($product, $request->toDTO());
 
         return $this->successResponse(
-            new ProductResource($updatedProduct->load(['category', 'subCategory'])),
+            new ProductResource($updatedProduct->load(['category', 'subCategory', 'supplierProducts'])),
             'Product updated successfully'
         );
     }
@@ -79,7 +82,25 @@ class ProductController extends Controller
     {
         $action->execute($product);
 
-        return $this->successResponse(null, 'Product deleted successfully');
+        return $this->successResponse(null, 'Product archived successfully');
+    }
+
+    /**
+     * Restore an archived product. Bound `withTrashed` in routes/api.php — the
+     * default binding applies the soft-delete scope and would 404 every target.
+     */
+    public function restore(Product $product, RestoreProductAction $action)
+    {
+        try {
+            $restored = $action->execute($product);
+        } catch (SupplierProductPoolException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        return $this->successResponse(
+            new ProductResource($restored->load(['category', 'subCategory', 'supplierProducts'])),
+            'Product restored successfully'
+        );
     }
 
     // ── Price controls ─────────────────────────────────────────────────────────
@@ -111,13 +132,14 @@ class ProductController extends Controller
         );
     }
 
-    public function bulkSetStatus(BulkProductActionRequest $request, BulkProductAction $action)
+    public function bulkPublish(BulkProductActionRequest $request, BulkProductAction $action)
     {
-        // The client sends `active`: "Activate" posts true, "Deactive" posts
-        // false. Absent means false, so the pre-toggle callers still deactivate.
+        // The client sends `published`: "Publish" posts true, "Unpublish" posts
+        // false. Absent means false, so a bare payload takes products down rather
+        // than putting them on sale.
         return $this->successResponse(
-            $action->setStatus($request->validated('ids'), $request->boolean('active')),
-            'Product statuses updated successfully'
+            $action->setPublished($request->validated('ids'), $request->boolean('published')),
+            'Product publish states updated successfully'
         );
     }
 
@@ -133,7 +155,7 @@ class ProductController extends Controller
     {
         return $this->successResponse(
             $action->delete($request->validated('ids')),
-            'Products deleted successfully'
+            'Products archived successfully'
         );
     }
 

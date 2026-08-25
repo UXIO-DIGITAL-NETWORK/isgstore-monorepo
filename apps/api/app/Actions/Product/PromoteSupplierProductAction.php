@@ -54,8 +54,11 @@ class PromoteSupplierProductAction
             throw new SupplierProductPoolException('Kode produk tidak boleh kosong.');
         }
 
-        if (Product::where('code', $code)->exists()) {
-            throw new SupplierProductPoolException("Kode produk '{$code}' sudah dipakai.");
+        // withTrashed: an archived product still holds its code — the unique
+        // index does not forget, so neither may this check. Re-promoting a SKU
+        // whose old product was archived is exactly how you would hit it.
+        if (Product::withTrashed()->where('code', $code)->exists()) {
+            throw new SupplierProductPoolException("Kode produk '{$code}' sudah dipakai produk lain atau produk yang diarsipkan.");
         }
 
         return DB::transaction(function () use ($supplierProduct, $categoryId, $subCategoryId, $name, $code) {

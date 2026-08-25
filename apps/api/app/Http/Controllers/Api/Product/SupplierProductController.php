@@ -186,6 +186,17 @@ class SupplierProductController extends Controller
         return $this->successResponse($result, "{$result['promoted']} SKU dipromosikan ke produk draft");
     }
 
+    public function bulkPromoteAndPublish(BulkPromoteSupplierProductsRequest $request, BulkSupplierProductAction $action)
+    {
+        $result = $action->promoteAndPublish(
+            $request->validated('ids'),
+            $request->validated('category_id'),
+            $request->validated('sub_category_id'),
+        );
+
+        return $this->successResponse($result, "{$result['published']} SKU dipromosikan dan dipublish");
+    }
+
     public function bulkPublish(BulkPublishSupplierProductsRequest $request, BulkSupplierProductAction $action)
     {
         $result = $action->publish($request->validated('ids'));

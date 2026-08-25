@@ -49,27 +49,54 @@ class ProductBulkActionsTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $a->id, 'is_price_hidden' => true]);
     }
 
-    public function test_bulk_status_toggles_both_ways_and_delete(): void
+    public function test_bulk_publish_toggles_both_ways_and_archives(): void
     {
         $this->actingAsAdmin();
         $a = $this->product(['status' => true, 'is_available' => true]);
         $b = $this->product(['status' => true]);
 
-        // Lifecycle only: storefront visibility is a separate switch, so
-        // reactivating restores the row exactly as it was.
-        $this->postJson('/api/v1/products/bulk/status', ['ids' => [$a->id], 'active' => false])
+        // Publishing needs a supplier to order from, so give A one. Storefront
+        // visibility (`is_available`) is a separate switch and must survive.
+        $mapping = SupplierProduct::factory()->create([
+            'product_id' => $a->id,
+            'supplier_id' => Supplier::factory()->create()->id,
+            'is_active' => true,
+            'buyer_product_status' => true,
+            'sync_deactivated_at' => now(),
+        ]);
+
+        $this->postJson('/api/v1/products/bulk/publish', ['ids' => [$a->id], 'published' => false])
             ->assertOk()->assertJsonPath('data.updated', 1);
         $this->assertDatabaseHas('products', ['id' => $a->id, 'status' => false, 'is_available' => true]);
+        // Both halves go off together, and the checker's stamp is cleared so the
+        // 5-minute sync cannot put the product back on sale by itself.
+        $this->assertDatabaseHas('supplier_products', [
+            'id' => $mapping->id, 'is_active' => false, 'sync_deactivated_at' => null,
+        ]);
 
-        // The row menu offers "Activate" once a row reads Inactive, so the same
-        // endpoint has to bring it back.
-        $this->postJson('/api/v1/products/bulk/status', ['ids' => [$a->id], 'active' => true])
+        $this->postJson('/api/v1/products/bulk/publish', ['ids' => [$a->id], 'published' => true])
             ->assertOk()->assertJsonPath('data.updated', 1);
         $this->assertDatabaseHas('products', ['id' => $a->id, 'status' => true]);
+        $this->assertDatabaseHas('supplier_products', ['id' => $mapping->id, 'is_active' => true]);
 
+        // Delete archives: the row survives so its order history keeps resolving.
         $this->postJson('/api/v1/products/bulk/delete', ['ids' => [$a->id, $b->id]])
             ->assertOk()->assertJsonPath('data.deleted', 2);
-        $this->assertDatabaseMissing('products', ['id' => $a->id]);
+        $this->assertSoftDeleted('products', ['id' => $a->id]);
+    }
+
+    /** A product with no supplier cannot be published, and says so per row. */
+    public function test_bulk_publish_skips_a_product_with_no_supplier(): void
+    {
+        $this->actingAsAdmin();
+        $orphan = $this->product(['status' => false]);
+
+        $this->postJson('/api/v1/products/bulk/publish', ['ids' => [$orphan->id], 'published' => true])
+            ->assertOk()
+            ->assertJsonPath('data.updated', 0)
+            ->assertJsonPath('data.skipped.0.reason', 'Produk belum punya mapping supplier.');
+
+        $this->assertDatabaseHas('products', ['id' => $orphan->id, 'status' => false]);
     }
 
     public function test_set_price_limit_clamps_stored_prices(): void

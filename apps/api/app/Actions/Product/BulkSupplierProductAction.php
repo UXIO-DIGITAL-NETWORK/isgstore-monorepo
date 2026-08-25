@@ -86,6 +86,44 @@ class BulkSupplierProductAction
     }
 
     /**
+     * Promote and publish in one go — the onboarding path.
+     *
+     * Promote-then-publish across two screens is right when each SKU deserves a
+     * look, and needless friction when fifty SKUs from a category the admin has
+     * already priced are going straight on sale. Both halves still run their own
+     * guards; a row that promotes but cannot publish is reported, and stays a
+     * draft on the Main Products list rather than being rolled back.
+     *
+     * @param  int[]  $ids
+     * @return array{promoted:int, published:int, skipped:array<int,array{id:int,buyer_sku_code:string,reason:string}>}
+     */
+    public function promoteAndPublish(array $ids, ?int $categoryId = null, ?int $subCategoryId = null): array
+    {
+        $rows = SupplierProduct::whereIn('id', $ids)->get();
+        $promoted = 0;
+        $published = 0;
+        $skipped = [];
+
+        foreach ($rows as $row) {
+            try {
+                $this->promoteAction->execute($row, $categoryId, $subCategoryId);
+                $promoted++;
+
+                $this->publishAction->execute($row->refresh());
+                $published++;
+            } catch (SupplierProductPoolException $e) {
+                $skipped[] = [
+                    'id' => $row->id,
+                    'buyer_sku_code' => $row->buyer_sku_code,
+                    'reason' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return ['promoted' => $promoted, 'published' => $published, 'skipped' => $skipped];
+    }
+
+    /**
      * @param  int[]  $ids
      * @return array{published:int, skipped:array<int,array{id:int,buyer_sku_code:string,reason:string}>}
      */

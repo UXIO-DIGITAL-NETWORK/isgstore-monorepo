@@ -49,7 +49,9 @@ class CreateUxiotopupProductAction
 
         $code = $dto->code ?? $dto->buyerSkuCode;
 
-        if (Product::where('code', $code)->exists()) {
+        // withTrashed — see PromoteSupplierProductAction: the unique index
+        // counts archived rows, so this check has to as well.
+        if (Product::withTrashed()->where('code', $code)->exists()) {
             throw new UxiotopupProductException("Kode produk '{$code}' sudah dipakai.");
         }
 

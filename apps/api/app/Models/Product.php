@@ -4,10 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    /** Promoted from the pool but never published — invisible to the storefront. */
+    public const STATE_DRAFT = 'draft';
+
+    /** Live: active AND served by an active supplier mapping. */
+    public const STATE_PUBLISHED = 'published';
+
+    /** Was published, then deliberately taken down. */
+    public const STATE_UNPUBLISHED = 'unpublished';
+
+    /** Archived. The row survives so its order history keeps resolving. */
+    public const STATE_ARCHIVED = 'archived';
 
     protected $guarded = ['id'];
 
@@ -23,6 +36,68 @@ class Product extends Model
     public function isDraft(): bool
     {
         return ! $this->status && $this->published_at === null;
+    }
+
+    /**
+     * The single definition of where this product sits in its lifecycle.
+     *
+     * PUBLISHED means exactly what `Catalog::sellableProducts()` means — active
+     * AND carrying an active supplier mapping. Reading `status` alone is what
+     * made "Activate" a lie: it produced products the admin was told were live
+     * while the storefront could not see them, because checkout needs a supplier
+     * to order from and the mapping was still off.
+     *
+     * Pass an already-loaded `supplierProducts` collection to keep this free of
+     * queries inside a list — `GetProductsAction` eager-loads it for that reason.
+     */
+    public function publishState(): string
+    {
+        if ($this->trashed()) {
+            return self::STATE_ARCHIVED;
+        }
+
+        if ($this->status && $this->supplierProducts->contains(fn ($mapping) => (bool) $mapping->is_active)) {
+            return self::STATE_PUBLISHED;
+        }
+
+        return $this->isDraft() ? self::STATE_DRAFT : self::STATE_UNPUBLISHED;
+    }
+
+    /**
+     * The mapping a publish would activate: the live one if there is one, else
+     * the most recently touched. Null when the product has no supplier at all,
+     * which is the one thing publishing cannot work around.
+     */
+    public function publishableMapping(): ?SupplierProduct
+    {
+        return $this->supplierProducts
+            ->sortByDesc(fn (SupplierProduct $mapping) => [(bool) $mapping->is_active, $mapping->updated_at])
+            ->first();
+    }
+
+    /** Null when the product may be published; otherwise the reason it may not. */
+    public function publishBlockedReason(): ?string
+    {
+        if ($this->trashed()) {
+            return 'Produk sudah diarsipkan. Pulihkan terlebih dahulu.';
+        }
+
+        $mapping = $this->publishableMapping();
+
+        if ($mapping === null) {
+            return 'Produk belum punya mapping supplier.';
+        }
+
+        if (! $mapping->buyer_product_status) {
+            return 'SKU sedang nonaktif di provider.';
+        }
+
+        return null;
+    }
+
+    public function canPublish(): bool
+    {
+        return $this->publishBlockedReason() === null;
     }
 
     /** The "client" (merchant) that sells this product; null for platform-owned catalogue. */

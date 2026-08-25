@@ -381,13 +381,16 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/bulk-create', [ProductController::class, 'bulkCreate']);
         Route::post('/bulk/lock-price', [ProductController::class, 'bulkLockPrice']);
         Route::post('/bulk/show-price', [ProductController::class, 'bulkShowPrice']);
-        Route::post('/bulk/status', [ProductController::class, 'bulkSetStatus']);
+        Route::post('/bulk/publish', [ProductController::class, 'bulkPublish']);
         Route::post('/bulk/uxiotopup-update', [ProductController::class, 'bulkUxiotopupUpdate']);
         Route::post('/bulk/delete', [ProductController::class, 'bulkDelete']);
         Route::get('/{product}', [ProductController::class, 'show']);
         Route::put('/{product}', [ProductController::class, 'update']);
         Route::delete('/{product}', [ProductController::class, 'destroy']);
         Route::post('/{product}/price-limit', [ProductController::class, 'setPriceLimit']);
+        // withTrashed: the target is archived by definition, so the default
+        // binding — which applies the soft-delete scope — would 404 every time.
+        Route::post('/{product}/restore', [ProductController::class, 'restore'])->withTrashed();
     });
 
     Route::prefix('supplier-products')->group(function () {
@@ -402,6 +405,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
         // it is a separate, deliberate act.
         Route::post('/bulk/promote', [SupplierProductController::class, 'bulkPromote']);
         Route::post('/bulk/publish', [SupplierProductController::class, 'bulkPublish']);
+        // Onboarding shortcut: promote and publish without a round trip through
+        // the Main Products list.
+        Route::post('/bulk/promote-publish', [SupplierProductController::class, 'bulkPromoteAndPublish']);
         Route::get('/{supplierProduct}', [SupplierProductController::class, 'show']);
         Route::put('/{supplierProduct}', [SupplierProductController::class, 'update']);
         Route::delete('/{supplierProduct}', [SupplierProductController::class, 'destroy']);

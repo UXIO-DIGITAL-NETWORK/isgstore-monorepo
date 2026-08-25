@@ -14,6 +14,63 @@ Prinsip: **harga modal = fakta dari supplier (otomatis)**, **harga jual = keputu
 
 ---
 
+## 0. Siklus Hidup Produk
+
+Satu SKU berjalan satu arah. Setiap tahap punya satu tempat tinggal — sebuah SKU
+tidak pernah muncul di dua daftar sekaligus.
+
+```
+price list uxiotopup
+   │  Add to pool
+   ▼
+POOL — halaman "Product Provider"
+   │  Needs margin ──(Set Profit Margin)──► Ready
+   │
+   ├─ Promote ───────────► MAIN PRODUCTS sebagai Draft
+   └─ Promote & Publish ─► MAIN PRODUCTS sebagai Published
+                              │
+                              │  Draft ──(Publish)──► Published
+                              │          ◄─(Unpublish)─┘
+                              │
+                              ├─ Archive ──► SKU balik ke POOL (Ready)
+                              └─ Restore ◄── selama SKU-nya belum dipakai produk lain
+```
+
+**Begitu dipromote, barisnya hilang dari pool.** Ia jadi Main Product, dan di sanalah
+ia dipublish, di-unpublish, dan diarsipkan. Satu-satunya jalan kembali ke pool adalah
+Archive.
+
+### Publish, bukan Activate
+
+Produk baru bisa dijual kalau **dua** hal menyala: `products.status` dan mapping supplier
+yang aktif (`supplier_products.is_active`). Dulu ada dua tombol berbeda untuk itu —
+"Activate" di Main Products hanya menyalakan yang pertama, sehingga produk bisa terlihat
+"Active" padahal storefront tetap tidak melihatnya. Sekarang satu verb: **Publish /
+Unpublish**, dan ia menggerakkan kedua-duanya.
+
+Publish ditolak, dengan alasannya ditampilkan langsung di menu, kalau:
+
+- produk belum punya mapping supplier
+- SKU-nya sedang nonaktif di uxiotopup — mempublikasikannya hanya akan mengiklankan
+  order yang pasti gagal saat checkout
+
+### Archive, bukan hapus
+
+Menghapus produk yang pernah terjual dulu **tidak mungkin**: `transactions.product_id`
+bersifat RESTRICT, jadi database menolak dan admin dapat error 500. Sekarang Delete
+mengarsipkan — barisnya tetap ada, sehingga invoice, riwayat transaksi, dan laporan lama
+tetap utuh selamanya. Produk terarsip:
+
+- hilang dari storefront dan dari daftar admin (kecuali filter **Status → Archived**)
+- SKU-nya kembali ke pool sebagai **Ready**, margin tetap tersimpan
+- bisa dipulihkan lewat **Restore** — ditolak kalau SKU-nya sudah terlanjur dipakai
+  produk lain
+
+Karena `products.code` unik dan produk terarsip masih memegang kodenya, mempromote ulang
+SKU yang sama akan ditolak selama produk lamanya belum di-restore atau kodenya diganti.
+
+---
+
 ## 1. Menambah Produk Satuan
 
 Menu: **Tools & Integrations → Uxiotopup Tools → tab "Tambah Produk"**

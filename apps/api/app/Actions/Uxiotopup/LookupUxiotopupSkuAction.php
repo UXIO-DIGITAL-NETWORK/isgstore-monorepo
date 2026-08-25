@@ -37,7 +37,9 @@ class LookupUxiotopupSkuAction
             ? SupplierProduct::where('supplier_id', $supplier->id)->where('buyer_sku_code', $sku)->exists()
             : false;
 
-        $existingProduct = Product::where('code', $sku)->first(['id', 'name', 'code']);
+        // withTrashed so the preview warns about an archived product too —
+        // otherwise it reads "not yet added" for a SKU that cannot be added.
+        $existingProduct = Product::withTrashed()->where('code', $sku)->first(['id', 'name', 'code']);
 
         return [
             'buyer_sku_code' => $sku,

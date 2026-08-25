@@ -22,6 +22,19 @@ class ProviderProductActionsTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
     }
 
+    /** A row still in the pool — no product behind it, which is what the list shows. */
+    private function pooledFor(Supplier $supplier): SupplierProduct
+    {
+        return SupplierProduct::factory()->create([
+            'product_id' => null,
+            'pool_category_id' => Category::factory()->create()->id,
+            'supplier_id' => $supplier->id,
+            'price' => 10000,
+            'margin_set_at' => now(),
+            'is_active' => false,
+        ]);
+    }
+
     private function providerFor(Supplier $supplier): SupplierProduct
     {
         $product = Product::factory()->create([
@@ -45,13 +58,37 @@ class ProviderProductActionsTest extends TestCase
         $this->actingAsAdmin();
         $system = Supplier::factory()->create(['is_system' => true]);
         $uxiotopup = Supplier::factory()->create(['is_system' => false]);
-        $this->providerFor($system);
-        $this->providerFor($uxiotopup);
+        $this->pooledFor($system);
+        $this->pooledFor($uxiotopup);
 
         $this->getJson("/api/v1/supplier-products?supplier_id={$system->id}")
             ->assertOk()
             ->assertJsonCount(1, 'data.data')
             ->assertJsonPath('data.data.0.is_system', true);
+    }
+
+    /**
+     * The pool is what is still in the pool. A promoted SKU lives on the Main
+     * Products list now; leaving it here too is what made "where does this
+     * product live?" unanswerable.
+     */
+    public function test_index_hides_rows_that_have_been_promoted(): void
+    {
+        $this->actingAsAdmin();
+        $supplier = Supplier::factory()->create(['is_system' => false]);
+        $pooled = $this->pooledFor($supplier);
+        $promoted = $this->providerFor($supplier);
+
+        $ids = collect($this->getJson('/api/v1/supplier-products')->assertOk()->json('data.data'))->pluck('id');
+
+        $this->assertTrue($ids->contains($pooled->id));
+        $this->assertFalse($ids->contains($promoted->id));
+
+        // ...but an explicit id selection still finds it: the Set Profit Margin
+        // page fetches its selection by id.
+        $byId = collect($this->getJson("/api/v1/supplier-products?ids={$promoted->id}")
+            ->assertOk()->json('data.data'))->pluck('id');
+        $this->assertTrue($byId->contains($promoted->id));
     }
 
     public function test_lock_price_toggles_the_flag(): void

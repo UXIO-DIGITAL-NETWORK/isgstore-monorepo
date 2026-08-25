@@ -4,10 +4,21 @@ namespace App\Actions\Product;
 
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Enums\PriceAlertStatus;
+use App\Models\PriceChangeAlert;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Archives a Main Product and returns its provider SKUs to the pool.
+ *
+ * Archiving, not destroying: `transactions.product_id` is NOT NULL and RESTRICT,
+ * so a product that has ever been ordered could not be deleted at all — the
+ * DELETE threw a QueryException nothing caught, surfacing as a 500 and leaving
+ * the row permanently undeletable. Nothing is removed now, so the constraint is
+ * never tested and every invoice, receipt and report keeps resolving.
+ */
 class DeleteProductAction
 {
     public function __construct(private CreateActivityLogAction $activityLogAction) {}
@@ -17,15 +28,27 @@ class DeleteProductAction
         $name = $product->name;
 
         return DB::transaction(function () use ($product, $name) {
+            $mappingIds = $product->supplierProducts()->pluck('id');
+
+            // A pending "your selling price is now wrong" alert outlives the
+            // product it was raised for otherwise — it points at the mapping, and
+            // the mapping survives the archive.
+            PriceChangeAlert::whereIn('supplier_product_id', $mappingIds)
+                ->where('status', PriceAlertStatus::PENDING)
+                ->delete();
+
             // Return the provider SKUs to the pool rather than losing them.
             //
-            // The FK is nullOnDelete, so `product_id` would clear itself — but it
-            // cannot clear `is_active`, which would leave an active mapping with no
-            // product behind it. Doing it explicitly also keeps the behaviour identical
-            // on SQLite, where the FK swap is not applied.
+            // Margins and `margin_set_at` are left intact, so the SKU lands back
+            // in the pool as READY and can be re-promoted without re-pricing.
             //
-            // `pool_category_id` is carried over so the demoted SKU still knows which
-            // category it belongs to and can be re-promoted without re-mapping.
+            // The FK is nullOnDelete, but an archive is an UPDATE — it would not
+            // fire at all — and it could never clear `is_active` anyway, which
+            // would leave an active mapping with no product behind it.
+            //
+            // `pool_category_id` is carried over so the demoted SKU still knows
+            // which category it belongs to and can be re-promoted without
+            // re-mapping.
             $product->supplierProducts()->update([
                 'product_id' => null,
                 'is_active' => false,
@@ -39,11 +62,11 @@ class DeleteProductAction
                     userId: Auth::id(),
                     ipAddress: request()->ip(),
                     userAgent: request()->userAgent(),
-                    message: "Deleted Product: {$name}"
+                    message: "Archived Product: {$name}"
                 ));
             }
 
-            return $deleted;
+            return (bool) $deleted;
         });
     }
 }

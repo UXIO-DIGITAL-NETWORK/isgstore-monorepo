@@ -67,9 +67,26 @@ class GetSupplierProductsAction
             $query->where('is_price_locked', $filters['mode'] === 'manual');
         }
 
+        // The pool is what is still IN the pool. A promoted SKU has left it — it
+        // lives on the Main Products list now, where it is published, unpublished
+        // or archived. Showing it here too was what made "where does this product
+        // live?" unanswerable, and left a Publish action stranded on a row the
+        // admin had already moved on from.
+        //
+        // Two ways past the filter, both deliberate: an explicit `ids` list (the
+        // Set Profit Margin page fetches its selection by id and must still find
+        // it), and an explicit promoted `pool_state`, which keeps the API able to
+        // answer questions about promoted rows.
+        $poolState = $filters['pool_state'] ?? null;
+        $promotedStates = [SupplierProduct::STATE_DRAFT, SupplierProduct::STATE_PUBLISHED];
+
+        if (empty($filters['ids']) && ! in_array($poolState, $promotedStates, true)) {
+            $query->pooled();
+        }
+
         // Where the row sits in the pipeline. Mirrors SupplierProduct::poolState();
         // the two must agree or a filter would hide rows the badge says are there.
-        match ($filters['pool_state'] ?? null) {
+        match ($poolState) {
             SupplierProduct::STATE_NEEDS_MARGIN => $query->whereNull('product_id')->whereNull('margin_set_at'),
             SupplierProduct::STATE_READY => $query->whereNull('product_id')->whereNotNull('margin_set_at'),
             SupplierProduct::STATE_DRAFT => $query->whereNotNull('product_id')
