@@ -12,7 +12,7 @@ export interface User {
   avatar: string | null;
   avatar_url: string | null;
   email: string;
-  phone: string;
+  phone: string | null;
   balance: number;
   point: number;
   locale: string;

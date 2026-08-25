@@ -49,7 +49,7 @@ export function useDashboardOverview(): UseDashboardOverviewReturn {
     ? {
         name: user.name,
         email: user.email,
-        phone: user.phone,
+        phone: user.phone ?? "",
         membershipLevel: TIER_BY_ROLE[user.role ?? "member"] ?? "Member",
         avatarUrl: user.avatar_url ?? undefined,
       }

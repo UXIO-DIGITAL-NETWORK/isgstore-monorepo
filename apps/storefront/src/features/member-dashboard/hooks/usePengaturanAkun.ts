@@ -41,7 +41,7 @@ export function usePengaturanAkun(): UsePengaturanAkunReturn {
     setFullName(user.name);
     setUsername(user.username ?? "");
     setEmail(user.email);
-    setWhatsapp(toNationalPhone(user.phone));
+    setWhatsapp(toNationalPhone(user.phone ?? ""));
     setAvatarPreview((prev) => (prev?.startsWith("blob:") ? prev : user.avatar_url ?? null));
   }, [user]);
 
