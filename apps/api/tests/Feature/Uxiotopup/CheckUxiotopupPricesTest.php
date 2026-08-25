@@ -3,12 +3,12 @@
 namespace Tests\Feature\Uxiotopup;
 
 use App\Actions\Uxiotopup\CheckUxiotopupPricesAction;
-use App\Enums\PriceAlertStatus;
-use App\Models\PriceChangeAlert;
+use App\Enums\PriceChangeLogStatus;
 use App\Models\PricingRule;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
+use App\Services\PricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -51,9 +51,16 @@ class CheckUxiotopupPricesTest extends TestCase
         ], $overrides);
     }
 
+    /** A live, priced mapping — the default subject of these tests. */
     private function seedMapping(int $cost = 10000, array $productOverrides = []): SupplierProduct
     {
-        $product = Product::factory()->create(array_merge(['code' => 'ML5'], $productOverrides));
+        $product = Product::factory()->create(array_merge([
+            'code' => 'ML5',
+            'price_member' => 12000,
+            'price_vip' => 11500,
+            'price_reseller' => 11000,
+            'price_agent' => 10500,
+        ], $productOverrides));
 
         return SupplierProduct::factory()->for($product)->for($this->uxiotopup)->create([
             'buyer_sku_code' => 'ML5',
@@ -72,33 +79,235 @@ class CheckUxiotopupPricesTest extends TestCase
         $this->assertSame(['BRAND_NEW'], $report->unknownSkusSample);
         $this->assertDatabaseCount('products', 0);
         $this->assertDatabaseCount('supplier_products', 0);
-        $this->assertDatabaseCount('price_change_alerts', 0);
+        $this->assertDatabaseCount('price_change_logs', 0);
     }
 
-    public function test_cost_change_updates_cost_creates_alert_and_never_touches_selling_prices(): void
+    public function test_cost_rise_reprices_all_four_tiers_and_logs_applied(): void
     {
-        $mapping = $this->seedMapping(10000, ['price_member' => 12000]);
+        $mapping = $this->seedMapping(10000);
 
         $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
 
         $report = app(CheckUxiotopupPricesAction::class)->execute();
 
         $this->assertSame(1, $report->priceChangedCount);
-        $this->assertSame(1, $report->alertsCreated);
+        $this->assertSame(1, $report->repricedCount);
 
         // Cost is factual — updated automatically.
         $this->assertDatabaseHas('supplier_products', ['buyer_sku_code' => 'ML5', 'price' => 12000]);
 
-        // Selling prices are the admin's decision — never touched.
-        $this->assertSame(12000, (int) $mapping->product->fresh()->price_member);
+        // All four tiers now follow the margin rules, and price_modal follows cost.
+        // Compare against an independent PricingService run so this asserts the
+        // wiring, not a hand-computed number vulnerable to float rounding.
+        $product = $mapping->product->fresh();
+        $expected = $this->expectedPrices($product, 12000);
+        $this->assertSame($expected['price_member'], (int) $product->price_member);
+        $this->assertSame($expected['price_vip'], (int) $product->price_vip);
+        $this->assertSame($expected['price_reseller'], (int) $product->price_reseller);
+        $this->assertSame($expected['price_agent'], (int) $product->price_agent);
+        $this->assertSame(12000, (int) $product->price_modal);
+        // The tiers genuinely moved up from the 10000-cost seed.
+        $this->assertGreaterThan(12000, (int) $product->price_member);
 
-        $this->assertDatabaseHas('price_change_alerts', [
+        $this->assertDatabaseHas('price_change_logs', [
             'supplier_product_id' => $mapping->id,
             'buyer_sku_code' => 'ML5',
-            'old_price' => 10000,
-            'new_price' => 12000,
-            'status' => PriceAlertStatus::PENDING->value,
+            'status' => PriceChangeLogStatus::APPLIED->value,
+            'old_cost' => 10000,
+            'new_cost' => 12000,
+            'old_price_member' => 12000,
+            'new_price_member' => $expected['price_member'],
         ]);
+    }
+
+    /** The same computation the checker delegates to — used to avoid float-artifact literals. */
+    private function expectedPrices(Product $product, int $cost, array $overrides = []): array
+    {
+        return app(PricingService::class)->computePrices(
+            $cost,
+            $product->category_id,
+            $overrides,
+            $product->price_min,
+            $product->price_max,
+        );
+    }
+
+    public function test_mapping_margin_override_wins_over_the_rules(): void
+    {
+        $mapping = $this->seedMapping(10000);
+        $mapping->update(['margin_member' => 50]); // 50% override for member only
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        app(CheckUxiotopupPricesAction::class)->execute();
+
+        $product = $mapping->product->fresh();
+        $this->assertSame(18000, (int) $product->price_member); // 12000 * 1.5 (override)
+        // vip untouched by the override → still the default-rule value.
+        $this->assertSame($this->expectedPrices($product, 12000)['price_vip'], (int) $product->price_vip);
+    }
+
+    public function test_price_max_clamps_the_repriced_values(): void
+    {
+        $mapping = $this->seedMapping(10000, ['price_max' => 13000]);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        $report = app(CheckUxiotopupPricesAction::class)->execute();
+
+        $this->assertSame(1, $report->repricedCount);
+        $product = $mapping->product->fresh();
+        // Member would exceed 13000 → clamped to it; agent stays under the ceiling.
+        $this->assertSame(13000, (int) $product->price_member);
+        $this->assertSame($this->expectedPrices($product, 12000)['price_agent'], (int) $product->price_agent);
+    }
+
+    public function test_locked_product_is_not_repriced_but_is_logged_locked(): void
+    {
+        $mapping = $this->seedMapping(10000, ['is_price_locked' => true, 'price_member' => 12000]);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        $report = app(CheckUxiotopupPricesAction::class)->execute();
+
+        $this->assertSame(1, $report->lockedCount);
+        $this->assertSame(0, $report->repricedCount);
+
+        // Cost still updates; the frozen selling price does not.
+        $this->assertDatabaseHas('supplier_products', ['buyer_sku_code' => 'ML5', 'price' => 12000]);
+        $this->assertSame(12000, (int) $mapping->product->fresh()->price_member);
+
+        $this->assertDatabaseHas('price_change_logs', [
+            'supplier_product_id' => $mapping->id,
+            'status' => PriceChangeLogStatus::LOCKED->value,
+            'old_cost' => 10000,
+            'new_cost' => 12000,
+            'new_price_member' => null,
+        ]);
+    }
+
+    public function test_a_sku_deactivated_at_the_provider_is_logged_as_needs_attention(): void
+    {
+        $mapping = $this->seedMapping();
+
+        $this->fakePriceList([$this->serviceItem(['status' => 'nonaktif'])]);
+
+        $report = app(CheckUxiotopupPricesAction::class)->execute();
+
+        $this->assertSame(1, $report->deactivatedLoggedCount);
+        $this->assertFalse((bool) $mapping->fresh()->is_active);
+        $this->assertDatabaseHas('price_change_logs', [
+            'supplier_product_id' => $mapping->id,
+            'status' => PriceChangeLogStatus::DEACTIVATED->value,
+        ]);
+    }
+
+    public function test_a_clamp_that_forces_price_below_cost_logs_negative_margin(): void
+    {
+        // price_max below the new cost means even the clamped price is under cost.
+        $mapping = $this->seedMapping(10000, ['price_max' => 11000]);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        $report = app(CheckUxiotopupPricesAction::class)->execute();
+
+        $this->assertSame(1, $report->negativeMarginCount);
+        $this->assertSame(0, $report->repricedCount);
+
+        $product = $mapping->product->fresh();
+        $this->assertSame(11000, (int) $product->price_member); // still applied (clamped)
+        $this->assertLessThan(12000, (int) $product->price_member);
+
+        $this->assertDatabaseHas('price_change_logs', [
+            'supplier_product_id' => $mapping->id,
+            'status' => PriceChangeLogStatus::NEGATIVE_MARGIN->value,
+        ]);
+    }
+
+    public function test_a_pooled_row_is_never_repriced_or_logged(): void
+    {
+        $mapping = SupplierProduct::factory()->for($this->uxiotopup)->create([
+            'product_id' => null,
+            'buyer_sku_code' => 'ML5',
+            'price' => 10000,
+            'is_active' => true,
+        ]);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        app(CheckUxiotopupPricesAction::class)->execute();
+
+        // Cost still updates; nothing to reprice or log.
+        $this->assertSame(12000, (int) $mapping->fresh()->price);
+        $this->assertDatabaseCount('price_change_logs', 0);
+    }
+
+    public function test_an_inactive_mapped_product_is_not_repriced(): void
+    {
+        $product = Product::factory()->create(['code' => 'ML5', 'price_member' => 12000]);
+        $mapping = SupplierProduct::factory()->for($product)->for($this->uxiotopup)->create([
+            'buyer_sku_code' => 'ML5',
+            'price' => 10000,
+            'is_active' => false,
+            'sync_deactivated_at' => null, // admin turned it off, not the checker
+        ]);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        $report = app(CheckUxiotopupPricesAction::class)->execute();
+
+        $this->assertSame(0, $report->repricedCount);
+        $this->assertDatabaseCount('price_change_logs', 0);
+        $this->assertSame(12000, (int) $mapping->product->fresh()->price_member); // untouched
+    }
+
+    public function test_unchanged_cost_writes_no_log(): void
+    {
+        $this->seedMapping(10000);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 10000])]);
+
+        $report = app(CheckUxiotopupPricesAction::class)->execute();
+
+        $this->assertSame(0, $report->priceChangedCount);
+        $this->assertDatabaseCount('price_change_logs', 0);
+    }
+
+    public function test_a_cost_revert_creates_a_second_applied_log_not_a_dedupe(): void
+    {
+        $mapping = $this->seedMapping(10000);
+
+        Http::fake([
+            '*/service' => Http::sequence()
+                ->push(['status' => true, 'msg' => 'ok', 'data' => [$this->serviceItem(['harga' => 12000])]])
+                ->push(['status' => true, 'msg' => 'ok', 'data' => [$this->serviceItem(['harga' => 10000])]]),
+        ]);
+
+        app(CheckUxiotopupPricesAction::class)->execute();
+        app(CheckUxiotopupPricesAction::class)->execute();
+
+        // Append-only: two movements, two rows.
+        $this->assertDatabaseCount('price_change_logs', 2);
+        // Prices are back to the 10000-derived values.
+        $this->assertSame(12000, (int) $mapping->product->fresh()->price_member);
+    }
+
+    public function test_only_the_uxiotopup_suppliers_mappings_are_touched(): void
+    {
+        $other = Supplier::factory()->create(['name' => 'Other']);
+        $otherProduct = Product::factory()->create(['code' => 'OTHER']);
+        $otherMapping = SupplierProduct::factory()->for($otherProduct)->for($other)->create([
+            'buyer_sku_code' => 'ML5',
+            'price' => 10000,
+            'is_active' => true,
+        ]);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        app(CheckUxiotopupPricesAction::class)->execute();
+
+        $this->assertSame(10000, (int) $otherMapping->fresh()->price);
+        $this->assertDatabaseCount('price_change_logs', 0);
     }
 
     public function test_configured_price_tier_is_used_as_cost(): void
@@ -111,81 +320,6 @@ class CheckUxiotopupPricesTest extends TestCase
         app(CheckUxiotopupPricesAction::class)->execute();
 
         $this->assertDatabaseHas('supplier_products', ['buyer_sku_code' => 'ML5', 'price' => 9500]);
-    }
-
-    public function test_selling_prices_untouched_even_with_pricing_rules_configured(): void
-    {
-        PricingRule::factory()->create(['role' => 'member', 'markup_percent' => 20, 'markup_flat' => 0]);
-        $mapping = $this->seedMapping(10000, ['price_member' => 55555]);
-
-        $this->fakePriceList([$this->serviceItem(['harga' => 11000])]);
-
-        app(CheckUxiotopupPricesAction::class)->execute();
-
-        $this->assertSame(55555, (int) $mapping->product->fresh()->price_member);
-    }
-
-    public function test_second_cost_change_updates_the_same_pending_alert(): void
-    {
-        $this->seedMapping(10000);
-
-        Http::fake([
-            '*/service' => Http::sequence()
-                ->push(['status' => true, 'msg' => 'ok', 'data' => [$this->serviceItem(['harga' => 12000])]])
-                ->push(['status' => true, 'msg' => 'ok', 'data' => [$this->serviceItem(['harga' => 13000])]]),
-        ]);
-
-        app(CheckUxiotopupPricesAction::class)->execute();
-        $report = app(CheckUxiotopupPricesAction::class)->execute();
-
-        $this->assertSame(1, $report->alertsUpdated);
-        $this->assertDatabaseCount('price_change_alerts', 1);
-        $this->assertDatabaseHas('price_change_alerts', [
-            'buyer_sku_code' => 'ML5',
-            'old_price' => 10000, // original cost preserved
-            'new_price' => 13000, // tracks the latest
-        ]);
-    }
-
-    public function test_cost_revert_deletes_the_pending_alert(): void
-    {
-        $this->seedMapping(10000);
-
-        Http::fake([
-            '*/service' => Http::sequence()
-                ->push(['status' => true, 'msg' => 'ok', 'data' => [$this->serviceItem(['harga' => 12000])]])
-                ->push(['status' => true, 'msg' => 'ok', 'data' => [$this->serviceItem(['harga' => 10000])]]),
-        ]);
-
-        app(CheckUxiotopupPricesAction::class)->execute();
-        app(CheckUxiotopupPricesAction::class)->execute();
-
-        $this->assertDatabaseCount('price_change_alerts', 0);
-        $this->assertDatabaseHas('supplier_products', ['buyer_sku_code' => 'ML5', 'price' => 10000]);
-    }
-
-    public function test_acknowledged_alert_gets_a_fresh_pending_row_on_next_change(): void
-    {
-        $mapping = $this->seedMapping(10000);
-
-        PriceChangeAlert::factory()->acknowledged()->create([
-            'supplier_product_id' => $mapping->id,
-            'buyer_sku_code' => 'ML5',
-            'old_price' => 9000,
-            'new_price' => 10000,
-        ]);
-
-        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
-
-        $report = app(CheckUxiotopupPricesAction::class)->execute();
-
-        $this->assertSame(1, $report->alertsCreated);
-        $this->assertDatabaseCount('price_change_alerts', 2); // history kept + new pending
-        $this->assertDatabaseHas('price_change_alerts', [
-            'old_price' => 10000,
-            'new_price' => 12000,
-            'status' => PriceAlertStatus::PENDING->value,
-        ]);
     }
 
     public function test_nonaktif_service_is_deactivated_and_reactivated_only_by_checker(): void
@@ -229,9 +363,11 @@ class CheckUxiotopupPricesTest extends TestCase
         $this->assertFalse((bool) $mapping->fresh()->is_active);
     }
 
-    public function test_negative_margin_products_are_reported(): void
+    public function test_a_locked_product_with_rising_cost_surfaces_in_the_negative_margin_scan(): void
     {
-        $this->seedMapping(10000, ['price_member' => 12000]);
+        // Locked → not repriced, so a rising cost leaves member below cost, which
+        // the cross-check scan still surfaces for the Discord report.
+        $this->seedMapping(10000, ['is_price_locked' => true, 'price_member' => 12000]);
 
         $this->fakePriceList([$this->serviceItem(['harga' => 15000])]);
 
@@ -281,5 +417,20 @@ class CheckUxiotopupPricesTest extends TestCase
         Http::fake(['*/service' => Http::response('server error', 500)]);
 
         $this->artisan('uxiotopup:check-prices')->assertExitCode(1);
+    }
+
+    public function test_pricing_rules_drive_the_repriced_values(): void
+    {
+        PricingRule::factory()->create(['category_id' => null, 'role' => 'member', 'markup_percent' => 30, 'markup_flat' => 0]);
+        $mapping = $this->seedMapping(10000);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        app(CheckUxiotopupPricesAction::class)->execute();
+
+        $product = $mapping->product->fresh();
+        // The 30% rule drives it, above the 20% built-in default (which would be 14400).
+        $this->assertSame($this->expectedPrices($product, 12000)['price_member'], (int) $product->price_member);
+        $this->assertGreaterThan(15000, (int) $product->price_member);
     }
 }

@@ -63,8 +63,9 @@ Schedule::command('uxiotopup:sync-processing')
     ->runInBackground()
     ->onFailure($alertFailure('uxiotopup:sync-processing'));
 
-// Price checker: updates supplier cost/availability + raises price change
-// alerts. No success/before Discord embeds — 288 runs/day would be spam.
+// Price checker: updates supplier cost/availability, auto-reprices live products
+// from the margin rules, and records a price-change log. No success/before Discord
+// embeds — 288 runs/day would be spam.
 Schedule::command('uxiotopup:check-prices')
     ->everyFiveMinutes()
     ->withoutOverlapping()

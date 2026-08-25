@@ -15,7 +15,7 @@ class CheckUxiotopupPricesCommand extends Command
 {
     protected $signature = 'uxiotopup:check-prices';
 
-    protected $description = 'Check uxiotopup prices: update supplier cost/availability and raise price change alerts. Never creates products or changes selling prices.';
+    protected $description = 'Check uxiotopup prices: update supplier cost/availability, auto-reprice live products from the margin rules, and record a price-change log. Locked prices are left frozen; products are never auto-created.';
 
     public function handle(CheckUxiotopupPricesAction $action): int
     {
@@ -29,12 +29,13 @@ class CheckUxiotopupPricesCommand extends Command
         }
 
         $this->info(sprintf(
-            '%d layanan, %d perubahan modal (%d alert baru, %d diperbarui), %d nonaktif, %d aktif lagi, %d layanan tak dikenal',
+            '%d layanan, %d modal berubah (%d di-reprice, %d terkunci, %d margin negatif, %d nonaktif perlu perhatian), %d aktif lagi, %d layanan tak dikenal',
             $report->totalFetched,
             $report->priceChangedCount,
-            $report->alertsCreated,
-            $report->alertsUpdated,
-            count($report->deactivated),
+            $report->repricedCount,
+            $report->lockedCount,
+            $report->negativeMarginCount,
+            $report->deactivatedLoggedCount,
             count($report->reactivated),
             $report->unknownCount,
         ));

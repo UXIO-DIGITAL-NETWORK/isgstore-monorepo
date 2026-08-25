@@ -18,7 +18,7 @@ class SyncUxiotopupProductsCommand extends Command
 {
     protected $signature = 'uxiotopup:sync-products';
 
-    protected $description = 'Cek harga uxiotopup manual: update modal/availability + buat price alert. TIDAK membuat produk / mengubah harga jual.';
+    protected $description = 'Cek harga uxiotopup manual: update modal/availability, reprice otomatis produk live dari aturan margin, dan catat price-change log. Harga terkunci dibiarkan; produk tidak dibuat otomatis.';
 
     public function handle(CheckUxiotopupPricesAction $action, DiscordWebhookService $discord): int
     {
@@ -43,11 +43,12 @@ class SyncUxiotopupProductsCommand extends Command
         $this->table(['Metric', 'Value'], [
             ['Services fetched', $report->totalFetched],
             ['Cost changes', $report->priceChangedCount],
-            ['Alerts created', $report->alertsCreated],
-            ['Alerts updated', $report->alertsUpdated],
-            ['Mappings deactivated', count($report->deactivated)],
+            ['Repriced (applied)', $report->repricedCount],
+            ['Locked (skipped)', $report->lockedCount],
+            ['Negative margin (logged)', $report->negativeMarginCount],
+            ['Deactivated (attention)', $report->deactivatedLoggedCount],
             ['Mappings reactivated', count($report->reactivated)],
-            ['Negative margin products', count($report->negativeMargin)],
+            ['Negative margin products (all)', count($report->negativeMargin)],
             ['Unknown services (not mapped locally)', $report->unknownCount],
         ]);
 
@@ -62,17 +63,19 @@ class SyncUxiotopupProductsCommand extends Command
             [
                 'name' => 'PREPAID',
                 'value' => "Layanan: {$report->totalFetched} • Modal berubah: {$report->priceChangedCount} • "
-                    ."Alert baru: {$report->alertsCreated} • Alert diperbarui: {$report->alertsUpdated} • "
-                    .'Nonaktif: '.count($report->deactivated)
+                    ."Reprice: {$report->repricedCount} • Terkunci: {$report->lockedCount} • "
+                    ."Margin negatif: {$report->negativeMarginCount} • "
+                    ."Nonaktif (perlu perhatian): {$report->deactivatedLoggedCount}"
                     .' • Aktif lagi: '.count($report->reactivated)
                     ." • Layanan tak dikenal: {$report->unknownCount}",
                 'inline' => false,
             ],
         ];
 
-        $hasNegativeMargin = $report->negativeMargin !== [];
+        $needsAttention = $report->negativeMargin !== []
+            || $report->deactivatedLoggedCount > 0;
 
-        if ($hasNegativeMargin) {
+        if ($report->negativeMargin !== []) {
             $fields[] = [
                 'name' => '⚠️ Margin negatif — checkout DITOLAK sampai di-reprice',
                 'value' => implode("\n", array_slice(array_map(
@@ -95,7 +98,7 @@ class SyncUxiotopupProductsCommand extends Command
         $discord->sendEmbed(
             '[UXIOTOPUP] 📦 Laporan Cek Harga uxiotopup',
             $fields,
-            $hasNegativeMargin ? DiscordWebhookService::COLOR_ORANGE : DiscordWebhookService::COLOR_GREEN
+            $needsAttention ? DiscordWebhookService::COLOR_ORANGE : DiscordWebhookService::COLOR_GREEN
         );
     }
 }

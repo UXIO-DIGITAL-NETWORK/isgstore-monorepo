@@ -5,12 +5,15 @@ namespace App\Actions\Uxiotopup;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Uxiotopup\PriceCheckReportDTO;
-use App\Enums\PriceAlertStatus;
-use App\Models\PriceChangeAlert;
+use App\Enums\PriceChangeLogStatus;
+use App\Models\PriceChangeLog;
+use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\SupplierSkuSighting;
+use App\Services\ProductRepricer;
 use App\Services\UxiotopupService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -20,8 +23,13 @@ use Illuminate\Support\Facades\DB;
  *  - Supplier cost (the configured tier from /service) and availability are
  *    updated automatically — factual data from the supplier that the checkout
  *    margin guard depends on.
- *  - Selling prices are NEVER touched: every cost change raises (or updates)
- *    a pending price_change_alert so the admin reprices manually.
+ *  - Selling prices of LIVE products are now recomputed AUTOMATICALLY from the
+ *    configured margin/pricing rules (via ProductRepricer) whenever cost moves,
+ *    UNLESS the product's price is locked — a locked product is left frozen and
+ *    only logged for review.
+ *  - Every relevant event writes a row to price_change_logs (applied / locked /
+ *    negative_margin / deactivated) — the admin's audit trail, which replaces the
+ *    old manual price-alert acknowledge flow.
  *  - Unknown service ids are NEVER auto-created — products are added manually
  *    via the admin site (single add or Excel import). They are only counted
  *    in the report.
@@ -40,7 +48,8 @@ class CheckUxiotopupPricesAction
 
     public function __construct(
         private readonly UxiotopupService $uxiotopupService,
-        private readonly CreateActivityLogAction $logAction
+        private readonly CreateActivityLogAction $logAction,
+        private readonly ProductRepricer $repricer,
     ) {}
 
     public function execute(): PriceCheckReportDTO
@@ -64,10 +73,10 @@ class CheckUxiotopupPricesAction
                 userId: auth()->id(),
                 ipAddress: request()?->ip() ?? '127.0.0.1',
                 userAgent: request()?->userAgent() ?? 'System/Scheduler',
-                message: "Cek harga uxiotopup: {$report->priceChangedCount} perubahan modal "
-                    ."({$report->alertsCreated} alert baru, {$report->alertsUpdated} alert diperbarui), "
-                    .count($report->deactivated).' dinonaktifkan, '
-                    .count($report->reactivated).' diaktifkan lagi.',
+                message: "Cek harga uxiotopup: {$report->priceChangedCount} modal berubah — "
+                    ."{$report->repricedCount} di-reprice, {$report->lockedCount} terkunci, "
+                    ."{$report->negativeMarginCount} margin negatif, "
+                    ."{$report->deactivatedLoggedCount} nonaktif (perlu perhatian).",
                 isSystem: true,
             ));
         }
@@ -82,14 +91,12 @@ class CheckUxiotopupPricesAction
     {
         $now = now();
 
+        // with('product'): reprice needs the product's category, limits, lock and
+        // current selling prices — load them once instead of per row.
         $existingMappings = SupplierProduct::where('supplier_id', $supplierId)
+            ->with('product')
             ->get()
             ->keyBy('buyer_sku_code');
-
-        $pendingAlerts = PriceChangeAlert::where('status', PriceAlertStatus::PENDING->value)
-            ->whereIn('supplier_product_id', $existingMappings->pluck('id'))
-            ->get()
-            ->keyBy('supplier_product_id');
 
         $this->recordSightings($supplierId, $items);
 
@@ -98,9 +105,13 @@ class CheckUxiotopupPricesAction
         $unknownCount = 0;
         $unknownSample = [];
         $priceChanged = 0;
-        $alertsCreated = 0;
-        $alertsUpdated = 0;
+        $repriced = 0;
+        $lockedCount = 0;
+        $negativeMarginCount = 0;
+        $deactivatedLogged = 0;
         $upsertRows = [];
+        $productUpdates = [];
+        $logRows = [];
 
         foreach ($items as $item) {
             // buyer_sku_code stores the uxiotopup service id (`id` in /service).
@@ -151,34 +162,48 @@ class CheckUxiotopupPricesAction
                 $priceChanged++;
             }
 
-            // A price alert says "your selling price is now wrong". A pooled row has
-            // no selling price yet, so alerting on it is pure noise — its cost is
-            // still updated below, and its preview prices move with it.
-            if ($costChanged && $existing->product_id !== null) {
-                // Alert dedupe: one pending alert per mapping. old_price stays at
-                // the cost from when the alert was first raised; new_price tracks
-                // the latest. A revert back to old_price dissolves the alert.
-                $pending = $pendingAlerts->get($existing->id);
+            // Auto-reprice + audit log. Only mapped products have a selling price;
+            // a pooled row (product_id null) has nothing to reprice or log — its
+            // cost still updates below and its preview prices move with it.
+            $product = $existing->product;
 
-                if ($pending) {
-                    if ($cost === (int) $pending->old_price) {
-                        $pending->delete();
-                        $pendingAlerts->forget($existing->id);
+            if ($existing->product_id !== null && $product !== null) {
+                if (! $available && $wasActive) {
+                    // Went dark at the provider this run — can't be sold until the
+                    // admin handles it. Attention outranks a locked-price note, so
+                    // this is the only row we write for the mapping this run.
+                    $logRows[] = $this->makeLogRow(
+                        PriceChangeLogStatus::DEACTIVATED, $existing, $product,
+                        (int) $existing->price, $cost, null,
+                        'SKU dinonaktifkan di provider — perlu perhatian admin.', $now,
+                    );
+                    $deactivatedLogged++;
+                } elseif ($costChanged && $isActive && $available) {
+                    if ($product->is_price_locked) {
+                        // Frozen by the admin — record the drift, do not reprice.
+                        $logRows[] = $this->makeLogRow(
+                            PriceChangeLogStatus::LOCKED, $existing, $product,
+                            (int) $existing->price, $cost, null,
+                            'Harga terkunci — modal berubah tapi harga jual dibekukan. Tinjau.', $now,
+                        );
+                        $lockedCount++;
                     } else {
-                        $pending->update(['new_price' => $cost]);
-                        $alertsUpdated++;
+                        $newPrices = $this->repricer->compute($cost, $product, $existing);
+                        $productUpdates[$product->id] = $newPrices;
+
+                        // ceil() keeps price >= cost, so the only way member ends up
+                        // below cost is price_max clamping it there.
+                        $isNegative = $newPrices['price_member'] < $cost;
+                        $logRows[] = $this->makeLogRow(
+                            $isNegative ? PriceChangeLogStatus::NEGATIVE_MARGIN : PriceChangeLogStatus::APPLIED,
+                            $existing, $product, (int) $existing->price, $cost, $newPrices,
+                            $isNegative
+                                ? 'Setelah markup & clamp, harga member masih di bawah modal.'
+                                : 'Harga jual diperbarui otomatis dari aturan margin.',
+                            $now,
+                        );
+                        $isNegative ? $negativeMarginCount++ : $repriced++;
                     }
-                } else {
-                    $alert = PriceChangeAlert::create([
-                        'supplier_product_id' => $existing->id,
-                        'buyer_sku_code' => $sku,
-                        'type' => 'prepaid',
-                        'old_price' => (int) $existing->price,
-                        'new_price' => $cost,
-                        'status' => PriceAlertStatus::PENDING,
-                    ]);
-                    $pendingAlerts->put($existing->id, $alert);
-                    $alertsCreated++;
                 }
             }
 
@@ -225,17 +250,72 @@ class CheckUxiotopupPricesAction
             );
         }
 
+        // Selling prices differ per product (different tiers), so this can't ride the
+        // upsert above. The set is only the live, unlocked products whose cost moved
+        // this run — small in steady state.
+        foreach ($productUpdates as $productId => $prices) {
+            Product::whereKey($productId)->update($prices);
+        }
+
+        // Append-only: plain insert, chunked. insert() bypasses casts, so the rows
+        // are already raw scalars with explicit timestamps.
+        foreach (array_chunk($logRows, self::UPSERT_CHUNK) as $chunk) {
+            PriceChangeLog::insert($chunk);
+        }
+
         return new PriceCheckReportDTO(
             totalFetched: count($items),
             priceChangedCount: $priceChanged,
-            alertsCreated: $alertsCreated,
-            alertsUpdated: $alertsUpdated,
+            repricedCount: $repriced,
+            lockedCount: $lockedCount,
+            negativeMarginCount: $negativeMarginCount,
+            deactivatedLoggedCount: $deactivatedLogged,
             deactivated: $deactivated,
             reactivated: $reactivated,
             negativeMargin: $this->scanNegativeMargins(),
             unknownCount: $unknownCount,
             unknownSkusSample: $unknownSample,
         );
+    }
+
+    /**
+     * One price_change_logs row as a raw array for bulk insert(). Old selling
+     * prices are snapshotted off the product; new prices come from the freshly
+     * computed set, or null for events that don't reprice (locked, deactivated).
+     *
+     * @param  array{price_modal:int,price_member:int,price_vip:int,price_reseller:int,price_agent:int}|null  $newPrices
+     * @return array<string,mixed>
+     */
+    private function makeLogRow(
+        PriceChangeLogStatus $status,
+        SupplierProduct $mapping,
+        Product $product,
+        int $oldCost,
+        int $newCost,
+        ?array $newPrices,
+        string $reason,
+        Carbon $now,
+    ): array {
+        return [
+            'supplier_product_id' => $mapping->id,
+            'product_id' => $product->id,
+            'buyer_sku_code' => $mapping->buyer_sku_code,
+            'product_name' => $product->name,
+            'status' => $status->value,
+            'old_cost' => $oldCost,
+            'new_cost' => $newCost,
+            'old_price_member' => (int) $product->price_member,
+            'new_price_member' => $newPrices['price_member'] ?? null,
+            'old_price_vip' => (int) $product->price_vip,
+            'new_price_vip' => $newPrices['price_vip'] ?? null,
+            'old_price_reseller' => (int) $product->price_reseller,
+            'new_price_reseller' => $newPrices['price_reseller'] ?? null,
+            'old_price_agent' => (int) $product->price_agent,
+            'new_price_agent' => $newPrices['price_agent'] ?? null,
+            'reason' => $reason,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
     }
 
     /**

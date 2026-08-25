@@ -4,8 +4,6 @@ namespace App\Actions\Product;
 
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
-use App\Enums\PriceAlertStatus;
-use App\Models\PriceChangeAlert;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -28,14 +26,9 @@ class DeleteProductAction
         $name = $product->name;
 
         return DB::transaction(function () use ($product, $name) {
-            $mappingIds = $product->supplierProducts()->pluck('id');
-
-            // A pending "your selling price is now wrong" alert outlives the
-            // product it was raised for otherwise — it points at the mapping, and
-            // the mapping survives the archive.
-            PriceChangeAlert::whereIn('supplier_product_id', $mappingIds)
-                ->where('status', PriceAlertStatus::PENDING)
-                ->delete();
+            // Price change logs are an append-only audit trail — they point at the
+            // mapping (which survives the archive) and are deliberately left intact
+            // as the record of what happened while the product was live.
 
             // Return the provider SKUs to the pool rather than losing them.
             //

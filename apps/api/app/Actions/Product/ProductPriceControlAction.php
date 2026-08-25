@@ -5,7 +5,7 @@ namespace App\Actions\Product;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Product;
-use App\Services\PricingService;
+use App\Services\ProductRepricer;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 class ProductPriceControlAction
 {
     public function __construct(
-        private PricingService $pricing,
+        private ProductRepricer $repricer,
         private CreateActivityLogAction $activityLogAction,
     ) {}
 
@@ -70,18 +70,7 @@ class ProductPriceControlAction
             return $product;
         }
 
-        $prices = $this->pricing->computePrices(
-            (int) $mapping->price,
-            $product->category_id,
-            array_filter([
-                'member' => $mapping->margin_member,
-                'vip' => $mapping->margin_vip,
-                'reseller' => $mapping->margin_reseller,
-                'agent' => $mapping->margin_agent,
-            ], fn ($m) => $m !== null),
-            $product->price_min,
-            $product->price_max,
-        );
+        $prices = $this->repricer->compute((int) $mapping->price, $product, $mapping);
         $product->update($prices);
         $this->log($product, 'Uxiotopup price update');
 

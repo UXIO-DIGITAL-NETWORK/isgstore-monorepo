@@ -81,7 +81,7 @@ use App\Http\Controllers\Api\Supplier\SupplierController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\User\SyncTimezoneController;
 use App\Http\Controllers\Api\User\UserController;
-use App\Http\Controllers\Api\Uxiotopup\PriceAlertController;
+use App\Http\Controllers\Api\Uxiotopup\PriceChangeLogController;
 use App\Http\Controllers\Api\Uxiotopup\UxiotopupBalanceController;
 use App\Http\Controllers\Api\Uxiotopup\UxiotopupCategoryController;
 use App\Http\Controllers\Api\Uxiotopup\UxiotopupPoolController;
@@ -465,10 +465,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/uxiotopup/products/import-template', [UxiotopupProductImportController::class, 'template']);
     Route::post('/uxiotopup/products/import', [UxiotopupProductImportController::class, 'import']);
 
-    // Uxiotopup Price Change Alerts (raised by the 5-minute checker)
-    Route::get('/uxiotopup/price-alerts', [PriceAlertController::class, 'index']);
-    Route::post('/uxiotopup/price-alerts/acknowledge-all', [PriceAlertController::class, 'acknowledgeAll']);
-    Route::post('/uxiotopup/price-alerts/{priceChangeAlert}/acknowledge', [PriceAlertController::class, 'acknowledge']);
+    // Uxiotopup Price Change Log — read-only audit trail of what the 5-minute
+    // checker auto-repriced, skipped (locked) or flagged (deactivated / negative margin).
+    Route::get('/uxiotopup/price-change-logs', [PriceChangeLogController::class, 'index']);
 
     // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.
     // Outbound signed calls to Monetapay; mirror the spec's query endpoints.
