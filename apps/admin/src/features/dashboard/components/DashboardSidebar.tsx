@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
-import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
   CommandEmpty,
@@ -36,7 +35,6 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -246,24 +244,6 @@ export function DashboardSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-
-      <SidebarFooter className="border-t border-border">
-        <Box className="group-data-[collapsible=icon]:hidden flex flex-col gap-2 rounded-lg bg-accent p-4">
-          <Text
-            as="span"
-            className="text-sm font-semibold text-foreground"
-          >
-            Subscribe to our newsletter
-          </Text>
-          <Text variant="small">Opt-in to receive updates and news about the sidebar.</Text>
-          <Button
-            size="sm"
-            className="mt-1 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Subscribe
-          </Button>
-        </Box>
-      </SidebarFooter>
 
       <CommandDialog
         open={commandOpen}
