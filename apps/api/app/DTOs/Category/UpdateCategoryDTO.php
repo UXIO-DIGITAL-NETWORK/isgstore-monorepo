@@ -21,6 +21,8 @@ readonly class UpdateCategoryDTO
         public bool $nicknameCheckEnabled,
         public ?string $region,
         public UploadedFile|string|null $logo,
+        public UploadedFile|string|null $thumbnail,
+        public UploadedFile|string|null $banner,
         public ?string $description,
         public bool $status,
         public ?array $orderFormFields,

@@ -7,6 +7,8 @@ use App\Models\CategoryType;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -70,6 +72,66 @@ class CategoryCrudTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.data.0.code', 'ml-diamonds')
             ->assertJsonPath('data.meta.per_page', 5);
+    }
+
+    public function test_thumbnail_and_banner_uploads_persist_and_reach_the_storefront(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $type = CategoryType::factory()->create();
+
+        // Thumbnail = portrait card background; banner = wide checkout header.
+        // Both are separate from the square logo overlay.
+        $response = $this->postJson('/api/v1/categories', [
+            'type_id' => $type->id,
+            'name' => 'Mobile Legends',
+            'code' => 'ml-diamonds',
+            'slug' => 'mobile-legends',
+            'status' => true,
+            'thumbnail' => UploadedFile::fake()->image('card.jpg', 600, 800),
+            'banner' => UploadedFile::fake()->image('header.jpg', 1600, 400),
+        ])->assertCreated();
+
+        $thumbnailPath = Category::firstWhere('code', 'ml-diamonds')->thumbnail;
+        $bannerPath = Category::firstWhere('code', 'ml-diamonds')->banner;
+
+        $this->assertNotNull($thumbnailPath, 'thumbnail column should be populated');
+        $this->assertNotNull($bannerPath, 'banner column should be populated');
+        Storage::disk('public')->assertExists($thumbnailPath);
+        Storage::disk('public')->assertExists($bannerPath);
+
+        $response
+            ->assertJsonPath('data.thumbnail', $thumbnailPath)
+            ->assertJsonPath('data.banner', $bannerPath);
+
+        // The storefront card reads thumbnail_url as its background; banner_url
+        // is the checkout header. Both must now be non-null.
+        $game = $this->getJson('/api/v1/games/mobile-legends')->assertOk()->json('data');
+        $this->assertNotNull($game['thumbnail_url']);
+        $this->assertNotNull($game['banner_url']);
+    }
+
+    public function test_updating_a_thumbnail_replaces_the_previous_file(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $type = CategoryType::factory()->create();
+        $category = Category::factory()->create([
+            'type_id' => $type->id,
+            'thumbnail' => 'categories/thumbnails/old.webp',
+        ]);
+        Storage::disk('public')->put('categories/thumbnails/old.webp', 'stale');
+
+        $this->putJson("/api/v1/categories/{$category->id}", [
+            'type_id' => $type->id,
+            'name' => $category->name,
+            'code' => $category->code,
+            'status' => true,
+            'thumbnail' => UploadedFile::fake()->image('new.jpg', 600, 800),
+        ])->assertOk();
+
+        Storage::disk('public')->assertMissing('categories/thumbnails/old.webp');
+        Storage::disk('public')->assertExists($category->fresh()->thumbnail);
     }
 
     public function test_validation_rejects_duplicate_code_and_slug(): void

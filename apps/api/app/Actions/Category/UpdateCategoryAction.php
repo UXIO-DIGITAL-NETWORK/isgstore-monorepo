@@ -29,6 +29,24 @@ class UpdateCategoryAction
             $logoPath = $this->images->store($dto->logo, 'categories/logos');
         }
 
+        $thumbnailPath = $category->thumbnail;
+
+        if ($dto->thumbnail instanceof UploadedFile) {
+            if ($thumbnailPath && Storage::disk('public')->exists($thumbnailPath)) {
+                Storage::disk('public')->delete($thumbnailPath);
+            }
+            $thumbnailPath = $this->images->store($dto->thumbnail, 'categories/thumbnails');
+        }
+
+        $bannerPath = $category->banner;
+
+        if ($dto->banner instanceof UploadedFile) {
+            if ($bannerPath && Storage::disk('public')->exists($bannerPath)) {
+                Storage::disk('public')->delete($bannerPath);
+            }
+            $bannerPath = $this->images->store($dto->banner, 'categories/banners');
+        }
+
         $ogImagePath = $category->og_image;
 
         if ($dto->ogImage instanceof UploadedFile) {
@@ -49,6 +67,8 @@ class UpdateCategoryAction
             'nickname_check_enabled' => $dto->nicknameCheckEnabled,
             'region' => $dto->region,
             'logo' => $logoPath,
+            'thumbnail' => $thumbnailPath,
+            'banner' => $bannerPath,
             'description' => $dto->description,
             'status' => $dto->status,
             'order_form_fields' => $dto->orderFormFields,

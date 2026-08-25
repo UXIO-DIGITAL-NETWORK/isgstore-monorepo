@@ -25,6 +25,18 @@ class CreateCategoryAction
             $logoPath = $this->images->store($dto->logo, 'categories/logos');
         }
 
+        $thumbnailPath = null;
+
+        if ($dto->thumbnail instanceof UploadedFile) {
+            $thumbnailPath = $this->images->store($dto->thumbnail, 'categories/thumbnails');
+        }
+
+        $bannerPath = null;
+
+        if ($dto->banner instanceof UploadedFile) {
+            $bannerPath = $this->images->store($dto->banner, 'categories/banners');
+        }
+
         $ogImagePath = null;
 
         if ($dto->ogImage instanceof UploadedFile) {
@@ -42,6 +54,8 @@ class CreateCategoryAction
             'nickname_check_enabled' => $dto->nicknameCheckEnabled,
             'region' => $dto->region,
             'logo' => $logoPath,
+            'thumbnail' => $thumbnailPath,
+            'banner' => $bannerPath,
             'description' => $dto->description,
             'status' => $dto->status,
             'order_form_fields' => $dto->orderFormFields,
