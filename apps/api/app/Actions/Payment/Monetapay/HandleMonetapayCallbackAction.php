@@ -16,8 +16,10 @@ use App\Enums\TransactionStatus;
 use App\Jobs\ProcessUxiotopupTopup;
 use App\Models\BalanceTopup;
 use App\Models\Payment;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
 use App\Models\Transaction;
+use App\Services\DiscordWebhookService;
 use App\Support\Ledger\ServiceRevenueLedger;
 use App\Support\Wallet\WalletLedger;
 use Exception;
@@ -42,6 +44,7 @@ class HandleMonetapayCallbackAction
         private readonly SettleMerchantTransactionAction $settleAction,
         private readonly ActivateServiceSubscriptionAction $activateSubscriptionAction,
         private readonly HandleDisbursementCallbackAction $disbursementCallbackAction,
+        private readonly DiscordWebhookService $discord,
     ) {}
 
     public function execute(MonetapayCallbackDTO $dto): void
@@ -82,12 +85,16 @@ class HandleMonetapayCallbackAction
         // Dispatching inside DB::transaction risks the worker picking up the job
         // before the Payment/Transaction rows are committed and visible.
         $paidTransaction = null;
+        // [Transaction, isSuccess] for the post-commit Discord notification —
+        // same reasoning as $paidTransaction: never fire a webhook-triggered
+        // HTTP call while still holding the Payment row lock.
+        $notifyData = null;
 
-        DB::transaction(function () use ($dto, &$paidTransaction) {
+        DB::transaction(function () use ($dto, &$paidTransaction, &$notifyData) {
 
             // Lock the Payment row to prevent concurrent webhook replays
             /** @var Payment $payment */
-            $payment = Payment::with('transaction')
+            $payment = Payment::with(['transaction.product', 'transaction.paymentChannel'])
                 ->where('reference_id', $dto->outNo)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -145,9 +152,14 @@ class HandleMonetapayCallbackAction
 
             $this->log($dto->outNo, "Callback processed — Monetapay status: {$dto->status}");
 
+            // ensure latest state is dispatched/notified
+            $freshTransaction = $transaction->fresh(['product', 'paymentChannel']);
+
             if ($isSuccess) {
-                $paidTransaction = $transaction->fresh(); // ensure latest state is dispatched
+                $paidTransaction = $freshTransaction;
             }
+
+            $notifyData = [$freshTransaction, $isSuccess];
         });
 
         // ── Dispatch uxiotopup job after commit ──────────────────────────────
@@ -159,6 +171,11 @@ class HandleMonetapayCallbackAction
             $this->settleAction->execute($paidTransaction);
 
             ProcessUxiotopupTopup::dispatch($paidTransaction);
+        }
+
+        if ($notifyData !== null) {
+            [$notifiedTransaction, $isSuccess] = $notifyData;
+            $this->notifyCheckoutDiscord($notifiedTransaction, $isSuccess);
         }
     }
 
@@ -218,9 +235,16 @@ class HandleMonetapayCallbackAction
      */
     private function handleBalanceTopup(MonetapayCallbackDTO $dto): void
     {
-        DB::transaction(function () use ($dto) {
+        // [BalanceTopup, isSuccess] for the post-commit Discord notification —
+        // sent outside the transaction so the HTTP call never runs under lock.
+        $notifyData = null;
+
+        DB::transaction(function () use ($dto, &$notifyData) {
             /** @var BalanceTopup|null $topup */
-            $topup = BalanceTopup::where('reference_id', $dto->outNo)->lockForUpdate()->first();
+            $topup = BalanceTopup::with(['user', 'paymentChannel'])
+                ->where('reference_id', $dto->outNo)
+                ->lockForUpdate()
+                ->first();
 
             if (! $topup) {
                 Log::channel('monetapay')->warning('Monetapay callback for an unknown top-up reference', [
@@ -252,6 +276,7 @@ class HandleMonetapayCallbackAction
             if (! $isSuccess) {
                 $topup->update(['status' => 'EXPIRED']);
                 $this->log($dto->outNo, "Top-up failed — Monetapay status: {$dto->status}");
+                $notifyData = [$topup, false];
 
                 return;
             }
@@ -269,7 +294,13 @@ class HandleMonetapayCallbackAction
             );
 
             $this->log($dto->outNo, "Top-up credited: Rp {$topup->amount}");
+            $notifyData = [$topup, true];
         });
+
+        if ($notifyData !== null) {
+            [$notifiedTopup, $isSuccess] = $notifyData;
+            $this->notifyTopupDiscord($notifiedTopup, $isSuccess);
+        }
     }
 
     /**
@@ -290,7 +321,12 @@ class HandleMonetapayCallbackAction
      */
     private function handleServiceInvoicePayment(MonetapayCallbackDTO $dto): void
     {
-        DB::transaction(function () use ($dto) {
+        // [ServiceInvoicePayment, isSuccess] for the post-commit Discord
+        // notification — sent outside the transaction so the HTTP call never
+        // runs under lock.
+        $notifyData = null;
+
+        DB::transaction(function () use ($dto, &$notifyData) {
             /** @var ServiceInvoicePayment|null $attempt */
             $attempt = ServiceInvoicePayment::where('reference_id', $dto->outNo)
                 ->lockForUpdate()
@@ -326,6 +362,7 @@ class HandleMonetapayCallbackAction
             if (! $isSuccess) {
                 $attempt->update(['status' => 'EXPIRED']);
                 $this->log($dto->outNo, "Service payment failed — Monetapay status: {$dto->status}");
+                $notifyData = [$attempt, null, false];
 
                 return;
             }
@@ -340,6 +377,7 @@ class HandleMonetapayCallbackAction
             // happen.
             if (! $invoice || $invoice->status === ServiceInvoiceStatus::PAID) {
                 $this->log($dto->outNo, 'Service payment received for an invoice already settled.');
+                $notifyData = [$attempt, $invoice, true];
 
                 return;
             }
@@ -358,6 +396,64 @@ class HandleMonetapayCallbackAction
             );
 
             $this->log($dto->outNo, "Service invoice {$invoice->invoice_number} paid: Rp {$attempt->total}");
+            $notifyData = [$attempt, $invoice->fresh('merchant'), true];
         });
+
+        if ($notifyData !== null) {
+            [$notifiedAttempt, $notifiedInvoice, $isSuccess] = $notifyData;
+            $this->notifyServiceInvoiceDiscord($notifiedAttempt, $notifiedInvoice, $isSuccess);
+        }
+    }
+
+    /** Customer checkout (product purchase) payment result — before uxiotopup fulfilment even starts. */
+    private function notifyCheckoutDiscord(Transaction $transaction, bool $isSuccess): void
+    {
+        $this->discord->sendEmbed(
+            $isSuccess ? '[MONETAPAY] 💳 Pembayaran Diterima' : '[MONETAPAY] ⏱️ Pembayaran Kedaluwarsa',
+            [
+                ['name' => '🧾 Invoice', 'value' => '`'.$transaction->invoice_number.'`', 'inline' => true],
+                ['name' => '🛒 Produk', 'value' => $transaction->product?->name ?? '-', 'inline' => true],
+                ['name' => '💳 Channel', 'value' => $transaction->paymentChannel?->name ?? '-', 'inline' => true],
+                ['name' => '💰 Nominal', 'value' => 'Rp '.number_format((int) $transaction->amount_total), 'inline' => true],
+                ['name' => '📊 Status', 'value' => $isSuccess ? '**PAID**' : '**EXPIRED**', 'inline' => false],
+            ],
+            $isSuccess ? DiscordWebhookService::COLOR_GREEN : DiscordWebhookService::COLOR_ORANGE,
+        );
+    }
+
+    /** Balance top-up payment result. */
+    private function notifyTopupDiscord(BalanceTopup $topup, bool $isSuccess): void
+    {
+        $this->discord->sendEmbed(
+            $isSuccess ? '[MONETAPAY] 💰 Top Up Saldo Berhasil' : '[MONETAPAY] ⏱️ Top Up Saldo Kedaluwarsa',
+            [
+                ['name' => '🧾 Referensi', 'value' => '`'.$topup->reference_id.'`', 'inline' => true],
+                ['name' => '👤 User', 'value' => $topup->user?->name ?? "User #{$topup->user_id}", 'inline' => true],
+                ['name' => '💳 Channel', 'value' => $topup->paymentChannel?->name ?? '-', 'inline' => true],
+                ['name' => '💰 Nominal', 'value' => 'Rp '.number_format((int) $topup->amount), 'inline' => true],
+                ['name' => '📊 Status', 'value' => $isSuccess ? '**PAID**' : '**EXPIRED**', 'inline' => false],
+            ],
+            $isSuccess ? DiscordWebhookService::COLOR_GREEN : DiscordWebhookService::COLOR_ORANGE,
+        );
+    }
+
+    /**
+     * Service invoice (langganan/subscription bill) payment result. `$invoice`
+     * is null on a failed attempt (never looked up) — the attempt's own
+     * reference is enough to identify a failed payment.
+     */
+    private function notifyServiceInvoiceDiscord(ServiceInvoicePayment $attempt, ?ServiceInvoice $invoice, bool $isSuccess): void
+    {
+        $this->discord->sendEmbed(
+            $isSuccess ? '[MONETAPAY] 🧾 Pembayaran Layanan Berhasil' : '[MONETAPAY] ⏱️ Pembayaran Layanan Kedaluwarsa',
+            [
+                ['name' => '🧾 Invoice', 'value' => '`'.($invoice?->invoice_number ?? $attempt->reference_id).'`', 'inline' => true],
+                ['name' => '🏬 Merchant', 'value' => $invoice?->merchant?->name ?? ($invoice ? "Client #{$invoice->merchant_id}" : '-'), 'inline' => true],
+                ['name' => '📦 Layanan', 'value' => $invoice?->service_name ?? '-', 'inline' => true],
+                ['name' => '💰 Nominal', 'value' => 'Rp '.number_format((int) $attempt->total), 'inline' => true],
+                ['name' => '📊 Status', 'value' => $isSuccess ? '**PAID**' : '**EXPIRED**', 'inline' => false],
+            ],
+            $isSuccess ? DiscordWebhookService::COLOR_GREEN : DiscordWebhookService::COLOR_ORANGE,
+        );
     }
 }

@@ -13,6 +13,7 @@ use App\Models\ServiceSubscription;
 use App\Services\Payment\MonetapayService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\Feature\PaymentPage\Concerns\PaysServiceInvoices;
 use Tests\TestCase;
@@ -123,6 +124,30 @@ class ServiceInvoiceWebhookTest extends TestCase
             'reference' => $attempt->reference_id,
             'amount' => $attempt->total,
         ]);
+    }
+
+    public function test_a_paid_callback_notifies_discord(): void
+    {
+        config(['services.discord.webhook_log_url' => 'https://discord.test/hook']);
+
+        $service = Service::factory()->create(['selling_price' => 250000]);
+        $invoice = $this->subscribe($this->merchant(), $service, $this->qrisChannel());
+        $attempt = ServiceInvoicePayment::firstOrFail();
+
+        $this->sendCallback($this->signedPayload($attempt->reference_id, $attempt->total))->assertOk();
+
+        Http::assertSent(function ($request) use ($invoice) {
+            if ($request->url() !== 'https://discord.test/hook') {
+                return false;
+            }
+
+            $embed = $request['embeds'][0] ?? null;
+            $fields = collect($embed['fields'] ?? []);
+
+            return $embed['title'] === '[MONETAPAY] 🧾 Pembayaran Layanan Berhasil'
+                && $fields->firstWhere('name', '🧾 Invoice')['value'] === '`'.$invoice->invoice_number.'`'
+                && str_contains($fields->firstWhere('name', '📊 Status')['value'], 'PAID');
+        });
     }
 
     /** Monetapay retries; a replay must not buy a second period. */
