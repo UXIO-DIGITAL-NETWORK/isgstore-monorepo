@@ -60,7 +60,8 @@ class FinanceWithdrawalController extends Controller
 
         return $this->successResponse(
             new WithdrawalResource($withdrawal),
-            'Permintaan penarikan internal berhasil dibuat'
+            'Permintaan penarikan internal berhasil dibuat',
+            201
         );
     }
 

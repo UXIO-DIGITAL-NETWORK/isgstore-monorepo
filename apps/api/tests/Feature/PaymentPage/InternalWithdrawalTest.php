@@ -170,8 +170,10 @@ class InternalWithdrawalTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.status', 'SETTLED');
 
-        // Settled, not refunded: still held, minus the fee re-credited as income.
-        $this->assertSame(60000, PlatformBalance::available());
+        // Settled, not refunded: the hold stays (amount still counted against
+        // available), but the fee is credited straight back as fresh income —
+        // it never actually left the platform — so the net drop is only `nett`.
+        $this->assertSame(100000 - 38335, PlatformBalance::available());
     }
 
     public function test_finance_can_reject_an_internal_withdrawal(): void
