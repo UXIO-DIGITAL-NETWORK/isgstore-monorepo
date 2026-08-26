@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\Finance\ServiceInstallationStepController;
 use App\Http\Controllers\Api\Finance\ServiceInvoiceController;
 use App\Http\Controllers\Api\Finance\ServiceSubscriptionController;
 use App\Http\Controllers\Api\FinancialController;
+use App\Http\Controllers\Api\Hub\HubReportController;
 use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\Marketing\FlashSaleController;
@@ -634,11 +635,13 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
     Route::put('/channels/{paymentChannel}', [ChannelFeeController::class, 'update']);
 
     // Services catalogue — what kita sells to its clients, and for how long.
+    // Writes are refused when the catalog is Hub-managed (catalog-local):
+    // a local edit would be silently overwritten by the next hub:sync-catalog.
     Route::get('/services', [ServiceController::class, 'index']);
-    Route::post('/services', [ServiceController::class, 'store']);
+    Route::post('/services', [ServiceController::class, 'store'])->middleware('catalog-local');
     Route::get('/services/{service}', [ServiceController::class, 'show']);
-    Route::put('/services/{service}', [ServiceController::class, 'update']);
-    Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+    Route::put('/services/{service}', [ServiceController::class, 'update'])->middleware('catalog-local');
+    Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->middleware('catalog-local');
 
     // Service bills — manual bukti-transfer verification.
     Route::get('/service-invoices', [ServiceInvoiceController::class, 'index']);
@@ -678,4 +681,18 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
     Route::get('/incidents/{serviceIncident}', [ServiceIncidentController::class, 'show']);
     Route::put('/incidents/{serviceIncident}', [ServiceIncidentController::class, 'update']);
     Route::delete('/incidents/{serviceIncident}', [ServiceIncidentController::class, 'destroy']);
+});
+
+// ── Hub reporting contract ───────────────────────────────────────────────────
+// Read-only summaries the Uxio Hub pulls on a schedule. Gated by X-Hub-Key
+// (+ optional IP allowlist) via the `hub` middleware — dead when no key is
+// configured, so a standalone deployment exposes nothing. ADDITIVE-ONLY
+// contract: fields may be added, never renamed or removed (sites run mixed
+// deploy versions; see HubReportController).
+Route::prefix('v1/hub')->middleware('hub')->group(function () {
+    Route::get('/summary', [HubReportController::class, 'summary']);
+    Route::get('/withdrawals', [HubReportController::class, 'withdrawals']);
+    Route::get('/service-orders', [HubReportController::class, 'serviceOrders']);
+    Route::get('/profit', [HubReportController::class, 'profit']);
+    Route::get('/channels', [HubReportController::class, 'channels']);
 });

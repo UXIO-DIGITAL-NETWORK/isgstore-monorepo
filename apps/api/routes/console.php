@@ -111,3 +111,21 @@ Schedule::command('subscriptions:notify-expiring')
     ->withoutOverlapping()
     ->runInBackground()
     ->onFailure($alertFailure('subscriptions:notify-expiring'));
+
+// Hub pulls: the service catalog and channel fee schedule are owned by the
+// Hub and mirrored down on a schedule (pull-only — the Hub never pushes).
+// Registered only on hub-managed deployments; a standalone site schedules
+// nothing and calls nowhere.
+if (config('services.hub.enabled')) {
+    Schedule::command('hub:sync-catalog')
+        ->everyFifteenMinutes()
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->onFailure($alertFailure('hub:sync-catalog'));
+
+    Schedule::command('hub:sync-channels')
+        ->everyFifteenMinutes()
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->onFailure($alertFailure('hub:sync-channels'));
+}

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureCatalogNotHubManaged;
+use App\Http\Middleware\EnsureHubRequest;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentInternal;
@@ -31,6 +33,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureUserIsAdmin::class,
             'payment-internal' => EnsureUserIsPaymentInternal::class,
             'payment-admin' => EnsureUserIsPaymentAdmin::class,
+            'hub' => EnsureHubRequest::class,
+            'catalog-local' => EnsureCatalogNotHubManaged::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
