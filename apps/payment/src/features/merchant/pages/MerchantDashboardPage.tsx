@@ -28,6 +28,16 @@ export default function MerchantDashboardPage() {
             caption: "Menunggu persetujuan penarikan",
           }}
         />
+        {/* Earned but still inside the per-channel holding period — without
+            this card a freshly-paid sale reads as "missing money". */}
+        <StatCard
+          data={{
+            id: "tertahan",
+            label: "Saldo Tertahan",
+            value: data?.saldo_tertahan ?? 0,
+            caption: "Menunggu settlement channel + masa tahan",
+          }}
+        />
         <StatCard
           data={{
             id: "penjualan",

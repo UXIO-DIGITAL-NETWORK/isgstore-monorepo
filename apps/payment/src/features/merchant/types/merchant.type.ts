@@ -1,6 +1,8 @@
 export interface MerchantDashboard {
   saldo_aktif: number;
   saldo_pending: number;
+  /** Earned but still inside the per-channel holding period (settlement T+n + fraud buffer). */
+  saldo_tertahan: number;
   total_penjualan: number;
   total_penarikan: number;
   total_transaksi: number;

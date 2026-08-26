@@ -15,6 +15,7 @@ vi.mock("@/components/common/Link", () => ({
 const dashboard = (over: Record<string, unknown> = {}) => ({
   saldo_aktif: 60000,
   saldo_pending: 0,
+  saldo_tertahan: 25000,
   total_penjualan: 60000,
   total_penarikan: 0,
   total_transaksi: 1,
@@ -36,6 +37,21 @@ const renderPage = () =>
   );
 
 beforeEach(() => vi.clearAllMocks());
+
+describe("MerchantDashboardPage — saldo cards", () => {
+  /**
+   * The held-balance card: earned money still inside the per-channel holding
+   * period. Without it a freshly-paid sale reads as "missing money".
+   */
+  it("shows Saldo Tertahan alongside the other balances", () => {
+    mockDashboard();
+    renderPage();
+
+    expect(screen.getByText("Saldo Tertahan")).toBeInTheDocument();
+    expect(screen.getByText("Rp 25.000,00")).toBeInTheDocument();
+    expect(screen.getByText("Menunggu settlement channel + masa tahan")).toBeInTheDocument();
+  });
+});
 
 describe("MerchantDashboardPage — Website Services card", () => {
   it("shows the nearest subscription expiry", () => {
