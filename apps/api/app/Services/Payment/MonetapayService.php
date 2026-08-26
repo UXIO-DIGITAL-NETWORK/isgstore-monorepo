@@ -488,15 +488,31 @@ class MonetapayService
      * Monetapay live on every request — the call that otherwise hangs the server
      * when the gateway is slow.
      *
+     * The cache key includes the sub-merchant id and currency: with per-client
+     * sub-merchants, a fixed key would hand every caller the FIRST queried
+     * sub-merchant's balance for the next 60s — no error, just a wrong number
+     * that looks plausible. `main` stands in for the main-merchant (null) query
+     * so it can never collide with a real sub_mch_id.
+     *
      * @return array<string,mixed>
      */
     public function inquiryBalanceCached(?string $subMchId = null, ?string $currency = null): array
     {
         return Cache::remember(
-            self::BALANCE_CACHE_KEY,
+            self::balanceCacheKey($subMchId, $currency),
             self::BALANCE_CACHE_TTL,
             fn () => $this->inquiryBalance($subMchId, $currency),
         );
+    }
+
+    /**
+     * The per-(sub-merchant, currency) cache key — public so cache-busting
+     * callers (integration ping / credential update) forget the same entry
+     * this class writes, instead of a stale literal.
+     */
+    public static function balanceCacheKey(?string $subMchId = null, ?string $currency = null): string
+    {
+        return self::BALANCE_CACHE_KEY.':'.($subMchId ?? 'main').':'.($currency ?? 'IDR');
     }
 
     /* =====================================================================

@@ -3,6 +3,7 @@
 namespace App\Actions\Integration;
 
 use App\Models\IntegrationCredential;
+use App\Services\Payment\MonetapayService;
 use App\Support\Integration\IntegrationConfig;
 use Illuminate\Support\Facades\Cache;
 
@@ -15,11 +16,6 @@ use Illuminate\Support\Facades\Cache;
  */
 class UpdateIntegrationCredentialAction
 {
-    private const BALANCE_CACHE_KEYS = [
-        'monetapay' => 'monetapay:balance',
-        'uxiotopup' => 'uxiotopup:balance',
-    ];
-
     public function execute(string $provider, array $input, ?int $userId = null): IntegrationCredential
     {
         $fields = config("integrations.{$provider}.fields", []);
@@ -63,9 +59,13 @@ class UpdateIntegrationCredentialAction
             ],
         );
 
-        if (isset(self::BALANCE_CACHE_KEYS[$provider])) {
-            Cache::forget(self::BALANCE_CACHE_KEYS[$provider]);
-        }
+        // Bust the exact key each service caches under (Monetapay's is keyed
+        // per sub-merchant/currency; new credentials affect the main entry).
+        match ($provider) {
+            'monetapay' => Cache::forget(MonetapayService::balanceCacheKey()),
+            'uxiotopup' => Cache::forget('uxiotopup:balance'),
+            default => null,
+        };
 
         return $credential;
     }

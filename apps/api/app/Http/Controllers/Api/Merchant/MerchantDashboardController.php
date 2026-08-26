@@ -46,6 +46,10 @@ class MerchantDashboardController extends Controller
             // withdrawals (MerchantBalance), not the stored users.balance column.
             'saldo_aktif' => MerchantBalance::available($user->id),
             'saldo_pending' => MerchantBalance::pending($user->id),
+            // Earned but still inside the per-channel holding period
+            // (settlement T+n + fraud buffer) — without this third figure the
+            // merchant would read a freshly-paid sale as "missing money".
+            'saldo_tertahan' => MerchantBalance::heldSalesTotal($user->id),
             'total_penjualan' => MerchantBalance::salesTotal($user->id),
             'total_penarikan' => (int) Withdrawal::where('merchant_id', $user->id)
                 ->where('status', WithdrawalStatus::SETTLED)

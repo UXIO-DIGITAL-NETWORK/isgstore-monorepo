@@ -21,6 +21,25 @@ class ChannelFeeContractTest extends TestCase
         return User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Payment-Internal'])->id]);
     }
 
+    /**
+     * bca_va is not in the Monetapay contract, so its rate can never be
+     * verified — deactivated by decision (27 Aug 2026). The row stays (history
+     * must keep resolving) but is never offered.
+     */
+    public function test_bca_va_is_seeded_inactive(): void
+    {
+        $this->seed(PaymentChannelSeeder::class);
+
+        $bca = PaymentChannel::where('channel_code', 'bca_va')->firstOrFail();
+        $this->assertFalse((bool) $bca->is_active);
+
+        // Every other seeded channel remains active.
+        $this->assertSame(
+            0,
+            PaymentChannel::where('channel_code', '!=', 'bca_va')->where('is_active', false)->count(),
+        );
+    }
+
     /** The shipped seeder must mirror the Monetapay contract — bca_va aside. */
     public function test_seeder_matches_the_contract(): void
     {

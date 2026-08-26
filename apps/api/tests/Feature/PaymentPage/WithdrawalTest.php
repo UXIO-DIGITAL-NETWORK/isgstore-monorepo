@@ -50,6 +50,10 @@ class WithdrawalTest extends TestCase
                 'amount_fee' => 0,
                 'amount_total' => $sales,
                 'status' => 'PAID',
+                // Backdated past the longest holding period (T+3 + 1-day
+                // buffer) so these tests exercise the settled regime; the
+                // holding period itself is pinned in WithdrawalHoldingPeriodTest.
+                'created_at' => now()->subDays(5),
             ]);
         }
 

@@ -32,8 +32,9 @@ class PaymentChannelSeeder extends Seeder
             ['Saldo (Wallet)', 'balance', 'balance', 0, false, 0, 0],
 
             // Virtual Account — flat gateway fee, no gateway percent.
-            // BCA isn't in the Monetapay contract; provisionally at the Mandiri
-            // rate (Rp 1.900) pending confirmation — see MonetapayContractFees.
+            // BCA isn't in the Monetapay contract, so its rate can never be
+            // verified — deactivated by decision (27 Aug 2026); the row stays
+            // so historical bca_va payments keep resolving.
             ['BCA Virtual Account', 'virtual_account', 'bca_va', 10000, true, 1900, 0],
             ['BRI Virtual Account', 'virtual_account', 'bri_va', 10000, true, 1500, 0],
             ['BNI Virtual Account', 'virtual_account', 'bni_va', 10000, true, 1500, 0],
@@ -63,7 +64,8 @@ class PaymentChannelSeeder extends Seeder
                 'payment_type' => $type,
                 'channel_code' => $code,
                 'min_amount' => $min,
-                'is_active' => true,
+                // bca_va is seeded inactive — not in the Monetapay contract.
+                'is_active' => $code !== 'bca_va',
                 'is_single_use' => $singleUse,
                 // Admin fee (Biaya Admin) = gateway fee: customer covers Monetapay's cut.
                 'fee_flat' => $gwFlat,

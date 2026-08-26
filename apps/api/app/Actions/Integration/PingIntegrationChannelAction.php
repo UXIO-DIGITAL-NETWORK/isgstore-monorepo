@@ -2,6 +2,7 @@
 
 namespace App\Actions\Integration;
 
+use App\Services\Payment\MonetapayService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -11,11 +12,6 @@ use Illuminate\Support\Facades\Cache;
  */
 class PingIntegrationChannelAction
 {
-    private const BALANCE_CACHE_KEYS = [
-        'monetapay' => 'monetapay:balance',
-        'uxiotopup' => 'uxiotopup:balance',
-    ];
-
     public function __construct(private readonly GetIntegrationChannelsAction $channels) {}
 
     public function execute(string $provider): ?array
@@ -24,9 +20,14 @@ class PingIntegrationChannelAction
             return null;
         }
 
-        if (isset(self::BALANCE_CACHE_KEYS[$provider])) {
-            Cache::forget(self::BALANCE_CACHE_KEYS[$provider]);
-        }
+        // Bust the exact key each service caches under. Monetapay's is keyed
+        // per (sub-merchant, currency); the integration panel reads the
+        // main-merchant entry, so that's the one to forget.
+        match ($provider) {
+            'monetapay' => Cache::forget(MonetapayService::balanceCacheKey()),
+            'uxiotopup' => Cache::forget('uxiotopup:balance'),
+            default => null,
+        };
 
         return (new Collection($this->channels->execute()))->firstWhere('id', $provider);
     }

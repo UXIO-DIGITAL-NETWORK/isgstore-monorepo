@@ -114,5 +114,11 @@ return [
         // positive and clear the gateway's minimum payout. StoreWithdrawalRequest
         // enforces it.
         'min_amount' => (int) env('WITHDRAWAL_MIN_AMOUNT', 10000),
+        // Fraud buffer ON TOP of each channel's Monetapay settlement window
+        // (MonetapayContractFees::settlementDays). A sale becomes withdrawable
+        // only after `settlement_days + hold_buffer_days` have passed since it
+        // was paid — VA (T+0) holds 1 day, retail (T+3) holds 4. Policy knob,
+        // separate from the contract facts, so it can move without touching them.
+        'hold_buffer_days' => (int) env('WITHDRAWAL_HOLD_BUFFER_DAYS', 1),
     ],
 ];

@@ -130,13 +130,14 @@ class NotificationTest extends TestCase
         $merchant = $this->merchant();
 
         // The withdrawable balance is derived from sales, so seed a paid sale to
-        // cover the request.
+        // cover the request — backdated past the holding period so it is settled.
         Transaction::factory()->create([
             'merchant_id' => $merchant->id,
             'amount_base' => 100000,
             'amount_fee' => 0,
             'amount_total' => 100000,
             'status' => 'PAID',
+            'created_at' => now()->subDays(5),
         ]);
 
         app(CreateWithdrawalRequestAction::class)->execute(new CreateWithdrawalDTO(

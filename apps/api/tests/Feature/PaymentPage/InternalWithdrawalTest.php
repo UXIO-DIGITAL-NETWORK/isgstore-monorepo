@@ -125,6 +125,9 @@ class InternalWithdrawalTest extends TestCase
             'amount_fee' => 0,
             'amount_total' => 100000,
             'status' => 'PAID',
+            // Past the longest holding period so the merchant's withdrawal here
+            // clears the settled-balance check.
+            'created_at' => now()->subDays(5),
         ]);
 
         Sanctum::actingAs($merchant);
