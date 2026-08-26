@@ -30,4 +30,10 @@ class Withdrawal extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    /** The internal user who created this request, for an internal withdrawal (merchant_id null). */
+    public function requester()
+    {
+        return $this->belongsTo(User::class, 'requested_by');
+    }
 }

@@ -104,9 +104,9 @@ return [
 
     'withdrawal' => [
         // Kita's withdraw fee, a flat charge on every payout regardless of amount.
-        // Read by CreateWithdrawalRequestAction::resolveFee() as
+        // Read by App\Support\Withdrawal\WithdrawalFeeCalculator::fee() as
         // `fee_flat + round(fee_flat * fee_percent / 100)` = 1500 + 165 = 1665;
-        // the merchant is disbursed `nett = amount - fee`.
+        // the merchant/internal requester is disbursed `nett = amount - fee`.
         // Config (not a column) so the schedule can change without a migration.
         'fee_flat' => (int) env('WITHDRAWAL_FEE_FLAT', 1500),
         'fee_percent' => (float) env('WITHDRAWAL_FEE_PERCENT', 11),

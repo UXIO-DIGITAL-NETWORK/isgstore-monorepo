@@ -7,6 +7,7 @@ namespace App\Actions\Service;
 use App\DTOs\Service\ConfirmServiceInvoiceDTO;
 use App\Enums\ServiceInvoiceStatus;
 use App\Models\ServiceInvoice;
+use App\Support\Ledger\ServiceRevenueLedger;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -47,6 +48,12 @@ class ConfirmServiceInvoiceAction
             ]);
 
             $this->activateAction->execute($invoice);
+
+            ServiceRevenueLedger::credit(
+                amount: (int) $invoice->amount,
+                reference: $invoice->invoice_number,
+                description: "Layanan {$invoice->invoice_number} (manual)",
+            );
 
             return $invoice->fresh(['service', 'subscription']);
         });

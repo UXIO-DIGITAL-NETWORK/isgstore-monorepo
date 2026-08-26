@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\PaymentPage;
 
 use App\Enums\ServiceInvoiceStatus;
+use App\Models\PlatformMutation;
 use App\Models\Service;
 use App\Models\ServiceInvoicePayment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -191,6 +192,30 @@ class ServiceInvoicePaymentTest extends TestCase
         $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
             'payment_channel_id' => $channel->id,
         ])->assertStatus(422);
+    }
+
+    /**
+     * A manually-confirmed invoice never gets a ServiceInvoicePayment row, so
+     * its revenue must be booked off the invoice's own amount, keyed on the
+     * invoice number rather than an attempt reference.
+     */
+    public function test_manual_confirm_books_service_revenue_from_the_invoice_amount(): void
+    {
+        $this->fakeGateway();
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 150000]), $this->qrisChannel());
+
+        Sanctum::actingAs($this->internal());
+        $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
+
+        $this->assertDatabaseHas('platform_mutations', [
+            'type' => 'service_revenue',
+            'reference' => $invoice->invoice_number,
+            'amount' => (int) $invoice->amount,
+        ]);
+        $this->assertSame(
+            1,
+            PlatformMutation::where('type', 'service_revenue')->where('reference', $invoice->invoice_number)->count(),
+        );
     }
 
     public function test_the_channel_list_offers_only_gateway_methods(): void

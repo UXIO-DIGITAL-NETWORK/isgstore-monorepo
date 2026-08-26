@@ -42,12 +42,18 @@ class WithdrawalStatusUpdated implements ShouldBroadcast, ShouldDispatchAfterCom
      */
     public function broadcastOn(): array
     {
-        return [
-            // The merchant that owns this payout (merchant_id references users.id).
-            new PrivateChannel("merchant.{$this->withdrawal->merchant_id}.withdrawals"),
-            // The kita team's aggregate feed of every merchant's payouts.
+        $channels = [
+            // The kita team's aggregate feed of every payout, merchant or internal.
             new PrivateChannel('finance.withdrawals'),
         ];
+
+        // merchant_id is null for an internal withdrawal — there is no
+        // merchant-owned stream to broadcast on.
+        if ($this->withdrawal->merchant_id !== null) {
+            $channels[] = new PrivateChannel("merchant.{$this->withdrawal->merchant_id}.withdrawals");
+        }
+
+        return $channels;
     }
 
     public function broadcastAs(): string

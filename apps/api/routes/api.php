@@ -621,6 +621,10 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
     Route::get('/transactions/export', [FinanceTransactionController::class, 'export']);
     Route::get('/transactions', [FinanceTransactionController::class, 'index']);
     Route::get('/withdrawals', [FinanceWithdrawalController::class, 'index']);
+    // Kita's own payout request ("penarikan internal") — same table/flow as a
+    // merchant withdrawal, `type=internal` on the index above lists these.
+    Route::post('/withdrawals', [FinanceWithdrawalController::class, 'store'])->middleware('throttle:checkout');
+    Route::get('/platform-balance', [FinanceWithdrawalController::class, 'platformBalance']);
     Route::post('/withdrawals/{withdrawal}/approve', [FinanceWithdrawalController::class, 'approve']);
     Route::post('/withdrawals/{withdrawal}/reject', [FinanceWithdrawalController::class, 'reject']);
 

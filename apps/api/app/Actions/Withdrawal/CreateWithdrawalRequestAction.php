@@ -10,6 +10,7 @@ use App\Enums\WithdrawalStatus;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Support\Wallet\MerchantBalance;
+use App\Support\Withdrawal\WithdrawalFeeCalculator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -35,7 +36,7 @@ class CreateWithdrawalRequestAction
     public function execute(CreateWithdrawalDTO $dto): Withdrawal
     {
         $withdrawal = DB::transaction(function () use ($dto) {
-            $fee = $this->resolveFee();
+            $fee = WithdrawalFeeCalculator::fee();
             $nett = $dto->amount - $fee;
 
             // Defensive floor behind StoreWithdrawalRequest's min_amount rule: a
@@ -87,17 +88,5 @@ class CreateWithdrawalRequestAction
         );
 
         return $withdrawal;
-    }
-
-    /**
-     * Flat withdrawal fee, independent of the amount:
-     * fee_flat + fee_percent% of fee_flat (1500 + 11% × 1500 = 1665).
-     */
-    private function resolveFee(): int
-    {
-        $flat = (int) config('services.withdrawal.fee_flat', 0);
-        $percent = (float) config('services.withdrawal.fee_percent', 0);
-
-        return $flat + (int) round($flat * ($percent / 100));
     }
 }

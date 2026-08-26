@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\PaymentPage;
 
 use App\Enums\ServiceInvoiceStatus;
+use App\Models\PlatformMutation;
 use App\Models\Service;
 use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoicePayment;
@@ -99,6 +100,28 @@ class ServiceInvoiceWebhookTest extends TestCase
         $this->assertDatabaseHas('service_installations', [
             'merchant_id' => $merchant->id,
             'service_id' => $service->id,
+        ]);
+    }
+
+    /** Platform income (PlatformBalance) must move when a service bill settles. */
+    public function test_a_paid_callback_books_service_revenue_once(): void
+    {
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 250000]), $this->qrisChannel());
+        $attempt = ServiceInvoicePayment::firstOrFail();
+
+        $payload = $this->signedPayload($attempt->reference_id, $attempt->total);
+        $this->sendCallback($payload)->assertOk();
+        // A retried webhook must not double-book the same revenue.
+        $this->sendCallback($payload)->assertOk();
+
+        $this->assertSame(
+            1,
+            PlatformMutation::where('type', 'service_revenue')->where('reference', $attempt->reference_id)->count(),
+        );
+        $this->assertDatabaseHas('platform_mutations', [
+            'type' => 'service_revenue',
+            'reference' => $attempt->reference_id,
+            'amount' => $attempt->total,
         ]);
     }
 

@@ -18,6 +18,7 @@ use App\Models\BalanceTopup;
 use App\Models\Payment;
 use App\Models\ServiceInvoicePayment;
 use App\Models\Transaction;
+use App\Support\Ledger\ServiceRevenueLedger;
 use App\Support\Wallet\WalletLedger;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -349,6 +350,12 @@ class HandleMonetapayCallbackAction
             ]);
 
             $this->activateSubscriptionAction->execute($invoice);
+
+            ServiceRevenueLedger::credit(
+                amount: (int) $attempt->total,
+                reference: $attempt->reference_id,
+                description: "Layanan {$invoice->invoice_number} ({$attempt->reference_id})",
+            );
 
             $this->log($dto->outNo, "Service invoice {$invoice->invoice_number} paid: Rp {$attempt->total}");
         });

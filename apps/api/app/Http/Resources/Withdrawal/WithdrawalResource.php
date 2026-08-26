@@ -32,11 +32,20 @@ class WithdrawalResource extends JsonResource
             'proof_url' => $this->proof_path ? Storage::disk('public')->url($this->proof_path) : null,
             'created_at' => $this->created_at?->toIso8601String(),
             // Only present for the finance (kita) view, which eager-loads it.
-            'merchant' => $this->whenLoaded('merchant', fn () => [
+            // merchant_id is null for an internal withdrawal, so the loaded
+            // relation itself can be null even when eager-loaded.
+            'merchant' => $this->whenLoaded('merchant', fn () => $this->merchant ? [
                 'id' => $this->merchant->id,
                 'name' => $this->merchant->name,
                 'email' => $this->merchant->email,
-            ]),
+            ] : null),
+            // The internal user who created an internal withdrawal (null for a
+            // merchant-initiated one).
+            'requester' => $this->whenLoaded('requester', fn () => $this->requester ? [
+                'id' => $this->requester->id,
+                'name' => $this->requester->name,
+                'email' => $this->requester->email,
+            ] : null),
         ];
     }
 }
