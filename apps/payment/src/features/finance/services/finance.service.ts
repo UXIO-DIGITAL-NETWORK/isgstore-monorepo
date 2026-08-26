@@ -2,7 +2,7 @@ import { api } from "@/lib/axios";
 import { API_VERSION } from "@/config/env";
 import { unwrapList, type ListParams, type ListResult } from "@/lib/list";
 import type { ApiResponse } from "@/types/api.type";
-import type { Withdrawal } from "@/types/withdrawal.type";
+import type { CreateInternalWithdrawalPayload, Withdrawal } from "@/types/withdrawal.type";
 import type { FinanceTransactionSummary, FinanceUnifiedTransaction } from "@/types/transaction.type";
 import type {
   InstallationDetailPayload,
@@ -79,21 +79,46 @@ export const financeService = {
     return (await api.get(`${BASE}/transactions/export`, { params, responseType: "blob" })) as unknown as Blob;
   },
 
+  // No `type` here — this is "Verifikasi Penarikan" (merchant requests only),
+  // relying on the backend's default `type=merchant`. The new internal
+  // withdrawals page passes `type: "internal"` explicitly instead.
   withdrawals: async (params: ListParams): Promise<ListResult<Withdrawal>> => {
     const res = await api.get(`${BASE}/withdrawals`, { params });
     return unwrapList<Withdrawal>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
+  /** Kita's own payout request ("penarikan internal") — no merchant, free-text account. */
+  createInternalWithdrawal: async (payload: CreateInternalWithdrawalPayload): Promise<Withdrawal> => {
+    const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals`, payload);
+    return res.data;
+  },
+
+  /** What kita can withdraw right now — platform profit, not a merchant's sales. */
+  platformBalance: async (): Promise<{ available: number }> => {
+    const res: ApiResponse<{ available: number }> = await api.get(`${BASE}/platform-balance`);
+    return res.data;
+  },
+
   /**
-   * Approve a pending withdrawal and fire the payout through Monetapay. The
-   * backend holds the partner key, encrypts the disbursement payload, signs it,
-   * and calls Monetapay; the row comes back PROCESSING with a `disbursement_ref`
-   * and settles to SETTLED/FAILED asynchronously via the gateway webhook.
+   * Approve a pending withdrawal. Two paths: `monetapay` (default) hands the
+   * payout to the gateway — the backend holds the partner key, encrypts and
+   * signs the disbursement, and the row comes back PROCESSING, settling to
+   * SETTLED/FAILED asynchronously via the gateway webhook. `manual` settles
+   * immediately once a bukti transfer (`proof`) is attached, sent as
+   * multipart — used for a transfer kita made out-of-band.
    */
-  approve: async (id: number): Promise<Withdrawal> => {
-    const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals/${id}/approve`, {
-      method: "monetapay",
-    });
+  approve: async (id: number, opts?: { method?: "manual" | "monetapay"; proof?: File }): Promise<Withdrawal> => {
+    const method = opts?.method ?? "monetapay";
+
+    if (opts?.proof) {
+      const form = new FormData();
+      form.append("method", method);
+      form.append("proof", opts.proof);
+      const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals/${id}/approve`, form);
+      return res.data;
+    }
+
+    const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals/${id}/approve`, { method });
     return res.data;
   },
 

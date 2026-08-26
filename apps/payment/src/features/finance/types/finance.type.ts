@@ -1,4 +1,4 @@
-export type { Withdrawal } from "@/types/withdrawal.type";
+export type { Withdrawal, CreateInternalWithdrawalPayload } from "@/types/withdrawal.type";
 
 export interface FinanceDashboard {
   saldo: number;

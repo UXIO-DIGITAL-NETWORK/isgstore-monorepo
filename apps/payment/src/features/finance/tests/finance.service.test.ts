@@ -143,3 +143,54 @@ describe("financeService — services, invoices, subscriptions, incidents", () =
     });
   });
 });
+
+describe("financeService — internal withdrawals", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("creates an internal withdrawal with no merchant on the payload", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(
+      envelope({ id: 1, withdrawal_number: "WD-abc", status: "PENDING" }) as never,
+    );
+
+    const payload = {
+      amount: 40000,
+      bank_code: "BCA",
+      account_number: "1234567890",
+      account_name: "Kas Internal",
+      account_phone: "08123456789",
+    };
+    const result = await financeService.createInternalWithdrawal(payload);
+
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-internal/withdrawals", payload);
+    expect(result.withdrawal_number).toBe("WD-abc");
+  });
+
+  it("reads the available platform balance", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope({ available: 75000 }) as never);
+
+    const result = await financeService.platformBalance();
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-internal/platform-balance");
+    expect(result.available).toBe(75000);
+  });
+
+  it("approves with just an id, defaulting to monetapay and no proof", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(envelope({ id: 5, status: "APPROVED" }) as never);
+
+    await financeService.approve(5);
+
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-internal/withdrawals/5/approve", { method: "monetapay" });
+  });
+
+  it("approves manually as multipart when a proof file is attached", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(envelope({ id: 5, status: "SETTLED" }) as never);
+
+    const proof = new File(["x"], "bukti.jpg", { type: "image/jpeg" });
+    await financeService.approve(5, { method: "manual", proof });
+
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-internal/withdrawals/5/approve", expect.any(FormData));
+    const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
+    expect(form.get("method")).toBe("manual");
+    expect(form.get("proof")).toBe(proof);
+  });
+});

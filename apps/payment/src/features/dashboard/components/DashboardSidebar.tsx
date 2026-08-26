@@ -3,6 +3,7 @@ import { useLocation } from "@tanstack/react-router";
 import {
   Activity,
   ArrowDownToLine,
+  Banknote,
   Bell,
   Boxes,
   CalendarClock,
@@ -50,6 +51,7 @@ const PAYMENT_INTERNAL_NAV: NavItem[] = [
   { label: "Merchant", href: "/app/payment-internal/merchants", icon: Store },
   { label: "Transaksi", href: "/app/payment-internal/transactions", icon: Receipt },
   { label: "Verifikasi Penarikan", href: "/app/payment-internal/withdrawals", icon: ArrowDownToLine },
+  { label: "Penarikan Internal", href: "/app/payment-internal/internal-withdrawals", icon: Banknote },
   { label: "Biaya Channel", href: "/app/payment-internal/channels", icon: Coins },
   { label: "Product / Services", href: "/app/payment-internal/services", icon: Boxes },
   { label: "Invoice", href: "/app/payment-internal/invoices", icon: FileText },

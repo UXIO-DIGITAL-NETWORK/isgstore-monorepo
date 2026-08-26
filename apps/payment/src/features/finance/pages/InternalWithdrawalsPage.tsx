@@ -5,11 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { BankCombobox } from "@/components/common/BankCombobox";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
-import { Text } from "@/components/common/Text";
+import { Link } from "@/components/common/Link";
 import { Pager } from "@/components/common/Pager";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatCard } from "@/components/common/StatCard";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,25 +18,25 @@ import { isEwalletCode } from "@/constants/bankCodes";
 import { withdrawalFeeFor, withdrawalNettFor } from "@/lib/withdrawalFee";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
+import type { Withdrawal } from "@/types/withdrawal.type";
 
-import { useCreateWithdrawal, useMerchantDashboard, useMerchantWithdrawals } from "../hooks/useMerchant";
-import { withdrawalSchema, type WithdrawalFormValues } from "../schemas/withdrawal.schema";
-import type { Withdrawal } from "../types/merchant.type";
+import { ApproveWithdrawalDialog } from "../components/ApproveWithdrawalDialog";
+import {
+  useCreateInternalWithdrawal,
+  useFinanceWithdrawals,
+  usePlatformBalance,
+  useRejectWithdrawal,
+} from "../hooks/useFinance";
+import { internalWithdrawalSchema, type InternalWithdrawalFormValues } from "../schemas/internalWithdrawal.schema";
 
-const columns: Column<Withdrawal>[] = [
-  { key: "number", header: "No. Penarikan", cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
-  { key: "amount", header: "Nominal", className: "text-right tabular-nums", cell: (r) => formatCurrency(r.amount, { fractionDigits: 0 }) },
-  { key: "fee", header: "Biaya", className: "text-right tabular-nums", cell: (r) => formatCurrency(r.fee, { fractionDigits: 0 }) },
-  { key: "nett", header: "Diterima", className: "text-right tabular-nums", cell: (r) => formatCurrency(r.nett, { fractionDigits: 0 }) },
-  { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
-  { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
-];
+const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
-export default function MerchantWithdrawalsPage() {
+export default function InternalWithdrawalsPage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isError } = useMerchantWithdrawals({ page, per_page: 20 });
-  const { data: dash } = useMerchantDashboard();
-  const { mutate: create, isPending } = useCreateWithdrawal();
+  const { data, isLoading, isError } = useFinanceWithdrawals({ page, per_page: 20, type: "internal" });
+  const { data: balance } = usePlatformBalance();
+  const { mutate: create, isPending } = useCreateInternalWithdrawal();
+  const { mutate: reject, isPending: rejecting } = useRejectWithdrawal();
 
   const {
     register,
@@ -44,34 +45,98 @@ export default function MerchantWithdrawalsPage() {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<WithdrawalFormValues>({ resolver: zodResolver(withdrawalSchema) });
+  } = useForm<InternalWithdrawalFormValues>({ resolver: zodResolver(internalWithdrawalSchema) });
 
   const bankCode = watch("bank_code");
   const isEwallet = isEwalletCode(bankCode);
 
-  // Live preview of kita's fee and what lands in the bank. Mirrors the server;
-  // the charged figure is recomputed on submit.
   const amount = watch("amount");
   const previewAmount = Number.isFinite(amount) ? Number(amount) : 0;
   const previewFee = withdrawalFeeFor(previewAmount);
   const previewNett = withdrawalNettFor(previewAmount);
 
-  const onSubmit = (values: WithdrawalFormValues) => create(values, { onSuccess: () => reset() });
+  const onSubmit = (values: InternalWithdrawalFormValues) => create(values, { onSuccess: () => reset() });
+
+  const columns: Column<Withdrawal>[] = [
+    { key: "number", header: "No. Penarikan", cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
+    { key: "requester", header: "Diminta oleh", cell: (r) => r.requester?.name ?? "-" },
+    { key: "amount", header: "Nominal", className: "text-right tabular-nums", cell: (r) => money(r.amount) },
+    { key: "nett", header: "Diterima", className: "text-right tabular-nums", cell: (r) => money(r.nett) },
+    { key: "bank", header: "Rekening", cell: (r) => `${r.bank_code} · ${r.account_number}` },
+    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
+    { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
+    {
+      key: "actions",
+      header: "Aksi",
+      cell: (r) => {
+        if (r.status === "PENDING") {
+          return (
+            <Box className="flex gap-2">
+              <ApproveWithdrawalDialog withdrawal={r} allowManual />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={rejecting}
+                onClick={() => reject({ id: r.id, reason: "Dibatalkan oleh internal" })}
+              >
+                Tolak
+              </Button>
+            </Box>
+          );
+        }
+        if (r.status === "PROCESSING") {
+          return (
+            <Text as="span" variant="small" className="text-muted-foreground">
+              Memproses…
+            </Text>
+          );
+        }
+        if (r.status === "FAILED") {
+          return (
+            <Text as="span" variant="small" className="text-destructive">
+              {r.failure_reason ?? "Pencairan gagal"}
+            </Text>
+          );
+        }
+        if (r.disbursement_ref) {
+          return (
+            <Text as="span" variant="small" className="tabular-nums text-muted-foreground">
+              {r.disbursement_ref}
+            </Text>
+          );
+        }
+        if (r.proof_url) {
+          return (
+            <Link href={r.proof_url} target="_blank" rel="noreferrer">
+              <Text as="span" variant="small" className="underline">
+                Lihat Bukti
+              </Text>
+            </Link>
+          );
+        }
+        return (
+          <Text as="span" variant="small">
+            —
+          </Text>
+        );
+      },
+    },
+  ];
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Penarikan</Heading>
+      <Heading level={1}>Penarikan Internal</Heading>
 
       <StatCard
         data={{
-          id: "saldo",
-          label: "Saldo yang bisa ditarik",
-          value: dash?.saldo_aktif ?? 0,
-          caption: "Nominal maksimal yang dapat kamu tarik saat ini",
+          id: "saldo-platform",
+          label: "Saldo Platform Tersedia",
+          value: balance?.available ?? 0,
+          caption: "Akumulasi profit biaya admin, fee penarikan, dan revenue langganan — dikurangi penarikan internal yang berjalan",
         }}
       />
 
-      {/* Request form */}
+      {/* Request form — kita creates its own withdrawal, same fields as the merchant form, no merchant to pick. */}
       <Box
         as="form"
         onSubmit={handleSubmit(onSubmit)}
@@ -84,8 +149,6 @@ export default function MerchantWithdrawalsPage() {
         </Box>
         <Box className="flex flex-col gap-1.5">
           <Label htmlFor="bank_code">Bank / E-wallet</Label>
-          {/* Registered hidden field so the value is validated + submitted; the
-              combobox drives it via setValue. */}
           <input type="hidden" {...register("bank_code")} />
           <BankCombobox
             id="bank_code"
@@ -124,7 +187,7 @@ export default function MerchantWithdrawalsPage() {
             </Box>
           )}
           <Button type="submit" disabled={isPending} className="w-fit">
-            {isPending ? "Memproses…" : "Ajukan Penarikan"}
+            {isPending ? "Memproses…" : "Ajukan Penarikan Internal"}
           </Button>
         </Box>
       </Box>
@@ -134,15 +197,10 @@ export default function MerchantWithdrawalsPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada penarikan"
+        emptyLabel="Belum ada penarikan internal"
         rowKey={(r) => r.id}
       />
-      <Pager
-        page={data?.page ?? page}
-        lastPage={data?.lastPage ?? 1}
-        total={data?.total ?? 0}
-        onPageChange={setPage}
-      />
+      <Pager page={data?.page ?? page} lastPage={data?.lastPage ?? 1} total={data?.total ?? 0} onPageChange={setPage} />
     </Box>
   );
 }

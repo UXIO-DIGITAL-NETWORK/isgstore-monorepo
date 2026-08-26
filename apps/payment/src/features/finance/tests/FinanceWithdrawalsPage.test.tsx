@@ -107,7 +107,7 @@ describe("FinanceWithdrawalsPage", () => {
     await user.click(screen.getByRole("button", { name: "Setujui & Cairkan via Monetapay" }));
 
     expect(approve).toHaveBeenCalledWith(
-      { id: 5 },
+      { id: 5, method: "monetapay", proof: undefined },
       expect.anything(),
     );
   });

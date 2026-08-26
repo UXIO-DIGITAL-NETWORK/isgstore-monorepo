@@ -55,6 +55,47 @@ describe("ApproveWithdrawalDialog", () => {
     await user.click(screen.getByRole("button", { name: "Setujui" }));
     await user.click(screen.getByRole("button", { name: "Setujui & Cairkan via Monetapay" }));
 
-    expect(approve).toHaveBeenCalledWith({ id: 42 }, expect.anything());
+    expect(approve).toHaveBeenCalledWith(
+      { id: 42, method: "monetapay", proof: undefined },
+      expect.anything(),
+    );
+  });
+
+  it("does not offer a manual option unless allowManual is set", async () => {
+    const user = userEvent.setup();
+    render(<ApproveWithdrawalDialog withdrawal={withdrawal} />);
+
+    await user.click(screen.getByRole("button", { name: "Setujui" }));
+
+    expect(screen.queryByLabelText("Transfer manual")).not.toBeInTheDocument();
+  });
+
+  it("requires a proof file before confirming a manual approval", async () => {
+    const user = userEvent.setup();
+    render(<ApproveWithdrawalDialog withdrawal={{ ...withdrawal, merchant: undefined, requester: { id: 9, name: "Finance A", email: "a@kita.id" } }} allowManual />);
+
+    await user.click(screen.getByRole("button", { name: "Setujui" }));
+    await user.click(screen.getByLabelText("Transfer manual"));
+    await user.click(screen.getByRole("button", { name: "Setujui & Tandai Selesai" }));
+
+    expect(screen.getByText("Bukti transfer wajib diunggah")).toBeInTheDocument();
+    expect(approve).not.toHaveBeenCalled();
+  });
+
+  it("fires a manual approval with the attached proof file", async () => {
+    const user = userEvent.setup();
+    render(<ApproveWithdrawalDialog withdrawal={withdrawal} allowManual />);
+
+    await user.click(screen.getByRole("button", { name: "Setujui" }));
+    await user.click(screen.getByLabelText("Transfer manual"));
+
+    const proof = new File(["x"], "bukti.jpg", { type: "image/jpeg" });
+    await user.upload(screen.getByLabelText("Bukti Transfer"), proof);
+    await user.click(screen.getByRole("button", { name: "Setujui & Tandai Selesai" }));
+
+    expect(approve).toHaveBeenCalledWith(
+      { id: 42, method: "manual", proof },
+      expect.anything(),
+    );
   });
 });

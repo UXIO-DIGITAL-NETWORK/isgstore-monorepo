@@ -2,6 +2,7 @@ export { default as FinanceDashboardPage } from "./pages/FinanceDashboardPage";
 export { default as FinanceMerchantsPage } from "./pages/FinanceMerchantsPage";
 export { default as FinanceTransactionsPage } from "./pages/FinanceTransactionsPage";
 export { default as FinanceWithdrawalsPage } from "./pages/FinanceWithdrawalsPage";
+export { default as InternalWithdrawalsPage } from "./pages/InternalWithdrawalsPage";
 export { default as ChannelFeePage } from "./pages/ChannelFeePage";
 export { default as FinanceServicesPage } from "./pages/FinanceServicesPage";
 export { default as FinanceInvoicesPage } from "./pages/FinanceInvoicesPage";

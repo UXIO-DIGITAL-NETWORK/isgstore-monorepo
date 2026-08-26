@@ -20,7 +20,13 @@ export interface Withdrawal {
   failure_reason: string | null;
   proof_url: string | null;
   created_at: string;
-  merchant?: { id: number; name: string; email: string };
+  // Present (possibly null) only on the finance ("payment-internal") list view,
+  // which eager-loads it. Null for an internal withdrawal (merchant_id null).
+  merchant?: { id: number; name: string; email: string } | null;
+  // Present (possibly null) only on the finance list view. Set for an internal
+  // ("penarikan internal") withdrawal — the kita user who created it; null for
+  // a merchant-initiated one.
+  requester?: { id: number; name: string; email: string } | null;
 }
 
 export interface CreateWithdrawalPayload {
@@ -33,3 +39,6 @@ export interface CreateWithdrawalPayload {
   account_phone: string;
   notes?: string;
 }
+
+/** Same shape as CreateWithdrawalPayload — an internal withdrawal has no merchant to pick. */
+export type CreateInternalWithdrawalPayload = CreateWithdrawalPayload;

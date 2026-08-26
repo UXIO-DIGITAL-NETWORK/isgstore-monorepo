@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
+import { ImageDropzone } from "@/components/common/ImageDropzone";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatCurrency } from "@/utils/currency";
 import type { Withdrawal } from "@/types/withdrawal.type";
 
@@ -21,23 +24,47 @@ const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
 interface ApproveWithdrawalDialogProps {
   withdrawal: Withdrawal;
+  /**
+   * Offer the manual transfer path alongside Monetapay. Only "Verifikasi
+   * Penarikan Internal" passes this — merchant payouts stay Monetapay-only,
+   * unchanged from before this prop existed.
+   */
+  allowManual?: boolean;
 }
 
 /**
- * Kita approves a pending withdrawal and the payout fires through Monetapay —
- * no bukti transfer, no manual step. The dialog confirms the beneficiary
- * details before the transfer because a disbursement can't be undone; on
- * confirm the row goes PROCESSING and settles asynchronously via webhook.
+ * Kita approves a pending withdrawal. Monetapay (the default, and the only
+ * option unless `allowManual`) fires the payout through the gateway — the
+ * dialog confirms the beneficiary details first because a disbursement can't
+ * be undone; on confirm the row goes PROCESSING and settles asynchronously
+ * via webhook. The manual path settles immediately once a bukti transfer is
+ * attached, for a transfer kita already made out-of-band.
  */
-export function ApproveWithdrawalDialog({ withdrawal }: ApproveWithdrawalDialogProps) {
+export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: ApproveWithdrawalDialogProps) {
   const [open, setOpen] = useState(false);
+  const [method, setMethod] = useState<"manual" | "monetapay">("monetapay");
+  const [proof, setProof] = useState<File | undefined>(undefined);
+  const [proofError, setProofError] = useState<string | undefined>(undefined);
   const { mutate: approve, isPending } = useApproveWithdrawal();
 
-  const onConfirm = () =>
+  const onConfirm = () => {
+    if (allowManual && method === "manual" && !proof) {
+      setProofError("Bukti transfer wajib diunggah");
+      return;
+    }
+
     approve(
-      { id: withdrawal.id },
-      { onSuccess: () => setOpen(false) },
+      { id: withdrawal.id, method, proof: method === "manual" ? proof : undefined },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          setMethod("monetapay");
+          setProof(undefined);
+          setProofError(undefined);
+        },
+      },
     );
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -46,17 +73,39 @@ export function ApproveWithdrawalDialog({ withdrawal }: ApproveWithdrawalDialogP
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Cairkan via Monetapay</DialogTitle>
+          <DialogTitle>{method === "manual" ? "Tandai Selesai (Transfer Manual)" : "Cairkan via Monetapay"}</DialogTitle>
           <DialogDescription>
-            Dana akan langsung ditransfer ke rekening penerima melalui Monetapay. Aksi ini tidak dapat
-            dibatalkan.
+            {method === "manual"
+              ? "Gunakan ini jika dana sudah ditransfer secara manual di luar Monetapay. Lampirkan bukti transfer."
+              : "Dana akan langsung ditransfer ke rekening penerima melalui Monetapay. Aksi ini tidak dapat dibatalkan."}
           </DialogDescription>
         </DialogHeader>
 
+        {allowManual && (
+          <RadioGroup
+            value={method}
+            onValueChange={(v) => setMethod(v as "manual" | "monetapay")}
+            className="flex gap-4"
+          >
+            <Box className="flex items-center gap-2">
+              <RadioGroupItem value="monetapay" id="method-monetapay" />
+              <Label htmlFor="method-monetapay">Monetapay</Label>
+            </Box>
+            <Box className="flex items-center gap-2">
+              <RadioGroupItem value="manual" id="method-manual" />
+              <Label htmlFor="method-manual">Transfer manual</Label>
+            </Box>
+          </RadioGroup>
+        )}
+
         <Box className="flex flex-col gap-2 rounded-lg bg-muted/50 px-4 py-3 text-sm">
           <Box className="flex justify-between gap-4">
-            <Text as="span" className="text-muted-foreground">Merchant</Text>
-            <Text as="span" className="font-medium">{withdrawal.merchant?.name ?? "-"}</Text>
+            <Text as="span" className="text-muted-foreground">
+              {withdrawal.merchant ? "Merchant" : "Diminta oleh"}
+            </Text>
+            <Text as="span" className="font-medium">
+              {withdrawal.merchant?.name ?? withdrawal.requester?.name ?? "-"}
+            </Text>
           </Box>
           <Box className="flex justify-between gap-4">
             <Text as="span" className="text-muted-foreground">Diterima</Text>
@@ -74,12 +123,26 @@ export function ApproveWithdrawalDialog({ withdrawal }: ApproveWithdrawalDialogP
           </Box>
         </Box>
 
+        {allowManual && method === "manual" && (
+          <ImageDropzone
+            id="proof"
+            label="Bukti Transfer"
+            caption="Unggah bukti transfer manual (JPG, JPEG, PNG)"
+            value={proof}
+            onChange={(file) => {
+              setProof(file);
+              setProofError(undefined);
+            }}
+            error={proofError}
+          />
+        )}
+
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Batal
           </Button>
           <Button type="button" onClick={onConfirm} disabled={isPending}>
-            {isPending ? "Memproses…" : "Setujui & Cairkan via Monetapay"}
+            {isPending ? "Memproses…" : method === "manual" ? "Setujui & Tandai Selesai" : "Setujui & Cairkan via Monetapay"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,7 +1,7 @@
 /**
- * The withdrawal (payout) fee, charged on every request.
+ * The withdrawal (payout) fee, charged on every request — merchant or internal.
  *
- * Mirrors the server's `CreateWithdrawalRequestAction::resolveFee()` —
+ * Mirrors the server's `App\Support\Withdrawal\WithdrawalFeeCalculator::fee()` —
  * `fee_flat + round(fee_flat * fee_percent / 100)`, integer rupiah — a FLAT
  * charge that is the same for every amount (1500 + 11% of 1500 = 1665). The
  * client shows the fee and what will land in the bank before submitting; the

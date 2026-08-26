@@ -4,6 +4,7 @@ import { useEchoConnected } from "@/hooks/useEchoConnected";
 import type { ListParams } from "@/lib/list";
 import { financeService } from "../services/finance.service";
 import type {
+  CreateInternalWithdrawalPayload,
   IncidentPayload,
   InstallationDetailPayload,
   InstallationPayload,
@@ -49,13 +50,33 @@ export const useFinanceWithdrawals = (params: ListParams) => {
 export const useApproveWithdrawal = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: number }) => financeService.approve(id),
-    onSuccess: () => {
+    mutationFn: ({ id, method, proof }: { id: number; method?: "manual" | "monetapay"; proof?: File }) =>
+      financeService.approve(id, { method, proof }),
+    onSuccess: (_, { method }) => {
       queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success("Penarikan diproses ke Monetapay");
+      toast.success(method === "manual" ? "Penarikan disetujui" : "Penarikan diproses ke Monetapay");
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message ?? "Gagal menyetujui penarikan");
+    },
+  });
+};
+
+/** Kita's own withdrawable balance — platform profit, gates "Penarikan Internal". */
+export const usePlatformBalance = () =>
+  useQuery({ queryKey: ["finance", "platform-balance"], queryFn: financeService.platformBalance });
+
+export const useCreateInternalWithdrawal = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateInternalWithdrawalPayload) => financeService.createInternalWithdrawal(payload),
+    onSuccess: () => {
+      // Refreshes both the internal withdrawals list and the platform-balance figure.
+      queryClient.invalidateQueries({ queryKey: ["finance"] });
+      toast.success("Permintaan penarikan internal berhasil dibuat");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal membuat penarikan internal");
     },
   });
 };
