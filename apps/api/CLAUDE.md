@@ -349,6 +349,42 @@ Every query is scoped to `user_id` **before** any filter is applied, so no filte
 
 `POST /v1/auth/register` always assigns the MEMBER role; role is never settable from the request body. `forgot-password` returns the same message whether or not the email exists (no `exists` rule, no differing response) so it cannot be used to enumerate accounts. `reset-password` revokes all existing tokens — a reset is the recovery path after a compromise.
 
+## Uxio Hub Integration (multi-site)
+
+This codebase is deployed once per client site; the **Uxio Hub**
+(`uxiotopup-hub-api` + `uxiotopup-hub` panel) oversees all of them. All
+cross-system traffic is **pull-only GETs** — neither side opens a write
+endpoint for the other; a standalone deployment (`HUB_ENABLED=false`, the
+default) schedules nothing, calls nowhere, exposes nothing.
+
+- **Reporting contract (Hub pulls us):** `GET /v1/hub/{summary, withdrawals,
+  service-orders, profit, channels}` — read-only, gated by `X-Hub-Key`
+  (+ optional IP allowlist) via the `hub` middleware; dead when no key is
+  configured. **ADDITIVE-ONLY:** sites run mixed deploy versions, so fields
+  may be added but never renamed/removed — shapes pinned in
+  `tests/Feature/Hub/HubReportEndpointsTest`.
+- **We pull the Hub:** `hub:sync-catalog` and `hub:sync-channels` (every 15
+  min when enabled). Catalog sync matches services by `code`, NEVER deletes
+  (only deactivates — service FKs cascade), never touches `cost_price` (the
+  Hub's private margin data, absent from the payload) or the local
+  `payment_channel_id`. Channel sync updates only the five fee columns;
+  `is_active` stays local. An error envelope aborts the sync rather than
+  emptying the catalog.
+- **Hub-managed guards:** with `HUB_MANAGED_CATALOG`/`HUB_MANAGED_CHANNELS`,
+  the local service-catalog writes 422 (`catalog-local` middleware) and
+  `ChannelFeeController` accepts only `is_active` — a local edit would be
+  silently overwritten by the next sync.
+- **Withdrawal holding period:** `MerchantBalance` splits paid sales into
+  settled vs held — a sale is withdrawable only after its channel's Monetapay
+  settlement window (`MonetapayContractFees::settlementDays`) plus
+  `WITHDRAWAL_HOLD_BUFFER_DAYS` (default 1). Dashboard exposes
+  `saldo_tertahan`. Test fixtures that seed paid sales must backdate
+  `created_at` past the longest hold (5 days) or the balance reads 0.
+- BCA VA is deactivated (not in the Monetapay contract; row kept for history).
+- Monetapay balance cache is keyed per `(sub_mch_id, currency)` —
+  `MonetapayService::balanceCacheKey()` is the shared key helper for
+  cache-busting callers.
+
 ## Required `.env` Keys Beyond Laravel Defaults
 
 ```
@@ -365,6 +401,14 @@ MONETAPAY_FAILED_REDIRECT_URL=    # redirect after failed payment link payment (
 WITHDRAWAL_FEE_FLAT=1500          # withdraw fee = flat + round(amount * percent/100); nett = amount - fee
 WITHDRAWAL_FEE_PERCENT=11
 WITHDRAWAL_MIN_AMOUNT=10000       # floor on the requested amount so nett stays positive
+WITHDRAWAL_HOLD_BUFFER_DAYS=1     # fraud buffer on top of each channel's settlement (T+n)
+
+HUB_ENABLED=false                 # Uxio Hub integration; false = standalone, nothing scheduled/exposed
+HUB_SITE_API_KEY=                 # per-site key issued by the Hub, shown once at registration
+HUB_BASE_URL=                     # the Hub API root, e.g. https://hub.uxiotopup.id
+HUB_ALLOWED_IPS=                  # optional source-IP allowlist for the Hub's pulls
+HUB_MANAGED_CATALOG=true          # local catalog writes 422 while the Hub owns the catalog
+HUB_MANAGED_CHANNELS=true         # local fee edits 422 (is_active stays local)
 
 UXIOTOPUP_API_KEY=
 UXIOTOPUP_BASE_URL=https://api.uxiotopup.id
