@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\User;
+use App\Support\Hub\HubSystemUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -88,7 +89,9 @@ class GameCatalogSeedTest extends TestCase
     {
         $this->seed();
 
-        $this->assertSame(3, User::count());
+        // Three human operator logins, plus the non-login Hub system account
+        // (no password) that Hub-driven money-path actions are attributed to.
+        $this->assertSame(3, User::whereNot('email', HubSystemUser::EMAIL)->count());
 
         foreach ([
             'admin@uxiotopup.id' => RoleType::ADMIN,

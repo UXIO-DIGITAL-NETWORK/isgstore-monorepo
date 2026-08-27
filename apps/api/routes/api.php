@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\Finance\ServiceInstallationStepController;
 use App\Http\Controllers\Api\Finance\ServiceInvoiceController;
 use App\Http\Controllers\Api\Finance\ServiceSubscriptionController;
 use App\Http\Controllers\Api\FinancialController;
+use App\Http\Controllers\Api\Hub\HubActionController;
 use App\Http\Controllers\Api\Hub\HubReportController;
 use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
@@ -695,4 +696,15 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
     Route::get('/service-orders', [HubReportController::class, 'serviceOrders']);
     Route::get('/profit', [HubReportController::class, 'profit']);
     Route::get('/channels', [HubReportController::class, 'channels']);
+});
+
+// ── Hub money-path WRITE channel ─────────────────────────────────────────────
+// Approve/reject withdrawals from the Hub. Gated by `hub` (read key) AND
+// `hub-write` (a SEPARATE write key + HUB_WRITE_ENABLED), plus a tight rate
+// limit — a leaked read key must never move money. Bound by number (the Hub
+// mirror keys on withdrawal_number, not the site's id). Each route wraps the
+// same Action the payment-internal panel uses (HubActionController).
+Route::prefix('v1/hub')->middleware(['hub', 'hub-write', 'throttle:hub-write'])->group(function () {
+    Route::post('/withdrawals/{withdrawal:withdrawal_number}/approve', [HubActionController::class, 'approveWithdrawal']);
+    Route::post('/withdrawals/{withdrawal:withdrawal_number}/reject', [HubActionController::class, 'rejectWithdrawal']);
 });

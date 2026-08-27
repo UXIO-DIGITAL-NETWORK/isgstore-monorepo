@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureCatalogNotHubManaged;
 use App\Http\Middleware\EnsureHubRequest;
+use App\Http\Middleware\EnsureHubWriteRequest;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentInternal;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'payment-internal' => EnsureUserIsPaymentInternal::class,
             'payment-admin' => EnsureUserIsPaymentAdmin::class,
             'hub' => EnsureHubRequest::class,
+            'hub-write' => EnsureHubWriteRequest::class,
             'catalog-local' => EnsureCatalogNotHubManaged::class,
         ]);
     })

@@ -43,6 +43,8 @@ class DatabaseSeeder extends Seeder
 
             // === 2. Users ===
             UserSeeder::class,
+            // System account for Hub-driven money-path actions (approved_by).
+            HubSystemUserSeeder::class,
 
             // === 3. Catalogue — intentionally NOT seeded ===
             // CategorySeeder, SubCategorySeeder, ServerCategorySeeder,

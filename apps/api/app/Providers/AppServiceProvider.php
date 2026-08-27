@@ -60,5 +60,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
         });
+
+        // Hub money-path writes: one caller (the Hub) driving a human's clicks,
+        // so a modest ceiling — enough for real review bursts, tight enough to
+        // blunt a leaked-write-key abuse window.
+        RateLimiter::for('hub-write', function (Request $request) {
+            return Limit::perMinute(30)->by($request->ip());
+        });
     }
 }

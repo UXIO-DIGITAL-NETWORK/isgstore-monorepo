@@ -139,5 +139,11 @@ return [
         // Hub owns: the service catalog and the channel fee schedule.
         'managed_catalog' => (bool) env('HUB_MANAGED_CATALOG', true),
         'managed_channels' => (bool) env('HUB_MANAGED_CHANNELS', true),
+        // Money-path WRITE channel (approve/reject withdrawals + confirm/reject
+        // service invoices FROM the Hub). Off by default and gated by a SEPARATE
+        // key from the read key above — a leaked read key must never move money.
+        // Empty write key = writes are dead even when enabled.
+        'write_enabled' => (bool) env('HUB_WRITE_ENABLED', false),
+        'write_api_key' => env('HUB_WRITE_API_KEY'),
     ],
 ];
