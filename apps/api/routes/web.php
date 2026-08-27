@@ -3,8 +3,10 @@
 use App\Http\Controllers\Web\TopupPageController;
 use Illuminate\Support\Facades\Route;
 
+// API landing page — documents every route group (public, member, admin,
+// payment-page merchant/internal, Hub). The API itself lives under /api/v1.
 Route::get('/', function () {
-    return view('welcome');
+    return view('api-landing');
 });
 
 // Public top-up page. Checkout itself is performed by the page against the
