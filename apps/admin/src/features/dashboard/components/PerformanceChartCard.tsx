@@ -10,13 +10,17 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChartSeries } from "../hooks/useDashboard";
+import { MONTH_OPTIONS } from "../types/dashboard.type";
 import type { MonthOption } from "../types/dashboard.type";
 
-const MONTH_OPTIONS: { value: MonthOption; label: string }[] = [
-  { value: "january", label: "January" },
-  { value: "february", label: "February" },
-  { value: "march", label: "March" },
-];
+/** Derived from the canonical list, so the selector can never fall behind it. */
+const MONTH_CHOICES: { value: MonthOption; label: string }[] = MONTH_OPTIONS.map((value) => ({
+  value,
+  label: `${value.charAt(0).toUpperCase()}${value.slice(1)}`,
+}));
+
+/** The month an operator almost always wants first is the one they are in. */
+const currentMonth = (): MonthOption => MONTH_OPTIONS[new Date().getMonth()];
 
 const chartConfig = {
   revenue: { label: "Revenue", color: "var(--chart-1)" },
@@ -24,7 +28,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function PerformanceChartCard() {
-  const [month, setMonth] = useState<MonthOption>("january");
+  const [month, setMonth] = useState<MonthOption>(currentMonth);
   const { data, isLoading, isError, refetch } = useChartSeries(month);
 
   const chartData = useMemo(
@@ -60,7 +64,7 @@ export function PerformanceChartCard() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {MONTH_OPTIONS.map((option) => (
+            {MONTH_CHOICES.map((option) => (
               <SelectItem
                 key={option.value}
                 value={option.value}

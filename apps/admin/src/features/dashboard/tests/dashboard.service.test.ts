@@ -54,6 +54,17 @@ describe("dashboardService.getChartSeries", () => {
 
     expect(api.get).toHaveBeenCalledWith("/v1/dashboard/stats", { params: { month: 3 } });
   });
+
+  // The selector was frozen at January–March, a leftover from the fixture
+  // shape — the API has always validated `month` as 1..12, so an admin simply
+  // could not look at April onward.
+  it("covers the whole year, not just the first quarter", async () => {
+    vi.mocked(api.get).mockResolvedValue(stats());
+
+    await dashboardService.getChartSeries("december");
+
+    expect(api.get).toHaveBeenCalledWith("/v1/dashboard/stats", { params: { month: 12 } });
+  });
 });
 
 describe("dashboardService.getPendingOrders", () => {

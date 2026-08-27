@@ -1,6 +1,12 @@
-import type { ChartPoint, MonthOption } from "../types/dashboard.type";
+import type { ChartPoint } from "../types/dashboard.type";
 
-export const CHART_SERIES: Record<MonthOption, ChartPoint[]> = {
+/**
+ * Test-only fixture (consumed by `src/test/fakeApi.ts` and the colocated data
+ * test), covering Q1 only. Typed on exactly the months it actually has rather
+ * than on the full `MonthOption` union, so it stays honest about its coverage
+ * instead of claiming a year it does not provide.
+ */
+export const CHART_SERIES: Record<"january" | "february" | "march", ChartPoint[]> = {
   january: [
     { date: "2026-01-01", revenue: 4200, netIncome: 2100 },
     { date: "2026-01-05", revenue: 3800, netIncome: 1900 },

@@ -8,7 +8,30 @@ export type ChartPoint = {
   netIncome: number;
 };
 
-export type MonthOption = "january" | "february" | "march";
+/**
+ * The chart's month selector. The API validates `month` as 1..12, so all
+ * twelve are offered — the list used to stop at March, a leftover from the
+ * fixture shape that made April onward unreachable.
+ *
+ * Declared once here and derived everywhere else so the labels, the option
+ * list and the API's month numbers cannot drift apart.
+ */
+export const MONTH_OPTIONS = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+] as const;
+
+export type MonthOption = (typeof MONTH_OPTIONS)[number];
 
 export type PendingOrders = {
   manualOrders: number;

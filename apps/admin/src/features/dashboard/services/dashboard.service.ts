@@ -2,6 +2,7 @@ import { api } from "@/lib/axios";
 import { API_VERSION } from "@/config/env";
 import { toRowId } from "@/lib/apiMappers";
 import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
+import { MONTH_OPTIONS } from "../types/dashboard.type";
 import type {
   ActivityLog,
   ChartPoint,
@@ -58,11 +59,14 @@ const CARD_LABELS: Record<StatCardApiRow["key"], string> = {
 };
 
 /**
- * The month selector offers three fixed options. The API scopes the chart by
- * calendar month number, so they map onto months of the current year rather
- * than being a decorative filter.
+ * The API scopes the chart by calendar month number, so the option maps onto a
+ * month of the current year rather than being a decorative filter. Derived
+ * from MONTH_OPTIONS' order, so adding a month is a one-place change.
  */
-const MONTH_NUMBERS: Record<MonthOption, number> = { january: 1, february: 2, march: 3 };
+const MONTH_NUMBERS = Object.fromEntries(MONTH_OPTIONS.map((name, index) => [name, index + 1])) as Record<
+  MonthOption,
+  number
+>;
 
 const toStatCard = (row: StatCardApiRow): StatCardData => ({
   id: row.key,
