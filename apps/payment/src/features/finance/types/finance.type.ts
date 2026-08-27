@@ -31,6 +31,21 @@ export interface ChannelFee {
   /** PPN rate on the channel fee — kita's expense, netted from profit at settlement. */
   tax_percent: number;
   is_active: boolean;
+  /**
+   * Written by the Hub sync. Only these rows are read-only here — the Hub's
+   * master holds the Monetapay-contracted codes, so `balance` and
+   * `payment_link` stay editable locally.
+   */
+  hub_managed: boolean;
+  /** Gateway fee diverges from the Monetapay contract table. */
+  contract_mismatch: boolean;
+  contract_expected: { gateway_fee_flat: number; gateway_fee_percent: number } | null;
+}
+
+/** Whether the Hub owns the fee schedule on this deployment. */
+export interface ChannelMeta {
+  hub_managed: boolean;
+  managed_note: string | null;
 }
 
 export interface FinanceMerchant {
