@@ -69,10 +69,69 @@ export interface Transaction {
   resolved_at?: string;
   /** Raw seconds between created_at and resolved_at — UI formats the duration badge. */
   elapsed_seconds?: number;
-  /** PRD-provisional; shape not specified yet. */
-  status_history?: unknown[];
   /** Audit trail shown by the Activity Log modal. */
   activity_log: ActivityLogEntry[];
+  updated_at: string;
+}
+
+/** The gateway half of a detail read. Every field is absent until the customer pays. */
+export interface TransactionDetailPayment {
+  reference_id?: string;
+  pg_transaction_id?: string;
+  gross_amount?: number;
+  paid_at?: string;
+}
+
+export interface TransactionDetailSupplier {
+  name?: string;
+  trx_id?: string;
+  /** The provider's own vocabulary, not a TransactionStatus — render it as text. */
+  status?: string;
+}
+
+/**
+ * What `GET /v1/transactions/{id}` guarantees, for the read-only detail
+ * dialog.
+ *
+ * Deliberately NOT a widening of `Transaction`: that type is the DataTable row
+ * and the fixture shape, so adding these as required fields would force every
+ * fixture to invent gateway references, and adding them as optional would give
+ * the dialog no type-level guarantee the data was ever requested — the exact
+ * mechanism that left the Game column blank.
+ *
+ * `total_price` is excluded on purpose: the API writes it only for
+ * admin-created rows, so it is 0 on every customer order.
+ * `resolved_at`/`elapsed_seconds` are excluded too — both are derived from
+ * `updated_at`, so a later admin edit silently rewrites them. The dialog shows
+ * `updated_at` honestly as "Last Update" instead.
+ */
+export interface TransactionDetail {
+  id: string;
+  invoice_no: string;
+  invoice_status: TransactionStatus;
+  payment_status: TransactionStatus;
+  is_manual: boolean;
+  customer: TransactionCustomer;
+  game: TransactionGameRef;
+  product: TransactionProductRef;
+  target_ref?: string;
+  target_uid?: string;
+  target_server?: string;
+  nickname?: string;
+  serial_number?: string;
+  proof_url?: string;
+  /** Already net of `discount_amount` — the discount is informational only. */
+  amount_base: number;
+  discount_amount: number;
+  amount_fee: number;
+  /** Equal to `amount_fee` on every modern row; only legacy markup rows differ. */
+  channel_fee: number;
+  amount_total: number;
+  margin: number;
+  payment_method: string;
+  payment: TransactionDetailPayment;
+  supplier: TransactionDetailSupplier;
+  created_at: string;
   updated_at: string;
 }
 

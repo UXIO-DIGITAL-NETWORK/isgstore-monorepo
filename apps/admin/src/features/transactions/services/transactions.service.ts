@@ -7,6 +7,8 @@ import type {
   RecapPeriod,
   StatusCounts,
   Transaction,
+  TransactionCustomer,
+  TransactionDetail,
   TransactionListParams,
   TransactionRecap,
   TransactionStatus,
@@ -84,6 +86,57 @@ interface TransactionApiRow {
   updated_at: string;
 }
 
+/**
+ * What `GET /v1/transactions/{id}` returns on top of the list row. Extends the
+ * list shape so the fields both reads share are declared exactly once.
+ *
+ * `total_price` is deliberately absent: the API writes it only for
+ * admin-created rows, so it is 0 on every customer order.
+ */
+interface TransactionDetailApiRow extends TransactionApiRow {
+  amount_base: number;
+  channel_fee: number;
+  discount_amount: number;
+  is_manual: boolean;
+  supplier_trx_id: string | null;
+  supplier_status: string | null;
+  supplier?: { id: number; name: string } | null;
+  payment?: {
+    status: string;
+    reference_id?: string | null;
+    pg_transaction_id?: string | null;
+    gross_amount?: number | null;
+    paid_at?: string | null;
+  } | null;
+}
+
+/** Guests have no user row; their contact lives on the transaction itself. */
+const toCustomer = (row: TransactionApiRow): TransactionCustomer => ({
+  user_id: row.user_id,
+  name: row.user?.name ?? "Guest",
+  phone: row.user?.phone ?? row.guest_contact ?? "",
+  email: row.user?.email ?? row.contact_email ?? undefined,
+  avatar_url: row.user?.avatar_url ?? undefined,
+});
+
+const toTargetRef = (row: TransactionApiRow): string | undefined =>
+  [row.target_uid, row.target_server].filter(Boolean).join(" / ") || undefined;
+
+const toInvoiceStatus = (row: TransactionApiRow): TransactionStatus => INVOICE_STATUS[row.status] ?? "pending";
+
+const toPaymentStatus = (row: TransactionApiRow): TransactionStatus =>
+  PAYMENT_STATUS[row.payment?.status ?? ""] ?? "pending";
+
+const toGame = (row: TransactionApiRow) => ({
+  id: toRowId(row.product?.category?.id ?? 0),
+  name: row.product?.category?.name ?? "",
+});
+
+const toProductRef = (row: TransactionApiRow) => ({
+  id: toRowId(row.product?.id ?? 0),
+  name: row.product?.name ?? "",
+});
+
 interface RecapApiShape {
   generated_at: string;
   breakdown?: { label: string; count: number; revenue: number }[];
@@ -92,33 +145,23 @@ interface RecapApiShape {
 }
 
 const toTransaction = (row: TransactionApiRow): Transaction => {
-  const invoiceStatus = INVOICE_STATUS[row.status] ?? "pending";
+  const invoiceStatus = toInvoiceStatus(row);
   const isTerminal = invoiceStatus === "success" || invoiceStatus === "failed" || invoiceStatus === "partial_refund";
 
   return {
     id: toRowId(row.id),
     invoice_no: row.invoice_number,
-    payment_status: PAYMENT_STATUS[row.payment?.status ?? ""] ?? "pending",
+    payment_status: toPaymentStatus(row),
     invoice_status: invoiceStatus,
-    customer: {
-      user_id: row.user_id,
-      // Guests have no user row; their contact lives on the transaction.
-      name: row.user?.name ?? "Guest",
-      phone: row.user?.phone ?? row.guest_contact ?? "",
-      email: row.user?.email ?? row.contact_email ?? undefined,
-      avatar_url: row.user?.avatar_url ?? undefined,
-    },
-    game: {
-      id: toRowId(row.product?.category?.id ?? 0),
-      name: row.product?.category?.name ?? "",
-    },
-    product: { id: toRowId(row.product?.id ?? 0), name: row.product?.name ?? "" },
+    customer: toCustomer(row),
+    game: toGame(row),
+    product: toProductRef(row),
     // `cost` is the customer's total, not the upstream cost — the column
     // header reads "Cost" but the reference's figures are the amount billed.
     cost: row.amount_total,
     profit: row.margin,
     admin_fee: row.amount_fee,
-    target_ref: [row.target_uid, row.target_server].filter(Boolean).join(" / ") || undefined,
+    target_ref: toTargetRef(row),
     nickname: row.target_nickname ?? undefined,
     payment_method: row.payment_channel?.name ?? "",
     serial_number: row.sn ?? undefined,
@@ -133,6 +176,72 @@ const toTransaction = (row: TransactionApiRow): Transaction => {
     activity_log: [],
     updated_at: row.updated_at,
   };
+};
+
+/**
+ * The detail dialog's shape. Shares every derivation with `toTransaction` via
+ * the helpers above, so the status-folding and guest-fallback rules cannot
+ * drift between the table and the dialog.
+ */
+const toTransactionDetail = (row: TransactionDetailApiRow): TransactionDetail => ({
+  id: toRowId(row.id),
+  invoice_no: row.invoice_number,
+  invoice_status: toInvoiceStatus(row),
+  payment_status: toPaymentStatus(row),
+  is_manual: Boolean(row.is_manual),
+  customer: toCustomer(row),
+  game: toGame(row),
+  product: toProductRef(row),
+  target_ref: toTargetRef(row),
+  target_uid: row.target_uid ?? undefined,
+  target_server: row.target_server ?? undefined,
+  nickname: row.target_nickname ?? undefined,
+  serial_number: row.sn ?? undefined,
+  proof_url: row.proof_url ?? undefined,
+  amount_base: row.amount_base,
+  discount_amount: row.discount_amount ?? 0,
+  amount_fee: row.amount_fee,
+  channel_fee: row.channel_fee,
+  amount_total: row.amount_total,
+  margin: row.margin,
+  payment_method: row.payment_channel?.name ?? "",
+  payment: {
+    reference_id: row.payment?.reference_id ?? undefined,
+    pg_transaction_id: row.payment?.pg_transaction_id ?? undefined,
+    gross_amount: row.payment?.gross_amount ?? undefined,
+    paid_at: row.payment?.paid_at ?? undefined,
+  },
+  supplier: {
+    name: row.supplier?.name ?? undefined,
+    trx_id: row.supplier_trx_id ?? undefined,
+    status: row.supplier_status ?? undefined,
+  },
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+/**
+ * `ref` is whatever the route carries, and the edit route is keyed on the
+ * invoice number — the identifier an operator can actually read off a receipt.
+ * The API binds `{transaction}` to the numeric id, so a non-numeric ref is
+ * resolved through a search instead of 404ing.
+ *
+ * Shared by `getById` and `getDetail` so the two reads cannot disagree about
+ * how a ref is resolved.
+ */
+const fetchTransactionRow = async <T extends TransactionApiRow>(ref: string): Promise<T> => {
+  if (/^\d+$/.test(ref)) {
+    const response: ApiResponse<T> = await api.get(`${BASE}/${ref}`);
+    return response.data;
+  }
+
+  const response: ApiResponse<PaginatedResponse<T>> = await api.get(BASE, {
+    params: { search: ref, per_page: 1 },
+  });
+
+  const found = response.data.data[0];
+  if (!found) throw new Error(`No transaction found for: ${ref}`);
+  return found;
 };
 
 const toListParams = (params: TransactionListParams) => ({
@@ -163,20 +272,14 @@ export const transactionsService = {
    * receipt. The API binds `{transaction}` to the numeric id, so a non-numeric
    * ref is resolved through a search instead of 404ing.
    */
-  getById: async (ref: string): Promise<Transaction> => {
-    if (/^\d+$/.test(ref)) {
-      const response: ApiResponse<TransactionApiRow> = await api.get(`${BASE}/${ref}`);
-      return toTransaction(response.data);
-    }
+  getById: async (ref: string): Promise<Transaction> => toTransaction(await fetchTransactionRow<TransactionApiRow>(ref)),
 
-    const response: ApiResponse<PaginatedResponse<TransactionApiRow>> = await api.get(BASE, {
-      params: { search: ref, per_page: 1 },
-    });
-
-    const found = response.data.data[0];
-    if (!found) throw new Error(`No transaction found for: ${ref}`);
-    return toTransaction(found);
-  },
+  /**
+   * The read-only detail dialog. Same endpoint as `getById`, but keeps the
+   * wider payload the table row discards.
+   */
+  getDetail: async (ref: string): Promise<TransactionDetail> =>
+    toTransactionDetail(await fetchTransactionRow<TransactionDetailApiRow>(ref)),
 
   /**
    * Scoped by `activity_logs.transaction_id`. The admin's row id is the

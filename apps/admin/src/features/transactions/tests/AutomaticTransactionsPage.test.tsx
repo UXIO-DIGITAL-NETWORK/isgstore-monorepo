@@ -379,4 +379,55 @@ describe("AutomaticTransactionsPage", () => {
     expect(screen.getByRole("columnheader", { name: "#" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Drag to reorder row" })).not.toBeInTheDocument();
   });
+
+  it("opens the Transaction Detail dialog for the row it was launched from", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    const transaction = TRANSACTIONS[0];
+    await user.click(
+      await screen.findByRole("button", { name: new RegExp(`Actions for ${transaction.invoice_no}`, "i") }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: "Transaction Detail" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Transaction Detail" });
+    expect(await within(dialog).findByText(transaction.invoice_no)).toBeInTheDocument();
+    expect(within(dialog).getByText(transaction.game.name)).toBeInTheDocument();
+    expect(within(dialog).getByText(transaction.product.name)).toBeInTheDocument();
+  });
+
+  // The dialog is mounted once per row, so it must show the row it was opened
+  // from — not whichever one rendered first.
+  it("shows the second row's own transaction when opened from that row", async () => {
+    vi.setSystemTime(new Date("2026-07-02T12:00:00.000Z"));
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    const transaction = TRANSACTIONS[1];
+    await user.click(
+      await screen.findByRole("button", { name: new RegExp(`Actions for ${transaction.invoice_no}`, "i") }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: "Transaction Detail" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Transaction Detail" });
+    expect(await within(dialog).findByText(transaction.invoice_no)).toBeInTheDocument();
+    expect(within(dialog).queryByText(TRANSACTIONS[0].invoice_no)).not.toBeInTheDocument();
+  });
+
+  // Pins `enabled: open`. Without it every visible row would fetch its own
+  // detail on page load — 15 requests for a screen nobody has clicked yet.
+  it("fetches no transaction detail until the menu item is clicked", async () => {
+    const detailSpy = vi.spyOn(transactionsService, "getDetail");
+    const user = userEvent.setup();
+    await renderRoute("/admin/transaction-preview");
+
+    await screen.findByText("ZP2607016UJFJVSHCJ");
+    expect(detailSpy).not.toHaveBeenCalled();
+
+    await user.click(await screen.findByRole("button", { name: /Actions for ZP2607016UJFJVSHCJ/i }));
+    await user.click(await screen.findByRole("menuitem", { name: "Transaction Detail" }));
+
+    await screen.findByRole("dialog", { name: "Transaction Detail" });
+    expect(detailSpy).toHaveBeenCalled();
+  });
 });

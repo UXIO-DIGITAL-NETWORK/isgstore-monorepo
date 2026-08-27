@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Eye, History, MoreHorizontal, Pencil, Receipt, RotateCcw, RotateCw, Send, Trash2, Upload } from "lucide-react";
-import { toast } from "sonner";
 
 import { Can } from "@/components/common/Can";
 import { ENV, API_VERSION } from "@/config/env";
@@ -24,6 +23,7 @@ import type { Transaction } from "../types/transaction.type";
 import { ActivityLogDialog } from "./ActivityLogDialog";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { RefundDialog } from "./RefundDialog";
+import { TransactionDetailDialog } from "./TransactionDetailDialog";
 
 interface RowActionMenuProps {
   transaction: Transaction;
@@ -43,6 +43,7 @@ interface RowActionMenuProps {
  */
 export function RowActionMenu({ transaction, showCallbackActions = true }: RowActionMenuProps) {
   const [activityOpen, setActivityOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
   const resendCallback = useResendCallback();
@@ -107,7 +108,7 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
             <Send />
             Resend Receipt
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => toast("Transaction Detail — coming soon")}>
+          <DropdownMenuItem onSelect={() => setDetailOpen(true)}>
             <Eye />
             Transaction Detail
           </DropdownMenuItem>
@@ -140,6 +141,11 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
         transactionId={transaction.id}
         open={activityOpen}
         onOpenChange={setActivityOpen}
+      />
+      <TransactionDetailDialog
+        transactionId={transaction.id}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
       />
       <DeleteConfirmDialog
         open={deleteOpen}

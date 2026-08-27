@@ -215,6 +215,16 @@ const DOCUMENTS: Record<string, unknown> = {
     { id: 1, group: "general", key: "site_name", value: "TopUpGame.ID", type: "string", label: "Site Name", is_public: true },
     { id: 2, group: "contact", key: "contact_whatsapp", value: "6281234567890", type: "string", label: "WhatsApp", is_public: true },
     { id: 3, group: "general", key: "maintenance_mode", value: "0", type: "boolean", label: "Maintenance Mode", is_public: true },
+    {
+      id: 4,
+      group: "general",
+      key: "site_logo",
+      value: null,
+      value_url: null,
+      type: "image",
+      label: "Site Logo",
+      is_public: true,
+    },
   ],
   "/v1/transactions/status-counts": { pending: 12, processing: 32, failed_provider: 8 },
   "/v1/integration/channels": CHANNELS.map((row) => ({
@@ -262,8 +272,23 @@ const toApiTransaction = (row: (typeof TRANSACTIONS)[number], index: number): Ro
     ? { id: row.customer.user_id, name: row.customer.name, phone: row.customer.phone, avatar_url: null }
     : null,
   product: { id: index + 1, name: row.product.name, category: { id: index + 1, name: row.game.name } },
-  payment: { status: TO_API_PAYMENT_STATUS[row.payment_status] ?? "1" },
+  payment: {
+    status: TO_API_PAYMENT_STATUS[row.payment_status] ?? "1",
+    reference_id: `PAY-${row.invoice_no}`,
+    pg_transaction_id: `PG-${index + 1}`,
+    gross_amount: row.cost,
+    paid_at: row.payment_status === "success" ? row.updated_at : null,
+  },
   payment_channel: { id: index + 1, name: row.payment_method },
+  // The detail read keeps these; the list mapper drops them. Derived from the
+  // same fixture row so the fixtures themselves need no new fields.
+  amount_base: row.cost - (row.admin_fee ?? 0),
+  channel_fee: row.admin_fee ?? 0,
+  discount_amount: 0,
+  is_manual: false,
+  supplier_trx_id: `SUP-${index + 1}`,
+  supplier_status: row.invoice_status === "success" ? "success" : "pending",
+  supplier: { id: index + 1, name: "Uxiotopup" },
   created_at: row.created_at,
   updated_at: row.updated_at,
 });

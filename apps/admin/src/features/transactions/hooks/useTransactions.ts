@@ -25,6 +25,23 @@ export const useTransaction = (id: string) =>
   });
 
 /**
+ * Backs the read-only Transaction Detail dialog.
+ *
+ * `enabled` is the dialog's open state, and is load-bearing for the same
+ * reason as the Activity Log dialog's: the dialog is mounted once per table
+ * row, so without it every visible row would fetch its detail on mount.
+ *
+ * The key segment is `detail-full`, not `detail`: it is the same id but a
+ * wider shape, and the two must not collide in the cache.
+ */
+export const useTransactionDetail = (id: string, enabled: boolean) =>
+  useQuery({
+    queryKey: ["transactions", "detail-full", id],
+    queryFn: () => transactionsService.getDetail(id),
+    enabled,
+  });
+
+/**
  * `enabled` is the dialog's open state, and is load-bearing: the Activity Log
  * dialog is mounted once per table row, so without it every visible row would
  * fetch its log on mount.

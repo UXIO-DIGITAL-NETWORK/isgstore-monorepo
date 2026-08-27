@@ -254,3 +254,144 @@ describe("transactionsService.edit", () => {
     });
   });
 });
+
+/**
+ * `getDetail` backs the read-only Transaction Detail dialog. It reads the same
+ * endpoint as `getById` but keeps the wider payload the list row throws away.
+ *
+ * Cases:
+ * - fetches by id for a numeric ref, and falls back to the invoice search
+ *   (parity with getById — proves the shared ref-resolution still works)
+ * - throws when an invoice number matches nothing
+ * - maps product.category onto game.name (the field that was silently blank
+ *   until the API started eager-loading the relation)
+ * - guests, and a row with no payment yet, map without throwing
+ * - status folding still applies, so the shared helper really is shared
+ * - total_price is never mapped: the API writes it only for admin-created
+ *   rows, so it is 0 on every customer order and would render as a lie
+ */
+const detailRow = (over: Record<string, unknown> = {}) => ({
+  ...apiRow(),
+  amount_base: 4000,
+  channel_fee: 752,
+  discount_amount: 0,
+  total_price: 0,
+  is_manual: false,
+  supplier_trx_id: "SUP-77",
+  supplier_status: "success",
+  supplier: { id: 3, name: "Uxiotopup" },
+  payment: {
+    status: "3",
+    reference_id: "PAY-REF-01",
+    pg_transaction_id: "PG-9",
+    gross_amount: 4752,
+    paid_at: "2026-07-01T14:57:00.000Z",
+  },
+  ...over,
+});
+
+describe("transactionsService.getDetail", () => {
+  it("fetches by id directly when the ref is numeric", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(detailRow()));
+
+    const result = await transactionsService.getDetail("1");
+
+    expect(api.get).toHaveBeenCalledWith("/v1/transactions/1");
+    expect(result).toMatchObject({
+      invoice_no: "ZP2607016UJFJVSHCJ",
+      amount_base: 4000,
+      channel_fee: 752,
+      amount_fee: 0,
+      amount_total: 4752,
+      margin: 47,
+      is_manual: false,
+      serial_number: "SN-123",
+    });
+  });
+
+  it("resolves an invoice number through a search instead of 404ing", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([detailRow()]));
+
+    const result = await transactionsService.getDetail("ZP2607016UJFJVSHCJ");
+
+    expect(api.get).toHaveBeenCalledWith("/v1/transactions", {
+      params: { search: "ZP2607016UJFJVSHCJ", per_page: 1 },
+    });
+    expect(result.invoice_no).toBe("ZP2607016UJFJVSHCJ");
+  });
+
+  it("throws when an invoice number matches nothing", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
+
+    await expect(transactionsService.getDetail("NOPE")).rejects.toThrow();
+  });
+
+  // The API omits `category` unless the relation is eager-loaded, which is
+  // why this rendered as an empty Game cell for as long as it did.
+  it("maps the product's category onto the game name", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(detailRow()));
+
+    const result = await transactionsService.getDetail("1");
+
+    expect(result.game).toEqual({ id: "4", name: "Mobile Legends" });
+  });
+
+  it("falls back to the guest contact when there is no user row", async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      envelope(
+        detailRow({
+          user: null,
+          user_id: null,
+          guest_contact: "6281234567890",
+          contact_email: "guest@example.com",
+        }),
+      ),
+    );
+
+    const result = await transactionsService.getDetail("1");
+
+    expect(result.customer).toMatchObject({
+      user_id: null,
+      name: "Guest",
+      phone: "6281234567890",
+      email: "guest@example.com",
+    });
+  });
+
+  it("maps a transaction that has no payment row yet", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(detailRow({ payment: null, status: "PENDING" })));
+
+    const result = await transactionsService.getDetail("1");
+
+    expect(result.payment_status).toBe("pending");
+    expect(result.payment).toEqual({
+      reference_id: undefined,
+      pg_transaction_id: undefined,
+      gross_amount: undefined,
+      paid_at: undefined,
+    });
+  });
+
+  it("folds PAID into pending in the detail mapper too", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(detailRow({ status: "PAID" })));
+
+    await expect(transactionsService.getDetail("1")).resolves.toMatchObject({ invoice_status: "pending" });
+  });
+
+  it("carries the manual flag", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(detailRow({ is_manual: true })));
+
+    await expect(transactionsService.getDetail("1")).resolves.toMatchObject({ is_manual: true });
+  });
+
+  // `total_price` is written only by admin-created rows; CheckoutAction never
+  // sets it, so it is 0 on every customer order. Mapping it would put a
+  // permanent "Rp 0" on the dialog.
+  it("never maps total_price", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(detailRow({ total_price: 999 })));
+
+    const result = await transactionsService.getDetail("1");
+
+    expect(result).not.toHaveProperty("total_price");
+  });
+});
