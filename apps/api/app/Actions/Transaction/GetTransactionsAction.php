@@ -26,7 +26,7 @@ class GetTransactionsAction
         $sortDirection = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
         return Transaction::query()
-            ->with(['user', 'product', 'supplier', 'payment', 'paymentChannel'])
+            ->with(['user', 'product.category', 'supplier', 'payment', 'paymentChannel'])
             ->when($status, fn ($q) => $q->where('status', $status))
             // The admin table's search box sits above both the invoice and the
             // customer column, so matching only the invoice number made a

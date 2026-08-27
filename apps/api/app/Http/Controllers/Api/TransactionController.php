@@ -30,6 +30,14 @@ class TransactionController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Every single-transaction response loads the same relations, so the list
+     * lives here rather than being repeated at each return. `product.category`
+     * implies `product`; it is what the admin renders as the order's "Game",
+     * and ProductResource only emits `category` when it is loaded.
+     */
+    private const RELATIONS = ['user', 'product.category', 'supplier', 'payment', 'paymentChannel'];
+
     public function statusCounts(GetTransactionStatusCountsAction $action)
     {
         return $this->successResponse($action->execute(), 'Transaction status counts retrieved successfully');
@@ -65,7 +73,7 @@ class TransactionController extends Controller
         $transaction = $action->execute($request->toDTO());
 
         return $this->successResponse(
-            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            new TransactionResource($transaction->load(self::RELATIONS)),
             'Transaction created successfully',
             201
         );
@@ -74,7 +82,7 @@ class TransactionController extends Controller
     public function show(Transaction $transaction)
     {
         return $this->successResponse(
-            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            new TransactionResource($transaction->load(self::RELATIONS)),
             'Transaction retrieved successfully'
         );
     }
@@ -84,7 +92,7 @@ class TransactionController extends Controller
         $transaction = $action->execute($transaction, $request->toDTO());
 
         return $this->successResponse(
-            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            new TransactionResource($transaction->load(self::RELATIONS)),
             'Transaction updated successfully'
         );
     }
@@ -101,7 +109,7 @@ class TransactionController extends Controller
         $transaction = $action->execute($transaction, $request->toDTO());
 
         return $this->successResponse(
-            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            new TransactionResource($transaction->load(self::RELATIONS)),
             'Transaction reviewed successfully'
         );
     }
@@ -111,7 +119,7 @@ class TransactionController extends Controller
         $transaction = $action->execute($transaction, $request->validated('reason'));
 
         return $this->successResponse(
-            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            new TransactionResource($transaction->load(self::RELATIONS)),
             'Transaction refunded successfully'
         );
     }
@@ -125,7 +133,7 @@ class TransactionController extends Controller
         }
 
         return $this->successResponse(
-            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            new TransactionResource($transaction->load(self::RELATIONS)),
             'Callback resent successfully'
         );
     }
@@ -135,7 +143,7 @@ class TransactionController extends Controller
         $transaction = $action->execute($transaction);
 
         return $this->successResponse(
-            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            new TransactionResource($transaction->load(self::RELATIONS)),
             'Transaction retried successfully'
         );
     }
@@ -145,7 +153,7 @@ class TransactionController extends Controller
         $transaction = $action->execute($transaction);
 
         return $this->successResponse(
-            new TransactionResource($transaction->load(['user', 'product', 'supplier', 'payment', 'paymentChannel'])),
+            new TransactionResource($transaction->load(self::RELATIONS)),
             'Receipt resent successfully'
         );
     }

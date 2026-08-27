@@ -74,7 +74,7 @@ class GetDashboardStatsAction
             ],
             'chart' => $this->chartSeries($month),
             'recent_transactions' => TransactionResource::collection(
-                Transaction::with(['user', 'product', 'supplier', 'payment', 'paymentChannel'])
+                Transaction::with(['user', 'product.category', 'supplier', 'payment', 'paymentChannel'])
                     ->latest()
                     ->limit(10)
                     ->get()

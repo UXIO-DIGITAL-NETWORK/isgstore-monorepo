@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Transaction;
@@ -94,5 +95,22 @@ class TransactionListTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.data.0.id', $older->id)
             ->assertJsonPath('data.data.1.id', $newer->id);
+    }
+
+    /**
+     * The admin table renders the product's category as its "Game" column.
+     * ProductResource only emits `category` when the relation is loaded, so
+     * without it every row's Game cell is silently blank.
+     */
+    public function test_index_includes_the_products_category(): void
+    {
+        $this->actingAsAdmin();
+        $category = Category::factory()->create(['name' => 'Mobile Legends']);
+        $product = Product::factory()->create(['category_id' => $category->id]);
+        Transaction::factory()->create(['product_id' => $product->id]);
+
+        $this->getJson('/api/v1/transactions')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.product.category.name', 'Mobile Legends');
     }
 }
