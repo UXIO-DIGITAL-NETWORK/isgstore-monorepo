@@ -65,19 +65,22 @@ class HubManagedGuardTest extends TestCase
             ->assertCreated();
     }
 
-    public function test_channel_fee_edits_are_refused_but_is_active_stays_local(): void
+    public function test_channel_edits_are_fully_refused_when_hub_managed(): void
     {
         config(['services.hub.enabled' => true, 'services.hub.managed_channels' => true]);
         $channel = PaymentChannel::factory()->create(['channel_code' => 'qris', 'is_active' => true]);
         Sanctum::actingAs($this->internal());
 
+        // The Hub now owns fees, is_active AND min_amount per site — the local
+        // editor is read-only, so every field is refused.
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['fee_percent' => 2])
             ->assertStatus(422);
-
-        // Toggling availability is the site's own call and still works.
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['is_active' => false])
-            ->assertOk();
-        $this->assertFalse((bool) $channel->fresh()->is_active);
+            ->assertStatus(422);
+        $this->assertTrue((bool) $channel->fresh()->is_active); // unchanged
+
+        // Reads stay open — the panel is a viewer.
+        $this->getJson('/api/v1/payment-internal/channels')->assertOk();
     }
 
     public function test_channel_fee_edits_work_on_a_standalone_deployment(): void

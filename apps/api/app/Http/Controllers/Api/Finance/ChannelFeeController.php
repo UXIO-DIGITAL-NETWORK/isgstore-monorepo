@@ -48,16 +48,14 @@ class ChannelFeeController extends Controller
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
-        // Hub-managed fee schedule: the fee columns are set once at the Hub and
-        // synced down, so a local edit would be silently overwritten by the
-        // next hub:sync-channels. `is_active` stays local — which channels a
-        // site offers is that site's own call.
+        // Hub-managed channels: fee columns AND is_active/min_amount are all set
+        // at the Hub (per site) and synced down, so any local edit would be
+        // silently overwritten by the next hub:sync-channels. The editor is
+        // read-only here — change everything from the Hub panel.
         if (config('services.hub.enabled') && config('services.hub.managed_channels')) {
-            $blocked = array_diff(array_keys($validated), ['is_active']);
-
-            if ($blocked !== []) {
+            if ($validated !== []) {
                 return $this->errorResponse(
-                    'Biaya channel dikelola di Hub. Ubah dari panel Hub — perubahan lokal akan tertimpa sinkronisasi. (Hanya status aktif yang bisa diubah di sini.)',
+                    'Channel dikelola di Hub. Ubah biaya, status aktif, dan minimum dari panel Hub — perubahan lokal akan tertimpa sinkronisasi.',
                     422
                 );
             }

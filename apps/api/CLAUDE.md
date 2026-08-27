@@ -372,8 +372,9 @@ default) schedules nothing, calls nowhere, exposes nothing.
   emptying the catalog.
 - **Hub-managed guards:** with `HUB_MANAGED_CATALOG`/`HUB_MANAGED_CHANNELS`,
   the local service-catalog writes 422 (`catalog-local` middleware) and
-  `ChannelFeeController` accepts only `is_active` — a local edit would be
-  silently overwritten by the next sync.
+  `ChannelFeeController` rejects EVERY field (fully read-only) — the Hub now
+  owns `is_active` and `min_amount` per site too, so `hub:sync-channels` writes
+  them alongside the fees; a local edit would be silently overwritten.
 - **Withdrawal holding period:** `MerchantBalance` splits paid sales into
   settled vs held — a sale is withdrawable only after its channel's Monetapay
   settlement window (`MonetapayContractFees::settlementDays`) plus
@@ -408,7 +409,7 @@ HUB_SITE_API_KEY=                 # per-site key issued by the Hub, shown once a
 HUB_BASE_URL=                     # the Hub API root, e.g. https://hub.uxiotopup.id
 HUB_ALLOWED_IPS=                  # optional source-IP allowlist for the Hub's pulls
 HUB_MANAGED_CATALOG=true          # local catalog writes 422 while the Hub owns the catalog
-HUB_MANAGED_CHANNELS=true         # local fee edits 422 (is_active stays local)
+HUB_MANAGED_CHANNELS=true         # local channel edits 422 (fees + is_active + min_amount all Hub-owned)
 
 UXIOTOPUP_API_KEY=
 UXIOTOPUP_BASE_URL=https://api.uxiotopup.id

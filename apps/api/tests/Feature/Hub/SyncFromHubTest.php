@@ -131,10 +131,11 @@ class SyncFromHubTest extends TestCase
         }
     }
 
-    public function test_channel_sync_updates_fees_but_never_is_active(): void
+    public function test_channel_sync_updates_fees_and_hub_owned_active_and_min(): void
     {
         $qris = PaymentChannel::factory()->create([
-            'channel_code' => 'qris', 'fee_percent' => 0.7, 'tax_percent' => 0, 'is_active' => false,
+            'channel_code' => 'qris', 'fee_percent' => 0.7, 'tax_percent' => 0,
+            'is_active' => false, 'min_amount' => 1000,
         ]);
         Http::fake(['hub.test/api/v1/sites/channel-settings' => Http::response([
             'status' => 'success', 'code' => 200, 'message' => 'ok',
@@ -144,6 +145,8 @@ class SyncFromHubTest extends TestCase
                     'fee_flat' => 0, 'fee_percent' => 0.9,
                     'gateway_fee_flat' => 0, 'gateway_fee_percent' => 0.7,
                     'tax_percent' => 11,
+                    // Hub now owns these per site.
+                    'is_active' => true, 'min_amount' => 5000,
                 ],
                 [
                     // Not configured on this site — skipped, never created.
@@ -162,9 +165,34 @@ class SyncFromHubTest extends TestCase
         $qris->refresh();
         $this->assertSame(0.9, (float) $qris->fee_percent);
         $this->assertSame(11.0, (float) $qris->tax_percent);
-        // Which channels a site offers is the site's own call.
-        $this->assertFalse((bool) $qris->is_active);
+        // The Hub now drives enablement + minimum per site.
+        $this->assertTrue((bool) $qris->is_active);
+        $this->assertSame(5000, (int) $qris->min_amount);
         $this->assertNull(PaymentChannel::where('channel_code', 'unknown_channel')->first());
+    }
+
+    public function test_channel_sync_leaves_active_and_min_alone_when_hub_omits_them(): void
+    {
+        // An older Hub sends only fee fields — additive contract means the local
+        // is_active / min_amount must be preserved, not zeroed.
+        $qris = PaymentChannel::factory()->create([
+            'channel_code' => 'qris', 'is_active' => true, 'min_amount' => 2500,
+        ]);
+        Http::fake(['hub.test/api/v1/sites/channel-settings' => Http::response([
+            'status' => 'success', 'code' => 200, 'message' => 'ok',
+            'data' => [[
+                'channel_code' => 'qris',
+                'fee_flat' => 0, 'fee_percent' => 0.9,
+                'gateway_fee_flat' => 0, 'gateway_fee_percent' => 0.7,
+                'tax_percent' => 11,
+            ]],
+        ])]);
+
+        app(SyncChannelSettingsFromHubAction::class)->execute();
+
+        $qris->refresh();
+        $this->assertTrue((bool) $qris->is_active);
+        $this->assertSame(2500, (int) $qris->min_amount);
     }
 
     public function test_the_commands_run_green(): void
