@@ -7,6 +7,7 @@ use App\Enums\SubscriptionStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\WithdrawalStatus;
 use App\Http\Controllers\Controller;
+use App\Models\GatewayBalanceSnapshot;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\PlatformMutation;
@@ -19,6 +20,7 @@ use App\Support\Wallet\PlatformBalance;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 /**
@@ -200,14 +202,24 @@ class HubReportController extends Controller
 
     private function gatewayBalance(): ?int
     {
+        // A Hub pull must NEVER block on a live gateway call: Monetapay's inquiry
+        // carries a 15s timeout, which meets the Hub's own pull timeout and makes
+        // the whole summary hang (cURL 28). So read only what is already at hand —
+        // the warm balance cache, else the latest reconciliation snapshot — and
+        // never trigger a fresh inquiry here. The cache is warmed by callers that
+        // can afford the wait (finance dashboard, monetapay:reconcile-fees).
         try {
-            $response = app(MonetapayService::class)->inquiryBalanceCached(
+            $cached = Cache::get(MonetapayService::balanceCacheKey(
                 config('services.monetapay.collection_app_id') ?: null,
-            );
+            ));
 
-            $balance = $response['data']['balance'] ?? $response['balance'] ?? null;
+            $balance = $cached['data']['balance'] ?? $cached['balance'] ?? null;
 
-            return is_numeric($balance) ? (int) round((float) $balance) : null;
+            if (is_numeric($balance)) {
+                return (int) round((float) $balance);
+            }
+
+            return GatewayBalanceSnapshot::latest('captured_at')->value('reported_balance');
         } catch (Throwable) {
             return null;
         }

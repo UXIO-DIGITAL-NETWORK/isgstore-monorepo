@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Hub;
 
+use App\Models\GatewayBalanceSnapshot;
 use App\Models\PaymentChannel;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceInvoice;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Services\Payment\MonetapayService;
 use App\Support\Ledger\PlatformLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -36,11 +38,21 @@ class HubReportEndpointsTest extends TestCase
         config([
             'services.hub.api_key' => self::KEY,
             'services.hub.allowed_ips' => '',
-            // Summary calls the gateway for its balance; fake it so no test
-            // ever leaves the machine.
             'services.monetapay.token' => 'test-token',
         ]);
+        // A Hub pull must never make a live gateway call; if any handler tried,
+        // this fake keeps it on-machine and would surface as an unexpected send.
         Http::fake(['*' => Http::response(['code' => 0, 'data' => ['balance' => 123000]])]);
+    }
+
+    /** gateway_balance is read from the warm balance cache (never a live call). */
+    private function warmGatewayBalance(int $balance): void
+    {
+        Cache::put(
+            MonetapayService::balanceCacheKey(config('services.monetapay.collection_app_id') ?: null),
+            ['data' => ['balance' => $balance]],
+            300,
+        );
     }
 
     private function pull(string $path)
@@ -76,6 +88,7 @@ class HubReportEndpointsTest extends TestCase
     public function test_summary_shape_is_pinned(): void
     {
         PlatformLedger::record(amount: 50000, type: 'markup', reference: 'SEED-1');
+        $this->warmGatewayBalance(123000);
 
         $this->pull('/api/v1/hub/summary')
             ->assertOk()
@@ -95,13 +108,32 @@ class HubReportEndpointsTest extends TestCase
             ]]);
     }
 
-    public function test_summary_survives_a_dead_gateway(): void
+    public function test_summary_never_makes_a_live_gateway_call(): void
     {
-        Http::fake(['*' => fn () => throw new ConnectionException('down')]);
-
+        // No warm cache, no snapshot: the pull must still return fast with a null
+        // balance — it must NEVER reach out to the gateway (that is what hung the
+        // pull past the Hub's timeout in production).
         $this->pull('/api/v1/hub/summary')
             ->assertOk()
             ->assertJsonPath('data.gateway_balance', null);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_summary_falls_back_to_the_latest_reconciliation_snapshot(): void
+    {
+        GatewayBalanceSnapshot::create([
+            'captured_at' => now(),
+            'reported_balance' => 777000,
+            'expected_balance' => 777000,
+            'delta' => 0,
+        ]);
+
+        $this->pull('/api/v1/hub/summary')
+            ->assertOk()
+            ->assertJsonPath('data.gateway_balance', 777000);
+
+        Http::assertNothingSent();
     }
 
     public function test_withdrawals_lists_open_rows_with_type_discriminator(): void
