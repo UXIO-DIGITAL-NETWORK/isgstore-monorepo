@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Hub;
 
+use App\Enums\ServiceInvoiceStatus;
 use App\Enums\WithdrawalStatus;
 use App\Jobs\ProcessWithdrawalPayoutJob;
 use App\Models\Role;
+use App\Models\ServiceInvoice;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Support\Hub\HubSystemUser;
@@ -134,6 +136,59 @@ class HubWriteChannelTest extends TestCase
         // Second approve on an already-approved row: the action's status guard
         // throws, surfaced as 422 so the Hub treats it as "already done".
         $this->postJson("/api/v1/hub/withdrawals/{$w->withdrawal_number}/approve", [], $this->headers())
+            ->assertStatus(422);
+    }
+
+    private function unpaidInvoice(string $number = 'SINV-1'): ServiceInvoice
+    {
+        $merchant = User::factory()->create([
+            'role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id,
+        ]);
+
+        return ServiceInvoice::factory()->create([
+            'merchant_id' => $merchant->id,
+            'invoice_number' => $number,
+            'status' => ServiceInvoiceStatus::UNPAID->value,
+        ]);
+    }
+
+    public function test_confirm_invoice_runs_the_real_action_as_the_system_user(): void
+    {
+        $this->enable();
+        $invoice = $this->unpaidInvoice();
+
+        $this->postJson("/api/v1/hub/service-invoices/{$invoice->invoice_number}/confirm", [], $this->headers())
+            ->assertOk()
+            ->assertJsonPath('data.status', ServiceInvoiceStatus::PAID->value);
+
+        $invoice->refresh();
+        $this->assertSame(ServiceInvoiceStatus::PAID, $invoice->status);
+        $this->assertSame(HubSystemUser::resolve()->id, $invoice->verified_by);
+        // The confirm activates a subscription — one period opened.
+        $this->assertDatabaseHas('service_subscriptions', ['service_invoice_id' => $invoice->id]);
+    }
+
+    public function test_reject_invoice_runs_the_real_action(): void
+    {
+        $this->enable();
+        $invoice = $this->unpaidInvoice();
+
+        $this->postJson(
+            "/api/v1/hub/service-invoices/{$invoice->invoice_number}/reject",
+            ['reason' => 'Bukti tidak valid'],
+            $this->headers(),
+        )->assertOk()->assertJsonPath('data.status', ServiceInvoiceStatus::REJECTED->value);
+
+        $this->assertSame(ServiceInvoiceStatus::REJECTED, $invoice->fresh()->status);
+    }
+
+    public function test_confirming_a_paid_invoice_is_a_benign_422(): void
+    {
+        $this->enable();
+        $invoice = $this->unpaidInvoice();
+
+        $this->postJson("/api/v1/hub/service-invoices/{$invoice->invoice_number}/confirm", [], $this->headers())->assertOk();
+        $this->postJson("/api/v1/hub/service-invoices/{$invoice->invoice_number}/confirm", [], $this->headers())
             ->assertStatus(422);
     }
 }

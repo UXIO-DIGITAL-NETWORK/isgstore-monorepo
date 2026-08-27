@@ -707,4 +707,6 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
 Route::prefix('v1/hub')->middleware(['hub', 'hub-write', 'throttle:hub-write'])->group(function () {
     Route::post('/withdrawals/{withdrawal:withdrawal_number}/approve', [HubActionController::class, 'approveWithdrawal']);
     Route::post('/withdrawals/{withdrawal:withdrawal_number}/reject', [HubActionController::class, 'rejectWithdrawal']);
+    Route::post('/service-invoices/{serviceInvoice:invoice_number}/confirm', [HubActionController::class, 'confirmInvoice']);
+    Route::post('/service-invoices/{serviceInvoice:invoice_number}/reject', [HubActionController::class, 'rejectInvoice']);
 });
