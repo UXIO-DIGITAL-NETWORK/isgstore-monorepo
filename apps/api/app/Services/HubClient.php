@@ -35,6 +35,44 @@ class HubClient
         return $this->get('/api/v1/sites/channel-settings', 'channel-settings');
     }
 
+    /**
+     * Record a merchant's service purchase on the Hub in real time — the one
+     * outbound WRITE (everything else here is a pull). The Hub upserts by
+     * invoice_number, so re-sending the same order (a retry, or a later status
+     * change) is safe. Throws on any non-2xx / error envelope so the calling
+     * job retries; a permanently failed push is healed by the Hub's own 5-min
+     * pull, so it must never be allowed to fail the purchase itself.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function pushServiceOrder(array $payload): void
+    {
+        $baseUrl = rtrim((string) config('services.hub.base_url'), '/');
+        $apiKey = (string) config('services.hub.api_key');
+
+        if ($baseUrl === '' || $apiKey === '') {
+            throw new Exception('Hub belum dikonfigurasi (HUB_BASE_URL / HUB_SITE_API_KEY kosong).');
+        }
+
+        $response = $this->client()
+            ->withHeaders(['X-Site-Key' => $apiKey])
+            ->post($baseUrl.'/api/v1/sites/service-orders', $payload);
+
+        if (! $response->successful()) {
+            Log::error('Hub service-order push failed', [
+                'http_status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            throw new Exception("Hub service-order push error: HTTP {$response->status()}");
+        }
+
+        if (($response->json('status') ?? null) !== 'success') {
+            $message = (string) ($response->json('message') ?? 'Unexpected response');
+            Log::error('Hub service-order push error envelope', ['message' => $message]);
+            throw new Exception("Hub service-order push error: {$message}");
+        }
+    }
+
     /** @return array<int, array<string, mixed>> */
     private function get(string $path, string $label): array
     {

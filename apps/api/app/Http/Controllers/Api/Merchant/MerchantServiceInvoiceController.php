@@ -10,6 +10,7 @@ use App\Http\Requests\Service\PayServiceInvoiceRequest;
 use App\Http\Requests\Service\SubscribeServiceRequest;
 use App\Http\Resources\Api\Payment\PaymentChannelResource;
 use App\Http\Resources\Api\Service\ServiceInvoiceResource;
+use App\Jobs\PushServiceOrderToHubJob;
 use App\Models\PaymentChannel;
 use App\Models\ServiceInvoice;
 use App\Traits\ApiResponse;
@@ -95,6 +96,10 @@ class MerchantServiceInvoiceController extends Controller
 
             return $this->errorResponse($e->getMessage(), 422);
         }
+
+        // Tell the Hub a service order was placed (still UNPAID). Fire-and-forget
+        // and gated to a Hub-enabled deployment; never fails the purchase.
+        PushServiceOrderToHubJob::maybeDispatch($invoice);
 
         return $this->successResponse(
             new ServiceInvoiceResource($invoice->load(self::DETAIL_RELATIONS)),
