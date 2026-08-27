@@ -66,6 +66,16 @@ class CustomerNumberFormatter
             );
         }
 
+        // Drop empty pipe segments so an optional field left blank (e.g. no
+        // zone/server) never emits a dangling separator like "dataId|" — uxiotopup
+        // wants "dataId|zoneId" or just "dataId", never a trailing pipe.
+        if (str_contains($customerNo, '|')) {
+            $customerNo = implode('|', array_filter(
+                explode('|', $customerNo),
+                static fn (string $segment) => $segment !== '',
+            ));
+        }
+
         return $customerNo;
     }
 }

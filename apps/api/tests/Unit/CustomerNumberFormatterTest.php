@@ -86,16 +86,48 @@ class CustomerNumberFormatterTest extends TestCase
         );
     }
 
-    public function test_legacy_list_shape_is_still_parsed_and_joined_in_order(): void
+    public function test_legacy_list_shape_defaults_to_the_pipe_joined_form(): void
     {
+        // No explicit template → default to uxiotopup's "dataId|zoneId" (pipe),
+        // not bare concatenation which the supplier rejects.
         $legacyList = [
             ['key' => 'user_id', 'label' => 'User ID', 'required' => true],
             ['key' => 'zone_id', 'label' => 'Zone ID', 'required' => true],
         ];
 
         $this->assertSame(
-            '1234567892001',
+            '123456789|2001',
             $this->formatter->format($this->category($legacyList), '123456789', '2001')
+        );
+    }
+
+    public function test_a_schema_without_a_template_pipe_joins_by_default(): void
+    {
+        $schema = [
+            'fields' => [
+                ['key' => 'user_id', 'label' => 'User ID', 'required' => true],
+                ['key' => 'zone_id', 'label' => 'Zone ID', 'required' => true],
+            ],
+        ];
+
+        $this->assertSame(
+            '123456789|2001',
+            $this->formatter->format($this->category($schema), '123456789', '2001')
+        );
+    }
+
+    public function test_default_pipe_template_drops_the_separator_for_an_empty_optional_field(): void
+    {
+        // Two declared fields, second optional and left blank → "dataId", no
+        // trailing "dataId|".
+        $legacyList = [
+            ['key' => 'user_id', 'label' => 'User ID', 'required' => true],
+            ['key' => 'zone_id', 'label' => 'Zone ID', 'required' => false],
+        ];
+
+        $this->assertSame(
+            '123456789',
+            $this->formatter->format($this->category($legacyList), '123456789', null)
         );
     }
 

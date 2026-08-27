@@ -57,12 +57,15 @@ class OrderFormSchema
             return null;
         }
 
-        // Legacy lists carry no template; joining in declaration order reproduces
-        // exactly what the old hardcoded concatenation did.
+        // A legacy list (or a schema without an explicit template) has no template
+        // string; build the default. uxiotopup expects the pipe form
+        // "dataId|zoneId" — the same separator the unconfigured fallback uses — so
+        // join with "|", NOT bare concatenation (which sent "dataId zoneId" glued
+        // together and made every multi-field order fail at the supplier).
         $template = $isLegacyList ? '' : trim((string) ($raw['customer_no_template'] ?? ''));
 
         if ($template === '') {
-            $template = implode('', array_map(fn (OrderFormField $f) => '{'.$f->key.'}', $fields));
+            $template = implode('|', array_map(fn (OrderFormField $f) => '{'.$f->key.'}', $fields));
         }
 
         return new self($fields, $template);
