@@ -639,6 +639,10 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
     // Writes are refused when the catalog is Hub-managed (catalog-local):
     // a local edit would be silently overwritten by the next hub:sync-catalog.
     Route::get('/services', [ServiceController::class, 'index']);
+    // Static path before the {service} wildcard, or "meta" route-model-binds as
+    // an id. A plain read (no catalog-local) so the panel can learn it is a
+    // Hub-managed viewer even while writes are 422'd.
+    Route::get('/services/meta', [ServiceController::class, 'catalogMeta']);
     Route::post('/services', [ServiceController::class, 'store'])->middleware('catalog-local');
     Route::get('/services/{service}', [ServiceController::class, 'show']);
     Route::put('/services/{service}', [ServiceController::class, 'update'])->middleware('catalog-local');

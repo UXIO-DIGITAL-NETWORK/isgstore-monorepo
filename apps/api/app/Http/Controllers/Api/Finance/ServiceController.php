@@ -45,6 +45,24 @@ class ServiceController extends Controller
         );
     }
 
+    /**
+     * Whether this site's catalogue is owned by the Hub. When true the write
+     * routes below are 422'd by the `catalog-local` middleware, so the panel
+     * hides its create/edit/delete controls (and the now-stale cost/margin
+     * columns — cost is Hub-private and never syncs down) and shows a notice.
+     */
+    public function catalogMeta()
+    {
+        $managed = (bool) config('services.hub.enabled') && (bool) config('services.hub.managed_catalog');
+
+        return $this->successResponse([
+            'hub_managed' => $managed,
+            'managed_note' => $managed
+                ? 'Katalog service dikelola di Hub. Ubah dari panel Hub — perubahan lokal akan tertimpa sinkronisasi.'
+                : null,
+        ], 'Service catalog meta');
+    }
+
     public function store(StoreServiceRequest $request, CreateServiceAction $action)
     {
         $service = $action->execute($request->validated());

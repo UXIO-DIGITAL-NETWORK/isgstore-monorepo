@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\SubscriptionStatus;
+use App\Jobs\PushServiceOrderToHubJob;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use Illuminate\Console\Command;
@@ -81,6 +82,9 @@ class ExpireServiceSubscriptions extends Command
 
             $invoice->update(['status' => ServiceInvoiceStatus::EXPIRED]);
             $expiredInvoices++;
+
+            // Keep the Hub's order queue in step: this order will never be paid.
+            PushServiceOrderToHubJob::maybeDispatch($invoice);
         }
 
         $this->info($dryRun

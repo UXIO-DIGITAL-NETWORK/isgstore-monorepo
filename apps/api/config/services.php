@@ -139,6 +139,11 @@ return [
         // Hub owns: the service catalog and the channel fee schedule.
         'managed_catalog' => (bool) env('HUB_MANAGED_CATALOG', true),
         'managed_channels' => (bool) env('HUB_MANAGED_CHANNELS', true),
+        // Real-time push of a merchant's service order to the Hub (the one
+        // site→Hub write, on top of the Hub's own 5-min pull). Kill-switch that
+        // defaults to on whenever the Hub is enabled; set HUB_PUSH_ORDERS=false
+        // to fall back to pull-only without disabling the rest of the Hub.
+        'push_orders' => (bool) env('HUB_PUSH_ORDERS', (bool) env('HUB_ENABLED', false)),
         // Money-path WRITE channel (approve/reject withdrawals + confirm/reject
         // service invoices FROM the Hub). Off by default and gated by a SEPARATE
         // key from the read key above — a leaked read key must never move money.

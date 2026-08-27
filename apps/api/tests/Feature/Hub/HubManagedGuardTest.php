@@ -56,6 +56,23 @@ class HubManagedGuardTest extends TestCase
         $this->getJson('/api/v1/payment-internal/services')->assertOk();
     }
 
+    public function test_catalog_meta_reports_hub_managed_state(): void
+    {
+        Sanctum::actingAs($this->internal());
+
+        config(['services.hub.enabled' => true, 'services.hub.managed_catalog' => true]);
+        $this->getJson('/api/v1/payment-internal/services/meta')
+            ->assertOk()
+            ->assertJsonPath('data.hub_managed', true)
+            ->assertJsonPath('data.managed_note', fn ($note) => is_string($note) && $note !== '');
+
+        config(['services.hub.enabled' => false]);
+        $this->getJson('/api/v1/payment-internal/services/meta')
+            ->assertOk()
+            ->assertJsonPath('data.hub_managed', false)
+            ->assertJsonPath('data.managed_note', null);
+    }
+
     public function test_catalog_writes_work_on_a_standalone_deployment(): void
     {
         config(['services.hub.enabled' => false]);
