@@ -8,15 +8,17 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Pulls the channel fee schedule (MDR, admin fee, tax) from the Hub — the
- * effective per-site values, overrides already applied. `is_active` and other
- * local columns are never touched.
+ * Pulls the channel fee schedule (MDR, admin fee, tax, enablement, minimum)
+ * from the Hub — the effective per-site values, overrides already applied.
+ * A code the site has never seen is created; one absent from the Monetapay
+ * contract is created INACTIVE. Logo, sort order, description and payment_type
+ * of an existing row stay local.
  */
 class SyncHubChannelsCommand extends Command
 {
     protected $signature = 'hub:sync-channels';
 
-    protected $description = 'Pull the channel fee settings from the Hub (fees only; is_active stays local)';
+    protected $description = 'Pull the channel fee schedule from the Hub (fees, enablement, minimum; creates unknown channels inactive)';
 
     public function handle(SyncChannelSettingsFromHubAction $action): int
     {
@@ -30,7 +32,8 @@ class SyncHubChannelsCommand extends Command
         }
 
         $this->info(sprintf(
-            'Biaya channel selaras: %d diperbarui, %d dilewati (tidak dikonfigurasi lokal).',
+            'Biaya channel selaras: %d dibuat, %d diperbarui, %d dilewati (payload tanpa nama/tipe).',
+            $report['created'],
             $report['updated'],
             $report['skipped'],
         ));

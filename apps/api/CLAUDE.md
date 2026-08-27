@@ -352,9 +352,11 @@ Every query is scoped to `user_id` **before** any filter is applied, so no filte
 ## Uxio Hub Integration (multi-site)
 
 This codebase is deployed once per client site; the **Uxio Hub**
-(`uxiotopup-hub-api` + `uxiotopup-hub` panel) oversees all of them. All
-cross-system traffic is **pull-only GETs** — neither side opens a write
-endpoint for the other; a standalone deployment (`HUB_ENABLED=false`, the
+(`uxiotopup-hub-api` + `uxiotopup-hub` panel) oversees all of them. **Data only
+ever moves on a GET the receiver made itself** — but that is not the same as
+"no write endpoints", and the difference matters: this site POSTs service orders
+up to the Hub, and the Hub POSTs two kinds of instruction down (a sync poke, and
+the money-path actions). A standalone deployment (`HUB_ENABLED=false`, the
 default) schedules nothing, calls nowhere, exposes nothing.
 
 - **Reporting contract (Hub pulls us):** `GET /v1/hub/{summary, withdrawals,
@@ -367,14 +369,34 @@ default) schedules nothing, calls nowhere, exposes nothing.
   min when enabled). Catalog sync matches services by `code`, NEVER deletes
   (only deactivates — service FKs cascade), never touches `cost_price` (the
   Hub's private margin data, absent from the payload) or the local
-  `payment_channel_id`. Channel sync updates only the five fee columns;
-  `is_active` stays local. An error envelope aborts the sync rather than
-  emptying the catalog.
+  `payment_channel_id`. Channel sync matches by `channel_code` and writes the
+  fee columns plus `is_active` and `min_amount`. An error envelope aborts the
+  sync rather than emptying the catalog.
+- **Channel sync CREATES a channel the site has never seen**, from the `name` +
+  `payment_type` the Hub now sends, so a new payment method rolls out to five
+  sites from one form. Two rules keep that from breaking checkout from an admin
+  panel: it is only created **active** if the `channel_code` exists in
+  `MonetapayContractFees::CONTRACT` (an unlisted code is one `MonetapayService`
+  would send raw to the gateway AND one `MerchantBalance` settles at T+0, i.e.
+  withdrawable before Monetapay released it), and `payment_type` is taken on
+  CREATE only — it picks the gateway endpoint, and the `match()` there falls
+  through to `virtual_account`, so a Hub typo would misroute a live channel
+  rather than error. Rows the sync writes are flagged `hub_managed`.
+- **The Hub pokes us:** `POST /v1/hub/sync` (middleware `hub` + `throttle:hub-sync`,
+  read key only) carries no data — it queues `RunHubSyncJob`, which runs the same
+  pulls the scheduler runs, so a Hub edit lands in seconds instead of 15 minutes.
+  Deliberately NOT behind `hub-write`: that gate exists so a leaked read key
+  cannot move money, and requiring it here would couple fast fee updates to
+  `HUB_WRITE_ENABLED`. The job is `ShouldBeUnique` for 60s, so a burst of panel
+  saves is one sync. Needs the queue worker; without it the cron still converges.
 - **Hub-managed guards:** with `HUB_MANAGED_CATALOG`/`HUB_MANAGED_CHANNELS`,
   the local service-catalog writes 422 (`catalog-local` middleware) and
-  `ChannelFeeController` rejects EVERY field (fully read-only) — the Hub now
-  owns `is_active` and `min_amount` per site too, so `hub:sync-channels` writes
-  them alongside the fees; a local edit would be silently overwritten.
+  `ChannelFeeController` rejects every field for a channel the Hub actually
+  syncs (`payment_channels.hub_managed`) — a local edit would be silently
+  overwritten. Scoped per row on purpose: the Hub's master holds only the
+  Monetapay-contracted codes, so `balance` and `payment_link` are not in it and
+  would otherwise be editable nowhere. `GET /v1/payment-internal/channels/meta`
+  lets the panel grey the inputs out instead of refusing on save.
 - **Withdrawal holding period:** `MerchantBalance` splits paid sales into
   settled vs held — a sale is withdrawable only after its channel's Monetapay
   settlement window (`MonetapayContractFees::settlementDays`) plus
@@ -409,7 +431,11 @@ HUB_SITE_API_KEY=                 # per-site key issued by the Hub, shown once a
 HUB_BASE_URL=                     # the Hub API root, e.g. https://hub.uxiotopup.id
 HUB_ALLOWED_IPS=                  # optional source-IP allowlist for the Hub's pulls
 HUB_MANAGED_CATALOG=true          # local catalog writes 422 while the Hub owns the catalog
-HUB_MANAGED_CHANNELS=true         # local channel edits 422 (fees + is_active + min_amount all Hub-owned)
+HUB_MANAGED_CHANNELS=true         # local edits 422 for Hub-synced channels (fees + is_active + min_amount)
+HUB_PUSH_ORDERS=                  # real-time service-order push to the Hub; defaults to HUB_ENABLED.
+                                  # Leave UNSET — an empty value reads as false and silently disables it.
+HUB_WRITE_ENABLED=false           # money-path write channel (Hub approving withdrawals / confirming invoices)
+HUB_WRITE_API_KEY=                # the SECOND key that channel needs; minted per site in the Hub panel
 
 UXIOTOPUP_API_KEY=
 UXIOTOPUP_BASE_URL=https://api.uxiotopup.id

@@ -19,7 +19,25 @@ class ChannelFeeController extends Controller
 {
     use ApiResponse;
 
+    /** One wording for the refusal and for the banner that prevents it. */
+    private const MANAGED_NOTE = 'Channel dikelola di Hub. Ubah biaya, status aktif, dan minimum dari panel Hub — perubahan lokal akan tertimpa sinkronisasi.';
+
     public function __construct(private readonly DiscordWebhookService $discord) {}
+
+    /**
+     * Lets the panel find out it is a viewer BEFORE someone types a number and
+     * is refused on save. Deliberately not behind the guard — the same reason
+     * ServiceController::catalogMeta() is not behind `catalog-local`.
+     */
+    public function channelMeta()
+    {
+        $managed = $this->hubManaged();
+
+        return $this->successResponse([
+            'hub_managed' => $managed,
+            'managed_note' => $managed ? self::MANAGED_NOTE : null,
+        ], 'Channel meta');
+    }
 
     public function index()
     {
@@ -50,14 +68,13 @@ class ChannelFeeController extends Controller
 
         // Hub-managed channels: fee columns AND is_active/min_amount are all set
         // at the Hub (per site) and synced down, so any local edit would be
-        // silently overwritten by the next hub:sync-channels. The editor is
-        // read-only here — change everything from the Hub panel.
-        if (config('services.hub.enabled') && config('services.hub.managed_channels')) {
+        // silently overwritten by the next hub:sync-channels. Scoped to the rows
+        // the sync actually writes (`hub_managed`) — the Hub's master has no
+        // `balance` or `payment_link`, and locking those would leave them
+        // uneditable everywhere.
+        if ($this->hubManaged() && $paymentChannel->hub_managed) {
             if ($validated !== []) {
-                return $this->errorResponse(
-                    'Channel dikelola di Hub. Ubah biaya, status aktif, dan minimum dari panel Hub — perubahan lokal akan tertimpa sinkronisasi.',
-                    422
-                );
+                return $this->errorResponse(self::MANAGED_NOTE, 422);
             }
         }
 
@@ -89,6 +106,11 @@ class ChannelFeeController extends Controller
         }
 
         return $this->successResponse($this->present($paymentChannel), 'Biaya channel berhasil disimpan');
+    }
+
+    private function hubManaged(): bool
+    {
+        return (bool) config('services.hub.enabled') && (bool) config('services.hub.managed_channels');
     }
 
     /** One shape for both the list and the update response — never edited apart. */
