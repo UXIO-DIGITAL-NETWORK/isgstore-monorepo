@@ -15,21 +15,20 @@ const TAB_SEGMENTS = [
   { value: "testimonials", label: "Testimonials", segment: "testimonials" },
 ];
 
-const PREVIEW_BASE = "/admin/content-preview";
-const REAL_BASE = "/admin/content";
+const BASE = "/admin/content";
 
 /**
  * Shell for the content tabs — real nested routes rather than tab state, so
  * the URL and breadcrumb reflect which section is open.
  *
- * Tab hrefs are built from whichever base the current path is under, so a
- * click inside the unauthenticated preview route can never leak into the
- * guarded one. The preview base is checked first because "/admin/content-preview"
- * also starts with "/admin/content".
+ * Unlike Categories and Products, content has no unauthenticated preview
+ * route: the `/admin/content-preview` base this once also matched was
+ * copy-pasted from those layouts and never existed in the route tree, so the
+ * branch could never be taken.
  */
 export function ContentTabsLayout() {
   const { pathname } = useLocation();
-  const base = pathname.startsWith(PREVIEW_BASE) ? PREVIEW_BASE : REAL_BASE;
+  const base = BASE;
   const activeSegment = pathname.slice(base.length).split("/").filter(Boolean)[0];
   const activeTab = TAB_SEGMENTS.find((tab) => tab.segment === activeSegment)?.value ?? "articles";
 
