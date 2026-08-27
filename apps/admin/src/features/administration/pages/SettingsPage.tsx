@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
+import { Image } from "@/components/common/Image";
+import { ImageDropzone } from "@/components/common/ImageDropzone";
 import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useSettings, useUpdateSettings } from "../hooks/useAdministration";
+import { useSettings, useUpdateSettings, useUploadSetting } from "../hooks/useAdministration";
 import type { Setting } from "../types/administration.type";
 
 const GROUP_LABELS: Record<string, string> = {
@@ -28,6 +30,7 @@ const GROUP_LABELS: Record<string, string> = {
 export function SettingsPage() {
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
+  const uploadSetting = useUploadSetting();
 
   // Only the keys the admin has actually touched. Everything else reads
   // through to the saved value, so the form needs no effect to seed itself and
@@ -91,7 +94,11 @@ export function SettingsPage() {
               className="flex flex-col gap-1.5"
             >
               <Box className="flex items-center gap-2">
-                <Label htmlFor={`setting-${setting.key}`}>{setting.label ?? setting.key}</Label>
+                {/* An image setting is labelled by its own ImageDropzone —
+                    labelling it here too would point two labels at one input. */}
+                {setting.type !== "image" && (
+                  <Label htmlFor={`setting-${setting.key}`}>{setting.label ?? setting.key}</Label>
+                )}
                 {setting.is_public && (
                   <Badge
                     variant="outline"
@@ -117,10 +124,35 @@ export function SettingsPage() {
                   onChange={(event) => setValue(setting.key, event.target.value)}
                 />
               ) : setting.type === "image" ? (
-                <Text variant="muted">
-                  {draft[setting.key] ? draft[setting.key] : "No file uploaded."} — images are managed through the
-                  upload endpoint.
-                </Text>
+                // Images have their own write path — the file is uploaded on
+                // pick, not folded into the bulk save below, which carries
+                // only `{key: value}` strings.
+                <Box
+                  className="flex flex-col gap-3"
+                  data-testid={`setting-upload-${setting.key}`}
+                >
+                  {setting.value_url ? (
+                    <Image
+                      src={setting.value_url}
+                      alt={setting.label ?? setting.key}
+                      width={160}
+                      height={80}
+                      objectFit="contain"
+                      className="rounded-xl border border-border bg-muted p-2"
+                    />
+                  ) : null}
+                  <ImageDropzone
+                    id={`setting-${setting.key}`}
+                    label={setting.label ?? setting.key}
+                    caption={setting.value ? "Replace the current file." : "No file uploaded yet."}
+                    // The endpoint also accepts SVG and ICO — a favicon and a
+                    // vector logo must keep their format, and compressImage
+                    // passes both through untouched.
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon"
+                    formatsLabel="JPG, PNG, WEBP, SVG, ICO — max 2 MB"
+                    onChange={(file) => uploadSetting.mutate({ key: setting.key, file })}
+                  />
+                </Box>
               ) : (
                 <Input
                   id={`setting-${setting.key}`}

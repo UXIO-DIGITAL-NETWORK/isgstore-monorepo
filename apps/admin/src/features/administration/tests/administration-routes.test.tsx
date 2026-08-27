@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 
-import { makeUser, renderRoute, screen, within } from "@/test/test-utils";
+import { fireEvent, makeUser, renderRoute, screen, waitFor, within } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
-import { usersService } from "../services/administration.service";
+import { settingsService, usersService } from "../services/administration.service";
 
 // Guarded routes with no preview twin — the store is seeded so requireAuth and
 // requirePermission run for real rather than being bypassed.
@@ -84,6 +84,28 @@ describe("administration routes", () => {
     await renderRoute("/admin/settings");
 
     expect(await screen.findByRole("switch", { name: "Maintenance Mode" })).toBeInTheDocument();
+  });
+
+  // An image setting used to render as the words "No file uploaded." with no
+  // way to change it, even though the upload endpoint has always existed.
+  it("an image setting offers a real upload control", async () => {
+    await renderRoute("/admin/settings");
+
+    expect(await screen.findByText("Site Logo")).toBeInTheDocument();
+    expect(screen.queryByText(/images are managed through the upload endpoint/i)).not.toBeInTheDocument();
+    expect(await screen.findByTestId("setting-upload-site_logo")).toBeInTheDocument();
+  });
+
+  it("uploads an image setting through its own endpoint", async () => {
+    const uploadSpy = vi.spyOn(settingsService, "upload");
+    await renderRoute("/admin/settings");
+
+    const dropzone = await screen.findByTestId("setting-upload-site_logo");
+    const input = dropzone.querySelector("input[type=file]") as HTMLInputElement;
+    const file = new File(["logo"], "logo.png", { type: "image/png" });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(uploadSpy).toHaveBeenCalledWith("site_logo", expect.any(File)));
   });
 });
 

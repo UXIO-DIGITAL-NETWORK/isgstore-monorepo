@@ -50,6 +50,8 @@ interface SettingApiRow {
   group: string;
   key: string;
   value: string | null;
+  /** Public URL for an image setting — `value` is only a storage path. */
+  value_url?: string | null;
   type: Setting["type"];
   label: string | null;
   is_public: boolean;
@@ -98,6 +100,7 @@ const toSetting = (row: SettingApiRow): Setting => ({
   group: row.group,
   key: row.key,
   value: row.value,
+  value_url: row.value_url ?? undefined,
   type: row.type,
   label: row.label ?? undefined,
   is_public: Boolean(row.is_public),
@@ -180,5 +183,18 @@ export const settingsService = {
   update: async (values: Record<string, string | number | boolean>): Promise<Setting[]> => {
     const response: ApiResponse<SettingApiRow[]> = await api.put(`${API_VERSION}/settings`, { settings: values });
     return response.data.map(toSetting);
+  },
+  /**
+   * Image settings have their own write path: the bulk update takes a
+   * `{key: value}` map and cannot carry a file, and the endpoint replaces the
+   * stored file (deleting the previous one) rather than setting a string.
+   */
+  upload: async (key: string, file: File): Promise<Setting> => {
+    const form = new FormData();
+    form.append("key", key);
+    form.append("file", file);
+
+    const response: ApiResponse<SettingApiRow> = await api.post(`${API_VERSION}/settings/upload`, form);
+    return toSetting(response.data);
   },
 };

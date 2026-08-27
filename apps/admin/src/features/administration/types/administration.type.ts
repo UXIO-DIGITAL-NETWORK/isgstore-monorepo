@@ -49,6 +49,8 @@ export interface Setting {
   group: string;
   key: string;
   value: string | null;
+  /** Renderable URL for an `image` setting; `value` alone is a storage path. */
+  value_url?: string;
   type: "string" | "text" | "number" | "boolean" | "json" | "image";
   label?: string;
   /** Whether the storefront's public settings endpoint returns this key. */

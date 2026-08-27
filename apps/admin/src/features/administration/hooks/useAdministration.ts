@@ -106,3 +106,20 @@ export const useUpdateSettings = () => {
     onError: () => toast.error("Failed to save settings"),
   });
 };
+
+/**
+ * Image settings are written one file at a time, not through the bulk save —
+ * see `settingsService.upload`.
+ */
+export const useUploadSetting = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ key, file }: { key: string; file: File }) => settingsService.upload(key, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Image uploaded");
+    },
+    onError: () => toast.error("Failed to upload image"),
+  });
+};
