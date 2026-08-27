@@ -6,7 +6,7 @@ import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useChannelFees, useUpdateChannelFee } from "../hooks/useFinance";
+import { useChannelFees, useChannelMeta, useUpdateChannelFee } from "../hooks/useFinance";
 import type { ChannelFee } from "../types/finance.type";
 
 type RowDraft = Partial<
@@ -18,7 +18,14 @@ type RowDraft = Partial<
 
 export default function ChannelFeePage() {
   const { data, isLoading, isError } = useChannelFees();
+  const { data: meta } = useChannelMeta();
   const { mutate: save, isPending } = useUpdateChannelFee();
+
+  // When the Hub owns the schedule, the update route 422s for every row it
+  // syncs. Without this the page gives no hint at all: you type a number, click
+  // Simpan, and are told no. Scoped per row — `balance` and `payment_link` are
+  // not in the Hub's master and stay editable here.
+  const lockedFor = (row: ChannelFee) => (meta?.hub_managed ?? false) && row.hub_managed;
 
   // Only edited overrides are tracked; unedited fields fall back to the row's
   // fetched value. This avoids seeding state from props via an effect.
@@ -46,6 +53,7 @@ export default function ChannelFeePage() {
       cell: (r) => (
         <Input
           type="number"
+          disabled={lockedFor(r)}
           value={merged(r).fee_flat}
           onChange={(e) => patch(r.id, { fee_flat: Number(e.target.value) })}
         />
@@ -58,6 +66,7 @@ export default function ChannelFeePage() {
       cell: (r) => (
         <Input
           type="number"
+          disabled={lockedFor(r)}
           step="0.01"
           value={merged(r).fee_percent}
           onChange={(e) => patch(r.id, { fee_percent: Number(e.target.value) })}
@@ -69,11 +78,24 @@ export default function ChannelFeePage() {
       header: "Fee Gateway (Rp)",
       className: "w-40",
       cell: (r) => (
-        <Input
-          type="number"
-          value={merged(r).gateway_fee_flat}
-          onChange={(e) => patch(r.id, { gateway_fee_flat: Number(e.target.value) })}
-        />
+        <Box className="flex flex-col gap-1">
+          <Input
+            type="number"
+            disabled={lockedFor(r)}
+            value={merged(r).gateway_fee_flat}
+            onChange={(e) => patch(r.id, { gateway_fee_flat: Number(e.target.value) })}
+          />
+          {/* Already in the payload, never shown until now — this is the same
+              divergence the Discord alarm shouts about, and it silently
+              under/over-reports profit at settlement. */}
+          {r.contract_mismatch && (
+            <Text as="span" variant="small" className="text-warning">
+              {r.contract_expected
+                ? `≠ kontrak ${r.contract_expected.gateway_fee_flat}+${r.contract_expected.gateway_fee_percent}%`
+                : "tidak ada di kontrak Monetapay"}
+            </Text>
+          )}
+        </Box>
       ),
     },
     {
@@ -83,6 +105,7 @@ export default function ChannelFeePage() {
       cell: (r) => (
         <Input
           type="number"
+          disabled={lockedFor(r)}
           step="0.01"
           value={merged(r).gateway_fee_percent}
           onChange={(e) => patch(r.id, { gateway_fee_percent: Number(e.target.value) })}
@@ -96,6 +119,7 @@ export default function ChannelFeePage() {
       cell: (r) => (
         <Input
           type="number"
+          disabled={lockedFor(r)}
           step="0.01"
           aria-label={`Pajak ${r.name}`}
           value={merged(r).tax_percent}
@@ -116,6 +140,7 @@ export default function ChannelFeePage() {
             size="sm"
             className="flex items-center gap-2 p-0"
             aria-label={`${active ? "Nonaktifkan" : "Aktifkan"} ${r.name}`}
+            disabled={lockedFor(r)}
             onClick={() => patch(r.id, { is_active: !active })}
           >
             <StatusBadge status={active ? "SETTLED" : "EXPIRED"} />
@@ -128,7 +153,11 @@ export default function ChannelFeePage() {
       key: "actions",
       header: "Aksi",
       cell: (r) => (
-        <Button size="sm" disabled={isPending} onClick={() => save({ id: r.id, payload: merged(r) })}>
+        <Button
+          size="sm"
+          disabled={isPending || lockedFor(r)}
+          onClick={() => save({ id: r.id, payload: merged(r) })}
+        >
           Simpan
         </Button>
       ),
@@ -143,6 +172,20 @@ export default function ChannelFeePage() {
         aktif/nonaktifkan channel. Pajak dikenakan atas fee channel dan mengurangi keuntungan kita
         (tidak menambah tagihan customer). Klik Simpan untuk menerapkan.
       </Text>
+
+      {meta?.hub_managed && (
+        <Box className="rounded-lg border border-border bg-muted/40 px-4 py-3">
+          <Text
+            as="p"
+            variant="small"
+            className="text-muted-foreground"
+          >
+            {meta.managed_note ??
+              "Channel dikelola di Hub. Ubah biaya, status aktif, dan minimum dari panel Hub — perubahan lokal akan tertimpa sinkronisasi."}
+          </Text>
+        </Box>
+      )}
+
       <SimpleTable
         columns={columns}
         rows={data ?? []}

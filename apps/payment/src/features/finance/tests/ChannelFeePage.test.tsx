@@ -18,6 +18,9 @@ const mandiriVa: ChannelFee = {
   gateway_fee_percent: 0,
   tax_percent: 11,
   is_active: true,
+  hub_managed: false,
+  contract_mismatch: false,
+  contract_expected: null,
 };
 
 const qris: ChannelFee = {
@@ -32,6 +35,9 @@ const qris: ChannelFee = {
   gateway_fee_percent: 0.7,
   tax_percent: 11,
   is_active: true,
+  hub_managed: false,
+  contract_mismatch: false,
+  contract_expected: null,
 };
 
 const save = vi.fn();
@@ -50,9 +56,18 @@ const renderPage = () =>
     </QueryClientProvider>,
   );
 
+const mockMeta = (hubManaged: boolean) =>
+  vi.spyOn(hooks, "useChannelMeta").mockReturnValue({
+    data: {
+      hub_managed: hubManaged,
+      managed_note: hubManaged ? "Channel dikelola di Hub." : null,
+    },
+  } as unknown as ReturnType<typeof hooks.useChannelMeta>);
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockList();
+  mockMeta(false);
   vi.spyOn(hooks, "useUpdateChannelFee").mockReturnValue({
     mutate: save,
     isPending: false,
@@ -102,5 +117,59 @@ describe("ChannelFeePage", () => {
     expect(save).toHaveBeenCalledWith(
       expect.objectContaining({ id: 9, payload: expect.objectContaining({ is_active: false }) }),
     );
+  });
+});
+
+describe("ChannelFeePage under Hub management", () => {
+  it("says so and locks the rows the Hub owns", () => {
+    // Before this, the page looked fully editable and only refused on Simpan —
+    // you typed a number, clicked, and were told no.
+    mockList([{ ...qris, hub_managed: true }]);
+    mockMeta(true);
+    renderPage();
+
+    expect(screen.getByText("Channel dikelola di Hub.")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Pajak QRIS/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Simpan" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Nonaktifkan QRIS/i })).toBeDisabled();
+  });
+
+  it("leaves a channel the Hub does not own editable", () => {
+    // `balance` is the internal wallet — it is not in the Hub's master, so
+    // locking it with the rest would leave it uneditable everywhere.
+    mockList([{ ...qris, name: "Saldo (Wallet)", channel_code: "balance", hub_managed: false }]);
+    mockMeta(true);
+    renderPage();
+
+    const input = screen.getByLabelText(/Pajak Saldo \(Wallet\)/i);
+    expect(input).not.toBeDisabled();
+
+    fireEvent.change(input, { target: { value: "12" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: expect.objectContaining({ tax_percent: 12 }) }),
+    );
+  });
+
+  it("flags a gateway fee that drifted from the Monetapay contract", () => {
+    mockList([
+      {
+        ...mandiriVa,
+        contract_mismatch: true,
+        contract_expected: { gateway_fee_flat: 1900, gateway_fee_percent: 0 },
+      },
+    ]);
+    renderPage();
+
+    expect(screen.getByText(/≠ kontrak 1900\+0%/)).toBeInTheDocument();
+  });
+
+  it("stays fully editable on a standalone deployment", () => {
+    mockMeta(false);
+    renderPage();
+
+    expect(screen.queryByText("Channel dikelola di Hub.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Simpan" })).not.toBeDisabled();
   });
 });

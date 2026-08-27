@@ -100,6 +100,10 @@ export const useRejectWithdrawal = () => {
 export const useChannelFees = () =>
   useQuery({ queryKey: ["finance", "channels"], queryFn: financeService.channels });
 
+/** Mirrors useServicesMeta: lets the page know it is a viewer before anyone types. */
+export const useChannelMeta = () =>
+  useQuery({ queryKey: ["finance", "channels", "meta"], queryFn: financeService.channelMeta });
+
 export const useUpdateChannelFee = () => {
   const queryClient = useQueryClient();
   return useMutation({

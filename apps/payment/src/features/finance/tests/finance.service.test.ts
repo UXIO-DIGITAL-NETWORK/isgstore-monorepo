@@ -194,3 +194,36 @@ describe("financeService — internal withdrawals", () => {
     expect(form.get("proof")).toBe(proof);
   });
 });
+
+describe("financeService — channel fees", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("reads the channel list", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope([{ id: 4, channel_code: "qris" }]) as never);
+
+    await financeService.channels();
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-internal/channels");
+  });
+
+  it("reads whether the Hub owns the fee schedule", async () => {
+    // Static path — if it ever bound as {paymentChannel} the page would silently
+    // decide it is editable and only find out on a refused save.
+    vi.mocked(api.get).mockResolvedValueOnce(
+      envelope({ hub_managed: true, managed_note: "Channel dikelola di Hub." }) as never,
+    );
+
+    const meta = await financeService.channelMeta();
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-internal/channels/meta");
+    expect(meta.hub_managed).toBe(true);
+  });
+
+  it("saves one channel's fees", async () => {
+    vi.mocked(api.put).mockResolvedValueOnce(envelope({ id: 4, tax_percent: 12 }) as never);
+
+    await financeService.updateChannel(4, { tax_percent: 12 });
+
+    expect(api.put).toHaveBeenCalledWith("/v1/payment-internal/channels/4", { tax_percent: 12 });
+  });
+});

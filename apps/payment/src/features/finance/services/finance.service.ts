@@ -15,6 +15,7 @@ import type {
 } from "@/types/service.type";
 import type {
   ChannelFee,
+  ChannelMeta,
   FinanceDashboard,
   FinanceMerchant,
   FinanceNotification,
@@ -130,6 +131,16 @@ export const financeService = {
   // ── Settings ──────────────────────────────────────────────────────────────
   channels: async (): Promise<ChannelFee[]> => {
     const res: ApiResponse<ChannelFee[]> = await api.get(`${BASE}/channels`);
+    return res.data;
+  },
+
+  /**
+   * Whether the fee schedule is owned by the Hub. When true the update route
+   * 422s for every Hub-synced row, so the page greys those out up front rather
+   * than letting someone type a number and be refused on Simpan.
+   */
+  channelMeta: async (): Promise<ChannelMeta> => {
+    const res: ApiResponse<ChannelMeta> = await api.get(`${BASE}/channels/meta`);
     return res.data;
   },
 
