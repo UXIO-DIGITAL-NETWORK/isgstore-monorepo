@@ -19,7 +19,12 @@ class PaymentChannel extends Model
 
     protected $guarded = ['id'];
 
-    protected $casts = ['extra_config' => 'array'];
+    protected $casts = [
+        'extra_config' => 'array',
+        'is_active' => 'boolean',
+        // Written by the Hub sync; the fee editor refuses exactly these rows.
+        'hub_managed' => 'boolean',
+    ];
 
     public function transactions()
     {

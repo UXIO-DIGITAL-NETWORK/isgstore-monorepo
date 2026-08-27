@@ -69,7 +69,12 @@ final class MonetapayContractFees
 
     public const DISBURSEMENT_SETTLEMENT_DAYS = 1;
 
-    /** Whether the channel is listed in the Monetapay contract (bca_va → false). */
+    /**
+     * Whether the channel is listed here at all. This is the gate the Hub sync
+     * uses before it will let a Hub-created channel go live: a code we hold no
+     * rate for is also a code MerchantBalance settles at T+0, which would make
+     * money withdrawable before Monetapay has released it.
+     */
     public static function has(string $channelCode): bool
     {
         return isset(self::CONTRACT[$channelCode]);

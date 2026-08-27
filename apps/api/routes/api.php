@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\Finance\ServiceSubscriptionController;
 use App\Http\Controllers\Api\FinancialController;
 use App\Http\Controllers\Api\Hub\HubActionController;
 use App\Http\Controllers\Api\Hub\HubReportController;
+use App\Http\Controllers\Api\Hub\HubSyncTriggerController;
 use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\Marketing\FlashSaleController;
@@ -633,6 +634,10 @@ Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-inter
     // Settings — biaya per metode pembayaran. That fee IS the "Biaya Admin"
     // the customer is charged; there is no separate global markup.
     Route::get('/channels', [ChannelFeeController::class, 'index']);
+    // Static path before the {paymentChannel} binder. A plain read (no guard)
+    // so the panel can learn it is a Hub-managed viewer and grey the inputs
+    // out, instead of discovering it from a 422 after someone typed a number.
+    Route::get('/channels/meta', [ChannelFeeController::class, 'channelMeta']);
     Route::put('/channels/{paymentChannel}', [ChannelFeeController::class, 'update']);
 
     // Services catalogue — what kita sells to its clients, and for how long.
@@ -708,6 +713,17 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
 // limit — a leaked read key must never move money. Bound by number (the Hub
 // mirror keys on withdrawal_number, not the site's id). Each route wraps the
 // same Action the payment-internal panel uses (HubActionController).
+// ── Hub config-sync trigger ──────────────────────────────────────────────────
+// "Your catalog/fee schedule changed — come and get it." Carries no data and
+// moves no money: the site still fetches everything itself over its own
+// outbound GET to the Hub, this only collapses the wait from 15 minutes to a
+// second. That is why it sits behind the READ key alone. Requiring the write
+// key would mean a site that accepts the Hub's reports but refuses Hub-driven
+// money movement (HUB_WRITE_ENABLED=false) also loses fast fee updates.
+Route::prefix('v1/hub')->middleware(['hub', 'throttle:hub-sync'])->group(function () {
+    Route::post('/sync', [HubSyncTriggerController::class, 'trigger']);
+});
+
 Route::prefix('v1/hub')->middleware(['hub', 'hub-write', 'throttle:hub-write'])->group(function () {
     Route::post('/withdrawals/{withdrawal:withdrawal_number}/approve', [HubActionController::class, 'approveWithdrawal']);
     Route::post('/withdrawals/{withdrawal:withdrawal_number}/reject', [HubActionController::class, 'rejectWithdrawal']);

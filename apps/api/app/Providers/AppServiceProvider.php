@@ -67,5 +67,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('hub-write', function (Request $request) {
             return Limit::perMinute(30)->by($request->ip());
         });
+
+        // Config-sync pokes from the Hub. One caller, and the job behind it is
+        // unique-for-60s anyway, so this only has to blunt a loop — a panel
+        // save burst of a dozen in a minute is normal and must pass.
+        RateLimiter::for('hub-sync', function (Request $request) {
+            return Limit::perMinute(12)->by($request->ip());
+        });
     }
 }
