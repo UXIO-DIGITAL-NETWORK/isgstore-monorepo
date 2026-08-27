@@ -30,8 +30,8 @@ export interface CategoryProvider {
 
 export interface CategoryProviderListParams {
   search?: string;
-  /** Backs the toolbar's "Type to search provider" select (§4.5 line 241). */
-  provider_name?: string;
+  /** Backs the toolbar's provider select (§4.5 line 241) — an exact supplier id. */
+  supplier_id?: string;
   page?: number;
   per_page?: number;
 }

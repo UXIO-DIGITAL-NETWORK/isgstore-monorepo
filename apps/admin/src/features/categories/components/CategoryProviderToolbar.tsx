@@ -6,14 +6,14 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PROVIDER_OPTIONS } from "../data/select-options.data";
+import { useSupplierOptions } from "../hooks/useSupplierOptions";
 
 const CLEAR_VALUE = "all";
 
 interface CategoryProviderToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
-  providerName?: string;
+  supplierId?: string;
   onProviderChange: (value: string | undefined) => void;
   onRefresh: () => void;
   onAdd: () => void;
@@ -41,13 +41,17 @@ interface CategoryProviderToolbarProps {
 export function CategoryProviderToolbar({
   search,
   onSearchChange,
-  providerName,
+  supplierId,
   onProviderChange,
   onRefresh,
   onAdd,
   selectedCount,
   onBulkDelete,
 }: CategoryProviderToolbarProps) {
+  // Real suppliers, id-valued: the API filters on `supplier_id`, and a
+  // provider added later must appear here without a code change.
+  const { options } = useSupplierOptions();
+
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
@@ -70,7 +74,7 @@ export function CategoryProviderToolbar({
           {/* `""` (not the clear sentinel) when unfiltered, so Radix shows the
               placeholder rather than the "All providers" item's label. */}
           <Select
-            value={providerName ?? ""}
+            value={supplierId ?? ""}
             onValueChange={(next) => onProviderChange(next === CLEAR_VALUE ? undefined : next)}
           >
             <SelectTrigger
@@ -81,7 +85,7 @@ export function CategoryProviderToolbar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={CLEAR_VALUE}>All providers</SelectItem>
-              {PROVIDER_OPTIONS.map((option) => (
+              {options.map((option) => (
                 <SelectItem
                   key={option.value}
                   value={option.value}

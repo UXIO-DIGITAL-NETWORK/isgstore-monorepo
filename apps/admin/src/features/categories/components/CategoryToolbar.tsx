@@ -6,7 +6,7 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CATEGORY_TYPE_OPTIONS } from "../data/select-options.data";
+import { useCategoryTypeOptions } from "../hooks/useCategoryTypeOptions";
 
 const CLEAR_VALUE = "all";
 
@@ -25,6 +25,11 @@ interface CategoryToolbarProps {
  * Add Category modal owned by the list page.
  */
 export function CategoryToolbar({ search, onSearchChange, type, onTypeChange, onRefresh, onAdd }: CategoryToolbarProps) {
+  // The API filters on `type_id`, so the options have to be the real rows —
+  // a hardcoded list of names could never match, and a type created on the
+  // Category Type tab would never show up here.
+  const { options } = useCategoryTypeOptions();
+
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
@@ -56,7 +61,7 @@ export function CategoryToolbar({ search, onSearchChange, type, onTypeChange, on
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={CLEAR_VALUE}>All types</SelectItem>
-              {CATEGORY_TYPE_OPTIONS.map((option) => (
+              {options.map((option) => (
                 <SelectItem
                   key={option.value}
                   value={option.value}

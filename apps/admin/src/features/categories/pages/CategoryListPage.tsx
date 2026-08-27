@@ -13,14 +13,14 @@ const DEFAULT_PAGE_SIZE = 10;
 
 export default function CategoryListPage() {
   const [search, setSearch] = useState("");
-  const [type, setType] = useState<string | undefined>(undefined);
+  const [typeId, setTypeId] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
-    () => ({ search: search || undefined, type, page, per_page: pageSize }),
-    [search, type, page, pageSize],
+    () => ({ search: search || undefined, type_id: typeId, page, per_page: pageSize }),
+    [search, typeId, page, pageSize],
   );
   const { data, isLoading, isError, refetch } = useCategoryList(params);
 
@@ -30,7 +30,7 @@ export default function CategoryListPage() {
   };
 
   const handleTypeChange = (value: string | undefined) => {
-    setType(value);
+    setTypeId(value);
     setPage(1);
   };
 
@@ -50,7 +50,7 @@ export default function CategoryListPage() {
         <CategoryToolbar
           search={search}
           onSearchChange={handleSearchChange}
-          type={type}
+          type={typeId}
           onTypeChange={handleTypeChange}
           onRefresh={() => refetch()}
           onAdd={() => setAddOpen(true)}

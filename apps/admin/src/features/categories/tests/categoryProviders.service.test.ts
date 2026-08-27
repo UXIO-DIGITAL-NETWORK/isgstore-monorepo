@@ -41,13 +41,17 @@ describe("categoryProvidersService.list", () => {
     });
   });
 
-  it("translates the toolbar's provider_name filter into the API's search param", async () => {
+  // Superseded: the filter used to fold the provider's *name* into `search`,
+  // which also matched provider_category and the category name and so widened
+  // the results. The API filters on `supplier_id` exactly, so it now goes
+  // through untouched.
+  it("passes the supplier id straight through as an exact filter", async () => {
     vi.mocked(api.get).mockResolvedValue(paginated([apiRow()]));
 
-    await categoryProvidersService.list({ provider_name: "Uxiotopup", page: 2 });
+    await categoryProvidersService.list({ supplier_id: "2", page: 2 });
 
     expect(api.get).toHaveBeenCalledWith("/v1/supplier-categories", {
-      params: { page: 2, search: "Uxiotopup" },
+      params: { supplier_id: "2", page: 2 },
     });
   });
 

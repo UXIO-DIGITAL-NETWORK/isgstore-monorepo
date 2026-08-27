@@ -30,7 +30,7 @@ const CATEGORY_OPTIONS_PAGE_SIZE = 100;
  */
 export default function CategoryProviderPage() {
   const [search, setSearch] = useState("");
-  const [providerName, setProviderName] = useState<string | undefined>(undefined);
+  const [supplierId, setSupplierId] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -38,8 +38,8 @@ export default function CategoryProviderPage() {
   const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
-    () => ({ search: search || undefined, provider_name: providerName, page, per_page: pageSize }),
-    [search, providerName, page, pageSize],
+    () => ({ search: search || undefined, supplier_id: supplierId, page, per_page: pageSize }),
+    [search, supplierId, page, pageSize],
   );
   const { data, isLoading, isError, refetch } = useCategoryProviderList(params);
   const deleteCategoryProviders = useDeleteCategoryProviders();
@@ -69,7 +69,7 @@ export default function CategoryProviderPage() {
   };
 
   const handleProviderChange = (value: string | undefined) => {
-    setProviderName(value);
+    setSupplierId(value);
     setPage(1);
   };
 
@@ -95,7 +95,7 @@ export default function CategoryProviderPage() {
         <CategoryProviderToolbar
           search={search}
           onSearchChange={handleSearchChange}
-          providerName={providerName}
+          supplierId={supplierId}
           onProviderChange={handleProviderChange}
           onRefresh={() => refetch()}
           onAdd={() => setAddOpen(true)}

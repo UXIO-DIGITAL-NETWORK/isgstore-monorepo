@@ -48,13 +48,11 @@ const toPayload = (input: Partial<CategoryProviderInput>) => ({
 
 export const categoryProvidersService = {
   list: async (params: CategoryProviderListParams = {}): Promise<PaginatedResponse<CategoryProvider>> => {
-    // The toolbar filters by provider *name*; the API filters by supplier id.
-    // Passing the name through as `search` matches on the supplier join, which
-    // is the closest honest translation until the filter becomes an id select.
-    const { provider_name, ...rest } = params;
-    const response: ApiResponse<PaginatedResponse<SupplierCategoryApiRow>> = await api.get(BASE, {
-      params: { ...rest, ...(provider_name ? { search: provider_name } : {}) },
-    });
+    // `supplier_id` is passed straight through: the API filters on it exactly.
+    // It used to be the provider's name folded into `search`, which also
+    // matched provider_category and the category name — so choosing a provider
+    // silently widened the results instead of narrowing them.
+    const response: ApiResponse<PaginatedResponse<SupplierCategoryApiRow>> = await api.get(BASE, { params });
     return unwrapPaginated(response, toCategoryProvider);
   },
 

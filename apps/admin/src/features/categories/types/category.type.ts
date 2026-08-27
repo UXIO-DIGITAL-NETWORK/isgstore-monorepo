@@ -49,7 +49,8 @@ export interface Category {
 
 export interface CategoryListParams {
   search?: string;
-  type?: string;
+  /** The API filters on the type's id, not its name. */
+  type_id?: string;
   page?: number;
   per_page?: number;
 }

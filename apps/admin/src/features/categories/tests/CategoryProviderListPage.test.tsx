@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 
 import { renderRoute, screen, within } from "@/test/test-utils";
+import { categoryProvidersService } from "../services/categoryProviders.service";
 
 const LIST_PATH = "/admin/categories-preview/category-provider";
 
@@ -98,5 +99,21 @@ describe("CategoryProviderListPage", () => {
     // Exactly two: no deactivate/activate, since this entity has no status.
     const items = await screen.findAllByRole("menuitem");
     expect(items.map((item) => item.textContent)).toEqual(["Edit Category Provider", "Delete"]);
+  });
+
+  // The filter used to send the provider's *name* as a free-text `search`,
+  // which also matched provider_category and the category name — so picking a
+  // provider quietly widened the result set. The API exposes an exact
+  // supplier_id filter; use it.
+  it("filters by an exact supplier id rather than a name search", async () => {
+    const listSpy = vi.spyOn(categoryProvidersService, "list");
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await user.click(await screen.findByLabelText("Provider"));
+    await user.click(await screen.findByRole("option", { name: "Zelpoint" }));
+
+    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ supplier_id: "2" }));
+    expect(listSpy).not.toHaveBeenCalledWith(expect.objectContaining({ provider_name: "Zelpoint" }));
   });
 });

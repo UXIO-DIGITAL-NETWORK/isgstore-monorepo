@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 
 import { renderRoute, screen, within } from "@/test/test-utils";
+import { categoriesService } from "../services/categories.service";
 
 /**
  * List view (product_requirements.md §4.5) — the reference's table columns
@@ -71,5 +72,28 @@ describe("CategoryListPage", () => {
 
     const items = await screen.findAllByRole("menuitem");
     expect(items.map((item) => item.textContent)).toEqual(["Edit", "Delete"]);
+  });
+
+  // The filter used to offer three hardcoded names while sending `?type=`,
+  // which the API (which reads `type_id`) ignored outright — so it narrowed
+  // nothing, and a type created on the Category Type tab never appeared.
+  it("offers every category type the API knows, not a frozen list", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/categories-preview");
+
+    await user.click(await screen.findByLabelText("Type Category"));
+
+    expect(await screen.findByRole("option", { name: "Direct Top Up" })).toBeInTheDocument();
+  });
+
+  it("filters by the type's id, which is what the API actually reads", async () => {
+    const listSpy = vi.spyOn(categoriesService, "list");
+    const user = userEvent.setup();
+    await renderRoute("/admin/categories-preview");
+
+    await user.click(await screen.findByLabelText("Type Category"));
+    await user.click(await screen.findByRole("option", { name: "Direct Top Up" }));
+
+    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ type_id: "4" }));
   });
 });
