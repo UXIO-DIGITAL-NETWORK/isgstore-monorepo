@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Api\Hub;
 
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\TransactionStatus;
 use App\Enums\WithdrawalStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\PlatformMutation;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
+use App\Models\Transaction;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
 use App\Support\Wallet\PlatformBalance;
@@ -67,7 +70,37 @@ class HubReportController extends Controller
             // is unreachable — a summary pull must never fail because Monetapay
             // is slow.
             'gateway_balance' => $this->gatewayBalance(),
+            // Finance breakdown so the Hub can render the same headline cards the
+            // site's own payment-internal dashboard shows. Additive to this
+            // contract; older sites simply omit these keys.
+            ...$this->financeBreakdown(),
         ], 'Site summary');
+    }
+
+    /**
+     * The profit breakdown the payment-internal dashboard shows, computed with
+     * the SAME queries as FinanceDashboardController::index so the Hub can never
+     * disagree with the site panel about the same numbers.
+     *
+     * @return array<string, int>
+     */
+    private function financeBreakdown(): array
+    {
+        // Only paid transactions represent money actually collected — the
+        // ledger-backed saldo settles at PAID; pending/failed rows would overstate.
+        $paid = Transaction::whereNotNull('merchant_id')
+            ->whereIn('status', TransactionStatus::paidStates());
+
+        $paidPayments = fn () => Payment::whereIn('transaction_id', $paid->clone()->select('id'));
+
+        return [
+            'total_admin_fee' => (int) $paid->clone()->sum('amount_fee'),
+            'total_gateway_fee' => (int) $paidPayments()->sum('gateway_fee'),
+            'total_tax' => (int) $paidPayments()->sum('tax_amount'),
+            'total_settled_to_merchants' => (int) $paid->clone()->sum('amount_base'),
+            'total_transactions_count' => (int) Transaction::whereNotNull('merchant_id')->count(),
+            'total_transactions_amount' => (int) $paid->clone()->sum('amount_base'),
+        ];
     }
 
     /** GET /v1/hub/withdrawals — the queue that needs eyes: everything open, plus recent terminal rows. */

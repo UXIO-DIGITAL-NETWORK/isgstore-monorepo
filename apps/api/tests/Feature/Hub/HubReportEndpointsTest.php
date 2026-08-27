@@ -87,6 +87,11 @@ class HubReportEndpointsTest extends TestCase
                 'pending_withdrawals_count', 'pending_withdrawals_amount',
                 'oldest_pending_minutes', 'active_subscriptions_count',
                 'paid_service_invoices_this_month', 'gateway_balance',
+                // Finance breakdown (Phase 1) — same numbers the payment-internal
+                // dashboard shows, so the Hub can render those cards.
+                'total_admin_fee', 'total_gateway_fee', 'total_tax',
+                'total_settled_to_merchants', 'total_transactions_count',
+                'total_transactions_amount',
             ]]);
     }
 
