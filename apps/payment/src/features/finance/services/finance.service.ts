@@ -153,6 +153,18 @@ export const financeService = {
     return unwrapList<Service>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
+  /**
+   * Whether the catalogue is owned by the Hub. When true the create/edit/delete
+   * routes are 422'd server-side, so the page hides those controls (and the
+   * now-stale cost/margin columns) and shows a "dikelola di Hub" notice.
+   */
+  servicesMeta: async (): Promise<{ hub_managed: boolean; managed_note: string | null }> => {
+    const res: ApiResponse<{ hub_managed: boolean; managed_note: string | null }> = await api.get(
+      `${BASE}/services/meta`,
+    );
+    return res.data;
+  },
+
   createService: async (payload: ServicePayload): Promise<Service> => {
     const res: ApiResponse<Service> = await api.post(`${BASE}/services`, payload);
     return res.data;

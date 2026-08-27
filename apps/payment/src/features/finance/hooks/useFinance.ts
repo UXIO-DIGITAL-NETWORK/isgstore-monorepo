@@ -132,6 +132,10 @@ export const useUpdateChannelFee = () => {
 export const useFinanceServices = (params: ListParams) =>
   useQuery({ queryKey: ["finance", "services", params], queryFn: () => financeService.services(params) });
 
+/** Is the catalogue Hub-managed? Drives the read-only view of the services page. */
+export const useServicesMeta = () =>
+  useQuery({ queryKey: ["finance", "services", "meta"], queryFn: financeService.servicesMeta });
+
 export const useCreateService = () => {
   const queryClient = useQueryClient();
   return useMutation({
