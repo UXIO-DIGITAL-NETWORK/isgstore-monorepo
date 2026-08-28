@@ -6,7 +6,7 @@ import { DashboardNavbar } from "../components/DashboardNavbar";
 
 export function DashboardLayout() {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="bg-sidebar">
       <DashboardSidebar />
       <SidebarInset className="min-w-0">
         <DashboardNavbar />

@@ -32,3 +32,5 @@ dist-ssr
 # Environment variables
 .env
 .env.local
+# Local QA screenshots (regenerated on demand; not part of the app)
+screenshots/

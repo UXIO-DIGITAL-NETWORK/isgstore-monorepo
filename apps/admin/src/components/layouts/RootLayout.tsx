@@ -4,7 +4,7 @@ import { Box } from "@/components/common/Box";
 
 export function RootLayout() {
   return (
-    <Box className="min-h-screen bg-slate-50 font-sans">
+    <Box className="min-h-svh bg-background font-sans">
       <Outlet />
 
       <TanStackRouterDevtools

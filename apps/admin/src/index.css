@@ -206,6 +206,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Tell the browser which theme is live so its scrollbars and the canvas it
+     paints behind the page (mobile URL-bar collapse, overscroll) follow it
+     instead of defaulting to white. */
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
