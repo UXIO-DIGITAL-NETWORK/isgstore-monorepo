@@ -66,11 +66,16 @@ Schedule::command('uxiotopup:sync-processing')
 // Is anyone consuming the queue at all? Every safety net above assumes a live
 // worker; if it died, a paid order never reaches the supplier and NOTHING errors.
 // This runs on the scheduler — a different process from supervisor — so it can
-// still raise the alarm when the worker cannot. Ten minutes: long enough that a
-// brief restart during deploy does not page anyone.
+// still raise the alarm when the worker cannot. Five minutes: the command only
+// counts jobs already 5 minutes overdue, so a deploy's brief restart cannot
+// trigger it, and the cost is one COUNT query.
+//
+// The lock is bounded (10 min) rather than left to Laravel's 24-hour default:
+// a run killed mid-flight would otherwise hold it and silently disable the very
+// alarm meant to catch things dying.
 Schedule::command('queue:health')
-    ->everyTenMinutes()
-    ->withoutOverlapping()
+    ->everyFiveMinutes()
+    ->withoutOverlapping(10)
     ->runInBackground()
     ->onFailure($alertFailure('queue:health'));
 
@@ -130,13 +135,13 @@ Schedule::command('subscriptions:notify-expiring')
 if (config('services.hub.enabled')) {
     Schedule::command('hub:sync-catalog')
         ->everyFifteenMinutes()
-        ->withoutOverlapping()
+        ->withoutOverlapping(30)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-catalog'));
 
     Schedule::command('hub:sync-channels')
         ->everyFifteenMinutes()
-        ->withoutOverlapping()
+        ->withoutOverlapping(30)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-channels'));
 }

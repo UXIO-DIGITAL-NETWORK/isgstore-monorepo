@@ -18,13 +18,19 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Runs the same pulls the 15-minute scheduler runs, on demand — dispatched when
- * the Hub pokes us to say its config changed.
+ * Runs the same pulls the 15-minute scheduler runs, on demand.
  *
- * Queued rather than inline so the Hub's request returns immediately and a slow
- * or unreachable Hub cannot turn a poke into a hung HTTP call. ShouldBeUnique
- * for a minute is the idempotency: an admin saving five rows in a row produces
- * five pokes and exactly one sync.
+ * RETIRED as the poke's execution path: HubSyncTriggerController now applies the
+ * sync inline and answers with the outcome, because queuing it made a config
+ * change depend on this site's worker being alive — and when it was not, the Hub
+ * saw a 202, logged a green row, and the fee sat unchanged with nothing anywhere
+ * reporting a problem.
+ *
+ * Kept for one release for two reasons, both about the deploy window: jobs
+ * already serialized in the `jobs` table must drain rather than poison
+ * `failed_jobs`, and a Hub on the newer build talking to a site still on this
+ * one relies on the ack this job sends. Delete it once every site is past that
+ * release — the same treatment RefundGatewayJob got.
  *
  * Failure is safe by construction — HubClient throws on a non-2xx AND on a 200
  * carrying an error envelope, both before the sync's transaction opens, so a

@@ -444,19 +444,20 @@ default) schedules nothing, calls nowhere, exposes nothing.
   through to `virtual_account`, so a Hub typo would misroute a live channel
   rather than error. Rows the sync writes are flagged `hub_managed`.
 - **The Hub pokes us:** `POST /v1/hub/sync` (middleware `hub` + `throttle:hub-sync`,
-  read key only) carries no data — it queues `RunHubSyncJob`, which runs the same
-  pulls the scheduler runs, so a Hub edit lands in seconds instead of 15 minutes.
-  Deliberately NOT behind `hub-write`: that gate exists so a leaked read key
-  cannot move money, and requiring it here would couple fast fee updates to
-  `HUB_WRITE_ENABLED`. The job is `ShouldBeUnique` for 60s, so a burst of panel
-  saves is one sync. Needs the queue worker; without it the cron still converges.
-  **`RunHubSyncJob` reports the outcome back** to the Hub's
-  `POST /v1/sites/sync-ack` (`HubClient::reportSyncResult`) — on success from
-  `handle()`, on give-up from `failed()`. Without it the Hub only ever knew we
-  ACCEPTED a poke (our 202), so a site whose queue worker was dead looked exactly
-  like one syncing perfectly. Reporting never throws and is never retried: a sync
-  that worked must not be undone because its receipt went missing, and the Hub
-  re-derives the truth on its next pull.
+  read key only) carries no data — we run the same pulls the scheduler runs, so a
+  Hub edit lands in about a second instead of 15 minutes. Deliberately NOT behind
+  `hub-write`: that gate exists so a leaked read key cannot move money, and
+  requiring it here would couple fast fee updates to `HUB_WRITE_ENABLED`.
+  **It runs INLINE and answers with `applied`.** It used to queue `RunHubSyncJob`,
+  which made a config change depend on this site's worker being alive — and when
+  it was not, the Hub saw its 202, logged a green row, and the fee sat unchanged
+  with nothing anywhere reporting a problem. The work is two GETs and a handful of
+  upserts, so there was never much to defer, and the response now IS the
+  confirmation. A failed pull answers **200 with `applied: false`**, never a 4xx:
+  reaching us and applying are different facts, and the Hub records them in
+  different columns. `RunHubSyncJob` is retired to drain in-flight jobs and to
+  keep answering a Hub that is a release ahead — delete it once every site is past
+  this release, the same treatment `RefundGatewayJob` got.
 - **The Hub raises an internal withdrawal:** `POST /v1/hub/internal-withdrawals`
   (`hub` + `hub-write`) wraps the SAME `CreateInternalWithdrawalRequestAction`
   the payment-internal panel uses, attributed to `HubSystemUser` — so the
