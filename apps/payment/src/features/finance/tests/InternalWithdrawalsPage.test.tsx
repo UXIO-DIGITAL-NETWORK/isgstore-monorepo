@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import InternalWithdrawalsPage from "../pages/InternalWithdrawalsPage";
 import * as hooks from "../hooks/useFinance";
 import type { Withdrawal } from "@/types/withdrawal.type";
+import { mockPayoutBanks } from "@/test/payoutBanks";
 
 const pending: Withdrawal = {
   id: 11,
@@ -55,6 +56,7 @@ beforeEach(() => {
   mockList([pending]);
   mockBalance();
   mockCreate();
+  mockPayoutBanks();
   vi.spyOn(hooks, "useApproveWithdrawal").mockReturnValue({
     mutate: approve,
     isPending: false,

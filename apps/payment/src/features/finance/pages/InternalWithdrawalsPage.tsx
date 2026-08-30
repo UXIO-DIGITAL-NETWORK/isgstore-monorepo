@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -14,7 +14,7 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isEwalletCode } from "@/constants/bankCodes";
+import { isEwalletCode, usePayoutBanks } from "@/hooks/usePayoutBanks";
 import { withdrawalFeeFor, withdrawalNettFor } from "@/lib/withdrawalFee";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
@@ -45,17 +45,37 @@ export default function InternalWithdrawalsPage() {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<InternalWithdrawalFormValues>({ resolver: zodResolver(internalWithdrawalSchema) });
+  } = useForm<InternalWithdrawalFormValues>({
+    resolver: zodResolver(internalWithdrawalSchema),
+    defaultValues: { is_ewallet: false },
+  });
 
+  const { data: banks = [] } = usePayoutBanks();
   const bankCode = watch("bank_code");
-  const isEwallet = isEwalletCode(bankCode);
+  const isEwallet = isEwalletCode(banks, bankCode);
+
+  // Form state only, so the schema can branch on the rail; stripped on submit.
+  useEffect(() => setValue("is_ewallet", isEwallet), [isEwallet, setValue]);
 
   const amount = watch("amount");
   const previewAmount = Number.isFinite(amount) ? Number(amount) : 0;
   const previewFee = withdrawalFeeFor(previewAmount);
   const previewNett = withdrawalNettFor(previewAmount);
 
-  const onSubmit = (values: InternalWithdrawalFormValues) => create(values, { onSuccess: () => reset() });
+  // Built field by field: `is_ewallet` drives the schema's branch and is not
+  // something the API accepts.
+  const onSubmit = (values: InternalWithdrawalFormValues) =>
+    create(
+      {
+        amount: values.amount,
+        bank_code: values.bank_code,
+        account_number: values.account_number,
+        account_name: values.account_name,
+        account_phone: values.account_phone,
+        notes: values.notes,
+      },
+      { onSuccess: () => reset() },
+    );
 
   const columns: Column<Withdrawal>[] = [
     { key: "number", header: "No. Penarikan", cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },

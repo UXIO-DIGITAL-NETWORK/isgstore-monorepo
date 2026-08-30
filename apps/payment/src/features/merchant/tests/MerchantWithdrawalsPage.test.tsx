@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import MerchantWithdrawalsPage from "../pages/MerchantWithdrawalsPage";
 import * as hooks from "../hooks/useMerchant";
+import { mockPayoutBanks } from "@/test/payoutBanks";
 
 const mockList = (rows: unknown[] = []) =>
   vi.spyOn(hooks, "useMerchantWithdrawals").mockReturnValue({
@@ -37,6 +38,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockList();
   mockCreate();
+  // The bank catalogue is served by the API now, not bundled — the picker has
+  // nothing to offer until this resolves.
+  mockPayoutBanks();
 });
 
 describe("MerchantWithdrawalsPage", () => {
@@ -88,6 +92,26 @@ describe("MerchantWithdrawalsPage", () => {
     expect(screen.getByLabelText("No. Rekening")).toBeInTheDocument();
     selectBank("gopay", "GOPAY — GoPay");
     expect(screen.queryByLabelText("No. Rekening")).not.toBeInTheDocument();
+  });
+
+  it("submits an e-wallet payout on the phone alone, without the form's rail flag", async () => {
+    const create = vi.fn();
+    mockCreate(create);
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText("Nominal"), { target: { value: "50000" } });
+    selectBank("gopay", "GOPAY — GoPay");
+    fireEvent.change(screen.getByLabelText("Nama Pemilik"), { target: { value: "Toko Jaya" } });
+    fireEvent.change(screen.getByLabelText("No. HP Penerima"), { target: { value: "081234567890" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ajukan Penarikan" }));
+
+    await waitFor(() => expect(create).toHaveBeenCalled());
+
+    const payload = create.mock.calls[0][0] as Record<string, unknown>;
+    expect(payload).toMatchObject({ bank_code: "GOPAY", account_phone: "081234567890" });
+    // `is_ewallet` exists so the schema can branch; it is form state, not a
+    // field the API knows, and must not ride along in the request.
+    expect(payload).not.toHaveProperty("is_ewallet");
   });
 
   it("rejects a request with a malformed phone", async () => {
