@@ -20,7 +20,10 @@ export function UserListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-  const params = useMemo(() => ({ search: search || undefined, page, per_page: pageSize }), [search, page, pageSize]);
+  const params = useMemo(
+    () => ({ search: search || undefined, page, per_page: pageSize, role: "admin" }),
+    [search, page, pageSize],
+  );
   const { data, isLoading, isError, refetch } = useUserList(params);
 
   const columns = useMemo<ColumnDef<AdminUser>[]>(
@@ -125,8 +128,8 @@ export function UserListPage() {
           Users
         </Heading>
         <Text variant="muted">
-          Registered customers, their wallet balance and account standing. Balance adjustments are audited and require a
-          reason; suspend or ban blocks an account from transacting.
+          Admin accounts for this dashboard, their wallet balance and account standing. Balance adjustments are audited
+          and require a reason; suspend or ban blocks an account from transacting.
         </Text>
       </Box>
 

@@ -60,6 +60,7 @@ export interface Setting {
 export interface AdministrationListParams {
   search?: string;
   role_id?: string;
+  role?: string;
   payment_type?: string;
   page?: number;
   per_page?: number;
