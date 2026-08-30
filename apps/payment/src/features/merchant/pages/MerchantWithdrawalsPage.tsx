@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -13,7 +13,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isEwalletCode } from "@/constants/bankCodes";
+import { isEwalletCode, usePayoutBanks } from "@/hooks/usePayoutBanks";
 import { withdrawalFeeFor, withdrawalNettFor } from "@/lib/withdrawalFee";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
@@ -44,10 +44,20 @@ export default function MerchantWithdrawalsPage() {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<WithdrawalFormValues>({ resolver: zodResolver(withdrawalSchema) });
+  } = useForm<WithdrawalFormValues>({
+    resolver: zodResolver(withdrawalSchema),
+    defaultValues: { is_ewallet: false },
+  });
 
+  // Which rail the picked code takes is the server catalogue's answer, not a
+  // list bundled here — see usePayoutBanks.
+  const { data: banks = [] } = usePayoutBanks();
   const bankCode = watch("bank_code");
-  const isEwallet = isEwalletCode(bankCode);
+  const isEwallet = isEwalletCode(banks, bankCode);
+
+  // Mirrored into form state so the schema's refine() can require the account
+  // number (bank) or the phone (e-wallet) without knowing the catalogue.
+  useEffect(() => setValue("is_ewallet", isEwallet), [isEwallet, setValue]);
 
   // Live preview of kita's fee and what lands in the bank. Mirrors the server;
   // the charged figure is recomputed on submit.
@@ -56,7 +66,20 @@ export default function MerchantWithdrawalsPage() {
   const previewFee = withdrawalFeeFor(previewAmount);
   const previewNett = withdrawalNettFor(previewAmount);
 
-  const onSubmit = (values: WithdrawalFormValues) => create(values, { onSuccess: () => reset() });
+  // `is_ewallet` is form state for the schema's branch, not a request field —
+  // the payload is built by hand so it cannot ride along.
+  const onSubmit = (values: WithdrawalFormValues) =>
+    create(
+      {
+        amount: values.amount,
+        bank_code: values.bank_code,
+        account_number: values.account_number,
+        account_name: values.account_name,
+        account_phone: values.account_phone,
+        notes: values.notes,
+      },
+      { onSuccess: () => reset() },
+    );
 
   return (
     <Box className="flex flex-col gap-6">

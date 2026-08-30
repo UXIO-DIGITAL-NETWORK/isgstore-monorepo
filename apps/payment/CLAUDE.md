@@ -58,6 +58,12 @@ So, in order:
   pager primitives live in `components/common`.
 - **Where an endpoint is genuinely missing**, keep the screen behind the same typed service
   interface and say so in the service — do not scatter placeholder data through components.
+- **The payout bank/e-wallet catalogue is the API's**, fetched via `usePayoutBanks`
+  (`GET /v1/payout-banks`, from the backend's `config/banks.php`). It used to live here as
+  `src/constants/bankCodes.ts`; that copy is gone. Never re-bundle it — the same list also
+  validates `bank_code` on submit and picks the Monetapay payout rail, so a local copy
+  drifts silently into codes the API rejects. `isEwalletCode(banks, code)` decides
+  account-number vs. phone; unknown codes count as bank transfers.
 - **Style by token _name_** (monochrome; color only via `text-success`/`text-destructive`);
   numbers use `tabular-nums`; money via `@/utils/currency`.
 - **Prefer TDD** for new features: test cases → failing tests → green. Vitest + React
@@ -84,7 +90,7 @@ section used to invoke live in the admin repo's `.claude/commands/` and **do not
 - `src/middlewares/authMiddleware.ts` — `requireAuth`, `requireGuest`, `requirePermission` and the two role wrappers.
 - `src/lib/` — `axios.ts` (envelope + shared token refresh), `list.ts` (`unwrapList`), `utils.ts`; `src/utils/currency.ts` for money.
 - `src/{store,types,config,constants}` — Zustand stores, `api.type`/`models`, `config/env.ts`, `constants/roles.ts`.
-- `src/test/` — Vitest harness (`setup.ts`, `test-utils.tsx`, `fakeApi.ts`).
+- `src/test/` — Vitest harness: `setup.ts` (global axios stub + jsdom gaps), `test-utils.tsx` (`renderRoute`, `makeUser`), `apiEnvelope.ts` (`envelope`/`paginated` builders), `payoutBanks.ts` (`mockPayoutBanks`). There is no `fakeApi.ts` here — that is the admin repo's.
 - `logs/feature-changes/` — one entry per shipped feature; `TEMPLATE.md` is the shape.
 - There is **no** `.agents/` or `.claude/` directory in this repo.
 
