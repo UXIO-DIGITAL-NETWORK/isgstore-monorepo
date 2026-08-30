@@ -58,6 +58,12 @@ So, in order:
   pager primitives live in `components/common`.
 - **Where an endpoint is genuinely missing**, keep the screen behind the same typed service
   interface and say so in the service — do not scatter placeholder data through components.
+- **Transaksi punya dua status, bukan satu.** Feed membawa `payment_status`
+  (gateway) dan `provider_status` (supplier); keduanya opsional dan diturunkan dari
+  `status` oleh `src/lib/transactionStatus.ts` bila API belum mengirimnya. Semua
+  kata yang dibaca orang ada di file itu — jangan pernah merender status mentah ke
+  merchant. `provider_status` selalu null untuk baris tagihan layanan. Kosakatanya
+  berbeda per audiens: merchant melihat lipatan 4 nilai, tampilan internal 8.
 - **The payout bank/e-wallet catalogue is the API's**, fetched via `usePayoutBanks`
   (`GET /v1/payout-banks`, from the backend's `config/banks.php`). It used to live here as
   `src/constants/bankCodes.ts`; that copy is gone. Never re-bundle it — the same list also

@@ -6,7 +6,8 @@ import { Heading } from "@/components/common/Heading";
 import { Pager } from "@/components/common/Pager";
 import { RecapDialog } from "@/components/common/RecapDialog";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
-import { StatusBadge } from "@/components/common/StatusBadge";
+import { PaymentStatusBadge, ProviderStatusBadge } from "@/components/common/TransactionStatusBadges";
+import { resolvePaymentStatus, resolveProviderStatus } from "@/lib/transactionStatus";
 import { Text } from "@/components/common/Text";
 import { TransactionFilters, type TransactionFilterState } from "@/components/common/TransactionFilters";
 import { TransactionSummaryPills } from "@/components/common/TransactionSummaryPills";
@@ -90,7 +91,18 @@ const columns: Column<FinanceUnifiedTransaction>[] = [
       </Text>
     ),
   },
-  { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
+  {
+    key: "payment_status",
+    header: "Pembayaran",
+    cell: (r) => <PaymentStatusBadge status={resolvePaymentStatus(r)} />,
+  },
+  {
+    // Blank on a service bill — kita issued it, no supplier is involved. That is
+    // an honest dash, not missing data.
+    key: "provider_status",
+    header: "Provider",
+    cell: (r) => <ProviderStatusBadge status={resolveProviderStatus(r)} audience="internal" />,
+  },
   { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
 ];
 

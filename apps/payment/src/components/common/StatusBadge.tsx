@@ -26,9 +26,26 @@ const TONE: Record<string, string> = {
   MINOR: "bg-muted text-muted-foreground",
   // Reachable through the unified transaction feed.
   REFUNDED: "bg-muted text-muted-foreground",
+  // The split transaction lifecycles. SUCCESS/DELIVERED read as done, the
+  // in-flight provider states as warning, and NONE (no provider on a service
+  // bill, or nothing to say) stays neutral rather than looking like a failure.
+  SUCCESS: "bg-success/10 text-success",
+  DELIVERED: "bg-success/10 text-success",
+  QUEUED: "bg-warning/10 text-warning",
+  SENDING: "bg-warning/10 text-warning",
+  ORDERED: "bg-warning/10 text-warning",
+  UNCONFIRMED: "bg-warning/10 text-warning",
+  NOT_ORDERED: "bg-muted text-muted-foreground",
+  UNDELIVERED: "bg-destructive/10 text-destructive",
+  NONE: "bg-muted text-muted-foreground",
 };
 
-export function StatusBadge({ status }: { status: string }) {
+/**
+ * `label` is optional and defaults to the raw status, so the ~15 pages that pass
+ * only `status` are unaffected. It exists for the two transaction-status badges,
+ * which own real dictionaries — a merchant should never read "FAILED_PROVIDER".
+ */
+export function StatusBadge({ status, label }: { status: string; label?: string }) {
   return (
     <Box
       as="span"
@@ -37,7 +54,7 @@ export function StatusBadge({ status }: { status: string }) {
         TONE[status] ?? "bg-muted text-muted-foreground",
       )}
     >
-      {status}
+      {label ?? status}
     </Box>
   );
 }

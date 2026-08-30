@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 import FinanceTransactionsPage from "../pages/FinanceTransactionsPage";
 import * as hooks from "../hooks/useFinance";
@@ -93,5 +93,23 @@ describe("FinanceTransactionsPage", () => {
     renderPage();
 
     expect(screen.getByRole("button", { name: /Sukses/i })).toHaveTextContent("4");
+  });
+
+  it("keeps every provider state distinct for the internal view", () => {
+    // The merchant view folds these into "Diproses"; kita is the one who has to
+    // chase the row where we lost the supplier's order id, so it must be named.
+    mockRows([{ ...sale, status: "PROCESSING", provider_status: "UNCONFIRMED" }]);
+    renderPage();
+
+    expect(within(screen.getByRole("table")).getByText("Belum Terkonfirmasi")).toBeInTheDocument();
+  });
+
+  it("separates a supplier refusal from a missing verdict", () => {
+    mockRows([{ ...sale, status: "FAILED_PROVIDER", provider_status: "UNDELIVERED" }]);
+    renderPage();
+
+    // "Retries ran out" is worth retrying by hand; "the supplier said no" is not.
+    expect(within(screen.getByRole("table")).getByText("Tidak Terkirim")).toBeInTheDocument();
+    expect(screen.queryByText("Ditolak Supplier")).not.toBeInTheDocument();
   });
 });
