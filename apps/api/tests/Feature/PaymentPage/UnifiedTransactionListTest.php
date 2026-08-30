@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\PaymentPage;
 
+use App\Enums\PaymentStatus;
+use App\Enums\ProviderStatus;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\Product;
@@ -355,5 +357,73 @@ class UnifiedTransactionListTest extends TestCase
 
         $this->assertStringContainsString('Profit Kita', $csv);
         $this->assertStringContainsString($merchant->name, $csv);
+    }
+
+    /**
+     * The two lifecycles reach the merchant feed apart. Before this, the feed
+     * carried only `transactions.status` — a merchant could not see whether their
+     * customer had actually paid, and read raw enum text for everything else.
+     */
+    public function test_a_sale_carries_both_lifecycles(): void
+    {
+        $merchant = $this->merchant();
+        $sale = $this->sale($merchant, ['status' => 'PROCESSING']);
+        Payment::factory()->create([
+            'transaction_id' => $sale->id,
+            'status' => PaymentStatus::SUCCESS,
+        ]);
+
+        Sanctum::actingAs($merchant);
+
+        $this->getJson('/api/v1/payment-admin/transactions')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.payment_status', 'SUCCESS')
+            ->assertJsonPath('data.data.0.provider_status', ProviderStatus::SENDING->value);
+    }
+
+    /**
+     * A service bill has no topup provider, so the Provider column is honestly
+     * empty — but its own status IS a payment lifecycle, and mapping it beats
+     * showing the merchant two blank columns on half the feed.
+     */
+    public function test_a_service_bill_has_no_provider_but_still_has_a_payment_status(): void
+    {
+        $merchant = $this->merchant();
+        $this->bill($merchant, ['status' => 'UNPAID']);
+
+        Sanctum::actingAs($merchant);
+
+        $this->getJson('/api/v1/payment-admin/transactions?type=service')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.provider_status', null)
+            ->assertJsonPath('data.data.0.payment_status', 'PENDING');
+    }
+
+    /**
+     * The union's own comment warns that a column-order mismatch between the two
+     * legs does not error on MySQL — it silently transposes values. Two new
+     * columns just landed on both legs, so pin that a service row's fields are
+     * still its own.
+     */
+    public function test_union_columns_stay_aligned_across_both_legs(): void
+    {
+        $merchant = $this->merchant();
+        $this->sale($merchant, ['status' => 'COMPLETED']);
+        $bill = $this->bill($merchant, ['status' => 'PAID']);
+
+        Sanctum::actingAs($merchant);
+
+        $rows = collect($this->getJson('/api/v1/payment-admin/transactions')->assertOk()
+            ->json('data.data'));
+
+        $service = $rows->firstWhere('type', 'service');
+        $sale = $rows->firstWhere('type', 'sale');
+
+        $this->assertSame($bill->invoice_number, $service['invoice_number']);
+        $this->assertSame('out', $service['direction']);
+        $this->assertNull($service['provider_status']);
+
+        $this->assertSame('in', $sale['direction']);
+        $this->assertNotNull($sale['provider_status']);
     }
 }

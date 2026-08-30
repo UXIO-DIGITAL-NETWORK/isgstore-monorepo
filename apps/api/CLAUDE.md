@@ -91,6 +91,24 @@ PENDING → PAID → PROCESSING → COMPLETED
 
 Statuses are backed enums cast on the models: `App\Enums\TransactionStatus` (values are the exact uppercase strings above) and `App\Enums\PaymentStatus`. `$model->status` returns the enum instance — compare against enum cases, never raw strings; JSON output is unchanged (enums serialize to their values).
 
+### The two lifecycles: `provider_status` vs `status`
+
+`transactions.status` answers two questions at once — did the customer pay, and did the supplier deliver — which is why `PROCESSING` cannot tell an operator whether uxiotopup has the order or the queue worker simply has not sent it yet. **`transactions.provider_status` (`App\Enums\ProviderStatus`) owns the supplier's half alone**, so the two can be read and filtered apart. `App\Enums\GatewayStatus` is the matching vocabulary for the payment half — a *projection*, not a column, over `payments.status` (`'1'..'4'`) and `service_invoices.status`, so the union feed and the frontends speak one alphabet.
+
+Three provider states name situations `TransactionStatus` flattens, and each is acted on differently:
+
+- **`REJECTED` vs `UNDELIVERED`** — an explicit supplier `cancel` versus retries running out with no verdict. Both used to write the same `FAILED_PROVIDER`; the second is worth retrying by hand, the first is not.
+- **`UNCONFIRMED`** — the duplicate-idtrx path: uxiotopup has the order but we hold no id for it, and `/status` has no lookup by our own reference, so nothing can poll it. `SyncProcessingUxiotopupCommand` already chased this state by guessing at `supplier_trx_id IS NULL`.
+
+**Never maintain `provider_status` by hand at a call site.** `App\Support\Transaction\ProviderStatusPolicy` holds the matrix (a default plus an allowed set per status) and `TransactionObserver::saving()` applies it to every save: a writer that touches only `status` gets a correct value automatically, and a contradictory pair is refused. A dozen places write `status`; a convention would have lasted until the thirteenth. Only four places write the column explicitly, and only because they know something the status cannot express (`ProcessUxiotopupTransactionAction`, `ProcessUxiotopupTopup::failed()`, `HandleUxiotopupWebhookAction`, `CheckUxiotopupTransactionStatusAction`).
+
+**`REFUNDED` preserves the previous provider value rather than defaulting.** A refund records that money came back, never whether the supplier delivered — without this rule, "the supplier failed and we refunded" and "the supplier delivered and an admin refunded as goodwill" become indistinguishable. It is also why the refund actions need no changes.
+
+Two rules that keep the guard airtight:
+
+- **Never `saveQuietly()` a `status` change.** It suppresses model events, including this guard — the one remaining bypass. The two existing call sites are safe only because neither has `status` dirty.
+- **No guard may read `provider_status`.** `transactions.status` stays the sole decision-maker for every terminal-state check, `RefundEligibility`, and `AdminRetryTransactionAction`. The new column is display and filter only, which also makes rollback trivial.
+
 ### Payment Status Codes (`App\Enums\PaymentStatus`, stored as string in `payments.status`)
 
 | Value | Enum case | Meaning |

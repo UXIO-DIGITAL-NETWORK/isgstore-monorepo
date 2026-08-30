@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Queries;
 
+use App\Enums\GatewayStatus;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -145,6 +146,17 @@ final class UnifiedTransactionQuery
             // `transactions.status` is a native MySQL ENUM while the other leg
             // is a VARCHAR; cast rather than lean on union type-widening.
             DB::raw('CAST(t.status AS CHAR) as status'),
+            // The two halves `status` conflates, exposed apart. Kept adjacent and
+            // in the SAME position on both legs — see the note above.
+            't.provider_status as provider_status',
+            // A correlated subquery, NOT a join. `payments.transaction_id` is
+            // indexed but not unique (nothing enforces the "1 transaction = 1
+            // payment" the column comment claims), so an unconditional join could
+            // multiply sales rows and quietly inflate the merchant's totals. A
+            // scalar subquery cannot change either leg's row count.
+            DB::raw('(SELECT '.GatewayStatus::sqlCaseForPayments('p2')
+                .' FROM payments p2 WHERE p2.transaction_id = t.id'
+                .' ORDER BY p2.id DESC LIMIT 1) as payment_status'),
             'pc.name as channel',
             't.merchant_id as merchant_id',
             'm.name as merchant_name',
@@ -196,6 +208,13 @@ final class UnifiedTransactionQuery
             DB::raw("'out' as direction"),
             'si.amount as amount',
             'si.status as status',
+            // A service bill has no topup provider at all — null is the honest
+            // answer, and the UI renders it as a dash rather than a blank badge.
+            DB::raw('NULL as provider_status'),
+            // But a bill DOES have a payment lifecycle; `si.status` is it, just
+            // in a different alphabet. Mapping it beats two empty columns on
+            // every service row, which would read as a bug.
+            DB::raw(GatewayStatus::sqlCaseForServiceInvoices('si').' as payment_status'),
             DB::raw('NULL as channel'),
             'si.merchant_id as merchant_id',
             'm.name as merchant_name',

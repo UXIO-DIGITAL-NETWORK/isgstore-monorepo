@@ -20,10 +20,18 @@ class ExportTransactionsAction
         ?int $paymentChannelId = null,
         ?string $startDate = null,
         ?string $endDate = null,
+        ?string $providerStatus = null,
+        ?string $paymentStatus = null,
     ): Collection {
         return Transaction::query()
-            ->with(['user', 'product', 'paymentChannel'])
+            ->with(['user', 'product', 'paymentChannel', 'payment'])
             ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($providerStatus, fn ($q) => $q->where('provider_status', $providerStatus))
+            ->when($paymentStatus === GetTransactionsAction::PAYMENT_STATUS_NONE, fn ($q) => $q->doesntHave('payment'))
+            ->when($paymentStatus && $paymentStatus !== GetTransactionsAction::PAYMENT_STATUS_NONE, function ($q) use ($paymentStatus) {
+                $code = GetTransactionsAction::paymentCodeFor($paymentStatus);
+                $q->whereHas('payment', fn ($p) => $p->where('status', $code ?? '__none__'));
+            })
             ->when($search, fn ($q) => $q->where(
                 fn ($q) => $q->where('invoice_number', 'like', "%{$search}%")
                     ->orWhere('guest_contact', 'like', "%{$search}%")

@@ -14,6 +14,7 @@ use App\Actions\Transaction\GetTransactionsAction;
 use App\Actions\Transaction\GetTransactionStatusCountsAction;
 use App\Actions\Transaction\ManualReviewTransactionAction;
 use App\Actions\Transaction\UpdateTransactionAction;
+use App\Enums\GatewayStatus;
 use App\Enums\RefundMethod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Transaction\ManualReviewTransactionRequest;
@@ -66,6 +67,10 @@ class TransactionController extends Controller
             $request->query('end_date'),
             $request->query('sort_by'),
             (string) $request->query('sort_dir', 'desc'),
+            // The supplier's half and the gateway's half, filterable apart —
+            // `status` alone could never express "paid but the supplier failed".
+            $request->query('provider_status'),
+            $request->query('payment_status'),
         );
 
         return $this->paginatedResponse(TransactionResource::collection($transactions), 'Transactions retrieved successfully');
@@ -201,11 +206,15 @@ class TransactionController extends Controller
             ($v = $request->query('payment_channel_id')) !== null ? (int) $v : null,
             $request->query('start_date'),
             $request->query('end_date'),
+            $request->query('provider_status'),
+            $request->query('payment_status'),
         );
 
         return response()->streamDownload(function () use ($transactions) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Invoice', 'Customer', 'Product', 'Status', 'Total', 'Margin', 'Created At']);
+            // The two new columns are APPENDED after Status, not inserted, so
+            // anything parsing this CSV by leading position keeps working.
+            fputcsv($out, ['Invoice', 'Customer', 'Product', 'Status', 'Total', 'Margin', 'Created At', 'Provider Status', 'Payment Status']);
             foreach ($transactions as $t) {
                 fputcsv($out, [
                     $t->invoice_number,
@@ -215,6 +224,8 @@ class TransactionController extends Controller
                     $t->amount_total,
                     $t->margin,
                     $t->created_at?->toDateTimeString(),
+                    $t->provider_status?->value,
+                    GatewayStatus::fromPayment($t->payment?->status)?->value,
                 ]);
             }
             fclose($out);

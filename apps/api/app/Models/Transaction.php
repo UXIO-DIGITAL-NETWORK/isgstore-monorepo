@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
 use App\Observers\TransactionObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -17,6 +18,10 @@ class Transaction extends Model
 
     protected $casts = [
         'status' => TransactionStatus::class,
+        // The supplier's half of the lifecycle, kept in lockstep with `status`
+        // by TransactionObserver. Not to be confused with `supplier_status`,
+        // which is uxiotopup's own raw wording, kept as evidence.
+        'provider_status' => ProviderStatus::class,
         'receipt_sent_at' => 'datetime',
         'whatsapp_sent_at' => 'datetime',
     ];

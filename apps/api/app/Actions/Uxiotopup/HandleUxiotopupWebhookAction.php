@@ -6,6 +6,7 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use App\Services\CustomerNumberFormatter;
@@ -91,6 +92,13 @@ class HandleUxiotopupWebhookAction
                 'sn' => $sn !== '' ? $sn : $transaction->sn,
                 'supplier_status' => $payload['status'] ?? $transaction->supplier_status,
                 'status' => $newStatus,
+                // Still in flight: the callback proves the supplier has the order.
+                // Whether we can poll it depends on holding an id for it.
+                ...($newStatus === TransactionStatus::PROCESSING
+                    ? ['provider_status' => (($payload['id'] ?? null) ?: $transaction->supplier_trx_id)
+                        ? ProviderStatus::ORDERED
+                        : ProviderStatus::UNCONFIRMED]
+                    : []),
             ]);
 
             if ($newStatus === TransactionStatus::FAILED_PROVIDER) {
