@@ -71,6 +71,18 @@ export interface InvoiceModel {
     paid_at: string | null;
     instructions: PaymentInstructions | null;
   };
+  /**
+   * Present only once a refund exists for this order. Deliberately narrow: the
+   * endpoint is unauthenticated, so it never carries the claim token, the
+   * contact details, or anything about the merchant. `method` is what decides
+   * between "already in your balance" and "claim your refund".
+   */
+  refund: {
+    status: "WAITING_DETAILS" | "PENDING" | "PROCESSING" | "COMPLETED" | "REJECTED";
+    method: "balance" | "manual_transfer" | "legacy_gateway";
+    amount: number;
+    refunded_at: string | null;
+  } | null;
   /** Drives the countdown; null when the channel has no configured window. */
   expires_at: string | null;
   /** Voucher / serial number, present once the supplier has fulfilled. */

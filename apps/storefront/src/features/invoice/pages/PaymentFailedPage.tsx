@@ -84,6 +84,8 @@ export default function PaymentFailedPage(): React.JSX.Element {
               invoiceNumber={order.invoiceNumber}
               paymentName={order.paymentName}
               createdAt={order.createdAt}
+              refund={invoice?.refund}
+              locale={locale}
             />
 
             {/* Retry action buttons */}

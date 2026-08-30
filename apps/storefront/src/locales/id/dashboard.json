@@ -350,5 +350,17 @@
       }
     },
     "noActivity": "Belum ada aktivitas"
+  },
+  "balanceHistory": {
+    "title": "Riwayat Saldo",
+    "loading": "Memuat riwayat saldo...",
+    "empty": "Belum ada mutasi saldo.",
+    "types": {
+      "topup": "Isi Saldo",
+      "purchase": "Pembelian",
+      "refund": "Pengembalian Dana",
+      "adjustment": "Penyesuaian Admin",
+      "settlement": "Settlement"
+    }
   }
 }

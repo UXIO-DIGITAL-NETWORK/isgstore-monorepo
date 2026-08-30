@@ -1,0 +1,67 @@
+{
+  "hero": {
+    "title": "PENGEMBALIAN DANA",
+    "subtitle": "Pesanan yang gagal diproses akan kami kembalikan sepenuhnya. Isi rekening tujuanmu di sini."
+  },
+  "lookup": {
+    "label": "Cari pengajuan pengembalian dana",
+    "invoice": "Nomor invoice",
+    "invoicePlaceholder": "INV-20260830-XXXXXX",
+    "contact": "Email atau nomor WhatsApp",
+    "contactPlaceholder": "email@contoh.com atau 08xxxxxxxxxx",
+    "button": "Kirim Tautan Klaim",
+    "sending": "Mengirim...",
+    "hint": "Demi keamanan, tautan pengisian rekening kami kirim ke email dan WhatsApp yang kamu pakai saat memesan — bukan ditampilkan di halaman ini.",
+    "sent": "Jika data cocok dengan pesanan yang menunggu pengembalian dana, tautan klaim sudah kami kirim ke email dan WhatsApp yang terdaftar. Cek juga folder spam."
+  },
+  "claim": {
+    "heading": "Pengembalian Dana",
+    "invoice": "Nomor Invoice",
+    "product": "Produk",
+    "amount": "Jumlah Pengembalian",
+    "status": "Status",
+    "loading": "Memuat data pengembalian dana...",
+    "invalid": "Tautan pengembalian dana tidak valid atau sudah kedaluwarsa.",
+    "invalidHelp": "Tautan berlaku 30 hari. Kirim ulang tautan lewat form di bawah ini.",
+    "sentTo": "Dikirim ke {{contact}}"
+  },
+  "form": {
+    "heading": "Rekening tujuan pengembalian dana",
+    "subtitle": "Pastikan datanya benar. Dana akan kami transfer ke rekening ini dalam 1×24 jam kerja.",
+    "bank": "Bank atau e-wallet",
+    "bankPlaceholder": "Pilih tujuan",
+    "accountNumber": "Nomor rekening",
+    "accountPhone": "Nomor e-wallet",
+    "accountName": "Nama pemilik rekening",
+    "accountNamePlaceholder": "Sesuai yang tertera di rekening",
+    "submit": "Kirim Data Rekening",
+    "submitting": "Menyimpan...",
+    "errors": {
+      "bank": "Pilih bank atau e-wallet tujuan",
+      "accountNumber": "Nomor rekening wajib diisi",
+      "accountPhone": "Nomor e-wallet wajib diisi",
+      "accountName": "Nama pemilik rekening wajib diisi"
+    }
+  },
+  "status": {
+    "WAITING_DETAILS": "Menunggu data rekeningmu",
+    "PENDING": "Menunggu transfer dari kami",
+    "PROCESSING": "Sedang diproses",
+    "COMPLETED": "Selesai ditransfer",
+    "REJECTED": "Ditolak"
+  },
+  "submitted": {
+    "heading": "Data rekening tersimpan",
+    "body": "Terima kasih. Dana akan kami transfer ke rekening di atas dalam 1×24 jam kerja, dan kamu akan mendapat konfirmasi lewat email dan WhatsApp."
+  },
+  "done": {
+    "heading": "Dana sudah dikembalikan",
+    "body": "Kami sudah mentransfer dana pengembalian ke rekening tujuanmu. Dana biasanya masuk dalam beberapa menit, namun bisa memakan waktu hingga 1×24 jam tergantung bank penerima."
+  },
+  "invoiceNote": {
+    "balance": "Dana sebesar {{amount}} telah dikembalikan ke saldo akunmu dan bisa langsung dipakai belanja lagi.",
+    "manual": "Dana sebesar {{amount}} akan kami kembalikan. Ajukan rekening tujuanmu agar kami bisa mentransfernya.",
+    "manualDone": "Dana sebesar {{amount}} sudah kami transfer ke rekening tujuanmu.",
+    "cta": "Ajukan Pengembalian Dana"
+  }
+}

@@ -8,6 +8,7 @@ import VoucherCard from "@/features/member-dashboard/components/isiSaldo/Voucher
 import PaymentSelector from "@/features/member-dashboard/components/isiSaldo/PaymentSelector";
 import SummaryCard from "@/features/member-dashboard/components/isiSaldo/SummaryCard";
 import SaldoCard from "@/features/member-dashboard/components/isiSaldo/SaldoCard";
+import BalanceHistoryCard from "@/features/member-dashboard/components/isiSaldo/BalanceHistoryCard";
 
 export default function IsiSaldoPage(): React.JSX.Element {
   const { t } = useTranslation("dashboard");
@@ -87,8 +88,9 @@ export default function IsiSaldoPage(): React.JSX.Element {
         </Box>
 
         {/* ── Right column: Saldo Anda (sticky on desktop) ── */}
-        <Box className="lg:sticky lg:top-[120px] self-start">
+        <Box className="lg:sticky lg:top-[120px] self-start flex flex-col gap-5">
           <SaldoCard />
+          <BalanceHistoryCard />
         </Box>
       </Box>
     </Box>

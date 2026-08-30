@@ -130,6 +130,7 @@ src/
 │   │   ├── index.tsx                 # Homepage
 │   │   ├── checkout/$gameSlug.tsx    # Single-route checkout SPA
 │   │   ├── invoice/$invoiceNumber.tsx
+│   │   ├── refund/index.tsx          # Public refund claim (?token= from email, ?invoice= prefill)
 │   │   ├── _auth/                    # requireGuest()
 │   │   ├── _member/                  # requireAuth({ role: 'member' })
 │   │   └── _admin/                   # requireAuth({ role: 'superadmin' })
@@ -392,7 +393,8 @@ In `__root.tsx`, a `useEffect` reads `params.locale` and calls `i18n.changeLangu
 ### Translation Files
 
 - One folder per locale under `src/locales/{locale}/`.
-- One JSON per namespace: `common`, `auth`, `checkout`, `home`, `dashboard`, `admin`, `errors`.
+- One JSON per namespace: `common`, `auth`, `checkout`, `home`, `dashboard`, `admin`, `errors`, `refund`, …
+- **A new namespace must be registered in `src/config/i18n.ts` in three places** — the `id` resources map, the `en` resources map, and the `ns` array. Missing the third makes the namespace load lazily and render raw keys on first paint; it is the step that gets forgotten.
 - Use `useTranslation('namespace')` or `t('namespace:key')`.
 
 ### Rules

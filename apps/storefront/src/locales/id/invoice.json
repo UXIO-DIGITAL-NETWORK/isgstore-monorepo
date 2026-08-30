@@ -63,7 +63,7 @@
     "subtitle": "Transaksi tidak dapat diproses",
     "failed": "FAILED",
     "time": "Waktu",
-    "refundNote": "Dana tidak terpotong atau akan dikembalikan secara otomatis maksimal 1×24 jam ke metode pembayaran Anda.",
+    "refundNote": "Pesanan gagal diproses. Jika dana sudah terpotong, pengembalian akan diproses dan statusnya muncul di sini.",
     "retryPayment": "Coba Lagi pembayaran",
     "choosePaymentMethod": "Pilih Metode Pembayaran",
     "banner": {
