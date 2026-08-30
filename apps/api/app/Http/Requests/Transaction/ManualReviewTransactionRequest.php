@@ -17,7 +17,16 @@ class ManualReviewTransactionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'string', Rule::enum(TransactionStatus::class)],
+            // REFUNDED is excluded on purpose. It now asserts that money went
+            // back to the customer, and it is written only by the refund flow
+            // (member wallet credit, or an admin completing a manual transfer).
+            // A dropdown that could set it would let the books claim a refund
+            // that never happened.
+            'status' => [
+                'required',
+                'string',
+                Rule::enum(TransactionStatus::class)->except([TransactionStatus::REFUNDED]),
+            ],
             'sn' => ['nullable', 'string', 'max:255'],
             'proof' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp,pdf', 'max:2048'],
         ];

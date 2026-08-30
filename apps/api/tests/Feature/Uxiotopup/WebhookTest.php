@@ -89,7 +89,10 @@ class WebhookTest extends TestCase
             'status' => 'cancel',
         ])->assertOk();
 
-        $this->assertSame(TransactionStatus::FAILED_PROVIDER, $transaction->fresh()->status);
+        // A member is refunded inline, so the order does not stop at
+        // FAILED_PROVIDER — it lands on REFUNDED, which is what tells the rest
+        // of the system (and the merchant balance) the money went back.
+        $this->assertSame(TransactionStatus::REFUNDED, $transaction->fresh()->status);
         $this->assertSame(12000, $user->fresh()->balance);
         $this->assertSame(PaymentStatus::REFUNDED, $transaction->payment->fresh()->status);
     }

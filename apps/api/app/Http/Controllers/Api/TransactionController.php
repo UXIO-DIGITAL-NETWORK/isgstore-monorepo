@@ -14,16 +14,19 @@ use App\Actions\Transaction\GetTransactionsAction;
 use App\Actions\Transaction\GetTransactionStatusCountsAction;
 use App\Actions\Transaction\ManualReviewTransactionAction;
 use App\Actions\Transaction\UpdateTransactionAction;
+use App\Enums\RefundMethod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Transaction\ManualReviewTransactionRequest;
 use App\Http\Requests\Transaction\RefundTransactionRequest;
 use App\Http\Requests\Transaction\StoreTransactionRequest;
 use App\Http\Requests\Transaction\UpdateTransactionRequest;
+use App\Http\Resources\Api\Refund\RefundRequestResource;
 use App\Http\Resources\Api\Transaction\TransactionResource;
 use App\Models\Transaction;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransactionController extends Controller
@@ -116,11 +119,25 @@ class TransactionController extends Controller
 
     public function refund(RefundTransactionRequest $request, Transaction $transaction, AdminRefundTransactionAction $action)
     {
-        $transaction = $action->execute($transaction, $request->validated('reason'));
+        try {
+            $refund = $action->execute($transaction, $request->validated('reason'));
+        } catch (RuntimeException $e) {
+            // Not paid, already refunded, or a refund already queued — an admin
+            // must be told, not handed a success for something that didn't run.
+            return $this->errorResponse($e->getMessage(), 422);
+        }
 
         return $this->successResponse(
-            new TransactionResource($transaction->load(self::RELATIONS)),
-            'Transaction refunded successfully'
+            [
+                // fresh(), not load(): the refund action wrote transactions.status,
+                // so the in-memory attributes are stale. RELATIONS carries
+                // product.category, which the Game column needs.
+                'transaction' => new TransactionResource($transaction->fresh(self::RELATIONS)),
+                'refund' => new RefundRequestResource($refund->load(['transaction.product', 'user', 'processedBy'])),
+            ],
+            $refund->method === RefundMethod::BALANCE
+                ? 'Refund credited to the member balance'
+                : 'Refund queued for manual transfer'
         );
     }
 
@@ -140,7 +157,11 @@ class TransactionController extends Controller
 
     public function retry(Transaction $transaction, AdminRetryTransactionAction $action)
     {
-        $transaction = $action->execute($transaction);
+        try {
+            $transaction = $action->execute($transaction);
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
 
         return $this->successResponse(
             new TransactionResource($transaction->load(self::RELATIONS)),

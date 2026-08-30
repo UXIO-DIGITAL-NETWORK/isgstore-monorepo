@@ -3,28 +3,47 @@
 namespace App\Actions\Transaction;
 
 use App\Actions\Log\CreateActivityLogAction;
-use App\Actions\Payment\RefundFailedTransactionAction;
+use App\Actions\Refund\InitiateRefundAction;
 use App\DTOs\Log\CreateActivityLogDTO;
+use App\Models\RefundRequest;
 use App\Models\Transaction;
+use App\Support\Refund\RefundEligibility;
 use Illuminate\Support\Facades\Auth;
+use RuntimeException;
 
 /**
- * Admin-triggered wrapper around RefundFailedTransactionAction — the
- * underlying action is idempotent/context-free (safe from a webhook or a
- * queue job too), this just adds the admin audit trail with an optional reason.
+ * Admin-triggered wrapper around InitiateRefundAction — the underlying action
+ * is idempotent and context-free (safe from a webhook or a queue job too);
+ * this adds the admin audit trail with an optional reason.
+ *
+ * Unlike the automatic callers, this one **refuses loudly**. The action no-ops
+ * on an unpaid or already-refunded transaction, which is right for a webhook
+ * and wrong for a human: an admin told "refunded successfully" for a refund
+ * that never happened would sit waiting for a queue row that will never appear.
+ * The controller maps the exception to a 422.
  */
 class AdminRefundTransactionAction
 {
     public function __construct(
-        private RefundFailedTransactionAction $refundAction,
+        private InitiateRefundAction $refundAction,
         private CreateActivityLogAction $activityLogAction
     ) {}
 
-    public function execute(Transaction $transaction, ?string $reason): Transaction
+    public function execute(Transaction $transaction, ?string $reason): RefundRequest
     {
-        $this->refundAction->execute($transaction);
+        if ($why = RefundEligibility::reason($transaction)) {
+            throw new RuntimeException($why);
+        }
 
-        $message = "Admin refunded Transaction: {$transaction->invoice_number}";
+        $refund = $this->refundAction->execute($transaction);
+
+        // Eligibility passed a moment ago, so a null here means a concurrent
+        // caller got there first — the refund exists, it just isn't ours.
+        if ($refund === null) {
+            throw new RuntimeException('Refund untuk transaksi ini sudah dibuat oleh proses lain.');
+        }
+
+        $message = "Admin refunded Transaction: {$transaction->invoice_number} ({$refund->refund_number})";
         if ($reason) {
             $message .= " — Reason: {$reason}";
         }
@@ -37,6 +56,6 @@ class AdminRefundTransactionAction
             transactionId: $transaction->id
         ));
 
-        return $transaction->fresh(['payment']);
+        return $refund;
     }
 }

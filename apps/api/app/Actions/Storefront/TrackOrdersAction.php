@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Storefront;
 
 use App\Models\Transaction;
+use App\Support\Phone;
 use App\Support\Storefront\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -29,7 +30,7 @@ class TrackOrdersAction
             return [];
         }
 
-        $contacts = $this->phoneCandidates($query);
+        $contacts = Phone::candidates($query);
         $email = $this->emailCandidate($query);
 
         return Transaction::query()
@@ -69,40 +70,6 @@ class TrackOrdersAction
             ])
             ->values()
             ->all();
-    }
-
-    /**
-     * The forms a phone number may have been stored in.
-     *
-     * `guest_contact` is persisted exactly as the customer typed it at checkout,
-     * so "0812…", "62812…" and "+62812…" all exist in the table. Rather than
-     * normalising the column (which would need a backfill and a functional
-     * index), the small set of equivalent spellings is matched exactly — still
-     * index-friendly, and no prefix search that could be walked.
-     *
-     * Returns [] for anything too short to be a phone number, which leaves the
-     * query on the invoice_number branch alone.
-     *
-     * @return list<string>
-     */
-    private function phoneCandidates(string $value): array
-    {
-        $digits = preg_replace('/\D/', '', $value) ?? '';
-
-        if (strlen($digits) < 8) {
-            return [];
-        }
-
-        $national = str_starts_with($digits, '62') ? '0'.substr($digits, 2) : $digits;
-        $international = str_starts_with($digits, '0') ? '62'.substr($digits, 1) : $digits;
-
-        return array_values(array_unique([
-            $value,
-            $digits,
-            $national,
-            $international,
-            '+'.$international,
-        ]));
     }
 
     /** The lowercased email if the query is a valid email address, else null. */

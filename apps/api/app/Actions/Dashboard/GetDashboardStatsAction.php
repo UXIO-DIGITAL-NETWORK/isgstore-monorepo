@@ -3,9 +3,11 @@
 namespace App\Actions\Dashboard;
 
 use App\Enums\PaymentStatus;
+use App\Enums\RefundStatus;
 use App\Enums\TransactionStatus;
 use App\Http\Resources\Api\Transaction\TransactionResource;
 use App\Models\Payment;
+use App\Models\RefundRequest;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -37,9 +39,12 @@ class GetDashboardStatsAction
             ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? AND paid_at < ? THEN gross_amount ELSE 0 END),0) as yesterday', [$yesterdayStart, $todayStart])
             ->first();
 
-        $refunded = Payment::where('status', PaymentStatus::REFUNDED->value)
-            ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? THEN gross_amount ELSE 0 END),0) as today', [$todayStart])
-            ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? AND paid_at < ? THEN gross_amount ELSE 0 END),0) as yesterday', [$yesterdayStart, $todayStart])
+        // Dated by when the refund actually settled, not by the original
+        // payment — a guest's manual transfer can land days later, and
+        // "refunds today" must mean today's money out.
+        $refunded = RefundRequest::where('status', RefundStatus::COMPLETED->value)
+            ->selectRaw('COALESCE(SUM(CASE WHEN refunded_at >= ? THEN amount ELSE 0 END),0) as today', [$todayStart])
+            ->selectRaw('COALESCE(SUM(CASE WHEN refunded_at >= ? AND refunded_at < ? THEN amount ELSE 0 END),0) as yesterday', [$yesterdayStart, $todayStart])
             ->first();
 
         $periods = [

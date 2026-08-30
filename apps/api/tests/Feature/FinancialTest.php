@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Payment;
 use App\Models\PaymentChannel;
+use App\Models\RefundRequest;
 use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\Transaction;
@@ -45,12 +46,22 @@ class FinancialTest extends TestCase
         ]);
 
         $refundedTx = Transaction::factory()->create(['status' => 'REFUNDED']);
-        Payment::factory()->create([
+        $refundedPayment = Payment::factory()->create([
             'transaction_id' => $refundedTx->id,
             'payment_channel_id' => $channel->id,
             'status' => '4', // REFUNDED
             'gross_amount' => 5000,
             'paid_at' => now(),
+        ]);
+        // Debit is summed from the refund ledger by `refunded_at`, not from the
+        // payment by `paid_at`: a guest's manual transfer settles days after
+        // the order was paid, and dating it by the payment would file the money
+        // as having left in a month it was still in the account.
+        RefundRequest::factory()->balance()->create([
+            'transaction_id' => $refundedTx->id,
+            'payment_id' => $refundedPayment->id,
+            'amount' => 5000,
+            'refunded_at' => now(),
         ]);
 
         $response = $this->getJson('/api/v1/financial/summary')->assertOk();

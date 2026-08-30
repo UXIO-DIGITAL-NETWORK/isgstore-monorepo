@@ -64,6 +64,8 @@ use App\Http\Controllers\Api\Pricing\PricingRuleController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Product\SupplierProductController;
 use App\Http\Controllers\Api\RatingController;
+use App\Http\Controllers\Api\Refund\RefundClaimController;
+use App\Http\Controllers\Api\Refund\RefundController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\Storefront\ArticleController as StorefrontArticleController;
 use App\Http\Controllers\Api\Storefront\ContentController;
@@ -77,6 +79,7 @@ use App\Http\Controllers\Api\Storefront\LeaderboardController as StorefrontLeade
 use App\Http\Controllers\Api\Storefront\MarketingController;
 use App\Http\Controllers\Api\Storefront\OrderTrackController;
 use App\Http\Controllers\Api\Storefront\PaymentChannelController as StorefrontPaymentChannelController;
+use App\Http\Controllers\Api\Storefront\PayoutBankController;
 use App\Http\Controllers\Api\Storefront\PriceListController;
 use App\Http\Controllers\Api\Storefront\ValidateGameIdController;
 use App\Http\Controllers\Api\Supplier\SupplierCategoryController;
@@ -202,6 +205,21 @@ Route::prefix('v1')->group(function () {
         // (the member equivalent is POST /v1/me/transactions/{invoiceNumber}/rating).
         // Throttled like checkout since the invoice number is the only credential.
         Route::post('/transactions/{invoiceNumber}/rating', [GuestRatingController::class, 'store']);
+    });
+
+    // Payout destinations for every refund/withdrawal form. Public: a static
+    // list of banks with nothing sensitive in it, and the guest claim page is
+    // unauthenticated.
+    Route::get('/payout-banks', PayoutBankController::class);
+
+    // Guest refund claim. Prefixed `refund-claims` on purpose: the admin queue
+    // lives at /v1/refunds/*, and Laravel's route collection is keyed on
+    // method+uri, so sharing that namespace would let a public route silently
+    // replace an admin one. The emailed token is the credential.
+    Route::middleware('throttle:refund-claim')->prefix('refund-claims')->group(function () {
+        Route::post('/resend', [RefundClaimController::class, 'resend']);
+        Route::get('/{claimToken}', [RefundClaimController::class, 'show']);
+        Route::post('/{claimToken}/payout-details', [RefundClaimController::class, 'submitPayoutDetails']);
     });
 
     // Authentication Routes
@@ -525,6 +543,16 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::post('/transactions/{transaction}/resend-callback', [TransactionController::class, 'resendCallback']);
     Route::post('/transactions/{transaction}/resend-receipt', [TransactionController::class, 'resendReceipt']);
     Route::post('/transactions/{transaction}/retry', [TransactionController::class, 'retry']);
+
+    // Refund queue. `status-counts` before the {refundRequest} wildcard, or
+    // Laravel tries to route-model-bind "status-counts" as an id.
+    Route::get('/refunds/status-counts', [RefundController::class, 'statusCounts']);
+    Route::get('/refunds', [RefundController::class, 'index']);
+    Route::get('/refunds/{refundRequest}', [RefundController::class, 'show']);
+    Route::post('/refunds/{refundRequest}/payout-details', [RefundController::class, 'payoutDetails']);
+    Route::post('/refunds/{refundRequest}/process', [RefundController::class, 'process']);
+    Route::post('/refunds/{refundRequest}/complete', [RefundController::class, 'complete']);
+    Route::post('/refunds/{refundRequest}/reject', [RefundController::class, 'reject']);
 
     // Payment Management
     Route::get('/payments', [PaymentController::class, 'index']);

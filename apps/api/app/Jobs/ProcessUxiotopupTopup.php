@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Actions\Payment\RefundFailedTransactionAction;
+use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\Actions\Uxiotopup\ProcessUxiotopupTransactionAction;
 use App\Enums\TransactionStatus;
@@ -56,11 +56,20 @@ class ProcessUxiotopupTopup implements ShouldQueue
 
     public function failed(Throwable $e): void
     {
-        $this->transaction->update(['status' => TransactionStatus::FAILED_PROVIDER]);
+        // Conditional, not unconditional: the webhook may have won the race and
+        // already refunded this row. Writing FAILED_PROVIDER over REFUNDED
+        // would un-say that the money went back, and quietly drop the order out
+        // of the refund queue's filters.
+        $fresh = $this->transaction->fresh() ?? $this->transaction;
+
+        if ($fresh->status !== TransactionStatus::REFUNDED) {
+            $fresh->update(['status' => TransactionStatus::FAILED_PROVIDER]);
+        }
 
         // Retries exhausted: the customer paid but fulfilment never succeeded,
-        // so refund them. The action is idempotent (locks + checks payment '3').
-        app(RefundFailedTransactionAction::class)->execute($this->transaction);
+        // so refund them. The action is idempotent (locks + checks payment '3'
+        // + a unique refund per transaction).
+        app(InitiateRefundAction::class)->execute($fresh);
 
         Log::channel('uxiotopup')->error('ProcessUxiotopupTopup: all retries exhausted — marked FAILED_PROVIDER & refunded', [
             'transaction_id' => $this->transaction->id,

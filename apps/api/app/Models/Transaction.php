@@ -58,6 +58,12 @@ class Transaction extends Model
         return $this->hasOne(Payment::class);
     }
 
+    /** At most one — `refund_requests.transaction_id` is unique. */
+    public function refundRequest()
+    {
+        return $this->hasOne(RefundRequest::class);
+    }
+
     public function pointHistories()
     {
         return $this->hasMany(PointHistory::class);

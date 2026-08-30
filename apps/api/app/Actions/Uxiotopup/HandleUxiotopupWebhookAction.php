@@ -3,7 +3,7 @@
 namespace App\Actions\Uxiotopup;
 
 use App\Actions\Log\CreateActivityLogAction;
-use App\Actions\Payment\RefundFailedTransactionAction;
+use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\TransactionStatus;
@@ -21,7 +21,7 @@ class HandleUxiotopupWebhookAction
 
     public function __construct(
         private readonly CreateActivityLogAction $logAction,
-        private readonly RefundFailedTransactionAction $refundAction,
+        private readonly InitiateRefundAction $refundAction,
         private readonly DiscordWebhookService $discord,
         private readonly CustomerNumberFormatter $customerNumberFormatter,
     ) {}
@@ -62,8 +62,18 @@ class HandleUxiotopupWebhookAction
                 return;
             }
 
-            // Idempotency guard: skip if already in a terminal state
-            if (in_array($transaction->status, [TransactionStatus::COMPLETED, TransactionStatus::FAILED_PROVIDER], true)) {
+            // Idempotency guard: skip if already in a terminal state.
+            //
+            // REFUNDED belongs here for a reason that is easy to miss: uxiotopup
+            // can redeliver `cancel` and then `success`. Without it, a late
+            // success callback would flip an already-refunded order back to
+            // COMPLETED — after the member's wallet was credited or a guest was
+            // wired their money — and we would have paid for the order twice.
+            if (in_array($transaction->status, [
+                TransactionStatus::COMPLETED,
+                TransactionStatus::FAILED_PROVIDER,
+                TransactionStatus::REFUNDED,
+            ], true)) {
                 Log::channel('uxiotopup')->info("Uxiotopup Webhook: Skipped — {$transaction->invoice_number} already {$transaction->status->value}");
 
                 return;
