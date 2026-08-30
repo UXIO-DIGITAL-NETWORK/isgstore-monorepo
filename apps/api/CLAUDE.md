@@ -433,6 +433,28 @@ default) schedules nothing, calls nowhere, exposes nothing.
   cannot move money, and requiring it here would couple fast fee updates to
   `HUB_WRITE_ENABLED`. The job is `ShouldBeUnique` for 60s, so a burst of panel
   saves is one sync. Needs the queue worker; without it the cron still converges.
+  **`RunHubSyncJob` reports the outcome back** to the Hub's
+  `POST /v1/sites/sync-ack` (`HubClient::reportSyncResult`) — on success from
+  `handle()`, on give-up from `failed()`. Without it the Hub only ever knew we
+  ACCEPTED a poke (our 202), so a site whose queue worker was dead looked exactly
+  like one syncing perfectly. Reporting never throws and is never retried: a sync
+  that worked must not be undone because its receipt went missing, and the Hub
+  re-derives the truth on its next pull.
+- **The Hub raises an internal withdrawal:** `POST /v1/hub/internal-withdrawals`
+  (`hub` + `hub-write`) wraps the SAME `CreateInternalWithdrawalRequestAction`
+  the payment-internal panel uses, attributed to `HubSystemUser` — so the
+  `platform_accounts` lock and the "saldo tidak mencukupi" guard are one
+  implementation, not a second copy that could drift more permissive. Unlike its
+  approve/reject siblings it CREATES rather than transitions, so it is made
+  idempotent by `withdrawals.idempotency_key` (unique): replaying a key returns
+  the ORIGINAL row instead of withdrawing twice. The lookup sits **before** the
+  balance check, so a replay still resolves once the balance it spent is gone —
+  otherwise a retry would read "saldo tidak mencukupi" about money that already
+  left. A replay also skips the finance notification: nothing new happened.
+  `GET /v1/hub/withdrawal-context` (read key only — it changes nothing, and a
+  site with the write channel off still deserves to show a balance) feeds the
+  Hub's form its available balance, fee, floor and `BankCatalog`; the Hub must
+  not carry its own copy of any of the four.
 - **Hub-managed guards:** with `HUB_MANAGED_CATALOG`/`HUB_MANAGED_CHANNELS`,
   the local service-catalog writes 422 (`catalog-local` middleware) and
   `ChannelFeeController` rejects every field for a channel the Hub actually
@@ -478,7 +500,7 @@ HUB_MANAGED_CATALOG=true          # local catalog writes 422 while the Hub owns 
 HUB_MANAGED_CHANNELS=true         # local edits 422 for Hub-synced channels (fees + is_active + min_amount)
 HUB_PUSH_ORDERS=                  # real-time service-order push to the Hub; defaults to HUB_ENABLED.
                                   # Leave UNSET — an empty value reads as false and silently disables it.
-HUB_WRITE_ENABLED=false           # money-path write channel (Hub approving withdrawals / confirming invoices)
+HUB_WRITE_ENABLED=false           # money-path write channel (Hub approving/raising withdrawals, confirming invoices)
 HUB_WRITE_API_KEY=                # the SECOND key that channel needs; minted per site in the Hub panel
 
 UXIOTOPUP_API_KEY=

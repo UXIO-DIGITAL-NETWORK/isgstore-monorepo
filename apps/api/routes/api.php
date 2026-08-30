@@ -733,6 +733,10 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
     Route::get('/service-orders', [HubReportController::class, 'serviceOrders']);
     Route::get('/profit', [HubReportController::class, 'profit']);
     Route::get('/channels', [HubReportController::class, 'channels']);
+    // Balance + fee + floor + bank catalogue for the Hub's internal-withdrawal
+    // form. Read-only, so the read key alone is the right gate — a site with the
+    // write channel off can still be looked at.
+    Route::get('/withdrawal-context', [HubReportController::class, 'withdrawalContext']);
 });
 
 // ── Hub money-path WRITE channel ─────────────────────────────────────────────
@@ -753,6 +757,9 @@ Route::prefix('v1/hub')->middleware(['hub', 'throttle:hub-sync'])->group(functio
 });
 
 Route::prefix('v1/hub')->middleware(['hub', 'hub-write', 'throttle:hub-write'])->group(function () {
+    // Raising a withdrawal has no prior row to guard on, so unlike its siblings
+    // it is NOT idempotent — the Hub reconciles by re-pulling, never by retrying.
+    Route::post('/internal-withdrawals', [HubActionController::class, 'createInternalWithdrawal']);
     Route::post('/withdrawals/{withdrawal:withdrawal_number}/approve', [HubActionController::class, 'approveWithdrawal']);
     Route::post('/withdrawals/{withdrawal:withdrawal_number}/reject', [HubActionController::class, 'rejectWithdrawal']);
     Route::post('/service-invoices/{serviceInvoice:invoice_number}/confirm', [HubActionController::class, 'confirmInvoice']);

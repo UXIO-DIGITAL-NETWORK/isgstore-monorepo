@@ -27,12 +27,21 @@ use RuntimeException;
  * holding the platform_accounts row FOR UPDATE — the same row PlatformLedger
  * locks for every mutation — so two concurrent internal requests can't both
  * pass the check against the same unspent balance.
+ *
+ * A caller that cannot see the outcome of its own request (the Hub, over the
+ * network) sends an `idempotencyKey`. Replaying it returns the ORIGINAL row
+ * rather than creating a second withdrawal, so a retry after a lost ack is
+ * safe. The lookup runs inside the same locked transaction as the balance
+ * check, and the unique index is the real guard — two simultaneous replays
+ * cannot both find nothing and both insert.
  */
 class CreateInternalWithdrawalRequestAction
 {
     public function execute(CreateInternalWithdrawalDTO $dto): Withdrawal
     {
-        $withdrawal = DB::transaction(function () use ($dto) {
+        $replayed = false;
+
+        $withdrawal = DB::transaction(function () use ($dto, &$replayed) {
             $fee = WithdrawalFeeCalculator::fee();
             $nett = $dto->amount - $fee;
 
@@ -41,6 +50,19 @@ class CreateInternalWithdrawalRequestAction
             }
 
             PlatformAccount::where('code', PlatformLedger::DEFAULT_ACCOUNT)->lockForUpdate()->firstOrFail();
+
+            // Before the balance check, not after: a replay must succeed even
+            // once the balance it originally spent is gone, or the caller would
+            // read "saldo tidak mencukupi" for a withdrawal that already exists.
+            if ($dto->idempotencyKey !== null) {
+                $existing = Withdrawal::where('idempotency_key', $dto->idempotencyKey)->first();
+
+                if ($existing !== null) {
+                    $replayed = true;
+
+                    return $existing;
+                }
+            }
 
             if ($dto->amount > PlatformBalance::available()) {
                 throw new RuntimeException('Saldo platform tidak mencukupi untuk penarikan ini.');
@@ -52,6 +74,7 @@ class CreateInternalWithdrawalRequestAction
                 'merchant_id' => null,
                 'requested_by' => $dto->requestedBy,
                 'withdrawal_number' => $number,
+                'idempotency_key' => $dto->idempotencyKey,
                 'amount' => $dto->amount,
                 'fee' => $fee,
                 'nett' => $nett,
@@ -63,6 +86,12 @@ class CreateInternalWithdrawalRequestAction
                 'notes' => $dto->notes,
             ]);
         });
+
+        // A replay is not a new request: notifying again would tell finance a
+        // second withdrawal was raised when nothing changed.
+        if ($replayed) {
+            return $withdrawal;
+        }
 
         $requesterName = User::find($dto->requestedBy)?->name ?? "User #{$dto->requestedBy}";
         app(NotifyPaymentInternalAction::class)->execute(

@@ -14,6 +14,12 @@ readonly class CreateInternalWithdrawalDTO
         public string $accountName,
         public ?string $accountPhone = null,
         public ?string $notes = null,
+        /**
+         * Set by a remote caller (the Hub) so a retry after a lost ack resolves
+         * to the same row instead of a second withdrawal. Null from the on-site
+         * panel, where a human sees the outcome directly.
+         */
+        public ?string $idempotencyKey = null,
     ) {}
 
     public static function fromValidated(array $validated, int $requestedBy): self
@@ -26,6 +32,7 @@ readonly class CreateInternalWithdrawalDTO
             accountName: $validated['account_name'],
             accountPhone: $validated['account_phone'] ?? null,
             notes: $validated['notes'] ?? null,
+            idempotencyKey: $validated['idempotency_key'] ?? null,
         );
     }
 }

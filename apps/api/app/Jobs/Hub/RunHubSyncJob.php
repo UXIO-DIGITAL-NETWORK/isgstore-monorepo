@@ -7,6 +7,7 @@ namespace App\Jobs\Hub;
 use App\Actions\Hub\SyncCatalogFromHubAction;
 use App\Actions\Hub\SyncChannelSettingsFromHubAction;
 use App\Services\DiscordWebhookService;
+use App\Services\HubClient;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -54,6 +55,7 @@ class RunHubSyncJob implements ShouldBeUnique, ShouldQueue
     public function handle(
         SyncChannelSettingsFromHubAction $channels,
         SyncCatalogFromHubAction $catalog,
+        HubClient $hub,
     ): void {
         if (in_array('channels', $this->targets, true)) {
             Log::info('Hub sync (poked): channels', $channels->execute());
@@ -62,11 +64,21 @@ class RunHubSyncJob implements ShouldBeUnique, ShouldQueue
         if (in_array('catalog', $this->targets, true)) {
             Log::info('Hub sync (poked): catalog', $catalog->execute());
         }
+
+        // Close the loop. Reported only after both pulls committed, so an `ok`
+        // here means the config really is live on this site — the one claim the
+        // Hub's own 202 could never make. Reporting never throws: a delivered
+        // sync must not be retried because its receipt went missing.
+        $hub->reportSyncResult($this->targets, 'ok');
     }
 
     public function failed(Throwable $e): void
     {
         Log::error('Hub sync (poked) failed', ['targets' => $this->targets, 'error' => $e->getMessage()]);
+
+        // Only after retries are exhausted, so the Hub is not told "failed" for
+        // an attempt that the next retry will settle.
+        app(HubClient::class)->reportSyncResult($this->targets, 'failed', $e->getMessage());
 
         app(DiscordWebhookService::class)->sendAlert(
             'Sinkronisasi dari Hub gagal setelah dipicu: '.$e->getMessage()

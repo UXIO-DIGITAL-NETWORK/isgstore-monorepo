@@ -10,7 +10,8 @@ class StoreInternalWithdrawalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // The `payment-internal` middleware gates the route.
+        // Route-gated: `payment-internal` for the on-site panel, `hub`+`hub-write`
+        // (read key AND write key) when the Hub raises one remotely.
         return true;
     }
 
@@ -33,6 +34,10 @@ class StoreInternalWithdrawalRequest extends FormRequest
                 'nullable', 'string', 'max:20',
             ],
             'notes' => ['nullable', 'string', 'max:255'],
+            // Sent by a caller that cannot see its own outcome (the Hub) so a
+            // retry after a lost ack resolves to the same row. Never required:
+            // the on-site panel has a human watching.
+            'idempotency_key' => ['nullable', 'string', 'max:64'],
         ];
     }
 }

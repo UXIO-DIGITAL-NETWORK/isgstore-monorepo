@@ -16,7 +16,9 @@ use App\Models\ServiceSubscription;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
+use App\Support\Payout\BankCatalog;
 use App\Support\Wallet\PlatformBalance;
+use App\Support\Withdrawal\WithdrawalFeeCalculator;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -198,6 +200,37 @@ class HubReportController extends Controller
             ]);
 
         return $this->successResponse($rows, 'Channels');
+    }
+
+    /**
+     * Everything the Hub's "Penarikan Internal" form needs to render honestly
+     * for THIS site: the withdrawable balance, our fee, our floor, and our
+     * payout catalogue.
+     *
+     * Read live rather than from the Hub's mirrored snapshot because the mirror
+     * lags by up to a pull cycle and the operator is about to move money against
+     * this number. Served on the read channel (X-Hub-Key only): it changes
+     * nothing, and gating it behind the write key would blind the form on a site
+     * that has HUB_WRITE_ENABLED off — which still deserves to show a balance.
+     *
+     * The site stays the authority on all four values; the Hub must not
+     * hardcode a fee or carry its own bank list.
+     */
+    public function withdrawalContext()
+    {
+        return $this->successResponse([
+            'available' => PlatformBalance::available(),
+            'fee' => WithdrawalFeeCalculator::fee(),
+            'min_amount' => max(1, (int) config('services.withdrawal.min_amount', 1)),
+            'banks' => collect(BankCatalog::codes())
+                ->map(fn (string $code) => [
+                    'code' => $code,
+                    'name' => BankCatalog::name($code),
+                    'is_ewallet' => BankCatalog::isEwallet($code),
+                ])
+                ->values()
+                ->all(),
+        ], 'Withdrawal context');
     }
 
     private function gatewayBalance(): ?int

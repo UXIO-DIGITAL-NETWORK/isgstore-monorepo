@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Outbound client for the Uxio Hub: this site pulls its catalog and channel
@@ -70,6 +71,45 @@ class HubClient
             $message = (string) ($response->json('message') ?? 'Unexpected response');
             Log::error('Hub service-order push error envelope', ['message' => $message]);
             throw new Exception("Hub service-order push error: {$message}");
+        }
+    }
+
+    /**
+     * Tell the Hub whether a poked sync actually landed.
+     *
+     * Without this the Hub only ever learns that we ACCEPTED a poke (its 202),
+     * never that we applied it — so a site whose queue worker is dead looks
+     * identical to one that synced perfectly. This closes that loop.
+     *
+     * Reports per-site, not per-poke, on purpose: RunHubSyncJob is
+     * ShouldBeUnique for 60s, so five pokes in a minute produce ONE sync. A
+     * per-poke ack would leave four rows looking unapplied when they were.
+     *
+     * Never throws. It carries no data the Hub cannot re-derive by pulling, and
+     * a sync that succeeded must not be marked failed because the report of it
+     * could not be delivered.
+     *
+     * @param  list<string>  $targets
+     */
+    public function reportSyncResult(array $targets, string $status, ?string $message = null): void
+    {
+        $baseUrl = rtrim((string) config('services.hub.base_url'), '/');
+        $apiKey = (string) config('services.hub.api_key');
+
+        if ($baseUrl === '' || $apiKey === '') {
+            return;
+        }
+
+        try {
+            $this->client()
+                ->withHeaders(['X-Site-Key' => $apiKey])
+                ->post($baseUrl.'/api/v1/sites/sync-ack', [
+                    'targets' => array_values($targets),
+                    'status' => $status,
+                    'message' => $message !== null ? mb_substr($message, 0, 490) : null,
+                ]);
+        } catch (Throwable $e) {
+            Log::info('Hub sync ack undeliverable', ['error' => $e->getMessage()]);
         }
     }
 

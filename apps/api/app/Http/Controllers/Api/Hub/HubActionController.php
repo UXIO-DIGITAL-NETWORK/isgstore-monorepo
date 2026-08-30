@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api\Hub;
 use App\Actions\Service\ConfirmServiceInvoiceAction;
 use App\Actions\Service\RejectServiceInvoiceAction;
 use App\Actions\Withdrawal\ApproveWithdrawalAction;
+use App\Actions\Withdrawal\CreateInternalWithdrawalRequestAction;
 use App\Actions\Withdrawal\RejectWithdrawalAction;
 use App\DTOs\Service\ConfirmServiceInvoiceDTO;
+use App\DTOs\Withdrawal\CreateInternalWithdrawalDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Withdrawal\StoreInternalWithdrawalRequest;
 use App\Models\ServiceInvoice;
 use App\Models\Withdrawal;
 use App\Support\Hub\HubSystemUser;
@@ -40,6 +43,34 @@ class HubActionController extends Controller
         }
 
         return $this->successResponse($this->present($updated), 'Penarikan disetujui');
+    }
+
+    /**
+     * Raise an internal (platform-profit) withdrawal on this site, requested
+     * from the Hub panel.
+     *
+     * The money never moves through the Hub — it asks us to run the very Action
+     * our own payment-internal panel runs, so the platform-balance lock and the
+     * "saldo tidak mencukupi" guard are the same code, not a second copy that
+     * could drift more permissive.
+     *
+     * NOT idempotent, unlike its approve/reject siblings: there is no prior row
+     * to guard on. A lost ack therefore means the Hub must reconcile by
+     * re-pulling rather than retrying blindly.
+     */
+    public function createInternalWithdrawal(
+        StoreInternalWithdrawalRequest $request,
+        CreateInternalWithdrawalRequestAction $action
+    ) {
+        try {
+            $withdrawal = $action->execute(
+                CreateInternalWithdrawalDTO::fromValidated($request->validated(), HubSystemUser::resolve()->id)
+            );
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        return $this->successResponse($this->present($withdrawal), 'Penarikan internal dibuat', 201);
     }
 
     public function rejectWithdrawal(Request $request, Withdrawal $withdrawal, RejectWithdrawalAction $action)
