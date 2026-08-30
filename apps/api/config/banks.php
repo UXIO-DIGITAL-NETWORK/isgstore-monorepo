@@ -10,8 +10,11 @@
 |     keyed on the recipient phone, no account number)
 |   - everything else → bank disbursement (createDisbursement, needs account number)
 |
-| Mirror of web-payment-fe `src/features/merchant/constants/bankCodes.ts` — keep
-| the two in sync. Deduped by code from the official Monetapay bank-code list.
+| This file is the single source of truth — no frontend keeps a copy any more.
+| `GET /v1/payout-banks` (PayoutBankController) serves it to the settlement SPA's
+| withdrawal forms, the admin refund queue, and the guest refund claim page, so
+| a code added here needs no frontend release and cannot silently drift.
+| Deduped by code from the official Monetapay bank-code list.
 */
 
 return [

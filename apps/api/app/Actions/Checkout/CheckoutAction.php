@@ -22,6 +22,7 @@ use App\Services\Payment\MonetapayService;
 use App\Support\Payment\DefaultMerchant;
 use App\Support\Pricing\RolePrice;
 use App\Support\Promo\PromoResolver;
+use App\Support\Wallet\WalletLedger;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -391,7 +392,19 @@ class CheckoutAction
                     throw new Exception('Saldo tidak mencukupi. Sisa saldo: Rp '.number_format($lockedUser->balance));
                 }
 
-                $lockedUser->decrement('balance', $grossAmount);
+                // Through the ledger, not a raw decrement: the refund credit is
+                // recorded as a `refund` mutation, and a statement showing money
+                // coming back with nothing having gone out is worse than no
+                // statement at all. WalletLedger re-locks the same row (already
+                // held here) and writes the before/after figures.
+                WalletLedger::record(
+                    user: $lockedUser->id,
+                    amount: -$grossAmount,
+                    type: 'purchase',
+                    reference: $transaction->invoice_number,
+                    description: "Pembelian {$transaction->invoice_number}",
+                );
+
                 $payment->update(['status' => PaymentStatus::SUCCESS, 'paid_at' => now()]);
 
                 // Balance channel has no external gateway cost, so kita keeps

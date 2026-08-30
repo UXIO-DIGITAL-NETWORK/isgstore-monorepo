@@ -2,7 +2,7 @@
 
 namespace App\Actions\Uxiotopup;
 
-use App\Actions\Payment\RefundFailedTransactionAction;
+use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
@@ -16,7 +16,7 @@ class CheckUxiotopupTransactionStatusAction
 
     public function __construct(
         private readonly UxiotopupService $uxiotopupService,
-        private readonly RefundFailedTransactionAction $refundAction,
+        private readonly InitiateRefundAction $refundAction,
         private readonly SendTransactionReceiptAction $receiptAction,
     ) {}
 

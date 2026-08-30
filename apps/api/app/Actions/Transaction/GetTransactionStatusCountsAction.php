@@ -25,6 +25,10 @@ class GetTransactionStatusCountsAction
             'pending' => (int) ($rows[TransactionStatus::PENDING->value]->cnt ?? 0),
             'processing' => (int) ($rows[TransactionStatus::PROCESSING->value]->cnt ?? 0),
             'failed_provider' => (int) ($rows[TransactionStatus::FAILED_PROVIDER->value]->cnt ?? 0),
+            // A refunded order leaves FAILED_PROVIDER, so without its own pill
+            // it would simply vanish from the operator's view — and the failed
+            // count would keep shrinking with no visible reason.
+            'refunded' => (int) ($rows[TransactionStatus::REFUNDED->value]->cnt ?? 0),
         ];
     }
 }

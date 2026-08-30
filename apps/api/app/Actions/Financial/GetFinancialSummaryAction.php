@@ -3,8 +3,10 @@
 namespace App\Actions\Financial;
 
 use App\Enums\PaymentStatus;
+use App\Enums\RefundStatus;
 use App\Enums\TransactionStatus;
 use App\Models\Payment;
+use App\Models\RefundRequest;
 use App\Models\Transaction;
 use Carbon\CarbonInterface;
 
@@ -28,9 +30,13 @@ class GetFinancialSummaryAction
             ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? AND paid_at < ? THEN gross_amount ELSE 0 END),0) as last_month', [$lastMonthStart, $monthStart])
             ->first();
 
-        $refunded = Payment::where('status', PaymentStatus::REFUNDED->value)
-            ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? THEN gross_amount ELSE 0 END),0) as this_month', [$monthStart])
-            ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? AND paid_at < ? THEN gross_amount ELSE 0 END),0) as last_month', [$lastMonthStart, $monthStart])
+        // Bucketed on `refunded_at`, not the payment's `paid_at`. A manual
+        // guest transfer can settle days after the order was paid, and dating
+        // it by the original payment would file the money as having left in a
+        // month it was still in the account.
+        $refunded = RefundRequest::where('status', RefundStatus::COMPLETED->value)
+            ->selectRaw('COALESCE(SUM(CASE WHEN refunded_at >= ? THEN amount ELSE 0 END),0) as this_month', [$monthStart])
+            ->selectRaw('COALESCE(SUM(CASE WHEN refunded_at >= ? AND refunded_at < ? THEN amount ELSE 0 END),0) as last_month', [$lastMonthStart, $monthStart])
             ->first();
 
         $profit = $this->marginBetween($monthStart, null);

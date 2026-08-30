@@ -70,7 +70,7 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 3. Price is role-resolved: `vip → reseller → agent → member → guest` (guests receive `price_member`).
 4. Margin guard: aborts if `selling_price - supplier_price < 0`. The price/margin are frozen into the Transaction row at checkout — a later supplier price change (daily sync) is margin variance, not a correctness bug.
 5. Creates `Transaction` (status: `PENDING`) then `Payment` (status: `'1'`) inside a single `DB::transaction()`.
-6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, deducts `user->balance`, marks Payment `'3'`, calls `ProcessUxiotopupTransactionAction` synchronously.
+6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, debits through `WalletLedger::record(type: 'purchase')` (not a raw `decrement` — a statement showing a refund credit with no matching debit is worse than no statement), marks Payment `'3'`, calls `ProcessUxiotopupTransactionAction` synchronously.
 7. **External path**: calls `MonetapayService::createTransaction()`, returns `qr_string` or `virtual_account` to the client.
 
 Rate limiting (named limiters in `AppServiceProvider`): `throttle:checkout` (10/min) on checkout + postpaid endpoints, `throttle:webhooks` (120/min per IP) on all callback routes, `throttle:login` (5/min per IP), and a global `throttle:api` (120/min) via `bootstrap/app.php`.
@@ -79,12 +79,15 @@ Rate limiting (named limiters in `AppServiceProvider`): `throttle:checkout` (10/
 
 ```
 PENDING → PAID → PROCESSING → COMPLETED
-        ↘                   ↘ FAILED_PROVIDER → (auto-refund if applicable)
+        ↘                   ↘ FAILED_PROVIDER → REFUNDED
          EXPIRED
 ```
 
 - `EXPIRED` — payment window timed out; customer never paid (set by Monetapay callback or `payments:sync-expired`).
 - `FAILED_PROVIDER` — customer paid; the uxiotopup supplier failed to fulfil the order (status `cancel`/`refund`).
+- `REFUNDED` — the money has gone back. A member's order reaches it immediately (the wallet is credited inline); a guest's stays on `FAILED_PROVIDER` until an admin completes the manual transfer.
+
+**`REFUNDED` is terminal, and every terminal-state guard must list it.** uxiotopup can redeliver `cancel` then `success`; without it a late success flips a refunded order to `COMPLETED` after the customer was already paid back. The two guards are `HandleUxiotopupWebhookAction` and `HandleMonetapayCallbackAction`. `ManualReviewTransactionRequest` deliberately **rejects** `REFUNDED` — the status now asserts that money moved, so only the refund flow may write it — and `AdminRetryTransactionAction` refuses a transaction with a non-`REJECTED` refund, or the customer would get the item *and* their money.
 
 Statuses are backed enums cast on the models: `App\Enums\TransactionStatus` (values are the exact uppercase strings above) and `App\Enums\PaymentStatus`. `$model->status` returns the enum instance — compare against enum cases, never raw strings; JSON output is unchanged (enums serialize to their values).
 
@@ -99,7 +102,30 @@ Statuses are backed enums cast on the models: `App\Enums\TransactionStatus` (val
 
 ### Refunds
 
-`RefundFailedTransactionAction` is idempotent (row lock + `PaymentStatus::SUCCESS` check). Wallet refunds lock the user row and credit inline; gateway refunds dispatch `RefundGatewayJob` (5 tries, escalating backoff, deterministic `RFD-{reference_id}` order number) — exhausted retries alert Discord for manual follow-up.
+**There is no automatic gateway refund.** `InitiateRefundAction` (`app/Actions/Refund/`) is the single entry point, idempotent three ways over: a transaction row lock, a `PaymentStatus::SUCCESS` gate, and a unique `refund_requests.transaction_id`. Its four callers are unchanged (uxiotopup webhook, status poll, `ProcessUxiotopupTopup::failed()`, admin). Two paths, chosen by `transactions.user_id`:
+
+- **Member → wallet, immediately.** `WalletLedger::record(type: 'refund')` — never a raw `increment`, so it lands in `balance_mutations` with before/after figures. `payments.status` and `transactions.status` both go `REFUNDED` in the same transaction, and the merchant settlement is reversed post-commit.
+- **Guest → the manual queue.** A `refund_requests` row in `WAITING_DETAILS` plus a claim link emailed and WhatsApped. **`payments.status` stays `SUCCESS` until an admin completes the transfer** — `GetFinancialSummaryAction` and `ReconcileGatewayFeesAction` read that column as cash out, and flipping it at request time would report money still sitting in the account.
+
+Claim surface (`/v1/refund-claims/*`, public, `throttle:refund-claim` 6/min):
+
+- Only `sha256(token)` is stored (`RefundClaimToken`), with a 30-day expiry. The plaintext exists in the customer's inbox and nowhere else, and `GET /v1/invoices/{inv}` deliberately never carries it — the invoice number alone is enough to open that page, and must not be enough to redirect someone's money.
+- **`POST /refund-claims/resend` answers identically for a hit and a miss** and delivers the link out of band, the same anti-enumeration reasoning as `forgot-password`. Matching is invoice **AND** contact (unlike `TrackOrdersAction`, which is OR because its output is harmless). It rotates the token, so an old forwarded link dies.
+- Payout details **freeze** once an admin claims the row (`PROCESSING`), or the destination could be swapped between an admin reading it and sending the money. `payout_submitted_by` records `customer` vs `admin`.
+- Payout fields reuse the `withdrawals` vocabulary and `BankCatalog` validation, so both places money leaves the platform speak one language.
+
+Admin queue (`/v1/refunds`, `auth:sanctum` + `admin`): `PENDING → PROCESSING → COMPLETED|REJECTED`. `PROCESSING` exists solely as a claim lock — `CompleteRefundRequestAction` refuses a row held by a different admin, which is the guard against two operators making the same bank transfer. Proof is stored byte-for-byte (`refunds/proofs`, never `ImageOptimizer`).
+
+`ReverseMerchantSettlementAction` (`app/Actions/Settlement/`) mirrors `SettleMerchantTransactionAction` at the moment money leaves — inline for a member, on `complete` for a guest, never on `REJECTED`. Three rules it must keep:
+
+- Platform legs are typed **`markup` with a negative amount**, not `markup_reversal`: `PlatformBalance::income()` whitelists `['markup','withdrawal_fee','service_revenue']` and would silently ignore anything else, leaving kita's withdrawable balance inflated by every refund.
+- Every leg references **`RFD-{invoice}`**, never the bare invoice number, or settlement's own `(type: settlement, reference: invoice)` idempotency guard would match a reversal.
+- A third leg books `gateway_fee + tax_amount` as a refund cost — Monetapay kept its cut and the PPN was levied, so refunding the full gross really is out of pocket by that much.
+- It **never fails a refund.** `WalletLedger` throws when a merchant's balance would go negative (they already spent it); that is caught, alerted to Discord, and the refund proceeds.
+
+`RefundGatewayJob` is retired to a logged no-op for one release so jobs already serialized in the `jobs` table drain instead of poisoning `failed_jobs` — **delete the file after that deploy**. `MonetapayService::refundTransaction()` and `POST /v1/monetapay/refund` stay as the manual admin tool, deliberately outside every automatic path.
+
+Legacy rows refunded by the old flow are backfilled as `method = legacy_gateway`, so the refund page is authoritative for all of history rather than only since the rewrite.
 
 ---
 

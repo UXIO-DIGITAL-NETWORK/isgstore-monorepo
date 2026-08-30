@@ -110,6 +110,9 @@ class HandleMonetapayCallbackAction
                 TransactionStatus::COMPLETED,
                 TransactionStatus::EXPIRED,
                 TransactionStatus::FAILED_PROVIDER,
+                // A refunded order is as terminal as they come — the money has
+                // already gone back to the customer.
+                TransactionStatus::REFUNDED,
             ], true)) {
                 Log::channel('monetapay')->info("Monetapay callback ignored — already {$transaction->status->value}", [
                     'reference_id' => $dto->outNo,

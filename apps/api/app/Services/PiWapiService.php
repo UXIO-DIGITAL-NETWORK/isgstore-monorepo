@@ -80,11 +80,55 @@ class PiWapiService
             'document_name' => $documentName,
         ]);
 
+        return $this->send('sendDocument', $recipient, $payload);
+    }
+
+    /**
+     * Send a plain `text` WhatsApp message. Used for notifications that carry a
+     * link rather than a document — the guest refund claim, for one.
+     *
+     * Same contract as sendDocument(): throws on transport failure or a
+     * non-success body so a queued caller can retry.
+     *
+     * @return array<string, mixed> the decoded PiWAPI response
+     */
+    public function sendText(string $recipient, string $message): array
+    {
+        $payload = [
+            'secret' => $this->secret,
+            'account' => $this->account,
+            'recipient' => $recipient,
+            'type' => 'text',
+            'message' => $message,
+            'priority' => 1,
+        ];
+
+        // Never log the secret, and never the message body — a claim link is a
+        // bearer credential and log files outlive the refund.
+        Log::channel('piwapi')->info('PiWAPI sendText Request', [
+            'recipient' => $recipient,
+        ]);
+
+        return $this->send('sendText', $recipient, $payload);
+    }
+
+    /**
+     * POST a prepared payload and validate PiWAPI's two-layer response.
+     *
+     * Shared by every message type so the "200 HTTP but a business error in the
+     * body" case cannot be handled correctly in one method and forgotten in the
+     * next.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function send(string $label, string $recipient, array $payload): array
+    {
         try {
             $response = $this->client()->asMultipart()->post($this->apiUrl, $this->multipart($payload));
 
             if (! $response->successful()) {
-                Log::channel('piwapi')->error('PiWAPI sendDocument HTTP Failed', [
+                Log::channel('piwapi')->error("PiWAPI {$label} HTTP Failed", [
                     'http_status' => $response->status(),
                     'recipient' => $recipient,
                     'response' => $response->body(),
@@ -98,7 +142,7 @@ class PiWapiService
             // PiWAPI answers 200 with a `status` field; anything other than 200
             // in the body is a business-level failure (bad number, no session…).
             if (($data['status'] ?? null) !== 200) {
-                Log::channel('piwapi')->error('PiWAPI sendDocument Rejected', [
+                Log::channel('piwapi')->error("PiWAPI {$label} Rejected", [
                     'recipient' => $recipient,
                     'response' => $data,
                 ]);
@@ -106,14 +150,14 @@ class PiWapiService
                 throw new Exception('PiWAPI rejected the message: '.($data['message'] ?? 'unknown error'));
             }
 
-            Log::channel('piwapi')->info('PiWAPI sendDocument Response', [
+            Log::channel('piwapi')->info("PiWAPI {$label} Response", [
                 'recipient' => $recipient,
                 'message_id' => $data['data']['messageId'] ?? null,
             ]);
 
             return $data;
         } catch (Exception $e) {
-            Log::channel('piwapi')->error('PiWAPI sendDocument Exception', [
+            Log::channel('piwapi')->error("PiWAPI {$label} Exception", [
                 'recipient' => $recipient,
                 'message' => $e->getMessage(),
             ]);

@@ -6,7 +6,9 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Uxiotopup\ProcessUxiotopupTransactionAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Transaction;
+use App\Support\Refund\RefundEligibility;
 use Illuminate\Support\Facades\Auth;
+use RuntimeException;
 
 /**
  * "Retry Invoice" — re-dispatches a fresh uxiotopup fulfilment request for a
@@ -26,6 +28,13 @@ class AdminRetryTransactionAction
 
     public function execute(Transaction $transaction): Transaction
     {
+        // The customer has already been paid back (or is about to be). Ordering
+        // again would mean they got the item *and* the money. A REJECTED refund
+        // doesn't count — no money left, so the order is fair game.
+        if (RefundEligibility::hasOpenOrSettledRefund($transaction)) {
+            throw new RuntimeException('Transaksi ini sudah direfund — batalkan refund-nya dulu sebelum mengulang pesanan.');
+        }
+
         $updated = $this->processAction->execute($transaction);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(

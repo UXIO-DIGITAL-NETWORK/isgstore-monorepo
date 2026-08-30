@@ -39,6 +39,7 @@ class ShowInvoiceAction
                 'paymentChannel:id,name,channel_code,payment_type',
                 'payment:id,transaction_id,payment_channel_id,reference_id,gross_amount,admin_fee,payment_data,status,paid_at,created_at',
                 'payment.paymentChannel:id,payment_type',
+                'refundRequest:id,transaction_id,status,method,amount,refunded_at',
             ])
             ->first();
 
@@ -47,6 +48,7 @@ class ShowInvoiceAction
         }
 
         $payment = $transaction->payment;
+        $refund = $transaction->refundRequest;
         $game = $transaction->product?->category;
         $expiresAt = $payment ? PaymentExpiry::for($payment) : null;
 
@@ -97,6 +99,19 @@ class ShowInvoiceAction
             // Drives the countdown. Null when the channel has no configured
             // window — the client then hides the timer rather than inventing one.
             'expires_at' => $expiresAt?->toIso8601String(),
+
+            // Present only once a refund exists. Deliberately narrow: no claim
+            // token, no contact details, nothing about the merchant. The token
+            // is emailed, never served — otherwise the invoice number alone
+            // (which is all this endpoint asks for) would let anyone redirect
+            // the customer's money. The client uses `method` to decide between
+            // "already in your balance" and "claim your refund".
+            'refund' => $refund ? [
+                'status' => $refund->status?->value,
+                'method' => $refund->method?->value,
+                'amount' => (int) $refund->amount,
+                'refunded_at' => $refund->refunded_at?->toIso8601String(),
+            ] : null,
 
             // Voucher / serial number, present once uxiotopup has fulfilled.
             'sn' => $transaction->sn,

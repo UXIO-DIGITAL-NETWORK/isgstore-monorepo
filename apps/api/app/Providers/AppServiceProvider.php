@@ -61,6 +61,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip());
         });
 
+        // Public refund claim. Tighter than checkout because the prize is
+        // different: this surface decides where money is sent, so a scripted
+        // sweep of invoice/contact pairs must die early. A real customer needs
+        // two or three requests, not six.
+        RateLimiter::for('refund-claim', function (Request $request) {
+            return Limit::perMinute(6)->by($request->ip());
+        });
+
         // Hub money-path writes: one caller (the Hub) driving a human's clicks,
         // so a modest ceiling — enough for real review bursts, tight enough to
         // blunt a leaked-write-key abuse window.
