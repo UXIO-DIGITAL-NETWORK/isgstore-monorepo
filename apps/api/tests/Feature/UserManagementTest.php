@@ -92,4 +92,20 @@ class UserManagementTest extends TestCase
             'direction' => 'credit',
         ])->assertUnprocessable();
     }
+
+    public function test_role_filter_returns_only_admin_accounts(): void
+    {
+        $adminRole = Role::factory()->create(['name' => 'Admin']);
+        $admin = User::factory()->create(['role_id' => $adminRole->id, 'name' => 'Super Admin']);
+        Sanctum::actingAs($admin);
+
+        $this->member(['name' => 'Client Merchant']);
+        Role::factory()->create(['name' => 'Payment-Internal']);
+        $this->member(['name' => 'Internal Finance']);
+
+        $response = $this->getJson('/api/v1/users?role=admin')->assertOk();
+
+        $response->assertJsonCount(1, 'data.data');
+        $response->assertJsonPath('data.data.0.name', 'Super Admin');
+    }
 }

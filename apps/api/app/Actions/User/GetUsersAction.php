@@ -5,6 +5,7 @@ namespace App\Actions\User;
 use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\User\UserFilterDTO;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -16,7 +17,7 @@ class GetUsersAction
 
     public function execute(UserFilterDTO $dto): LengthAwarePaginator
     {
-        $query = User::query();
+        $query = User::with('role');
 
         // 1. Pencarian Global (Nama, Email, HP)
         if ($dto->search) {
@@ -33,6 +34,10 @@ class GetUsersAction
         }
         if ($dto->excludeRoleId) {
             $query->where('role_id', '!=', $dto->excludeRoleId);
+        }
+        if ($dto->role) {
+            $roleId = Role::whereRaw('LOWER(name) = ?', [$dto->role])->value('id');
+            $query->where('role_id', $roleId ?? 0);
         }
 
         // 3. Filter Range Saldo

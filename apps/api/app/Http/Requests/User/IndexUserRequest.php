@@ -17,6 +17,7 @@ class IndexUserRequest extends FormRequest
             'search' => ['nullable', 'string', 'max:255'],
             'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'exclude_role_id' => ['nullable', 'integer', 'exists:roles,id'],
+            'role' => ['nullable', 'string', 'in:admin,member,vip,reseller,agent,payment-internal,payment-admin'],
 
             // Filter Saldo & Poin
             'min_balance' => ['nullable', 'numeric', 'min:0'],
