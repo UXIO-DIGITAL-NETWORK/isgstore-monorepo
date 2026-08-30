@@ -33,6 +33,7 @@ UDN Admin Dashboard gives a single operator ("Super Admin") a data-dense control
 - **Monitor** platform health — balances, daily sales, revenue vs. net income trends, pending order queues, recent activity.
 - **Oversee finances** — aggregate money movement, revenue/net-income reporting, exportable financial recaps.
 - **Operate transactions** — search, filter, inspect, and act on every top-up transaction (status override, refund, re-trigger provider callback, resend receipt, export, recaps).
+- **Settle refunds** — work the refund queue: a member is credited to their balance automatically, while a guest waits on a manual bank transfer that an operator records payout details for, marks in progress, and closes with proof of transfer.
 
 This admin app runs against a **separate backend/service** from the public-facing "UDN Top Up Website" (the consumer platform). It does not share the consumer frontend, database, or design identity — the consumer site uses a Near-Black + Neon Violet brand; this admin uses **pure monochrome**.
 

@@ -3,7 +3,7 @@
  * against the Automatic Transaction History reference). Provisional until
  * the real API contract lands.
  */
-export type TransactionStatus = "pending" | "processing" | "success" | "failed" | "partial_refund" | "partial_success";
+export type TransactionStatus = "pending" | "processing" | "success" | "failed" | "refunded" | "partial_success";
 
 export interface TransactionCustomer {
   user_id: number | null;

@@ -25,12 +25,19 @@ Precedence when they conflict:
 - **The feature set is built, not a roadmap.** All 16 slices ship with routes:
   `activity`, `administration`, `auth`, `categories`, `content`, `dashboard`, `feedback`,
   `financial`, `home`, `integration`, `marketing`, `membership`, `pricing`, `products`,
-  `reports`, `transactions`. Treat `product_requirements.md §5`'s MVP ordering as history.
+  `refunds`, `reports`, `transactions`. Treat `product_requirements.md §5`'s MVP ordering as history.
 - **`dashboard` is real** — `dashboard.service.ts` reads `/v1/dashboard/stats` and
   `/v1/dashboard/performance`. The files left in `features/*/data/` are **no longer the
   service backing**: they are either static select-option lists (`select-options.data.ts`,
   imported by `products.service.ts`) or fixtures now consumed only by the colocated
   `tests/`. Do not wire a screen to them.
+- **Refunds are a queue, not a button.** `POST /v1/transactions/{id}/refund` no longer
+  fires a gateway refund: a registered member is credited to their balance inline, and a
+  guest is queued on `/admin/refunds` for a manual bank transfer. Two consequences for
+  anything touching transaction status: the local `refunded` status now asserts that money
+  actually left, so it is filterable but **not settable** (`EDITABLE_INVOICE_STATUS_OPTIONS`,
+  and the API 422s it on `manual-review`); and the payout bank list is fetched from
+  `GET /v1/payout-banks` rather than bundled, so it cannot drift from what the API accepts.
 - **`src/index.css` is already retuned** — the greys are true neutral (every one is
   `oklch(L 0 0)`, chroma zero, no blue tint) and `--success`/`--success-foreground` ship in
   both themes. Non-zero chroma is confined to `--success`, `--destructive` and `--chart-*`,

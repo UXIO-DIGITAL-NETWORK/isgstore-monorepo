@@ -91,7 +91,7 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     id: "txn-5",
     invoice_no: "ZP2607051STUVWXYZA",
     payment_status: "success",
-    invoice_status: "partial_refund",
+    invoice_status: "refunded",
     customer: { user_id: null, name: "Guest Buyer", phone: "+628456789012" },
     game: { id: "game-mlbb-id", name: "Mobile Legends Indonesia" },
     product: { id: "prod-86-diamond", name: "86 Diamond" },
@@ -318,7 +318,7 @@ function activitySteps(row: Omit<Transaction, "activity_log">): ActivityStep[] {
           description: "Callback resent to the provider for reconciliation.",
         },
       ];
-    case "partial_refund":
+    case "refunded":
       return [
         created,
         paid,

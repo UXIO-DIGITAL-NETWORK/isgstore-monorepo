@@ -15,42 +15,37 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { refundSchema, type RefundFormValues } from "../schemas/refund.schema";
+import { rejectRefundSchema, type RejectRefundFormValues } from "../schemas/refund.schema";
 
-interface RefundDialogProps {
+interface RejectRefundDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  invoiceNo: string;
-  /** Fires only on a valid submit — never on open — carrying the required reason. */
+  refundNumber: string;
   onConfirm: (reason: string) => void;
   isPending?: boolean;
 }
 
 /**
- * Confirmation gate for the "Refund" row action (product_requirements.md §4.3).
- * Unlike the Delete dialog this collects a required reason, so it's a real form
- * (RHF + Zod) rather than a bare AlertDialog — the reason is passed straight to
- * `transactionsService.refund`, which also rejects an empty string.
+ * Refusing to return someone's money. The reason is mandatory — this is the
+ * one action whose justification someone will go looking for later — and the
+ * API enforces the same, so the form gate catches it before the mutation.
  */
-export function RefundDialog({ open, onOpenChange, invoiceNo, onConfirm, isPending = false }: RefundDialogProps) {
+export function RejectRefundDialog({ open, onOpenChange, refundNumber, onConfirm, isPending = false }: RejectRefundDialogProps) {
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<RefundFormValues>({
-    resolver: zodResolver(refundSchema),
+  } = useForm<RejectRefundFormValues>({
+    resolver: zodResolver(rejectRefundSchema),
     defaultValues: { reason: "" },
   });
 
-  // Mounted once per table row and reused across opens, so the reason from a
-  // previous open must be cleared — same reset-on-open concern the Edit modal
-  // used to carry before it became a route.
   useEffect(() => {
     if (open) reset({ reason: "" });
   }, [open, reset]);
 
-  const onSubmit = (values: RefundFormValues) => {
+  const onSubmit = (values: RejectRefundFormValues) => {
     onConfirm(values.reason.trim());
     onOpenChange(false);
   };
@@ -67,19 +62,19 @@ export function RefundDialog({ open, onOpenChange, invoiceNo, onConfirm, isPendi
           className="flex flex-col gap-4"
         >
           <DialogHeader>
-            <DialogTitle>Refund transaction {invoiceNo}?</DialogTitle>
+            <DialogTitle>Reject refund {refundNumber}?</DialogTitle>
             <DialogDescription>
-              A registered member is credited to their balance immediately. A guest is queued on the Refunds page for a
-              manual transfer. Provide a reason for the audit trail.
+              No money moves and the sale still stands. The claim link stops working, so the customer cannot submit
+              payout details afterwards.
             </DialogDescription>
           </DialogHeader>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="refund-reason">Reason</Label>
+            <Label htmlFor="reject-reason">Reason</Label>
             <Textarea
-              id="refund-reason"
+              id="reject-reason"
               className="rounded-xl"
-              placeholder="e.g. Item out of stock at supplier"
+              placeholder="e.g. Duplicate claim — already refunded under RFD-…"
               {...register("reason")}
             />
             {errors.reason && (
@@ -104,10 +99,10 @@ export function RefundDialog({ open, onOpenChange, invoiceNo, onConfirm, isPendi
             <Button
               type="submit"
               variant="destructive"
-              className="rounded-xl dark:bg-destructive"
+              className="dark:bg-destructive rounded-xl"
               disabled={isPending}
             >
-              {isPending ? "Refunding..." : "Refund"}
+              {isPending ? "Rejecting..." : "Reject refund"}
             </Button>
           </DialogFooter>
         </Box>

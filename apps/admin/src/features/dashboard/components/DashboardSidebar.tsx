@@ -13,6 +13,7 @@ import {
   Percent,
   Plug,
   Receipt,
+  RotateCcw,
   Search,
   Settings,
   Star,
@@ -70,6 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Orders",
     items: [
       { label: "Transaction", href: "/admin/transactions", icon: Receipt },
+      { label: "Refunds", href: "/admin/refunds", icon: RotateCcw },
       { label: "Activity", href: "/admin/activity", icon: Activity },
       { label: "Feedback", href: "/admin/feedback", icon: Star },
     ],
