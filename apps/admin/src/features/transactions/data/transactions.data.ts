@@ -19,6 +19,7 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     invoice_ref: "UX1T8Z6B99946B8XE2CK",
     payment_status: "success",
     invoice_status: "success",
+    provider_status: "delivered",
     customer: {
       user_id: 1001,
       name: "Randy Galang",
@@ -40,8 +41,9 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     id: "txn-2",
     invoice_no: "ZP2607027KDLMNQRST",
     invoice_ref: "UX1T8Z6B99946B8XE3DL",
-    payment_status: "failed",
+    payment_status: "expired",
     invoice_status: "failed",
+    provider_status: "rejected",
     customer: {
       user_id: 1002,
       name: "Sinta Dewi",
@@ -64,6 +66,7 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     invoice_no: "ZP2607031ABCDEFGHI",
     payment_status: "pending",
     invoice_status: "pending",
+    provider_status: "not_ordered",
     customer: { user_id: 1003, name: "Budi Santoso", phone: "+628234567890" },
     game: { id: "game-pubgm", name: "PUBG Mobile" },
     product: { id: "prod-660-uc", name: "660 UC" },
@@ -76,8 +79,9 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
   {
     id: "txn-4",
     invoice_no: "ZP2607041JKLMNOPQR",
-    payment_status: "processing",
+    payment_status: "pending",
     invoice_status: "processing",
+    provider_status: "ordered",
     customer: { user_id: 1004, name: "Wulan Ayu", phone: "+628345678901" },
     game: { id: "game-genshin", name: "Genshin Impact" },
     product: { id: "prod-genesis-crystal", name: "980 Genesis Crystal" },
@@ -92,6 +96,7 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     invoice_no: "ZP2607051STUVWXYZA",
     payment_status: "success",
     invoice_status: "refunded",
+    provider_status: "undelivered",
     customer: { user_id: null, name: "Guest Buyer", phone: "+628456789012" },
     game: { id: "game-mlbb-id", name: "Mobile Legends Indonesia" },
     product: { id: "prod-86-diamond", name: "86 Diamond" },
@@ -110,6 +115,7 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     invoice_no: "ZP2607062BCDEFGHIJ",
     payment_status: "success",
     invoice_status: "partial_success",
+    provider_status: "ordered",
     customer: { user_id: 1006, name: "Agus Setiawan", phone: "+628567890123" },
     game: { id: "game-ff", name: "Free Fire" },
     product: { id: "prod-310-diamond", name: "310 Diamond" },
@@ -126,8 +132,9 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
   {
     id: "txn-7",
     invoice_no: "ZP2607073CDEFGHIJK",
-    payment_status: "failed",
+    payment_status: "expired",
     invoice_status: "failed",
+    provider_status: "rejected",
     customer: { user_id: 1007, name: "Rina Marlina", phone: "+628678901234" },
     game: { id: "game-pubgm", name: "PUBG Mobile" },
     product: { id: "prod-325-uc", name: "325 UC" },
@@ -144,6 +151,7 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     invoice_no: "ZP2607084DEFGHIJKL",
     payment_status: "success",
     invoice_status: "success",
+    provider_status: "delivered",
     customer: { user_id: 1008, name: "Randy Galang", phone: "+629876543210" },
     game: { id: "game-genshin", name: "Genshin Impact" },
     product: { id: "prod-topup-60", name: "60 Genesis Crystal" },
@@ -162,6 +170,7 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     invoice_no: "ZP2607095EFGHIJKLM",
     payment_status: "pending",
     invoice_status: "pending",
+    provider_status: "not_ordered",
     customer: { user_id: 1009, name: "Dewi Lestari", phone: "+628789012345" },
     game: { id: "game-mlbb-id", name: "Mobile Legends Indonesia" },
     product: { id: "prod-343-diamond", name: "343 Diamond" },
@@ -176,6 +185,7 @@ const TRANSACTION_SEEDS: Omit<Transaction, "activity_log">[] = [
     invoice_no: "ZP2607106FGHIJKLMN",
     payment_status: "success",
     invoice_status: "success",
+    provider_status: "delivered",
     customer: { user_id: 1010, name: "Hendra Wijaya", phone: "+628890123456" },
     game: { id: "game-ff", name: "Free Fire" },
     product: { id: "prod-520-diamond", name: "520 Diamond" },
@@ -218,6 +228,14 @@ function generateSyntheticRows(count: number): Omit<Transaction, "activity_log">
   const products = ["19 Diamond (17 + 2 Bonus)", "100 Diamond", "660 UC", "980 Genesis Crystal", "310 Diamond"];
   const methods = ["Credits", "QRIS", "Virtual Account", "E-Wallet"];
   const statuses: Transaction["invoice_status"][] = ["success", "failed", "pending", "processing"];
+  // Declared in here rather than at module scope: this function is called
+  // above its own definition, and `const` does not hoist the way `function` does.
+  const providerFor: Record<string, Transaction["provider_status"]> = {
+    success: "delivered",
+    failed: "rejected",
+    pending: "not_ordered",
+    processing: "ordered",
+  };
 
   return Array.from({ length: count }, (_, i) => {
     const n = i % names.length;
@@ -230,7 +248,11 @@ function generateSyntheticRows(count: number): Omit<Transaction, "activity_log">
     return {
       id: `txn-synthetic-${i + 1}`,
       invoice_no: `ZP2607${String(200 + i)}SYN${i}`,
-      payment_status: status,
+      // The two lifecycles are no longer the same value. A failed order is one
+      // the customer PAID for and the supplier then fluffed — copying `status`
+      // into both would have produced rows that cannot exist.
+      payment_status: status === "pending" ? "pending" : "success",
+      provider_status: providerFor[status],
       invoice_status: status,
       customer: { user_id: 2000 + i, name: names[n], phone: phones[n] },
       game,

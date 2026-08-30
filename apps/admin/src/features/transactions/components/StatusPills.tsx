@@ -3,13 +3,13 @@ import { Text } from "@/components/common/Text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useStatusCounts } from "../hooks/useTransactions";
-import type { StatusCounts, TransactionStatus } from "../types/transaction.type";
+import type { TransactionStatus } from "../types/transaction.type";
 
 const PILLS: {
   status: TransactionStatus;
   label: string;
   tooltip: string;
-  countKey: keyof StatusCounts;
+  countKey: "pending" | "processing" | "failed";
   borderClass: string;
   bgClass: string;
   hoverBgClass: string;

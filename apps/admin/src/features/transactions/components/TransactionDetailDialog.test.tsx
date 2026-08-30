@@ -24,6 +24,7 @@ const detail: TransactionDetail = {
   invoice_no: "ZP2607016UJFJVSHCJ",
   invoice_status: "success",
   payment_status: "success",
+  provider_status: "delivered",
   is_manual: false,
   customer: { user_id: 1001, name: "Randy Galang", phone: "+629876543210", email: "randy@example.com" },
   game: { id: "4", name: "Mobile Legends" },

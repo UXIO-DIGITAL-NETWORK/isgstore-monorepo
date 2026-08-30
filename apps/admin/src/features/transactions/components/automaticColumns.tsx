@@ -11,9 +11,28 @@ import { initials } from "@/utils/initials";
 import { formatElapsed } from "../lib/formatElapsed";
 import type { Transaction } from "../types/transaction.type";
 import { RowActionMenu } from "./RowActionMenu";
-import { StatusBadge } from "./StatusBadge";
+import { PaymentStatusBadge } from "./PaymentStatusBadge";
+import { ProviderStatusBadge } from "./ProviderStatusBadge";
 
 /** Automatic tab columns, exact shape from the reference (product_requirements.md §4.3). */
+/**
+ * What actually happened, for the resolved-at line in the Time column.
+ *
+ * Three outcomes rather than two: a payment that expired never reached the
+ * supplier at all, so colouring it as a supplier failure would blame the wrong
+ * half of the system.
+ */
+function resolvedOutcome(
+  provider: Transaction["provider_status"],
+  payment: Transaction["payment_status"],
+): { label: string; className: string } {
+  if (provider === "delivered") return { label: "Delivered", className: "text-success" };
+  if (provider === "rejected" || provider === "undelivered")
+    return { label: "Failed", className: "text-destructive" };
+  if (payment === "expired") return { label: "Expired", className: "text-muted-foreground" };
+  return { label: "Resolved", className: "text-muted-foreground" };
+}
+
 export const automaticColumns: ColumnDef<Transaction>[] = [
   {
     accessorKey: "invoice_no",
@@ -131,14 +150,17 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
     ),
   },
   {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Box className="flex flex-col items-start gap-1">
-        <StatusBadge status={row.original.payment_status} />
-        <StatusBadge status={row.original.invoice_status} />
-      </Box>
-    ),
+    id: "payment_status",
+    header: "Payment",
+    cell: ({ row }) => <PaymentStatusBadge status={row.original.payment_status} />,
+  },
+  {
+    // Two columns, not two stacked badges. The stack showed both lifecycles
+    // already but named neither, so a green "Success" over an amber
+    // "Processing" gave an operator no way to tell which half was which.
+    id: "provider_status",
+    header: "Provider",
+    cell: ({ row }) => <ProviderStatusBadge status={row.original.provider_status} />,
   },
   {
     id: "method",
@@ -168,8 +190,11 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
     header: "Time",
     cell: ({ row }) => {
       const tx = row.original;
-      const outcomeFailed = tx.invoice_status === "failed";
-      const outcomeLabel = outcomeFailed ? "Failed" : "Success";
+      // Reads the provider lifecycle, which is what "resolved" actually means
+      // here — an order is done when the supplier is done with it. The old
+      // `invoice_status === "failed"` test was wrong for a refunded row: it is
+      // neither "failed" nor a success, so it rendered a green "Success".
+      const outcome = resolvedOutcome(tx.provider_status, tx.payment_status);
       return (
         <Box className="flex flex-col gap-1">
           <Text
@@ -181,9 +206,9 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
           {tx.resolved_at && (
             <Text
               as="span"
-              className={outcomeFailed ? "text-destructive" : "text-success"}
+              className={outcome.className}
             >
-              {outcomeLabel}: {format(new Date(tx.resolved_at), "MMM d, HH:mm")}
+              {outcome.label}: {format(new Date(tx.resolved_at), "MMM d, HH:mm")}
             </Text>
           )}
           {tx.elapsed_seconds !== undefined && (
