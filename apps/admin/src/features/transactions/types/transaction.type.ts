@@ -5,6 +5,37 @@
  */
 export type TransactionStatus = "pending" | "processing" | "success" | "failed" | "refunded" | "partial_success";
 
+/**
+ * The Payment Gateway half — did the customer pay?
+ *
+ * Deliberately narrower than TransactionStatus: a payment is never "processing"
+ * and never "partial". Sharing the wider union is what let the Payment Status
+ * dropdown offer states a payment can never be in.
+ *
+ * `none` is not a gateway state — it means the order never went through a
+ * gateway at all (admin-created or manually recorded), which is a real and
+ * otherwise invisible answer on the Manual tab.
+ */
+export type PaymentStatus = "pending" | "success" | "expired" | "refunded" | "none";
+
+/**
+ * The Topup Provider half — did the supplier deliver?
+ *
+ * Three of these name situations the single status column flattened:
+ * `rejected` (the supplier said no) versus `undelivered` (our retries ran out
+ * with no verdict — worth retrying by hand), and `unconfirmed` (the supplier
+ * has the order but we hold no id for it, so nothing can poll it).
+ */
+export type ProviderStatus =
+  | "not_ordered"
+  | "queued"
+  | "sending"
+  | "ordered"
+  | "unconfirmed"
+  | "delivered"
+  | "rejected"
+  | "undelivered";
+
 export interface TransactionCustomer {
   user_id: number | null;
   name: string;
@@ -49,8 +80,11 @@ export interface Transaction {
   invoice_no: string;
   /** Sub-code shown under the invoice number in the reference. */
   invoice_ref?: string;
-  /** Confirmed as a separate field from invoice_status. */
-  payment_status: TransactionStatus;
+  /** The gateway's own verdict, independent of the supplier's. */
+  payment_status: PaymentStatus;
+  /** The supplier's own verdict, independent of the gateway's. */
+  provider_status: ProviderStatus;
+  /** The combined order lifecycle. Still what the edit form and the API filter on. */
   invoice_status: TransactionStatus;
   customer: TransactionCustomer;
   game: TransactionGameRef;
@@ -109,7 +143,8 @@ export interface TransactionDetail {
   id: string;
   invoice_no: string;
   invoice_status: TransactionStatus;
-  payment_status: TransactionStatus;
+  payment_status: PaymentStatus;
+  provider_status: ProviderStatus;
   is_manual: boolean;
   customer: TransactionCustomer;
   game: TransactionGameRef;
@@ -142,7 +177,8 @@ export interface TransactionListParams {
   categoryId?: string;
   productId?: string;
   invoiceStatus?: TransactionStatus;
-  paymentStatus?: TransactionStatus;
+  paymentStatus?: PaymentStatus;
+  providerStatus?: ProviderStatus;
   startDate?: string;
   endDate?: string;
   invoiceFrom?: string;
@@ -167,6 +203,9 @@ export interface StatusCounts {
   pending: number;
   processing: number;
   failed: number;
+  /** Per-lifecycle breakdowns. Optional — absent when running against an API that predates the split. */
+  provider?: Partial<Record<ProviderStatus, number>>;
+  payment?: Partial<Record<PaymentStatus, number>>;
 }
 
 /** Small typed option shape for the filter-bar selects. */

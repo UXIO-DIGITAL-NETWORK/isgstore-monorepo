@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
 import { useTransactionDetail } from "../hooks/useTransactions";
 import { StatusBadge } from "./StatusBadge";
+import { PaymentStatusBadge } from "./PaymentStatusBadge";
+import { ProviderStatusBadge } from "./ProviderStatusBadge";
 
 const SKELETON_ROW_COUNT = 8;
 
@@ -142,11 +144,14 @@ export function TransactionDetailDialog({ transactionId, open, onOpenChange }: T
                   label="invoice number"
                 />
               </Row>
-              <Row label="Invoice Status">
+              <Row label="Order Status">
                 <StatusBadge status={data.invoice_status} />
               </Row>
               <Row label="Payment Status">
-                <StatusBadge status={data.payment_status} />
+                <PaymentStatusBadge status={data.payment_status} />
+              </Row>
+              <Row label="Provider Status">
+                <ProviderStatusBadge status={data.provider_status} />
               </Row>
               <Row label="Source">
                 <Value>{data.is_manual ? "Manual" : "Automatic"}</Value>
@@ -270,9 +275,10 @@ export function TransactionDetailDialog({ transactionId, open, onOpenChange }: T
                   label="supplier transaction id"
                 />
               </Row>
-              {/* The provider's own vocabulary, not a TransactionStatus — a
-                  StatusBadge would have to invent a mapping for it. */}
-              <Row label="Supplier Status">
+              {/* uxiotopup's own wording, kept as evidence. Deliberately plain
+                  text next to the normalized Provider Status above, so it reads
+                  as the raw source rather than a competing verdict. */}
+              <Row label="Provider Status (raw)">
                 <Value className="text-muted-foreground">{data.supplier.status ?? EM_DASH}</Value>
               </Row>
             </Section>

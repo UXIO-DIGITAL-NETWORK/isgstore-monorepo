@@ -31,6 +31,13 @@ Precedence when they conflict:
   service backing**: they are either static select-option lists (`select-options.data.ts`,
   imported by `products.service.ts`) or fixtures now consumed only by the colocated
   `tests/`. Do not wire a screen to them.
+- **Transaction status is two statuses.** The API splits the gateway's verdict from the
+  supplier's: `payment_status` (`GatewayStatus`, narrower than the order status — a payment
+  is never "processing") and `provider_status` (`ProviderStatus`, eight states). The table
+  shows them as two labelled columns, **Payment** and **Provider**; `invoice_status` is the
+  combined order lifecycle and stays in the edit form and the detail dialog. Both new fields
+  are optional in `TransactionApiRow` with a fallback to the old shape, because the three
+  repos deploy independently — do not make them required.
 - **Refunds are a queue, not a button.** `POST /v1/transactions/{id}/refund` no longer
   fires a gateway refund: a registered member is credited to their balance inline, and a
   guest is queued on `/admin/refunds` for a manual bank transfer. Two consequences for

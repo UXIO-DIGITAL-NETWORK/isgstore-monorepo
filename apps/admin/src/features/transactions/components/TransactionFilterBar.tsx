@@ -14,6 +14,7 @@ import {
   CATEGORY_OPTIONS,
   INVOICE_FROM_OPTIONS,
   INVOICE_STATUS_OPTIONS,
+  PROVIDER_STATUS_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
   PAYMENT_STATUS_OPTIONS,
   PRODUCT_OPTIONS,
@@ -28,6 +29,7 @@ export type TransactionFilters = Pick<
   | "categoryId"
   | "productId"
   | "invoiceStatus"
+  | "providerStatus"
   | "paymentStatus"
   | "startDate"
   | "endDate"
@@ -41,6 +43,7 @@ export type FilterField =
   | "category"
   | "product"
   | "invoiceStatus"
+  | "providerStatus"
   | "paymentStatus"
   | "startDate"
   | "endDate"
@@ -53,6 +56,7 @@ const ALL_FILTER_FIELDS: FilterField[] = [
   "category",
   "product",
   "invoiceStatus",
+  "providerStatus",
   "paymentStatus",
   "startDate",
   "endDate",
@@ -218,6 +222,16 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
           options={INVOICE_STATUS_OPTIONS}
           value={filters.invoiceStatus}
           onChange={(value) => onChange({ invoiceStatus: value as TransactionFilters["invoiceStatus"] })}
+        />
+      )}
+      {has("providerStatus") && (
+        <FilterSelect
+          id={`${uid}-provider-status`}
+          label="Provider Status"
+          placeholder="All statuses"
+          options={PROVIDER_STATUS_OPTIONS}
+          value={filters.providerStatus}
+          onChange={(value) => onChange({ providerStatus: value as TransactionFilters["providerStatus"] })}
         />
       )}
       {has("paymentStatus") && (

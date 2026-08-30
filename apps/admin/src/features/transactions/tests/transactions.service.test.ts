@@ -71,6 +71,61 @@ describe("transactionsService.list", () => {
     expect(result.data[1].invoice_status).toBe("failed");
   });
 
+  it("reads both lifecycles from the split-aware API", async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      paginated([
+        apiRow({
+          status: "FAILED_PROVIDER",
+          payment_status: "SUCCESS",
+          provider_status: "UNDELIVERED",
+        }),
+      ]),
+    );
+
+    const result = await transactionsService.list({});
+
+    // Paid, yet the supplier never came back to us — two facts one column
+    // could not hold at the same time.
+    expect(result.data[0].payment_status).toBe("success");
+    expect(result.data[0].provider_status).toBe("undelivered");
+  });
+
+  /**
+   * The three repos deploy independently, so this page has to render correctly
+   * against an API that has not shipped the split yet.
+   */
+  it("falls back to the old fields when the API predates the split", async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      paginated([apiRow({ status: "COMPLETED", payment: { status: "3" } })]),
+    );
+
+    const result = await transactionsService.list({});
+
+    expect(result.data[0].payment_status).toBe("success");
+    expect(result.data[0].provider_status).toBe("delivered");
+  });
+
+  it("sends the payment and provider filters the API can now receive", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
+
+    // The Payment Status dropdown has existed for a while but was never
+    // serialized — picking a value changed local state and nothing else.
+    await transactionsService.list({ paymentStatus: "success", providerStatus: "unconfirmed" });
+
+    expect(vi.mocked(api.get).mock.calls[0][1]?.params).toMatchObject({
+      payment_status: "SUCCESS",
+      provider_status: "UNCONFIRMED",
+    });
+  });
+
+  it("asks for orders with no gateway at all", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
+
+    await transactionsService.list({ paymentStatus: "none" });
+
+    expect(vi.mocked(api.get).mock.calls[0][1]?.params).toMatchObject({ payment_status: "NONE" });
+  });
+
   it("names a guest from the transaction's own contact, since there is no user row", async () => {
     vi.mocked(api.get).mockResolvedValue(
       paginated([apiRow({ user: null, user_id: null, guest_contact: "+628111222333" })]),
@@ -358,12 +413,15 @@ describe("transactionsService.getDetail", () => {
     });
   });
 
-  it("maps a transaction that has no payment row yet", async () => {
+  it("distinguishes an order with no gateway from one merely awaiting payment", async () => {
     vi.mocked(api.get).mockResolvedValue(envelope(detailRow({ payment: null, status: "PENDING" })));
 
     const result = await transactionsService.getDetail("1");
 
-    expect(result.payment_status).toBe("pending");
+    // Not "pending": an admin-created or manually recorded order never went
+    // through a gateway at all, and folding that into "unpaid" is what made the
+    // Manual tab's payment column meaningless.
+    expect(result.payment_status).toBe("none");
     expect(result.payment).toEqual({
       reference_id: undefined,
       pg_transaction_id: undefined,

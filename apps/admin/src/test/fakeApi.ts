@@ -252,13 +252,32 @@ const TO_API_INVOICE_STATUS: Record<string, string> = {
   partial_success: "PROCESSING",
 };
 
+/** The legacy numeric encoding, still emitted so the service's fallback path stays exercised. */
 const TO_API_PAYMENT_STATUS: Record<string, string> = {
   pending: "1",
-  failed: "2",
+  expired: "2",
   success: "3",
   refunded: "4",
-  processing: "1",
-  partial_success: "1",
+  none: "1",
+};
+
+/** The `GatewayStatus` word the split-aware API sends alongside it. */
+const TO_API_PAYMENT_WORD: Record<string, string> = {
+  pending: "PENDING",
+  expired: "EXPIRED",
+  success: "SUCCESS",
+  refunded: "REFUNDED",
+};
+
+const TO_API_PROVIDER_STATUS: Record<string, string> = {
+  not_ordered: "NOT_ORDERED",
+  queued: "QUEUED",
+  sending: "SENDING",
+  ordered: "ORDERED",
+  unconfirmed: "UNCONFIRMED",
+  delivered: "DELIVERED",
+  rejected: "REJECTED",
+  undelivered: "UNDELIVERED",
 };
 
 const toApiTransaction = (row: (typeof TRANSACTIONS)[number], index: number): Row => ({
@@ -272,6 +291,14 @@ const toApiTransaction = (row: (typeof TRANSACTIONS)[number], index: number): Ro
   amount_total: row.cost,
   margin: row.profit ?? 0,
   status: TO_API_INVOICE_STATUS[row.invoice_status] ?? "PENDING",
+  // An order with no gateway keeps both new fields absent, which is also the
+  // shape an API that predates the split sends — so the fallback stays covered.
+  ...(row.payment_status === "none"
+    ? {}
+    : {
+        provider_status: TO_API_PROVIDER_STATUS[row.provider_status] ?? "NOT_ORDERED",
+        payment_status: TO_API_PAYMENT_WORD[row.payment_status],
+      }),
   sn: row.serial_number ?? null,
   proof_url: row.proof_url ?? null,
   user: row.customer.user_id

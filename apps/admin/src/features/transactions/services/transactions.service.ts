@@ -4,6 +4,8 @@ import { toRowId, unwrapPaginated } from "@/lib/apiMappers";
 import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type {
   ActivityLogEntry,
+  PaymentStatus,
+  ProviderStatus,
   RecapPeriod,
   StatusCounts,
   Transaction,
@@ -40,6 +42,65 @@ const PAYMENT_STATUS: Record<string, TransactionStatus> = {
   "2": "failed",
   "3": "success",
   "4": "refunded",
+};
+
+/** `GatewayStatus` words, as served by the split-aware API. */
+const API_PAYMENT_STATUS: Record<string, PaymentStatus> = {
+  PENDING: "pending",
+  SUCCESS: "success",
+  EXPIRED: "expired",
+  REFUNDED: "refunded",
+};
+
+/** `ProviderStatus` values, as served by the split-aware API. */
+const API_PROVIDER_STATUS: Record<string, ProviderStatus> = {
+  NOT_ORDERED: "not_ordered",
+  QUEUED: "queued",
+  SENDING: "sending",
+  ORDERED: "ordered",
+  UNCONFIRMED: "unconfirmed",
+  DELIVERED: "delivered",
+  REJECTED: "rejected",
+  UNDELIVERED: "undelivered",
+};
+
+/**
+ * The fold the API now does for us, kept here as a fallback.
+ *
+ * The three repos deploy independently, so this SPA has to render correctly
+ * against an API that has not shipped the split yet. It is coarser by necessity
+ * — a list row carries no `supplier_trx_id` — but it is never wrong, only less
+ * specific.
+ */
+const LEGACY_PROVIDER_STATUS: Record<string, ProviderStatus> = {
+  PENDING: "not_ordered",
+  EXPIRED: "not_ordered",
+  PAID: "queued",
+  PROCESSING: "ordered",
+  COMPLETED: "delivered",
+  FAILED_PROVIDER: "rejected",
+  REFUNDED: "undelivered",
+};
+
+/** Sent back to the API when filtering. */
+const TO_API_PAYMENT_STATUS: Record<PaymentStatus, string> = {
+  pending: "PENDING",
+  success: "SUCCESS",
+  expired: "EXPIRED",
+  refunded: "REFUNDED",
+  // Not a gateway state — it selects orders with no payment row at all.
+  none: "NONE",
+};
+
+const TO_API_PROVIDER_STATUS: Record<ProviderStatus, string> = {
+  not_ordered: "NOT_ORDERED",
+  queued: "QUEUED",
+  sending: "SENDING",
+  ordered: "ORDERED",
+  unconfirmed: "UNCONFIRMED",
+  delivered: "DELIVERED",
+  rejected: "REJECTED",
+  undelivered: "UNDELIVERED",
 };
 
 /** The reverse direction, for writes. */
@@ -81,6 +142,9 @@ interface TransactionApiRow {
   user?: { id: number; name: string; phone: string; email?: string | null; avatar_url: string | null } | null;
   product?: { id: number; name: string; category?: { id: number; name: string } | null } | null;
   payment?: { status: string } | null;
+  /** Both added by the status split. Optional: absent when the API predates it. */
+  provider_status?: string | null;
+  payment_status?: string | null;
   payment_channel?: { id: number; name: string } | null;
   created_at: string;
   updated_at: string;
@@ -124,8 +188,21 @@ const toTargetRef = (row: TransactionApiRow): string | undefined =>
 
 const toInvoiceStatus = (row: TransactionApiRow): TransactionStatus => INVOICE_STATUS[row.status] ?? "pending";
 
-const toPaymentStatus = (row: TransactionApiRow): TransactionStatus =>
-  PAYMENT_STATUS[row.payment?.status ?? ""] ?? "pending";
+const toPaymentStatus = (row: TransactionApiRow): PaymentStatus => {
+  const fromApi = API_PAYMENT_STATUS[row.payment_status ?? ""];
+  if (fromApi) return fromApi;
+
+  // Pre-split API: the numeric code on the nested payment row.
+  const legacy = PAYMENT_STATUS[row.payment?.status ?? ""];
+  if (legacy === "failed") return "expired";
+  if (legacy === "success" || legacy === "refunded" || legacy === "pending") return legacy;
+
+  // No payment row at all is a real answer, not a pending one.
+  return row.payment ? "pending" : "none";
+};
+
+const toProviderStatus = (row: TransactionApiRow): ProviderStatus =>
+  API_PROVIDER_STATUS[row.provider_status ?? ""] ?? LEGACY_PROVIDER_STATUS[row.status] ?? "not_ordered";
 
 const toGame = (row: TransactionApiRow) => ({
   id: toRowId(row.product?.category?.id ?? 0),
@@ -152,6 +229,7 @@ const toTransaction = (row: TransactionApiRow): Transaction => {
     id: toRowId(row.id),
     invoice_no: row.invoice_number,
     payment_status: toPaymentStatus(row),
+    provider_status: toProviderStatus(row),
     invoice_status: invoiceStatus,
     customer: toCustomer(row),
     game: toGame(row),
@@ -188,6 +266,7 @@ const toTransactionDetail = (row: TransactionDetailApiRow): TransactionDetail =>
   invoice_no: row.invoice_number,
   invoice_status: toInvoiceStatus(row),
   payment_status: toPaymentStatus(row),
+  provider_status: toProviderStatus(row),
   is_manual: Boolean(row.is_manual),
   customer: toCustomer(row),
   game: toGame(row),
@@ -250,6 +329,10 @@ const toListParams = (params: TransactionListParams) => ({
   ...(params.productId && { product_id: params.productId }),
   ...(params.paymentMethod && { payment_channel_id: params.paymentMethod }),
   ...(params.invoiceStatus && { status: TO_API_STATUS[params.invoiceStatus] }),
+  // Both of these used to go nowhere: the Payment Status dropdown wrote to
+  // local state and was never serialized, and the API had no parameter for it.
+  ...(params.paymentStatus && { payment_status: TO_API_PAYMENT_STATUS[params.paymentStatus] }),
+  ...(params.providerStatus && { provider_status: TO_API_PROVIDER_STATUS[params.providerStatus] }),
   ...(params.startDate && { start_date: params.startDate }),
   ...(params.endDate && { end_date: params.endDate }),
   ...(params.page && { page: params.page }),
@@ -307,13 +390,23 @@ export const transactionsService = {
   },
 
   getStatusCounts: async (): Promise<StatusCounts> => {
-    const response: ApiResponse<{ pending: number; processing: number; failed_provider: number }> = await api.get(
-      `${BASE}/status-counts`,
-    );
+    const response: ApiResponse<{
+      pending: number;
+      processing: number;
+      failed_provider: number;
+      // The per-lifecycle breakdowns are nested and additive — the four flat
+      // keys above are frozen so this page keeps working across a deploy where
+      // only one of the two repos has shipped.
+      provider?: Record<string, number>;
+      payment?: Record<string, number>;
+    }> = await api.get(`${BASE}/status-counts`);
+
     return {
       pending: response.data.pending,
       processing: response.data.processing,
       failed: response.data.failed_provider,
+      provider: response.data.provider as StatusCounts["provider"],
+      payment: response.data.payment as StatusCounts["payment"],
     };
   },
 

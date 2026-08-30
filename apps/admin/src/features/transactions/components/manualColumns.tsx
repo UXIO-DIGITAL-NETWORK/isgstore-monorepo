@@ -8,7 +8,8 @@ import { formatCurrency } from "@/utils/currency";
 import { initials } from "@/utils/initials";
 import type { Transaction } from "../types/transaction.type";
 import { RowActionMenu } from "./RowActionMenu";
-import { StatusBadge } from "./StatusBadge";
+import { PaymentStatusBadge } from "./PaymentStatusBadge";
+import { ProviderStatusBadge } from "./ProviderStatusBadge";
 
 /**
  * Manual tab columns — reuses the Automatic shape minus Target (no provider
@@ -103,14 +104,17 @@ export const manualColumns: ColumnDef<Transaction>[] = [
     ),
   },
   {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Box className="flex flex-col items-start gap-1">
-        <StatusBadge status={row.original.payment_status} />
-        <StatusBadge status={row.original.invoice_status} />
-      </Box>
-    ),
+    id: "payment_status",
+    header: "Payment",
+    cell: ({ row }) => <PaymentStatusBadge status={row.original.payment_status} />,
+  },
+  {
+    // Two columns, not two stacked badges. The stack showed both lifecycles
+    // already but named neither, so a green "Success" over an amber
+    // "Processing" gave an operator no way to tell which half was which.
+    id: "provider_status",
+    header: "Provider",
+    cell: ({ row }) => <ProviderStatusBadge status={row.original.provider_status} />,
   },
   {
     accessorKey: "payment_method",

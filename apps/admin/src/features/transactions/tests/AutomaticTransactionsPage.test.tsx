@@ -125,7 +125,20 @@ describe("AutomaticTransactionsPage", () => {
     await renderRoute("/admin/transaction-preview");
 
     const table = await screen.findByRole("table");
-    for (const header of ["Invoice No.", "User", "Product", "Cost", "Target", "Status", "Method", "Time", "Action"]) {
+    // "Status" is gone, replaced by the two lifecycles it used to stack
+    // unlabelled: the gateway's verdict and the supplier's.
+    for (const header of [
+      "Invoice No.",
+      "User",
+      "Product",
+      "Cost",
+      "Target",
+      "Payment",
+      "Provider",
+      "Method",
+      "Time",
+      "Action",
+    ]) {
       expect(within(table).getByRole("columnheader", { name: header })).toBeInTheDocument();
     }
   });

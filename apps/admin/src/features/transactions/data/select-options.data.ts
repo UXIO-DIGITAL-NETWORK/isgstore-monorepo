@@ -30,7 +30,34 @@ export const INVOICE_STATUS_OPTIONS: SelectOption[] = [
   { value: "partial_success", label: "Partial Success" },
 ];
 
-export const PAYMENT_STATUS_OPTIONS: SelectOption[] = INVOICE_STATUS_OPTIONS;
+/**
+ * The gateway's own vocabulary, and deliberately NOT an alias of the invoice
+ * options it used to be. A payment is never "processing" and never "partial" —
+ * offering those could only ever produce an empty result.
+ *
+ * `none` is not a gateway state: it selects orders that never went through a
+ * gateway at all, which is the whole population of the Manual tab and is
+ * otherwise unreachable.
+ */
+export const PAYMENT_STATUS_OPTIONS: SelectOption[] = [
+  { value: "pending", label: "Unpaid" },
+  { value: "success", label: "Paid" },
+  { value: "expired", label: "Expired" },
+  { value: "refunded", label: "Refunded" },
+  { value: "none", label: "No Gateway" },
+];
+
+/** The supplier's own vocabulary. Mirrors the Provider column exactly. */
+export const PROVIDER_STATUS_OPTIONS: SelectOption[] = [
+  { value: "not_ordered", label: "Not Ordered" },
+  { value: "queued", label: "Queued" },
+  { value: "sending", label: "Sending" },
+  { value: "ordered", label: "In Progress" },
+  { value: "unconfirmed", label: "Unconfirmed" },
+  { value: "delivered", label: "Delivered" },
+  { value: "rejected", label: "Rejected" },
+  { value: "undelivered", label: "No Response" },
+];
 
 /**
  * What an admin may set by hand, as opposed to what they may filter by.
