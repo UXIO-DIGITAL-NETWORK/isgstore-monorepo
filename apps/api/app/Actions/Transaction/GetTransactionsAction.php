@@ -2,6 +2,8 @@
 
 namespace App\Actions\Transaction;
 
+use App\Enums\GatewayStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Transaction;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -9,6 +11,27 @@ class GetTransactionsAction
 {
     /** Whitelisted to real, indexed-friendly columns — never interpolate a raw sort_by from the request. */
     private const SORTABLE_COLUMNS = ['invoice_number', 'amount_total', 'status', 'created_at'];
+
+    /** Not a GatewayStatus: "this order never went through a gateway at all". */
+    public const PAYMENT_STATUS_NONE = 'NONE';
+
+    /**
+     * The '1'..'4' code behind a gateway word, or null if the word is unknown.
+     * Shared with ExportTransactionsAction so a filtered export matches the list
+     * it was exported from.
+     */
+    public static function paymentCodeFor(string $word): ?string
+    {
+        return match (GatewayStatus::tryFrom($word)) {
+            GatewayStatus::PENDING => PaymentStatus::PENDING->value,
+            GatewayStatus::EXPIRED => PaymentStatus::EXPIRED->value,
+            GatewayStatus::SUCCESS => PaymentStatus::SUCCESS->value,
+            GatewayStatus::REFUNDED => PaymentStatus::REFUNDED->value,
+            // CANCELLED only exists on the service-invoice leg, which this
+            // admin list does not cover.
+            default => null,
+        };
+    }
 
     public function execute(
         int $perPage,
@@ -21,6 +44,8 @@ class GetTransactionsAction
         ?string $endDate = null,
         ?string $sortBy = null,
         string $sortDir = 'desc',
+        ?string $providerStatus = null,
+        ?string $paymentStatus = null,
     ): LengthAwarePaginator {
         $sortColumn = in_array($sortBy, self::SORTABLE_COLUMNS, true) ? $sortBy : 'created_at';
         $sortDirection = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
@@ -28,6 +53,17 @@ class GetTransactionsAction
         return Transaction::query()
             ->with(['user', 'product.category', 'supplier', 'payment', 'paymentChannel'])
             ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($providerStatus, fn ($q) => $q->where('provider_status', $providerStatus))
+            // 'NONE' is not a gateway state — it selects orders with no payment row
+            // at all (admin-created / manually recorded), which is the whole point
+            // of the Manual tab and is otherwise unreachable.
+            ->when($paymentStatus === self::PAYMENT_STATUS_NONE, fn ($q) => $q->doesntHave('payment'))
+            ->when($paymentStatus && $paymentStatus !== self::PAYMENT_STATUS_NONE, function ($q) use ($paymentStatus) {
+                $code = self::paymentCodeFor($paymentStatus);
+
+                // An unknown word must return nothing, not silently everything.
+                $q->whereHas('payment', fn ($p) => $p->where('status', $code ?? '__none__'));
+            })
             // The admin table's search box sits above both the invoice and the
             // customer column, so matching only the invoice number made a
             // name search look like "no results" rather than "not supported".

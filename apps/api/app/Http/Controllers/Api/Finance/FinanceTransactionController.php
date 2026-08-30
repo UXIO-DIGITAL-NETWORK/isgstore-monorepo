@@ -51,6 +51,11 @@ class FinanceTransactionController extends Controller
                 'gateway_fee' => (int) $row->gateway_fee,
                 'platform_profit' => (int) $row->platform_profit,
                 'status' => $row->status,
+                // The two halves apart: did the customer pay, and did the
+                // supplier deliver. `provider_status` is null on a service bill,
+                // which has no supplier behind it.
+                'provider_status' => $row->provider_status,
+                'payment_status' => $row->payment_status,
                 'payment_channel' => $row->channel,
                 'created_at' => $this->iso($row->occurred_at),
             ]);

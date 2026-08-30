@@ -4,6 +4,7 @@ namespace App\Actions\Uxiotopup;
 
 use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
+use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use App\Services\UxiotopupService;
@@ -43,6 +44,11 @@ class CheckUxiotopupTransactionStatusAction
             'sn' => $sn !== '' ? $sn : $transaction->sn,
             'supplier_status' => $response['status'] ?? $transaction->supplier_status,
             'status' => $newStatus,
+            // Reaching here means we polled /status BY supplier_trx_id, so the
+            // supplier demonstrably has the order — ORDERED, never SENDING.
+            ...($newStatus === TransactionStatus::PROCESSING
+                ? ['provider_status' => ProviderStatus::ORDERED]
+                : []),
         ]);
 
         $fresh = $transaction->fresh();

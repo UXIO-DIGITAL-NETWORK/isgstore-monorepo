@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\Actions\Uxiotopup\ProcessUxiotopupTransactionAction;
+use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use Illuminate\Bus\Queueable;
@@ -63,7 +64,14 @@ class ProcessUxiotopupTopup implements ShouldQueue
         $fresh = $this->transaction->fresh() ?? $this->transaction;
 
         if ($fresh->status !== TransactionStatus::REFUNDED) {
-            $fresh->update(['status' => TransactionStatus::FAILED_PROVIDER]);
+            $fresh->update([
+                'status' => TransactionStatus::FAILED_PROVIDER,
+                // Not the REJECTED default: retries ran out without the supplier
+                // ever giving us a verdict. That is worth retrying by hand; an
+                // explicit cancel is not. Collapsing the two is what makes today's
+                // FAILED_PROVIDER unactionable.
+                'provider_status' => ProviderStatus::UNDELIVERED,
+            ]);
         }
 
         // Retries exhausted: the customer paid but fulfilment never succeeded,
