@@ -31,7 +31,7 @@ const INVOICE_STATUS: Record<string, TransactionStatus> = {
   COMPLETED: "success",
   FAILED_PROVIDER: "failed",
   EXPIRED: "failed",
-  REFUNDED: "partial_refund",
+  REFUNDED: "refunded",
 };
 
 /** `payments.status` is stored as a numeric string — see App\Enums\PaymentStatus. */
@@ -39,7 +39,7 @@ const PAYMENT_STATUS: Record<string, TransactionStatus> = {
   "1": "pending",
   "2": "failed",
   "3": "success",
-  "4": "partial_refund",
+  "4": "refunded",
 };
 
 /** The reverse direction, for writes. */
@@ -48,7 +48,7 @@ const TO_API_STATUS: Partial<Record<TransactionStatus, string>> = {
   processing: "PROCESSING",
   success: "COMPLETED",
   failed: "FAILED_PROVIDER",
-  partial_refund: "REFUNDED",
+  refunded: "REFUNDED",
 };
 
 /**
@@ -146,7 +146,7 @@ interface RecapApiShape {
 
 const toTransaction = (row: TransactionApiRow): Transaction => {
   const invoiceStatus = toInvoiceStatus(row);
-  const isTerminal = invoiceStatus === "success" || invoiceStatus === "failed" || invoiceStatus === "partial_refund";
+  const isTerminal = invoiceStatus === "success" || invoiceStatus === "failed" || invoiceStatus === "refunded";
 
   return {
     id: toRowId(row.id),

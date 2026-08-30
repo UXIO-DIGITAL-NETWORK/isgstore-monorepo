@@ -7,7 +7,7 @@ const STATUS_LABELS: Record<TransactionStatus, string> = {
   processing: "Processing",
   success: "Success",
   failed: "Failed",
-  partial_refund: "Partial Refund",
+  refunded: "Refunded",
   partial_success: "Partial Success",
 };
 
@@ -21,7 +21,7 @@ const STATUS_BADGE_CLASS: Record<TransactionStatus, string> = {
   processing: "text-warning border-warning",
   success: "text-success border-success",
   failed: "text-destructive border-destructive",
-  partial_refund: "text-muted-foreground border-border",
+  refunded: "text-muted-foreground border-border",
   partial_success: "text-muted-foreground border-border",
 };
 

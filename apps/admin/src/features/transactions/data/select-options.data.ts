@@ -26,11 +26,23 @@ export const INVOICE_STATUS_OPTIONS: SelectOption[] = [
   { value: "processing", label: "Processing" },
   { value: "success", label: "Success" },
   { value: "failed", label: "Failed" },
-  { value: "partial_refund", label: "Partial Refund" },
+  { value: "refunded", label: "Refunded" },
   { value: "partial_success", label: "Partial Success" },
 ];
 
 export const PAYMENT_STATUS_OPTIONS: SelectOption[] = INVOICE_STATUS_OPTIONS;
+
+/**
+ * What an admin may set by hand, as opposed to what they may filter by.
+ *
+ * `refunded` is filterable but not settable: the API rejects it on
+ * `manual-review` because the status now asserts that money went back to the
+ * customer. Refunds are created by the refund flow and completed on the Refunds
+ * page — a dropdown must not be able to claim one that never happened.
+ */
+export const EDITABLE_INVOICE_STATUS_OPTIONS: SelectOption[] = INVOICE_STATUS_OPTIONS.filter(
+  (option) => option.value !== "refunded",
+);
 
 export const INVOICE_FROM_OPTIONS: SelectOption[] = [
   { value: "website", label: "Website" },

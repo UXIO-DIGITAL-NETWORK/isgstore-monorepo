@@ -25,6 +25,7 @@ import { Route as AdminProtectedUsersIndexRouteImport } from './routes/admin/_pr
 import { Route as AdminProtectedTransactionsIndexRouteImport } from './routes/admin/_protected/transactions/index'
 import { Route as AdminProtectedSettingsIndexRouteImport } from './routes/admin/_protected/settings/index'
 import { Route as AdminProtectedReportsIndexRouteImport } from './routes/admin/_protected/reports/index'
+import { Route as AdminProtectedRefundsIndexRouteImport } from './routes/admin/_protected/refunds/index'
 import { Route as AdminProtectedPromosIndexRouteImport } from './routes/admin/_protected/promos/index'
 import { Route as AdminProtectedProductsIndexRouteImport } from './routes/admin/_protected/products/index'
 import { Route as AdminProtectedPricingIndexRouteImport } from './routes/admin/_protected/pricing/index'
@@ -39,6 +40,7 @@ import { Route as AdminProtectedContentIndexRouteImport } from './routes/admin/_
 import { Route as AdminProtectedCategoriesIndexRouteImport } from './routes/admin/_protected/categories/index'
 import { Route as AdminProtectedActivityIndexRouteImport } from './routes/admin/_protected/activity/index'
 import { Route as AdminPreviewTransactionPreviewIndexRouteImport } from './routes/admin/_preview/transaction-preview/index'
+import { Route as AdminPreviewRefundsPreviewIndexRouteImport } from './routes/admin/_preview/refunds-preview/index'
 import { Route as AdminPreviewProductsPreviewIndexRouteImport } from './routes/admin/_preview/products-preview/index'
 import { Route as AdminPreviewIntegrationPreviewIndexRouteImport } from './routes/admin/_preview/integration-preview/index'
 import { Route as AdminPreviewFinancePreviewIndexRouteImport } from './routes/admin/_preview/finance-preview/index'
@@ -167,6 +169,12 @@ const AdminProtectedReportsIndexRoute =
     path: '/reports/',
     getParentRoute: () => AdminProtectedRoute,
   } as any)
+const AdminProtectedRefundsIndexRoute =
+  AdminProtectedRefundsIndexRouteImport.update({
+    id: '/refunds/',
+    path: '/refunds/',
+    getParentRoute: () => AdminProtectedRoute,
+  } as any)
 const AdminProtectedPromosIndexRoute =
   AdminProtectedPromosIndexRouteImport.update({
     id: '/promos/',
@@ -249,6 +257,12 @@ const AdminPreviewTransactionPreviewIndexRoute =
   AdminPreviewTransactionPreviewIndexRouteImport.update({
     id: '/transaction-preview/',
     path: '/transaction-preview/',
+    getParentRoute: () => AdminPreviewRoute,
+  } as any)
+const AdminPreviewRefundsPreviewIndexRoute =
+  AdminPreviewRefundsPreviewIndexRouteImport.update({
+    id: '/refunds-preview/',
+    path: '/refunds-preview/',
     getParentRoute: () => AdminPreviewRoute,
   } as any)
 const AdminPreviewProductsPreviewIndexRoute =
@@ -496,6 +510,7 @@ export interface FileRoutesByFullPath {
   '/admin/finance-preview/': typeof AdminPreviewFinancePreviewIndexRoute
   '/admin/integration-preview/': typeof AdminPreviewIntegrationPreviewIndexRoute
   '/admin/products-preview/': typeof AdminPreviewProductsPreviewIndexRoute
+  '/admin/refunds-preview/': typeof AdminPreviewRefundsPreviewIndexRoute
   '/admin/transaction-preview/': typeof AdminPreviewTransactionPreviewIndexRoute
   '/admin/activity/': typeof AdminProtectedActivityIndexRoute
   '/admin/categories/': typeof AdminProtectedCategoriesIndexRoute
@@ -510,6 +525,7 @@ export interface FileRoutesByFullPath {
   '/admin/pricing/': typeof AdminProtectedPricingIndexRoute
   '/admin/products/': typeof AdminProtectedProductsIndexRoute
   '/admin/promos/': typeof AdminProtectedPromosIndexRoute
+  '/admin/refunds/': typeof AdminProtectedRefundsIndexRoute
   '/admin/reports/': typeof AdminProtectedReportsIndexRoute
   '/admin/settings/': typeof AdminProtectedSettingsIndexRoute
   '/admin/transactions/': typeof AdminProtectedTransactionsIndexRoute
@@ -558,6 +574,7 @@ export interface FileRoutesByTo {
   '/admin/finance-preview': typeof AdminPreviewFinancePreviewIndexRoute
   '/admin/integration-preview': typeof AdminPreviewIntegrationPreviewIndexRoute
   '/admin/products-preview': typeof AdminPreviewProductsPreviewIndexRoute
+  '/admin/refunds-preview': typeof AdminPreviewRefundsPreviewIndexRoute
   '/admin/transaction-preview': typeof AdminPreviewTransactionPreviewIndexRoute
   '/admin/activity': typeof AdminProtectedActivityIndexRoute
   '/admin/categories': typeof AdminProtectedCategoriesIndexRoute
@@ -572,6 +589,7 @@ export interface FileRoutesByTo {
   '/admin/pricing': typeof AdminProtectedPricingIndexRoute
   '/admin/products': typeof AdminProtectedProductsIndexRoute
   '/admin/promos': typeof AdminProtectedPromosIndexRoute
+  '/admin/refunds': typeof AdminProtectedRefundsIndexRoute
   '/admin/reports': typeof AdminProtectedReportsIndexRoute
   '/admin/settings': typeof AdminProtectedSettingsIndexRoute
   '/admin/transactions': typeof AdminProtectedTransactionsIndexRoute
@@ -629,6 +647,7 @@ export interface FileRoutesById {
   '/admin/_preview/finance-preview/': typeof AdminPreviewFinancePreviewIndexRoute
   '/admin/_preview/integration-preview/': typeof AdminPreviewIntegrationPreviewIndexRoute
   '/admin/_preview/products-preview/': typeof AdminPreviewProductsPreviewIndexRoute
+  '/admin/_preview/refunds-preview/': typeof AdminPreviewRefundsPreviewIndexRoute
   '/admin/_preview/transaction-preview/': typeof AdminPreviewTransactionPreviewIndexRoute
   '/admin/_protected/activity/': typeof AdminProtectedActivityIndexRoute
   '/admin/_protected/categories/': typeof AdminProtectedCategoriesIndexRoute
@@ -643,6 +662,7 @@ export interface FileRoutesById {
   '/admin/_protected/pricing/': typeof AdminProtectedPricingIndexRoute
   '/admin/_protected/products/': typeof AdminProtectedProductsIndexRoute
   '/admin/_protected/promos/': typeof AdminProtectedPromosIndexRoute
+  '/admin/_protected/refunds/': typeof AdminProtectedRefundsIndexRoute
   '/admin/_protected/reports/': typeof AdminProtectedReportsIndexRoute
   '/admin/_protected/settings/': typeof AdminProtectedSettingsIndexRoute
   '/admin/_protected/transactions/': typeof AdminProtectedTransactionsIndexRoute
@@ -699,6 +719,7 @@ export interface FileRouteTypes {
     | '/admin/finance-preview/'
     | '/admin/integration-preview/'
     | '/admin/products-preview/'
+    | '/admin/refunds-preview/'
     | '/admin/transaction-preview/'
     | '/admin/activity/'
     | '/admin/categories/'
@@ -713,6 +734,7 @@ export interface FileRouteTypes {
     | '/admin/pricing/'
     | '/admin/products/'
     | '/admin/promos/'
+    | '/admin/refunds/'
     | '/admin/reports/'
     | '/admin/settings/'
     | '/admin/transactions/'
@@ -761,6 +783,7 @@ export interface FileRouteTypes {
     | '/admin/finance-preview'
     | '/admin/integration-preview'
     | '/admin/products-preview'
+    | '/admin/refunds-preview'
     | '/admin/transaction-preview'
     | '/admin/activity'
     | '/admin/categories'
@@ -775,6 +798,7 @@ export interface FileRouteTypes {
     | '/admin/pricing'
     | '/admin/products'
     | '/admin/promos'
+    | '/admin/refunds'
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/transactions'
@@ -831,6 +855,7 @@ export interface FileRouteTypes {
     | '/admin/_preview/finance-preview/'
     | '/admin/_preview/integration-preview/'
     | '/admin/_preview/products-preview/'
+    | '/admin/_preview/refunds-preview/'
     | '/admin/_preview/transaction-preview/'
     | '/admin/_protected/activity/'
     | '/admin/_protected/categories/'
@@ -845,6 +870,7 @@ export interface FileRouteTypes {
     | '/admin/_protected/pricing/'
     | '/admin/_protected/products/'
     | '/admin/_protected/promos/'
+    | '/admin/_protected/refunds/'
     | '/admin/_protected/reports/'
     | '/admin/_protected/settings/'
     | '/admin/_protected/transactions/'
@@ -1006,6 +1032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedReportsIndexRouteImport
       parentRoute: typeof AdminProtectedRoute
     }
+    '/admin/_protected/refunds/': {
+      id: '/admin/_protected/refunds/'
+      path: '/refunds'
+      fullPath: '/admin/refunds/'
+      preLoaderRoute: typeof AdminProtectedRefundsIndexRouteImport
+      parentRoute: typeof AdminProtectedRoute
+    }
     '/admin/_protected/promos/': {
       id: '/admin/_protected/promos/'
       path: '/promos'
@@ -1102,6 +1135,13 @@ declare module '@tanstack/react-router' {
       path: '/transaction-preview'
       fullPath: '/admin/transaction-preview/'
       preLoaderRoute: typeof AdminPreviewTransactionPreviewIndexRouteImport
+      parentRoute: typeof AdminPreviewRoute
+    }
+    '/admin/_preview/refunds-preview/': {
+      id: '/admin/_preview/refunds-preview/'
+      path: '/refunds-preview'
+      fullPath: '/admin/refunds-preview/'
+      preLoaderRoute: typeof AdminPreviewRefundsPreviewIndexRouteImport
       parentRoute: typeof AdminPreviewRoute
     }
     '/admin/_preview/products-preview/': {
@@ -1445,6 +1485,7 @@ interface AdminPreviewRouteChildren {
   AdminPreviewDashboardPreviewIndexRoute: typeof AdminPreviewDashboardPreviewIndexRoute
   AdminPreviewFinancePreviewIndexRoute: typeof AdminPreviewFinancePreviewIndexRoute
   AdminPreviewIntegrationPreviewIndexRoute: typeof AdminPreviewIntegrationPreviewIndexRoute
+  AdminPreviewRefundsPreviewIndexRoute: typeof AdminPreviewRefundsPreviewIndexRoute
   AdminPreviewTransactionPreviewIndexRoute: typeof AdminPreviewTransactionPreviewIndexRoute
   AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute: typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
 }
@@ -1459,6 +1500,7 @@ const AdminPreviewRouteChildren: AdminPreviewRouteChildren = {
   AdminPreviewFinancePreviewIndexRoute: AdminPreviewFinancePreviewIndexRoute,
   AdminPreviewIntegrationPreviewIndexRoute:
     AdminPreviewIntegrationPreviewIndexRoute,
+  AdminPreviewRefundsPreviewIndexRoute: AdminPreviewRefundsPreviewIndexRoute,
   AdminPreviewTransactionPreviewIndexRoute:
     AdminPreviewTransactionPreviewIndexRoute,
   AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute:
@@ -1608,6 +1650,7 @@ interface AdminProtectedRouteChildren {
   AdminProtectedPaymentsIndexRoute: typeof AdminProtectedPaymentsIndexRoute
   AdminProtectedPricingIndexRoute: typeof AdminProtectedPricingIndexRoute
   AdminProtectedPromosIndexRoute: typeof AdminProtectedPromosIndexRoute
+  AdminProtectedRefundsIndexRoute: typeof AdminProtectedRefundsIndexRoute
   AdminProtectedReportsIndexRoute: typeof AdminProtectedReportsIndexRoute
   AdminProtectedSettingsIndexRoute: typeof AdminProtectedSettingsIndexRoute
   AdminProtectedUsersIndexRoute: typeof AdminProtectedUsersIndexRoute
@@ -1631,6 +1674,7 @@ const AdminProtectedRouteChildren: AdminProtectedRouteChildren = {
   AdminProtectedPaymentsIndexRoute: AdminProtectedPaymentsIndexRoute,
   AdminProtectedPricingIndexRoute: AdminProtectedPricingIndexRoute,
   AdminProtectedPromosIndexRoute: AdminProtectedPromosIndexRoute,
+  AdminProtectedRefundsIndexRoute: AdminProtectedRefundsIndexRoute,
   AdminProtectedReportsIndexRoute: AdminProtectedReportsIndexRoute,
   AdminProtectedSettingsIndexRoute: AdminProtectedSettingsIndexRoute,
   AdminProtectedUsersIndexRoute: AdminProtectedUsersIndexRoute,

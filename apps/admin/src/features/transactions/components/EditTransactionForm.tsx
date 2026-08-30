@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { INVOICE_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from "../data/select-options.data";
+import { EDITABLE_INVOICE_STATUS_OPTIONS } from "../data/select-options.data";
 import { editTransactionSchema, type EditTransactionFormValues } from "../schemas/editTransaction.schema";
 import { useEditTransaction } from "../hooks/useTransactions";
 import type { Transaction } from "../types/transaction.type";
@@ -99,7 +99,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {PAYMENT_STATUS_OPTIONS.map((option) => (
+                {EDITABLE_INVOICE_STATUS_OPTIONS.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}
@@ -138,7 +138,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {INVOICE_STATUS_OPTIONS.map((option) => (
+                {EDITABLE_INVOICE_STATUS_OPTIONS.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}

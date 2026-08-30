@@ -96,10 +96,17 @@ export const useRefund = () => {
     mutationFn: ({ id, reason }: { id: string; reason: string }) => transactionsService.refund(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.success("Refund initiated");
+      // The refunds queue now owns a row for every refund, member or guest.
+      queryClient.invalidateQueries({ queryKey: ["refunds"] });
+      // Deliberately not "Refund initiated": nothing is left in flight. A
+      // member's balance is credited immediately; a guest's refund is queued
+      // on the Refunds page for a manual transfer.
+      toast.success("Refund opened — see Refunds for the payout");
     },
     onError: () => {
-      toast.error("Failed to initiate refund");
+      // The API 422s when there is nothing to refund (never paid, already
+      // refunded), which the old flow reported as a success.
+      toast.error("Could not open a refund for this transaction");
     },
   });
 };
