@@ -8,6 +8,24 @@
 
 export type TransactionType = "sale" | "service";
 
+/** The Payment Gateway half — did the customer pay? `CANCELLED` is service-bill only. */
+export type PaymentLifecycle = "PENDING" | "SUCCESS" | "EXPIRED" | "REFUNDED" | "CANCELLED";
+
+/**
+ * The Topup Provider half — did the supplier deliver?
+ *
+ * Null on a service-invoice row: a bill kita issued has no supplier behind it.
+ */
+export type ProviderLifecycle =
+  | "NOT_ORDERED"
+  | "QUEUED"
+  | "SENDING"
+  | "ORDERED"
+  | "UNCONFIRMED"
+  | "DELIVERED"
+  | "REJECTED"
+  | "UNDELIVERED";
+
 /** Client-relative in BOTH roles: "in" = money into the client. */
 export type TransactionDirection = "in" | "out";
 
@@ -20,6 +38,12 @@ export interface UnifiedTransaction {
   direction: TransactionDirection;
   amount: number;
   status: string;
+  /**
+   * The two halves `status` conflates. Optional: absent when the API predates
+   * the split, in which case src/lib/transactionStatus.ts derives them.
+   */
+  payment_status?: PaymentLifecycle | null;
+  provider_status?: ProviderLifecycle | null;
   payment_channel: string | null;
   created_at: string;
 }

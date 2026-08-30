@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 
 import MerchantTransactionsPage from "../pages/MerchantTransactionsPage";
 import * as hooks from "../hooks/useMerchant";
@@ -69,7 +69,42 @@ describe("MerchantTransactionsPage", () => {
     renderPage();
 
     expect(screen.getByText("−Rp 200.000")).toBeInTheDocument();
-    expect(screen.getByText("—")).toBeInTheDocument();
+    // Two dashes now: no payment method, and no supplier either. A bill kita
+    // issued has no top-up provider behind it, which is a fact, not a gap.
+    expect(screen.getAllByText("—")).toHaveLength(2);
+  });
+
+  it("names both lifecycles in words a merchant can read", () => {
+    mockRows([{ ...sale, status: "FAILED_PROVIDER" }]);
+    renderPage();
+
+    // Scoped to the table: "Gagal" is also a summary-pill label above it.
+    const table = within(screen.getByRole("table"));
+
+    // The money was taken; the supplier is the half that failed.
+    expect(table.getByText("Lunas")).toBeInTheDocument();
+    expect(table.getByText("Gagal")).toBeInTheDocument();
+    // Never the raw enum, which is what this table used to print verbatim.
+    expect(screen.queryByText("FAILED_PROVIDER")).not.toBeInTheDocument();
+  });
+
+  it("hides our fulfilment mechanics from the merchant", () => {
+    mockRows([{ ...sale, status: "PROCESSING", provider_status: "UNCONFIRMED" }]);
+    renderPage();
+
+    // Internally this is "we lost the supplier's order id"; a merchant can only
+    // act on "it is being processed".
+    expect(within(screen.getByRole("table")).getByText("Diproses")).toBeInTheDocument();
+    expect(screen.queryByText("Belum Terkonfirmasi")).not.toBeInTheDocument();
+  });
+
+  it("shows the two columns apart", () => {
+    mockRows([sale]);
+    renderPage();
+
+    expect(screen.getByRole("columnheader", { name: "Pembayaran" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Provider" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Status" })).not.toBeInTheDocument();
   });
 
   it("queries the feed with the default filters", () => {
