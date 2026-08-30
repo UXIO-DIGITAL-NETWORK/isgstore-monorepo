@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Can } from "@/components/common/Can";
@@ -60,9 +60,7 @@ export function PricingRulesPage() {
       {
         id: "category",
         header: "Category",
-        cell: ({ row }) => (
-          <Text as="span">{row.original.category_name ?? "All categories (global)"}</Text>
-        ),
+        cell: ({ row }) => <Text as="span">{row.original.category_name ?? "All categories (global)"}</Text>,
       },
       {
         id: "markup_percent",
@@ -95,11 +93,12 @@ export function PricingRulesPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="ghost"
+                variant="outline"
+                className="rounded-xl"
                 size="icon-sm"
                 aria-label={`Actions for ${row.original.role} rule`}
               >
-                <MoreHorizontal className="size-4" />
+                <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -146,8 +145,8 @@ export function PricingRulesPage() {
               Pricing Rules
             </Heading>
             <Text variant="muted">
-              Markup applied over supplier cost per role (optionally per category). These drive the suggested prices when
-              adding products.
+              Markup applied over supplier cost per role (optionally per category). These drive the suggested prices
+              when adding products.
             </Text>
           </Box>
           <Can permission="pricing.manage">
@@ -188,9 +187,7 @@ export function PricingRulesPage() {
         rule={editRule}
         categoryOptions={categoryOptions}
         isPending={createRule.isPending || updateRule.isPending}
-        onSubmit={(input) =>
-          editRule ? updateRule.mutate({ id: editRule.id, input }) : createRule.mutate(input)
-        }
+        onSubmit={(input) => (editRule ? updateRule.mutate({ id: editRule.id, input }) : createRule.mutate(input))}
       />
 
       <DeleteConfirmDialog

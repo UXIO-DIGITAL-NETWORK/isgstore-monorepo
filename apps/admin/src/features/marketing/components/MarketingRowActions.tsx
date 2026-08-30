@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,14 @@ interface MarketingRowActionsProps {
  * them all rather than copies that would drift. Edit opens the edit modal owned
  * by the list page — the same rule the categories feature follows.
  */
-export function MarketingRowActions({ id, label, entityLabel, onDelete, onEdit, extraItems }: MarketingRowActionsProps) {
+export function MarketingRowActions({
+  id,
+  label,
+  entityLabel,
+  onDelete,
+  onEdit,
+  extraItems,
+}: MarketingRowActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
@@ -37,11 +44,12 @@ export function MarketingRowActions({ id, label, entityLabel, onDelete, onEdit, 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
+            className="rounded-xl"
             size="icon-sm"
             aria-label={`Actions for ${label}`}
           >
-            <MoreHorizontal className="size-4" />
+            <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

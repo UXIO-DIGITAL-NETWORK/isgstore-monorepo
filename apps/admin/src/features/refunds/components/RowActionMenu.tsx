@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Ban, Check, CreditCard, Eye, HandCoins, MoreHorizontal } from "lucide-react";
+import { Ban, Check, CreditCard, Eye, HandCoins, MoreVertical } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  useCompleteRefund,
-  useProcessRefund,
-  useRejectRefund,
-  useSaveRefundPayoutDetails,
-} from "../hooks/useRefunds";
+import { useCompleteRefund, useProcessRefund, useRejectRefund, useSaveRefundPayoutDetails } from "../hooks/useRefunds";
 import type { Refund } from "../types/refund.type";
 import { CompleteRefundDialog } from "./CompleteRefundDialog";
 import { PayoutDetailsDialog } from "./PayoutDetailsDialog";
@@ -46,18 +41,20 @@ export function RowActionMenu({ refund }: { refund: Refund }) {
   const isManual = refund.method === "manual_transfer";
   const canEditPayout = isManual && (refund.status === "WAITING_DETAILS" || refund.status === "PENDING");
   const canClaim = isManual && refund.status === "PENDING" && Boolean(refund.payout);
-  const canComplete = isManual && (refund.status === "PENDING" || refund.status === "PROCESSING") && Boolean(refund.payout);
+  const canComplete =
+    isManual && (refund.status === "PENDING" || refund.status === "PROCESSING") && Boolean(refund.payout);
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
+            className="rounded-xl"
             size="icon-sm"
             aria-label={`Actions for ${refund.refund_number}`}
           >
-            <MoreHorizontal className="size-4" />
+            <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

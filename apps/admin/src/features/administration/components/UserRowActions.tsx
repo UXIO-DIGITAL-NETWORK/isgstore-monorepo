@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Ban, MoreHorizontal, RotateCcw, Trash2, UserX, Wallet } from "lucide-react";
+import { Ban, MoreVertical, RotateCcw, Trash2, UserX, Wallet } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
@@ -32,11 +32,12 @@ export function UserRowActions({ user }: { user: AdminUser }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
+            className="rounded-xl"
             size="icon-sm"
             aria-label={`Actions for ${user.name}`}
           >
-            <MoreHorizontal className="size-4" />
+            <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2 } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
 import { Button } from "@/components/ui/button";
@@ -34,11 +34,12 @@ export function FeedbackRowActions({ id, label, onDelete }: FeedbackRowActionsPr
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
+            className="rounded-xl"
             size="icon-sm"
             aria-label={`Actions for ${label}`}
           >
-            <MoreHorizontal className="size-4" />
+            <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

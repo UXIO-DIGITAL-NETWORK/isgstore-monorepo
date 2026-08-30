@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUpCircle, Lock, MoreHorizontal, Rocket, SlidersHorizontal, Trash2, Unlock } from "lucide-react";
+import { ArrowUpCircle, Lock, MoreVertical, Rocket, SlidersHorizontal, Trash2, Unlock } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Can } from "@/components/common/Can";
@@ -55,11 +55,19 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${provider.product_name}`}>
-            <MoreHorizontal className="size-4" />
+          <Button
+            variant="outline"
+            className="rounded-xl"
+            size="icon-sm"
+            aria-label={`Actions for ${provider.product_name}`}
+          >
+            <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="rounded-2xl">
+        <DropdownMenuContent
+          align="end"
+          className="rounded-2xl"
+        >
           <Can permission="products.edit">
             <DropdownMenuItem onSelect={() => setLockOpen(true)}>
               {provider.is_price_locked ? <Unlock /> : <Lock />}
@@ -85,7 +93,11 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
                 <Box className="flex flex-col items-start">
                   Promote to Main Product
                   {!provider.can_promote && provider.promote_blocked_reason && (
-                    <Text as="span" variant="small" className="text-muted-foreground">
+                    <Text
+                      as="span"
+                      variant="small"
+                      className="text-muted-foreground"
+                    >
                       {provider.promote_blocked_reason}
                     </Text>
                   )}
@@ -105,7 +117,10 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
           {!provider.is_system && (
             <Can permission="products.delete">
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => setDeleteOpen(true)}
+              >
                 <Trash2 />
                 Delete
               </DropdownMenuItem>

@@ -87,9 +87,9 @@ export function ChannelCard({ channel }: ChannelCardProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 text-muted-foreground"
+              variant="outline"
+              size="icon-sm"
+              className="rounded-xl text-muted-foreground"
             >
               <MoreVertical className="size-4" />
               <Text

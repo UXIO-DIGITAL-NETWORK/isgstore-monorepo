@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Eye, History, MoreHorizontal, Pencil, Receipt, RotateCcw, RotateCw, Send, Trash2, Upload } from "lucide-react";
+import { Eye, History, MoreVertical, Pencil, Receipt, RotateCcw, RotateCw, Send, Trash2, Upload } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
 import { ENV, API_VERSION } from "@/config/env";
@@ -64,11 +64,12 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
+            className="rounded-xl"
             size="icon-sm"
             aria-label={`Actions for ${transaction.invoice_no}`}
           >
-            <MoreHorizontal className="size-4" />
+            <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

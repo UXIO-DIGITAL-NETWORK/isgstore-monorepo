@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Can } from "@/components/common/Can";
@@ -118,11 +118,12 @@ export function MembershipListPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="ghost"
+                variant="outline"
+                className="rounded-xl"
                 size="icon-sm"
                 aria-label={`Actions for ${row.original.name}`}
               >
-                <MoreHorizontal className="size-4" />
+                <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent

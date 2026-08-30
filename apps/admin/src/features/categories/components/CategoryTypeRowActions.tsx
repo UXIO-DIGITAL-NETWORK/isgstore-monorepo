@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreHorizontal, Pencil, Power, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Power, Trash2 } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
 import { Button } from "@/components/ui/button";
@@ -43,11 +43,12 @@ export function CategoryTypeRowActions({ categoryType }: CategoryTypeRowActionsP
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
+            className="rounded-xl"
             size="icon-sm"
             aria-label={`Actions for ${categoryType.name}`}
           >
-            <MoreHorizontal className="size-4" />
+            <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

@@ -6,7 +6,7 @@ import {
   Eye,
   EyeOff,
   Lock,
-  MoreHorizontal,
+  MoreVertical,
   Pencil,
   RefreshCcw,
   Rocket,
@@ -88,11 +88,12 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
+            className="rounded-xl"
             size="icon-sm"
             aria-label={`Actions for ${product.name}`}
           >
-            <MoreHorizontal className="size-4" />
+            <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -109,66 +110,64 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
               </DropdownMenuItem>
             </Can>
           ) : (
-          <Can permission="products.edit">
-            <DropdownMenuItem onSelect={() => setUxiotopupOpen(true)}>
-              <RefreshCcw />
-              Uxiotopup Update
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setShowOpen(true)}>
-              {nextHidden ? <EyeOff /> : <Eye />}
-              {nextHidden ? "Hide Price" : "Show Price"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setLockOpen(true)}>
-              {nextLocked ? <Lock /> : <Unlock />}
-              {nextLocked ? "Lock Price" : "Unlock Price"}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() =>
-                navigate({ to: "/admin/products/main/set-price-limit", search: { id: product.id } })
-              }
-            >
-              <SlidersHorizontal />
-              Set Price Limit
-            </DropdownMenuItem>
-            {/* Disabled rather than hidden, with the server's own reason inside
+            <Can permission="products.edit">
+              <DropdownMenuItem onSelect={() => setUxiotopupOpen(true)}>
+                <RefreshCcw />
+                Uxiotopup Update
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setShowOpen(true)}>
+                {nextHidden ? <EyeOff /> : <Eye />}
+                {nextHidden ? "Hide Price" : "Show Price"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setLockOpen(true)}>
+                {nextLocked ? <Lock /> : <Unlock />}
+                {nextLocked ? "Lock Price" : "Unlock Price"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => navigate({ to: "/admin/products/main/set-price-limit", search: { id: product.id } })}
+              >
+                <SlidersHorizontal />
+                Set Price Limit
+              </DropdownMenuItem>
+              {/* Disabled rather than hidden, with the server's own reason inside
                 the item: a disabled DropdownMenuItem swallows pointer events, so
                 a tooltip on it would never fire. Same pattern as the pool's
                 Promote. */}
-            <DropdownMenuItem
-              disabled={nextPublished && !product.can_publish}
-              onSelect={() => setPublishOpen(true)}
-            >
-              {nextPublished ? <Rocket /> : <Archive />}
-              <Box className="flex flex-col items-start">
-                {nextPublished ? "Publish" : "Unpublish"}
-                {nextPublished && product.publish_blocked_reason && (
-                  <Text
-                    as="span"
-                    variant="small"
-                    className="text-muted-foreground"
-                  >
-                    {product.publish_blocked_reason}
-                  </Text>
-                )}
-              </Box>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <Pencil />
-              Edit Product
-            </DropdownMenuItem>
-          </Can>
+              <DropdownMenuItem
+                disabled={nextPublished && !product.can_publish}
+                onSelect={() => setPublishOpen(true)}
+              >
+                {nextPublished ? <Rocket /> : <Archive />}
+                <Box className="flex flex-col items-start">
+                  {nextPublished ? "Publish" : "Unpublish"}
+                  {nextPublished && product.publish_blocked_reason && (
+                    <Text
+                      as="span"
+                      variant="small"
+                      className="text-muted-foreground"
+                    >
+                      {product.publish_blocked_reason}
+                    </Text>
+                  )}
+                </Box>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+                <Pencil />
+                Edit Product
+              </DropdownMenuItem>
+            </Can>
           )}
           {!isArchived && (
-          <Can permission="products.delete">
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => setDeleteOpen(true)}
-            >
-              <Archive />
-              Archive
-            </DropdownMenuItem>
-          </Can>
+            <Can permission="products.delete">
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => setDeleteOpen(true)}
+              >
+                <Archive />
+                Archive
+              </DropdownMenuItem>
+            </Can>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
