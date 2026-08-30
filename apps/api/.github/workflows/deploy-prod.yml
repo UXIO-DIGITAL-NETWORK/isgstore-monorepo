@@ -141,6 +141,13 @@ jobs:
             CRON_ENTRY="* * * * * cd /home/uxioserver1/web-topup-uxiotopup-provider/api && php artisan schedule:run >> /dev/null 2>&1"
             ( crontab -l 2>/dev/null | grep -vF "web-topup-uxiotopup-provider/api && php artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
             echo "Scheduler cron installed:"
+            # Verified, not just printed: the scheduler is what runs the expiry
+            # sweeps, the status-poll reaper and queue:health. Losing it silently
+            # would take out every safety net at once.
+            crontab -l | grep -q "schedule:run" || {
+              echo "::error::Cron scheduler tidak terpasang — payments:sync-expired, uxiotopup:sync-processing dan queue:health tidak akan pernah berjalan."
+              exit 1
+            }
             crontab -l | grep "schedule:run"
 
             # 10. Install supervisor jika belum ada
@@ -198,7 +205,22 @@ jobs:
             # tidak memutus ProcessUxiotopupTopup/refund di tengah seperti hard-restart.
             sudo supervisorctl start api-prod-worker:* 2>/dev/null || true
             php artisan queue:restart
-            sudo supervisorctl status api-prod-worker:* || true
+
+            # 15. Verifikasi worker BENAR-BENAR hidup — bukan sekadar dicetak.
+            # Sebelumnya langkah ini berakhir `|| true`, jadi deploy tetap hijau
+            # walau worker mati. Itu persis cara sebuah situs berjalan berhari-hari
+            # dengan order berbayar yang tidak pernah dikirim ke supplier: semua
+            # laporan hijau, tidak ada yang error, uang masuk, barang tidak keluar.
+            # queue:restart baru saja menyuruh worker lama exit; beri supervisor
+            # waktu menghidupkan penggantinya sebelum menilai.
+            sleep 5
+            WORKER_STATUS=$(sudo supervisorctl status api-prod-worker:* 2>&1 || true)
+            echo "$WORKER_STATUS"
+            if ! echo "$WORKER_STATUS" | grep -q "RUNNING"; then
+              echo "::error::Queue worker TIDAK berjalan setelah deploy. Order top-up yang dibayar tidak akan diproses. Cek 'sudo supervisorctl status' dan storage/logs/worker.log di server."
+              exit 1
+            fi
+            echo "Queue worker aktif."
 
       - name: Notify Discord — deploy succeeded
         if: success()

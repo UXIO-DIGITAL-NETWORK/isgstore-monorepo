@@ -63,6 +63,17 @@ Schedule::command('uxiotopup:sync-processing')
     ->runInBackground()
     ->onFailure($alertFailure('uxiotopup:sync-processing'));
 
+// Is anyone consuming the queue at all? Every safety net above assumes a live
+// worker; if it died, a paid order never reaches the supplier and NOTHING errors.
+// This runs on the scheduler — a different process from supervisor — so it can
+// still raise the alarm when the worker cannot. Ten minutes: long enough that a
+// brief restart during deploy does not page anyone.
+Schedule::command('queue:health')
+    ->everyTenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure($alertFailure('queue:health'));
+
 // Price checker: updates supplier cost/availability, auto-reprices live products
 // from the margin rules, and records a price-change log. No success/before Discord
 // embeds — 288 runs/day would be spam.

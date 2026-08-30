@@ -248,6 +248,23 @@ Flow inside the job:
 
 Queue driver is `database` by default (`QUEUE_CONNECTION=database`). Tests run with `sync`.
 
+**The queue worker is not optional, and its failure is silent.** Eight job
+classes depend on it, and this one places a paid customer's order with the
+supplier — if the worker is down the payment succeeds, the job parks in `jobs`,
+and nothing anywhere errors. Three things guard that, and all three must stay:
+
+- `supervisor/api-prod-worker.conf` runs **two** processes. One is not enough:
+  every job shares the queue and a supplier order is an outbound HTTP call that
+  can hold a worker for seconds, so a Hub config poke would wait behind it.
+- The deploy **fails** if the worker does not reach `RUNNING`, and if the
+  scheduler cron is missing. Both checks used to end in `|| true`, which is how
+  a site can run for days on green deploys while paid orders go nowhere.
+- `queue:health` (scheduled every 10 min) alerts Discord when a *due* job has sat
+  untouched for 5 minutes. It runs on the scheduler — a separate process from
+  supervisor — so it can still speak when the worker cannot. It counts only
+  overdue jobs on purpose: `PollUxiotopupStatusJob` re-schedules itself into the
+  future, so a healthy queue is often far from empty.
+
 ---
 
 ## Service Billing (payment page)
