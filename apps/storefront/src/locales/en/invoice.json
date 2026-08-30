@@ -63,7 +63,7 @@
     "subtitle": "The transaction could not be processed",
     "failed": "FAILED",
     "time": "Time",
-    "refundNote": "Your funds were not charged or will be automatically refunded within 1×24 hours to your payment method.",
+    "refundNote": "The order could not be processed. If you were charged, a refund will be arranged and its status will appear here.",
     "retryPayment": "Try Payment Again",
     "choosePaymentMethod": "Choose Payment Method",
     "banner": {

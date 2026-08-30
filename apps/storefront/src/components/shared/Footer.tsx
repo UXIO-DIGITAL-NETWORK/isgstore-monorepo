@@ -56,7 +56,7 @@ export function Footer(): React.JSX.Element {
   ];
 
   const LEGAL_LINKS: { labelKey: string; href: string }[] = [
-    { labelKey: "footer.legal.refundPolicy", href: "#" },
+    { labelKey: "footer.legal.refundPolicy", href: `/${locale}/refund` },
     { labelKey: "footer.legal.privacyPolicy", href: `/${locale}/kebijakan-privasi` },
     { labelKey: "footer.legal.termsConditions", href: "#" },
   ];

@@ -350,5 +350,17 @@
       }
     },
     "noActivity": "No activity yet"
+  },
+  "balanceHistory": {
+    "title": "Balance History",
+    "loading": "Loading balance history...",
+    "empty": "No balance activity yet.",
+    "types": {
+      "topup": "Top Up",
+      "purchase": "Purchase",
+      "refund": "Refund",
+      "adjustment": "Admin Adjustment",
+      "settlement": "Settlement"
+    }
   }
 }
