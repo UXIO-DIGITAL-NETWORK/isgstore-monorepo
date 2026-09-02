@@ -54,8 +54,11 @@ return new class extends Migration
     {
         Schema::table('refund_requests', function (Blueprint $table) {
             $table->dropIndex(['status', 'verify_due_at']);
-            $table->dropIndex(['claimed_user_id']);
+            // Foreign key before its index: InnoDB refuses to drop an index a
+            // constraint still needs (errno 1553), and claimed_user_id's index
+            // is the only one backing it.
             $table->dropForeign(['claimed_user_id']);
+            $table->dropIndex(['claimed_user_id']);
             $table->dropColumn([
                 'claimed_user_id',
                 'claimed_at',

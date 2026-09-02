@@ -40,8 +40,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('membership_subscriptions', function (Blueprint $table) {
-            $table->dropUnique(['renewed_into_id']);
+            // Foreign key before its index: InnoDB refuses to drop an index a
+            // constraint still needs (errno 1553), and this unique is the only
+            // one backing renewed_into_id.
             $table->dropForeign(['renewed_into_id']);
+            $table->dropUnique(['renewed_into_id']);
             $table->dropColumn('renewed_into_id');
         });
 
