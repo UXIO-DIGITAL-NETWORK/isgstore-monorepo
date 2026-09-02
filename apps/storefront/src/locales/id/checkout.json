@@ -72,7 +72,7 @@
   "contact": {
     "title": "Detail Kontak",
     "whatsapp": "No. WhatsApp",
-    "whatsappPlaceholder": "Nomor Handphone",
+    "whatsappPlaceholder": "08xxxxxxxxxx atau +65xxxxxxxx",
     "helperNote": "Nomor ini akan dihubungi jika terjadi masalah",
     "whatsappRequired": "Nomor WhatsApp wajib diisi",
     "email": "Email",
@@ -126,7 +126,8 @@
     "buyNow": "Top Up Sekarang",
     "processing": "Memproses...",
     "checkingId": "Mengecek ID...",
-    "instantProcess": "Waktu proses instan"
+    "instantProcess": "Waktu proses instan",
+    "pointsDiscount": "Potongan Poin"
   },
   "confirmModal": {
     "title": "KONFIRMASI PEMBELIAN",
@@ -144,5 +145,13 @@
     "totalPay": "Total Bayar",
     "confirm": "Pesan Sekarang",
     "cancel": "Batalkan"
+  },
+  "points": {
+    "title": "Pakai Poin",
+    "available": "Kamu punya {{points}} poin (setara {{value}}).",
+    "useMax": "Pakai Semua",
+    "applied": "Potongan poin {{value}} diterapkan.",
+    "coversAll": "Poin menutupi seluruh pembayaran — tidak ada yang perlu dibayar.",
+    "notAllowed": "Paket membership kamu sudah termasuk potongan harga, jadi poin tidak bisa dipakai."
   }
 }

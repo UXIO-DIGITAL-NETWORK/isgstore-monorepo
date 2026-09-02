@@ -72,7 +72,7 @@
   "contact": {
     "title": "Contact Details",
     "whatsapp": "WhatsApp No.",
-    "whatsappPlaceholder": "Phone Number",
+    "whatsappPlaceholder": "08xxxxxxxxxx or +65xxxxxxxx",
     "helperNote": "This number will be contacted if an issue occurs",
     "whatsappRequired": "WhatsApp number is required",
     "email": "Email",
@@ -126,7 +126,8 @@
     "buyNow": "Top Up Now",
     "processing": "Processing...",
     "checkingId": "Checking ID...",
-    "instantProcess": "Instant processing time"
+    "instantProcess": "Instant processing time",
+    "pointsDiscount": "Point Discount"
   },
   "confirmModal": {
     "title": "PURCHASE CONFIRMATION",
@@ -144,5 +145,13 @@
     "totalPay": "Total Payable",
     "confirm": "Order Now",
     "cancel": "Cancel"
+  },
+  "points": {
+    "title": "Use Points",
+    "available": "You have {{points}} points (worth {{value}}).",
+    "useMax": "Use All",
+    "applied": "{{value}} point discount applied.",
+    "coversAll": "Points cover the whole order — nothing left to pay.",
+    "notAllowed": "Your membership plan already includes a discount, so points cannot be used."
   }
 }

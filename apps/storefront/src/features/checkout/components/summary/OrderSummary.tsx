@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { totalAfterPoints } from "@/features/checkout/lib/points";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { PriceText } from "@/components/common/PriceText";
@@ -14,6 +15,8 @@ interface Props {
   totalPrice: number;
   /** "Biaya Admin" — the selected payment method's fee. */
   adminFee: number;
+  /** Rupiah covered by redeemed loyalty points; 0 when none are applied. */
+  pointsDiscount?: number;
   gameThumbnail: string;
   gameName: string;
   selectedPaymentName?: string;
@@ -53,6 +56,7 @@ export default function OrderSummary({
   selectedPackage,
   totalPrice,
   adminFee,
+  pointsDiscount = 0,
   gameThumbnail,
   gameName,
   selectedPaymentName,
@@ -69,7 +73,10 @@ export default function OrderSummary({
   const locale = i18n.language;
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const total = totalPrice + adminFee;
+  // Points come off before the fee, and a fully covered order owes nothing at
+  // all — there is no payment left for a fee to sit on. Mirrors what the API
+  // recomputes, so the number shown is the number charged.
+  const total = totalAfterPoints(totalPrice, adminFee, pointsDiscount);
 
   const handleTopUp = async () => {
     if (!onRequestConfirm) {
@@ -117,7 +124,15 @@ export default function OrderSummary({
       {/* Price breakdown */}
       <Box className="px-4 pt-4 pb-2 flex flex-col gap-2.5">
         <FeeRow label={t("summary.price")} value={formatCurrency(totalPrice, locale)} />
-        {adminFee > 0 && <FeeRow label={t("summary.adminFee")} value={formatCurrency(adminFee, locale)} />}
+        {pointsDiscount > 0 && (
+          <FeeRow
+            label={t("summary.pointsDiscount")}
+            value={`- ${formatCurrency(pointsDiscount, locale)}`}
+          />
+        )}
+        {adminFee > 0 && totalPrice - pointsDiscount > 0 && (
+          <FeeRow label={t("summary.adminFee")} value={formatCurrency(adminFee, locale)} />
+        )}
       </Box>
 
       {/* Divider */}

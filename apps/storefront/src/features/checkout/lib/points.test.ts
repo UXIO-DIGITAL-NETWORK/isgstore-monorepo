@@ -1,0 +1,62 @@
+import { describe, expect, it } from "vitest";
+
+import { applyPoints, maxRedeemablePoints, totalAfterPoints } from "./points";
+
+describe("maxRedeemablePoints", () => {
+  it("is capped by the wallet of points", () => {
+    expect(maxRedeemablePoints(12000, 2000, 1)).toBe(2000);
+  });
+
+  it("is capped by what the order is worth", () => {
+    // Never overshoot into a credit note the storefront cannot honour.
+    expect(maxRedeemablePoints(12000, 50000, 1)).toBe(12000);
+  });
+
+  it("rounds down when a point is worth more than a rupiah", () => {
+    // 12000 / 500 = 24 exactly; 12100 / 500 must not become 25.
+    expect(maxRedeemablePoints(12100, 999, 500)).toBe(24);
+  });
+
+  it("is zero for a free order or an empty balance", () => {
+    expect(maxRedeemablePoints(0, 5000, 1)).toBe(0);
+    expect(maxRedeemablePoints(12000, 0, 1)).toBe(0);
+  });
+});
+
+describe("applyPoints", () => {
+  it("discounts what the points are worth", () => {
+    expect(applyPoints(12000, 5000, 1, 2000)).toEqual({ points: 2000, discount: 2000, coversEverything: false });
+  });
+
+  it("flags an order points cover entirely", () => {
+    // The case with no gateway to call: nothing is owed.
+    expect(applyPoints(12000, 20000, 1, 12000)).toEqual({
+      points: 12000,
+      discount: 12000,
+      coversEverything: true,
+    });
+  });
+
+  it("clamps a request larger than the balance", () => {
+    expect(applyPoints(12000, 500, 1, 9999).points).toBe(500);
+  });
+
+  it("never returns negative points", () => {
+    expect(applyPoints(12000, 5000, 1, -100).points).toBe(0);
+  });
+});
+
+describe("totalAfterPoints", () => {
+  it("charges the fee on the reduced price", () => {
+    expect(totalAfterPoints(12000, 1000, 2000)).toBe(11000);
+  });
+
+  it("owes nothing at all when points cover the order", () => {
+    // Including the admin fee — there is no payment to charge a fee on.
+    expect(totalAfterPoints(12000, 1000, 12000)).toBe(0);
+  });
+
+  it("never goes negative when points overshoot", () => {
+    expect(totalAfterPoints(12000, 1000, 20000)).toBe(0);
+  });
+});

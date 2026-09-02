@@ -130,6 +130,8 @@ export interface CheckoutPayload {
   locale?: string;
   /** Re-validated server-side — the client's quoted discount is never trusted. */
   promo_code?: string;
+  /** Loyalty points to redeem. Capped server-side at the balance and the price. */
+  points_to_spend?: number;
 }
 
 export interface CheckoutResult {

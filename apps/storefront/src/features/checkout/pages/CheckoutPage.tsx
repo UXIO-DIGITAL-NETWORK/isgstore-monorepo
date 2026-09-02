@@ -30,6 +30,9 @@ import { getOrderFormErrors } from "@/features/checkout/lib/orderFormValidation"
 import { normalizeWhatsappNumber } from "@/lib/phone";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { usePointsBalance } from "@/features/checkout/hooks/usePointsBalance";
+import { applyPoints } from "@/features/checkout/lib/points";
+import PointsRedeem from "@/features/checkout/components/points/PointsRedeem";
 import type { GameInfo, PaymentOption } from "@/features/checkout/types/checkout.type";
 
 /** Shown while the game loads, so the header doesn't collapse mid-render. */
@@ -145,6 +148,15 @@ export default function CheckoutPage(): React.JSX.Element {
   // figure is display-only.
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountAmount: number } | null>(null);
 
+  // Loyalty points. The API re-derives every figure at checkout — this is so
+  // the buyer sees the same total before they commit.
+  const { data: pointsSummary } = usePointsBalance();
+  const [pointsToSpend, setPointsToSpend] = useState(0);
+  const pointsRate = pointsSummary?.redeem_rate ?? 1;
+  const pointsApplied = pointsSummary
+    ? applyPoints(totalPrice, pointsSummary.points, pointsRate, pointsToSpend)
+    : { points: 0, discount: 0, coversEverything: false };
+
   /**
    * Runs when the buyer presses "Top Up Sekarang", before the confirmation
    * modal is allowed to open. Returning false keeps it shut.
@@ -190,6 +202,7 @@ export default function CheckoutPage(): React.JSX.Element {
         // Storefront language, so the receipt email is sent in the buyer's language.
         locale,
         promo_code: appliedPromo?.code,
+        points_to_spend: pointsApplied.points || undefined,
       },
       {
         onSuccess: (response) => {
@@ -304,10 +317,21 @@ export default function CheckoutPage(): React.JSX.Element {
               onCleared={() => setAppliedPromo(null)}
             />
 
+            <PointsRedeem
+              stepNumber={6}
+              balance={pointsSummary?.points ?? null}
+              rate={pointsRate}
+              price={totalPrice}
+              value={pointsToSpend}
+              onChange={setPointsToSpend}
+              allowed={pointsSummary?.allows_point_spending ?? true}
+            />
+
             <OrderSummary
               selectedPackage={selectedPackage}
               totalPrice={totalPrice}
               adminFee={adminFee}
+              pointsDiscount={pointsApplied.discount}
               gameThumbnail={game.thumbnail}
               gameName={game.name}
               selectedPaymentName={selectedPayment?.name}
