@@ -8,6 +8,7 @@ use App\Services\DiscordWebhookService;
 use App\Services\Payment\MonetapayService;
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Payout\BankCatalog;
+use App\Support\Phone;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -72,7 +73,18 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
         // the disbursement account_phone. Falls back to the merchant's phone then
         // a placeholder so the field is always present (postSigned() drops it from
         // the signed map only if it is blank).
-        $accountPhone = (string) ($current->account_phone ?: $current->merchant?->phone ?: '08123456789');
+        //
+        // `account_phone` is validated as an Indonesian number and passes through
+        // untouched. The **merchant's phone is not** — contact numbers are now
+        // international, and this is the one path that would carry a foreign one
+        // straight into an Indonesian disbursement, failing only after the money
+        // had moved. A non-Indonesian merchant phone therefore degrades to the
+        // placeholder rather than being sent.
+        $accountPhone = (string) (
+            $current->account_phone
+            ?: Phone::toIndonesianLocal($current->merchant?->phone)
+            ?: '08123456789'
+        );
         $isEwallet = BankCatalog::isEwallet((string) $current->bank_code);
 
         // HTTP call runs outside any DB transaction so no row lock spans it.

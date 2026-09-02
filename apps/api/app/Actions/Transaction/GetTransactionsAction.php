@@ -5,6 +5,7 @@ namespace App\Actions\Transaction;
 use App\Enums\GatewayStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Transaction;
+use App\Support\Phone;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class GetTransactionsAction
@@ -68,12 +69,21 @@ class GetTransactionsAction
             // customer column, so matching only the invoice number made a
             // name search look like "no results" rather than "not supported".
             // Guests have no user row — their contact is on the transaction.
+            // Phone spellings are expanded because the columns hold more than
+            // one: contact numbers are only canonical from the E.164 release
+            // onward and the older rows were never migrated, so an admin typing
+            // "0812…" must still find a row stored as "+62812…".
             ->when($search, fn ($q) => $q->where(
-                fn ($q) => $q->where('invoice_number', 'like', "%{$search}%")
-                    ->orWhere('guest_contact', 'like', "%{$search}%")
-                    ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%"))
+                function ($q) use ($search) {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"));
+
+                    foreach (array_unique([$search, ...Phone::candidates($search)]) as $spelling) {
+                        $q->orWhere('guest_contact', 'like', "%{$spelling}%")
+                            ->orWhereHas('user', fn ($u) => $u->where('phone', 'like', "%{$spelling}%"));
+                    }
+                }
             ))
             ->when($userId, fn ($q) => $q->where('user_id', $userId))
             ->when($productId, fn ($q) => $q->where('product_id', $productId))

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Checkout;
 
+use App\Http\Requests\Concerns\NormalizesPhoneInput;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\OrderForm\OrderFormSchema;
@@ -9,6 +10,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCheckoutRequest extends FormRequest
 {
+    use NormalizesPhoneInput;
+
     private ?OrderFormSchema $schema = null;
 
     private bool $schemaResolved = false;
@@ -18,13 +21,26 @@ class StoreCheckoutRequest extends FormRequest
         return true; // auth guard handled at route level; guests are allowed
     }
 
+    protected function prepareForValidation(): void
+    {
+        // Only ever rewrites a value that was actually sent: `guest_contact` is
+        // required for a guest and nullable for a member, and materialising the
+        // key would turn "a member omitted it" into "a member cleared it".
+        $this->normalizePhoneFields(['guest_contact']);
+    }
+
     public function rules(): array
     {
         $rules = [
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'payment_channel_id' => ['required', 'integer', 'exists:payment_channels,id'],
             // Required for guests; optional for authenticated members
-            'guest_contact' => $this->checkoutUser() ? ['nullable', 'string', 'max:20'] : ['required', 'string', 'max:20'],
+            // Canonical E.164, rewritten by prepareForValidation(). The storefront
+            // already submits this shape; the rule is what makes an admin-authored
+            // order and a non-browser API caller agree with it.
+            'guest_contact' => $this->checkoutUser()
+                ? ['nullable', 'string', 'max:20', self::E164_RULE]
+                : ['required', 'string', 'max:20', self::E164_RULE],
             // Email is required for everyone: it is where the purchase receipt is
             // sent and lets the buyer track the order by email later.
             'email' => ['required', 'email', 'max:255'],
@@ -34,6 +50,9 @@ class StoreCheckoutRequest extends FormRequest
             // fulfilment — uxiotopup is sent target_uid/target_server only.
             'target_nickname' => ['nullable', 'string', 'max:100'],
             'promo_code' => ['nullable', 'string', 'max:64'],
+            // Members only, capped server-side. An over-large figure is clamped
+            // rather than refused: the customer asked to spend what they had.
+            'points_to_spend' => ['nullable', 'integer', 'min:0'],
         ];
 
         $schema = $this->orderFormSchema();

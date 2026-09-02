@@ -85,7 +85,13 @@ class PiWapiServiceTest extends TestCase
             'with country code' => ['6281234567890', '+6281234567890'],
             'plus and spaces' => ['+62 812-3456-7890', '+6281234567890'],
             'bare national' => ['81234567890', '+6281234567890'],
+            // Any country the customer names is taken at their word — that is
+            // the whole of international support without a country picker.
+            'foreign with plus' => ['+6591234567', '+6591234567'],
+            'foreign with international prefix' => ['0065 9123 4567', '+6591234567'],
+            'bare eight digits still local' => ['12345678', '+6212345678'],
             'too short' => ['123', null],
+            'longer than e164 allows' => ['+621234567890123456', null],
             'empty' => ['', null],
             'null' => [null, null],
         ];

@@ -29,6 +29,12 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
+            // Same reasoning as `email_verified_at` above, which Laravel's own
+            // scaffold defaults for exactly this purpose: the factory makes a
+            // *usable* account, and an admin without a second factor is refused
+            // by `EnsureTwoFactorSatisfied` on every admin route. The 2FA tests
+            // override this to null when an un-enrolled user is the point.
+            'two_factor_confirmed_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
 
@@ -51,6 +57,16 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /** An account that has never set up a second factor. */
+    public function withoutTwoFactor(): static
+    {
+        return $this->state(fn () => [
+            'two_factor_secret' => null,
+            'two_factor_confirmed_at' => null,
+            'two_factor_last_used_timestep' => null,
         ]);
     }
 }

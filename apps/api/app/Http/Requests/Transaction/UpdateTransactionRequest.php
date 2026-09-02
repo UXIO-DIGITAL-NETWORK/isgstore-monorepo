@@ -4,14 +4,22 @@ namespace App\Http\Requests\Transaction;
 
 use App\DTOs\Transaction\UpdateTransactionDTO;
 use App\Enums\TransactionStatus;
+use App\Http\Requests\Concerns\NormalizesPhoneInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateTransactionRequest extends FormRequest
 {
+    use NormalizesPhoneInput;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizePhoneFields(['guest_contact']);
     }
 
     public function rules(): array
@@ -20,7 +28,8 @@ class UpdateTransactionRequest extends FormRequest
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'payment_channel_id' => ['nullable', 'integer', 'exists:payment_channels,id'],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
-            'guest_contact' => ['nullable', 'string', 'max:20'],
+            // Canonical E.164, rewritten by prepareForValidation().
+            'guest_contact' => ['nullable', 'string', 'max:20', self::E164_RULE],
             'target_uid' => ['nullable', 'string', 'max:255'],
             'target_server' => ['nullable', 'string', 'max:255'],
             'amount_base' => ['required', 'integer', 'min:0'],

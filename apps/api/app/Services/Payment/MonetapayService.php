@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Support\Integration\IntegrationConfig;
+use App\Support\Phone;
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -222,13 +223,13 @@ class MonetapayService
             $requestParams['product_quantity'] = '1';
             $requestParams['product_type'] = 'PRODUCT';
             $requestParams['product_category'] = $customerData['product_category'] ?? 'General';
-            $requestParams['account_phone'] = (string) ($customerData['customer_phone'] ?? '08123456789');
+            $requestParams['account_phone'] = self::indonesianAccountPhone($customerData);
             $requestParams['success_redirect_url'] = config('services.monetapay.success_redirect_url', 'https://example.com');
             $requestParams['expire_seconds'] = '7200';
         } else {
             $requestParams['account_name'] = (string) ($customerData['customer_name'] ?? 'Guest');
             $requestParams['account_bank_code'] = strtoupper(str_replace('_va', '', strtolower($channelCode)));
-            $requestParams['account_phone'] = (string) ($customerData['customer_phone'] ?? '08123456789');
+            $requestParams['account_phone'] = self::indonesianAccountPhone($customerData);
             $requestParams['is_single_use'] = (string) ($customerData['is_single_use'] ?? '1');
             $requestParams['expire_seconds'] = '600';
         }
@@ -767,5 +768,26 @@ class MonetapayService
     public function merchantPermissionQuery(array $params): array
     {
         return $this->postPlain('/v1.0.0/mch/permission/query', $params);
+    }
+
+    /**
+     * The customer phone Monetapay is given, in the Indonesian local form.
+     *
+     * Contact phones are stored as E.164 for any country now, but Monetapay
+     * settles in IDR to Indonesian banks and e-wallets — and on an e-wallet
+     * charge this field IS the wallet identity. A foreign number here would be
+     * rejected by the gateway, so it degrades to the same placeholder this
+     * field has always defaulted to rather than being passed through.
+     *
+     * (Indonesian numbers already reached this code as `+62…` from the
+     * storefront, so this narrows what is sent rather than changing it.)
+     *
+     * @param  array<string, mixed>  $customerData
+     */
+    private static function indonesianAccountPhone(array $customerData): string
+    {
+        $phone = $customerData['customer_phone'] ?? null;
+
+        return Phone::toIndonesianLocal(is_string($phone) ? $phone : null) ?? '08123456789';
     }
 }

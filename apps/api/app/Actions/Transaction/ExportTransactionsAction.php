@@ -3,6 +3,7 @@
 namespace App\Actions\Transaction;
 
 use App\Models\Transaction;
+use App\Support\Phone;
 use Illuminate\Support\Collection;
 
 /**
@@ -32,12 +33,21 @@ class ExportTransactionsAction
                 $code = GetTransactionsAction::paymentCodeFor($paymentStatus);
                 $q->whereHas('payment', fn ($p) => $p->where('status', $code ?? '__none__'));
             })
+            // Phone spellings are expanded because the columns hold more than
+            // one: contact numbers are only canonical from the E.164 release
+            // onward and the older rows were never migrated, so an admin typing
+            // "0812…" must still find a row stored as "+62812…".
             ->when($search, fn ($q) => $q->where(
-                fn ($q) => $q->where('invoice_number', 'like', "%{$search}%")
-                    ->orWhere('guest_contact', 'like', "%{$search}%")
-                    ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%"))
+                function ($q) use ($search) {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"));
+
+                    foreach (array_unique([$search, ...Phone::candidates($search)]) as $spelling) {
+                        $q->orWhere('guest_contact', 'like', "%{$spelling}%")
+                            ->orWhereHas('user', fn ($u) => $u->where('phone', 'like', "%{$spelling}%"));
+                    }
+                }
             ))
             ->when($userId, fn ($q) => $q->where('user_id', $userId))
             ->when($productId, fn ($q) => $q->where('product_id', $productId))
