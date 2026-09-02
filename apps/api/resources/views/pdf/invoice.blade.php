@@ -1,5 +1,7 @@
 @php
-    $rp = fn ($n) => 'Rp ' . number_format((int) $n, 0, ',', '.');
+    // One definition, in App\Support\Money — this closure used to be
+    // copy-pasted into all three views while most of app/ used US separators.
+    $rp = fn ($n) => \App\Support\Money::rupiah((int) $n);
     $muted = '#9aa0ac';
     $text = '#ECEDEE';
 

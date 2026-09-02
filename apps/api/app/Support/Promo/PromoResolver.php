@@ -6,6 +6,7 @@ namespace App\Support\Promo;
 
 use App\Models\Promo;
 use App\Models\User;
+use App\Support\Money;
 
 /**
  * The single definition of what a promo code is worth.
@@ -45,7 +46,7 @@ final class PromoResolver
             return new self(
                 false,
                 0,
-                'Minimum pembelian Rp '.number_format((int) $promo->min_purchase, 0, ',', '.').' untuk kode ini.',
+                'Minimum pembelian '.Money::rupiah((int) $promo->min_purchase).' untuk kode ini.',
                 $promo,
             );
         }

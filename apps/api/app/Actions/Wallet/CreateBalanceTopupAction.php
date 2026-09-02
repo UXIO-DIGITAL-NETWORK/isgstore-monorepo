@@ -9,6 +9,7 @@ use App\Models\BalanceTopup;
 use App\Models\PaymentChannel;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
+use App\Support\Money;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -60,8 +61,8 @@ class CreateBalanceTopupAction
 
         if ($total < $channel->min_amount) {
             throw new Exception(
-                'Total pembayaran Rp '.number_format($total).
-                ' kurang dari minimum Rp '.number_format($channel->min_amount)
+                'Total pembayaran '.Money::rupiah($total).
+                ' kurang dari minimum '.Money::rupiah((int) $channel->min_amount)
             );
         }
 

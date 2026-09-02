@@ -11,6 +11,7 @@ use App\Models\PaymentChannel;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
 use App\Services\Payment\MonetapayService;
+use App\Support\Money;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -89,8 +90,8 @@ class OpenServiceInvoicePaymentAction
 
         if ($total < (int) $channel->min_amount) {
             throw new RuntimeException(
-                'Total pembayaran Rp '.number_format($total).
-                ' kurang dari minimum Rp '.number_format((int) $channel->min_amount)
+                'Total pembayaran '.Money::rupiah($total).
+                ' kurang dari minimum '.Money::rupiah((int) $channel->min_amount)
             );
         }
 
