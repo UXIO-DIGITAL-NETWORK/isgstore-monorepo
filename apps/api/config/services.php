@@ -93,6 +93,20 @@ return [
         // the receipt email. The tracker lives at /{locale}/cek-pesanan.
         'url' => env('STOREFRONT_URL', 'http://localhost:5173'),
         'brand' => env('STOREFRONT_BRAND', 'TOPUP GAME'),
+
+        // Applied by `App\Support\Phone` only to a number that carries no
+        // country code of its own — a customer who types "+65…" is always taken
+        // at their word. This is what lets the ordinary Indonesian "0812…" keep
+        // working without asking every buyer to pick a country.
+        'default_country_code' => env('STOREFRONT_DEFAULT_COUNTRY_CODE', '62'),
+    ],
+
+    'payment_page' => [
+        // Uxiolabs Pay, where a client renews the subscription to their own
+        // website. The admin panel builds a deep link to the checkout page from
+        // this; every route there is behind a login, so the client signs in
+        // with their own payment-admin account on arrival.
+        'url' => env('PAYMENT_PAGE_URL', 'http://localhost:5174'),
     ],
 
     'service_invoice' => [
