@@ -148,8 +148,23 @@ export function SettingsPage() {
                     // The endpoint also accepts SVG and ICO — a favicon and a
                     // vector logo must keep their format, and compressImage
                     // passes both through untouched.
-                    accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon"
-                    formatsLabel="JPG, PNG, WEBP, SVG, ICO — max 2 MB"
+                    //
+                    // GIF is offered for the logo only, matching the API: an
+                    // animated GIF reaches disk uncompressed (neither
+                    // compressImage nor ImageOptimizer will re-encode one), so
+                    // it gets the larger ceiling. No link-preview scraper
+                    // animates an OG image and a GIF favicon is unpredictable,
+                    // so the other keys stay as they were.
+                    accept={
+                      setting.key === "logo"
+                        ? "image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon,image/gif"
+                        : "image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon"
+                    }
+                    formatsLabel={
+                      setting.key === "logo"
+                        ? "JPG, PNG, WEBP, SVG, ICO — max 2 MB · GIF (animated) — max 5 MB"
+                        : "JPG, PNG, WEBP, SVG, ICO — max 2 MB"
+                    }
                     onChange={(file) => uploadSetting.mutate({ key: setting.key, file })}
                   />
                 </Box>
