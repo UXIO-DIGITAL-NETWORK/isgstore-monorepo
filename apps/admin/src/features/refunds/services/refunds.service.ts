@@ -5,6 +5,7 @@ import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type {
   PayoutDetailsPayload,
   Refund,
+  RefundClaimedAccount,
   RefundListParams,
   RefundStatusCounts,
 } from "../types/refund.type";
@@ -36,6 +37,10 @@ interface RefundApiRow {
   refunded_at: string | null;
   settlement_reversed_at: string | null;
   created_at: string | null;
+  claimed_account: RefundClaimedAccount | null;
+  verify_due_at: string | null;
+  is_overdue: boolean;
+  claim_rejected_count: number;
 }
 
 const toRefund = (row: RefundApiRow): Refund => ({
@@ -46,6 +51,8 @@ const toRefund = (row: RefundApiRow): Refund => ({
 const toQuery = (params: RefundListParams) => ({
   ...(params.status && { status: params.status }),
   ...(params.method && { method: params.method }),
+  ...(params.unclaimed && { unclaimed: 1 }),
+  ...(params.overdue && { overdue: 1 }),
   ...(params.search && { search: params.search }),
   ...(params.dateFrom && { date_from: params.dateFrom }),
   ...(params.dateTo && { date_to: params.dateTo }),
@@ -105,6 +112,21 @@ export const refundsService = {
     if (!reason.trim()) throw new Error("A rejection reason is required");
 
     const response: ApiResponse<RefundApiRow> = await api.post(`${BASE}/${id}/reject`, { reason });
+
+    return toRefund(response.data);
+  },
+
+  /**
+   * Refuse the *account* that claimed the refund, not the refund itself.
+   *
+   * The money never left, so the buyer is still owed it: the row goes back to
+   * awaiting an account and a fresh claim link is sent to the contact on the
+   * order. Use `reject` only when the refund itself is not owed.
+   */
+  rejectClaim: async (id: string, reason: string): Promise<Refund> => {
+    if (!reason.trim()) throw new Error("A rejection reason is required");
+
+    const response: ApiResponse<RefundApiRow> = await api.post(`${BASE}/${id}/reject-claim`, { reason });
 
     return toRefund(response.data);
   },

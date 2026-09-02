@@ -116,7 +116,8 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
               <Row
                 label="Claim link sent"
                 value={
-                  refund.method === "manual_transfer" && !refund.claim_notified_at ? (
+                  (refund.method === "manual_transfer" || refund.method === "balance_claim") &&
+                  !refund.claim_notified_at ? (
                     <Text
                       as="span"
                       className="text-destructive"
@@ -129,6 +130,96 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
                 }
               />
             </Box>
+
+            {/* The verification record. Everything here is frozen at claim
+                time — the account may have changed its email since, and the
+                decision has to be reviewable against what actually matched. */}
+            {refund.claimed_account && (
+              <Box className="py-2">
+                <Row
+                  label="Claimed by"
+                  value={refund.claimed_account.name ?? "—"}
+                />
+                <Row
+                  label="Account email"
+                  value={refund.claimed_account.email ?? "—"}
+                />
+                <Row
+                  label="Account phone"
+                  value={refund.claimed_account.phone ?? "—"}
+                />
+                <Row
+                  label="Matched on"
+                  value={
+                    refund.claimed_account.contact_match
+                      ? `${refund.claimed_account.contact_match} — ${refund.claimed_account.contact_value ?? "—"}`
+                      : "—"
+                  }
+                />
+                <Row
+                  label="Claimed at"
+                  value={formatDate(refund.claimed_account.claimed_at)}
+                />
+                <Row
+                  label="Account status"
+                  value={
+                    refund.claimed_account.account_status === "active" ? (
+                      "Active"
+                    ) : (
+                      <Text
+                        as="span"
+                        className="text-destructive"
+                      >
+                        {refund.claimed_account.account_status ?? "unknown"} — cannot be credited
+                      </Text>
+                    )
+                  }
+                />
+                <Row
+                  label="Other claims"
+                  value={
+                    refund.claimed_account.sibling_claims > 0 ? (
+                      <Text
+                        as="span"
+                        className="text-warning"
+                      >
+                        {refund.claimed_account.sibling_claims} by this account
+                      </Text>
+                    ) : (
+                      "None"
+                    )
+                  }
+                />
+                <Row
+                  label="Verify by"
+                  value={
+                    refund.is_overdue ? (
+                      <Text
+                        as="span"
+                        className="text-destructive"
+                      >
+                        {formatDate(refund.verify_due_at)} — overdue
+                      </Text>
+                    ) : (
+                      formatDate(refund.verify_due_at)
+                    )
+                  }
+                />
+                {refund.claim_rejected_count > 0 && (
+                  <Row
+                    label="Claims rejected"
+                    value={
+                      <Text
+                        as="span"
+                        className="text-warning"
+                      >
+                        {refund.claim_rejected_count}
+                      </Text>
+                    }
+                  />
+                )}
+              </Box>
+            )}
 
             {refund.payout && (
               <Box className="py-2">

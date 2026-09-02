@@ -38,14 +38,43 @@ describe("RefundsPage", () => {
   it("shows the status pills with their counts", async () => {
     await renderRoute("/admin/refunds-preview");
 
-    const awaiting = await screen.findByRole("button", { name: /Awaiting details/ });
+    const awaiting = await screen.findByRole("button", { name: /Awaiting account/ });
     expect(within(awaiting).getByText("2")).toBeInTheDocument();
 
-    const ready = screen.getByRole("button", { name: /Ready to transfer/ });
+    const ready = screen.getByRole("button", { name: /Ready to verify/ });
     expect(within(ready).getByText("1")).toBeInTheDocument();
 
     const completed = screen.getByRole("button", { name: /Completed/ });
     expect(within(completed).getByText("7")).toBeInTheDocument();
+  });
+
+  it("surfaces refunds past the 2x24 working-hour promise", async () => {
+    // Late refunds are the one thing that should interrupt whatever the
+    // operator came here to do, so they get their own line above the filters.
+    await renderRoute("/admin/refunds-preview");
+
+    expect(await screen.findByText(/past the 2x24 working-hour promise/)).toBeInTheDocument();
+  });
+
+  it("offers verify and reject-claim on a claimed balance refund", async () => {
+    await renderRoute("/admin/refunds-preview");
+    await screen.findByText("RFD-c1a2i3m4e5d6");
+
+    const user = await openRowMenu("RFD-c1a2i3m4e5d6");
+
+    // Verifying the account is the work; the bank-transfer verbs must not
+    // appear on a refund that pays to balance.
+    expect(await screen.findByRole("menuitem", { name: /Verify & credit balance/ })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /Reject claim/ })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /Mark as transferred/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /payout details/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("menuitem", { name: /Verify & credit balance/ }));
+
+    // The dialog leads with the identity comparison, because that — not the
+    // amount — is what the admin is actually deciding.
+    expect(await screen.findByText("Claiming account")).toBeInTheDocument();
+    expect(screen.getByText(/Matched on/)).toBeInTheDocument();
   });
 
   it("renders both refund paths with the payout column each deserves", async () => {

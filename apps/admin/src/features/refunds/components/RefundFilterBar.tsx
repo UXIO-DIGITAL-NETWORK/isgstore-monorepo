@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { RefundListParams, RefundMethod, RefundStatus } from "../types/refund.type";
@@ -76,6 +77,29 @@ export function RefundFilterBar({ filters, onChange }: RefundFilterBarProps) {
           ))}
         </SelectContent>
       </Select>
+
+      {/* Two derived views rather than statuses: "overdue" cuts across PENDING
+          and PROCESSING, and "unclaimed" is the outstanding-liability list
+          finance asks for. Toggles, because they compose with the filters. */}
+      <Button
+        type="button"
+        variant={filters.overdue ? "default" : "outline"}
+        className="rounded-xl"
+        aria-pressed={Boolean(filters.overdue)}
+        onClick={() => onChange({ ...filters, overdue: filters.overdue ? undefined : true })}
+      >
+        Overdue
+      </Button>
+
+      <Button
+        type="button"
+        variant={filters.unclaimed ? "default" : "outline"}
+        className="rounded-xl"
+        aria-pressed={Boolean(filters.unclaimed)}
+        onClick={() => onChange({ ...filters, unclaimed: filters.unclaimed ? undefined : true })}
+      >
+        Unclaimed
+      </Button>
     </Box>
   );
 }

@@ -82,3 +82,12 @@ export const useRejectRefund = () =>
     "Refund rejected",
     "Could not reject this refund",
   );
+
+export const useRejectRefundClaim = () =>
+  useRefundMutation(
+    ({ id, reason }: { id: string; reason: string }) => refundsService.rejectClaim(id, reason),
+    // Worth spelling out in the toast: the operator has just turned someone
+    // away, and needs to know the money is still owed rather than written off.
+    "Claim rejected — the refund is still owed and a new link was sent",
+    "Could not reject this claim",
+  );

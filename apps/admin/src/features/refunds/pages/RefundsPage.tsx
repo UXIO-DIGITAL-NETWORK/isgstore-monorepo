@@ -13,33 +13,38 @@ import type { RefundListParams, RefundStatus } from "../types/refund.type";
 const DEFAULT_PAGE_SIZE = 10;
 
 /**
- * The pills answer the only question an operator opens this page with: how
- * much money is waiting on me, and on whom. `WAITING_DETAILS` is on the
- * customer; `PENDING` and `PROCESSING` are on us.
+ * The pills answer the only question an operator opens this page with: how much
+ * money is waiting on me, and on whom. `WAITING_ACCOUNT` is on the customer;
+ * `PENDING` and `PROCESSING` are on us.
+ *
+ * `WAITING_DETAILS` is deliberately absent: it belongs to the retired
+ * bank-transfer scheme and is draining to zero, so giving it a permanent
+ * headline slot would be reserving the operator's attention for a shrinking
+ * pile. It is still reachable from the status filter.
  */
 const PILLS: { status: RefundStatus; label: string; hint: string; accent: string }[] = [
   {
-    status: "WAITING_DETAILS",
-    label: "Awaiting details",
-    hint: "The customer has not told us where to send it yet",
+    status: "WAITING_ACCOUNT",
+    label: "Awaiting account",
+    hint: "Owed, but the customer has not made an account yet",
     accent: "border-border bg-muted/40",
   },
   {
     status: "PENDING",
-    label: "Ready to transfer",
-    hint: "Account on file — waiting for someone to send the money",
+    label: "Ready to verify",
+    hint: "An account is attached — waiting for someone to check it",
     accent: "border-warning bg-warning/10",
   },
   {
     status: "PROCESSING",
     label: "In progress",
-    hint: "An admin has claimed it and is transferring",
+    hint: "An admin has claimed it and is verifying",
     accent: "border-chart-1 bg-chart-1/10",
   },
   {
     status: "COMPLETED",
     label: "Completed",
-    hint: "Money has left",
+    hint: "Money has moved",
     accent: "border-success bg-success/10",
   },
 ];
@@ -59,8 +64,19 @@ export default function RefundsPage() {
   };
 
   const outstanding = (data?.data ?? [])
-    .filter((refund) => refund.status === "WAITING_DETAILS" || refund.status === "PENDING" || refund.status === "PROCESSING")
+    .filter(
+      (refund) =>
+        refund.status === "WAITING_ACCOUNT" ||
+        refund.status === "WAITING_DETAILS" ||
+        refund.status === "PENDING" ||
+        refund.status === "PROCESSING",
+    )
     .reduce((total, refund) => total + refund.amount, 0);
+
+  // Late refunds are the one thing that should interrupt whatever the operator
+  // came here to do, so it gets its own line rather than a fifth pill competing
+  // with the states.
+  const overdueCount = counts.overdue ?? 0;
 
   return (
     <Box className="flex flex-col gap-6">
@@ -132,6 +148,20 @@ export default function RefundsPage() {
           );
         })}
       </Box>
+
+      {overdueCount > 0 && (
+        <Box
+          as="button"
+          type="button"
+          onClick={() => handleFilterChange({ ...filters, overdue: true })}
+          className="border-destructive bg-destructive/10 text-destructive rounded-2xl border p-4 text-left"
+        >
+          <Text as="span">
+            {overdueCount} refund{overdueCount === 1 ? " is" : "s are"} past the 2x24 working-hour promise. Show
+            {overdueCount === 1 ? " it" : " them"}.
+          </Text>
+        </Box>
+      )}
 
       <RefundFilterBar
         filters={filters}
