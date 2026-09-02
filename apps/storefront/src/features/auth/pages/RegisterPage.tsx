@@ -14,7 +14,7 @@ import googleLogo from "@/assets/icons/google_logo.svg";
 import { registerSchema, type RegisterFormValues } from "../schemas/auth.schema";
 import { useRegister } from "../hooks/useRegister";
 import type { ApiError } from "@/types/api.type";
-import { normalizeWhatsappNumber, toNationalPhone } from "@/lib/phone";
+import { normalizeWhatsappNumber, sanitizePhoneInput } from "@/lib/phone";
 
 const inputClass =
   "w-full bg-white/6 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#C084FC] focus:bg-white/8 transition-all";
@@ -121,18 +121,20 @@ export default function RegisterPage() {
             {t("register.phone")}
           </Text>
           <Box className="flex w-full bg-white/6 border border-white/10 rounded-full focus-within:border-[#C084FC] focus-within:bg-white/8 transition-all overflow-hidden">
+            {/* A hint, not a fixed prefix: "0812…" is read as Indonesian, and a
+                typed "+65…" is kept as typed. */}
             <Text
               as="span"
-              className="flex items-center px-5 py-3 text-white/60 border-r border-white/10 flex-shrink-0 select-none text-sm font-inter"
+              className="flex items-center px-5 py-3 text-white/40 border-r border-white/10 flex-shrink-0 select-none text-sm font-inter"
             >
-              +62
+              +
             </Text>
             <Box
               as="input"
               type="tel"
               {...register("phone", {
                 onChange: (e) =>
-                  setValue("phone", toNationalPhone(e.target.value), { shouldValidate: true }),
+                  setValue("phone", sanitizePhoneInput(e.target.value), { shouldValidate: true }),
               })}
               placeholder={t("register.phonePlaceholder")}
               className="flex-1 bg-transparent px-4 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none"

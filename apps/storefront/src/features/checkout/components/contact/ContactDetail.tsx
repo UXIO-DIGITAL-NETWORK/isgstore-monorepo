@@ -4,7 +4,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
 import SectionCard from "@/features/checkout/components/SectionCard";
-import { toNationalPhone } from "@/lib/phone";
+import { sanitizePhoneInput } from "@/lib/phone";
 
 interface Props {
   whatsapp: string;
@@ -35,19 +35,21 @@ export default function ContactDetail({ whatsapp, onWhatsappChange, email, onEma
             <Text as="span" className="text-red-500 text-[13px] leading-none">*</Text>
           </Text>
           <Box className="relative">
+            {/* A hint, not a fixed prefix. The number is Indonesian unless the
+                customer types their own "+<code>", which the field now keeps. */}
             <Box className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
-              <Text as="span" className="font-inter font-medium text-[13px] text-white/70 leading-none">
-                +62
+              <Text as="span" className="font-inter font-medium text-[13px] text-white/40 leading-none">
+                +
               </Text>
               <Text as="span" className="text-white/20 text-sm leading-none">|</Text>
             </Box>
             <Input
               type="tel"
               value={whatsapp}
-              onChange={(e) => onWhatsappChange(toNationalPhone(e.target.value))}
+              onChange={(e) => onWhatsappChange(sanitizePhoneInput(e.target.value))}
               onBlur={() => setTouched(true)}
               placeholder={t("contact.whatsappPlaceholder")}
-              className={`pl-[52px] ${hasError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+              className={`pl-[36px] ${hasError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
             />
           </Box>
           {/* Required field error */}

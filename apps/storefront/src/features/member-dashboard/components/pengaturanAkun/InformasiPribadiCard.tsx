@@ -7,7 +7,7 @@ import { Text } from "@/components/common/Text";
 import SectionCard from "@/features/member-dashboard/components/pengaturanAkun/SectionCard";
 import { Spinner } from "@/components/common/Spinner";
 import { compressImage } from "@/lib/imageCompression";
-import { toNationalPhone } from "@/lib/phone";
+import { sanitizePhoneInput } from "@/lib/phone";
 
 const inputClass =
   "w-full bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#3B82F6]/60 transition-all";
@@ -201,24 +201,26 @@ export default function InformasiPribadiCard({
           />
         </Box>
 
-        {/* Row 3: No. WhatsApp with +62 prefix */}
+        {/* Row 3: No. WhatsApp. The field holds the whole number, country code
+            included — it is seeded from the stored value, so stripping the code
+            here would silently rewrite a foreign number on every save. */}
         <Box>
           <Text as="span" className={labelClass}>
             {t("pengaturanAkun.personalInfo.whatsapp")}
           </Text>
           <Box className="flex items-center gap-2">
-            {/* +62 prefix chip */}
+            {/* A hint, not a fixed prefix. */}
             <Box className="shrink-0 px-4 py-2.5 bg-[#0A0D14] border border-white/10 rounded-full">
-              <Text as="span" className="text-sm font-inter text-white/70 leading-none">
-                +62
+              <Text as="span" className="text-sm font-inter text-white/40 leading-none">
+                +
               </Text>
             </Box>
             <Box
               as="input"
               type="tel"
               value={whatsapp}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeWhatsapp(toNationalPhone(e.target.value))}
-              placeholder="8xxx xxxx xxxx"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeWhatsapp(sanitizePhoneInput(e.target.value))}
+              placeholder="08xx xxxx xxxx"
               className={inputClass}
             />
           </Box>
