@@ -47,6 +47,9 @@ type RetriableConfig = AxiosRequestConfig & { _retried?: boolean };
  * token the server has already invalidated — logging the admin out precisely
  * when the refresh was supposed to keep them in.
  */
+/** Where an admin owing a second factor is sent to enrol. */
+const TWO_FACTOR_SETUP_PATH = "/admin/security/two-factor";
+
 let refreshInFlight: Promise<string | null> | null = null;
 
 function refreshAccessToken(): Promise<string | null> {
@@ -99,6 +102,21 @@ api.interceptors.response.use(
     const config = error.config as RetriableConfig | undefined;
     const isUnauthorized = error.response?.status === 401;
     const isAuthRequest = config?.url?.startsWith(AUTH_PATH) ?? false;
+
+    // An admin without a second factor is refused on every admin route. The
+    // panel fires several requests per page, so without an explicit branch the
+    // person sees a generic error toast from whichever request lost the race —
+    // and the redirect would depend on that race. The API sends a
+    // machine-readable code precisely so this can be unambiguous.
+    const code = (error.response?.data as { data?: { code?: string } } | undefined)?.data?.code;
+
+    if (error.response?.status === 403 && code === "two_factor_setup_required") {
+      if (!window.location.pathname.startsWith(TWO_FACTOR_SETUP_PATH)) {
+        window.location.replace(TWO_FACTOR_SETUP_PATH);
+      }
+
+      return Promise.reject(error);
+    }
 
     if (!isUnauthorized || isAuthRequest || !config || config._retried) {
       return Promise.reject(error);

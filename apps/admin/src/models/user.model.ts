@@ -13,8 +13,11 @@ export interface User {
   locale: string;
   timezone: string;
   email_verified_at: string | null;
-  /** Reserved for the planned 2FA phase — not in the real response yet. */
+  /** Set once the account has enrolled an authenticator. */
   two_factor_confirmed_at?: string | null;
+  two_factor_enabled?: boolean;
+  /** True for roles that must enrol before the panel opens (admins). */
+  two_factor_required?: boolean;
   created_at: string;
   updated_at: string;
 }

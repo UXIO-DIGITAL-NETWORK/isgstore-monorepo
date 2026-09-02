@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, ArrowRight } from "lucide-react";
@@ -13,9 +14,15 @@ import { Button } from "@/components/ui/button";
 import { loginSchema, type LoginFormValues } from "../schemas/auth.schema";
 import { useLogin } from "../hooks/useLogin";
 import type { AuthApiError } from "../types/auth.type";
+import { TwoFactorStep } from "../components/TwoFactorStep";
 
 export default function LoginPage() {
-  const { mutate: login, isPending, error } = useLogin();
+  // Held here, not in the auth store: a challenge is not a session, and
+  // `requireGuest` would bounce anyone the store considers signed in.
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [remember, setRemember] = useState(false);
+
+  const { mutate: login, isPending, error } = useLogin(setChallengeToken);
 
   const {
     register,
@@ -27,11 +34,22 @@ export default function LoginPage() {
   });
 
   const onSubmit = (data: LoginFormValues) => {
+    setRemember(Boolean(data.remember));
     login(data);
   };
 
   // Catch API Error Message (Example: Invalid credentials)
   const apiErrorMessage = (error as unknown as AuthApiError)?.response?.data?.message;
+
+  if (challengeToken) {
+    return (
+      <TwoFactorStep
+        challengeToken={challengeToken}
+        remember={remember}
+        onCancel={() => setChallengeToken(null)}
+      />
+    );
+  }
 
   return (
     <Box className="w-full max-w-[420px]">
