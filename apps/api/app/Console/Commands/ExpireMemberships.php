@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\RoleType;
 use App\Models\MembershipSubscription;
-use App\Models\Role;
+use App\Support\Membership\DefaultPlan;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -12,22 +11,27 @@ use Illuminate\Support\Facades\DB;
  * Reverts members whose paid tier has lapsed.
  *
  * Without this a subscription's `ends_at` passes and nothing happens: the
- * member keeps the role their plan granted, and `RolePrice` keeps quoting them
- * VIP/reseller/agent pricing forever. The purchase is what grants the role, so
- * the expiry has to be what takes it away.
+ * member keeps the plan they bought, and `PlanPrice` keeps quoting them that
+ * tier's pricing forever. The purchase is what grants the plan, so the expiry
+ * has to be what takes it away.
+ *
+ * It reverts `membership_plan_id` to the default (free) plan — **not**
+ * `role_id`. Roles no longer decide price; the plan does. Touching the role
+ * here would strip an admin-assigned role from someone whose only crime was
+ * letting a subscription lapse.
  */
 class ExpireMemberships extends Command
 {
     protected $signature = 'memberships:expire {--dry-run : Report what would change without writing}';
 
-    protected $description = 'Expire lapsed membership subscriptions and restore the default member role';
+    protected $description = 'Expire lapsed membership subscriptions and restore the default membership plan';
 
     public function handle(): int
     {
-        $memberRoleId = Role::whereRaw('LOWER(name) = ?', [RoleType::MEMBER->value])->value('id');
+        $defaultPlanId = DefaultPlan::id();
 
-        if (! $memberRoleId) {
-            $this->error('No MEMBER role found — cannot determine what to revert to.');
+        if (! $defaultPlanId) {
+            $this->error('No default membership plan found — cannot determine what to revert to.');
 
             return self::FAILURE;
         }
@@ -67,13 +71,13 @@ class ExpireMemberships extends Command
                     '  #%d %s — %s',
                     $subscription->id,
                     $user?->email ?? 'unknown user',
-                    $stillCovered ? 'closing row only (covered by a later plan)' : 'reverting to member',
+                    $stillCovered ? 'closing row only (covered by a later plan)' : 'reverting to the default plan',
                 ));
 
                 continue;
             }
 
-            DB::transaction(function () use ($subscription, $user, $stillCovered, $memberRoleId, &$reverted) {
+            DB::transaction(function () use ($subscription, $user, $stillCovered, $defaultPlanId, &$reverted) {
                 $subscription->update(['status' => 'expired']);
 
                 if (! $user || $stillCovered) {
@@ -81,7 +85,7 @@ class ExpireMemberships extends Command
                 }
 
                 $user->forceFill([
-                    'role_id' => $memberRoleId,
+                    'membership_plan_id' => $defaultPlanId,
                     'membership_expires_at' => null,
                 ])->save();
 

@@ -2,10 +2,16 @@
 
 namespace App\Models;
 
+use App\Observers\MembershipPlanObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[ObservedBy(MembershipPlanObserver::class)]
 class MembershipPlan extends Model
 {
+    use SoftDeletes;
+
     protected $guarded = ['id'];
 
     protected $casts = [
@@ -13,7 +19,17 @@ class MembershipPlan extends Model
         'benefits' => 'array',
         'is_popular' => 'boolean',
         'is_active' => 'boolean',
+        'is_default' => 'boolean',
+        'allows_point_spending' => 'boolean',
+        'price' => 'integer',
+        'sort_order' => 'integer',
     ];
+
+    /** Every product's price on this plan. */
+    public function planPrices()
+    {
+        return $this->hasMany(ProductPlanPrice::class);
+    }
 
     public function role()
     {

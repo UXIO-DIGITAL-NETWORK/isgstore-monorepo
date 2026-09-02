@@ -49,7 +49,7 @@ class SubscribeToMembershipTest extends TestCase
     private function member(int $balance): User
     {
         $user = User::factory()->create(['role_id' => $this->roles['member'], 'balance' => $balance]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['access-api']);
 
         return $user;
     }
@@ -68,7 +68,8 @@ class SubscribeToMembershipTest extends TestCase
         $this->assertSame('active', $subscription->status);
 
         $user->refresh();
-        $this->assertSame($this->roles['vip'], $user->role_id);
+        // The plan itself is the entitlement now; roles gate access only.
+        $this->assertSame($subscription->membership_plan_id, $user->membership_plan_id);
         $this->assertNull($user->membership_expires_at);
         $this->assertSame(50000, (int) $user->balance, 'The plan price must leave the wallet.');
     }
@@ -82,7 +83,7 @@ class SubscribeToMembershipTest extends TestCase
             ->assertCreated();
 
         $this->travel(10)->years();
-        Sanctum::actingAs($user->fresh());
+        Sanctum::actingAs($user->fresh(), ['access-api']);
 
         // `ends_at > now()` alone would report "no membership" here.
         $this->getJson('/api/v1/me/membership')

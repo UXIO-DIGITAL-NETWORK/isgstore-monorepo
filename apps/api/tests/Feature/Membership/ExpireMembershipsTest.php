@@ -6,6 +6,7 @@ use App\Models\MembershipPlan;
 use App\Models\MembershipSubscription;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Membership\DefaultPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -112,7 +113,11 @@ class ExpireMembershipsTest extends TestCase
         $this->artisan('memberships:expire')->assertSuccessful();
 
         $user->refresh();
-        $this->assertSame($memberRole, $user->role_id, 'A lapsed member must stop being quoted their old tier.');
+        // The plan is the pricing tier, so the plan is what is taken back. The
+        // role is deliberately untouched — reverting it would strip whatever an
+        // admin had assigned from someone who merely let a subscription lapse.
+        $this->assertSame(DefaultPlan::id(), $user->membership_plan_id, 'A lapsed member must stop being quoted their old tier.');
+        $this->assertSame($vipRole, $user->role_id, 'Expiry must not touch access roles.');
         $this->assertNull($user->membership_expires_at);
         $this->assertSame('expired', MembershipSubscription::first()->status);
     }

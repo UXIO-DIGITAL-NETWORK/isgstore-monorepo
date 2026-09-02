@@ -102,6 +102,15 @@ Schedule::command('monetapay:reconcile-fees')
 // Membership expiry: reverts a lapsed member's role so RolePrice stops quoting
 // them a tier they no longer pay for. Daily is enough — a plan's granularity is
 // days, and running it more often would just re-scan the same empty set.
+// Before the expiry sweep: renewal writes a successor subscription, which is
+// what makes ExpireMemberships see the member as still covered. The two are
+// independent — no ordering guarantee is required, this is just tidier.
+Schedule::command('memberships:renew')
+    ->dailyAt('00:10')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure($alertFailure('memberships:renew'));
+
 Schedule::command('memberships:expire')
     ->dailyAt('00:15')
     ->withoutOverlapping()

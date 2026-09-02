@@ -16,7 +16,7 @@ class MembershipPlanCrudTest extends TestCase
     private function actingAsAdmin(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
     }
 
     public function test_index_requires_admin(): void
@@ -39,8 +39,10 @@ class MembershipPlanCrudTest extends TestCase
             ->assertJsonPath('data.price', 50000)
             ->assertJsonPath('data.benefits.0', 'Priority support');
 
-        // Stored as locale-keyed JSON under the 'id' key.
-        $this->assertSame(['id' => 'Gold'], MembershipPlan::first()->name);
+        // Stored as locale-keyed JSON under the 'id' key. Looked up by code,
+        // not by `first()`: the free default plan the migration inserts is now
+        // the lowest-id row in every database.
+        $this->assertSame(['id' => 'Gold'], MembershipPlan::where('code', 'gold')->first()->name);
     }
 
     public function test_admin_can_create_a_lifetime_plan(): void
@@ -89,7 +91,21 @@ class MembershipPlanCrudTest extends TestCase
             ->assertJsonPath('data.price', 25000);
 
         $this->deleteJson("/api/v1/membership-plans/{$plan->id}")->assertOk();
-        $this->assertDatabaseMissing('membership_plans', ['id' => $plan->id]);
+        // Soft delete: a hard delete would cascade away the plan's price rows,
+        // which past invoices and repricing history point at.
+        $this->assertSoftDeleted('membership_plans', ['id' => $plan->id]);
+    }
+
+    public function test_the_default_plan_cannot_be_deleted(): void
+    {
+        // Every price resolution falls through to it, guests included. Deleting
+        // it would not degrade the storefront — it would stop it quoting at all.
+        $this->actingAsAdmin();
+
+        $default = MembershipPlan::where('is_default', true)->firstOrFail();
+
+        $this->deleteJson("/api/v1/membership-plans/{$default->id}")->assertStatus(422);
+        $this->assertNotSoftDeleted('membership_plans', ['id' => $default->id]);
     }
 
     public function test_create_rejects_a_duplicate_code(): void

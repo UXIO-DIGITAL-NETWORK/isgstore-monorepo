@@ -12,6 +12,7 @@ use App\Http\Resources\Api\Membership\MembershipPlanResource;
 use App\Models\MembershipPlan;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class MembershipPlanController extends Controller
 {
@@ -51,7 +52,12 @@ class MembershipPlanController extends Controller
 
     public function destroy(MembershipPlan $membershipPlan, DeleteMembershipPlanAction $action)
     {
-        $action->execute($membershipPlan);
+        try {
+            $action->execute($membershipPlan);
+        } catch (RuntimeException $e) {
+            // The default plan refuses deletion — everything prices through it.
+            return $this->errorResponse($e->getMessage(), 422);
+        }
 
         return $this->successResponse(null, 'Membership plan deleted successfully');
     }

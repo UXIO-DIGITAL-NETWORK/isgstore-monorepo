@@ -12,6 +12,7 @@ class MembershipSubscription extends Model
     protected $casts = [
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'price_paid' => 'integer',
     ];
 
     /**
@@ -31,6 +32,17 @@ class MembershipSubscription extends Model
     }
 
     /** Never expires. */
+    /**
+     * The subscription this one was auto-renewed into.
+     *
+     * Uniquely indexed: it is the idempotency key for `memberships:renew`, so a
+     * second run hits a duplicate key rather than debiting the wallet twice.
+     */
+    public function renewedInto()
+    {
+        return $this->belongsTo(self::class, 'renewed_into_id');
+    }
+
     public function isLifetime(): bool
     {
         return $this->ends_at === null;

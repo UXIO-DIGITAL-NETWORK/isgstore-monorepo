@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Api\Member;
 
+use App\Actions\Membership\SubscribeToMembershipPlanAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Membership\SubscribeMembershipRequest;
 use App\Models\MembershipPlan;
 use App\Models\MembershipSubscription;
-use App\Models\User;
-use App\Support\Wallet\WalletLedger;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class MembershipController extends Controller
@@ -63,74 +62,42 @@ class MembershipController extends Controller
      * commit together, so there is no window where money has left the wallet
      * but the membership has not started. Members top the wallet up first.
      */
-    public function subscribe(Request $request)
+    /**
+     * Turn automatic renewal on or off.
+     *
+     * Lives on the user, not the subscription: switching it off means "stop
+     * billing me", not "skip this one period". Nothing else can debit a wallet
+     * without the member asking, so this is the switch that makes the default
+     * defensible.
+     */
+    public function setAutoRenew(Request $request)
     {
         $validated = $request->validate([
-            'membership_plan_id' => ['required', 'exists:membership_plans,id'],
+            'auto_renew' => ['required', 'boolean'],
         ]);
 
+        $user = $request->user();
+        $user->forceFill(['auto_renew' => (bool) $validated['auto_renew']])->save();
+
+        return $this->successResponse(
+            ['auto_renew' => (bool) $user->auto_renew],
+            $user->auto_renew ? 'Perpanjangan otomatis diaktifkan' : 'Perpanjangan otomatis dimatikan'
+        );
+    }
+
+    public function subscribe(SubscribeMembershipRequest $request, SubscribeToMembershipPlanAction $action)
+    {
         try {
-            $result = DB::transaction(function () use ($request, $validated) {
-                /** @var MembershipPlan $plan */
-                $plan = MembershipPlan::where('is_active', true)->findOrFail($validated['membership_plan_id']);
-
-                /** @var User $user */
-                $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
-
-                if ((int) $user->balance < (int) $plan->price) {
-                    throw new RuntimeException(
-                        'Saldo tidak mencukupi. Silakan isi saldo terlebih dahulu. Sisa saldo: Rp '
-                        .number_format($user->balance)
-                    );
-                }
-
-                WalletLedger::record(
-                    user: $user->id,
-                    amount: -1 * (int) $plan->price,
-                    type: 'purchase',
-                    reference: 'MEMBERSHIP-'.$plan->code,
-                    description: 'Upgrade membership: '.$plan->localizedName(),
-                );
-
-                // Extends an existing membership rather than truncating it —
-                // renewing early must not cost the member the days they have
-                // already paid for.
-                $active = MembershipSubscription::where('user_id', $user->id)
-                    ->currentlyActive()
-                    ->latest('ends_at')
-                    ->first();
-
-                // A lifetime membership has no end to stack onto, so the new one
-                // simply starts now.
-                $startsAt = $active?->ends_at ?? now();
-
-                $subscription = MembershipSubscription::create([
-                    'user_id' => $user->id,
-                    'membership_plan_id' => $plan->id,
-                    'starts_at' => $startsAt,
-                    'ends_at' => $plan->isLifetime() ? null : $startsAt->copy()->addDays($plan->duration_days),
-                    'status' => 'active',
-                ]);
-
-                // The role is what actually prices the member's orders —
-                // without it the plan would grant nothing.
-                // `membership_expires_at` is a display cache, NULL for lifetime.
-                // Entitlement rides on role_id — see App\Support\Pricing\RolePrice.
-                $user->forceFill([
-                    'role_id' => $plan->role_id ?? $user->role_id,
-                    'membership_expires_at' => $subscription->ends_at,
-                ])->save();
-
-                return $subscription;
-            });
-
-            return $this->successResponse([
-                'plan_id' => $result->membership_plan_id,
-                'starts_at' => $result->starts_at,
-                'ends_at' => $result->ends_at,
-            ], 'Membership berhasil diaktifkan', 201);
+            $subscription = $action->execute($request->user(), $request->toDTO());
         } catch (RuntimeException $e) {
+            // Insufficient balance is the expected refusal, not a fault.
             return $this->errorResponse($e->getMessage(), 400);
         }
+
+        return $this->successResponse([
+            'plan_id' => $subscription->membership_plan_id,
+            'starts_at' => $subscription->starts_at,
+            'ends_at' => $subscription->ends_at,
+        ], 'Membership berhasil diaktifkan', 201);
     }
 }
