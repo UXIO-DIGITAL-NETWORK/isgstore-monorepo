@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\User;
 
+use App\Enums\RoleType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -22,6 +23,11 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'balance' => (float) $this->balance,
             'point' => $this->point,
+            // The navigation signal. `EnsureTwoFactorSatisfied` does the
+            // enforcing with a 403; this is what lets the client route an admin
+            // to setup before firing a request that will be refused.
+            'two_factor_enabled' => $this->two_factor_confirmed_at !== null,
+            'two_factor_required' => strtolower((string) ($this->role?->name ?? '')) === RoleType::ADMIN->value,
             'status' => $this->status ?? 'active',
             'locale' => $this->locale,
             'timezone' => $this->timezone,

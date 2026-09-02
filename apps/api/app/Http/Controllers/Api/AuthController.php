@@ -31,13 +31,7 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request, LoginAction $action): JsonResponse
     {
-        $result = $action->execute($request->toDTO());
-
-        return $this->successResponse([
-            'user' => new UserResource($result['user']),
-            'access_token' => $result['access_token'],
-            'refresh_token' => $result['refresh_token'],
-        ], 'Login successful');
+        return $this->sessionResponse($action->execute($request->toDTO()));
     }
 
     /**
@@ -46,7 +40,27 @@ class AuthController extends Controller
      */
     public function google(GoogleLoginRequest $request, GoogleLoginAction $action): JsonResponse
     {
-        $result = $action->execute($request->toDTO());
+        return $this->sessionResponse($action->execute($request->toDTO()));
+    }
+
+    /**
+     * Shape whatever `IssueSessionAction` returned.
+     *
+     * When a second factor is owed the body carries the challenge and nothing
+     * else — no user, no email, no role. Returning the account here would hand
+     * anyone working through a leaked password list a free enumeration and
+     * role-disclosure oracle.
+     *
+     * @param  array<string, mixed>  $result
+     */
+    private function sessionResponse(array $result): JsonResponse
+    {
+        if (isset($result['two_factor_required'])) {
+            return $this->successResponse([
+                'two_factor_required' => true,
+                'challenge_token' => $result['challenge_token'],
+            ], 'Masukkan kode dari aplikasi authenticator kamu');
+        }
 
         return $this->successResponse([
             'user' => new UserResource($result['user']),

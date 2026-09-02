@@ -28,10 +28,12 @@ class GoogleLoginAction
     public function __construct(
         private readonly GoogleTokenVerifier $verifier,
         private readonly CreateActivityLogAction $activityLogAction,
+        private readonly IssueSessionAction $issueSession,
     ) {}
 
     /**
      * @return array{access_token: string, refresh_token: string, user: User}
+     *                                                                        |array{two_factor_required: true, challenge_token: string}
      *
      * @throws ValidationException
      */
@@ -92,24 +94,23 @@ class GoogleLoginAction
             return $user;
         });
 
-        // Same token pair and lifetimes as LoginAction/RegisterAction so a
-        // Google sign-in is indistinguishable from a normal one downstream.
-        $accessToken = $user->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-        $refreshToken = $user->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+        // Through the same door as a password login, so an account with a
+        // second factor gets challenged here too. Google verifies an email
+        // address, not a device — treating it as the second factor would make
+        // "Sign in with Google" a way around the one the admin enrolled.
+        $session = $this->issueSession->execute($user, request()?->ip());
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
             userId: $user->id,
             ipAddress: request()?->ip(),
             userAgent: request()?->userAgent(),
-            message: 'User logged in with Google',
+            message: isset($session['two_factor_required'])
+                ? 'Google sign-in accepted; awaiting two-factor code'
+                : 'User logged in with Google',
             type: ActivityType::LOGIN,
         ));
 
-        return [
-            'access_token' => $accessToken,
-            'refresh_token' => $refreshToken,
-            'user' => $user->load('role'),
-        ];
+        return $session;
     }
 
     /**

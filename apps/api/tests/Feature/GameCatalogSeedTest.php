@@ -12,6 +12,8 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\User;
+use App\Support\Auth\Base32;
+use App\Support\Auth\Totp;
 use App\Support\Hub\HubSystemUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -104,7 +106,7 @@ class GameCatalogSeedTest extends TestCase
         }
     }
 
-    public function test_the_seeded_admin_can_reach_an_admin_only_endpoint(): void
+    public function test_the_seeded_admin_must_enrol_a_second_factor_before_using_the_panel(): void
     {
         $this->seed();
 
@@ -116,6 +118,48 @@ class GameCatalogSeedTest extends TestCase
             'password' => 'uxiotopupJaya123',
         ])->assertOk()->json('data.access_token');
 
+        // **The deployment consequence, pinned here on purpose.** A seeded (or
+        // any pre-existing) admin has no second factor, so the panel is closed
+        // to them until they enrol — with a machine-readable code so the client
+        // routes them to setup instead of showing a generic error.
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/v1/products')
+            ->assertForbidden()
+            ->assertJsonPath('data.code', 'two_factor_setup_required');
+
+        // And the way out is open: enrolment lives outside the admin group, so
+        // the operator is never stranded.
+        $secret = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/auth/2fa/setup')
+            ->assertOk()
+            ->json('data.secret');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/auth/2fa/confirm', [
+                'code' => Totp::at($secret, Totp::timestep()),
+            ])->assertOk();
+    }
+
+    public function test_an_enrolled_admin_reaches_the_panel_after_a_second_factor(): void
+    {
+        $this->seed();
+
+        $admin = User::where('email', 'admin@uxiotopup.id')->firstOrFail();
+        $secret = Base32::randomSecret();
+        $admin->forceFill(['two_factor_secret' => $secret, 'two_factor_confirmed_at' => now()])->save();
+
+        $challenge = $this->postJson('/api/v1/auth/login', [
+            'email' => 'admin@uxiotopup.id',
+            'password' => 'uxiotopupJaya123',
+        ])->assertOk()->json('data.challenge_token');
+
+        $this->assertNotNull($challenge, 'A password alone must no longer open the panel.');
+
+        $token = $this->postJson('/api/v1/auth/2fa/verify', [
+            'challenge_token' => $challenge,
+            'code' => Totp::at($secret, Totp::timestep()),
+        ])->assertOk()->json('data.access_token');
+
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/products')
             ->assertOk();
@@ -125,9 +169,13 @@ class GameCatalogSeedTest extends TestCase
     {
         $this->seed();
 
+        // Three seeded plans plus the free default row the migration inserts —
+        // every account without a subscription is priced on that one.
         $plans = MembershipPlan::all();
 
-        $this->assertCount(3, $plans);
+        $this->assertCount(4, $plans);
+        $this->assertCount(1, $plans->where('is_default', true), 'Exactly one plan may be the default.');
+
         foreach ($plans as $plan) {
             $this->assertTrue($plan->isLifetime(), "Plan {$plan->code} must never expire.");
         }

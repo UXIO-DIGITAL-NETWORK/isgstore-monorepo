@@ -22,7 +22,10 @@ use Illuminate\Validation\ValidationException;
  */
 class RegisterAction
 {
-    public function __construct(private readonly CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private readonly CreateActivityLogAction $activityLogAction,
+        private readonly IssueSessionAction $issueSession,
+    ) {}
 
     /**
      * @return array{access_token: string, refresh_token: string, user: User}
@@ -42,10 +45,10 @@ class RegisterAction
             ]);
         });
 
-        // Same token pair and lifetimes as LoginAction, so a new account is
-        // signed in exactly like a returning one.
-        $accessToken = $user->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
-        $refreshToken = $user->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
+        // Through the shared issuer, like every other path. A brand-new
+        // account has no second factor, so this always returns tokens — but it
+        // must not be the one route that mints them by hand.
+        $session = $this->issueSession->mint($user);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
             userId: $user->id,
@@ -55,11 +58,7 @@ class RegisterAction
             type: ActivityType::VERIFICATION,
         ));
 
-        return [
-            'access_token' => $accessToken,
-            'refresh_token' => $refreshToken,
-            'user' => $user->load('role'),
-        ];
+        return $session;
     }
 
     /**

@@ -13,12 +13,16 @@ use Illuminate\Validation\ValidationException;
 
 class LoginAction
 {
-    public function __construct(private CreateActivityLogAction $activityLogAction) {}
+    public function __construct(
+        private CreateActivityLogAction $activityLogAction,
+        private IssueSessionAction $issueSession,
+    ) {}
 
     /**
      * Execute the login action.
      *
      * @return array{access_token: string, refresh_token: string, user: User}
+     *                                                                        |array{two_factor_required: true, challenge_token: string}
      *
      * @throws ValidationException
      */
@@ -38,26 +42,19 @@ class LoginAction
             $user->update(['timezone' => $dto->timezone]);
         }
 
-        // Issue Access Token (valid for 60 mins)
-        $accessToken = $user->createToken('access_token', ['access-api'], now()->addMinutes(60))->plainTextToken;
+        // One door for every authentication path. When the account carries a
+        // confirmed second factor this returns a challenge instead of tokens.
+        $session = $this->issueSession->execute($user, request()->ip());
 
-        // Issue Refresh Token (valid for 30 days)
-        $refreshToken = $user->createToken('refresh_token', ['issue-access-token'], now()->addDays(30))->plainTextToken;
-
-        // Log activity
         $this->activityLogAction->execute(new CreateActivityLogDTO(
             userId: $user->id,
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: 'User logged in successfully'
+            message: isset($session['two_factor_required'])
+                ? 'Password accepted; awaiting two-factor code'
+                : 'User logged in successfully'
         ));
 
-        return [
-            'access_token' => $accessToken,
-            'refresh_token' => $refreshToken,
-            // Role is eager-loaded so UserResource can emit it — the storefront
-            // routes its member/admin guards off that value.
-            'user' => $user->load('role'),
-        ];
+        return $session;
     }
 }

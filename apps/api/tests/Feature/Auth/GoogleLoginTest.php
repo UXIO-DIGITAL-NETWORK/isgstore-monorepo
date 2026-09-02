@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\GoogleTokenVerifier;
+use App\Support\Auth\Base32;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -60,7 +61,7 @@ class GoogleLoginTest extends TestCase
     public function test_returning_google_user_reuses_the_same_row(): void
     {
         $role = Role::factory()->create(['name' => 'Member']);
-        User::factory()->create([
+        User::factory()->withoutTwoFactor()->create([
             'role_id' => $role->id,
             'email' => 'budi@gmail.com',
             'google_id' => '1234567890',
@@ -75,7 +76,7 @@ class GoogleLoginTest extends TestCase
     public function test_existing_email_account_gets_its_google_identity_linked(): void
     {
         $role = Role::factory()->create(['name' => 'Member']);
-        $user = User::factory()->create([
+        $user = User::factory()->withoutTwoFactor()->create([
             'role_id' => $role->id,
             'email' => 'budi@gmail.com',
             'google_id' => null,
@@ -114,5 +115,32 @@ class GoogleLoginTest extends TestCase
         $this->postJson('/api/v1/auth/google', [])
             ->assertStatus(422)
             ->assertJsonPath('errors.credential.0', 'The credential field is required.');
+    }
+
+    public function test_google_sign_in_is_challenged_when_the_account_has_two_factor(): void
+    {
+        // The hole this closes: Google verifies an email address, not a device.
+        // Treating it as the second factor would have made "Sign in with
+        // Google" a way around the authenticator the admin enrolled — and
+        // GoogleLoginAction auto-links a Google identity to an existing
+        // password account, so it is reachable without ever knowing a password.
+        $role = Role::factory()->create(['name' => 'Admin']);
+        User::factory()->create([
+            'role_id' => $role->id,
+            'email' => 'budi@gmail.com',
+            'google_id' => '1234567890',
+            'two_factor_secret' => Base32::randomSecret(),
+            'two_factor_confirmed_at' => now(),
+        ]);
+        $this->fakeVerifier($this->googlePayload());
+
+        $response = $this->postJson('/api/v1/auth/google', ['credential' => 'fake-id-token'])->assertOk();
+
+        $this->assertTrue($response->json('data.two_factor_required'));
+        $this->assertNotNull($response->json('data.challenge_token'));
+        // No session, and nothing that identifies the account: returning the
+        // user here would be a free enumeration oracle.
+        $this->assertNull($response->json('data.access_token'));
+        $this->assertNull($response->json('data.user'));
     }
 }
