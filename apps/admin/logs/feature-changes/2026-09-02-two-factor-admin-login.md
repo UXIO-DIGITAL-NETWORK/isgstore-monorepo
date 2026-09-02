@@ -31,4 +31,4 @@
 ## Notes / follow-ups
 
 - No Google credentials are involved — TOTP is an offline algorithm; "Google Authenticator" is just one app that implements it.
-- `TwoFactorLogin.test.tsx` surfaces a jsdom gap in `input-otp` (`document.elementFromPoint` is not implemented). It is reported as an unhandled error, not a failing test.
+- `input-otp` calls `document.elementFromPoint` from a `setTimeout`, which jsdom does not implement. Because it fires on a timer it landed after the test finished, so it surfaced as an unhandled exception that failed the whole run while every test passed. Stubbed in `src/test/setup.ts` alongside the other jsdom gaps.

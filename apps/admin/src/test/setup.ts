@@ -100,3 +100,11 @@ Object.defineProperty(navigator, "clipboard", {
 Element.prototype.hasPointerCapture ??= () => false;
 Element.prototype.releasePointerCapture ??= () => {};
 Element.prototype.scrollIntoView ??= () => {};
+
+// jsdom doesn't implement elementFromPoint; `input-otp` (the 2FA code entry)
+// calls it from a setTimeout to decide whether the pointer is still over the
+// input. Because it fires on a timer, it lands *after* the test that triggered
+// it has finished, so it surfaced as an unhandled exception that failed the
+// whole run while every test still passed. `null` is what a real browser
+// returns for a point with nothing on it.
+Document.prototype.elementFromPoint ??= () => null;
