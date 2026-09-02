@@ -77,12 +77,22 @@ class SettingController extends Controller
         return $this->successResponse(SettingResource::collection($settings), 'Settings updated successfully');
     }
 
-    /** Image-typed settings (logo, favicon, OG image) need a file endpoint. */
+    /**
+     * Image-typed settings (logo, favicon, OG image) need a file endpoint.
+     *
+     * The allowed formats are scoped to the setting being replaced rather than
+     * shared across all of them. Only the logo accepts an animated GIF: no
+     * link-preview scraper animates an OG image, and a GIF favicon behaves
+     * unpredictably across browsers — allowing them everywhere would just move
+     * the problem into a support ticket.
+     */
     public function upload(Request $request, ImageOptimizer $images)
     {
+        $key = (string) $request->input('key');
+
         $validated = $request->validate([
             'key' => ['required', 'string', 'exists:settings,key'],
-            'file' => ['required', 'image', 'mimes:jpeg,png,jpg,webp,svg,ico', 'max:2048'],
+            'file' => ['required', 'image', 'mimes:'.$this->allowedMimes($key), 'max:'.$this->maxKilobytes($request)],
         ]);
 
         $setting = Setting::where('key', $validated['key'])->firstOrFail();
@@ -96,5 +106,29 @@ class SettingController extends Controller
         $setting->update(['value' => $images->store($request->file('file'), 'settings')]);
 
         return $this->successResponse(new SettingResource($setting->fresh()), 'Setting file uploaded successfully');
+    }
+
+    /** Formats this particular setting may be replaced with. */
+    private function allowedMimes(string $key): string
+    {
+        $base = 'jpeg,png,jpg,webp,svg,ico';
+
+        return $key === 'logo' ? $base.',gif' : $base;
+    }
+
+    /**
+     * An animated GIF is the one upload that reaches disk uncompressed —
+     * `ImageOptimizer` deliberately refuses to re-encode it, because GD cannot
+     * write animated WebP and converting would silently keep a single frame.
+     * A GIF worth animating is routinely 1–5 MB, so holding it to the 2 MB
+     * ceiling meant for compressible rasters would reject every real one.
+     */
+    private function maxKilobytes(Request $request): int
+    {
+        $file = $request->file('file');
+
+        return $file && strtolower((string) $file->getClientOriginalExtension()) === 'gif'
+            ? 5120
+            : 2048;
     }
 }
