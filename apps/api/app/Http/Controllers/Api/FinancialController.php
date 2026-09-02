@@ -7,14 +7,15 @@ use App\Actions\Financial\GetPaymentGatewayBalancesAction;
 use App\Actions\Financial\GetSupplierBalancesAction;
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 
 class FinancialController extends Controller
 {
     use ApiResponse;
 
-    public function summary(GetFinancialSummaryAction $action)
+    public function summary(Request $request, GetFinancialSummaryAction $action)
     {
-        return $this->successResponse($action->execute(), 'Financial summary retrieved successfully');
+        return $this->successResponse($action->execute($request->user()?->timezone), 'Financial summary retrieved successfully');
     }
 
     public function paymentGateways(GetPaymentGatewayBalancesAction $action)

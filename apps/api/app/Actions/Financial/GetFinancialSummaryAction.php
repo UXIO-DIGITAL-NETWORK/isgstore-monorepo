@@ -8,6 +8,7 @@ use App\Enums\TransactionStatus;
 use App\Models\Payment;
 use App\Models\RefundRequest;
 use App\Models\Transaction;
+use App\Support\Report\PeriodResolver;
 use Carbon\CarbonInterface;
 
 /**
@@ -20,10 +21,12 @@ use Carbon\CarbonInterface;
  */
 class GetFinancialSummaryAction
 {
-    public function execute(): array
+    /** @param  string|null  $timezone  The viewer's IANA zone; month boundaries are local, see PeriodResolver. */
+    public function execute(?string $timezone = null): array
     {
-        $monthStart = now()->startOfMonth();
-        $lastMonthStart = now()->subMonthNoOverflow()->startOfMonth();
+        $now = PeriodResolver::now($timezone);
+        $monthStart = $now->copy()->startOfMonth()->utc();
+        $lastMonthStart = $now->copy()->subMonthNoOverflow()->startOfMonth()->utc();
 
         $collected = Payment::where('status', PaymentStatus::SUCCESS->value)
             ->selectRaw('COALESCE(SUM(CASE WHEN paid_at >= ? THEN gross_amount ELSE 0 END),0) as this_month', [$monthStart])

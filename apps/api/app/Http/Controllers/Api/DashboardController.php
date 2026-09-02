@@ -20,7 +20,7 @@ class DashboardController extends Controller
         ]);
 
         return $this->successResponse(
-            $action->execute($validated['month'] ?? null),
+            $action->execute($validated['month'] ?? null, $request->user()?->timezone),
             'Dashboard stats retrieved successfully'
         );
     }

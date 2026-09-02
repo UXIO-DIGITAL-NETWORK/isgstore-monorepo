@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\RefundRequest;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\Report\PeriodResolver;
 use Carbon\CarbonInterface;
 
 /**
@@ -25,12 +26,17 @@ class GetDashboardStatsAction
      * @param  int|null  $month  1-12, to scope the chart to a specific month of
      *                           the current year. Null keeps the rolling
      *                           30-day window the dashboard opens on.
+     * @param  string|null  $timezone  The viewer's IANA zone. "Today" is a local
+     *                                 day, so it must be resolved in the
+     *                                 admin's zone and only then expressed in
+     *                                 UTC for the query — see PeriodResolver.
      */
-    public function execute(?int $month = null): array
+    public function execute(?int $month = null, ?string $timezone = null): array
     {
-        $todayStart = now()->startOfDay();
-        $monthStart = now()->startOfMonth();
-        $yesterdayStart = now()->subDay()->startOfDay();
+        $now = PeriodResolver::now($timezone);
+        $todayStart = $now->copy()->startOfDay()->utc();
+        $monthStart = $now->copy()->startOfMonth()->utc();
+        $yesterdayStart = $now->copy()->subDay()->startOfDay()->utc();
 
         $collected = Payment::where('status', PaymentStatus::SUCCESS->value)
             ->selectRaw('COALESCE(SUM(gross_amount),0) as all_time')
@@ -77,7 +83,7 @@ class GetDashboardStatsAction
                 'processing' => Transaction::where('status', TransactionStatus::PROCESSING->value)->count(),
                 'failed_transaction' => Transaction::where('status', TransactionStatus::FAILED_PROVIDER->value)->count(),
             ],
-            'chart' => $this->chartSeries($month),
+            'chart' => $this->chartSeries($month, $timezone),
             'recent_transactions' => TransactionResource::collection(
                 Transaction::with(['user', 'product.category', 'supplier', 'payment', 'paymentChannel'])
                     ->latest()
@@ -142,15 +148,21 @@ class GetDashboardStatsAction
     /**
      * @return array<int,array{date:string, transactions:int, revenue:int}>
      */
-    private function chartSeries(?int $month = null): array
+    private function chartSeries(?int $month = null, ?string $timezone = null): array
     {
         $completed = TransactionStatus::COMPLETED->value;
+        $now = PeriodResolver::now($timezone);
 
+        // Known limitation, left deliberately: the window below is resolved in
+        // the viewer's zone, but DATE(created_at) still buckets each point by
+        // its UTC day. Shifting the buckets needs DATE(created_at + INTERVAL ..),
+        // which is MySQL-only and would break the SQLite test suite.
         [$from, $to] = $month !== null
-            ? [now()->setMonth($month)->startOfMonth(), now()->setMonth($month)->endOfMonth()]
-            : [now()->subDays(29)->startOfDay(), now()->endOfDay()];
+            ? [$now->copy()->setMonth($month)->startOfMonth(), $now->copy()->setMonth($month)->addMonth()->startOfMonth()]
+            : [$now->copy()->subDays(29)->startOfDay(), $now->copy()->addDay()->startOfDay()];
 
-        return Transaction::whereBetween('created_at', [$from, $to])
+        return Transaction::where('created_at', '>=', $from->utc())
+            ->where('created_at', '<', $to->utc())
             // net_income is margin, not revenue: the dashboard chart plots the
             // two against each other, and revenue alone says nothing about
             // whether the volume was profitable.
