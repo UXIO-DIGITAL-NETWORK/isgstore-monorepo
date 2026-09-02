@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearch } from "@tanstack/react-router";
+import { useParams, useSearch } from "@tanstack/react-router";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -9,6 +9,7 @@ import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 import RefundLookupCard from "@/features/refund/components/RefundLookupCard";
 import PayoutDetailsForm from "@/features/refund/components/PayoutDetailsForm";
+import ClaimAccountCard from "@/features/refund/components/ClaimAccountCard";
 import RefundSummaryCard from "@/features/refund/components/RefundSummaryCard";
 import { useRefundClaim, useSubmitPayoutDetails } from "@/features/refund/hooks/useRefundClaim";
 
@@ -17,8 +18,11 @@ import { useRefundClaim, useSubmitPayoutDetails } from "@/features/refund/hooks/
  *
  * Two modes, decided by whether the URL carries a token:
  *
- *   - **`?token=…`** (the emailed link) — shows the refund and, while it is
- *     still editable, the payout form.
+ *   - **`?token=…`** (the emailed link) — shows the refund and, depending on
+ *     which scheme it belongs to, either the account form (`balance_claim`, the
+ *     current one) or the bank-account form (`manual_transfer`, retired and
+ *     draining). The API decides which via `can_claim_account` /
+ *     `can_submit_payout`; this page never infers it from the status.
  *   - **no token** — shows only the lookup, which re-sends the link out of
  *     band. The form is never reachable from an invoice number alone; that
  *     number already opens the public invoice page, and must not also be enough
@@ -29,10 +33,15 @@ import { useRefundClaim, useSubmitPayoutDetails } from "@/features/refund/hooks/
  */
 export default function RefundClaimPage(): React.JSX.Element {
   const { t } = useTranslation("refund");
+  const { locale } = useParams({ from: "/$locale/refund/" });
   const { token, invoice } = useSearch({ from: "/$locale/refund/" });
 
   const { data: claim, isLoading, isError } = useRefundClaim(token ?? null);
   const submit = useSubmitPayoutDetails(token ?? null);
+
+  // Claiming kills the token, so the page cannot simply refetch afterwards —
+  // it keeps the claimed projection the mutation handed back instead.
+  const [claimed, setClaimed] = useState(false);
 
   // The mutation returns the refreshed claim, so the page can show the saved
   // account immediately without a refetch round-trip.
@@ -81,6 +90,32 @@ export default function RefundClaimPage(): React.JSX.Element {
           <>
             <RefundSummaryCard claim={current} />
 
+            {/* The current scheme: the money needs an account to land in. */}
+            {current.can_claim_account && !claimed && token && (
+              <ClaimAccountCard
+                token={token}
+                amount={current.amount}
+                contact={current.contact}
+                locale={locale}
+                onClaimed={() => setClaimed(true)}
+              />
+            )}
+
+            {claimed && (
+              <Box className="flex items-start gap-3 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-4">
+                <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
+                <Box className="flex flex-col gap-1">
+                  <Text as="span" className="font-inter text-[13px] text-white/80">
+                    {t("claimed.heading")}
+                  </Text>
+                  <Text as="span" className="font-inter text-[12px] text-white/55 leading-relaxed">
+                    {t("claimed.body")}
+                  </Text>
+                </Box>
+              </Box>
+            )}
+
+            {/* The retired scheme, still draining. */}
             {current.can_submit_payout && (
               <PayoutDetailsForm
                 onSubmit={(payload) => submit.mutate(payload)}
@@ -88,7 +123,7 @@ export default function RefundClaimPage(): React.JSX.Element {
               />
             )}
 
-            {!current.can_submit_payout && current.status !== "COMPLETED" && (
+            {!current.can_submit_payout && !current.can_claim_account && !claimed && current.status !== "COMPLETED" && (
               <Box className="flex items-start gap-3 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-4">
                 <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
                 <Box className="flex flex-col gap-1">

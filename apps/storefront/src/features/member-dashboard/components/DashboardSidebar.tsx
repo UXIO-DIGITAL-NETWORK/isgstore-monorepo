@@ -8,6 +8,7 @@ import {
   Plug,
   TrendingUp,
   Activity,
+  RotateCcw,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -48,6 +49,14 @@ export default function DashboardSidebar(): React.JSX.Element {
       labelKey: "sidebar.topUpBalance",
       icon: <Wallet className="w-4 h-4" />,
       href: `/${locale}/isi-saldo`,
+    },
+    {
+      // Sits right after the wallet: a refund is money arriving, and this is
+      // where the customer looks when the balance has not landed yet.
+      key: "refunds",
+      labelKey: "sidebar.refunds",
+      icon: <RotateCcw className="w-4 h-4" />,
+      href: `/${locale}/pengembalian-dana`,
     },
     {
       key: "integrations",

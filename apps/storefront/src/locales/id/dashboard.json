@@ -7,6 +7,7 @@
     "dashboard": "Dashboard",
     "transactions": "Transaksi",
     "topUpBalance": "Isi Saldo",
+    "refunds": "Pengembalian Dana",
     "integrations": "Integrasi",
     "upgradeMembership": "Upgrade Membership",
     "activityLog": "Log Aktivitas",
@@ -187,7 +188,7 @@
       "username": "Username",
       "email": "Email",
       "whatsapp": "No. WhatsApp",
-      "whatsappNote": "Nomor akan otomatis diformat sesuai negara",
+      "whatsappNote": "Nomor akan disimpan dalam format internasional. Ketik \"+\" beserta kode negara untuk nomor di luar Indonesia.",
       "saveButton": "Simpan Perubahan"
     },
     "password": {

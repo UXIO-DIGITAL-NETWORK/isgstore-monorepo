@@ -7,6 +7,7 @@
     "dashboard": "Dashboard",
     "transactions": "Transactions",
     "topUpBalance": "Top Up Balance",
+    "refunds": "Refunds",
     "integrations": "Integrations",
     "upgradeMembership": "Upgrade Membership",
     "activityLog": "Activity Log",
@@ -187,7 +188,7 @@
       "username": "Username",
       "email": "Email",
       "whatsapp": "WhatsApp Number",
-      "whatsappNote": "Number will be automatically formatted by country",
+      "whatsappNote": "Your number is stored in international format. Type \"+\" and the country code for numbers outside Indonesia.",
       "saveButton": "Save Changes"
     },
     "password": {

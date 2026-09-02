@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Check, Info, Landmark } from "lucide-react";
+import { Copy, Check, Info, Landmark, Wallet } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
@@ -119,7 +119,31 @@ export default function PaymentFailedCard({ invoiceNumber, paymentName, createdA
               money back in their balance; a guest has to tell us where to send
               it; and until a refund row exists there is nothing to promise at
               all. */}
-          {refund?.method === "balance" ? (
+          {refund?.method === "balance_claim" ? (
+            <Box className="flex flex-col gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-3">
+              <Box className="flex items-start gap-3">
+                <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <Text as="span" className="font-inter text-[12px] text-white/70 leading-relaxed">
+                  {tRefund(refund.status === "COMPLETED" ? "invoiceNote.claimDone" : "invoiceNote.claim", {
+                    amount: formatCurrency(refund.amount, i18n.language),
+                  })}
+                </Text>
+              </Box>
+              {refund.status !== "COMPLETED" && (
+                /* Straight to the lookup, not to a signup form. This page opens
+                   on the invoice number alone and deliberately never carries
+                   the claim token, so the credential has to come back through
+                   the customer's own inbox. */
+                <Link
+                  href={`/${locale}/refund?invoice=${encodeURIComponent(invoiceNumber)}`}
+                  className="flex items-center justify-center gap-2 rounded-[50px] border border-amber-500/50 bg-amber-500/10 py-2 px-4 font-outfit font-bold text-[12px] text-amber-300 hover:bg-amber-500/20 transition-colors"
+                >
+                  <Wallet className="w-3.5 h-3.5 shrink-0" />
+                  {tRefund("invoiceNote.claimCta")}
+                </Link>
+              )}
+            </Box>
+          ) : refund?.method === "balance" ? (
             <Box className="flex items-start gap-3 rounded-xl border border-green-500/40 bg-green-500/10 px-3 py-3">
               <Check className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
               <Text as="span" className="font-inter text-[12px] text-white/70 leading-relaxed">

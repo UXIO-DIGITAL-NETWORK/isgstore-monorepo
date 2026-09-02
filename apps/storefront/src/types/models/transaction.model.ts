@@ -78,8 +78,8 @@ export interface InvoiceModel {
    * between "already in your balance" and "claim your refund".
    */
   refund: {
-    status: "WAITING_DETAILS" | "PENDING" | "PROCESSING" | "COMPLETED" | "REJECTED";
-    method: "balance" | "manual_transfer" | "legacy_gateway";
+    status: "WAITING_ACCOUNT" | "WAITING_DETAILS" | "PENDING" | "PROCESSING" | "COMPLETED" | "REJECTED";
+    method: "balance" | "balance_claim" | "manual_transfer" | "legacy_gateway";
     amount: number;
     refunded_at: string | null;
   } | null;

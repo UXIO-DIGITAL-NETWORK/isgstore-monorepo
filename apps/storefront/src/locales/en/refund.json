@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "REFUNDS",
-    "subtitle": "Orders we could not fulfil are refunded in full. Tell us where to send your money."
+    "subtitle": "Orders that failed to process are refunded in full as balance on your account."
   },
   "lookup": {
     "label": "Find your refund",
@@ -48,7 +48,8 @@
     "PENDING": "Waiting for us to transfer",
     "PROCESSING": "Being processed",
     "COMPLETED": "Transferred",
-    "REJECTED": "Rejected"
+    "REJECTED": "Rejected",
+    "WAITING_ACCOUNT": "Waiting for you to create an account"
   },
   "submitted": {
     "heading": "Account details saved",
@@ -62,6 +63,56 @@
     "balance": "{{amount}} has been returned to your account balance and can be spent right away.",
     "manual": "{{amount}} will be refunded to you. Tell us where to send it so we can transfer the money.",
     "manualDone": "{{amount}} has been transferred to the account you gave us.",
-    "cta": "Claim Your Refund"
+    "cta": "Claim Your Refund",
+    "claim": "{{amount}} will be refunded as balance. Create an account first to receive it.",
+    "claimDone": "{{amount}} has been refunded to your account balance.",
+    "claimCta": "Request Refund"
+  },
+  "account": {
+    "heading": "Create an account to receive {{amount}}",
+    "subtitle": "Your refund is paid to your account balance. Create an account, or sign in if you already have one, and our admin will verify it.",
+    "balanceNotice": "The refund is credited as balance on this site and can be spent straight away. Balance cannot be withdrawn to a bank account.",
+    "mustMatch": "Use the same email or WhatsApp number you ordered with: {{contact}}",
+    "tabs": {
+      "register": "Create Account",
+      "signin": "I Have an Account"
+    },
+    "fields": {
+      "name": "Full name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "phone": "WhatsApp number",
+      "password": "Password",
+      "passwordConfirmation": "Repeat password"
+    },
+    "submitRegister": "Create Account & Claim",
+    "submitAttach": "Claim to This Account",
+    "submitting": "Processing...",
+    "signedInHelp": "You are signed in. Claim this refund to the account you are using.",
+    "signInHelp": "Already have an account with the same email or number? Sign in first and you will be brought back here.",
+    "goToLogin": "Sign In"
+  },
+  "register": {
+    "errors": {
+      "name": "Name must be at least 3 characters",
+      "email": "Invalid email format",
+      "phone": "Invalid WhatsApp number",
+      "password": "Password must be at least 6 characters",
+      "passwordConfirmation": "Passwords do not match"
+    }
+  },
+  "claimed": {
+    "heading": "Account linked",
+    "body": "Our admin will verify it and credit your account balance within 2x24 working hours. You can follow it on the Refunds page in your account."
+  },
+  "myRefunds": {
+    "title": "Refunds",
+    "subtitle": "Refunds you have claimed to this account.",
+    "empty": "You have not claimed any refunds yet.",
+    "invoice": "Invoice",
+    "amount": "Amount",
+    "status": "Status",
+    "due": "Expected by",
+    "dueNote": "Within 2x24 working hours of your claim."
   }
 }

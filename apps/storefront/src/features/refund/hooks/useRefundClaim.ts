@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { refundService } from "@/features/refund/services/refund.service";
-import type { PayoutDetailsPayload } from "@/features/refund/types/refund.type";
+import type { PayoutDetailsPayload, RegisterAndClaimPayload } from "@/features/refund/types/refund.type";
+import { useAuthStore } from "@/store/useAuthStore";
 
 /**
  * The claim behind a one-time link. `enabled` keeps it from firing on the
@@ -44,4 +45,30 @@ export const useResendClaimLink = () =>
   useMutation({
     mutationFn: ({ invoiceNumber, contact }: { invoiceNumber: string; contact: string }) =>
       refundService.resendClaimLink(invoiceNumber, contact),
+  });
+
+/**
+ * Create an account and claim the refund with it.
+ *
+ * The new session is stored the same way the ordinary signup stores it, with
+ * `remember` on: the customer is mid-way through getting their money back, and
+ * being logged out by a browser restart would strand them on a link that is
+ * already dead.
+ */
+export const useRegisterAndClaim = (token: string | null) => {
+  const setAuth = useAuthStore((state) => state.setAuth);
+
+  return useMutation({
+    mutationFn: (payload: RegisterAndClaimPayload) => refundService.registerAndClaim(token as string, payload),
+    onSuccess: (response) => {
+      const data = response.data;
+      if (data) setAuth(data.access_token, data.refresh_token, data.user, true);
+    },
+  });
+};
+
+/** Claim with the account already signed in. */
+export const useAttachRefundAccount = (token: string | null) =>
+  useMutation({
+    mutationFn: () => refundService.attachAccount(token as string),
   });

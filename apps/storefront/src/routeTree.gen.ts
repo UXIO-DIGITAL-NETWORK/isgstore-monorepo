@@ -29,6 +29,7 @@ import { Route as LocaleBeritaSlugRouteImport } from './routes/$locale/berita/$s
 import { Route as LocaleInvoiceInvoiceNumberIndexRouteImport } from './routes/$locale/invoice/$invoiceNumber/index'
 import { Route as LocaleMemberUpgradeMembershipIndexRouteImport } from './routes/$locale/_member/upgrade-membership/index'
 import { Route as LocaleMemberRiwayatTransaksiIndexRouteImport } from './routes/$locale/_member/riwayat-transaksi/index'
+import { Route as LocaleMemberPengembalianDanaIndexRouteImport } from './routes/$locale/_member/pengembalian-dana/index'
 import { Route as LocaleMemberPengaturanAkunIndexRouteImport } from './routes/$locale/_member/pengaturan-akun/index'
 import { Route as LocaleMemberLogAktivitasIndexRouteImport } from './routes/$locale/_member/log-aktivitas/index'
 import { Route as LocaleMemberIsiSaldoIndexRouteImport } from './routes/$locale/_member/isi-saldo/index'
@@ -145,6 +146,12 @@ const LocaleMemberRiwayatTransaksiIndexRoute =
     path: '/riwayat-transaksi/',
     getParentRoute: () => LocaleMemberRouteRoute,
   } as any)
+const LocaleMemberPengembalianDanaIndexRoute =
+  LocaleMemberPengembalianDanaIndexRouteImport.update({
+    id: '/pengembalian-dana/',
+    path: '/pengembalian-dana/',
+    getParentRoute: () => LocaleMemberRouteRoute,
+  } as any)
 const LocaleMemberPengaturanAkunIndexRoute =
   LocaleMemberPengaturanAkunIndexRouteImport.update({
     id: '/pengaturan-akun/',
@@ -230,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/$locale/isi-saldo/': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/log-aktivitas/': typeof LocaleMemberLogAktivitasIndexRoute
   '/$locale/pengaturan-akun/': typeof LocaleMemberPengaturanAkunIndexRoute
+  '/$locale/pengembalian-dana/': typeof LocaleMemberPengembalianDanaIndexRoute
   '/$locale/riwayat-transaksi/': typeof LocaleMemberRiwayatTransaksiIndexRoute
   '/$locale/upgrade-membership/': typeof LocaleMemberUpgradeMembershipIndexRoute
   '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -259,6 +267,7 @@ export interface FileRoutesByTo {
   '/$locale/isi-saldo': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/log-aktivitas': typeof LocaleMemberLogAktivitasIndexRoute
   '/$locale/pengaturan-akun': typeof LocaleMemberPengaturanAkunIndexRoute
+  '/$locale/pengembalian-dana': typeof LocaleMemberPengembalianDanaIndexRoute
   '/$locale/riwayat-transaksi': typeof LocaleMemberRiwayatTransaksiIndexRoute
   '/$locale/upgrade-membership': typeof LocaleMemberUpgradeMembershipIndexRoute
   '/$locale/invoice/$invoiceNumber': typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -292,6 +301,7 @@ export interface FileRoutesById {
   '/$locale/_member/isi-saldo/': typeof LocaleMemberIsiSaldoIndexRoute
   '/$locale/_member/log-aktivitas/': typeof LocaleMemberLogAktivitasIndexRoute
   '/$locale/_member/pengaturan-akun/': typeof LocaleMemberPengaturanAkunIndexRoute
+  '/$locale/_member/pengembalian-dana/': typeof LocaleMemberPengembalianDanaIndexRoute
   '/$locale/_member/riwayat-transaksi/': typeof LocaleMemberRiwayatTransaksiIndexRoute
   '/$locale/_member/upgrade-membership/': typeof LocaleMemberUpgradeMembershipIndexRoute
   '/$locale/invoice/$invoiceNumber/': typeof LocaleInvoiceInvoiceNumberIndexRoute
@@ -324,6 +334,7 @@ export interface FileRouteTypes {
     | '/$locale/isi-saldo/'
     | '/$locale/log-aktivitas/'
     | '/$locale/pengaturan-akun/'
+    | '/$locale/pengembalian-dana/'
     | '/$locale/riwayat-transaksi/'
     | '/$locale/upgrade-membership/'
     | '/$locale/invoice/$invoiceNumber/'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/$locale/isi-saldo'
     | '/$locale/log-aktivitas'
     | '/$locale/pengaturan-akun'
+    | '/$locale/pengembalian-dana'
     | '/$locale/riwayat-transaksi'
     | '/$locale/upgrade-membership'
     | '/$locale/invoice/$invoiceNumber'
@@ -385,6 +397,7 @@ export interface FileRouteTypes {
     | '/$locale/_member/isi-saldo/'
     | '/$locale/_member/log-aktivitas/'
     | '/$locale/_member/pengaturan-akun/'
+    | '/$locale/_member/pengembalian-dana/'
     | '/$locale/_member/riwayat-transaksi/'
     | '/$locale/_member/upgrade-membership/'
     | '/$locale/invoice/$invoiceNumber/'
@@ -537,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleMemberRiwayatTransaksiIndexRouteImport
       parentRoute: typeof LocaleMemberRouteRoute
     }
+    '/$locale/_member/pengembalian-dana/': {
+      id: '/$locale/_member/pengembalian-dana/'
+      path: '/pengembalian-dana'
+      fullPath: '/$locale/pengembalian-dana/'
+      preLoaderRoute: typeof LocaleMemberPengembalianDanaIndexRouteImport
+      parentRoute: typeof LocaleMemberRouteRoute
+    }
     '/$locale/_member/pengaturan-akun/': {
       id: '/$locale/_member/pengaturan-akun/'
       path: '/pengaturan-akun'
@@ -632,6 +652,7 @@ interface LocaleMemberRouteRouteChildren {
   LocaleMemberIsiSaldoIndexRoute: typeof LocaleMemberIsiSaldoIndexRoute
   LocaleMemberLogAktivitasIndexRoute: typeof LocaleMemberLogAktivitasIndexRoute
   LocaleMemberPengaturanAkunIndexRoute: typeof LocaleMemberPengaturanAkunIndexRoute
+  LocaleMemberPengembalianDanaIndexRoute: typeof LocaleMemberPengembalianDanaIndexRoute
   LocaleMemberRiwayatTransaksiIndexRoute: typeof LocaleMemberRiwayatTransaksiIndexRoute
   LocaleMemberUpgradeMembershipIndexRoute: typeof LocaleMemberUpgradeMembershipIndexRoute
 }
@@ -642,6 +663,8 @@ const LocaleMemberRouteRouteChildren: LocaleMemberRouteRouteChildren = {
   LocaleMemberIsiSaldoIndexRoute: LocaleMemberIsiSaldoIndexRoute,
   LocaleMemberLogAktivitasIndexRoute: LocaleMemberLogAktivitasIndexRoute,
   LocaleMemberPengaturanAkunIndexRoute: LocaleMemberPengaturanAkunIndexRoute,
+  LocaleMemberPengembalianDanaIndexRoute:
+    LocaleMemberPengembalianDanaIndexRoute,
   LocaleMemberRiwayatTransaksiIndexRoute:
     LocaleMemberRiwayatTransaksiIndexRoute,
   LocaleMemberUpgradeMembershipIndexRoute:

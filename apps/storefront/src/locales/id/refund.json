@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "PENGEMBALIAN DANA",
-    "subtitle": "Pesanan yang gagal diproses akan kami kembalikan sepenuhnya. Isi rekening tujuanmu di sini."
+    "subtitle": "Pesanan yang gagal diproses akan kami kembalikan sepenuhnya sebagai saldo akunmu."
   },
   "lookup": {
     "label": "Cari pengajuan pengembalian dana",
@@ -48,7 +48,8 @@
     "PENDING": "Menunggu transfer dari kami",
     "PROCESSING": "Sedang diproses",
     "COMPLETED": "Selesai ditransfer",
-    "REJECTED": "Ditolak"
+    "REJECTED": "Ditolak",
+    "WAITING_ACCOUNT": "Menunggu kamu membuat akun"
   },
   "submitted": {
     "heading": "Data rekening tersimpan",
@@ -62,6 +63,56 @@
     "balance": "Dana sebesar {{amount}} telah dikembalikan ke saldo akunmu dan bisa langsung dipakai belanja lagi.",
     "manual": "Dana sebesar {{amount}} akan kami kembalikan. Ajukan rekening tujuanmu agar kami bisa mentransfernya.",
     "manualDone": "Dana sebesar {{amount}} sudah kami transfer ke rekening tujuanmu.",
-    "cta": "Ajukan Pengembalian Dana"
+    "cta": "Ajukan Pengembalian Dana",
+    "claim": "Dana sebesar {{amount}} akan dikembalikan sebagai saldo. Buat akun terlebih dahulu untuk menerimanya.",
+    "claimDone": "Dana sebesar {{amount}} sudah kami kembalikan ke saldo akunmu.",
+    "claimCta": "Ajukan Pengembalian Dana"
+  },
+  "account": {
+    "heading": "Buat akun untuk menerima {{amount}}",
+    "subtitle": "Dana pengembalian dikirim ke saldo akunmu. Buat akun, atau masuk bila sudah punya, lalu admin kami akan memverifikasinya.",
+    "balanceNotice": "Dana dikembalikan sebagai saldo di website ini dan bisa langsung dipakai belanja. Saldo tidak bisa ditarik ke rekening bank.",
+    "mustMatch": "Gunakan email atau nomor WhatsApp yang sama seperti saat memesan: {{contact}}",
+    "tabs": {
+      "register": "Buat Akun",
+      "signin": "Sudah Punya Akun"
+    },
+    "fields": {
+      "name": "Nama lengkap",
+      "namePlaceholder": "Nama kamu",
+      "email": "Email",
+      "phone": "Nomor WhatsApp",
+      "password": "Password",
+      "passwordConfirmation": "Ulangi password"
+    },
+    "submitRegister": "Buat Akun & Klaim Dana",
+    "submitAttach": "Klaim ke Akun Ini",
+    "submitting": "Memproses...",
+    "signedInHelp": "Kamu sudah masuk. Klaim pengembalian dana ini ke akun yang sedang kamu pakai.",
+    "signInHelp": "Sudah punya akun dengan email atau nomor yang sama? Masuk dulu, lalu kamu akan kembali ke halaman ini.",
+    "goToLogin": "Masuk ke Akun"
+  },
+  "register": {
+    "errors": {
+      "name": "Nama minimal 3 karakter",
+      "email": "Format email tidak valid",
+      "phone": "Nomor WhatsApp tidak valid",
+      "password": "Password minimal 6 karakter",
+      "passwordConfirmation": "Konfirmasi password tidak cocok"
+    }
+  },
+  "claimed": {
+    "heading": "Akun berhasil ditautkan",
+    "body": "Admin kami akan memverifikasi dan mengirim dana ke saldo akunmu paling lambat 2x24 jam kerja. Kamu bisa memantaunya di halaman Pengembalian Dana pada akunmu."
+  },
+  "myRefunds": {
+    "title": "Pengembalian Dana",
+    "subtitle": "Pengembalian dana yang kamu klaim ke akun ini.",
+    "empty": "Belum ada pengembalian dana yang kamu klaim.",
+    "invoice": "Invoice",
+    "amount": "Jumlah",
+    "status": "Status",
+    "due": "Estimasi selesai",
+    "dueNote": "Paling lambat 2x24 jam kerja setelah klaim."
   }
 }
