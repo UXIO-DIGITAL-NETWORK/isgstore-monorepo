@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChannelFees, useChannelMeta, useUpdateChannelFee } from "../hooks/useFinance";
 import type { ChannelFee } from "../types/finance.type";
+import { formatCurrency } from "@/utils/currency";
 
 type RowDraft = Partial<
   Pick<
@@ -91,7 +92,7 @@ export default function ChannelFeePage() {
           {r.contract_mismatch && (
             <Text as="span" variant="small" className="text-warning">
               {r.contract_expected
-                ? `≠ kontrak ${r.contract_expected.gateway_fee_flat}+${r.contract_expected.gateway_fee_percent}%`
+                ? `≠ kontrak ${formatCurrency(r.contract_expected.gateway_fee_flat, { fractionDigits: 0 })} + ${r.contract_expected.gateway_fee_percent}%`
                 : "tidak ada di kontrak Monetapay"}
             </Text>
           )}

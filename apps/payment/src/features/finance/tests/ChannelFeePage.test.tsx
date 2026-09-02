@@ -162,7 +162,7 @@ describe("ChannelFeePage under Hub management", () => {
     ]);
     renderPage();
 
-    expect(screen.getByText(/≠ kontrak 1900\+0%/)).toBeInTheDocument();
+    expect(screen.getByText(/≠ kontrak Rp 1.900 \+ 0%/)).toBeInTheDocument();
   });
 
   it("stays fully editable on a standalone deployment", () => {
