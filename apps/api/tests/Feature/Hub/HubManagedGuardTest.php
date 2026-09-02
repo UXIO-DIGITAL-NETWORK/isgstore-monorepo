@@ -43,7 +43,7 @@ class HubManagedGuardTest extends TestCase
     public function test_catalog_writes_are_refused_when_hub_managed(): void
     {
         config(['services.hub.enabled' => true, 'services.hub.managed_catalog' => true]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/services', $this->servicePayload())
             ->assertStatus(422);
@@ -60,7 +60,7 @@ class HubManagedGuardTest extends TestCase
 
     public function test_catalog_meta_reports_hub_managed_state(): void
     {
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         config(['services.hub.enabled' => true, 'services.hub.managed_catalog' => true]);
         $this->getJson('/api/v1/payment-internal/services/meta')
@@ -78,7 +78,7 @@ class HubManagedGuardTest extends TestCase
     public function test_catalog_writes_work_on_a_standalone_deployment(): void
     {
         config(['services.hub.enabled' => false]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/services', $this->servicePayload())
             ->assertCreated();
@@ -90,7 +90,7 @@ class HubManagedGuardTest extends TestCase
         $channel = PaymentChannel::factory()->create([
             'channel_code' => 'qris', 'is_active' => true, 'hub_managed' => true,
         ]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         // The Hub owns fees, is_active AND min_amount per site — for the rows it
         // syncs, the local editor is read-only, so every field is refused.
@@ -114,7 +114,7 @@ class HubManagedGuardTest extends TestCase
             'channel_code' => 'balance', 'payment_type' => 'balance',
             'fee_flat' => 0, 'hub_managed' => false,
         ]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/channels/{$wallet->id}", ['fee_flat' => 500])
             ->assertOk();
@@ -123,7 +123,7 @@ class HubManagedGuardTest extends TestCase
 
     public function test_channel_meta_reports_hub_managed_state(): void
     {
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         config(['services.hub.enabled' => true, 'services.hub.managed_channels' => true]);
         $this->getJson('/api/v1/payment-internal/channels/meta')
@@ -142,7 +142,7 @@ class HubManagedGuardTest extends TestCase
     {
         config(['services.hub.enabled' => false]);
         $channel = PaymentChannel::factory()->create(['channel_code' => 'qris', 'fee_percent' => 0.7]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['fee_percent' => 0.9])
             ->assertOk();

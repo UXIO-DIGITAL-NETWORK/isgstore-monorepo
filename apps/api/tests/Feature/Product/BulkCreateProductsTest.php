@@ -18,7 +18,7 @@ class BulkCreateProductsTest extends TestCase
     private function actingAsAdmin(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
     }
 
     public function test_creates_many_products_with_derived_prices_and_mappings(): void

@@ -37,7 +37,7 @@ class ServiceSubscriptionFlowTest extends TestCase
         $service = Service::factory()->create(['selling_price' => 250000, 'duration_days' => 30]);
         $merchant = $this->merchant();
         $channel = $this->qrisChannel();
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/service-invoices', [
             'service_id' => $service->id,
@@ -58,7 +58,7 @@ class ServiceSubscriptionFlowTest extends TestCase
     public function test_a_payment_channel_is_required(): void
     {
         $service = Service::factory()->create();
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/service-invoices', ['service_id' => $service->id])
             ->assertStatus(422)
@@ -68,7 +68,7 @@ class ServiceSubscriptionFlowTest extends TestCase
     public function test_an_inactive_service_cannot_be_subscribed(): void
     {
         $service = Service::factory()->inactive()->create();
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/service-invoices', [
             'service_id' => $service->id,
@@ -83,7 +83,7 @@ class ServiceSubscriptionFlowTest extends TestCase
         $channel = $this->qrisChannel();
         $this->subscribe($merchant, $service, $channel);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/service-invoices', [
             'service_id' => $service->id,
             'payment_channel_id' => $channel->id,
@@ -104,7 +104,7 @@ class ServiceSubscriptionFlowTest extends TestCase
         Http::fake(['*' => Http::response(['code' => 500, 'message' => 'gateway down'], 500)]);
 
         $service = Service::factory()->create();
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/service-invoices', [
             'service_id' => $service->id,
@@ -120,7 +120,7 @@ class ServiceSubscriptionFlowTest extends TestCase
         $merchant = $this->merchant();
         $invoice = $this->subscribe($merchant, $service);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")
             ->assertOk()
             ->assertJsonPath('data.status', 'PAID')
@@ -142,7 +142,7 @@ class ServiceSubscriptionFlowTest extends TestCase
         $merchant = $this->merchant();
         $invoice = $this->subscribe($merchant, $service);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertStatus(422);
 
@@ -156,14 +156,14 @@ class ServiceSubscriptionFlowTest extends TestCase
         $channel = $this->qrisChannel();
         $invoice = $this->subscribe($merchant, $service, $channel);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/reject", ['reason' => 'Nominal tidak sesuai'])
             ->assertOk()
             ->assertJsonPath('data.status', 'REJECTED');
 
         // A rejected bill is not UNPAID, so it is not payable — the client
         // subscribes again rather than retrying a bill kita has refused.
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
             'payment_channel_id' => $channel->id,
         ])->assertStatus(422);
@@ -185,11 +185,11 @@ class ServiceSubscriptionFlowTest extends TestCase
         $channel = $this->qrisChannel();
 
         $first = $this->subscribe($merchant, $service, $channel);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$first->id}/confirm")->assertOk();
 
         $second = $this->subscribe($merchant, $service, $channel);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$second->id}/confirm")->assertOk();
 
         $periods = ServiceSubscription::where('merchant_id', $merchant->id)
@@ -211,7 +211,7 @@ class ServiceSubscriptionFlowTest extends TestCase
         $channel = $this->qrisChannel();
         $invoice = $this->subscribe($owner, $service, $channel);
 
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")->assertStatus(404);
         $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
             'payment_channel_id' => $channel->id,
@@ -225,7 +225,7 @@ class ServiceSubscriptionFlowTest extends TestCase
         $this->subscribe($owner, $service);
 
         $other = $this->merchant();
-        Sanctum::actingAs($other);
+        Sanctum::actingAs($other, ['access-api']);
 
         $this->getJson('/api/v1/payment-admin/service-invoices')
             ->assertOk()

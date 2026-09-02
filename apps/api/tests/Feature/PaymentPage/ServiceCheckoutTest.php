@@ -24,7 +24,7 @@ class ServiceCheckoutTest extends TestCase
     public function test_the_checkout_detail_returns_one_active_service(): void
     {
         $service = Service::factory()->create(['name' => 'Uxiotopup', 'selling_price' => 250000, 'duration_days' => 30]);
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->getJson("/api/v1/payment-admin/services/{$service->id}")
             ->assertOk()
@@ -38,7 +38,7 @@ class ServiceCheckoutTest extends TestCase
     public function test_an_inactive_service_is_not_reachable_by_deep_link(): void
     {
         $service = Service::factory()->inactive()->create();
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->getJson("/api/v1/payment-admin/services/{$service->id}")->assertStatus(404);
     }
@@ -47,7 +47,7 @@ class ServiceCheckoutTest extends TestCase
     public function test_the_projected_period_starts_now_when_nothing_is_active(): void
     {
         $service = Service::factory()->create(['duration_days' => 30]);
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $data = $this->getJson("/api/v1/payment-admin/services/{$service->id}")->json('data');
 
@@ -77,7 +77,7 @@ class ServiceCheckoutTest extends TestCase
             'ends_at' => $endsAt,
         ]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $data = $this->getJson("/api/v1/payment-admin/services/{$service->id}")->json('data');
 
         $this->assertSame(
@@ -99,7 +99,7 @@ class ServiceCheckoutTest extends TestCase
             'service_id' => $service->id,
         ]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->getJson("/api/v1/payment-admin/services/{$service->id}")
             ->assertOk()
@@ -117,7 +117,7 @@ class ServiceCheckoutTest extends TestCase
         $merchant = $this->merchant();
         $invoice = ServiceInvoice::factory()->create(['merchant_id' => $merchant->id]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")
             ->assertOk()

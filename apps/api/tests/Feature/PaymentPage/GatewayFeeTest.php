@@ -51,7 +51,7 @@ class GatewayFeeTest extends TestCase
             'role_id' => Role::firstOrCreate(['name' => 'Member'])->id,
             'balance' => 100000,
         ]);
-        Sanctum::actingAs($buyer);
+        Sanctum::actingAs($buyer, ['access-api']);
 
         $this->postJson('/api/v1/checkout', [
             'product_id' => $product->id,
@@ -76,7 +76,7 @@ class GatewayFeeTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create([
             'role_id' => Role::firstOrCreate(['name' => 'Payment-Internal'])->id,
-        ]));
+        ]), ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/transactions?type=sale')
             ->assertOk()
@@ -104,7 +104,7 @@ class GatewayFeeTest extends TestCase
             'role_id' => Role::firstOrCreate(['name' => 'Member'])->id,
             'balance' => 100000,
         ]);
-        Sanctum::actingAs($buyer);
+        Sanctum::actingAs($buyer, ['access-api']);
 
         $this->postJson('/api/v1/checkout', [
             'product_id' => $product->id,
@@ -128,7 +128,7 @@ class GatewayFeeTest extends TestCase
             'role_id' => Role::firstOrCreate(['name' => 'Member'])->id,
             'balance' => 100000,
         ]);
-        Sanctum::actingAs($buyer);
+        Sanctum::actingAs($buyer, ['access-api']);
 
         $this->postJson('/api/v1/checkout', [
             'product_id' => $product->id,

@@ -19,13 +19,13 @@ class CategoryCrudTest extends TestCase
     private function actingAsAdmin(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
     }
 
     private function actingAsMember(): void
     {
         $role = Role::factory()->create(['name' => 'Member']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
     }
 
     public function test_categories_require_authentication(): void

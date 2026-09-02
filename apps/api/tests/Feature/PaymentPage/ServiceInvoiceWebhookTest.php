@@ -239,7 +239,7 @@ class ServiceInvoiceWebhookTest extends TestCase
         $invoice = $this->subscribe($merchant, Service::factory()->create(), $this->qrisChannel());
         $attempt = ServiceInvoicePayment::firstOrFail();
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
 
         $this->sendCallback($this->signedPayload($attempt->reference_id, $attempt->total))->assertOk();

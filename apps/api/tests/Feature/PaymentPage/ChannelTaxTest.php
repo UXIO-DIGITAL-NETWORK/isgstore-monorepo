@@ -55,7 +55,7 @@ class ChannelTaxTest extends TestCase
             'role_id' => Role::firstOrCreate(['name' => 'Member'])->id,
             'balance' => 100000,
         ]);
-        Sanctum::actingAs($buyer);
+        Sanctum::actingAs($buyer, ['access-api']);
 
         $this->postJson('/api/v1/checkout', [
             'product_id' => $product->id,
@@ -68,7 +68,7 @@ class ChannelTaxTest extends TestCase
     public function test_channel_update_persists_tax_percent(): void
     {
         $channel = PaymentChannel::factory()->create(['channel_code' => 'qris', 'payment_type' => 'qris']);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['tax_percent' => 11])
             ->assertOk()
@@ -94,7 +94,7 @@ class ChannelTaxTest extends TestCase
     public function test_internal_feed_nets_tax_from_profit_kita(): void
     {
         $this->checkoutWithTax();
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/transactions?type=sale')
             ->assertOk()
@@ -107,7 +107,7 @@ class ChannelTaxTest extends TestCase
     public function test_dashboard_reports_total_tax(): void
     {
         $this->checkoutWithTax();
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/dashboard')
             ->assertOk()

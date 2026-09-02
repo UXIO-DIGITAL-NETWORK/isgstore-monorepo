@@ -90,7 +90,7 @@ class WithdrawalHoldingPeriodTest extends TestCase
         $merchant = $this->merchant();
         $this->sale($merchant, 'qris', 100000, now());
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', [
             'amount' => 40000,
             'bank_code' => 'BCA',
@@ -173,7 +173,7 @@ class WithdrawalHoldingPeriodTest extends TestCase
         $this->sale($merchant, 'qris', 100000, now());
         $this->sale($merchant, 'bri_va', 40000, now()->subDays(5)); // long settled
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson('/api/v1/payment-admin/dashboard')
             ->assertOk()
             ->assertJsonPath('data.saldo_aktif', 40000)

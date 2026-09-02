@@ -78,7 +78,7 @@ class DisbursementCallbackTest extends TestCase
     private function processingWithdrawal(int $amount = 100000): Withdrawal
     {
         $merchant = $this->merchant($amount);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', [
             'amount' => $amount,
             'bank_code' => 'BCA',
@@ -88,7 +88,7 @@ class DisbursementCallbackTest extends TestCase
 
         $withdrawal = Withdrawal::firstOrFail();
 
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/approve", ['method' => 'monetapay'])
             ->assertOk();
 

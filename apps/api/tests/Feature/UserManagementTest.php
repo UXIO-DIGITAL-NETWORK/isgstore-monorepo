@@ -16,7 +16,7 @@ class UserManagementTest extends TestCase
     private function actingAsAdmin(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
     }
 
     private function member(array $overrides = []): User
@@ -97,7 +97,7 @@ class UserManagementTest extends TestCase
     {
         $adminRole = Role::factory()->create(['name' => 'Admin']);
         $admin = User::factory()->create(['role_id' => $adminRole->id, 'name' => 'Super Admin']);
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['access-api']);
 
         $this->member(['name' => 'Client Merchant']);
         Role::factory()->create(['name' => 'Payment-Internal']);

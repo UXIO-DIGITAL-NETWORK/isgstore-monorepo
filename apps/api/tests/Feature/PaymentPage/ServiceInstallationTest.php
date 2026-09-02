@@ -30,7 +30,7 @@ class ServiceInstallationTest extends TestCase
     {
         $invoice = $this->subscribe($merchant, $service);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
 
         return $invoice->fresh();
@@ -79,7 +79,7 @@ class ServiceInstallationTest extends TestCase
         $this->buyAndConfirm($merchant, $service);
         $subscription = ServiceSubscription::firstOrFail();
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->putJson("/api/v1/payment-internal/service-subscriptions/{$subscription->id}/installation", [
             'starts_at' => '2026-08-15',
             'ends_at' => '2026-08-20',
@@ -97,7 +97,7 @@ class ServiceInstallationTest extends TestCase
         $this->buyAndConfirm($merchant, Service::factory()->create());
         $subscription = ServiceSubscription::firstOrFail();
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->putJson("/api/v1/payment-internal/service-subscriptions/{$subscription->id}/installation", [
             'starts_at' => '2026-08-20',
             'ends_at' => '2026-08-15',
@@ -114,7 +114,7 @@ class ServiceInstallationTest extends TestCase
         ServiceInstallationStep::factory()->count(2)->completed()->create(['service_installation_id' => $installation->id]);
         ServiceInstallationStep::factory()->count(2)->create(['service_installation_id' => $installation->id]);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->getJson("/api/v1/payment-internal/service-subscriptions/{$subscription->id}/installation")
             ->assertOk()
             ->assertJsonPath('data.steps_total', 4)
@@ -131,7 +131,7 @@ class ServiceInstallationTest extends TestCase
         ServiceInstallationStep::factory()->count(2)->completed()
             ->create(['service_installation_id' => ServiceInstallation::firstOrFail()->id]);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->getJson("/api/v1/payment-internal/service-subscriptions/{$subscription->id}/installation")
             ->assertJsonPath('data.progress_percent', 100)
             ->assertJsonPath('data.status', 'DONE');
@@ -145,7 +145,7 @@ class ServiceInstallationTest extends TestCase
             'service_installation_id' => ServiceInstallation::firstOrFail()->id,
         ]);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $first = $this->postJson("/api/v1/payment-internal/installation-steps/{$step->id}/completion", ['completed' => true])
             ->assertOk()->json('data.completed_at');
 
@@ -168,7 +168,7 @@ class ServiceInstallationTest extends TestCase
         $installation = ServiceInstallation::firstOrFail();
         ServiceInstallationStep::factory()->create(['service_installation_id' => $installation->id, 'sort_order' => 7]);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/installations/{$installation->id}/steps", ['title' => 'Uji transaksi'])
             ->assertCreated()
             ->assertJsonPath('data.sort_order', 8);
@@ -184,7 +184,7 @@ class ServiceInstallationTest extends TestCase
         ServiceInstallationStep::factory()->completed()->create(['service_installation_id' => $installation->id]);
         $pending = ServiceInstallationStep::factory()->create(['service_installation_id' => $installation->id]);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->deleteJson("/api/v1/payment-internal/installation-steps/{$pending->id}")->assertOk();
 
         $this->getJson("/api/v1/payment-internal/service-subscriptions/{$subscription->id}/installation")
@@ -198,7 +198,7 @@ class ServiceInstallationTest extends TestCase
         $this->buyAndConfirm($merchant, Service::factory()->create());
         $subscription = ServiceSubscription::firstOrFail();
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-subscriptions/{$subscription->id}/installation")
             ->assertOk()
             ->assertJsonPath('data.status', 'NOT_STARTED');
@@ -210,7 +210,7 @@ class ServiceInstallationTest extends TestCase
         $this->buyAndConfirm($owner, Service::factory()->create());
         $subscription = ServiceSubscription::firstOrFail();
 
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-subscriptions/{$subscription->id}/installation")
             ->assertStatus(404);
     }
@@ -221,7 +221,7 @@ class ServiceInstallationTest extends TestCase
         $this->buyAndConfirm($merchant, Service::factory()->create());
         $installation = ServiceInstallation::firstOrFail();
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson("/api/v1/payment-internal/installations/{$installation->id}/steps", ['title' => 'x'])
             ->assertStatus(403);
     }
@@ -232,7 +232,7 @@ class ServiceInstallationTest extends TestCase
         $merchant = $this->merchant();
         $subscription = ServiceSubscription::factory()->create(['merchant_id' => $merchant->id]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-subscriptions/{$subscription->id}/installation")
             ->assertOk()
             ->assertJsonPath('data', null);

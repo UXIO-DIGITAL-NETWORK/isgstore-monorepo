@@ -36,7 +36,7 @@ class ServiceInvoiceInstallationTest extends TestCase
 
     private function schedule(ServiceInvoice $invoice, array $over = []): void
     {
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/installation", array_merge([
             'starts_at' => '2026-08-15',
@@ -50,7 +50,7 @@ class ServiceInvoiceInstallationTest extends TestCase
         $merchant = $this->merchant();
         $invoice = $this->subscribeAndUpload($merchant, Service::factory()->create());
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->putJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/installation", [
             'starts_at' => '2026-08-15',
             'ends_at' => '2026-08-20',
@@ -80,7 +80,7 @@ class ServiceInvoiceInstallationTest extends TestCase
     {
         $invoice = $this->subscribeAndUpload($this->merchant(), Service::factory()->create());
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->getJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/installation")
             ->assertOk()
             ->assertJsonPath('data', null);
@@ -92,7 +92,7 @@ class ServiceInvoiceInstallationTest extends TestCase
         $this->schedule($invoice);
         $installation = ServiceInstallation::firstOrFail();
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/installations/{$installation->id}/steps", ['title' => 'Verifikasi akun'])
             ->assertCreated();
         $this->postJson("/api/v1/payment-internal/installations/{$installation->id}/detail-items", [
@@ -111,7 +111,7 @@ class ServiceInvoiceInstallationTest extends TestCase
         $invoice = $this->subscribeAndUpload($this->merchant(), Service::factory()->create());
         $this->schedule($invoice);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
 
         $this->assertDatabaseCount('service_installations', 1);
@@ -127,7 +127,7 @@ class ServiceInvoiceInstallationTest extends TestCase
         $this->schedule($invoice);
         $installation = ServiceInstallation::firstOrFail();
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/installations/{$installation->id}/steps", ['title' => 'Uji transaksi'])
             ->assertCreated();
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
@@ -150,14 +150,14 @@ class ServiceInvoiceInstallationTest extends TestCase
 
         $first = $this->subscribeAndUpload($merchant, $service);
         $this->schedule($first);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$first->id}/confirm")->assertOk();
 
         $firstSubscriptionId = ServiceSubscription::firstOrFail()->id;
 
         $second = $this->subscribeAndUpload($merchant, $service);
         $this->schedule($second, ['starts_at' => '2026-09-15', 'ends_at' => '2026-09-20']);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$second->id}/confirm")->assertOk();
 
         $this->assertDatabaseCount('service_subscriptions', 2);
@@ -174,7 +174,7 @@ class ServiceInvoiceInstallationTest extends TestCase
         $invoice = $this->subscribeAndUpload($this->merchant(), Service::factory()->create());
         $this->schedule($invoice);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/reject", ['reason' => 'Nominal tidak sesuai'])
             ->assertOk();
 
@@ -188,7 +188,7 @@ class ServiceInvoiceInstallationTest extends TestCase
         $invoice = $this->subscribeAndUpload($merchant, Service::factory()->create());
         $this->schedule($invoice);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")
             ->assertOk()
             ->assertJsonPath('data.subscription', null);
@@ -201,7 +201,7 @@ class ServiceInvoiceInstallationTest extends TestCase
         $merchant = $this->merchant();
         $invoice = $this->subscribeAndUpload($merchant, Service::factory()->create());
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->putJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/installation", ['starts_at' => '2026-08-15'])
             ->assertStatus(403);
     }
@@ -210,7 +210,7 @@ class ServiceInvoiceInstallationTest extends TestCase
     {
         $invoice = $this->subscribeAndUpload($this->merchant(), Service::factory()->create());
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->putJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/installation", [
             'starts_at' => '2026-08-20',
             'ends_at' => '2026-08-15',
@@ -223,7 +223,7 @@ class ServiceInvoiceInstallationTest extends TestCase
         $invoice = $this->subscribeAndUpload($this->merchant(), Service::factory()->create());
         $this->schedule($invoice);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $viaInvoice = $this->getJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/installation")
             ->assertOk()->json('data.id');
 

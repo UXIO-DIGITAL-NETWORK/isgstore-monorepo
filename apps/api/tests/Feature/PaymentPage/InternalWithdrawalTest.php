@@ -72,7 +72,7 @@ class InternalWithdrawalTest extends TestCase
     public function test_internal_request_reduces_available_platform_balance(): void
     {
         $this->seedPlatformIncome(100000);
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
 
         $response = $this->postJson('/api/v1/payment-internal/withdrawals', $this->payload(40000));
 
@@ -88,7 +88,7 @@ class InternalWithdrawalTest extends TestCase
     public function test_internal_request_rejected_when_platform_balance_insufficient(): void
     {
         $this->seedPlatformIncome(10000);
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/withdrawals', $this->payload(40000))
             ->assertStatus(422);
@@ -101,7 +101,7 @@ class InternalWithdrawalTest extends TestCase
     {
         $this->seedPlatformIncome(100000);
         $requester = $this->finance();
-        Sanctum::actingAs($requester);
+        Sanctum::actingAs($requester, ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/withdrawals', $this->payload(40000))->assertCreated();
 
@@ -130,7 +130,7 @@ class InternalWithdrawalTest extends TestCase
             'created_at' => now()->subDays(5),
         ]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', [
             'amount' => 40000,
             'bank_code' => 'BCA',
@@ -138,7 +138,7 @@ class InternalWithdrawalTest extends TestCase
             'account_name' => 'Client Store',
         ])->assertCreated();
 
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->postJson('/api/v1/payment-internal/withdrawals', $this->payload(40000))->assertCreated();
 
         // Default (no `type`) and explicit `type=merchant`: only the merchant row.
@@ -162,7 +162,7 @@ class InternalWithdrawalTest extends TestCase
     {
         Storage::fake('public');
         $this->seedPlatformIncome(100000);
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->postJson('/api/v1/payment-internal/withdrawals', $this->payload(40000))->assertCreated();
         $withdrawal = Withdrawal::firstOrFail();
 
@@ -182,7 +182,7 @@ class InternalWithdrawalTest extends TestCase
     public function test_finance_can_reject_an_internal_withdrawal(): void
     {
         $this->seedPlatformIncome(100000);
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->postJson('/api/v1/payment-internal/withdrawals', $this->payload(40000))->assertCreated();
         $withdrawal = Withdrawal::firstOrFail();
 
@@ -196,7 +196,7 @@ class InternalWithdrawalTest extends TestCase
     public function test_platform_balance_endpoint_reports_available(): void
     {
         $this->seedPlatformIncome(75000);
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/platform-balance')
             ->assertOk()

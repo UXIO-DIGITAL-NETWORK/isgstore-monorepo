@@ -15,7 +15,7 @@ class PaymentChannelCrudTest extends TestCase
     private function actingAsAdmin(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
     }
 
     public function test_admin_can_create_an_offered_payment_type(): void

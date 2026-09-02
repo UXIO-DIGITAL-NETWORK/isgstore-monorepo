@@ -38,7 +38,7 @@ class DefaultMerchantAttributionTest extends TestCase
         $channel = PaymentChannel::factory()->balance()->create();
         $role = Role::factory()->create(['name' => 'Member']);
         $buyer = User::factory()->create(['role_id' => $role->id, 'balance' => 100000]);
-        Sanctum::actingAs($buyer);
+        Sanctum::actingAs($buyer, ['access-api']);
 
         $this->postJson('/api/v1/checkout', [
             'product_id' => $product->id,

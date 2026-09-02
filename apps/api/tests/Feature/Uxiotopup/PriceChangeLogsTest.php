@@ -16,7 +16,7 @@ class PriceChangeLogsTest extends TestCase
     private function actingAsAdmin(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
     }
 
     public function test_requires_authentication(): void
@@ -27,7 +27,7 @@ class PriceChangeLogsTest extends TestCase
     public function test_requires_admin(): void
     {
         $role = Role::factory()->create(['name' => 'Member']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
 
         $this->getJson('/api/v1/uxiotopup/price-change-logs')->assertForbidden();
     }

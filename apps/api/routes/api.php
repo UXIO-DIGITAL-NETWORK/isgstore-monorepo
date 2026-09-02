@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\Admin\WebsiteSubscriptionController;
 use App\Http\Controllers\Api\AnnouncementController;
+use App\Http\Controllers\Api\Auth\TwoFactorController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\Category\CategoryController;
@@ -41,6 +43,8 @@ use App\Http\Controllers\Api\Marketing\PromoController;
 use App\Http\Controllers\Api\Member\ApiCredentialController;
 use App\Http\Controllers\Api\Member\BalanceTopupController;
 use App\Http\Controllers\Api\Member\MemberActivityLogController;
+use App\Http\Controllers\Api\Member\MemberPointController;
+use App\Http\Controllers\Api\Member\MemberRefundController;
 use App\Http\Controllers\Api\Member\MembershipController;
 use App\Http\Controllers\Api\Member\MemberTransactionController;
 use App\Http\Controllers\Api\Member\ProfileController;
@@ -220,13 +224,24 @@ Route::prefix('v1')->group(function () {
         Route::post('/resend', [RefundClaimController::class, 'resend']);
         Route::get('/{claimToken}', [RefundClaimController::class, 'show']);
         Route::post('/{claimToken}/payout-details', [RefundClaimController::class, 'submitPayoutDetails']);
+
+        // Claiming the refund with an account, which is how a guest is repaid
+        // now. Two endpoints rather than one optional-auth endpoint: the bodies
+        // are disjoint, and a single route would let an expired Bearer token
+        // fall through to "register" and fail on a duplicate email instead of
+        // telling the customer their session lapsed.
+        Route::post('/{claimToken}/register', [RefundClaimController::class, 'register']);
+        Route::post('/{claimToken}/attach', [RefundClaimController::class, 'attach'])
+            ->middleware('auth:sanctum');
     });
 
     // Authentication Routes
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
         Route::post('/google', [AuthController::class, 'google'])->middleware('throttle:login');
-        Route::post('/refresh', [AuthController::class, 'refreshToken']);
+        // Throttled like every other unauthenticated auth route. Without a
+        // limiter this is an unmetered token-guessing oracle.
+        Route::post('/refresh', [AuthController::class, 'refreshToken'])->middleware('throttle:api');
 
         // Self-service signup and password recovery. Both are throttled per IP
         // like login: they take an email address and would otherwise be a free
@@ -235,14 +250,34 @@ Route::prefix('v1')->group(function () {
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:login');
         Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:login');
 
-        Route::middleware('auth:sanctum')->group(function () {
+        // Unauthenticated on purpose: the caller has proved a password but
+        // holds no session, and the challenge token is the only thing that
+        // gets them further.
+        Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->middleware('throttle:two-factor');
+
+        Route::middleware(['auth:sanctum', 'abilities:access-api'])->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
+
+            // Enrolment sits outside the admin group deliberately: an admin
+            // mid-setup is refused by `two-factor`, so guarding these with it
+            // would leave them nowhere to go.
+            Route::post('/2fa/setup', [TwoFactorController::class, 'setup']);
+            Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm']);
+            Route::post('/2fa/disable', [TwoFactorController::class, 'disable']);
         });
     });
 });
 
 // Protected Routes (Requires Auth)
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+//
+// `abilities:access-api` is not decoration. `auth:sanctum` alone accepts ANY
+// unexpired personal access token regardless of what it was minted for — so
+// without this the 30-day `refresh_token` (abilities `['issue-access-token']`)
+// is a full API session, and the admin panel keeps it in a JS-readable cookie.
+// The ability check is what makes the refresh token exchangeable-only.
+//
+// Every new protected group must carry it.
+Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api'])->group(function () {
 
     // User Info (Current Auth User) — any authenticated user, not admin-only
     Route::get('/user', function (Request $request) {
@@ -282,8 +317,19 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::get('/topups/{reference}', [BalanceTopupController::class, 'show']);
         Route::get('/balance-mutations', [BalanceTopupController::class, 'mutations']);
 
+        // ── Points ───────────────────────────────────────────────────────
+        // A statement, not just a number: points move on completed orders and
+        // on refunds, and a balance that changes with no line behind it looks
+        // like a bug.
+        Route::get('/points', [MemberPointController::class, 'summary']);
+        Route::get('/point-history', [MemberPointController::class, 'history']);
+        // Refunds this account claimed. Not in /me/transactions, because a
+        // claim never rewrites `transactions.user_id` — see the controller.
+        Route::get('/refunds', [MemberRefundController::class, 'index']);
+
         // ── Membership ───────────────────────────────────────────────────
         Route::get('/membership', [MembershipController::class, 'current']);
+        Route::patch('/membership/auto-renew', [MembershipController::class, 'setAutoRenew']);
         Route::post('/membership/subscribe', [MembershipController::class, 'subscribe'])
             ->middleware('throttle:checkout');
 
@@ -296,8 +342,12 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     });
 });
 
-// Admin-only management API (requires auth:sanctum + role_id 1 — see EnsureUserIsAdmin)
-Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
+// Admin-only management API (requires auth:sanctum + the admin role — see EnsureUserIsAdmin)
+Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin', 'two-factor'])->group(function () {
+
+    // This site's own subscription to the platform, for the sidebar footer.
+    // Rendered on every admin page, so it always answers 200.
+    Route::get('/website-subscription', [WebsiteSubscriptionController::class, 'show']);
 
     // CRUD Users
     Route::prefix('users')->group(function () {
@@ -553,6 +603,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::post('/refunds/{refundRequest}/process', [RefundController::class, 'process']);
     Route::post('/refunds/{refundRequest}/complete', [RefundController::class, 'complete']);
     Route::post('/refunds/{refundRequest}/reject', [RefundController::class, 'reject']);
+    // Refusing the claiming *account* without refusing the refund. A separate
+    // verb because the money outcomes differ: this one leaves the refund owed
+    // and re-claimable, `reject` closes it for good.
+    Route::post('/refunds/{refundRequest}/reject-claim', [RefundController::class, 'rejectClaim']);
 
     // Payment Management
     Route::get('/payments', [PaymentController::class, 'index']);
@@ -593,7 +647,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
 // ── Payment page: payment-admin ("client") ───────────────────────────────────
 // The merchant's own view. Every handler additionally scopes to the caller's
 // id, so the `payment-admin` gate is defence-in-depth, not the only guard.
-Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'payment-admin'])->group(function () {
+Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'abilities:access-api', 'payment-admin'])->group(function () {
     Route::get('/dashboard', [MerchantDashboardController::class, 'index']);
     // Specific routes before the collection so /summary and /export are not
     // swallowed by a wildcard.
@@ -636,7 +690,7 @@ Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'payment-admin'])
 // ── Payment page: payment-internal ("kita") ──────────────────────────────────
 // The internal team's cross-merchant view: all data, withdrawal verification,
 // per-channel fee settings, and the services it sells to its clients.
-Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'payment-internal'])->group(function () {
+Route::prefix('v1/payment-internal')->middleware(['auth:sanctum', 'abilities:access-api', 'payment-internal'])->group(function () {
     Route::get('/dashboard', [FinanceDashboardController::class, 'index']);
 
     // In-app notifications — one fan-out row per internal user; every query is

@@ -70,7 +70,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $this->sale($merchant, ['created_at' => now()->subDays(2)]);
         $this->bill($merchant, ['created_at' => now()->subDay()]);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $response = $this->getJson('/api/v1/payment-admin/transactions')->assertOk();
 
@@ -86,7 +86,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $this->sale($merchant);
         $this->bill($merchant);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $rows = collect($this->getJson('/api/v1/payment-admin/transactions')->json('data.data'))
             ->keyBy('type');
@@ -107,7 +107,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $this->sale($merchant);
         $this->bill($merchant);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $sales = $this->getJson('/api/v1/payment-admin/transactions?type=sale')->json('data.data');
         $this->assertCount(1, $sales);
@@ -127,7 +127,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $sale = $this->sale($merchant);
         $bill = $this->bill($merchant);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $rows = $this->getJson('/api/v1/payment-admin/transactions')->json('data.data');
 
@@ -143,7 +143,7 @@ class UnifiedTransactionListTest extends TestCase
         $this->sale($owner);
         $this->bill($owner);
 
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->getJson('/api/v1/payment-admin/transactions')
             ->assertOk()
@@ -154,7 +154,7 @@ class UnifiedTransactionListTest extends TestCase
     {
         $merchant = $this->merchant();
         $this->sale($merchant);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $row = $this->getJson('/api/v1/payment-admin/transactions')->json('data.data.0');
 
@@ -181,7 +181,7 @@ class UnifiedTransactionListTest extends TestCase
         ]);
         $this->bill($merchant);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $rows = collect($this->getJson('/api/v1/payment-internal/transactions')->json('data.data'))
             ->keyBy('type');
 
@@ -201,7 +201,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $sale = $this->sale($merchant);
         $bill = $this->bill($merchant, ['invoice_number' => 'SINV-202608-ZZTOP1']);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->getJson('/api/v1/payment-admin/transactions?search='.$sale->invoice_number)
             ->assertOk()->assertJsonPath('data.total', 1)
@@ -217,7 +217,7 @@ class UnifiedTransactionListTest extends TestCase
     {
         $merchant = $this->merchant();
         $this->sale($merchant, ['merchant_id' => null]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/transactions')
             ->assertOk()
@@ -228,7 +228,7 @@ class UnifiedTransactionListTest extends TestCase
     {
         $merchant = $this->merchant();
         $this->sale($merchant);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->getJson('/api/v1/payment-admin/transactions?per_page=9999')
             ->assertOk()
@@ -242,7 +242,7 @@ class UnifiedTransactionListTest extends TestCase
         $this->sale($merchant, ['status' => 'PENDING']);   // pending
         $this->bill($merchant, ['status' => 'PAID']);      // success
         $this->bill($merchant, ['status' => 'UNPAID']);    // pending
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $rows = $this->getJson('/api/v1/payment-admin/transactions?status_group=success')
             ->assertOk()->json('data.data');
@@ -260,7 +260,7 @@ class UnifiedTransactionListTest extends TestCase
         $this->sale($merchant, ['status' => 'FAILED_PROVIDER']);
         $this->bill($merchant, ['status' => 'REJECTED']);
         $this->sale($merchant, ['status' => 'COMPLETED']);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->getJson('/api/v1/payment-admin/transactions?status_group=failed')
             ->assertOk()
@@ -272,7 +272,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $this->sale($merchant, ['created_at' => '2026-07-01 10:00:00']);
         $this->sale($merchant, ['created_at' => '2026-08-15 10:00:00']);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->getJson('/api/v1/payment-admin/transactions?start_date=2026-08-01&end_date=2026-08-31')
             ->assertOk()
@@ -286,7 +286,7 @@ class UnifiedTransactionListTest extends TestCase
         $this->sale($merchant, ['status' => 'PENDING']);         // pending
         $this->sale($merchant, ['status' => 'FAILED_PROVIDER']); // failed
         $this->bill($merchant, ['status' => 'UNPAID', 'amount' => 250000]); // pending
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $summary = $this->getJson('/api/v1/payment-admin/transactions/summary')
             ->assertOk()->json('data');
@@ -306,7 +306,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $this->sale($merchant, ['status' => 'COMPLETED']);
         $this->sale($merchant, ['status' => 'FAILED_PROVIDER']);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $summary = $this->getJson('/api/v1/payment-admin/transactions/summary?status_group=failed')
             ->assertOk()->json('data');
@@ -321,7 +321,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $this->sale($merchant, ['status' => 'COMPLETED']); // amount_fee 1000, no payment -> profit 1000
         $this->bill($merchant, ['status' => 'PAID', 'amount' => 250000]); // profit = whole amount
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $summary = $this->getJson('/api/v1/payment-internal/transactions/summary')
             ->assertOk()->json('data');
@@ -336,7 +336,7 @@ class UnifiedTransactionListTest extends TestCase
     {
         $merchant = $this->merchant();
         $this->sale($merchant, ['status' => 'COMPLETED']);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $response = $this->get('/api/v1/payment-admin/transactions/export')->assertOk();
         $this->assertStringContainsString('text/csv', (string) $response->headers->get('content-type'));
@@ -351,7 +351,7 @@ class UnifiedTransactionListTest extends TestCase
     {
         $merchant = $this->merchant();
         $this->sale($merchant, ['status' => 'COMPLETED']);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $csv = $this->get('/api/v1/payment-internal/transactions/export')->assertOk()->streamedContent();
 
@@ -373,7 +373,7 @@ class UnifiedTransactionListTest extends TestCase
             'status' => PaymentStatus::SUCCESS,
         ]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->getJson('/api/v1/payment-admin/transactions')
             ->assertOk()
@@ -391,7 +391,7 @@ class UnifiedTransactionListTest extends TestCase
         $merchant = $this->merchant();
         $this->bill($merchant, ['status' => 'UNPAID']);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->getJson('/api/v1/payment-admin/transactions?type=service')
             ->assertOk()
@@ -411,7 +411,7 @@ class UnifiedTransactionListTest extends TestCase
         $this->sale($merchant, ['status' => 'COMPLETED']);
         $bill = $this->bill($merchant, ['status' => 'PAID']);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $rows = collect($this->getJson('/api/v1/payment-admin/transactions')->assertOk()
             ->json('data.data'));

@@ -209,7 +209,7 @@ class NotificationTest extends TestCase
         Notification::create(['user_id' => $me->id, 'type' => 'transaction_sale', 'title' => 'Mine', 'message' => 'x']);
         Notification::create(['user_id' => $other->id, 'type' => 'transaction_sale', 'title' => 'Theirs', 'message' => 'y']);
 
-        Sanctum::actingAs($me);
+        Sanctum::actingAs($me, ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/notifications')
             ->assertOk()
@@ -223,7 +223,7 @@ class NotificationTest extends TestCase
         Notification::create(['user_id' => $me->id, 'type' => 't', 'title' => 'a', 'message' => 'x']);
         Notification::create(['user_id' => $me->id, 'type' => 't', 'title' => 'b', 'message' => 'y', 'read_at' => now()]);
 
-        Sanctum::actingAs($me);
+        Sanctum::actingAs($me, ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/notifications/unread-count')
             ->assertOk()
@@ -241,7 +241,7 @@ class NotificationTest extends TestCase
         $one = Notification::create(['user_id' => $me->id, 'type' => 't', 'title' => 'a', 'message' => 'x']);
         Notification::create(['user_id' => $me->id, 'type' => 't', 'title' => 'b', 'message' => 'y']);
 
-        Sanctum::actingAs($me);
+        Sanctum::actingAs($me, ['access-api']);
 
         $this->postJson("/api/v1/payment-internal/notifications/{$one->id}/read")
             ->assertOk()
@@ -258,7 +258,7 @@ class NotificationTest extends TestCase
         $other = $this->internal();
         $theirs = Notification::create(['user_id' => $other->id, 'type' => 't', 'title' => 'a', 'message' => 'x']);
 
-        Sanctum::actingAs($me);
+        Sanctum::actingAs($me, ['access-api']);
 
         $this->postJson("/api/v1/payment-internal/notifications/{$theirs->id}/read")->assertNotFound();
         $this->assertNull($theirs->fresh()->read_at);
@@ -266,7 +266,7 @@ class NotificationTest extends TestCase
 
     public function test_a_payment_admin_cannot_reach_the_internal_feed(): void
     {
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/notifications')->assertForbidden();
     }

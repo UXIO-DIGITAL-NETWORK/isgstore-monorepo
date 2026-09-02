@@ -39,7 +39,7 @@ class ServiceIncidentTest extends TestCase
     public function test_internal_publishes_an_incident_against_a_channel(): void
     {
         $channel = PaymentChannel::factory()->create(['name' => 'QRIS']);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/incidents', $this->payload(['payment_channel_id' => $channel->id]))
             ->assertCreated()
@@ -53,7 +53,7 @@ class ServiceIncidentTest extends TestCase
     {
         $channel = PaymentChannel::factory()->create();
         $service = Service::factory()->create();
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/incidents', $this->payload())
             ->assertStatus(422)
@@ -70,7 +70,7 @@ class ServiceIncidentTest extends TestCase
         $incident = ServiceIncident::factory()->create([
             'payment_channel_id' => PaymentChannel::factory()->create()->id,
         ]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/incidents/{$incident->id}", ['status' => 'RESOLVED'])
             ->assertOk()
@@ -95,7 +95,7 @@ class ServiceIncidentTest extends TestCase
             'payment_channel_id' => $broken->id,
         ]);
 
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
         $response = $this->getJson('/api/v1/payment-admin/service-status')->assertOk();
 
         $this->assertSame('degraded', $response->json('data.overall'));
@@ -116,7 +116,7 @@ class ServiceIncidentTest extends TestCase
             'severity' => 'CRITICAL',
         ]);
 
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
         $response = $this->getJson('/api/v1/payment-admin/service-status')->assertOk();
 
         $this->assertSame('down', $response->json('data.overall'));
@@ -129,7 +129,7 @@ class ServiceIncidentTest extends TestCase
     public function test_merchant_cannot_write_incidents(): void
     {
         $channel = PaymentChannel::factory()->create();
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/incidents', $this->payload(['payment_channel_id' => $channel->id]))
             ->assertStatus(403);

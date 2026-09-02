@@ -72,7 +72,7 @@ class ChannelFeeContractTest extends TestCase
             'gateway_fee_flat' => 0,
             'gateway_fee_percent' => 1.6,
         ]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['gateway_fee_percent' => 1.6])
             ->assertOk()
@@ -90,7 +90,7 @@ class ChannelFeeContractTest extends TestCase
             'gateway_fee_flat' => 0,
             'gateway_fee_percent' => 1.6,
         ]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['gateway_fee_percent' => 5.0])
             ->assertOk()
@@ -111,7 +111,7 @@ class ChannelFeeContractTest extends TestCase
             'gateway_fee_flat' => 1500,
             'gateway_fee_percent' => 0,
         ]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['gateway_fee_flat' => 1500])
             ->assertOk()

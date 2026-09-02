@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureCatalogNotHubManaged;
 use App\Http\Middleware\EnsureHubRequest;
 use App\Http\Middleware\EnsureHubWriteRequest;
+use App\Http\Middleware\EnsureTwoFactorSatisfied;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentInternal;
@@ -11,6 +12,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -31,7 +33,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi();
         $middleware->alias([
+            // Sanctum ships this but registers no alias. Without it
+            // `auth:sanctum` accepts any unexpired token no matter what it was
+            // minted for — which made the 30-day refresh token a full API
+            // session. Every protected group carries `abilities:access-api`.
+            'abilities' => CheckAbilities::class,
             'admin' => EnsureUserIsAdmin::class,
+            'two-factor' => EnsureTwoFactorSatisfied::class,
             'payment-internal' => EnsureUserIsPaymentInternal::class,
             'payment-admin' => EnsureUserIsPaymentAdmin::class,
             'hub' => EnsureHubRequest::class,

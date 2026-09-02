@@ -21,7 +21,7 @@ class MemberSelfServiceTest extends TestCase
     {
         $role = Role::factory()->create(['name' => 'Member']);
         $user = User::factory()->create(array_merge(['role_id' => $role->id], $attributes));
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['access-api']);
 
         return $user;
     }

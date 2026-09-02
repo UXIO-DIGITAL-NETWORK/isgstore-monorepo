@@ -40,7 +40,7 @@ class ServiceCatalogTest extends TestCase
 
     public function test_internal_creates_a_service(): void
     {
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/services', $this->payload())
             ->assertCreated()
@@ -56,7 +56,7 @@ class ServiceCatalogTest extends TestCase
     public function test_service_code_must_be_unique(): void
     {
         Service::factory()->create(['code' => 'whatsapp-api']);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->postJson('/api/v1/payment-internal/services', $this->payload())
             ->assertStatus(422)
@@ -70,7 +70,7 @@ class ServiceCatalogTest extends TestCase
             'selling_price' => 100000,
             'duration_days' => 30,
         ]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/services/{$service->id}", [
             'cost_price' => 90000,
@@ -92,13 +92,13 @@ class ServiceCatalogTest extends TestCase
     {
         Service::factory()->create(['code' => 'uxiotopup', 'cost_price' => 180000, 'selling_price' => 250000]);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->getJson('/api/v1/payment-internal/services')
             ->assertOk()
             ->assertJsonPath('data.data.0.cost_price', 180000)
             ->assertJsonPath('data.data.0.selling_price', 250000);
 
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
         $row = $this->getJson('/api/v1/payment-admin/services')
             ->assertOk()
             ->json('data.data.0');
@@ -118,7 +118,7 @@ class ServiceCatalogTest extends TestCase
             'service_id' => $service->id,
             'merchant_id' => $this->merchant()->id,
         ]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->deleteJson("/api/v1/payment-internal/services/{$service->id}")->assertStatus(422);
 
@@ -128,7 +128,7 @@ class ServiceCatalogTest extends TestCase
     public function test_an_unsold_service_can_be_deleted(): void
     {
         $service = Service::factory()->create();
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->deleteJson("/api/v1/payment-internal/services/{$service->id}")->assertOk();
 
@@ -139,7 +139,7 @@ class ServiceCatalogTest extends TestCase
     {
         Service::factory()->create(['name' => 'Uxiotopup']);
         Service::factory()->inactive()->create(['name' => 'Layanan Lama']);
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $response = $this->getJson('/api/v1/payment-admin/services')->assertOk();
 
@@ -150,10 +150,10 @@ class ServiceCatalogTest extends TestCase
 
     public function test_role_gates(): void
     {
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
         $this->postJson('/api/v1/payment-internal/services', $this->payload())->assertStatus(403);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->getJson('/api/v1/payment-admin/services')->assertStatus(403);
     }
 }

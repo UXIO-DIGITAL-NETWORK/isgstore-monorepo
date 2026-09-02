@@ -80,7 +80,7 @@ class WithdrawalTest extends TestCase
     public function test_merchant_request_reduces_available_balance(): void
     {
         $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $response = $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000));
 
@@ -105,14 +105,14 @@ class WithdrawalTest extends TestCase
         // fee = 1500 + round(1500 * 0.11) = 1500 + 165 = 1665, the same for
         // every amount (the 11% is taken on the flat, not the withdrawal amount).
         $big = $this->merchant(500000);
-        Sanctum::actingAs($big);
+        Sanctum::actingAs($big, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(100000))
             ->assertCreated()
             ->assertJsonPath('data.fee', 1665)
             ->assertJsonPath('data.nett', 98335); // 100000 - 1665
 
         $small = $this->merchant(500000);
-        Sanctum::actingAs($small);
+        Sanctum::actingAs($small, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(20000))
             ->assertCreated()
             ->assertJsonPath('data.fee', 1665) // identical fee on a different amount
@@ -122,7 +122,7 @@ class WithdrawalTest extends TestCase
     public function test_request_below_minimum_is_rejected(): void
     {
         $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         // Below the 10.000 floor — rejected before any hold, so nett can never
         // go non-positive under the 1500 + 11% schedule.
@@ -137,7 +137,7 @@ class WithdrawalTest extends TestCase
     public function test_request_rejected_when_sales_insufficient(): void
     {
         $merchant = $this->merchant(10000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))
             ->assertStatus(422);
@@ -149,7 +149,7 @@ class WithdrawalTest extends TestCase
     public function test_rejects_an_unknown_bank_code(): void
     {
         $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/withdrawals', [
             'amount' => 40000,
@@ -171,7 +171,7 @@ class WithdrawalTest extends TestCase
 
         // E-wallet payout: keyed on the phone, no account number required.
         $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', [
             'amount' => 40000,
             'bank_code' => 'DANA',
@@ -180,7 +180,7 @@ class WithdrawalTest extends TestCase
         ])->assertCreated();
         $withdrawal = Withdrawal::firstOrFail();
 
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/approve", ['method' => 'monetapay'])
             ->assertOk();
 
@@ -193,11 +193,11 @@ class WithdrawalTest extends TestCase
     {
         Storage::fake('public');
         $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))->assertCreated();
         $withdrawal = Withdrawal::first();
 
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->post("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/approve", [
             'method' => 'manual',
             'proof' => UploadedFile::fake()->image('bukti.jpg'),
@@ -213,11 +213,11 @@ class WithdrawalTest extends TestCase
     public function test_manual_approve_requires_bukti_transfer(): void
     {
         $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))->assertCreated();
         $withdrawal = Withdrawal::first();
 
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/approve", ['method' => 'manual'])
             ->assertStatus(422)
             ->assertJsonValidationErrors('proof');
@@ -233,12 +233,12 @@ class WithdrawalTest extends TestCase
         config(['services.withdrawal.fee_flat' => 5000, 'services.withdrawal.fee_percent' => 0]);
 
         $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))->assertCreated();
         $withdrawal = Withdrawal::first();
         $this->assertSame(5000, (int) $withdrawal->fee);
 
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $response = $this->post("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/approve", [
             'method' => 'manual',
             'proof' => UploadedFile::fake()->image('bukti.jpg'),
@@ -268,11 +268,11 @@ class WithdrawalTest extends TestCase
     public function test_finance_reject_restores_available_balance(): void
     {
         $merchant = $this->merchant(100000);
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))->assertCreated();
         $withdrawal = Withdrawal::first();
 
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/withdrawals/{$withdrawal->id}/reject", ['reason' => 'invalid account'])
             ->assertOk()
             ->assertJsonPath('data.status', 'REJECTED');
@@ -285,22 +285,22 @@ class WithdrawalTest extends TestCase
     public function test_merchant_cannot_see_another_merchants_withdrawal(): void
     {
         $a = $this->merchant(100000);
-        Sanctum::actingAs($a);
+        Sanctum::actingAs($a, ['access-api']);
         $this->postJson('/api/v1/payment-admin/withdrawals', $this->payload(40000))->assertCreated();
         $number = Withdrawal::first()->withdrawal_number;
 
-        Sanctum::actingAs($this->merchant(100000));
+        Sanctum::actingAs($this->merchant(100000), ['access-api']);
         $this->getJson("/api/v1/payment-admin/withdrawals/{$number}")->assertNotFound();
     }
 
     public function test_role_gates(): void
     {
         // A merchant cannot reach the finance surface.
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
         $this->getJson('/api/v1/payment-internal/dashboard')->assertStatus(403);
 
         // Finance cannot reach the merchant surface.
-        Sanctum::actingAs($this->finance());
+        Sanctum::actingAs($this->finance(), ['access-api']);
         $this->getJson('/api/v1/payment-admin/dashboard')->assertStatus(403);
     }
 }

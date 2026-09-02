@@ -89,7 +89,7 @@ class ServiceInstallationDetailTest extends TestCase
             'service_id' => $installation->service_id,
         ]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $response = $this->getJson("/api/v1/payment-admin/service-subscriptions/{$subscription->id}/installation")
             ->assertOk()
             ->assertJsonPath('data.details.0.value', null)
@@ -115,7 +115,7 @@ class ServiceInstallationDetailTest extends TestCase
             'service_id' => $installation->service_id,
         ]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-subscriptions/{$subscription->id}/installation")
             ->assertJsonPath('data.details.0.value', 'https://uxio.test/callback')
             ->assertJsonPath('data.details.0.masked_value', 'https://uxio.test/callback');
@@ -129,7 +129,7 @@ class ServiceInstallationDetailTest extends TestCase
             'value' => self::SECRET,
         ]);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $response = $this->postJson("/api/v1/payment-admin/installation-details/{$detail->id}/reveal")
             ->assertOk()
             ->assertJsonPath('data.value', self::SECRET);
@@ -144,7 +144,7 @@ class ServiceInstallationDetailTest extends TestCase
             'service_installation_id' => $this->installation($owner)->id,
         ]);
 
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
         $this->postJson("/api/v1/payment-admin/installation-details/{$detail->id}/reveal")->assertStatus(404);
     }
 
@@ -152,7 +152,7 @@ class ServiceInstallationDetailTest extends TestCase
     {
         $installation = $this->installation($this->merchant());
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $response = $this->postJson("/api/v1/payment-internal/installations/{$installation->id}/detail-items", [
             'label' => 'API Key',
             'value' => self::SECRET,
@@ -170,7 +170,7 @@ class ServiceInstallationDetailTest extends TestCase
             'value' => self::SECRET,
         ]);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->putJson("/api/v1/payment-internal/installation-details/{$detail->id}", ['label' => 'API Key (prod)'])
             ->assertOk()
             ->assertJsonPath('data.label', 'API Key (prod)');
@@ -206,7 +206,7 @@ class ServiceInstallationDetailTest extends TestCase
         $merchant = $this->merchant();
         $installation = $this->installation($merchant);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson("/api/v1/payment-internal/installations/{$installation->id}/detail-items", [
             'label' => 'x', 'value' => 'y',
         ])->assertStatus(403);

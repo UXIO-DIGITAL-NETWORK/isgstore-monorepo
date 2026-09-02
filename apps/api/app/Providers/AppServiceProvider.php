@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,8 +58,32 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(120)->by($request->ip());
         });
 
+        // Two limits, not one. Keyed on the email as well as the IP because a
+        // shared office egresses through a single address: five colleagues
+        // signing in at 09:00 used to exhaust the whole allowance, and since
+        // /register, /forgot-password and /reset-password share this limiter it
+        // locked out password recovery for everyone behind that IP too.
+        //
+        // The per-email limit is the one that actually stops credential
+        // stuffing against an account; the per-IP ceiling is the loose backstop
+        // against a single host hammering many accounts.
         RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(5)->by($request->ip());
+            $email = Str::lower(trim((string) $request->input('email')));
+
+            return [
+                Limit::perMinute(5)->by($email.'|'.$request->ip()),
+                Limit::perMinute(30)->by($request->ip()),
+            ];
+        });
+
+        // Second-factor verification. Keyed on the challenge, not the IP: a
+        // per-IP limit is useless against distributed guessing and harmful in a
+        // shared office. The real control is the per-challenge attempt counter
+        // — this is the backstop against hammering one challenge.
+        RateLimiter::for('two-factor', function (Request $request) {
+            $challenge = (string) $request->input('challenge_token');
+
+            return Limit::perMinute(10)->by($challenge !== '' ? hash('sha256', $challenge) : $request->ip());
         });
 
         // Public refund claim. Tighter than checkout because the prize is

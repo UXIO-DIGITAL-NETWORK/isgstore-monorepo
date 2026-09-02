@@ -71,7 +71,7 @@ trait PaysServiceInvoices
     {
         $channel ??= $this->qrisChannel();
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         $response = $this->postJson('/api/v1/payment-admin/service-invoices', [
             'service_id' => $service->id,

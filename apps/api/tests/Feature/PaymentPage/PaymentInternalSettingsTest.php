@@ -30,7 +30,7 @@ class PaymentInternalSettingsTest extends TestCase
     public function test_internal_updates_channel_fee(): void
     {
         $channel = PaymentChannel::factory()->create(['fee_flat' => 0, 'fee_percent' => 0]);
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", [
             'fee_flat' => 2500,
@@ -48,7 +48,7 @@ class PaymentInternalSettingsTest extends TestCase
     public function test_merchant_cannot_touch_settings(): void
     {
         $channel = PaymentChannel::factory()->create();
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/channels')->assertStatus(403);
         $this->putJson("/api/v1/payment-internal/channels/{$channel->id}", ['fee_flat' => 1000])
@@ -61,7 +61,7 @@ class PaymentInternalSettingsTest extends TestCase
      */
     public function test_admin_fee_settings_route_is_gone(): void
     {
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
 
         $this->getJson('/api/v1/payment-internal/settings/admin-fee')->assertStatus(404);
         $this->putJson('/api/v1/payment-internal/settings/admin-fee', ['type' => 'fixed', 'value' => 1000])

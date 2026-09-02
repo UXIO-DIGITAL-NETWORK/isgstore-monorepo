@@ -94,7 +94,7 @@ class RefundTerminalGuardTest extends TestCase
     public function test_the_status_counts_expose_refunded_instead_of_losing_the_row(): void
     {
         $adminRole = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $adminRole->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $adminRole->id]), ['access-api']);
 
         $this->refundedMemberOrder();
 

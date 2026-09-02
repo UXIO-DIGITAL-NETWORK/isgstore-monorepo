@@ -51,7 +51,7 @@ class TransactionStatusFilterTest extends TestCase
         $paid = $this->order(TransactionStatus::PROCESSING, PaymentStatus::SUCCESS);
         $this->order(TransactionStatus::PENDING, PaymentStatus::PENDING);
 
-        Sanctum::actingAs($this->admin());
+        Sanctum::actingAs($this->admin(), ['access-api']);
 
         $this->getJson('/api/v1/transactions?payment_status=SUCCESS')
             ->assertOk()
@@ -64,7 +64,7 @@ class TransactionStatusFilterTest extends TestCase
         $delivered = $this->order(TransactionStatus::COMPLETED, PaymentStatus::SUCCESS);
         $this->order(TransactionStatus::PROCESSING, PaymentStatus::SUCCESS);
 
-        Sanctum::actingAs($this->admin());
+        Sanctum::actingAs($this->admin(), ['access-api']);
 
         $this->getJson('/api/v1/transactions?provider_status='.ProviderStatus::DELIVERED->value)
             ->assertOk()
@@ -82,7 +82,7 @@ class TransactionStatusFilterTest extends TestCase
         // Same provider verdict, but the customer never paid — must not match.
         $this->order(TransactionStatus::FAILED_PROVIDER, PaymentStatus::EXPIRED);
 
-        Sanctum::actingAs($this->admin());
+        Sanctum::actingAs($this->admin(), ['access-api']);
 
         $this->getJson('/api/v1/transactions?payment_status=SUCCESS&provider_status='.ProviderStatus::REJECTED->value)
             ->assertOk()
@@ -95,7 +95,7 @@ class TransactionStatusFilterTest extends TestCase
         $manual = $this->order(TransactionStatus::COMPLETED, null);
         $this->order(TransactionStatus::COMPLETED, PaymentStatus::SUCCESS);
 
-        Sanctum::actingAs($this->admin());
+        Sanctum::actingAs($this->admin(), ['access-api']);
 
         $this->getJson('/api/v1/transactions?payment_status=NONE')
             ->assertOk()
@@ -107,7 +107,7 @@ class TransactionStatusFilterTest extends TestCase
     {
         $this->order(TransactionStatus::COMPLETED, PaymentStatus::SUCCESS);
 
-        Sanctum::actingAs($this->admin());
+        Sanctum::actingAs($this->admin(), ['access-api']);
 
         // A silently-ignored filter is worse than an empty result: an operator
         // would read "all orders" as "all matching orders".
@@ -120,7 +120,7 @@ class TransactionStatusFilterTest extends TestCase
     {
         $this->order(TransactionStatus::FAILED_PROVIDER, PaymentStatus::SUCCESS);
 
-        Sanctum::actingAs($this->admin());
+        Sanctum::actingAs($this->admin(), ['access-api']);
 
         $this->getJson('/api/v1/transactions')
             ->assertOk()
@@ -134,7 +134,7 @@ class TransactionStatusFilterTest extends TestCase
     {
         $this->order(TransactionStatus::PROCESSING, PaymentStatus::SUCCESS);
 
-        Sanctum::actingAs($this->admin());
+        Sanctum::actingAs($this->admin(), ['access-api']);
 
         $this->getJson('/api/v1/transactions/status-counts')
             ->assertOk()

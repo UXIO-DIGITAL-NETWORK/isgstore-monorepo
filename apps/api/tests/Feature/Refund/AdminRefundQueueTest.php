@@ -26,7 +26,7 @@ class AdminRefundQueueTest extends TestCase
     {
         $role = Role::factory()->create(['name' => 'Admin']);
         $admin = User::factory()->create(['role_id' => $role->id, 'name' => $name]);
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['access-api']);
 
         return $admin;
     }
@@ -148,7 +148,7 @@ class AdminRefundQueueTest extends TestCase
 
         // A second operator walks up to the same row.
         $second = User::factory()->create(['role_id' => $first->role_id, 'name' => 'Second Admin']);
-        Sanctum::actingAs($second);
+        Sanctum::actingAs($second, ['access-api']);
 
         $this->postJson("/api/v1/refunds/{$refund->id}/complete")->assertUnprocessable();
         $this->assertSame(RefundStatus::PROCESSING, $refund->fresh()->status);

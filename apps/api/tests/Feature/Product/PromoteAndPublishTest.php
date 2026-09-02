@@ -31,7 +31,7 @@ class PromoteAndPublishTest extends TestCase
         parent::setUp();
 
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
         $this->category = Category::factory()->create(['status' => true]);
     }
 

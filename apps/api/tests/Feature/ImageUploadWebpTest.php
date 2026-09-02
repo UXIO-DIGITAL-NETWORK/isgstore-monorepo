@@ -34,7 +34,7 @@ class ImageUploadWebpTest extends TestCase
     public function test_an_upload_through_the_api_lands_as_webp(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
 
         $logo = $this->postJson('/api/v1/sub-categories', [
             'category_id' => Category::factory()->create()->id,

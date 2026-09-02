@@ -33,7 +33,7 @@ class FeeBreakdownTest extends TestCase
 
         $role = Role::factory()->create(['name' => 'Member']);
         $user = User::factory()->create(['role_id' => $role->id, 'balance' => 100000]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['access-api']);
 
         $response = $this->postJson('/api/v1/checkout', [
             'product_id' => $product->id,

@@ -118,7 +118,7 @@ class WhatsAppReceiptTest extends TestCase
     {
         $this->configurePiwapi();
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
         Http::fake(['*' => Http::response([], 200)]);
 
         $channels = collect($this->getJson('/api/v1/integration/channels')->assertOk()->json('data'))->keyBy('id');
@@ -131,7 +131,7 @@ class WhatsAppReceiptTest extends TestCase
     public function test_piwapi_credentials_are_readable_and_masked(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
         Http::fake(['*' => Http::response([], 200)]);
 
         // Save credentials, then confirm the secret is masked on read-back.

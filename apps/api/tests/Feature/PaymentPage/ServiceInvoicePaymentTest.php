@@ -34,7 +34,7 @@ class ServiceInvoicePaymentTest extends TestCase
 
         $invoice = $this->subscribe($merchant, $service, $this->qrisChannel());
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")
             ->assertOk()
             ->assertJsonPath('data.payment.type', 'qris')
@@ -50,7 +50,7 @@ class ServiceInvoicePaymentTest extends TestCase
 
         $invoice = $this->subscribe($merchant, $service, $this->vaChannel());
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")
             ->assertOk()
             ->assertJsonPath('data.payment.type', 'virtual_account')
@@ -78,7 +78,7 @@ class ServiceInvoicePaymentTest extends TestCase
             $this->qrisChannel(['payment_type' => 'ewallet', 'channel_code' => 'gopay', 'name' => 'GoPay']),
         );
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")
             ->assertOk()
             ->assertJsonPath('data.payment.instructions.redirect_url', 'https://pay.example/redirect')
@@ -107,7 +107,7 @@ class ServiceInvoicePaymentTest extends TestCase
         // The bill stays what was agreed; only the payment carries the fee.
         $this->assertSame(250000, (int) $invoice->amount);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->getJson("/api/v1/payment-admin/service-invoices/{$invoice->id}")
             ->assertOk()
             ->assertJsonPath('data.amount', 250000)
@@ -118,7 +118,7 @@ class ServiceInvoicePaymentTest extends TestCase
     public function test_a_channel_below_its_minimum_is_refused(): void
     {
         $this->fakeGateway();
-        Sanctum::actingAs($merchant = $this->merchant());
+        Sanctum::actingAs($merchant = $this->merchant(), ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/service-invoices', [
             'service_id' => Service::factory()->create(['selling_price' => 5000])->id,
@@ -133,7 +133,7 @@ class ServiceInvoicePaymentTest extends TestCase
     public function test_the_wallet_channel_cannot_pay_a_service_bill(): void
     {
         $this->fakeGateway();
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/service-invoices', [
             'service_id' => Service::factory()->create()->id,
@@ -148,7 +148,7 @@ class ServiceInvoicePaymentTest extends TestCase
     public function test_an_inactive_channel_is_refused(): void
     {
         $this->fakeGateway();
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $this->postJson('/api/v1/payment-admin/service-invoices', [
             'service_id' => Service::factory()->create()->id,
@@ -166,7 +166,7 @@ class ServiceInvoicePaymentTest extends TestCase
         $merchant = $this->merchant();
         $invoice = $this->subscribe($merchant, Service::factory()->create(), $this->qrisChannel());
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
             'payment_channel_id' => $this->vaChannel()->id,
         ])->assertOk()->assertJsonPath('data.payment.type', 'virtual_account');
@@ -185,10 +185,10 @@ class ServiceInvoicePaymentTest extends TestCase
         $channel = $this->qrisChannel();
         $invoice = $this->subscribe($merchant, Service::factory()->create(), $channel);
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
         $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
             'payment_channel_id' => $channel->id,
         ])->assertStatus(422);
@@ -204,7 +204,7 @@ class ServiceInvoicePaymentTest extends TestCase
         $this->fakeGateway();
         $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 150000]), $this->qrisChannel());
 
-        Sanctum::actingAs($this->internal());
+        Sanctum::actingAs($this->internal(), ['access-api']);
         $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
 
         $this->assertDatabaseHas('platform_mutations', [
@@ -225,7 +225,7 @@ class ServiceInvoicePaymentTest extends TestCase
         $this->qrisChannel(['payment_type' => 'balance', 'channel_code' => 'balance', 'name' => 'Saldo']);
         $this->qrisChannel(['channel_code' => 'off_qris', 'name' => 'Nonaktif', 'is_active' => false]);
 
-        Sanctum::actingAs($this->merchant());
+        Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $codes = collect($this->getJson('/api/v1/payment-admin/payment-channels')->assertOk()->json('data'))
             ->pluck('channel_code');
@@ -245,7 +245,7 @@ class ServiceInvoicePaymentTest extends TestCase
         $qris = $this->qrisChannel();
         $invoice = $this->subscribe($merchant, Service::factory()->create(), $qris);
 
-        Sanctum::actingAs($merchant);
+        Sanctum::actingAs($merchant, ['access-api']);
 
         // Same channel the bill was just opened with: still inside the window.
         $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
