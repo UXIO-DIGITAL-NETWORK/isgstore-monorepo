@@ -5,34 +5,34 @@ import { Text } from "@/components/common/Text";
 import StatusBadge from "@/features/price-list/components/StatusBadge";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { displayTiers, tierColor, tierPriceLabel } from "@/features/price-list/lib/tierColumns";
 import type { PriceListItem } from "@/features/price-list/types/priceList.type";
-
-/**
- * Must match the grid template in PriceTable header.
- * Columns: Game | Layanan | Harga Normal | Member | Gold | Status
- */
-export const TABLE_GRID_COLS =
-  "grid-cols-[minmax(0,1.4fr)_minmax(0,2.2fr)_minmax(0,1.3fr)_minmax(0,1.3fr)_minmax(0,1.3fr)_minmax(0,0.9fr)]";
 
 interface Props {
   item: PriceListItem;
   index: number;
+  /** Built by the parent from the plans the API returned; header and row must
+   *  share one template or the columns drift apart. */
+  gridTemplate: string;
 }
 
-export default function PriceTableRow({ item, index }: Props): React.JSX.Element {
-  const { i18n } = useTranslation();
+export default function PriceTableRow({ item, index, gridTemplate }: Props): React.JSX.Element {
+  const { t, i18n } = useTranslation("priceList");
   const locale = i18n.language;
   const isEven = index % 2 === 0;
+  const tiers = displayTiers(item.tiers);
+  const hiddenLabel = t("table.hiddenPrice");
 
   return (
     <>
       {/* ── Desktop row (md+) ─────────────────────────────────────────── */}
       <Box
         className={cn(
-          `hidden md:grid ${TABLE_GRID_COLS} items-center w-full px-5 py-3.5`,
+          "hidden md:grid items-center w-full px-5 py-3.5",
           "border-b border-white/5 last:border-0",
           isEven ? "bg-transparent" : "bg-[#0D0718]/40",
         )}
+        style={{ gridTemplateColumns: gridTemplate }}
       >
         {/* Game cell: logo + name + region */}
         <Box className="flex items-center gap-2 min-w-0">
@@ -69,15 +69,17 @@ export default function PriceTableRow({ item, index }: Props): React.JSX.Element
           {formatCurrency(item.normalPrice, locale)}
         </Text>
 
-        {/* Member price (azure) */}
-        <Text as="span" className="font-plex text-[13px] text-[#3B82F6] leading-none">
-          {formatCurrency(item.memberPrice, locale)}
-        </Text>
-
-        {/* Gold price (amber) */}
-        <Text as="span" className="font-plex text-[13px] text-[#E5A000] leading-none">
-          {formatCurrency(item.goldPrice, locale)}
-        </Text>
+        {/* One cell per membership tier, coloured by its rung on the ladder. */}
+        {tiers.map((tier, tierIndex) => (
+          <Text
+            key={tier.planId}
+            as="span"
+            className="font-plex text-[13px] leading-none truncate"
+            style={{ color: tier.isHidden ? undefined : tierColor(tierIndex, tiers.length) }}
+          >
+            {tierPriceLabel(tier, (value) => formatCurrency(value, locale), hiddenLabel)}
+          </Text>
+        ))}
 
         {/* Status badge */}
         <Box className="flex justify-center">
@@ -123,32 +125,35 @@ export default function PriceTableRow({ item, index }: Props): React.JSX.Element
           </Text>
         </Box>
 
-        {/* Prices row */}
-        <Box className="grid grid-cols-3 gap-x-4 gap-y-2">
-          <Box className="flex flex-col gap-0.5">
+        {/* Prices row. Wraps rather than being pinned to three columns — the
+            number of tiers is data, and a fourth plan must not overflow. */}
+        <Box className="flex flex-wrap gap-x-4 gap-y-2">
+          <Box className="flex flex-col gap-0.5 min-w-[5.5rem]">
             <Text as="span" className="font-inter text-[10px] text-white/40 leading-none uppercase tracking-wide">
-              Normal
+              {t("table.normalPrice")}
             </Text>
             <Text as="span" className="font-plex text-[13px] text-white/80 leading-none">
               {formatCurrency(item.normalPrice, locale)}
             </Text>
           </Box>
-          <Box className="flex flex-col gap-0.5">
-            <Text as="span" className="font-inter text-[10px] text-[#3B82F6]/70 leading-none uppercase tracking-wide">
-              Member
-            </Text>
-            <Text as="span" className="font-plex text-[13px] text-[#3B82F6] leading-none">
-              {formatCurrency(item.memberPrice, locale)}
-            </Text>
-          </Box>
-          <Box className="flex flex-col gap-0.5">
-            <Text as="span" className="font-inter text-[10px] text-[#E5A000]/70 leading-none uppercase tracking-wide">
-              Gold
-            </Text>
-            <Text as="span" className="font-plex text-[13px] text-[#E5A000] leading-none">
-              {formatCurrency(item.goldPrice, locale)}
-            </Text>
-          </Box>
+          {tiers.map((tier, tierIndex) => {
+            const color = tier.isHidden ? "rgba(255,255,255,0.4)" : tierColor(tierIndex, tiers.length);
+
+            return (
+              <Box key={tier.planId} className="flex flex-col gap-0.5 min-w-[5.5rem]">
+                <Text
+                  as="span"
+                  className="font-inter text-[10px] leading-none uppercase tracking-wide truncate"
+                  style={{ color }}
+                >
+                  {tier.planName}
+                </Text>
+                <Text as="span" className="font-plex text-[13px] leading-none" style={{ color }}>
+                  {tierPriceLabel(tier, (value) => formatCurrency(value, locale), hiddenLabel)}
+                </Text>
+              </Box>
+            );
+          })}
         </Box>
       </Box>
     </>

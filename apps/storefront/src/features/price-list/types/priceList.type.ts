@@ -13,14 +13,25 @@ export interface PriceListItem {
   gameLogo: string;
   /** Game server / publisher region — e.g. "Indonesia", "moHoyo" */
   gameRegion: string;
-  /** Normal (retail) price in IDR */
+  /** What a visitor pays today — the default (free) plan's price. */
   normalPrice: number;
-  /** Member-tier price in IDR (UI-only — not yet in backend schema) */
-  memberPrice: number;
-  /** Gold-tier price in IDR (UI-only — not yet in backend schema) */
-  goldPrice: number;
-  /** Active/inactive status (UI-only — not yet in backend schema) */
+  /**
+   * One entry per active membership plan, in the admin's order. The table grows
+   * its columns from this rather than from a fixed set, so adding a plan needs
+   * no frontend release.
+   */
+  tiers: PriceListTier[];
   status: PriceStatus;
+}
+
+export interface PriceListTier {
+  planId: number;
+  planCode: string;
+  planName: string;
+  isDefault: boolean;
+  /** The highest tier hides its price; `price` is null when it does. */
+  isHidden: boolean;
+  price: number | null;
 }
 
 export type SortOption = "default" | "name-asc" | "price-asc" | "price-desc";

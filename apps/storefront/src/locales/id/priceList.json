@@ -3,46 +3,37 @@
     "title": "DAFTAR HARGA LAYANAN",
     "subtitle": "Harga terbaik untuk top up game dan layanan digital, proses otomatis & instan 24/7"
   },
-
   "category": {
     "title": "PILIH KATEGORI GAME",
     "subtitle": "Pilih kategori untuk menyaring tabel",
     "searchPlaceholder": "Cari kategori game...",
     "noResults": "Tidak ada game yang ditemukan."
   },
-
   "toolbar": {
     "searchPlaceholder": "Cari nama layanan..."
   },
-
   "sort": {
     "default": "Urutan Default",
     "name-asc": "Nama A–Z",
     "price-asc": "Harga Terendah",
     "price-desc": "Harga Tertinggi"
   },
-
   "table": {
     "game": "Game",
     "service": "Layanan",
     "normalPrice": "Harga Normal",
-    "member": "Member",
-    "gold": "Gold",
-    "status": "Status"
+    "status": "Status",
+    "hiddenPrice": "Khusus member"
   },
-
   "status": {
     "active": "Aktif",
     "inactive": "Nonaktif"
   },
-
   "noGameSelected": {
     "title": "Pilih Game Dulu",
     "subtitle": "Pilih kategori game di atas untuk melihat daftar harga layanan."
   },
-
   "emptyState": "Tidak ada layanan yang cocok dengan pencarian Anda.",
-
   "pagination": {
     "prev": "Prev",
     "next": "Next"

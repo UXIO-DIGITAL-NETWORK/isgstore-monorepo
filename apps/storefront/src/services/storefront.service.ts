@@ -14,9 +14,23 @@ export interface PriceListRow {
   game_region: string | null;
   game_logo_url: string | null;
   normal_price: number;
-  member_price: number;
-  gold_price: number;
+  /**
+   * One entry per active membership plan, in the admin's own order. Replaces
+   * the fixed normal/member/gold triple — "gold" used to be `price_vip`, which
+   * was already a different plan's price.
+   */
+  tiers: PriceListTier[];
   status: "active" | "inactive";
+}
+
+export interface PriceListTier {
+  membership_plan_id: number;
+  plan_code: string;
+  plan_name: string;
+  is_default: boolean;
+  /** The top tier withholds its price — it is the reason to subscribe. */
+  is_hidden: boolean;
+  price: number | null;
 }
 
 export interface BannerModel {

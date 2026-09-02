@@ -33,6 +33,16 @@ export const membershipService = {
   current: async (locale: string): Promise<ApiResponse<CurrentMembershipModel | null>> =>
     await api.get(`${API_VERSION}/me/membership`, { params: { locale } }),
 
+  /**
+   * Turn automatic renewal on or off.
+   *
+   * On the user, not the subscription: switching it off means "stop billing
+   * me", and a per-subscription flag would have to be copied forward on every
+   * renewal, where one missed copy silently switches billing back on.
+   */
+  setAutoRenew: async (autoRenew: boolean): Promise<ApiResponse<{ auto_renew: boolean }>> =>
+    await api.patch(`${API_VERSION}/me/membership/auto-renew`, { auto_renew: autoRenew }),
+
   subscribe: async (membershipPlanId: number): Promise<ApiResponse<{ ends_at: string }>> =>
     await api.post(`${API_VERSION}/me/membership/subscribe`, { membership_plan_id: membershipPlanId }),
 };

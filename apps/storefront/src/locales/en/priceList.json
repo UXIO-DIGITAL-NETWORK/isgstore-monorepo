@@ -3,46 +3,37 @@
     "title": "SERVICE PRICE LIST",
     "subtitle": "Best prices for game top-ups and digital services, automated & instant processing 24/7"
   },
-
   "category": {
     "title": "SELECT GAME CATEGORY",
     "subtitle": "Choose a category to filter the table",
     "searchPlaceholder": "Search game category...",
     "noResults": "No games found."
   },
-
   "toolbar": {
     "searchPlaceholder": "Search service name..."
   },
-
   "sort": {
     "default": "Default Order",
     "name-asc": "Name A–Z",
     "price-asc": "Lowest Price",
     "price-desc": "Highest Price"
   },
-
   "table": {
     "game": "Game",
     "service": "Service",
     "normalPrice": "Normal Price",
-    "member": "Member",
-    "gold": "Gold",
-    "status": "Status"
+    "status": "Status",
+    "hiddenPrice": "Members only"
   },
-
   "status": {
     "active": "Active",
     "inactive": "Inactive"
   },
-
   "noGameSelected": {
     "title": "Select a Game First",
     "subtitle": "Choose a game category above to view the service price list."
   },
-
   "emptyState": "No services matched your search.",
-
   "pagination": {
     "prev": "Prev",
     "next": "Next"
