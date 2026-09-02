@@ -226,8 +226,25 @@ const DOCUMENTS: Record<string, unknown> = {
       is_public: true,
     },
   ],
+  // This site's own platform subscription — feeds the sidebar footer card,
+  // which is mounted on every admin route.
+  "/v1/website-subscription": {
+    status: "expiring_soon",
+    service: { id: 1, code: "uxiotopup", name: "Website Topup" },
+    ends_at: "2026-09-14T00:00:00.000Z",
+    days_remaining: 9,
+    checkout_url: "https://pay.example.test/app/payment-admin/services/1/checkout",
+  },
   "/v1/transactions/status-counts": { pending: 12, processing: 32, failed_provider: 8, refunded: 3 },
-  "/v1/refunds/status-counts": { WAITING_DETAILS: 2, PENDING: 1, PROCESSING: 0, COMPLETED: 7 },
+  "/v1/refunds/status-counts": {
+    WAITING_ACCOUNT: 2,
+    WAITING_DETAILS: 1,
+    PENDING: 1,
+    PROCESSING: 0,
+    COMPLETED: 7,
+    unclaimed: 2,
+    overdue: 1,
+  },
   "/v1/payout-banks": [
     { code: "BCA", name: "Bank Central Asia (BCA)", is_ewallet: false },
     { code: "MANDIRI", name: "Bank Mandiri", is_ewallet: false },
@@ -502,6 +519,10 @@ const SEEDS: Record<string, () => Row[]> = {
       refunded_at: null,
       settlement_reversed_at: null,
       created_at: "2026-08-30T10:00:30.000Z",
+      claimed_account: null,
+      verify_due_at: null,
+      is_overdue: false,
+      claim_rejected_count: 0,
     },
     {
       id: 2,
@@ -532,7 +553,65 @@ const SEEDS: Record<string, () => Row[]> = {
       refunded_at: "2026-08-30T09:00:10.000Z",
       settlement_reversed_at: "2026-08-30T09:00:10.000Z",
       created_at: "2026-08-30T09:00:05.000Z",
+      claimed_account: null,
+      verify_due_at: null,
+      is_overdue: false,
+      claim_rejected_count: 0,
     },
+    {
+      // The current scheme: a guest came back with an account and is waiting on
+      // an admin to verify it. Overdue, so the SLA affordances are covered too.
+      id: 3,
+      refund_number: "RFD-c1a2i3m4e5d6",
+      method: "balance_claim",
+      status: "PENDING",
+      amount: 30000,
+      transaction: {
+        id: 3,
+        invoice_number: "INV-20260901-CLM001",
+        product: "355 Diamonds",
+        created_at: "2026-08-31T08:00:00.000Z",
+      },
+      customer: {
+        user_id: null,
+        name: null,
+        email: "claimer@example.com",
+        phone: "081200001111",
+        is_guest: true,
+      },
+      payout: null,
+      claim_notified_at: "2026-08-31T08:01:00.000Z",
+      processed_by: null,
+      processed_at: null,
+      proof_url: null,
+      admin_note: null,
+      reject_reason: null,
+      refunded_at: null,
+      settlement_reversed_at: null,
+      created_at: "2026-08-31T08:00:30.000Z",
+      claimed_account: {
+        user_id: 2002,
+        name: "Claiming Customer",
+        email: "claimer@example.com",
+        phone: "081200001111",
+        claimed_at: "2026-08-31T09:00:00.000Z",
+        account_status: "active",
+        contact_match: "email",
+        contact_value: "claimer@example.com",
+        sibling_claims: 0,
+      },
+      verify_due_at: "2026-09-02T09:00:00.000Z",
+      is_overdue: true,
+      claim_rejected_count: 0,
+    },
+  ],
+  // Pricing tiers are membership plans now: the margin form and the pricing
+  // rule select both build their fields from this list rather than from a
+  // hardcoded four.
+  "membership-plans": () => [
+    { id: 1, code: "free", name: { id: "Basic", en: "Basic" }, price: 0, duration_days: null, is_active: true, is_default: true, sort_order: 0 },
+    { id: 2, code: "platinum", name: { id: "Platinum", en: "Platinum" }, price: 150000, duration_days: null, is_active: true, is_default: false, sort_order: 2 },
+    { id: 3, code: "gold", name: { id: "Gold", en: "Gold" }, price: 300000, duration_days: null, is_active: true, is_default: false, sort_order: 3 },
   ],
   "article-categories": () =>
     ["promo", "mobile-legend", "free-fire"].map((key, index) => ({

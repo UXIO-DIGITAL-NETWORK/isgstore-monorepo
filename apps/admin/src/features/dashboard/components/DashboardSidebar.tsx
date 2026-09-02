@@ -36,6 +36,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -45,6 +46,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useSidebar } from "@/hooks/useSidebar";
+import { WebsiteSubscriptionCard } from "./WebsiteSubscriptionCard";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
 import { cn } from "@/lib/utils";
@@ -246,6 +248,12 @@ export function DashboardSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
+
+      {/* The site's own subscription. Sits below the nav so it is the last
+          thing an admin sees, and links out to where it is actually renewed. */}
+      <SidebarFooter>
+        <WebsiteSubscriptionCard />
+      </SidebarFooter>
 
       <CommandDialog
         open={commandOpen}
