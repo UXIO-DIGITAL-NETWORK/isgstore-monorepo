@@ -22,7 +22,12 @@ function toIntlLocale(locale: string): string {
  * `undefined`, so a field the API stopped sending would otherwise reach the
  * screen looking like a price. An em dash is a visible absence.
  */
-export function formatCurrency(amount: number, _locale = "id"): string {
+export function formatCurrency(amount: number, locale = "id"): string {
+  // Referenced but never read, so the linter can tell "deliberately ignored"
+  // (see the docblock) from "forgot to use". The parameter cannot simply be
+  // dropped: ~45 call sites still pass the page locale as a second argument.
+  void locale;
+
   if (!Number.isFinite(amount)) return "-";
 
   return new Intl.NumberFormat("id-ID", {
