@@ -9,31 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductPriceCell } from "../components/ProductPriceCell";
-import { useBulkSetProviderMargin, useProviderProductList } from "../hooks/useProviderProducts";
-import { PRICE_TIERS, type PriceTier } from "../types/product.type";
-
-const TIER_LABELS: Record<PriceTier, string> = {
-  public: "Public",
-  vip: "VIP",
-  reseller: "Reseller",
-  agent: "Agent",
-};
+import { useBulkSetProviderMargin, useMarginPlanOptions, useProviderProductList } from "../hooks/useProviderProducts";
 
 /**
- * Set Profit Margin (Bulk) — applies one set of per-tier margins to every
+ * Set Profit Margin (Bulk) — applies one set of per-plan margins to every
  * selected provider product. The left column stacks the selected items with
  * their price breakdown; the right form is applied to all. Selection is passed
  * as `?ids=1,2` so the page is linkable and survives a refresh.
+ *
+ * One field per membership plan, built from the plans that exist. It used to be
+ * four fixed fields (Public/VIP/Reseller/Agent), which meant a plan an admin
+ * created could never be given a margin.
  */
 export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
   const navigate = useNavigate();
   const bulkMargin = useBulkSetProviderMargin();
-  const [values, setValues] = useState<Record<PriceTier, string>>({
-    public: "",
-    vip: "",
-    reseller: "",
-    agent: "",
-  });
+  const { data: plans = [] } = useMarginPlanOptions();
+  // Keyed by plan id as a string, because that is what an input holds.
+  const [values, setValues] = useState<Record<string, string>>({});
   // The selling-price window travels with the margin: both are decided here,
   // and promote carries them onto the product together.
   const [priceMin, setPriceMin] = useState("");
@@ -59,21 +52,22 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
 
   const backToList = () => navigate({ to: "/admin/products/provider" });
 
-  const onSubmit = () =>
+  const onSubmit = () => {
+    // Only the plans the admin actually touched. Sending every plan would turn
+    // an untouched blank field into "clear this tier's margin".
+    const margins: Record<number, number | null> = {};
+
+    for (const plan of plans) {
+      const raw = values[plan.value];
+      if (raw === undefined) continue;
+      margins[Number(plan.value)] = parse(raw);
+    }
+
     bulkMargin.mutate(
-      {
-        ids,
-        input: {
-          margin_member: parse(values.public),
-          margin_vip: parse(values.vip),
-          margin_reseller: parse(values.reseller),
-          margin_agent: parse(values.agent),
-          price_min: parse(priceMin),
-          price_max: parse(priceMax),
-        },
-      },
+      { ids, input: { margins, price_min: parse(priceMin), price_max: parse(priceMax) } },
       { onSuccess: backToList },
     );
+  };
 
   return (
     <Box className="flex flex-col gap-6">
@@ -124,19 +118,25 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
 
         <Box className="h-fit rounded-2xl border border-border bg-card p-6">
           <Box className="grid grid-cols-1 gap-4">
-            {PRICE_TIERS.map((tier) => (
-              <Box key={tier} className="flex flex-col gap-1.5">
-                <Label htmlFor={`margin-${tier}`}>{TIER_LABELS[tier]} margin (%)</Label>
-                <Input
-                  id={`margin-${tier}`}
-                  type="number"
-                  step="0.01"
-                  value={values[tier]}
-                  onChange={(e) => setValues((prev) => ({ ...prev, [tier]: e.target.value }))}
-                  placeholder="0"
-                />
-              </Box>
-            ))}
+            {plans.length === 0 ? (
+              <Text variant="muted">No membership plans yet — create one before pricing a SKU.</Text>
+            ) : (
+              plans.map((plan) => (
+                <Box key={plan.value} className="flex flex-col gap-1.5">
+                  <Label htmlFor={`margin-${plan.value}`}>
+                    {plan.label} margin (%){plan.is_default ? " · default tier" : ""}
+                  </Label>
+                  <Input
+                    id={`margin-${plan.value}`}
+                    type="number"
+                    step="0.01"
+                    value={values[plan.value] ?? ""}
+                    onChange={(e) => setValues((prev) => ({ ...prev, [plan.value]: e.target.value }))}
+                    placeholder="0"
+                  />
+                </Box>
+              ))
+            )}
           </Box>
           <Box className="mt-4 grid grid-cols-1 gap-4 border-t border-border pt-4">
             <Box className="flex flex-col gap-1.5">

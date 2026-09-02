@@ -1,13 +1,18 @@
 import { z } from "zod";
 
 /**
- * Role markup rule. Numeric inputs register with `valueAsNumber` (no native
- * `min` — Zod owns the bounds, or the browser would block submit before
- * validation runs). An empty `category_id` means the global fallback rule.
+ * Markup rule. Numeric inputs register with `valueAsNumber` (no native `min` —
+ * Zod owns the bounds, or the browser would block submit before validation
+ * runs).
+ *
+ * Both selects carry a sentinel rather than an enum: an empty `category_id`
+ * means every category, an empty `membership_plan_id` means every plan. The
+ * plan list is data, so it cannot be a `z.enum` — validating against a fixed
+ * set is exactly the cap this release removes.
  */
 export const pricingRuleSchema = z.object({
   category_id: z.string(),
-  role: z.enum(["member", "vip", "reseller", "agent"]),
+  membership_plan_id: z.string(),
   markup_percent: z
     .number({ message: "Enter a valid percentage" })
     .min(0, "Cannot be negative")

@@ -20,6 +20,7 @@ import { formatCurrency } from "@/utils/currency";
 import { PricingRuleFormDialog } from "../components/PricingRuleFormDialog";
 import {
   useCategoryOptions,
+  usePlanOptions,
   useCreatePricingRule,
   useDeletePricingRule,
   usePricingRules,
@@ -30,6 +31,7 @@ import type { PricingRule } from "../types/pricingRule.type";
 export function PricingRulesPage() {
   const { data: rules, isLoading, isError, refetch } = usePricingRules();
   const { data: categoryOptions = [] } = useCategoryOptions();
+  const { data: planOptions = [] } = usePlanOptions();
   const createRule = useCreatePricingRule();
   const updateRule = useUpdatePricingRule();
   const deleteRuleMutation = useDeletePricingRule();
@@ -46,14 +48,16 @@ export function PricingRulesPage() {
   const columns = useMemo<ColumnDef<PricingRule>[]>(
     () => [
       {
-        accessorKey: "role",
-        header: "Role",
+        accessorKey: "membership_plan_id",
+        header: "Membership plan",
         cell: ({ row }) => (
           <Badge
             variant="outline"
             className="capitalize"
           >
-            {row.original.role}
+            {/* No plan means the rule is the fallback every unpriced tier
+                uses — worth naming rather than showing an empty cell. */}
+            {row.original.plan_name ?? "All plans"}
           </Badge>
         ),
       },
@@ -96,7 +100,7 @@ export function PricingRulesPage() {
                 variant="outline"
                 className="rounded-xl"
                 size="icon-sm"
-                aria-label={`Actions for ${row.original.role} rule`}
+                aria-label={`Actions for ${row.original.plan_name ?? "all plans"} rule`}
               >
                 <MoreVertical className="size-4" />
               </Button>
@@ -145,7 +149,7 @@ export function PricingRulesPage() {
               Pricing Rules
             </Heading>
             <Text variant="muted">
-              Markup applied over supplier cost per role (optionally per category). These drive the suggested prices
+              Markup applied over supplier cost per membership plan (optionally per category). These drive the suggested prices
               when adding products.
             </Text>
           </Box>
@@ -168,7 +172,7 @@ export function PricingRulesPage() {
             isError={isError}
             onRetry={() => refetch()}
             entityLabel="pricing rules"
-            emptyMessage="No pricing rules yet — the built-in defaults apply (member 20%, vip 15%, reseller 10%, agent 5%)."
+            emptyMessage="No pricing rules yet — every plan falls back to the default markup."
             showRowNumber
             enableSelection={false}
             page={1}
@@ -186,6 +190,7 @@ export function PricingRulesPage() {
         onOpenChange={setFormOpen}
         rule={editRule}
         categoryOptions={categoryOptions}
+        planOptions={planOptions}
         isPending={createRule.isPending || updateRule.isPending}
         onSubmit={(input) => (editRule ? updateRule.mutate({ id: editRule.id, input }) : createRule.mutate(input))}
       />

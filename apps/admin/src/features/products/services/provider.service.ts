@@ -119,7 +119,33 @@ const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
   };
 };
 
+/** A membership plan, as the margin form needs to know it. */
+export interface MarginPlanOption {
+  value: string;
+  label: string;
+  is_default: boolean;
+}
+
 export const providerService = {
+  /**
+   * The membership plans a margin can be set for.
+   *
+   * Fetched here rather than imported from the pricing feature: one feature
+   * must never reach into another's service, and this projection is only what
+   * the margin form needs.
+   */
+  planOptions: async (): Promise<MarginPlanOption[]> => {
+    const response: ApiResponse<{ data: { id: number; code: string; name?: unknown; is_default?: boolean }[] }> =
+      await api.get(`${API_VERSION}/membership-plans`, { params: { per_page: 100 } });
+
+    return response.data.data.map((plan) => {
+      const name = plan.name as Record<string, string> | string | null | undefined;
+      const label = typeof name === "string" ? name : (name?.id ?? name?.en ?? plan.code);
+
+      return { value: String(plan.id), label, is_default: Boolean(plan.is_default) };
+    });
+  },
+
   priceList: async (params: UxiotopupPriceListParams = {}): Promise<PaginatedResponse<UxiotopupPriceListItem>> => {
     const { only_unmapped, ...rest } = params;
     // The API's `boolean` rule rejects the string "true" (what axios sends for a JS boolean)

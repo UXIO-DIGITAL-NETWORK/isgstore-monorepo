@@ -23,8 +23,10 @@ describe("ProviderMarginBulkPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Set Profit Margin" })).toBeInTheDocument();
     expect(await screen.findByText("MOBILELEGEND - 19 Diamond")).toBeInTheDocument();
-    expect(screen.getByLabelText("Public margin (%)")).toBeInTheDocument();
-    expect(screen.getByLabelText("Agent margin (%)")).toBeInTheDocument();
+    // One field per membership plan, built from the plans that exist — the
+    // four fixed tiers could not describe a plan the admin just created.
+    expect(await screen.findByLabelText("Basic margin (%) · default tier")).toBeInTheDocument();
+    expect(screen.getByLabelText("Gold margin (%)")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 

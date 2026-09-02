@@ -161,7 +161,7 @@ describe("Provider pool", () => {
     await user.click(await screen.findByRole("menuitem", { name: "Set Profit Margin" }));
 
     expect(await screen.findByRole("heading", { name: "Set Profit Margin" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Public margin (%)")).toBeInTheDocument();
+    expect(await screen.findByLabelText("Basic margin (%) · default tier")).toBeInTheDocument();
     expect(screen.getByLabelText("Lower Price Limit (Min)")).toBeInTheDocument();
     expect(screen.getByLabelText("Upper Price Limit (Max)")).toBeInTheDocument();
   });

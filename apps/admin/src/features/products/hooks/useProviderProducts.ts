@@ -43,6 +43,9 @@ export const useAddUxiotopupProduct = () => {
 
 // ── Managed provider products (redesigned Product Provider tab) ──────────────
 
+export const useMarginPlanOptions = () =>
+  useQuery({ queryKey: ["membership-plans", "margin-options"], queryFn: providerService.planOptions });
+
 export const useProviderProductList = (params: ProviderProductListParams) =>
   useQuery({
     queryKey: ["supplier-products", "list", params],

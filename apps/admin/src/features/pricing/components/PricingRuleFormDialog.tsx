@@ -17,30 +17,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { pricingRuleSchema, type PricingRuleFormValues } from "../schemas/pricingRule.schema";
-import type { CategoryOption, PricingRule, PricingRuleInput } from "../types/pricingRule.type";
+import type { CategoryOption, PlanOption, PricingRule, PricingRuleInput } from "../types/pricingRule.type";
 
 interface PricingRuleFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rule?: PricingRule | null;
   categoryOptions: CategoryOption[];
+  planOptions: PlanOption[];
   onSubmit: (input: PricingRuleInput) => void;
   isPending?: boolean;
 }
 
-const ROLE_OPTIONS = [
-  { value: "member", label: "Member" },
-  { value: "vip", label: "VIP" },
-  { value: "reseller", label: "Reseller" },
-  { value: "agent", label: "Agent" },
-];
-
-// Radix Select forbids an empty-string item value, so the global rule uses a
-// sentinel that maps back to `category_id: null` on submit.
+// Radix Select forbids an empty-string item value, so "applies to everything"
+// uses a sentinel that maps back to `null` on submit. Both selects need one:
+// a null category means every category, a null plan means every plan.
 const GLOBAL_VALUE = "__global__";
 const GLOBAL = { value: GLOBAL_VALUE, label: "All categories (global)" };
+const ALL_PLANS = { value: GLOBAL_VALUE, label: "All plans (fallback)" };
 
-export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOptions, onSubmit, isPending = false }: PricingRuleFormDialogProps) {
+export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOptions, planOptions, onSubmit, isPending = false }: PricingRuleFormDialogProps) {
   const {
     control,
     register,
@@ -49,7 +45,7 @@ export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOption
     formState: { errors },
   } = useForm<PricingRuleFormValues>({
     resolver: zodResolver(pricingRuleSchema),
-    defaultValues: { category_id: GLOBAL_VALUE, role: "member", markup_percent: 0, markup_flat: 0 },
+    defaultValues: { category_id: GLOBAL_VALUE, membership_plan_id: GLOBAL_VALUE, markup_percent: 0, markup_flat: 0 },
   });
 
   useEffect(() => {
@@ -58,18 +54,18 @@ export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOption
       rule
         ? {
             category_id: rule.category_id !== null ? String(rule.category_id) : GLOBAL_VALUE,
-            role: rule.role,
+            membership_plan_id: rule.membership_plan_id !== null ? String(rule.membership_plan_id) : GLOBAL_VALUE,
             markup_percent: rule.markup_percent,
             markup_flat: rule.markup_flat,
           }
-        : { category_id: GLOBAL_VALUE, role: "member", markup_percent: 0, markup_flat: 0 },
+        : { category_id: GLOBAL_VALUE, membership_plan_id: GLOBAL_VALUE, markup_percent: 0, markup_flat: 0 },
     );
   }, [open, rule, reset]);
 
   const submit = (values: PricingRuleFormValues) => {
     onSubmit({
       category_id: values.category_id === GLOBAL_VALUE ? null : Number(values.category_id),
-      role: values.role,
+      membership_plan_id: values.membership_plan_id === GLOBAL_VALUE ? null : Number(values.membership_plan_id),
       markup_percent: values.markup_percent,
       markup_flat: values.markup_flat,
     });
@@ -90,21 +86,22 @@ export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOption
           <DialogHeader>
             <DialogTitle>{rule ? "Edit Pricing Rule" : "Add Pricing Rule"}</DialogTitle>
             <DialogDescription>
-              Sets the markup applied over supplier cost for a role. Price = ⌈cost × (1 + %/100)⌉ + flat.
+              Sets the markup applied over supplier cost for a membership plan. Price = ⌈cost × (1 + %/100)⌉ + flat.
+              A rule with no plan applies to every plan that has none of its own.
             </DialogDescription>
           </DialogHeader>
 
           <Controller
             control={control}
-            name="role"
+            name="membership_plan_id"
             render={({ field }) => (
               <SelectField
-                id="rule-role"
-                label="Role"
-                options={ROLE_OPTIONS}
+                id="rule-plan"
+                label="Membership plan"
+                options={[ALL_PLANS, ...planOptions.map(({ value, label }) => ({ value, label }))]}
                 value={field.value}
                 onChange={field.onChange}
-                error={errors.role?.message}
+                error={errors.membership_plan_id?.message}
               />
             )}
           />

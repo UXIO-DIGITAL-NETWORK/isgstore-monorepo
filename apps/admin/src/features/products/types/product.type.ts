@@ -300,10 +300,15 @@ export interface ProviderProductListParams {
 
 /** Per-tier profit-margin percentages sent to `POST …/profit-margin`. */
 export interface SetProviderMarginInput {
-  margin_member?: number | null;
-  margin_vip?: number | null;
-  margin_reseller?: number | null;
-  margin_agent?: number | null;
+  /**
+   * Margins keyed by membership plan id. A plan present with `null` is an
+   * explicit "use the pricing rules"; a plan omitted entirely is left as it
+   * was, so clearing one tier does not clear the rest.
+   *
+   * The number of tiers is data — this replaced four fixed `margin_*` fields
+   * that could not describe a plan the admin had just created.
+   */
+  margins?: Record<number, number | null>;
   /** Sent only when the form actually carries the limit fields — omitting them
    * leaves an existing window alone rather than clearing it. */
   price_min?: number | null;

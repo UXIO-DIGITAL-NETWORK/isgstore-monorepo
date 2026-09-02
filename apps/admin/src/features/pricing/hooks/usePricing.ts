@@ -11,6 +11,9 @@ export const usePricingRules = () => useQuery({ queryKey: [KEY, "list"], queryFn
 export const useCategoryOptions = () =>
   useQuery({ queryKey: ["categories", "options"], queryFn: pricingService.categoryOptions });
 
+export const usePlanOptions = () =>
+  useQuery({ queryKey: ["membership-plans", "options"], queryFn: pricingService.planOptions });
+
 export const useCreatePricingRule = () => {
   const queryClient = useQueryClient();
 
