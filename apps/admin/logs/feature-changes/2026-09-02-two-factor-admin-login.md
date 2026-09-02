@@ -28,6 +28,11 @@
 - [x] `tsc --noEmit` clean
 - [x] `npm run lint` clean
 
+## Follow-up (same day)
+
+- The six code boxes were invisible in practice. The stock shadcn slot is a 36px cell with a `border-input` hairline (`oklch(0.922)`) and no fill — an 8% contrast step around an empty square on a white page. They are now 48px (56px from `sm`), separated, and borrow the sign-in form's own idiom (white fill, `slate-200`, `rounded-xl`), with a black border and ring on the active cell.
+- The Verify button was the default variant, whose `disabled:opacity-50` over a near-black fill read as a washed-out slab rather than "not ready yet". It now matches the sign-in submit button exactly.
+
 ## Notes / follow-ups
 
 - No Google credentials are involved — TOTP is an offline algorithm; "Google Authenticator" is just one app that implements it.
