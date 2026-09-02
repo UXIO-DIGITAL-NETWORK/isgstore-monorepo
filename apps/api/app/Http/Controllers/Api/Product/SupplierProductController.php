@@ -97,7 +97,7 @@ class SupplierProductController extends Controller
     {
         $updated = $action->execute(
             $supplierProduct,
-            $request->margins(),
+            $request->planMargins(),
             $request->priceMin(),
             $request->priceMax(),
             $request->limitsProvided(),
@@ -120,7 +120,7 @@ class SupplierProductController extends Controller
     {
         $result = $action->setMargin(
             $request->validated('ids'),
-            $request->margins(),
+            $request->planMargins(),
             $request->priceMin(),
             $request->priceMax(),
             $request->limitsProvided(),

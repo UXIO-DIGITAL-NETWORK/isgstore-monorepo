@@ -3,11 +3,14 @@
 namespace Tests\Feature\Storefront;
 
 use App\Models\Category;
+use App\Models\MembershipPlan;
 use App\Models\PaymentChannel;
 use App\Models\Product;
+use App\Models\ProductPlanPrice;
 use App\Models\Role;
 use App\Models\SupplierProduct;
 use App\Models\User;
+use App\Support\Membership\DefaultPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -117,19 +120,59 @@ class StorefrontCatalogTest extends TestCase
             ->assertJsonPath('data.products.0.price', 25000);
     }
 
-    public function test_products_endpoint_quotes_the_role_price_to_a_signed_in_member(): void
+    public function test_products_endpoint_quotes_the_plan_price_to_a_signed_in_member(): void
     {
         $game = Category::factory()->create(['slug' => 'mobile-legends']);
-        $this->sellableProduct($game, ['price_member' => 25000, 'price_reseller' => 21000]);
+        $product = $this->sellableProduct($game, ['price_member' => 25000]);
 
-        $role = Role::factory()->create(['name' => 'Reseller']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        $plan = MembershipPlan::create([
+            'code' => 'gold',
+            'name' => ['id' => 'Gold'],
+            'price' => 300000,
+            'duration_days' => null,
+            'is_active' => true,
+            'sort_order' => 3,
+        ]);
+
+        ProductPlanPrice::create([
+            'product_id' => $product->id,
+            'membership_plan_id' => $plan->id,
+            'price' => 21000,
+        ]);
+
+        $role = Role::factory()->create(['name' => 'Member']);
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id, 'membership_plan_id' => $plan->id]), ['access-api']);
 
         // Must match what CheckoutAction will charge — a catalog that quotes the
-        // guest price to a reseller shows one number and bills another.
+        // default price to a Gold member shows one number and bills another.
         $this->getJson('/api/v1/games/mobile-legends/products')
             ->assertOk()
             ->assertJsonPath('data.products.0.price', 21000);
+    }
+
+    public function test_products_endpoint_falls_back_to_the_default_tier_for_an_unpriced_plan(): void
+    {
+        // A plan created after the last repricing run has no row for this
+        // product. The honest answer is the default tier — never more than the
+        // customer expected to pay.
+        $game = Category::factory()->create(['slug' => 'mobile-legends']);
+        $this->sellableProduct($game, ['price_member' => 25000]);
+
+        $plan = MembershipPlan::create([
+            'code' => 'hokage',
+            'name' => ['id' => 'Hokage'],
+            'price' => 10000,
+            'duration_days' => 30,
+            'is_active' => true,
+            'sort_order' => 5,
+        ]);
+
+        $role = Role::factory()->create(['name' => 'Member']);
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id, 'membership_plan_id' => $plan->id]), ['access-api']);
+
+        $this->getJson('/api/v1/games/mobile-legends/products')
+            ->assertOk()
+            ->assertJsonPath('data.products.0.price', 25000);
     }
 
     public function test_products_endpoint_groups_denominations_by_sub_category(): void
@@ -184,7 +227,7 @@ class StorefrontCatalogTest extends TestCase
         PaymentChannel::factory()->balance()->create();
 
         $role = Role::factory()->create(['name' => 'Member']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id, 'balance' => 50000]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id, 'balance' => 50000]), ['access-api']);
 
         $channels = collect($this->getJson('/api/v1/storefront/payment-channels')->assertOk()->json('data.channels'));
         $balance = $channels->firstWhere('channel_code', 'balance');
@@ -196,15 +239,53 @@ class StorefrontCatalogTest extends TestCase
     public function test_price_list_exposes_retail_prices_only(): void
     {
         $game = Category::factory()->create(['name' => 'Mobile Legends']);
-        $this->sellableProduct($game, ['price_modal' => 19000, 'price_member' => 25000, 'price_vip' => 24000]);
+        $product = $this->sellableProduct($game, ['price_modal' => 19000, 'price_member' => 25000]);
 
-        $response = $this->getJson('/api/v1/price-list')->assertOk();
+        ProductPlanPrice::create([
+            'product_id' => $product->id,
+            'membership_plan_id' => DefaultPlan::id(),
+            'price' => 25000,
+        ]);
 
-        $row = $response->json('data.data.0');
+        $row = $this->getJson('/api/v1/price-list')->assertOk()->json('data.data.0');
 
         $this->assertSame(25000, $row['normal_price']);
-        $this->assertSame(24000, $row['gold_price']);
-        $this->assertArrayNotHasKey('price_modal', $row);
+        $this->assertArrayNotHasKey('price_modal', $row, 'Cost data must never reach the public price list.');
+    }
+
+    public function test_price_list_emits_a_column_per_plan_and_hides_the_top_tier(): void
+    {
+        // The top tier's price is the reason to subscribe — publishing it gives
+        // away the incentive. The row still appears so the ladder is visible.
+        $game = Category::factory()->create(['name' => 'Mobile Legends']);
+        $product = $this->sellableProduct($game, ['price_modal' => 19000, 'price_member' => 25000]);
+
+        $platinum = MembershipPlan::create([
+            'code' => 'platinum', 'name' => ['id' => 'Platinum'], 'price' => 150000,
+            'duration_days' => null, 'is_active' => true, 'sort_order' => 2,
+        ]);
+        $gold = MembershipPlan::create([
+            'code' => 'gold', 'name' => ['id' => 'Gold'], 'price' => 300000,
+            'duration_days' => null, 'is_active' => true, 'sort_order' => 3,
+        ]);
+
+        foreach ([DefaultPlan::id() => 25000, $platinum->id => 23000, $gold->id => 21000] as $planId => $price) {
+            ProductPlanPrice::create([
+                'product_id' => $product->id,
+                'membership_plan_id' => $planId,
+                'price' => $price,
+            ]);
+        }
+
+        $tiers = collect($this->getJson('/api/v1/price-list')->assertOk()->json('data.data.0.tiers'));
+
+        $this->assertCount(3, $tiers, 'One column per active plan, in the admin ordering.');
+        $this->assertSame(25000, $tiers->firstWhere('plan_code', 'free')['price']);
+        $this->assertSame(23000, $tiers->firstWhere('plan_code', 'platinum')['price']);
+
+        $top = $tiers->firstWhere('plan_code', 'gold');
+        $this->assertTrue($top['is_hidden']);
+        $this->assertNull($top['price'], 'The highest tier must not publish its price.');
     }
 
     public function test_unknown_game_returns_not_found(): void

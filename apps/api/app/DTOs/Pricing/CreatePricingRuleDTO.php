@@ -6,7 +6,8 @@ readonly class CreatePricingRuleDTO
 {
     public function __construct(
         public ?int $categoryId,
-        public string $role,
+        /** Null = the rule applies to every membership plan. */
+        public ?int $membershipPlanId,
         public float $markupPercent,
         public int $markupFlat,
     ) {}

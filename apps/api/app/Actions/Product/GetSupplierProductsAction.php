@@ -4,11 +4,15 @@ namespace App\Actions\Product;
 
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
+use App\Services\ProductRepricer;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class GetSupplierProductsAction
 {
-    public function __construct(private readonly PricingService $pricing) {}
+    public function __construct(
+        private readonly PricingService $pricing,
+        private readonly ProductRepricer $repricer,
+    ) {}
 
     /**
      * @param  array{ids?:string|array<int|string>,search?:string,supplier_id?:int,category_id?:int,status?:string,mode?:string,pool_state?:string,availability?:string,min_cost?:int,max_cost?:int}  $filters
@@ -135,17 +139,12 @@ class GetSupplierProductsAction
                 continue;
             }
 
-            $margins = array_filter([
-                'member' => $row->margin_member,
-                'vip' => $row->margin_vip,
-                'reseller' => $row->margin_reseller,
-                'agent' => $row->margin_agent,
-            ], fn ($margin) => $margin !== null);
-
-            $row->setAttribute('preview_prices', $this->pricing->computePrices(
+            // Previewed per plan, so the admin sees the ladder they will
+            // actually sell at rather than four fixed tiers.
+            $row->setAttribute('preview_plan_prices', $this->pricing->computePlanPrices(
                 (int) $row->price,
                 $row->pool_category_id,
-                $margins,
+                $this->repricer->planMargins($row),
                 $row->price_min,
                 $row->price_max,
             ));

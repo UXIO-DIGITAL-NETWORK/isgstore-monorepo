@@ -33,6 +33,12 @@ class Product extends Model
     ];
 
     /** Never published, as opposed to published-then-deactivated. */
+    /** Selling price per membership plan — see `App\Support\Pricing\PlanPrice`. */
+    public function planPrices()
+    {
+        return $this->hasMany(ProductPlanPrice::class);
+    }
+
     public function isDraft(): bool
     {
         return ! $this->status && $this->published_at === null;

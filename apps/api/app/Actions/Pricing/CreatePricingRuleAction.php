@@ -16,7 +16,7 @@ class CreatePricingRuleAction
     {
         $rule = PricingRule::create([
             'category_id' => $dto->categoryId,
-            'role' => $dto->role,
+            'membership_plan_id' => $dto->membershipPlanId,
             'markup_percent' => $dto->markupPercent,
             'markup_flat' => $dto->markupFlat,
         ]);
@@ -25,7 +25,7 @@ class CreatePricingRuleAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Created Pricing Rule: {$rule->role} ".($rule->category_id ? "(category {$rule->category_id})" : '(global)')
+            message: 'Created Pricing Rule: '.($rule->membership_plan_id ? "plan {$rule->membership_plan_id}" : 'all plans').' '.($rule->category_id ? "(category {$rule->category_id})" : '(global)')
         ));
 
         return $rule;

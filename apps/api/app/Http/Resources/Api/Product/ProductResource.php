@@ -40,10 +40,24 @@ class ProductResource extends JsonResource
             'access' => $this->access,
             'tag' => $this->tag,
             'price_modal' => $this->price_modal,
+            // Kept for one release: the admin table still sorts and filters on
+            // it, and it is the denormalised default-plan price rather than a
+            // tier of its own. `prices` below is the real answer.
             'price_member' => $this->price_member,
-            'price_vip' => $this->price_vip,
-            'price_reseller' => $this->price_reseller,
-            'price_agent' => $this->price_agent,
+            // One entry per membership plan the product is priced on. The
+            // number of tiers is data now, so the admin UI builds its columns
+            // from this rather than from a hardcoded four.
+            'prices' => $this->whenLoaded('planPrices', fn () => $this->planPrices
+                ->map(fn ($row) => [
+                    'membership_plan_id' => (int) $row->membership_plan_id,
+                    'plan_code' => $row->membershipPlan?->code,
+                    'plan_name' => $row->membershipPlan?->localizedName(),
+                    'price' => (int) $row->price,
+                    'margin_percent' => $row->margin_percent !== null ? (float) $row->margin_percent : null,
+                    'margin_flat' => (int) $row->margin_flat,
+                    'is_manual' => (bool) $row->is_manual,
+                ])
+                ->values()),
             'status' => (bool) $this->status,
             // Where the product sits in its lifecycle, mirroring the pool's
             // `pool_state` / `can_promote` / `promote_blocked_reason` trio.

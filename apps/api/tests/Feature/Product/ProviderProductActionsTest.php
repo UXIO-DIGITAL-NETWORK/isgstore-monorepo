@@ -3,6 +3,7 @@
 namespace Tests\Feature\Product;
 
 use App\Models\Category;
+use App\Models\MembershipPlan;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Supplier;
@@ -19,7 +20,7 @@ class ProviderProductActionsTest extends TestCase
     private function actingAsAdmin(): void
     {
         $role = Role::factory()->create(['name' => 'Admin']);
-        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]));
+        Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
     }
 
     /** A row still in the pool — no product behind it, which is what the list shows. */
@@ -107,6 +108,20 @@ class ProviderProductActionsTest extends TestCase
     {
         $this->actingAsAdmin();
         $provider = $this->providerFor(Supplier::factory()->create(['is_system' => false]));
+
+        // A plan that grants VIP, so the legacy `margin_vip` override still has
+        // a tier to land on. Margins are authored per membership plan now; the
+        // role-keyed request body is the transitional bridge.
+        $vipRole = Role::factory()->create(['name' => 'VIP']);
+        MembershipPlan::create([
+            'code' => 'vip-plan',
+            'name' => ['id' => 'VIP'],
+            'price' => 50000,
+            'duration_days' => null,
+            'role_id' => $vipRole->id,
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
 
         $this->postJson("/api/v1/supplier-products/{$provider->id}/profit-margin", [
             'margin_member' => 1.0,   // +1% of 10000 → 10100

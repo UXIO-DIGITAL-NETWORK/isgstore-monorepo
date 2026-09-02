@@ -143,8 +143,9 @@ class CheckUxiotopupPricesTest extends TestCase
 
         $product = $mapping->product->fresh();
         $this->assertSame(18000, (int) $product->price_member); // 12000 * 1.5 (override)
-        // vip untouched by the override → still the default-rule value.
-        $this->assertSame($this->expectedPrices($product, 12000)['price_vip'], (int) $product->price_vip);
+        // No plan grants VIP in this database, so the legacy column mirrors the
+        // default tier rather than inventing a price for a tier nobody sells.
+        $this->assertSame(18000, (int) $product->price_vip);
     }
 
     public function test_price_max_clamps_the_repriced_values(): void

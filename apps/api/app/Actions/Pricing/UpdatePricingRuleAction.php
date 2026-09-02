@@ -16,7 +16,7 @@ class UpdatePricingRuleAction
     {
         $pricingRule->update([
             'category_id' => $dto->categoryId,
-            'role' => $dto->role,
+            'membership_plan_id' => $dto->membershipPlanId,
             'markup_percent' => $dto->markupPercent,
             'markup_flat' => $dto->markupFlat,
         ]);
@@ -25,7 +25,7 @@ class UpdatePricingRuleAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Updated Pricing Rule: {$pricingRule->role} ".($pricingRule->category_id ? "(category {$pricingRule->category_id})" : '(global)')
+            message: 'Updated Pricing Rule: '.($pricingRule->membership_plan_id ? "plan {$pricingRule->membership_plan_id}" : 'all plans').' '.($pricingRule->category_id ? "(category {$pricingRule->category_id})" : '(global)')
         ));
 
         return $pricingRule->fresh();

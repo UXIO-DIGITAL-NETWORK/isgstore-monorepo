@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\PaymentChannel;
 use App\Models\Transaction;
+use App\Support\Membership\DefaultPlan;
+use App\Support\Pricing\PlanPrice;
 use App\Support\Storefront\Catalog;
 use App\Support\Storefront\MediaUrl;
 use App\Support\Storefront\OrderFormFields;
@@ -71,18 +73,28 @@ class TopupPageController extends Controller
      */
     public function products(Category $category): JsonResponse
     {
+        // Through PlanPrice like every other quote. This page used to read
+        // `price_member` directly, which was correct only for as long as guests
+        // and the default tier were the same thing by accident rather than by
+        // definition — and it meant one more place that could drift from the
+        // price checkout actually charges.
+        $planId = DefaultPlan::id();
+
         $products = Catalog::productsFor($category)
-            ->with('subCategory:id,name')
-            ->orderBy('price_member')
+            ->with([
+                'subCategory:id,name',
+                'planPrices' => fn ($q) => $q->where('membership_plan_id', $planId),
+            ])
             ->get(['id', 'sub_category_id', 'name', 'code', 'price_member'])
             ->map(fn ($p) => [
                 'id' => $p->id,
                 'name' => $p->name,
                 'code' => $p->code,
-                // Guests are charged price_member — see CheckoutAction::process().
-                'price' => (int) $p->price_member,
+                // Guests are priced on the default plan — see CheckoutAction.
+                'price' => PlanPrice::for($p, null),
                 'group' => $p->subCategory?->name ?? 'Lainnya',
             ])
+            ->sortBy('price')
             ->values();
 
         return response()->json([

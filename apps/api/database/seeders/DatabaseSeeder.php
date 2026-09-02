@@ -39,6 +39,9 @@ class DatabaseSeeder extends Seeder
             CategoryTypeSeeder::class,
             SupplierSeeder::class,
             PaymentChannelSeeder::class,
+            // Plans before rules: pricing rules are keyed on a membership plan
+            // now, so a rule seeded first would have nothing to point at.
+            MembershipPlanSeeder::class,
             PricingRuleSeeder::class,
 
             // === 2. Users ===
@@ -80,7 +83,6 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,
             PromoSeeder::class,
             FlashSaleSeeder::class,
-            MembershipPlanSeeder::class,
 
             // § Payment-page services kita sells to its clients. After
             // PaymentChannelSeeder, whose rows Monetapay's service points at.

@@ -36,6 +36,12 @@ class SupplierProduct extends Model
         'price_max' => 'integer',
     ];
 
+    /** Authored margin per membership plan — see `SupplierProductMargin`. */
+    public function planMargins()
+    {
+        return $this->hasMany(SupplierProductMargin::class);
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);

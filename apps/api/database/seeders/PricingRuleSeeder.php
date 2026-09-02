@@ -2,25 +2,70 @@
 
 namespace Database\Seeders;
 
+use App\Models\MembershipPlan;
+use App\Support\Membership\DefaultPlan;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Global (category_id = NULL) markup rules, one per membership plan.
+ *
+ * Markup falls as the tier rises — the paid plans are the discount. The free
+ * default tier keeps the headline +20%, and each seeded plan undercuts it.
+ *
+ * Runs after MembershipPlanSeeder, and is idempotent on (category_id, plan) so
+ * re-seeding a live database does not duplicate rules. Per-category overrides
+ * are added through the pricing-rules admin API.
+ */
 class PricingRuleSeeder extends Seeder
 {
-    /**
-     * Global (category_id = NULL) markup rules per role, matching the tiers
-     * used by ProductSeeder: member +20%, vip +15%, reseller +10%, agent +5%.
-     * Per-category overrides can be added via the pricing-rules admin API.
-     */
+    /** Plan code → global markup percent. */
+    private const MARKUP_BY_PLAN = [
+        'basic' => 15.00,
+        'platinum' => 10.00,
+        'gold' => 5.00,
+    ];
+
     public function run(): void
     {
         $now = now();
+        $rows = [];
 
-        DB::table('pricing_rules')->insert([
-            ['category_id' => null, 'role' => 'member', 'markup_percent' => 20.00, 'markup_flat' => 0, 'created_at' => $now, 'updated_at' => $now],
-            ['category_id' => null, 'role' => 'vip', 'markup_percent' => 15.00, 'markup_flat' => 0, 'created_at' => $now, 'updated_at' => $now],
-            ['category_id' => null, 'role' => 'reseller', 'markup_percent' => 10.00, 'markup_flat' => 0, 'created_at' => $now, 'updated_at' => $now],
-            ['category_id' => null, 'role' => 'agent', 'markup_percent' => 5.00, 'markup_flat' => 0, 'created_at' => $now, 'updated_at' => $now],
-        ]);
+        $defaultPlanId = DefaultPlan::id();
+
+        if ($defaultPlanId !== null) {
+            $rows[] = [
+                'category_id' => null,
+                'membership_plan_id' => $defaultPlanId,
+                'markup_percent' => 20.00,
+                'markup_flat' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        foreach (self::MARKUP_BY_PLAN as $code => $percent) {
+            $planId = MembershipPlan::where('code', $code)->value('id');
+
+            if ($planId === null) {
+                continue;
+            }
+
+            $rows[] = [
+                'category_id' => null,
+                'membership_plan_id' => $planId,
+                'markup_percent' => $percent,
+                'markup_flat' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        foreach ($rows as $row) {
+            DB::table('pricing_rules')->updateOrInsert(
+                ['category_id' => $row['category_id'], 'membership_plan_id' => $row['membership_plan_id']],
+                $row,
+            );
+        }
     }
 }

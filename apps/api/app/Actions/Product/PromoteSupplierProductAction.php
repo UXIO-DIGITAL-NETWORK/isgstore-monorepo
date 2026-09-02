@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Actions\Product;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Pricing\WritePlanPricesAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Exceptions\SupplierProductPoolException;
 use App\Models\Product;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
+use App\Services\ProductRepricer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -29,9 +31,34 @@ class PromoteSupplierProductAction
 {
     public function __construct(
         private readonly PricingService $pricing,
+        private readonly ProductRepricer $repricer,
+        private readonly WritePlanPricesAction $writePlanPrices,
         private readonly CreateActivityLogAction $activityLogAction,
         private readonly RestoreProductAction $restoreAction,
     ) {}
+
+    /**
+     * Plan-keyed margins expressed in the legacy role vocabulary, for the four
+     * frozen `products.price_*` columns that are still NOT NULL.
+     *
+     * @param  array<int,float>  $planMargins
+     * @return array<string,float>
+     */
+    private function legacyShape(array $planMargins): array
+    {
+        $roleByPlan = array_flip(ProductRepricer::planIdByRole());
+        $margins = [];
+
+        foreach ($planMargins as $planId => $margin) {
+            $role = $roleByPlan[$planId] ?? null;
+
+            if ($role !== null) {
+                $margins[$role] = $margin;
+            }
+        }
+
+        return $margins;
+    }
 
     /**
      * @throws SupplierProductPoolException
@@ -75,19 +102,15 @@ class PromoteSupplierProductAction
         }
 
         return DB::transaction(function () use ($supplierProduct, $categoryId, $subCategoryId, $name, $code) {
-            $margins = array_filter([
-                'member' => $supplierProduct->margin_member,
-                'vip' => $supplierProduct->margin_vip,
-                'reseller' => $supplierProduct->margin_reseller,
-                'agent' => $supplierProduct->margin_agent,
-            ], fn ($margin) => $margin !== null);
+            $planMargins = $this->repricer->planMargins($supplierProduct);
 
-            // All five price columns are NOT NULL with no default, so they have to
-            // be resolved here — from the margins the admin already decided.
+            // All five legacy price columns are NOT NULL with no default, so
+            // they still have to be resolved here. The real per-plan prices are
+            // written after the product exists — they need its id.
             $prices = $this->pricing->computePrices(
                 (int) $supplierProduct->price,
                 $categoryId,
-                $margins,
+                $this->legacyShape($planMargins),
                 $supplierProduct->price_min,
                 $supplierProduct->price_max,
             );
@@ -109,6 +132,20 @@ class PromoteSupplierProductAction
                 'pool_category_id' => $categoryId,
                 'is_active' => false,
             ]);
+
+            // The real prices, now that the product has an id. Written after
+            // creation rather than folded into it, because they are rows in
+            // another table keyed on the product.
+            $this->writePlanPrices->execute(
+                $product,
+                $this->pricing->computePlanPrices(
+                    (int) $supplierProduct->price,
+                    $categoryId,
+                    $planMargins,
+                    $supplierProduct->price_min,
+                    $supplierProduct->price_max,
+                ),
+            );
 
             $this->activityLogAction->execute(new CreateActivityLogDTO(
                 userId: Auth::id(),

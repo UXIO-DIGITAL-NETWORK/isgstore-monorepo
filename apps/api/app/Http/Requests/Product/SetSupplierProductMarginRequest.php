@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Product;
 
+use App\Services\ProductRepricer;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -18,6 +19,14 @@ class SetSupplierProductMarginRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Plan-keyed margins: `margins[<membership_plan_id>] = percent`.
+            // The number of tiers is data, so it cannot be a fixed field list.
+            // A null entry means "fall through to the pricing rules", which is
+            // a real choice and not the same as omitting the plan.
+            'margins' => ['sometimes', 'array'],
+            'margins.*' => ['nullable', 'numeric', 'min:-100', 'max:1000'],
+            // Retired role-keyed fields, still accepted so an older client (and
+            // the bulk screen mid-migration) keeps working.
             'margin_member' => ['nullable', 'numeric', 'min:-100', 'max:1000'],
             'margin_vip' => ['nullable', 'numeric', 'min:-100', 'max:1000'],
             'margin_reseller' => ['nullable', 'numeric', 'min:-100', 'max:1000'],
@@ -30,16 +39,40 @@ class SetSupplierProductMarginRequest extends FormRequest
     }
 
     /**
-     * @return array{member:?float,vip:?float,reseller:?float,agent:?float}
+     * Margins keyed by membership plan id.
+     *
+     * A plan present with a null value is an explicit "use the pricing rules";
+     * a plan absent entirely is left as it was. The two must stay
+     * distinguishable or clearing one tier would silently clear them all.
+     *
+     * @return array<int,float|null>
      */
-    public function margins(): array
+    public function planMargins(): array
     {
-        return [
-            'member' => $this->filled('margin_member') ? (float) $this->validated('margin_member') : null,
-            'vip' => $this->filled('margin_vip') ? (float) $this->validated('margin_vip') : null,
-            'reseller' => $this->filled('margin_reseller') ? (float) $this->validated('margin_reseller') : null,
-            'agent' => $this->filled('margin_agent') ? (float) $this->validated('margin_agent') : null,
-        ];
+        $margins = [];
+
+        foreach ((array) $this->input('margins', []) as $planId => $value) {
+            if (! is_numeric($planId)) {
+                continue;
+            }
+
+            $margins[(int) $planId] = ($value === null || $value === '') ? null : (float) $value;
+        }
+
+        if ($margins !== []) {
+            return $margins;
+        }
+
+        // Legacy role-keyed body: translate onto the plans those roles granted.
+        foreach (ProductRepricer::planIdByRole() as $role => $planId) {
+            $field = 'margin_'.$role;
+
+            if ($this->has($field)) {
+                $margins[$planId] = $this->filled($field) ? (float) $this->input($field) : null;
+            }
+        }
+
+        return $margins;
     }
 
     public function priceMin(): ?int
