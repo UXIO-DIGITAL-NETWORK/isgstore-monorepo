@@ -17,6 +17,9 @@ class Transaction extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
+        'points_spent' => 'integer',
+        'points_spent_amount' => 'integer',
+        'points_earned' => 'integer',
         'status' => TransactionStatus::class,
         // The supplier's half of the lifecycle, kept in lockstep with `status`
         // by TransactionObserver. Not to be confused with `supplier_status`,

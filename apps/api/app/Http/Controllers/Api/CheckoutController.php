@@ -30,6 +30,7 @@ class CheckoutController extends Controller
                 promoCode: ($p = trim($request->string('promo_code')->toString())) !== '' ? $p : null,
                 email: trim($request->string('email')->toString()) ?: null,
                 locale: ($l = trim($request->string('locale')->toString())) !== '' ? $l : null,
+                pointsToSpend: max(0, $request->integer('points_to_spend')),
             );
 
             $result = $action->execute($dto);

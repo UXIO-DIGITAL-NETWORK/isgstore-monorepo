@@ -22,5 +22,9 @@ readonly class CheckoutDTO
         // Email tujuan bukti pembelian (wajib untuk semua) + bahasa email (id|en).
         public ?string $email = null,
         public ?string $locale = null,
+        // Loyalty points the customer asked to redeem. Capped server-side at
+        // both their balance and the order's value — the client's figure is
+        // never trusted, exactly like the promo discount above.
+        public int $pointsToSpend = 0,
     ) {}
 }

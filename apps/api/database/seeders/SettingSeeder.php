@@ -47,6 +47,18 @@ class SettingSeeder extends Seeder
             ['payment', 'balance_topup_presets', '[10000,25000,50000,100000,250000,500000]', 'json', 'Top-up Nominal Presets', true],
             ['payment', 'min_topup_amount', '10000', 'number', 'Minimum Top-up', true],
 
+            // Loyalty points. `earn_percent`/`earn_flat` are the fallback for a
+            // product that has none of its own, so a new SKU still earns.
+            // `redeem_rate` is what one point is worth in rupiah when spent.
+            ['points', 'earn_percent', '1', 'number', 'Point Earn (%)', true],
+            ['points', 'earn_flat', '0', 'number', 'Point Earn (flat)', true],
+            ['points', 'redeem_rate', '1', 'number', 'Point Value (Rp)', true],
+
+            // The markup applied when no pricing rule matches at any level.
+            // A single figure, because there is no sensible built-in default
+            // for a membership plan an admin invented this morning.
+            ['pricing', 'default_markup_percent', '20', 'number', 'Default Markup (%)', false],
+
             // Operational — never exposed publicly.
             ['operational', 'order_auto_expire_minutes', '15', 'number', 'Order Expiry (minutes)', false],
             ['operational', 'support_notification_email', 'ops@topupgame.id', 'string', 'Ops Notification Email', false],

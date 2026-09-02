@@ -2,6 +2,7 @@
 
 namespace App\Actions\Uxiotopup;
 
+use App\Actions\Points\GrantTransactionPointsAction;
 use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\Enums\ProviderStatus;
@@ -19,6 +20,7 @@ class CheckUxiotopupTransactionStatusAction
         private readonly UxiotopupService $uxiotopupService,
         private readonly InitiateRefundAction $refundAction,
         private readonly SendTransactionReceiptAction $receiptAction,
+        private readonly GrantTransactionPointsAction $pointsAction,
     ) {}
 
     public function execute(string $invoiceNumber): Transaction
@@ -62,6 +64,7 @@ class CheckUxiotopupTransactionStatusAction
 
         if ($newStatus === TransactionStatus::COMPLETED) {
             $this->receiptAction->execute($fresh);
+            $this->pointsAction->execute($fresh);
         }
 
         return $fresh;

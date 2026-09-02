@@ -3,6 +3,7 @@
 namespace App\Actions\Checkout;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Points\GrantTransactionPointsAction;
 use App\Actions\Settlement\SettleMerchantTransactionAction;
 use App\Actions\Storefront\ValidateGameIdAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
@@ -19,8 +20,12 @@ use App\Models\PromoRedemption;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
+use App\Support\Membership\MembershipResolver;
+use App\Support\Money;
 use App\Support\Payment\DefaultMerchant;
-use App\Support\Pricing\RolePrice;
+use App\Support\Points\PointLedger;
+use App\Support\Points\PointRules;
+use App\Support\Pricing\PlanPrice;
 use App\Support\Promo\PromoResolver;
 use App\Support\Wallet\WalletLedger;
 use Exception;
@@ -93,10 +98,11 @@ class CheckoutAction
             throw new Exception('Nomor WhatsApp/Kontak wajib diisi untuk pelanggan tamu.');
         }
 
-        // ── 3. Role-based price ──────────────────────────────────────────────
+        // ── 3. Membership-plan price ─────────────────────────────────────────
         // Shared with the public catalog so the quoted price and the billed
-        // price come from one implementation.
-        $sellingPrice = RolePrice::for($product, $user);
+        // price come from one implementation. Guests resolve to the default
+        // plan, which is the free tier every account starts on.
+        $sellingPrice = PlanPrice::for($product, $user);
 
         // ── 4. Supplier & margin guard ───────────────────────────────────────
         $activeSupplier = $product->supplierProducts->first();
@@ -134,6 +140,41 @@ class CheckoutAction
             $margin -= $discount;
         }
 
+        // ── 4c. Points ───────────────────────────────────────────────────────
+        // Applied after the promo and **before** the fee, so the fee follows the
+        // rule the block below already states: the customer pays it on what they
+        // are actually charged. It also means `payments.gross_amount` ends up as
+        // the rupiah remainder, which is exactly what a refund has to give back.
+        //
+        // Points are NOT taken out of margin. A promo is the platform eating its
+        // own margin; a point was already paid for in cash on an earlier order,
+        // so that money is in the till. Charging it to margin here would make
+        // the guard above reject a legitimate redemption on a thin product.
+        $pointsSpent = 0;
+        $pointsSpentAmount = 0;
+
+        if ($dto->pointsToSpend > 0) {
+            if (! $user) {
+                throw new Exception('Poin hanya bisa digunakan oleh member. Silakan login terlebih dahulu.');
+            }
+
+            $plan = MembershipResolver::planFor($user);
+
+            if ($plan && ! $plan->allows_point_spending) {
+                throw new Exception('Paket membership kamu sudah termasuk potongan harga, jadi poin tidak bisa dipakai.');
+            }
+
+            if ($dto->pointsToSpend > (int) $user->point) {
+                throw new Exception('Poin tidak mencukupi. Sisa poin: '.Money::digits((int) $user->point));
+            }
+
+            // Never let a customer overpay with points: cap at what the order
+            // is actually worth, rounding down so redemption cannot overshoot.
+            $pointsSpent = min($dto->pointsToSpend, PointRules::pointsToCover($sellingPrice));
+            $pointsSpentAmount = PointRules::rupiahFor($pointsSpent);
+            $sellingPrice -= $pointsSpentAmount;
+        }
+
         // ── 5. Fee & total ───────────────────────────────────────────────────
         // Computed on the discounted price: the customer pays the fee on what
         // they are actually charged. The per-channel fee IS the "Biaya Admin"
@@ -163,10 +204,13 @@ class CheckoutAction
         $taxPercent = max(0, min(100, (float) $channel->tax_percent));
         $taxAmount = $channelFee > 0 ? (int) round($channelFee * ($taxPercent / 100)) : 0;
 
-        if ($grossAmount < $channel->min_amount) {
+        // A fully points-covered order owes nothing, so a gateway minimum has
+        // nothing to apply to. Without this exemption the guard rejects exactly
+        // the redemption the feature exists to allow.
+        if ($grossAmount > 0 && $grossAmount < $channel->min_amount) {
             throw new Exception(
-                'Total tagihan Rp '.number_format($grossAmount).
-                ' kurang dari minimum pembayaran Rp '.number_format($channel->min_amount)
+                'Total tagihan '.Money::rupiah($grossAmount).
+                ' kurang dari minimum pembayaran '.Money::rupiah((int) $channel->min_amount)
             );
         }
 
@@ -271,7 +315,10 @@ class CheckoutAction
             $pgTransactionId = $pgData['order_no'] ?? null;
         };
 
-        $isExternal = $channel->channel_code !== 'balance';
+        // A fully points-covered order owes nothing, so there is no gateway to
+        // call — it settles like a wallet payment regardless of the channel the
+        // customer picked. Their choice is still recorded on the transaction.
+        $isExternal = $channel->channel_code !== 'balance' && $grossAmount > 0;
         // Defer the gateway call into the transaction only for a promo checkout,
         // so the quota lock is reserved before the order is minted.
         $gatewayInsideTx = $isExternal && (bool) $dto->promoCode;
@@ -287,6 +334,7 @@ class CheckoutAction
             $dto, $user, $product, $channel, $activeSupplier, $invoiceNumber, $referenceId,
             $targetNickname, $discount, $sellingPrice, $adminFee, $channelFee, $gatewayFee,
             $taxAmount, $taxPercent, $margin, $grossAmount, $callGateway, $gatewayInsideTx,
+            $pointsSpent, $pointsSpentAmount, $isExternal,
             &$paymentInstructions, &$pgTransactionId, &$transactionStatus,
         ) {
             // Promo: lock the row so two concurrent redemptions cannot both slip
@@ -342,10 +390,31 @@ class CheckoutAction
                 // while a global markup existed — stay reconstructable.
                 'admin_markup' => 0,
                 'discount_amount' => $discount,
+                // Its own line, deliberately: the rupiah was collected on an
+                // earlier order, so this is a liability being discharged, not a
+                // discount coming out of margin. Keeping it separate is what
+                // lets finance report the cost of the points programme at all,
+                // and what marks the order as having used points.
+                'points_spent' => $pointsSpent,
+                'points_spent_amount' => $pointsSpentAmount,
                 'amount_total' => $grossAmount,
                 'margin' => $margin,
                 'status' => TransactionStatus::PENDING,
             ]);
+
+            // Debit the points inside the same transaction as the order they
+            // paid for. PointLedger locks the user row itself; on the balance
+            // path that lock is taken again below, which nests as a savepoint.
+            if ($pointsSpent > 0) {
+                PointLedger::record(
+                    user: $user->id,
+                    amount: -$pointsSpent,
+                    type: 'spend',
+                    transactionId: $transaction->id,
+                    reference: $invoiceNumber,
+                    description: "Poin dipakai untuk {$invoiceNumber}",
+                );
+            }
 
             if ($promo) {
                 PromoRedemption::create([
@@ -380,7 +449,7 @@ class CheckoutAction
                 'status' => PaymentStatus::PENDING,
             ]);
 
-            if ($channel->channel_code === 'balance') {
+            if (! $isExternal) {
                 // ── Balance path ─────────────────────────────────────────────
                 // Pessimistic lock: re-fetch the user row FOR UPDATE inside the
                 // open transaction so concurrent balance checkouts serialize.
@@ -389,7 +458,7 @@ class CheckoutAction
                 $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
 
                 if ($lockedUser->balance < $grossAmount) {
-                    throw new Exception('Saldo tidak mencukupi. Sisa saldo: Rp '.number_format($lockedUser->balance));
+                    throw new Exception('Saldo tidak mencukupi. Sisa saldo: '.Money::rupiah((int) $lockedUser->balance));
                 }
 
                 // Through the ledger, not a raw decrement: the refund credit is
@@ -397,13 +466,18 @@ class CheckoutAction
                 // coming back with nothing having gone out is worse than no
                 // statement at all. WalletLedger re-locks the same row (already
                 // held here) and writes the before/after figures.
-                WalletLedger::record(
-                    user: $lockedUser->id,
-                    amount: -$grossAmount,
-                    type: 'purchase',
-                    reference: $transaction->invoice_number,
-                    description: "Pembelian {$transaction->invoice_number}",
-                );
+                // Guarded: WalletLedger refuses a zero mutation, and an order
+                // paid entirely with points owes exactly zero rupiah. Without
+                // this the redemption crashes at the moment it succeeds.
+                if ($grossAmount > 0) {
+                    WalletLedger::record(
+                        user: $lockedUser->id,
+                        amount: -$grossAmount,
+                        type: 'purchase',
+                        reference: $transaction->invoice_number,
+                        description: "Pembelian {$transaction->invoice_number}",
+                    );
+                }
 
                 $payment->update(['status' => PaymentStatus::SUCCESS, 'paid_at' => now()]);
 
@@ -426,6 +500,12 @@ class CheckoutAction
                 // delivered if the checkout commits.
                 if ($transactionStatus === TransactionStatus::COMPLETED) {
                     $this->sendReceiptAction->execute($transaction);
+                    // Points land only when the order is genuinely done —
+                    // payment settled and the supplier delivered. Called here
+                    // rather than from an observer for the same reason the
+                    // receipt is: saveQuietly() bypasses observers, and this
+                    // grants something worth money.
+                    app(GrantTransactionPointsAction::class)->execute($transaction);
                 }
             }
 

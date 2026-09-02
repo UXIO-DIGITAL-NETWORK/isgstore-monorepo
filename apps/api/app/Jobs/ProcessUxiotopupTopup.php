@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Actions\Points\GrantTransactionPointsAction;
 use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\Actions\Uxiotopup\ProcessUxiotopupTransactionAction;
@@ -36,6 +37,7 @@ class ProcessUxiotopupTopup implements ShouldQueue
             // Fulfilled by the supplier — email the receipt (idempotent).
             if ($updated->status === TransactionStatus::COMPLETED) {
                 app(SendTransactionReceiptAction::class)->execute($updated);
+                app(GrantTransactionPointsAction::class)->execute($updated);
             }
         } catch (Throwable $e) {
             Log::channel('uxiotopup')->error('ProcessUxiotopupTopup: attempt failed', [

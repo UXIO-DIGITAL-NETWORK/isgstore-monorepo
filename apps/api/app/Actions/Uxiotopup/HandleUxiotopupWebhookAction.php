@@ -3,6 +3,7 @@
 namespace App\Actions\Uxiotopup;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Points\GrantTransactionPointsAction;
 use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\DTOs\Log\CreateActivityLogDTO;
@@ -130,6 +131,7 @@ class HandleUxiotopupWebhookAction
             // Order fulfilled — email the receipt to the buyer (idempotent).
             if ($newStatus === TransactionStatus::COMPLETED) {
                 app(SendTransactionReceiptAction::class)->execute($transaction);
+                app(GrantTransactionPointsAction::class)->execute($transaction);
             }
 
             $this->sendToDiscord($transaction, $oldStatus, $newStatus);
