@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/common/Text";
+import { NavbarClock } from "@/features/dashboard/components/NavbarClock";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -177,6 +178,7 @@ export function DashboardNavbar() {
       </Box>
 
       <Box className="flex items-center gap-1">
+        <NavbarClock />
         <Button
           variant="ghost"
           size="icon"

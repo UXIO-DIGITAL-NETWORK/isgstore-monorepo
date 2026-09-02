@@ -5,6 +5,7 @@ import { render, act } from "@testing-library/react";
 import { routeTree } from "@/routeTree.gen";
 import { ThemeProvider } from "@/providers/theme-provider";
 import type { User } from "@/models/user.model";
+import { getBrowserTimezone } from "@/utils/getBrowserTimezone";
 
 /**
  * Canonical mock of the confirmed staging login user (role_id 1 =
@@ -21,7 +22,10 @@ export function makeUser(overrides: Partial<User> = {}): User {
     balance: 9999999,
     point: 9999,
     locale: "id",
-    timezone: "Asia/Jakarta",
+    // The host zone, not a literal: useTimezoneSync fires whenever the stored
+    // zone differs from the browser's, so a hardcoded value would make every
+    // protected-route test issue an unmocked PATCH on any CI box outside WIB.
+    timezone: getBrowserTimezone(),
     email_verified_at: "2026-07-10T13:39:19.000000Z",
     created_at: "2026-07-01T00:00:00.000000Z",
     updated_at: "2026-07-10T13:39:19.000000Z",

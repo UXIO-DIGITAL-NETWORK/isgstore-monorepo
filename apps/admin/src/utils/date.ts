@@ -23,3 +23,17 @@ export function formatRelativeTime(isoString: string): string {
 export function formatBannerDate(date: Date): string {
   return `It's ${format(date, "EEEE, MMMM d, yyyy")}!`;
 }
+
+/**
+ * A calendar day as `YYYY-MM-DD`, read from the date's *local* fields.
+ *
+ * Never use `toISOString().slice(0, 10)` here: that renders the UTC day, so a
+ * local-midnight pick east of Greenwich reports the previous date. The API
+ * only accepts this format precisely so the day the admin clicked and the day
+ * the server aggregates can never diverge.
+ */
+export function toApiDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}

@@ -144,11 +144,18 @@ export default function DashboardPage() {
                   ))}
                 </TabsList>
 
-                {/* Decorative only — scoped to visual parity with the reference; not wired to data. */}
-                <Select defaultValue="this-week">
+                {/* Disabled, not removed: GetDashboardPerformanceAction has no
+                    date filtering at all, so this control has never done
+                    anything. Now that Reports ships real period filters next
+                    door, leaving it operable would read as a bug. */}
+                <Select
+                  defaultValue="this-week"
+                  disabled
+                >
                   <SelectTrigger
                     size="sm"
                     className="w-[130px]"
+                    title="Period filtering is not available for this panel yet"
                   >
                     <SelectValue />
                   </SelectTrigger>
