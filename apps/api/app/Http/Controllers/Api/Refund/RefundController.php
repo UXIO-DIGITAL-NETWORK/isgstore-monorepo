@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Refund;
 use App\Actions\Refund\CompleteRefundRequestAction;
 use App\Actions\Refund\ListRefundRequestsAction;
 use App\Actions\Refund\ProcessRefundRequestAction;
+use App\Actions\Refund\RejectRefundClaimAction;
 use App\Actions\Refund\RejectRefundRequestAction;
 use App\Actions\Refund\SubmitRefundPayoutDetailsAction;
 use App\DTOs\Refund\CompleteRefundDTO;
@@ -31,7 +32,7 @@ class RefundController extends Controller
 {
     use ApiResponse;
 
-    private const RELATIONS = ['transaction.product', 'user', 'processedBy'];
+    private const RELATIONS = ['transaction.product', 'user', 'claimedUser', 'processedBy'];
 
     public function index(ListRefundRequestsRequest $request, ListRefundRequestsAction $action)
     {
@@ -119,6 +120,28 @@ class RefundController extends Controller
         return $this->successResponse(
             new RefundRequestResource($refund->load(self::RELATIONS)),
             'Refund rejected'
+        );
+    }
+
+    /**
+     * Refuse the account that claimed this refund, without refusing the refund.
+     *
+     * Separate from `reject` because the money outcome is different and cannot
+     * be undone by wording: the buyer is still owed this, so the row goes back
+     * to waiting for an account and a fresh link is sent to the contact on the
+     * order. `reject` closes the refund for good.
+     */
+    public function rejectClaim(RejectRefundRequest $request, RefundRequest $refundRequest, RejectRefundClaimAction $action)
+    {
+        try {
+            $refund = $action->execute($refundRequest, $request->user(), $request->validated('reason'));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        return $this->successResponse(
+            new RefundRequestResource($refund->load(self::RELATIONS)),
+            'Refund claim rejected; the refund is still owed and can be claimed again'
         );
     }
 }

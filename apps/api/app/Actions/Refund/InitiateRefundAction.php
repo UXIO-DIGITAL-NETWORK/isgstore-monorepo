@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace App\Actions\Refund;
 
+use App\Actions\Points\GrantTransactionPointsAction;
 use App\Actions\Settlement\ReverseMerchantSettlementAction;
 use App\Enums\PaymentStatus;
 use App\Enums\RefundMethod;
 use App\Enums\RefundStatus;
 use App\Enums\TransactionStatus;
+use App\Models\PointLedgerEntry;
 use App\Models\RefundRequest;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\Points\PointLedger;
 use App\Support\Refund\RefundClaimToken;
 use App\Support\Wallet\WalletLedger;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -36,11 +40,17 @@ use Illuminate\Support\Str;
  *     `WalletLedger` so it lands in `balance_mutations` as a `refund`. No admin
  *     approval; the money is spendable at the next checkout. Settles here, so
  *     the settlement reversal runs here too.
- *   - **Guest** → recorded as a manual-transfer refund and queued on the admin
- *     refund page. The customer supplies bank details on the public claim page;
- *     an admin transfers by hand and marks it complete. `payments.status` stays
- *     Success until then — the money has not moved, and the finance reports
- *     read that column as cash out.
+ *   - **Guest** → recorded as a `balance_claim` refund in WAITING_ACCOUNT and
+ *     queued on the admin refund page. There is no account to credit yet: the
+ *     customer follows the emailed claim link, creates or signs in to an
+ *     account whose contact matches the order, and an admin verifies it before
+ *     the balance is credited. `payments.status` stays Success until that
+ *     credit — the money has not moved, and the finance reports read that
+ *     column as cash out.
+ *
+ * The retired guest path (`manual_transfer`, an admin transferring to a bank
+ * account by hand) opens no new rows, but the ones still open are worked to
+ * completion through the same queue.
  *
  * There is deliberately no automatic gateway refund any more. `POST
  * /v1/monetapay/refund` remains as a manual admin tool, outside this path.
@@ -89,7 +99,12 @@ class InitiateRefundAction
                 return;
             }
 
+            // Points were subtracted before the fee was computed, so
+            // `gross_amount` is already the rupiah remainder — the split needs
+            // no arithmetic. Points go back as points; only cash goes back as
+            // balance, or a redemption would become a way to cash points out.
             $amount = (int) $payment->gross_amount;
+            $pointsBack = (int) $locked->points_spent;
 
             // Belt and braces. `transactions.user_id` is restrictOnDelete, so a
             // buyer's account cannot vanish under their own order and this
@@ -108,6 +123,7 @@ class InitiateRefundAction
                 'merchant_id' => $locked->merchant_id,
                 'refund_number' => 'RFD-'.Str::lower(Str::random(12)),
                 'amount' => $amount,
+                'points_amount' => $pointsBack,
             ];
 
             if ($member) {
@@ -123,13 +139,21 @@ class InitiateRefundAction
                 // The ledger is the only sanctioned way users.balance moves; it
                 // locks the user row itself, so concurrent refunds and
                 // checkouts cannot interleave and lose an increment.
-                WalletLedger::record(
-                    user: $member->id,
-                    amount: $amount,
-                    type: 'refund',
-                    reference: $locked->invoice_number,
-                    description: "Refund {$locked->invoice_number}",
-                );
+                //
+                // Guarded on zero: an order paid entirely with points owes no
+                // cash back, and WalletLedger refuses a zero mutation.
+                if ($amount > 0) {
+                    WalletLedger::record(
+                        user: $member->id,
+                        amount: $amount,
+                        type: 'refund',
+                        reference: $locked->invoice_number,
+                        description: "Refund {$locked->invoice_number}",
+                    );
+                }
+
+                $this->returnPoints($locked, $member->id, $pointsBack);
+                $this->reverseEarnedPoints($locked, $member->id);
 
                 $payment->update(['status' => PaymentStatus::REFUNDED]);
                 $locked->update(['status' => TransactionStatus::REFUNDED]);
@@ -141,23 +165,23 @@ class InitiateRefundAction
                 return;
             }
 
-            // Guest (or an orphaned member): queue it for a manual transfer.
-            // Nothing about the payment changes yet — the money is still ours
-            // until an admin actually sends it.
+            // Guest (or an orphaned member): the money is owed, but there is
+            // no account to credit yet. Nothing about the payment changes —
+            // it is still ours until the credit actually happens.
             [$plain, $hash] = RefundClaimToken::generate();
             $claimToken = $plain;
 
             $created = RefundRequest::create($base + [
                 'user_id' => null,
-                'method' => RefundMethod::MANUAL_TRANSFER,
-                'status' => RefundStatus::WAITING_DETAILS,
+                'method' => RefundMethod::BALANCE_CLAIM,
+                'status' => RefundStatus::WAITING_ACCOUNT,
                 'contact_email' => $locked->contact_email,
                 'contact_phone' => $locked->guest_contact,
                 'claim_token_hash' => $hash,
                 'claim_expires_at' => now()->addDays(RefundClaimToken::TTL_DAYS),
             ]);
 
-            Log::info("Refund (manual): Rp {$amount} queued as {$created->refund_number} for {$locked->invoice_number}");
+            Log::info("Refund (claim): Rp {$amount} queued as {$created->refund_number} for {$locked->invoice_number}");
         });
 
         // ── Post-commit: no lock held, and nothing here may fail the refund ──
@@ -176,5 +200,82 @@ class InitiateRefundAction
         }
 
         return $created;
+    }
+
+    /**
+     * Give back the points the customer redeemed on this order.
+     *
+     * As points, not as cash: converting them would make a deliberately failed
+     * purchase a way to turn points into rupiah.
+     */
+    private function returnPoints(Transaction $transaction, int $userId, int $points): void
+    {
+        if ($points <= 0) {
+            return;
+        }
+
+        try {
+            PointLedger::record(
+                user: $userId,
+                amount: $points,
+                type: 'refund_return',
+                transactionId: $transaction->id,
+                reference: $transaction->invoice_number,
+                description: "Poin dikembalikan {$transaction->invoice_number}",
+            );
+        } catch (QueryException) {
+            // Unique (transaction_id, type) — already returned by a racing caller.
+        }
+    }
+
+    /**
+     * Take back points this order earned, when it earned any.
+     *
+     * Only reachable on a goodwill refund: points are granted at COMPLETED, and
+     * `RefundEligibility` checks the *payment* status, so an admin can refund an
+     * order the supplier already delivered.
+     *
+     * **Clawed back only as far as the balance allows, never into the negative.**
+     * A negative point balance would silently swallow everything the customer
+     * earns next with no explanation on screen; the shortfall is logged for
+     * review instead.
+     */
+    private function reverseEarnedPoints(Transaction $transaction, int $userId): void
+    {
+        $earned = (int) PointLedgerEntry::query()
+            ->where('transaction_id', $transaction->id)
+            ->where('type', GrantTransactionPointsAction::TYPE)
+            ->value('amount');
+
+        if ($earned <= 0) {
+            return;
+        }
+
+        $available = PointLedger::balanceFor($userId);
+        $clawback = min($earned, $available);
+
+        if ($clawback < $earned) {
+            Log::warning(
+                "Point clawback short on {$transaction->invoice_number}: "
+                ."owed {$earned}, took {$clawback} (balance would have gone negative)."
+            );
+        }
+
+        if ($clawback <= 0) {
+            return;
+        }
+
+        try {
+            PointLedger::record(
+                user: $userId,
+                amount: -$clawback,
+                type: 'earn_reversal',
+                transactionId: $transaction->id,
+                reference: $transaction->invoice_number,
+                description: "Pembatalan poin {$transaction->invoice_number}",
+            );
+        } catch (QueryException) {
+            // Already reversed.
+        }
     }
 }

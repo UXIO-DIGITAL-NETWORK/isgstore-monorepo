@@ -8,11 +8,17 @@ use App\Models\Payment;
 use App\Models\RefundRequest;
 use App\Models\Transaction;
 use App\Support\Refund\RefundClaimToken;
+use App\Support\Refund\RefundSla;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
  * @extends Factory<RefundRequest>
+ *
+ * The default is deliberately still the retired `manual_transfer` shape: the
+ * existing suite exercises the rows that must keep draining through the admin
+ * queue, and silently re-pointing it at the new scheme would stop testing that.
+ * New-scheme tests opt in with `balanceClaim()` / `claimedBy()`.
  */
 class RefundRequestFactory extends Factory
 {
@@ -50,6 +56,36 @@ class RefundRequestFactory extends Factory
             'account_name' => 'Guest Customer',
             'payout_submitted_at' => now(),
             'payout_submitted_by' => 'customer',
+        ]);
+    }
+
+    /** The current guest shape: owed, waiting for the customer to make an account. */
+    public function balanceClaim(): static
+    {
+        return $this->state(fn () => [
+            'method' => RefundMethod::BALANCE_CLAIM,
+            'status' => RefundStatus::WAITING_ACCOUNT,
+        ]);
+    }
+
+    /**
+     * Claimed with an account and waiting on an admin. Mirrors what
+     * `ClaimRefundWithAccountAction` leaves behind, token included — the link
+     * is dead once it has been used.
+     */
+    public function claimedBy(int $userId, string $match = 'email', ?string $value = null): static
+    {
+        return $this->state(fn () => [
+            'method' => RefundMethod::BALANCE_CLAIM,
+            'status' => RefundStatus::PENDING,
+            'user_id' => $userId,
+            'claimed_user_id' => $userId,
+            'claimed_at' => now(),
+            'claimed_contact_match' => $match,
+            'claimed_contact_value' => $value ?? 'guest@example.com',
+            'verify_due_at' => RefundSla::dueAt(),
+            'claim_token_hash' => null,
+            'claim_expires_at' => null,
         ]);
     }
 

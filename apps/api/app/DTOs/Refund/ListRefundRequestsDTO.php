@@ -14,5 +14,9 @@ readonly class ListRefundRequestsDTO
         public ?string $search = null,
         public ?string $startDate = null,
         public ?string $endDate = null,
+        /** Owed but never claimed — the outstanding-liability view. */
+        public bool $unclaimed = false,
+        /** Claimed, still open, and past its 2x24 working-hour promise. */
+        public bool $overdue = false,
     ) {}
 }

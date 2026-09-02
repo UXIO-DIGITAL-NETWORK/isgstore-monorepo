@@ -24,6 +24,8 @@ class ListRefundRequestsRequest extends FormRequest
             'search' => ['nullable', 'string', 'max:255'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'unclaimed' => ['nullable', 'boolean'],
+            'overdue' => ['nullable', 'boolean'],
         ];
     }
 
@@ -36,6 +38,8 @@ class ListRefundRequestsRequest extends FormRequest
             search: $this->validated('search'),
             startDate: $this->validated('date_from'),
             endDate: $this->validated('date_to'),
+            unclaimed: $this->boolean('unclaimed'),
+            overdue: $this->boolean('overdue'),
         );
     }
 }

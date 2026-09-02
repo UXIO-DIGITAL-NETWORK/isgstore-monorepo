@@ -16,9 +16,11 @@ use RuntimeException;
  * An admin claims a refund row before making the transfer.
  *
  * This is the whole reason PROCESSING exists: two admins working the same
- * queue would otherwise both see a PENDING row, both open their banking app,
- * and both send the money. Claiming stamps `processed_by`, and
- * CompleteRefundRequestAction refuses a different admin.
+ * queue would otherwise both see a PENDING row and both act on it — under the
+ * retired manual scheme by both sending the money, and under the current one by
+ * both verifying the same claimed account and possibly reaching opposite
+ * conclusions. Claiming stamps `processed_by`, and CompleteRefundRequestAction
+ * refuses a different admin.
  */
 class ProcessRefundRequestAction
 {
@@ -40,7 +42,11 @@ class ProcessRefundRequestAction
                 throw new RuntimeException('Refund ini tidak sedang menunggu untuk diproses.');
             }
 
-            if (! $locked->hasPayoutDetails()) {
+            // Only the retired bank-transfer path needs a destination. A
+            // balance claim needs an account, which is what PENDING already
+            // means for it — `ClaimRefundWithAccountAction` is the only writer
+            // of that transition.
+            if ($locked->requiresPayoutDetails() && ! $locked->hasPayoutDetails()) {
                 throw new RuntimeException('Rekening tujuan belum diisi.');
             }
 

@@ -7,7 +7,6 @@ use App\Enums\PaymentStatus;
 use App\Enums\RefundMethod;
 use App\Enums\RefundStatus;
 use App\Enums\TransactionStatus;
-use App\Jobs\RefundGatewayJob;
 use App\Mail\RefundMail;
 use App\Models\BalanceMutation;
 use App\Models\Payment;
@@ -115,8 +114,12 @@ class RefundInitiationTest extends TestCase
 
         $refund = app(InitiateRefundAction::class)->execute($transaction);
 
-        $this->assertSame(RefundMethod::MANUAL_TRANSFER, $refund->method);
-        $this->assertSame(RefundStatus::WAITING_DETAILS, $refund->status);
+        $this->assertSame(RefundMethod::BALANCE_CLAIM, $refund->method);
+        $this->assertSame(RefundStatus::WAITING_ACCOUNT, $refund->status);
+        // Nothing is owed to an account yet, and the SLA clock only starts when
+        // the customer claims — an unclaimed refund must never read as late.
+        $this->assertNull($refund->claimed_user_id);
+        $this->assertNull($refund->verify_due_at);
         $this->assertNotNull($refund->claim_token_hash);
         $this->assertSame('guest@example.com', $refund->contact_email);
         $this->assertSame('081234567890', $refund->contact_phone);
@@ -132,11 +135,17 @@ class RefundInitiationTest extends TestCase
 
     public function test_no_gateway_refund_job_is_ever_dispatched(): void
     {
+        // The class is gone; what has to stay true is that opening a refund
+        // queues nothing that talks to the payment gateway. (It does queue the
+        // customer's claim notification, which is the point of the flow.)
         Queue::fake();
 
         app(InitiateRefundAction::class)->execute($this->paidTransaction(null));
 
-        Queue::assertNotPushed(RefundGatewayJob::class);
+        foreach (Queue::pushedJobs() as $class => $jobs) {
+            $this->assertStringNotContainsStringIgnoringCase('gateway', (string) $class);
+            $this->assertStringNotContainsStringIgnoringCase('monetapay', (string) $class);
+        }
     }
 
     public function test_refund_is_skipped_when_the_payment_never_succeeded(): void

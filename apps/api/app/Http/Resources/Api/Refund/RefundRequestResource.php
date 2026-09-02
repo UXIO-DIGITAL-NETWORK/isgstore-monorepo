@@ -53,6 +53,26 @@ class RefundRequestResource extends JsonResource
                 'submitted_by' => $this->payout_submitted_by,
             ] : null,
 
+            // The verification evidence. `contact_match`/`contact_value` are
+            // frozen at claim time rather than read off the account: the user
+            // can change their email in their profile afterwards, and the admin
+            // deciding two days later must see what actually matched.
+            'claimed_account' => $this->claimed_user_id ? [
+                'user_id' => $this->claimed_user_id,
+                'name' => $this->claimedUser?->name,
+                'email' => $this->claimedUser?->email,
+                'phone' => $this->claimedUser?->phone,
+                'account_status' => $this->claimedUser?->status,
+                'claimed_at' => $this->claimed_at?->toIso8601String(),
+                'contact_match' => $this->claimed_contact_match,
+                'contact_value' => $this->claimed_contact_value,
+            ] : null,
+            'verify_due_at' => $this->verify_due_at?->toIso8601String(),
+            // Computed here so the list and the badge cannot disagree about
+            // what "late" means.
+            'is_overdue' => $this->resource->isOverdue(),
+            'claim_rejected_count' => (int) $this->claim_rejected_count,
+
             'claim_notified_at' => $this->claim_notified_at?->toIso8601String(),
             'processed_by' => $this->processedBy?->name,
             'processed_at' => $this->processed_at?->toIso8601String(),

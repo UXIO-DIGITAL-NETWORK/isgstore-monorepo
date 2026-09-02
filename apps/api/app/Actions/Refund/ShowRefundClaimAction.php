@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Refund;
 
+use App\Enums\RefundMethod;
 use App\Enums\RefundStatus;
 use App\Support\Payout\BankCatalog;
 use App\Support\Refund\RefundClaimToken;
@@ -13,10 +14,15 @@ use App\Support\Refund\RefundClaimToken;
  *
  * The projection is built field-by-field on purpose, exactly like
  * `ShowInvoiceAction`. Whoever holds the link is unauthenticated, so this must
- * never carry `user_id`, `merchant_id`, `payment_id`, the raw contact details,
- * or anything about the sale's economics. The customer's own email and phone
- * come back masked — enough to confirm we are talking about their order,
- * useless to someone who intercepted the link.
+ * never carry `user_id`, `claimed_user_id`, `merchant_id`, `payment_id`, the raw
+ * contact details, or anything about the sale's economics. The customer's own
+ * email and phone come back masked — enough to confirm we are talking about
+ * their order, useless to someone who intercepted the link.
+ *
+ * `can_claim_account` and `can_submit_payout` are decided here rather than
+ * re-derived by the client from the status string: the two schemes overlap in
+ * PENDING, and a client guessing would offer a bank-account form on a refund
+ * that pays to balance.
  */
 class ShowRefundClaimAction
 {
@@ -37,9 +43,13 @@ class ShowRefundClaimAction
             'product' => $refund->transaction?->product?->name,
             'amount' => (int) $refund->amount,
             'status' => $refund->status->value,
-            // Whether the form should still be shown, decided here rather than
-            // re-derived by the client from the status string.
-            'can_submit_payout' => in_array($refund->status, RefundStatus::payoutEditable(), true),
+            'method' => $refund->method->value,
+            'can_submit_payout' => $refund->isPayoutEditable(),
+            // The current scheme: the money is waiting for an account.
+            'can_claim_account' => $refund->method === RefundMethod::BALANCE_CLAIM
+                && $refund->status === RefundStatus::WAITING_ACCOUNT,
+            // Set once claimed — what we promised, so the page can say it.
+            'verify_due_at' => $refund->verify_due_at?->toIso8601String(),
             'contact' => [
                 'email' => $this->maskEmail($refund->contact_email),
                 'phone' => $this->maskPhone($refund->contact_phone),

@@ -19,6 +19,13 @@ use RuntimeException;
  * number in the window between an admin reading it and making the transfer,
  * which is a one-step theft with no trail. `payout_submitted_by` records which
  * of the two defences applies if the transfer is ever disputed.
+ *
+ * Only `manual_transfer` refunds have a destination at all, and no new ones are
+ * opened — this action exists to finish the rows that were. A `balance_claim`
+ * refund is paid to an account, and also sits in PENDING once claimed, so a
+ * status-only guard here would quietly re-open bank transfers on the very
+ * scheme that retired them. `isPayoutEditable()` asks method and status as one
+ * question, which is why the guard below goes through the model.
  */
 class SubmitRefundPayoutDetailsAction
 {
@@ -28,7 +35,11 @@ class SubmitRefundPayoutDetailsAction
             /** @var RefundRequest $locked */
             $locked = RefundRequest::whereKey($refund->getKey())->lockForUpdate()->firstOrFail();
 
-            if (! in_array($locked->status, RefundStatus::payoutEditable(), true)) {
+            if (! $locked->requiresPayoutDetails()) {
+                throw new RuntimeException('Refund ini dikembalikan sebagai saldo, bukan transfer bank.');
+            }
+
+            if (! $locked->isPayoutEditable()) {
                 throw new RuntimeException('Rekening tujuan tidak dapat diubah lagi untuk refund ini.');
             }
 

@@ -186,14 +186,46 @@ class RefundClaimTest extends TestCase
         [$refund] = $this->guestRefund();
         $invoice = $refund->transaction->invoice_number;
 
-        foreach (['081234567890', '6281234567890', '+6281234567890'] as $spelling) {
+        foreach (['081234567890', '6281234567890', '+6281234567890'] as $i => $spelling) {
             $this->postJson('/api/v1/refund-claims/resend', [
                 'invoice_number' => $invoice,
                 'contact' => $spelling,
             ])->assertOk();
+
+            // Each spelling must find the row, but rotating the token three
+            // times in a row is exactly what the cooldown exists to stop:
+            // otherwise anyone holding the invoice and contact could keep
+            // killing a victim's live link forever. Step past it so the next
+            // spelling is testing the matching, not the throttle.
+            $this->travel(6)->minutes();
         }
 
         Mail::assertQueued(RefundMail::class, 3);
+    }
+
+    public function test_resend_will_not_rotate_a_link_that_was_just_sent(): void
+    {
+        Mail::fake();
+
+        [$refund, $token] = $this->guestRefund();
+
+        $this->postJson('/api/v1/refund-claims/resend', [
+            'invoice_number' => $refund->transaction->invoice_number,
+            'contact' => '081234567890',
+        ])->assertOk();
+
+        $rotated = $refund->fresh()->claim_token_hash;
+
+        // Immediately again: answered identically (the response must never
+        // reveal what happened), but the freshly delivered link survives.
+        $this->postJson('/api/v1/refund-claims/resend', [
+            'invoice_number' => $refund->transaction->invoice_number,
+            'contact' => '081234567890',
+        ])->assertOk();
+
+        $this->assertSame($rotated, $refund->fresh()->claim_token_hash);
+        $this->assertNull(RefundClaimToken::resolve($token));
+        Mail::assertQueued(RefundMail::class, 1);
     }
 
     public function test_resend_requires_both_the_invoice_and_a_contact(): void
