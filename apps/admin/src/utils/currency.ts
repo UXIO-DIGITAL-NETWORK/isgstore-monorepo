@@ -9,6 +9,12 @@
  * "Rp 4.752"), so it passes `{ fractionDigits: 0 }`.
  */
 export function formatCurrency(value: number, options?: { fractionDigits?: number }): string {
+  // A value that is not a finite number renders as "-" rather than "RpNaN".
+  // `Intl.NumberFormat` formats `undefined` happily, so a field the API stopped
+  // sending — a renamed column, say — would otherwise reach the screen looking
+  // like a price. An em dash is a visible absence.
+  if (!Number.isFinite(value)) return "-";
+
   const fractionDigits = options?.fractionDigits ?? 2;
   return new Intl.NumberFormat("id-ID", {
     style: "currency",

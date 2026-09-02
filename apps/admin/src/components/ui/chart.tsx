@@ -232,9 +232,16 @@ function ChartTooltipContent({
                           {itemConfig?.label || item.name}
                         </span>
                       </div>
-                      {item.value && (
+                      {/* `item.value &&` hid a legitimate 0 entirely — a
+                          zero-revenue month rendered an empty tooltip row. And
+                          toLocaleString() with no locale follows the browser,
+                          so two admins saw different grouping for the same
+                          number. Currency belongs in each chart's own
+                          `formatter`, not here: this tooltip is shared with
+                          charts that plot counts. */}
+                      {item.value != null && (
                         <span className="text-foreground font-mono font-medium tabular-nums">
-                          {item.value.toLocaleString()}
+                          {item.value.toLocaleString("id-ID")}
                         </span>
                       )}
                     </div>

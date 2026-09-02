@@ -10,3 +10,10 @@ describe("formatCurrency", () => {
     expect(formatCurrency(0)).toBe("Rp 0,00");
   });
 });
+
+describe("a value that is not a number", () => {
+  it("renders an absence rather than RpNaN", () => {
+    expect(formatCurrency(Number.NaN)).toBe("-");
+    expect(formatCurrency(undefined as unknown as number)).toBe("-");
+  });
+});

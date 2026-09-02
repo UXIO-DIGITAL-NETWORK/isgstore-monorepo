@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useChartSeries } from "../hooks/useDashboard";
 import { MONTH_OPTIONS } from "../types/dashboard.type";
 import type { MonthOption } from "../types/dashboard.type";
+import { formatCurrency } from "@/utils/currency";
 
 /** Derived from the canonical list, so the selector can never fall behind it. */
 const MONTH_CHOICES: { value: MonthOption; label: string }[] = MONTH_OPTIONS.map((value) => ({
@@ -102,7 +103,23 @@ export function PerformanceChartCard() {
               axisLine={false}
               tickMargin={8}
             />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            {/* Both series are rupiah. The formatter lives here rather than in
+                the shared shadcn tooltip, which is also used by count charts
+                and is overwritten whenever the primitive is re-added. */}
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value, name) => (
+                    <>
+                      <span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig]?.label ?? name}</span>
+                      <span className="text-foreground ml-auto font-mono font-medium tabular-nums">
+                        {formatCurrency(Number(value), { fractionDigits: 0 })}
+                      </span>
+                    </>
+                  )}
+                />
+              }
+            />
             <Area
               dataKey="revenue"
               type="natural"
