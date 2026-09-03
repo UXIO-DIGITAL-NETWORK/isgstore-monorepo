@@ -22,15 +22,33 @@ class SettingSeeder extends Seeder
             ['general', 'logo', null, 'image', 'Logo', true],
             ['general', 'favicon', null, 'image', 'Favicon', true],
             ['general', 'maintenance_mode', '0', 'boolean', 'Maintenance Mode', true],
+            // Footer copy. Held here rather than in the storefront's locale
+            // files so an operator can reword it without a front-end deploy;
+            // the bundled translation stays as the fallback when blank.
+            [
+                'general',
+                'footer_description',
+                'Platform top up game yang menyediakan layanan cepat, aman, dan praktis untuk berbagai kebutuhan digital Anda.',
+                'text',
+                'Footer Description',
+                true,
+            ],
+            ['general', 'copyright_text', null, 'text', 'Copyright Text', true],
 
             ['contact', 'contact_whatsapp', '6281234567890', 'string', 'WhatsApp', true],
             ['contact', 'contact_email', 'support@topupgame.id', 'string', 'Support Email', true],
             ['contact', 'contact_address', 'Jakarta, Indonesia', 'string', 'Address', true],
+            ['contact', 'operational_hours', '24 Jam', 'string', 'Operational Hours', true],
 
             ['social', 'social_instagram', 'https://instagram.com/topupgame.id', 'string', 'Instagram', true],
             ['social', 'social_tiktok', 'https://tiktok.com/@topupgame.id', 'string', 'TikTok', true],
             ['social', 'social_youtube', 'https://youtube.com/@topupgameid', 'string', 'YouTube', true],
             ['social', 'social_facebook', 'https://facebook.com/topupgameid', 'string', 'Facebook', true],
+            // Left empty on purpose: the storefront renders only the networks
+            // that have a URL, so an unused account is simply absent rather
+            // than a dead icon.
+            ['social', 'social_x', null, 'string', 'X (Twitter)', true],
+            ['social', 'social_linkedin', null, 'string', 'LinkedIn', true],
 
             ['seo', 'meta_title', 'TopUpGame.ID — Top Up Game Murah, Cepat, Aman', 'string', 'Meta Title', true],
             [
