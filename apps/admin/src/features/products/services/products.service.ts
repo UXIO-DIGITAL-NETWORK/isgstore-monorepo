@@ -161,6 +161,12 @@ const toFormData = (input: Partial<ProductInput>, method?: "PUT"): FormData => {
   if (input.is_available !== undefined) form.append("is_available", input.is_available ? "1" : "0");
   if (input.logo instanceof File) form.append("logo", input.logo);
 
+  // Points are sent as an empty string when cleared, which the API reads as
+  // "use the global settings" — omitting the field instead would leave the
+  // previous override in place and make the form unable to clear it.
+  if (input.point_percent !== undefined) form.append("point_percent", input.point_percent?.toString() ?? "");
+  if (input.point_flat !== undefined) form.append("point_flat", input.point_flat?.toString() ?? "");
+
   // The API requires all five prices on every write. A product created from
   // the priceless Add form sends zeroes; an edit resends the variant it has.
   const variant = input.variants?.[0];
