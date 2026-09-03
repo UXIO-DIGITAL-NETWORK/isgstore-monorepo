@@ -44,14 +44,17 @@ interface SupplierProductApiRow {
   price_min: number | null;
   price_max: number | null;
   pool_category?: { id: number; name: string } | null;
-  /** Projected prices for a pooled row, which has no product to read real ones from. */
-  preview_prices?: {
-    price_modal: number;
-    price_member: number;
-    price_vip: number;
-    price_reseller: number;
-    price_agent: number;
-  } | null;
+  /**
+   * Projected prices for a pooled row, which has no product to read real ones
+   * from — one entry per active membership plan, carrying its label. It used to
+   * be a fixed four-tier object under `preview_prices`, which the API stopped
+   * emitting when pricing moved to plans; every tier then read 0 here.
+   */
+  preview_plan_prices?: { membership_plan_id: number; plan_code: string; plan_name: string; is_default: boolean; price: number }[] | null;
+  /** The margins an admin authored, keyed by plan — what the form prefills from. */
+  plan_margins?: { membership_plan_id: number; margin_percent: number }[] | null;
+  point_percent?: number | null;
+  point_flat?: number | null;
   margins: { member: number | null; vip: number | null; reseller: number | null; agent: number | null };
   product?: {
     id: number;
@@ -73,7 +76,10 @@ interface SupplierProductApiRow {
 const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
   const product = row.product;
   const pooled = row.product_id === null;
-  const preview = row.preview_prices;
+  const previewByPlan = row.preview_plan_prices ?? [];
+  // Legacy four-tier view for the provider table's price cell. The plan order is
+  // the admin's own sort order, so the first entry is the default tier.
+  const previewFallback = previewByPlan.map((entry) => entry.price);
   return {
     id: String(row.id),
     buyer_sku_code: row.buyer_sku_code,
@@ -100,6 +106,10 @@ const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
       reseller: row.margins?.reseller ?? null,
       agent: row.margins?.agent ?? null,
     },
+    plan_margins: row.plan_margins ?? [],
+    preview_plan_prices: previewByPlan,
+    point_percent: row.point_percent ?? null,
+    point_flat: row.point_flat ?? null,
     variant: {
       // Prefixed by origin: a product id and a supplier_product id are different
       // counters, and an unprefixed String() lets two rows collide on one React key.
@@ -107,10 +117,10 @@ const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
       name: product?.name ?? row.provider_name ?? row.buyer_sku_code,
       cost_price: product?.price_modal ?? row.price,
       prices: {
-        public: pooled ? (preview?.price_member ?? 0) : (product?.price_member ?? 0),
-        vip: pooled ? (preview?.price_vip ?? 0) : (product?.price_vip ?? 0),
-        reseller: pooled ? (preview?.price_reseller ?? 0) : (product?.price_reseller ?? 0),
-        agent: pooled ? (preview?.price_agent ?? 0) : (product?.price_agent ?? 0),
+        public: pooled ? (previewFallback[0] ?? 0) : (product?.price_member ?? 0),
+        vip: pooled ? (previewFallback[1] ?? 0) : (product?.price_vip ?? 0),
+        reseller: pooled ? (previewFallback[2] ?? 0) : (product?.price_reseller ?? 0),
+        agent: pooled ? (previewFallback[3] ?? 0) : (product?.price_agent ?? 0),
       },
       // A pooled row sells nothing, so it is never "active" whatever the mapping says.
       status: !pooled && product?.status ? "active" : "inactive",
@@ -123,6 +133,8 @@ const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
 export interface MarginPlanOption {
   value: string;
   label: string;
+  /** Two plans may share a display name, so the form labels them by code too. */
+  code: string;
   is_default: boolean;
 }
 
@@ -142,7 +154,7 @@ export const providerService = {
       const name = plan.name as Record<string, string> | string | null | undefined;
       const label = typeof name === "string" ? name : (name?.id ?? name?.en ?? plan.code);
 
-      return { value: String(plan.id), label, is_default: Boolean(plan.is_default) };
+      return { value: String(plan.id), label, code: plan.code, is_default: Boolean(plan.is_default) };
     });
   },
 
