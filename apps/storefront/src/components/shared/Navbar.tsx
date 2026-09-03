@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, Gamepad2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
@@ -11,6 +11,7 @@ import { useLocaleDropdown } from "@/hooks/useLocaleDropdown";
 import { SearchBar } from "@/components/shared/SearchBar";
 import { NavDropdown } from "@/components/shared/NavDropdown";
 import { UserMenu } from "@/components/shared/UserMenu";
+import { SiteLogo } from "@/components/shared/SiteLogo";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function Navbar(): React.JSX.Element {
@@ -38,16 +39,12 @@ export function Navbar(): React.JSX.Element {
         <Box className="max-w-6xl mx-auto px-4 md:px-8 h-19 flex items-center justify-between gap-4">
           {/* Logo */}
           <Link href={`/${locale}`} className="flex items-center gap-2.5 shrink-0">
-            <Box className="w-9 h-9 rounded-full bg-linear-to-br from-violet-600 to-blue-500 flex items-center justify-center shrink-0">
-              <Gamepad2 className="w-4.5 h-4.5 text-white" />
-            </Box>
-            <Text
-              as="span"
-              className="text-[22px] font-black text-white uppercase tracking-tight leading-none hidden sm:inline font-outfit"
-            >
-              TOPUP
-              <Text as="span" className="text-[#9234EA] text-[22px]">GAME</Text>
-            </Text>
+            {/* The wordmark is hidden on the narrowest screens, where the
+                search field needs the width. */}
+            <SiteLogo
+              className="w-9 h-9"
+              textClassName="text-[22px] hidden sm:inline"
+            />
           </Link>
 
           {/* Search bar — desktop */}

@@ -2,11 +2,19 @@ import { Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { Toaster } from "sonner";
 import { Box } from "@/components/common/Box";
+import { MaintenanceGate } from "@/components/shared/MaintenanceGate";
+import { SiteHead } from "@/components/shared/SiteHead";
 
 export function RootLayout(): React.JSX.Element {
   return (
     <Box className="min-h-screen bg-[#0A0A0C] font-inter text-white">
-      <Outlet />
+      {/* Head tags and the maintenance flag both come from the same public
+          settings query, which is cached — mounting them here costs one request
+          for the whole app. */}
+      <SiteHead />
+      <MaintenanceGate>
+        <Outlet />
+      </MaintenanceGate>
       {/* Mounted once at the root so any feature can report an API failure
           without adding a provider of its own. Themed to the dark surface —
           sonner's default light toast would be jarring on this palette. */}

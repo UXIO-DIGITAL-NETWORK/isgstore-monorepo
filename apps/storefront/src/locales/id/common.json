@@ -32,12 +32,16 @@
     "popular": "Pencarian Populer",
     "noResults": "Game tidak ditemukan"
   },
+  "maintenance": {
+    "title": "Sedang Dalam Perbaikan",
+    "description": "Kami sedang melakukan pemeliharaan sistem. Silakan kembali beberapa saat lagi — hubungi kami jika ada yang mendesak."
+  },
   "footer": {
     "description": "Platform top up game yang menyediakan layanan cepat, aman, dan praktis untuk berbagai kebutuhan digital Anda. Didukung sistem otomatis dan metode pembayaran lengkap, kami hadir untuk memberikan pengalaman transaksi yang lebih mudah dan terpercaya.",
     "needHelp": "Butuh Bantuan?",
     "chatWhatsApp": "Chat WhatsApp",
-    "operationalHours": "Jam Operasional: 24 Jam",
-    "email": "E-mail: support@topupgaming.com",
+    "operationalHoursLabel": "Jam Operasional",
+    "emailLabel": "E-mail",
     "menuLink": "Menu Link",
     "legalitas": "Legalitas",
     "paymentMethods": "Metode Pembayaran",
