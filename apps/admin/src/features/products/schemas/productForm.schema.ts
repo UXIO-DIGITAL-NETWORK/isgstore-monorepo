@@ -47,7 +47,11 @@ export const productFormSchema = z.object({
 
   /* Pricing & Margin. Optional like the rest — the frame marks nothing
      required, and a product can be filed before it is priced. */
+  /** Point earn rate. Blank = fall back to the global points settings. */
   points: percent("Points"),
+  /** Flat bonus points, the sweetener a cheap denomination needs to be worth
+      anything at a percentage alone. */
+  pointsFlat: digits("Bonus Points"),
   discount: percent("Discount"),
   costPrice: digits("Cost Price"),
   publicPrice: digits("Public Price"),
