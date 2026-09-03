@@ -9,11 +9,13 @@ use App\Actions\Product\DeleteProductAction;
 use App\Actions\Product\GetProductsAction;
 use App\Actions\Product\ProductPriceControlAction;
 use App\Actions\Product\RestoreProductAction;
+use App\Actions\Product\SetProductMarginAction;
 use App\Actions\Product\UpdateProductAction;
 use App\Exceptions\SupplierProductPoolException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\BulkCreateProductsRequest;
 use App\Http\Requests\Product\BulkProductActionRequest;
+use App\Http\Requests\Product\SetProductMarginRequest;
 use App\Http\Requests\Product\SetProductPriceLimitRequest;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
@@ -104,6 +106,28 @@ class ProductController extends Controller
     }
 
     // ── Price controls ─────────────────────────────────────────────────────────
+
+    /**
+     * Re-price one product from the Main Products form.
+     *
+     * Delegates to the provider mapping's margin action wherever a mapping
+     * exists, so this screen and Set Profit Margin write the same rows.
+     */
+    public function setMargin(SetProductMarginRequest $request, Product $product, SetProductMarginAction $action)
+    {
+        $updated = $action->execute(
+            $product,
+            $request->planMargins(),
+            $request->priceMin(),
+            $request->priceMax(),
+            $request->limitsProvided(),
+            $request->pointPercent(),
+            $request->pointFlat(),
+            $request->pointsProvided(),
+        );
+
+        return $this->successResponse(new ProductResource($updated), 'Product margin updated successfully');
+    }
 
     public function setPriceLimit(SetProductPriceLimitRequest $request, Product $product, ProductPriceControlAction $action)
     {
