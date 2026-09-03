@@ -91,6 +91,13 @@ export interface Product {
   archived_at?: string | null;
   /** §6's `is_available` — storefront visibility. The second badge. */
   is_available: boolean;
+  /**
+   * Loyalty points this product earns, set on the product form. `null` means
+   * the global `points` settings apply — which is not the same as 0, "this
+   * product earns nothing".
+   */
+  point_percent?: number | null;
+  point_flat?: number | null;
   /** Selling price per membership plan — what the table renders. Optional, and
    * empty/absent for a product priced before plan pricing existed (the legacy
    * four-tier fixtures included), which falls back to `variants`. */
