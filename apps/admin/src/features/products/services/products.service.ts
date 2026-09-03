@@ -10,6 +10,7 @@ import type {
   Product,
   ProductListParams,
   PublishState,
+  SetProductMarginInput,
   SelectOption,
 } from "../types/product.type";
 
@@ -235,6 +236,21 @@ export const productsService = {
   },
 
   // ── Price controls (row + bulk) ────────────────────────────────────────────
+
+  /**
+   * Re-price one product from its own form. Same vocabulary as the provider
+   * screen — margins keyed by membership plan id — because the API delegates
+   * to the very same action wherever the product has a mapping.
+   */
+  setMargin: async (id: string, input: SetProductMarginInput): Promise<Product> => {
+    const response: ApiResponse<ProductApiRow> = await api.post(`${BASE}/${id}/profit-margin`, {
+      ...input,
+      // Keyed by plan id; a plan present with null clears its override back to
+      // the pricing rules, a plan omitted is left alone.
+      margins: input.margins ?? {},
+    });
+    return toProduct(response.data);
+  },
 
   setPriceLimit: async (id: string, limits: { price_min: number | null; price_max: number | null }): Promise<void> => {
     await api.post(`${BASE}/${id}/price-limit`, limits);

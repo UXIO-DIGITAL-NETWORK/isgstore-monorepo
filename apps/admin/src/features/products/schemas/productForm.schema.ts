@@ -14,6 +14,19 @@ export const DESCRIPTION_MAX = 280;
 // payload finally needs numbers.
 const digits = (label: string) => z.string().regex(/^\d*$/, `${label} must be a number`).optional();
 
+/**
+ * A margin may be negative — selling below cost is a decision an admin can make
+ * (a loss-leader), and the API accepts -100..1000 — so this cannot reuse
+ * `percent`, which is digits-only.
+ */
+const marginPercent = () =>
+  z
+    .string()
+    .regex(/^-?\d*(\.\d+)?$/, "Margin must be a number")
+    .refine((value) => value === "" || Number(value) >= -100, "Margin cannot be below -100")
+    .refine((value) => value === "" || Number(value) <= 1000, "Margin cannot exceed 1000")
+    .optional();
+
 const percent = (label: string) =>
   z
     .string()
@@ -45,25 +58,29 @@ export const productFormSchema = z.object({
     .optional(),
   description: z.string().max(DESCRIPTION_MAX).optional(),
 
-  /* Pricing & Margin. Optional like the rest — the frame marks nothing
-     required, and a product can be filed before it is priced. */
+  /* Pricing & Margin. Optional like the rest — a product can be filed before
+     it is priced.
+
+     Margins replaced the five fixed money fields (Cost/Public/VIP/Reseller/
+     Agent): those were never written by anything, and they could not describe a
+     membership plan an admin created — which is how pricing actually works now.
+     The cost is the supplier's, not something typed here. */
+  /** Margin percent per membership plan, keyed by plan id as the input holds it. */
+  margins: z.record(z.string(), marginPercent()),
+  /** Selling-price window. 0/empty = no limit, as on the provider screen. */
+  priceMin: digits("Lower Price Limit"),
+  priceMax: digits("Upper Price Limit"),
   /** Point earn rate. Blank = fall back to the global points settings. */
   points: percent("Points"),
   /** Flat bonus points, the sweetener a cheap denomination needs to be worth
       anything at a percentage alone. */
   pointsFlat: digits("Bonus Points"),
-  discount: percent("Discount"),
-  costPrice: digits("Cost Price"),
-  publicPrice: digits("Public Price"),
-  vipPrice: digits("VIP Price"),
-  resellerPrice: digits("Reseller Price"),
-  agentPrice: digits("Agent Price"),
 
   /* Product Mix. Empty by default, so an untouched section never blocks Save;
      a row the admin did add must be complete to mean anything. */
   productMix: z.array(
     z.object({
-      supplierProduct: z.string().min(1, "Supplier Product is required"),
+      mainProduct: z.string().min(1, "Main Product is required"),
       quantity: z.string().regex(/^[1-9]\d*$/, "Quantity must be at least 1"),
     }),
   ),

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Controller, useFieldArray, type Control, type FieldErrors, type UseFormRegister } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -7,27 +8,41 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SUPPLIER_PRODUCT_OPTIONS } from "../data/select-options.data";
+import { useProductList } from "../hooks/useProducts";
 import type { ProductFormValues } from "../schemas/productForm.schema";
 
 interface ProductMixBuilderProps {
   control: Control<ProductFormValues>;
   register: UseFormRegister<ProductFormValues>;
   errors: FieldErrors<ProductFormValues>;
+  /** Excluded from the picker — a bundle that contains itself is a loop. */
+  currentProductId?: string;
 }
 
 /**
- * Repeatable supplier-product rows for the Add form's Product Mix section
- * (product_requirements.md §4.6). Same `useFieldArray` mechanism as the
- * Category form's builders.
+ * Repeatable rows for the Product Mix section: which product goes into the
+ * bundle, and how many of it.
  *
- * **The row is inferred, not pictured** — the frame shows only the empty state
- * and the "Add Mix" button. A bundle needs to say *which* upstream SKU and
- * *how many* of it, so that is the row; the remove control follows the
- * Category builders, since a list you can only grow is a dead end.
+ * The picker lists the **main products this site actually sells**, fetched from
+ * the catalogue. It used to offer `SUPPLIER_PRODUCT_OPTIONS`, a bundled
+ * constant of five invented supplier SKUs that matched nothing in the database —
+ * so every row an admin built referenced a product that did not exist.
  */
-export function ProductMixBuilder({ control, register, errors }: ProductMixBuilderProps) {
+export function ProductMixBuilder({ control, register, errors, currentProductId }: ProductMixBuilderProps) {
   const { fields, append, remove } = useFieldArray({ control, name: "productMix" });
+  // One page is plenty for a picker; the list is searchable in its own screen.
+  const { data, isLoading } = useProductList({ per_page: 100 });
+
+  const options = useMemo(
+    () =>
+      (data?.data ?? [])
+        .filter((product) => product.id !== currentProductId)
+        .map((product) => ({
+          value: product.id,
+          label: `${product.name} — ${product.code}`,
+        })),
+    [data, currentProductId],
+  );
 
   return (
     <Box className="flex flex-col gap-3">
@@ -37,7 +52,7 @@ export function ProductMixBuilder({ control, register, errors }: ProductMixBuild
         type="button"
         variant="outline"
         className="w-fit self-end rounded-xl"
-        onClick={() => append({ supplierProduct: "", quantity: "" })}
+        onClick={() => append({ mainProduct: "", quantity: "" })}
       >
         <Plus className="size-4" />
         Add Mix
@@ -56,15 +71,17 @@ export function ProductMixBuilder({ control, register, errors }: ProductMixBuild
             >
               <Controller
                 control={control}
-                name={`productMix.${index}.supplierProduct`}
+                name={`productMix.${index}.mainProduct`}
                 render={({ field: select }) => (
                   <SelectField
-                    id={`product-mix-supplier-${index}`}
-                    label="Supplier Product"
-                    options={SUPPLIER_PRODUCT_OPTIONS}
+                    id={`product-mix-product-${index}`}
+                    label="Main Product"
+                    options={options}
+                    disabled={isLoading}
+                    emptyLabel={isLoading ? "Loading products..." : "No products available"}
                     value={select.value}
                     onChange={select.onChange}
-                    error={errors.productMix?.[index]?.supplierProduct?.message}
+                    error={errors.productMix?.[index]?.mainProduct?.message}
                   />
                 )}
               />
@@ -83,7 +100,7 @@ export function ProductMixBuilder({ control, register, errors }: ProductMixBuild
                     variant="small"
                     className="text-destructive"
                   >
-                    {errors.productMix[index]?.quantity?.message}
+                    {errors.productMix?.[index]?.quantity?.message}
                   </Text>
                 )}
               </Box>
@@ -91,8 +108,10 @@ export function ProductMixBuilder({ control, register, errors }: ProductMixBuild
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
+                size="icon"
+                // Numbered so a screen reader (and a test) can tell two rows apart.
                 aria-label={`Remove mix ${index + 1}`}
+                className="rounded-xl"
                 onClick={() => remove(index)}
               >
                 <Trash2 className="size-4" />

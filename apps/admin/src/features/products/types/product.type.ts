@@ -334,6 +334,21 @@ export interface ProviderProductListParams {
   per_page?: number;
 }
 
+/**
+ * What the Main Products form sends to `POST /products/{id}/profit-margin`.
+ *
+ * Deliberately the same shape as `SetProviderMarginInput`: the API delegates to
+ * the provider mapping's action wherever one exists, so the two screens author
+ * the same rows and cannot disagree about what a margin means.
+ */
+export interface SetProductMarginInput {
+  margins?: Record<number, number | null>;
+  price_min?: number | null;
+  price_max?: number | null;
+  point_percent?: number | null;
+  point_flat?: number | null;
+}
+
 /** Per-tier profit-margin percentages sent to `POST …/profit-margin`. */
 export interface SetProviderMarginInput {
   /**
