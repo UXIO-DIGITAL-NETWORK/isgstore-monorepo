@@ -111,6 +111,39 @@ describe("productsService.update", () => {
   });
 });
 
+describe("productsService — per-product points", () => {
+  it("maps the point columns through, keeping null distinct from 0", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow({ point_percent: 2.5, point_flat: 0 })]));
+
+    const result = await productsService.list();
+
+    expect(result.data[0].point_percent).toBe(2.5);
+    expect(result.data[0].point_flat).toBe(0);
+  });
+
+  it("sends a cleared point rule as an empty value so the API falls back to the global setting", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow({ point_percent: 5, point_flat: 10 })));
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow()));
+
+    await productsService.update("21", { point_percent: null, point_flat: null });
+
+    const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
+    expect(form.get("point_percent")).toBe("");
+    expect(form.get("point_flat")).toBe("");
+  });
+
+  it("sends an explicit zero as zero — that product earns nothing", async () => {
+    vi.mocked(api.get).mockResolvedValue(envelope(apiRow()));
+    vi.mocked(api.post).mockResolvedValue(envelope(apiRow()));
+
+    await productsService.update("21", { point_percent: 0, point_flat: 0 });
+
+    const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
+    expect(form.get("point_percent")).toBe("0");
+    expect(form.get("point_flat")).toBe("0");
+  });
+});
+
 describe("productsService.remove", () => {
   it("deletes by id", async () => {
     vi.mocked(api.delete).mockResolvedValue(envelope(null));

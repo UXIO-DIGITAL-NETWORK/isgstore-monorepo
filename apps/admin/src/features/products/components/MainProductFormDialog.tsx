@@ -44,9 +44,13 @@ const PRICE_FIELDS = [
 
 /**
  * Add / Edit Main Product (product_requirements.md §4.6), as a modal — the
- * create/update flow no longer navigates to its own page. Pricing & Margin and
- * Product Mix are still captured but not written (a known gap): the service
- * writes prices off `variants[0]`, which stays empty here.
+ * create/update flow no longer navigates to its own page.
+ *
+ * Points and Bonus Points are written: loyalty earning is configured per
+ * product here rather than only as one global percentage, and a blank field is
+ * what selects that global fallback. The money fields and Product Mix are still
+ * captured but not written (a known gap): the service writes prices off
+ * `variants[0]`, which stays empty here.
  */
 export function MainProductFormDialog({ open, onOpenChange, productId }: MainProductFormDialogProps) {
   const isEdit = Boolean(productId);
@@ -72,6 +76,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
       subCategory: "",
       description: "",
       points: "",
+      pointsFlat: "",
       discount: "",
       costPrice: "",
       publicPrice: "",
@@ -91,7 +96,8 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
           category: existing.game_id,
           subCategory: "",
           description: existing.description ?? "",
-          points: "",
+          points: existing.point_percent != null ? String(existing.point_percent) : "",
+          pointsFlat: existing.point_flat != null ? String(existing.point_flat) : "",
           discount: "",
           costPrice: "",
           publicPrice: "",
@@ -125,6 +131,10 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
       tag: values.tag || undefined,
       description: values.description || undefined,
       logo: values.logo ?? undefined,
+      // Blank means "use the global points settings", so it travels as null
+      // rather than 0 — 0 is the admin saying this product earns nothing.
+      point_percent: values.points === "" || values.points === undefined ? null : Number(values.points),
+      point_flat: values.pointsFlat === "" || values.pointsFlat === undefined ? null : Number(values.pointsFlat),
     };
 
     const onSuccess = () => onOpenChange(false);
@@ -374,11 +384,17 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
 
             <Box className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="product-points">Points</Label>
+                <FieldLabel
+                  htmlFor="product-points"
+                  tooltip="Loyalty points this product earns, as a percentage of the sale. Leave empty to use the global points setting; enter 0 for a product that earns nothing."
+                >
+                  Points
+                </FieldLabel>
                 <InputGroup className="rounded-xl">
                   <InputGroupInput
                     id="product-points"
                     inputMode="numeric"
+                    placeholder="Global default"
                     {...register("points")}
                   />
                   <InputGroupAddon align="inline-end">
@@ -391,6 +407,34 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     className="text-destructive"
                   >
                     {errors.points.message}
+                  </Text>
+                )}
+              </Box>
+
+              <Box className="flex flex-col gap-1.5">
+                <FieldLabel
+                  htmlFor="product-points-flat"
+                  tooltip="Flat bonus points added on top of the percentage — what makes a cheap denomination worth anything at all. Leave empty to use the global setting."
+                >
+                  Bonus Points
+                </FieldLabel>
+                <InputGroup className="rounded-xl">
+                  <InputGroupInput
+                    id="product-points-flat"
+                    inputMode="numeric"
+                    placeholder="Global default"
+                    {...register("pointsFlat")}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>pts</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+                {errors.pointsFlat && (
+                  <Text
+                    variant="small"
+                    className="text-destructive"
+                  >
+                    {errors.pointsFlat.message}
                   </Text>
                 )}
               </Box>
