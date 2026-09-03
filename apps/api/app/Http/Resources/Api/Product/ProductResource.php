@@ -59,6 +59,11 @@ class ProductResource extends JsonResource
                 ])
                 ->values()),
             'status' => (bool) $this->status,
+            // Null is meaningful — it is what makes the admin form show an
+            // empty field ("use the global points settings") rather than a 0
+            // the customer would read as "earns nothing".
+            'point_percent' => $this->point_percent !== null ? (float) $this->point_percent : null,
+            'point_flat' => $this->point_flat !== null ? (int) $this->point_flat : null,
             // Where the product sits in its lifecycle, mirroring the pool's
             // `pool_state` / `can_promote` / `promote_blocked_reason` trio.
             // `status` alone cannot answer it: a product is only live when an
