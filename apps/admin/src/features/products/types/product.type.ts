@@ -91,6 +91,10 @@ export interface Product {
   archived_at?: string | null;
   /** §6's `is_available` — storefront visibility. The second badge. */
   is_available: boolean;
+  /** Selling price per membership plan — what the table renders. Optional, and
+   * empty/absent for a product priced before plan pricing existed (the legacy
+   * four-tier fixtures included), which falls back to `variants`. */
+  plan_prices?: PlanPricePreview[];
   /** Price controls (bulk feature). `0/null = no limit`. */
   is_price_locked?: boolean;
   is_price_hidden?: boolean;

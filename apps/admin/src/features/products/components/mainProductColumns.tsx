@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatCurrency } from "@/utils/currency";
 import { initials } from "@/utils/initials";
 import type { Product } from "../types/product.type";
+import { PlanPriceCard } from "./PlanPriceCard";
 import { ProductPriceCell } from "./ProductPriceCell";
 import { ProductAvailabilityBadge, ProductStatusBadge } from "./ProductStatusBadge";
 import { ProductRowActions } from "./ProductRowActions";
@@ -93,7 +94,18 @@ export const mainProductColumns: ColumnDef<Product>[] = [
   {
     id: "price",
     header: "Price",
-    cell: ({ row }) => <ProductPriceCell variants={row.original.variants} />,
+    // Priced per membership plan, which is how pricing actually works now; a
+    // product with no plan rows yet (priced before that cutover) still renders
+    // the four legacy tiers rather than an empty cell.
+    cell: ({ row }) =>
+      (row.original.plan_prices?.length ?? 0) > 0 ? (
+        <PlanPriceCard
+          cost={row.original.variants[0]?.cost_price ?? 0}
+          plans={row.original.plan_prices ?? []}
+        />
+      ) : (
+        <ProductPriceCell variants={row.original.variants} />
+      ),
   },
   {
     accessorKey: "created_at",

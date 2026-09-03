@@ -95,11 +95,14 @@ describe("MainProductsPage", () => {
     expect((await screen.findAllByText("Rp 27.788")).length).toBeGreaterThan(0);
   });
 
-  it("breaks each variant's price down by tier, with margin and markup percent", async () => {
+  it("breaks each variant's price down by membership plan, with margin and markup percent", async () => {
     await renderRoute(LIST_PATH);
     const table = await screen.findByRole("table");
 
-    for (const label of ["Cost", "Public", "VIP", "Reseller", "Agent"]) {
+    // One row per membership plan, not four frozen tiers: the API stopped
+    // sending `price_vip`/`price_reseller`/`price_agent` when pricing moved to
+    // plans, which is what rendered a dash and NaN% below the retail row.
+    for (const label of ["Cost", "Basic", "Platinum", "Gold"]) {
       expect((await within(table).findAllByText(label)).length).toBeGreaterThan(0);
     }
     // prod-1-var-1: cost Rp 25.970 -> public Rp 27.788, so Rp 1.818 — 7.0% of
