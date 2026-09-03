@@ -23,6 +23,10 @@ class MembershipPlanResource extends JsonResource
             // NULL, not 0 — the admin table renders it as "Lifetime".
             'duration_days' => $this->duration_days === null ? null : (int) $this->duration_days,
             'role_id' => $this->role_id,
+            // Which plan the default (unsubscribed) buyer sits on. Two plans can
+            // legitimately carry the same display name, so the pricing screens
+            // need this to tell them apart.
+            'is_default' => (bool) $this->is_default,
             'is_popular' => (bool) $this->is_popular,
             'is_active' => (bool) $this->is_active,
             'sort_order' => (int) $this->sort_order,

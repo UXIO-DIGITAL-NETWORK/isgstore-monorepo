@@ -124,6 +124,11 @@ class PromoteSupplierProductAction
                 'published_at' => null,
                 'price_min' => $supplierProduct->price_min,
                 'price_max' => $supplierProduct->price_max,
+                // Decided on the Set Profit Margin page, alongside the window
+                // above — null stays null, which is what selects the global
+                // points settings rather than "earns nothing".
+                'point_percent' => $supplierProduct->point_percent,
+                'point_flat' => $supplierProduct->point_flat,
                 ...$prices,
             ]);
 

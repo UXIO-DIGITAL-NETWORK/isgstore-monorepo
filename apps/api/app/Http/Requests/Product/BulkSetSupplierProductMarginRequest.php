@@ -31,6 +31,11 @@ class BulkSetSupplierProductMarginRequest extends FormRequest
             'price_max' => ['nullable', 'integer', 'min:0', 'gte:price_min'],
             'margins' => ['sometimes', 'array'],
             'margins.*' => ['nullable', 'numeric', 'min:-100', 'max:1000'],
+            // Loyalty points earned on this SKU, decided at the same moment as
+            // the margins. Nullable is meaningful: null = fall back to the
+            // global `points` settings, 0 = this SKU earns nothing.
+            'point_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'point_flat' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -85,5 +90,24 @@ class BulkSetSupplierProductMarginRequest extends FormRequest
     public function limitsProvided(): bool
     {
         return $this->has('price_min') || $this->has('price_max');
+    }
+
+    public function pointPercent(): ?float
+    {
+        return $this->filled('point_percent') ? (float) $this->validated('point_percent') : null;
+    }
+
+    public function pointFlat(): ?int
+    {
+        return $this->filled('point_flat') ? (int) $this->validated('point_flat') : null;
+    }
+
+    /**
+     * Same contract as `limitsProvided()`: a caller that never sent the point
+     * fields must not have an existing override wiped by their absence.
+     */
+    public function pointsProvided(): bool
+    {
+        return $this->has('point_percent') || $this->has('point_flat');
     }
 }

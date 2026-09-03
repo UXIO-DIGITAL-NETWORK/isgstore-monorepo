@@ -45,10 +45,22 @@ class BulkSupplierProductAction
         ?int $priceMin = null,
         ?int $priceMax = null,
         bool $limitsProvided = false,
+        ?float $pointPercent = null,
+        ?int $pointFlat = null,
+        bool $pointsProvided = false,
     ): array {
         $rows = SupplierProduct::whereIn('id', $ids)->get();
         foreach ($rows as $row) {
-            $this->marginAction->execute($row, $margins, $priceMin, $priceMax, $limitsProvided);
+            $this->marginAction->execute(
+                $row,
+                $margins,
+                $priceMin,
+                $priceMax,
+                $limitsProvided,
+                $pointPercent,
+                $pointFlat,
+                $pointsProvided,
+            );
         }
 
         return ['updated' => $rows->count()];
