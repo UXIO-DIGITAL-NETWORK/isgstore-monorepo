@@ -52,6 +52,10 @@ class ProductResource extends JsonResource
                     'membership_plan_id' => (int) $row->membership_plan_id,
                     'plan_code' => $row->membershipPlan?->code,
                     'plan_name' => $row->membershipPlan?->localizedName(),
+                    // Which row is the retail price an unsubscribed buyer pays.
+                    // Two plans can share a display name, so the table needs
+                    // this (and the code) to tell them apart.
+                    'is_default' => (bool) $row->membershipPlan?->is_default,
                     'price' => (int) $row->price,
                     'margin_percent' => $row->margin_percent !== null ? (float) $row->margin_percent : null,
                     'margin_flat' => (int) $row->margin_flat,

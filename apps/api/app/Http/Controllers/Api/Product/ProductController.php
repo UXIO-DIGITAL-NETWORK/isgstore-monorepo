@@ -54,7 +54,7 @@ class ProductController extends Controller
         $product = $action->execute($request->toDTO());
 
         return $this->successResponse(
-            new ProductResource($product->load(['category', 'subCategory'])),
+            new ProductResource($product->load(['category', 'subCategory', 'planPrices.membershipPlan'])),
             'Product created successfully',
             201
         );
@@ -63,7 +63,7 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         return $this->successResponse(
-            new ProductResource($product->load(['category', 'subCategory', 'supplierProducts'])),
+            new ProductResource($product->load(['category', 'subCategory', 'supplierProducts', 'planPrices.membershipPlan'])),
             'Product retrieved successfully'
         );
     }
@@ -73,7 +73,7 @@ class ProductController extends Controller
         $updatedProduct = $action->execute($product, $request->toDTO());
 
         return $this->successResponse(
-            new ProductResource($updatedProduct->load(['category', 'subCategory', 'supplierProducts'])),
+            new ProductResource($updatedProduct->load(['category', 'subCategory', 'supplierProducts', 'planPrices.membershipPlan'])),
             'Product updated successfully'
         );
     }
@@ -98,7 +98,7 @@ class ProductController extends Controller
         }
 
         return $this->successResponse(
-            new ProductResource($restored->load(['category', 'subCategory', 'supplierProducts'])),
+            new ProductResource($restored->load(['category', 'subCategory', 'supplierProducts', 'planPrices.membershipPlan'])),
             'Product restored successfully'
         );
     }
@@ -110,7 +110,7 @@ class ProductController extends Controller
         $updated = $action->setLimit($product, $request->priceMin(), $request->priceMax());
 
         return $this->successResponse(
-            new ProductResource($updated->load(['category', 'subCategory'])),
+            new ProductResource($updated->load(['category', 'subCategory', 'planPrices.membershipPlan'])),
             'Price limit updated successfully'
         );
     }

@@ -26,7 +26,11 @@ class GetProductsAction
         ?int $maxPrice = null,
         ?string $publishState = null,
     ): LengthAwarePaginator {
-        return Product::with(['category', 'subCategory', 'supplierProducts'])
+        // `planPrices` is what the admin table renders now: the number of price
+        // tiers is data, and the frozen `price_vip/reseller/agent` columns are
+        // no longer serialised at all. Eager-loaded with its plan so the table
+        // can label each row without a query per product.
+        return Product::with(['category', 'subCategory', 'supplierProducts', 'planPrices.membershipPlan'])
             ->when($publishState !== null, fn ($query) => $this->scopeToState($query, $publishState))
             ->when($search, fn ($query) => $query->where(
                 fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")
