@@ -2,6 +2,7 @@
 
 namespace App\Actions\Product;
 
+use App\Models\MembershipPlan;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
 use App\Services\ProductRepricer;
@@ -19,7 +20,10 @@ class GetSupplierProductsAction
      */
     public function execute(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        $query = SupplierProduct::with(['product.category', 'supplier', 'poolCategory'])->latest();
+        // `planMargins` is eager-loaded because every row reports the margins an
+        // admin authored — the Set Profit Margin page prefills from them, and
+        // reading them per row would be an N+1 across the whole table.
+        $query = SupplierProduct::with(['product.category', 'supplier', 'poolCategory', 'planMargins'])->latest();
 
         // Explicit id selection, used by the Set Profit Margin page. Without it that
         // page has to pull a whole page and narrow the selection client-side, which
@@ -124,30 +128,64 @@ class GetSupplierProductsAction
     }
 
     /**
-     * A pooled row has no product, so it has no stored selling prices — the admin
-     * table would show zeroes. Project what the prices *would* be from the cost and
-     * the decided margins.
+     * The margins an admin authored, and — for a pooled row — the prices those
+     * margins would produce.
      *
-     * Computed here, once per page, on purpose: PricingService memoises its rules
-     * per instance, so doing this inside the Resource would resolve a fresh service
-     * (and re-query pricing_rules) for every row.
+     * Both are attached here, once per page, on purpose: PricingService memoises
+     * its rules per instance, so doing this inside the Resource would resolve a
+     * fresh service (and re-query pricing_rules) for every row.
+     *
+     * The preview is plan-keyed and carries each plan's label, because that is
+     * what the admin actually types against — the four legacy tiers cannot
+     * describe a plan someone created this morning.
      */
     private function attachPreviewPrices(LengthAwarePaginator $paginator): void
     {
+        $plans = null;
+
         foreach ($paginator->items() as $row) {
+            $margins = $this->repricer->planMargins($row);
+
+            $row->setAttribute('authored_plan_margins', array_map(
+                fn ($planId, $margin) => [
+                    'membership_plan_id' => (int) $planId,
+                    'margin_percent' => (float) $margin,
+                ],
+                array_keys($margins),
+                $margins,
+            ));
+
+            // A promoted row has real stored prices to read; only a pooled one
+            // needs the projection.
             if ($row->product_id !== null) {
                 continue;
             }
 
-            // Previewed per plan, so the admin sees the ladder they will
-            // actually sell at rather than four fixed tiers.
-            $row->setAttribute('preview_plan_prices', $this->pricing->computePlanPrices(
+            // Resolved lazily so a page of promoted rows costs no query at all.
+            $plans ??= MembershipPlan::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+
+            $prices = $this->pricing->computePlanPrices(
                 (int) $row->price,
                 $row->pool_category_id,
-                $this->repricer->planMargins($row),
+                $margins,
                 $row->price_min,
                 $row->price_max,
-            ));
+            );
+
+            $row->setAttribute('preview_plan_prices', $plans
+                ->map(fn (MembershipPlan $plan) => [
+                    'membership_plan_id' => (int) $plan->id,
+                    'plan_code' => $plan->code,
+                    'plan_name' => $plan->localizedName(),
+                    'is_default' => (bool) $plan->is_default,
+                    'price' => (int) ($prices[$plan->id] ?? 0),
+                ])
+                ->values()
+                ->all());
         }
     }
 }

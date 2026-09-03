@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\Product;
 
 use App\Http\Resources\Api\Supplier\SupplierResource;
+use App\Services\ProductRepricer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -30,12 +31,16 @@ class SupplierProductResource extends JsonResource
             // Convenience mirror of the supplier flag so the table can protect
             // System rows without eager-reading the relationship every render.
             'is_system' => (bool) ($this->relationLoaded('supplier') && $this->supplier?->is_system),
-            'margins' => [
-                'member' => $this->margin_member !== null ? (float) $this->margin_member : null,
-                'vip' => $this->margin_vip !== null ? (float) $this->margin_vip : null,
-                'reseller' => $this->margin_reseller !== null ? (float) $this->margin_reseller : null,
-                'agent' => $this->margin_agent !== null ? (float) $this->margin_agent : null,
-            ],
+            // The margins an admin actually authored, keyed by membership plan.
+            // Read from `supplier_product_margins` (attached per page by
+            // GetSupplierProductsAction), not from the frozen `margin_*`
+            // columns — nothing has written those since pricing moved to plans,
+            // so a saved margin used to read back as null everywhere.
+            'plan_margins' => $this->whenNotNull($this->authored_plan_margins),
+            // Legacy role-keyed mirror, kept for one release for the provider
+            // table. Derived from the same authored margins rather than the
+            // dead columns.
+            'margins' => $this->legacyMargins(),
             'price_min' => $this->price_min,
             'price_max' => $this->price_max,
             'margin_set_at' => $this->margin_set_at,
@@ -47,7 +52,13 @@ class SupplierProductResource extends JsonResource
             'promote_blocked_reason' => $this->promoteBlockedReason(),
             // Projected selling prices for a pooled row, which has no product to
             // read real ones from. Attached per page by GetSupplierProductsAction.
-            'preview_prices' => $this->whenNotNull($this->preview_prices),
+            //
+            // One entry per active membership plan, carrying its label: the
+            // admin prices a SKU per plan, so previewing four fixed tiers could
+            // never show what a plan they created would sell at.
+            'preview_plan_prices' => $this->whenNotNull($this->preview_plan_prices),
+            'point_percent' => $this->point_percent !== null ? (float) $this->point_percent : null,
+            'point_flat' => $this->point_flat !== null ? (int) $this->point_flat : null,
             'product_status' => $this->whenLoaded('product', fn () => (bool) $this->product?->status),
             'published_at' => $this->whenLoaded('product', fn () => $this->product?->published_at),
             'pool_category' => $this->whenLoaded('poolCategory', fn () => $this->poolCategory ? [
@@ -59,5 +70,25 @@ class SupplierProductResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    /**
+     * The authored margins expressed in the legacy role vocabulary.
+     *
+     * @return array<string,float|null>
+     */
+    private function legacyMargins(): array
+    {
+        $authored = collect($this->authored_plan_margins ?? [])
+            ->pluck('margin_percent', 'membership_plan_id');
+
+        $margins = [];
+
+        foreach (ProductRepricer::planIdByRole() as $role => $planId) {
+            $margin = $authored[$planId] ?? null;
+            $margins[$role] = $margin !== null ? (float) $margin : null;
+        }
+
+        return $margins;
     }
 }

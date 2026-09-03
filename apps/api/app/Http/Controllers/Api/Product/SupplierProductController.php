@@ -101,6 +101,9 @@ class SupplierProductController extends Controller
             $request->priceMin(),
             $request->priceMax(),
             $request->limitsProvided(),
+            $request->pointPercent(),
+            $request->pointFlat(),
+            $request->pointsProvided(),
         );
 
         return $this->successResponse(
@@ -124,6 +127,9 @@ class SupplierProductController extends Controller
             $request->priceMin(),
             $request->priceMax(),
             $request->limitsProvided(),
+            $request->pointPercent(),
+            $request->pointFlat(),
+            $request->pointsProvided(),
         );
 
         return $this->successResponse($result, 'Profit margins updated successfully');

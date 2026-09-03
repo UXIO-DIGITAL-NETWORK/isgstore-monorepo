@@ -43,8 +43,11 @@ class SetSupplierProductMarginAction
         ?int $priceMin = null,
         ?int $priceMax = null,
         bool $limitsProvided = false,
+        ?float $pointPercent = null,
+        ?int $pointFlat = null,
+        bool $pointsProvided = false,
     ): SupplierProduct {
-        return DB::transaction(function () use ($supplierProduct, $margins, $priceMin, $priceMax, $limitsProvided) {
+        return DB::transaction(function () use ($supplierProduct, $margins, $priceMin, $priceMax, $limitsProvided, $pointPercent, $pointFlat, $pointsProvided) {
             // `margin_set_at` is stamped either way: the promote gate asks
             // "did an admin decide?", and deciding to fall back to the rules is
             // still deciding.
@@ -58,6 +61,14 @@ class SetSupplierProductMarginAction
                 $attributes['price_max'] = $priceMax;
             }
 
+            // Points ride along with the margins for the same reason the limits
+            // do: they are decided in the same form, and a pooled row has no
+            // product to hold them until promote copies them across.
+            if ($pointsProvided) {
+                $attributes['point_percent'] = $pointPercent;
+                $attributes['point_flat'] = $pointFlat;
+            }
+
             $supplierProduct->update($attributes);
             $this->writeMargins($supplierProduct, $margins);
             $supplierProduct->refresh();
@@ -67,6 +78,13 @@ class SetSupplierProductMarginAction
             if ($product) {
                 if ($limitsProvided) {
                     $product->update(['price_min' => $priceMin, 'price_max' => $priceMax]);
+                    $product->refresh();
+                }
+
+                // An already-promoted SKU must not need a second trip to the
+                // product form for the points the admin just decided here.
+                if ($pointsProvided) {
+                    $product->update(['point_percent' => $pointPercent, 'point_flat' => $pointFlat]);
                     $product->refresh();
                 }
 
