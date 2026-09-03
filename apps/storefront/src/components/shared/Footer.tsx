@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "@tanstack/react-router";
 import {
-  Gamepad2,
   ChevronRight,
   Clock,
   Mail,
@@ -12,11 +11,14 @@ import {
   Twitter,
   Facebook,
   Linkedin,
+  Music2,
 } from "lucide-react";
 import whatsappLogo from "@/assets/icons/whatsapp_logo.svg";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Link } from "@/components/common/Link";
+import { SiteLogo } from "@/components/shared/SiteLogo";
+import { useSiteSettings, whatsappLink } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
 
 import paymentLogo1 from "@/assets/images/payment_method/payment_logo_1.png";
@@ -33,18 +35,35 @@ const PAYMENT_LOGOS: { src: string; alt: string }[] = [
   { src: paymentLogo5, alt: "ShopeePay" },
 ];
 
-type SocialIconEntry = { Icon: React.ElementType; label: string };
+/**
+ * The networks the footer can show, each paired with the setting that holds its
+ * URL. Only the ones an admin has filled in are rendered — an icon that links
+ * nowhere is worse than an absent one, which is what the previous hardcoded
+ * list produced for every network the business does not actually use.
+ */
+type SocialIconEntry = { Icon: React.ElementType; label: string; settingKey: string };
 const SOCIAL_ICONS: SocialIconEntry[] = [
-  { Icon: Instagram, label: "Instagram" },
-  { Icon: Youtube, label: "YouTube" },
-  { Icon: Twitter, label: "X (Twitter)" },
-  { Icon: Facebook, label: "Facebook" },
-  { Icon: Linkedin, label: "LinkedIn" },
+  { Icon: Instagram, label: "Instagram", settingKey: "social_instagram" },
+  { Icon: Music2, label: "TikTok", settingKey: "social_tiktok" },
+  { Icon: Youtube, label: "YouTube", settingKey: "social_youtube" },
+  { Icon: Facebook, label: "Facebook", settingKey: "social_facebook" },
+  { Icon: Twitter, label: "X (Twitter)", settingKey: "social_x" },
+  { Icon: Linkedin, label: "LinkedIn", settingKey: "social_linkedin" },
 ];
 
 export function Footer(): React.JSX.Element {
   const { t } = useTranslation("common");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
+  const { text } = useSiteSettings();
+
+  // Every value below falls back to the bundled copy: a setting an admin has
+  // not filled in must not blank out the footer.
+  const whatsappHref = whatsappLink(text("contact_whatsapp"));
+  const supportEmail = text("contact_email");
+  const operationalHours = text("operational_hours");
+  const socialLinks = SOCIAL_ICONS.map((entry) => ({ ...entry, href: text(entry.settingKey) })).filter(
+    (entry): entry is SocialIconEntry & { href: string } => Boolean(entry.href),
+  );
 
   const MENU_LINKS: { labelKey: string; href: string }[] = [
     { labelKey: "footer.menu.dashboard", href: `/${locale}/dashboard` },
@@ -74,18 +93,7 @@ export function Footer(): React.JSX.Element {
           <Box className="flex flex-col gap-5">
             {/* Logo mark */}
             <Box className="flex items-center gap-2.5">
-              <Box className="w-10 h-10 rounded-full bg-linear-to-br from-[#3B82F6] to-[#9234EA] flex items-center justify-center shrink-0">
-                <Gamepad2 className="w-5 h-5 text-white" />
-              </Box>
-              <Text
-                as="span"
-                className="text-[22px] font-black text-white uppercase tracking-tight leading-none font-outfit"
-              >
-                TOPUP
-                <Text as="span" className="text-[#9234EA] text-[22px] font-outfit font-black">
-                  GAME
-                </Text>
-              </Text>
+              <SiteLogo className="w-10 h-10" />
             </Box>
 
             {/* Description */}
@@ -93,7 +101,7 @@ export function Footer(): React.JSX.Element {
               as="p"
               className="text-[13.5px] leading-[1.75] text-white/50 font-inter max-w-85"
             >
-              {t("footer.description")}
+              {text("footer_description") ?? t("footer.description")}
             </Text>
           </Box>
 
@@ -104,9 +112,12 @@ export function Footer(): React.JSX.Element {
             </Text>
 
             {/* WhatsApp CTA */}
-            <Box
-              as="button"
-              type="button"
+            {/* Rendered only when a number is configured: the button was
+                previously inert, so a customer who clicked it got nothing. */}
+            {whatsappHref && (
+            <Link
+              href={whatsappHref}
+              target="_blank"
               className={cn(
                 "flex items-center justify-between gap-2.5 w-full rounded-full",
                 "bg-white/6 border border-white/15 backdrop-blur-sm",
@@ -127,22 +138,30 @@ export function Footer(): React.JSX.Element {
                 </Text>
               </Box>
               <ChevronRight className="w-4 h-4 text-white/45 shrink-0" />
-            </Box>
+            </Link>
+            )}
 
             {/* Operational info */}
             <Box className="flex flex-col gap-3">
-              <Box className="flex items-center gap-2.5">
-                <Clock className="w-4 h-4 text-white shrink-0" />
-                <Text as="span" className="text-[13px] text-white/65 font-inter leading-none">
-                  {t("footer.operationalHours")}
-                </Text>
-              </Box>
-              <Box className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-white shrink-0" />
-                <Text as="span" className="text-[13px] text-white/65 font-inter leading-none">
-                  {t("footer.email")}
-                </Text>
-              </Box>
+              {operationalHours && (
+                <Box className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-white shrink-0" />
+                  <Text as="span" className="text-[13px] text-white/65 font-inter leading-none">
+                    {t("footer.operationalHoursLabel")}: {operationalHours}
+                  </Text>
+                </Box>
+              )}
+              {supportEmail && (
+                <Box className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-white shrink-0" />
+                  <Link
+                    href={`mailto:${supportEmail}`}
+                    className="text-[13px] text-white/65 hover:text-white font-inter leading-none transition-colors"
+                  >
+                    {t("footer.emailLabel")}: {supportEmail}
+                  </Link>
+                </Box>
+              )}
             </Box>
           </Box>
 
@@ -230,24 +249,26 @@ export function Footer(): React.JSX.Element {
           </Box>
 
           {/* R2C3 — Social media */}
-          <Box className="flex flex-col gap-3">
-            <Text as="p" className="text-[14px] font-semibold text-white font-outfit">
-              {t("footer.followUs")}
-            </Text>
-            <Box className="flex items-center gap-2 flex-wrap">
-              {SOCIAL_ICONS.map(({ Icon, label }) => (
-                <Box
-                  key={label}
-                  as="button"
-                  type="button"
-                  aria-label={label}
-                  className="w-10 h-10 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/15 transition-colors cursor-pointer"
-                >
-                  <Icon className="w-4.5 h-4.5 text-white" />
-                </Box>
-              ))}
+          {socialLinks.length > 0 && (
+            <Box className="flex flex-col gap-3">
+              <Text as="p" className="text-[14px] font-semibold text-white font-outfit">
+                {t("footer.followUs")}
+              </Text>
+              <Box className="flex items-center gap-2 flex-wrap">
+                {socialLinks.map(({ Icon, label, href }) => (
+                  <Link
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    aria-label={label}
+                    className="w-10 h-10 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/15 transition-colors cursor-pointer"
+                  >
+                    <Icon className="w-4.5 h-4.5 text-white" />
+                  </Link>
+                ))}
+              </Box>
             </Box>
-          </Box>
+          )}
 
         </Box>
       </Box>
@@ -261,11 +282,16 @@ export function Footer(): React.JSX.Element {
       <Box className="max-w-6xl mx-auto px-4 md:px-8 py-5">
         <Box className="flex items-center justify-between gap-4 flex-wrap">
           <Text as="span" className="text-[12px] text-white/30 font-inter">
-            {t("footer.copyright")}
+            {text("copyright_text") ?? t("footer.copyright")}
           </Text>
-          <Text as="span" className="text-[12px] text-white/30 font-inter">
-            {t("footer.copyrightOwners")}
-          </Text>
+          {/* The trademark notice is boilerplate, not branding, so it stays in
+              the locale files — and is dropped when an admin has written their
+              own copyright line, which supersedes the pair. */}
+          {!text("copyright_text") && (
+            <Text as="span" className="text-[12px] text-white/30 font-inter">
+              {t("footer.copyrightOwners")}
+            </Text>
+          )}
         </Box>
       </Box>
 
