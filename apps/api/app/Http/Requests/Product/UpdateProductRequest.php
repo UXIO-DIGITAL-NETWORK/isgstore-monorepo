@@ -44,6 +44,11 @@ class UpdateProductRequest extends FormRequest
             'price_reseller' => ['required', 'integer'],
             'price_agent' => ['required', 'integer'],
             'status' => ['required', 'boolean'],
+            // Per-product loyalty points. Nullable on purpose: a blank field
+            // means "fall back to the global points settings", which is not
+            // the same as an explicit 0 ("this SKU earns nothing").
+            'point_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'point_flat' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -66,7 +71,12 @@ class UpdateProductRequest extends FormRequest
             priceReseller: (int) $this->validated('price_reseller'),
             priceAgent: (int) $this->validated('price_agent'),
             status: (bool) $this->validated('status'),
-            isAvailable: $this->has('is_available') ? $this->boolean('is_available') : true
+            isAvailable: $this->has('is_available') ? $this->boolean('is_available') : true,
+            // `filled()` rather than `has()`: an empty string from a multipart
+            // form is the admin clearing the override, and must reach the model
+            // as null, not as 0.
+            pointPercent: $this->filled('point_percent') ? (float) $this->validated('point_percent') : null,
+            pointFlat: $this->filled('point_flat') ? (int) $this->validated('point_flat') : null,
         );
     }
 }

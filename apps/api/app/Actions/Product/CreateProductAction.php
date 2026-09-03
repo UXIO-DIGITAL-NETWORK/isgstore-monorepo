@@ -43,6 +43,8 @@ class CreateProductAction
             'price_reseller' => $dto->priceReseller,
             'price_agent' => $dto->priceAgent,
             'status' => $dto->status,
+            'point_percent' => $dto->pointPercent,
+            'point_flat' => $dto->pointFlat,
         ]);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(

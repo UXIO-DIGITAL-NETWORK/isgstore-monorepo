@@ -23,6 +23,13 @@ readonly class CreateProductDTO
         public int $priceReseller,
         public int $priceAgent,
         public bool $status,
-        public bool $isAvailable
+        public bool $isAvailable,
+        /**
+         * Loyalty points this product earns, overriding the `points` settings.
+         * Null means "use the global fallback" — an unpriced-for-points SKU
+         * still earns rather than silently becoming worthless to the customer.
+         */
+        public ?float $pointPercent = null,
+        public ?int $pointFlat = null,
     ) {}
 }
