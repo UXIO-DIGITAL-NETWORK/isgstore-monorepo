@@ -143,9 +143,38 @@ const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
     tag: row.tag ?? null,
     price_modal: variant?.cost_price ?? 0,
     price_member: variant?.prices.public ?? 0,
+    // The API stopped serialising the frozen tier columns when pricing moved to
+    // membership plans; `prices` is the shape the table renders from now. Both
+    // are kept here so the mapper's legacy fallback stays exercised.
     price_vip: variant?.prices.vip ?? 0,
     price_reseller: variant?.prices.reseller ?? 0,
     price_agent: variant?.prices.agent ?? 0,
+    prices: [
+      {
+        membership_plan_id: 1,
+        plan_code: "free",
+        plan_name: "Basic",
+        is_default: true,
+        price: variant?.prices.public ?? 0,
+        margin_percent: null,
+      },
+      {
+        membership_plan_id: 2,
+        plan_code: "platinum",
+        plan_name: "Platinum",
+        is_default: false,
+        price: variant?.prices.vip ?? 0,
+        margin_percent: null,
+      },
+      {
+        membership_plan_id: 3,
+        plan_code: "gold",
+        plan_name: "Gold",
+        is_default: false,
+        price: variant?.prices.agent ?? 0,
+        margin_percent: null,
+      },
+    ],
     status: row.status === "active",
     is_available: row.is_available,
     is_price_locked: row.is_price_locked ?? false,

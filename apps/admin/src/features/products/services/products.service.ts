@@ -29,12 +29,23 @@ interface ProductApiRow {
   tag: string | null;
   price_modal: number;
   price_member: number;
-  price_vip: number;
-  price_reseller: number;
-  price_agent: number;
+  // Frozen columns the API no longer sends; still typed because an older
+  // deployment does, and the price cell falls back to them.
+  price_vip?: number;
+  price_reseller?: number;
+  price_agent?: number;
   status: boolean;
-  point_percent: number | null;
-  point_flat: number | null;
+  /** One entry per membership plan the product is priced on. The frozen
+   * `price_vip/reseller/agent` columns are no longer serialised at all — this
+   * is the only place tier prices come from now. */
+  prices?: {
+    membership_plan_id: number;
+    plan_code: string | null;
+    plan_name: string | null;
+    is_default: boolean;
+    price: number;
+    margin_percent: number | null;
+  }[];
   publish_state: PublishState;
   can_publish: boolean;
   publish_blocked_reason: string | null;
@@ -77,8 +88,13 @@ const toProduct = (row: ProductApiRow): Product => ({
   tag: row.tag ?? undefined,
   description: row.description ?? undefined,
   status: row.status ? "active" : "inactive",
-  point_percent: row.point_percent ?? null,
-  point_flat: row.point_flat ?? null,
+  plan_prices: (row.prices ?? []).map((entry) => ({
+    membership_plan_id: entry.membership_plan_id,
+    plan_code: entry.plan_code ?? "",
+    plan_name: entry.plan_name ?? entry.plan_code ?? "—",
+    is_default: Boolean(entry.is_default),
+    price: entry.price,
+  })),
   // The API only emits these when it loaded the supplier mappings. A transaction
   // row embeds a product too, and computing them there would cost a query per
   // row, so the fallbacks keep the mapper honest rather than optimistic.
@@ -103,11 +119,15 @@ const toProduct = (row: ProductApiRow): Product => ({
       // it is — this product's own pricing.
       name: row.sub_name ?? "Default",
       cost_price: row.price_modal,
+      // Legacy four-tier shape, kept for anything still reading `variant`.
+      // `price_vip`/`price_reseller`/`price_agent` are no longer sent, so the
+      // plan prices (in the admin's own sort order) stand in for them — reading
+      // the absent columns is what rendered "-" and NaN% in the price cell.
       prices: {
         public: row.price_member,
-        vip: row.price_vip,
-        reseller: row.price_reseller,
-        agent: row.price_agent,
+        vip: row.prices?.[1]?.price ?? row.price_vip ?? row.price_member,
+        reseller: row.prices?.[2]?.price ?? row.price_reseller ?? row.price_member,
+        agent: row.prices?.[3]?.price ?? row.price_agent ?? row.price_member,
       },
       status: row.status ? "active" : "inactive",
     },
