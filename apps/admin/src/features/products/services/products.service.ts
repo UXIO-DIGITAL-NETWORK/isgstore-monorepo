@@ -35,6 +35,8 @@ interface ProductApiRow {
   price_reseller?: number;
   price_agent?: number;
   status: boolean;
+  point_percent: number | null;
+  point_flat: number | null;
   /** One entry per membership plan the product is priced on. The frozen
    * `price_vip/reseller/agent` columns are no longer serialised at all — this
    * is the only place tier prices come from now. */
@@ -88,6 +90,8 @@ const toProduct = (row: ProductApiRow): Product => ({
   tag: row.tag ?? undefined,
   description: row.description ?? undefined,
   status: row.status ? "active" : "inactive",
+  point_percent: row.point_percent ?? null,
+  point_flat: row.point_flat ?? null,
   plan_prices: (row.prices ?? []).map((entry) => ({
     membership_plan_id: entry.membership_plan_id,
     plan_code: entry.plan_code ?? "",
