@@ -359,6 +359,14 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
     price_reseller: Math.ceil(modal * 1.1),
     price_agent: Math.ceil(modal * 1.05),
   });
+  // What the API projects for a pooled row: one price per active membership
+  // plan, carrying its label. The four-tier `preview_prices` it replaced is
+  // what silently rendered every price as Rp 0 once the API stopped sending it.
+  const previewPlanPrices = (modal: number) => [
+    { membership_plan_id: 1, plan_code: "free", plan_name: "Basic", is_default: true, price: Math.ceil(modal * 1.2) },
+    { membership_plan_id: 2, plan_code: "platinum", plan_name: "Platinum", is_default: false, price: Math.ceil(modal * 1.1) },
+    { membership_plan_id: 3, plan_code: "gold", plan_name: "Gold", is_default: false, price: Math.ceil(modal * 1.05) },
+  ];
   return [
     {
       id: 1,
@@ -377,6 +385,10 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
       price_max: null,
       pool_category: { id: 1, name: "Membership" },
       preview_prices: null,
+      preview_plan_prices: [],
+      plan_margins: [],
+      point_percent: null,
+      point_flat: null,
       margins: { member: null, vip: null, reseller: null, agent: null },
       product: {
         id: 101,
@@ -406,6 +418,10 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
       price_max: null,
       pool_category: { id: 2, name: "Mobile Legends Indonesia" },
       preview_prices: null,
+      preview_plan_prices: [],
+      plan_margins: [],
+      point_percent: null,
+      point_flat: null,
       margins: { member: null, vip: null, reseller: null, agent: null },
       product: {
         id: 102,
@@ -437,6 +453,10 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
       price_max: null,
       pool_category: { id: 3, name: "Valorant" },
       preview_prices: priced(15000),
+      preview_plan_prices: previewPlanPrices(15000),
+      plan_margins: [],
+      point_percent: null,
+      point_flat: null,
       margins: { member: null, vip: null, reseller: null, agent: null },
       product: null,
       supplier: { id: 1, name: "Uxiotopup", is_system: false },
@@ -460,6 +480,13 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
       price_max: null,
       pool_category: { id: 3, name: "Valorant" },
       preview_prices: priced(50000),
+      preview_plan_prices: previewPlanPrices(50000),
+      plan_margins: [
+        { membership_plan_id: 1, margin_percent: 20 },
+        { membership_plan_id: 3, margin_percent: 5 },
+      ],
+      point_percent: 2.5,
+      point_flat: 50,
       margins: { member: 20, vip: 15, reseller: 10, agent: 5 },
       product: null,
       supplier: { id: 1, name: "Uxiotopup", is_system: false },
@@ -610,6 +637,9 @@ const SEEDS: Record<string, () => Row[]> = {
   // hardcoded four.
   "membership-plans": () => [
     { id: 1, code: "free", name: { id: "Basic", en: "Basic" }, price: 0, duration_days: null, is_active: true, is_default: true, sort_order: 0 },
+    // Production ships two plans displaying as "Basic" (the default free tier
+    // and the paid one), which is why the form labels them by code.
+    { id: 4, code: "basic", name: { id: "Basic", en: "Basic" }, price: 50000, duration_days: null, is_active: true, is_default: false, sort_order: 1 },
     { id: 2, code: "platinum", name: { id: "Platinum", en: "Platinum" }, price: 150000, duration_days: null, is_active: true, is_default: false, sort_order: 2 },
     { id: 3, code: "gold", name: { id: "Gold", en: "Gold" }, price: 300000, duration_days: null, is_active: true, is_default: false, sort_order: 3 },
   ],
@@ -1223,6 +1253,37 @@ export function createFakeApi() {
       if (url === "/v1/supplier-products/bulk/promote") {
         const ids = ((body as { ids?: unknown[] })?.ids ?? []) as unknown[];
         return envelope({ promoted: ids.length, skipped: [] });
+      }
+      // Margins are stored per plan and read straight back by the Set Profit
+      // Margin page, which stays put after saving — the generic create branch
+      // below would parse "bulk/profit-margin" as a new row instead.
+      if (url === "/v1/supplier-products/bulk/profit-margin") {
+        const payload = body as {
+          ids?: unknown[];
+          margins?: Record<string, number | null>;
+          point_percent?: number | null;
+          point_flat?: number | null;
+        };
+        const ids = (payload?.ids ?? []).map(String);
+        const rows = store["supplier-products"] ?? [];
+
+        for (const row of rows) {
+          if (!ids.includes(String(row.id))) continue;
+
+          const margins = { ...(payload.margins ?? {}) };
+          const kept = ((row.plan_margins ?? []) as { membership_plan_id: number; margin_percent: number }[]).filter(
+            (margin) => !(String(margin.membership_plan_id) in margins),
+          );
+          const written = Object.entries(margins)
+            .filter(([, percent]) => percent !== null && percent !== undefined)
+            .map(([planId, percent]) => ({ membership_plan_id: Number(planId), margin_percent: Number(percent) }));
+
+          row.plan_margins = [...kept, ...written];
+          if ("point_percent" in payload) row.point_percent = payload.point_percent ?? null;
+          if ("point_flat" in payload) row.point_flat = payload.point_flat ?? null;
+        }
+
+        return envelope({ updated: ids.length });
       }
       if (url === "/v1/supplier-products/bulk/publish") {
         const ids = ((body as { ids?: unknown[] })?.ids ?? []) as unknown[];

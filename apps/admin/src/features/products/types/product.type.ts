@@ -248,6 +248,19 @@ export const POOL_STATE_LABELS: Record<PoolState, string> = {
   published: "Published",
 };
 
+export interface PlanMargin {
+  membership_plan_id: number;
+  margin_percent: number;
+}
+
+export interface PlanPricePreview {
+  membership_plan_id: number;
+  plan_code: string;
+  plan_name: string;
+  is_default: boolean;
+  price: number;
+}
+
 export interface ProviderProduct {
   id: string;
   buyer_sku_code: string;
@@ -271,8 +284,20 @@ export interface ProviderProduct {
   /** Selling-price window carried onto the product at promote. 0/null = no limit. */
   price_min: number | null;
   price_max: number | null;
-  /** Per-tier margin overrides in percent; null = derived from pricing rules. */
+  /** Per-tier margin overrides in percent; null = derived from pricing rules.
+   * Legacy four-tier view, kept for the provider table. */
   margins: Record<PriceTier, number | null>;
+  /** The margins an admin authored, keyed by membership plan — what the Set
+   * Profit Margin form prefills from. The number of tiers is data, so this is
+   * the shape that can describe a plan created this morning. */
+  plan_margins: PlanMargin[];
+  /** Projected selling price per plan for a pooled row. Empty once promoted:
+   * the product then carries real stored prices. */
+  preview_plan_prices: PlanPricePreview[];
+  /** Loyalty points earned on this SKU. `null` = use the global points
+   * settings, `0` = this SKU earns nothing. */
+  point_percent: number | null;
+  point_flat: number | null;
   /** The product's price breakdown, ready for `ProductPriceCell`. */
   variant: ProductVariant;
   created_at: string;
@@ -313,6 +338,11 @@ export interface SetProviderMarginInput {
    * leaves an existing window alone rather than clearing it. */
   price_min?: number | null;
   price_max?: number | null;
+  /** Loyalty points earned on this SKU. Sent only when the form carries the
+   * fields; null clears the override back to the global points settings, while
+   * 0 means the SKU earns nothing. */
+  point_percent?: number | null;
+  point_flat?: number | null;
 }
 
 /* ── Provider pool ─────────────────────────────────────────────────────────── */

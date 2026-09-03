@@ -122,3 +122,73 @@ describe("providerService.bulkAdd", () => {
     expect(result).toEqual({ created: 2, skipped: [] });
   });
 });
+
+/**
+ * The list mapper is what the Set Profit Margin page reads. It had no coverage
+ * at all, which is how a renamed API field (`preview_prices` →
+ * `preview_plan_prices`) reached production as "every price shows Rp 0".
+ */
+describe("providerService.list — pooled row prices", () => {
+  const pooledRow = (over: Record<string, unknown> = {}) => ({
+    id: 4,
+    product_id: null,
+    buyer_sku_code: "VAL420",
+    provider_name: "Valorant 420 Points",
+    price: 50000,
+    is_active: false,
+    is_price_locked: false,
+    is_system: false,
+    buyer_product_status: true,
+    pool_state: "ready",
+    can_promote: true,
+    promote_blocked_reason: null,
+    price_min: null,
+    price_max: null,
+    pool_category: { id: 3, name: "Valorant" },
+    preview_plan_prices: [
+      { membership_plan_id: 1, plan_code: "free", plan_name: "Basic", is_default: true, price: 60000 },
+      { membership_plan_id: 3, plan_code: "gold", plan_name: "Gold", is_default: false, price: 52500 },
+    ],
+    plan_margins: [{ membership_plan_id: 1, margin_percent: 20 }],
+    point_percent: 2.5,
+    point_flat: 50,
+    margins: { member: 20, vip: null, reseller: null, agent: null },
+    product: null,
+    supplier: { id: 1, name: "Uxiotopup", is_system: false },
+    created_at: "2026-08-24T10:05:00.000000Z",
+    ...over,
+  });
+
+  it("carries the plan-keyed preview, margins and points through", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([pooledRow()]));
+
+    const row = (await providerService.list()).data[0];
+
+    expect(row.preview_plan_prices).toHaveLength(2);
+    expect(row.preview_plan_prices[0]).toMatchObject({ plan_name: "Basic", is_default: true, price: 60000 });
+    expect(row.plan_margins).toEqual([{ membership_plan_id: 1, margin_percent: 20 }]);
+    expect(row.point_percent).toBe(2.5);
+    expect(row.point_flat).toBe(50);
+  });
+
+  it("falls back to the plan order for the legacy four-tier price cell", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([pooledRow()]));
+
+    const row = (await providerService.list()).data[0];
+
+    // The provider table still renders four fixed tiers; the default plan is
+    // first in the admin's own sort order, so it drives the retail row.
+    expect(row.variant.prices.public).toBe(60000);
+    expect(row.variant.prices.vip).toBe(52500);
+    expect(row.variant.cost_price).toBe(50000);
+  });
+
+  it("reports a plan whose price the API omitted as null, not as a margin", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([pooledRow({ preview_plan_prices: null, plan_margins: null })]));
+
+    const row = (await providerService.list()).data[0];
+
+    expect(row.preview_plan_prices).toEqual([]);
+    expect(row.plan_margins).toEqual([]);
+  });
+});
