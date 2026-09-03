@@ -57,9 +57,11 @@ describe("AddMainProductDialog", () => {
     expect(within(dialog).getByRole("heading", { name: "Media & description" })).toBeInTheDocument();
     expect(within(dialog).getByText("Product logo and description shown on the storefront.")).toBeInTheDocument();
     expect(within(dialog).getByRole("heading", { name: "Pricing & Margin" })).toBeInTheDocument();
-    expect(within(dialog).getByText("Cost price and selling price per user segment.")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/Margin per membership plan over the supplier’s cost/),
+    ).toBeInTheDocument();
     expect(within(dialog).getByRole("heading", { name: "Product Mix" })).toBeInTheDocument();
-    expect(within(dialog).getByText("Combine supplier products into one bundled price.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Combine main products into one bundled price.")).toBeInTheDocument();
   });
 
   it("shows every field by label, with the reference's mislabels corrected", async () => {
@@ -78,12 +80,13 @@ describe("AddMainProductDialog", () => {
       "Product Logo",
       "Description",
       "Points",
-      "Discount",
-      "Cost Price",
-      "Public Price",
-      "VIP Price",
-      "Reseller Price",
-      "Agent Price",
+      "Bonus Points",
+      "Lower Price Limit (Min)",
+      "Upper Price Limit (Max)",
+      // Pricing is authored per membership plan now — the five fixed money
+      // fields could not describe a plan an admin had just created.
+      "Basic (free) margin (%) · default tier",
+      "Gold (gold) margin (%)",
     ]) {
       expect(within(dialog).getByLabelText(label)).toBeInTheDocument();
     }
@@ -126,16 +129,30 @@ describe("AddMainProductDialog", () => {
     expect(within(dialog).getByText("5% used")).toBeInTheDocument();
   });
 
-  it("rejects a price that is not a number", async () => {
+  it("rejects a margin that is not a number", async () => {
     const createSpy = vi.spyOn(productsService, "create");
     const user = userEvent.setup();
     const dialog = await openAdd(user);
 
     await fillRequiredFields(user, dialog);
-    await user.type(within(dialog).getByLabelText("Cost Price"), "12k");
+    await user.type(within(dialog).getByLabelText("Gold (gold) margin (%)"), "12k");
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await within(dialog).findByText("Cost Price must be a number")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Margin must be a number")).toBeInTheDocument();
+    expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  /** A loss-leader is a real decision, so a negative margin is accepted — down to -100%. */
+  it("accepts a negative margin but not one below -100", async () => {
+    const createSpy = vi.spyOn(productsService, "create");
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+
+    await fillRequiredFields(user, dialog);
+    await user.type(within(dialog).getByLabelText("Gold (gold) margin (%)"), "-150");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    expect(await within(dialog).findByText("Margin cannot be below -100")).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
@@ -145,10 +162,10 @@ describe("AddMainProductDialog", () => {
     const dialog = await openAdd(user);
 
     await fillRequiredFields(user, dialog);
-    await user.type(within(dialog).getByLabelText("Discount"), "120");
+    await user.type(within(dialog).getByLabelText("Points"), "120");
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await within(dialog).findByText("Discount cannot exceed 100")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Points cannot exceed 100")).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
@@ -161,7 +178,7 @@ describe("AddMainProductDialog", () => {
     await user.click(within(dialog).getByRole("button", { name: /Add Mix/i }));
 
     expect(within(dialog).queryByText("No product mix yet.")).not.toBeInTheDocument();
-    expect(within(dialog).getByRole("combobox", { name: "Supplier Product" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("combobox", { name: "Main Product" })).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Quantity")).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: /Add Mix/i }));
@@ -173,7 +190,7 @@ describe("AddMainProductDialog", () => {
     expect(within(dialog).getByText("No product mix yet.")).toBeInTheDocument();
   });
 
-  it("requires a supplier product and a quantity once a mix row exists", async () => {
+  it("requires a main product and a quantity once a mix row exists", async () => {
     const createSpy = vi.spyOn(productsService, "create");
     const user = userEvent.setup();
     const dialog = await openAdd(user);
@@ -182,32 +199,49 @@ describe("AddMainProductDialog", () => {
     await user.click(within(dialog).getByRole("button", { name: /Add Mix/i }));
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await within(dialog).findByText("Supplier Product is required")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Main Product is required")).toBeInTheDocument();
     expect(within(dialog).getByText("Quantity must be at least 1")).toBeInTheDocument();
     expect(createSpy).not.toHaveBeenCalled();
   });
 
-  it("captures pricing and mix without putting them in the payload yet", async () => {
+  /** The mix picker lists the catalogue, not a bundled list of invented SKUs. */
+  it("picks the mix rows from the products this site actually sells", async () => {
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+
+    await user.click(within(dialog).getByRole("button", { name: /Add Mix/i }));
+    await user.click(within(dialog).getByRole("combobox", { name: "Main Product" }));
+
+    expect(
+      await screen.findByRole("option", { name: "Weekly Diamond Pass (One Week) — MLBB-WDP-01" }),
+    ).toBeInTheDocument();
+  });
+
+  it("saves the margins after creating the product", async () => {
     const createSpy = vi.spyOn(productsService, "create");
+    const marginSpy = vi.spyOn(productsService, "setMargin");
     const user = userEvent.setup();
     const dialog = await openAdd(user);
 
     await fillRequiredFields(user, dialog, "Diamond Bundle 900");
     await user.type(within(dialog).getByLabelText("Points"), "10");
-    await user.type(within(dialog).getByLabelText("Cost Price"), "12000");
-    await user.type(within(dialog).getByLabelText("Public Price"), "15000");
-    await user.click(within(dialog).getByRole("button", { name: /Add Mix/i }));
-    await user.click(within(dialog).getByRole("combobox", { name: "Supplier Product" }));
-    await user.click(await screen.findByRole("option", { name: "Uxiotopup — ML 86 Diamond" }));
-    await user.type(within(dialog).getByLabelText("Quantity"), "2");
+    await user.type(within(dialog).getByLabelText("Basic (free) margin (%) · default tier"), "30");
+    await user.type(within(dialog).getByLabelText("Lower Price Limit (Min)"), "5000");
 
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
     const payload = createSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(payload).toBeDefined();
-    expect(payload.variants).toEqual([]);
-    expect(Object.keys(payload)).not.toContain("points");
-    expect(Object.keys(payload)).not.toContain("product_mix");
+    expect(payload.point_percent).toBe(10);
+    // Pricing is a second call against the product the first one created: the
+    // plan prices are a different resource from the product row.
+    const [, input] = (await vi.waitFor(() => {
+      expect(marginSpy).toHaveBeenCalled();
+      return marginSpy.mock.calls[0];
+    })) as [string, { margins: Record<number, number | null>; price_min: number | null }];
+
+    expect(Object.values(input.margins)).toContain(30);
+    expect(input.price_min).toBe(5000);
   });
 
   it("creates the product with the mapped payload and closes the modal", async () => {
@@ -252,5 +286,20 @@ describe("AddMainProductDialog", () => {
 
     await waitForModalClosed();
     expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  it("keeps the dialog open and reports the failure when the prices are rejected", async () => {
+    vi.spyOn(productsService, "create").mockResolvedValue({ id: "999" } as never);
+    const marginSpy = vi.spyOn(productsService, "setMargin").mockRejectedValue(new Error("nope"));
+    const user = userEvent.setup();
+
+    const dialog = await openAdd(user);
+    await fillRequiredFields(user, dialog);
+    await user.click(within(dialog).getByRole("button", { name: /^Save$/i }));
+
+    await vi.waitFor(() => expect(marginSpy).toHaveBeenCalled());
+    // The product exists but is unpriced: closing here would hide that, and
+    // the admin would have to reopen the row to find out.
+    expect(screen.getByRole("dialog", { name: "Add Main Products" })).toBeInTheDocument();
   });
 });

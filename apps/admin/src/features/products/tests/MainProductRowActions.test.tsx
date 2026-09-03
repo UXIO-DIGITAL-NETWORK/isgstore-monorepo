@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 
 import { renderRoute, screen, within } from "@/test/test-utils";
@@ -188,5 +188,72 @@ describe("Main Products row actions", () => {
 
     expect(await screen.findByRole("heading", { name: "Set Price limit" })).toBeInTheDocument();
     useAuthStore.setState({ token: null, permissions: [] });
+  });
+});
+
+/**
+ * Editing an existing product's pricing. Margins are what the platform prices
+ * on now, so the form has to show what the product currently sells at and be
+ * able to change it — the five money fields it replaced were never written by
+ * anything at all.
+ */
+describe("Edit Main Product — pricing", () => {
+  beforeEach(() => {
+    // The Edit item is `<Can permission="products.update">`-gated.
+    useAuthStore.setState({ token: "test-token", permissions: ["*"] });
+  });
+
+  afterEach(() => {
+    useAuthStore.setState({ token: null, permissions: [] });
+    vi.restoreAllMocks();
+  });
+
+  async function openEdit(user: ReturnType<typeof userEvent.setup>) {
+    await renderRoute(LIST_PATH);
+    await openRowMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "Edit Product" }));
+    return screen.findByRole("dialog", { name: "Edit Main Product" });
+  }
+
+  it("splits the form into Product, Pricing & Margin and Product Mix", async () => {
+    const user = userEvent.setup();
+    const dialog = await openEdit(user);
+
+    expect(within(dialog).getByRole("tab", { name: "Product" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("tab", { name: "Pricing & Margin" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("tab", { name: "Product Mix" })).toBeInTheDocument();
+  });
+
+  it("prefills the margin each plan currently sells at", async () => {
+    const user = userEvent.setup();
+    const dialog = await openEdit(user);
+
+    await user.click(within(dialog).getByRole("tab", { name: "Pricing & Margin" }));
+
+    // The fixture's default tier sells at cost × 1.07 — the markup the price
+    // cell shows as 7.0%, read back into the field an admin edits.
+    const field = await within(dialog).findByLabelText("Basic (free) margin (%) · default tier");
+    await vi.waitFor(() => expect(field).toHaveValue("7"));
+  });
+
+  it("sends the edited margin to the product's own pricing endpoint", async () => {
+    const marginSpy = vi.spyOn(productsService, "setMargin");
+    const user = userEvent.setup();
+    const dialog = await openEdit(user);
+
+    await user.click(within(dialog).getByRole("tab", { name: "Pricing & Margin" }));
+    const field = await within(dialog).findByLabelText("Basic (free) margin (%) · default tier");
+    await user.clear(field);
+    await user.type(field, "25");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    const [id, input] = (await vi.waitFor(() => {
+      expect(marginSpy).toHaveBeenCalled();
+      return marginSpy.mock.calls[0];
+    })) as [string, { margins: Record<number, number | null> }];
+
+    // The list is served by the fake API, so the row carries its numeric id.
+    expect(id).toBe("1");
+    expect(Object.values(input.margins)).toContain(25);
   });
 });

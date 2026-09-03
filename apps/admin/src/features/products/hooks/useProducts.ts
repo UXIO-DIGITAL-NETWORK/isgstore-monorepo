@@ -2,7 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { productsService, type ProductInput } from "../services/products.service";
-import type { BulkCreateProductsInput, Product, ProductListParams } from "../types/product.type";
+import type {
+  BulkCreateProductsInput,
+  Product,
+  ProductListParams,
+  SetProductMarginInput,
+} from "../types/product.type";
 
 /**
  * A product's lifecycle lives in two tables: publishing flips the product AND
@@ -197,6 +202,21 @@ export const useUxiotopupUpdateProducts = () => {
       toast.success(ids.length === 1 ? "Product updated from supplier" : `${ids.length} products updated from supplier`);
     },
     onError: () => toast.error("Failed to update from supplier"),
+  });
+};
+
+/** Re-price one product from the Main Products form. */
+export const useSetProductMargin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: SetProductMarginInput }) => productsService.setMargin(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      // The margins live on the provider mapping, so that list is stale too.
+      queryClient.invalidateQueries({ queryKey: ["supplier-products"] });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error) ?? "Failed to update the product margin"),
   });
 };
 
