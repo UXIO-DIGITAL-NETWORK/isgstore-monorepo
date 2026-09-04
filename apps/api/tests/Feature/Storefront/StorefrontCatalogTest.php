@@ -8,6 +8,7 @@ use App\Models\PaymentChannel;
 use App\Models\Product;
 use App\Models\ProductPlanPrice;
 use App\Models\Role;
+use App\Models\Setting;
 use App\Models\SupplierProduct;
 use App\Models\User;
 use App\Support\Membership\DefaultPlan;
@@ -108,6 +109,26 @@ class StorefrontCatalogTest extends TestCase
 
         $this->assertArrayNotHasKey('price_modal', $response->json('data.products.0'));
         $response->assertJsonMissing(['price_modal' => 19000]);
+    }
+
+    public function test_products_endpoint_exposes_the_resolved_point_earning_rule(): void
+    {
+        Setting::create(['group' => 'points', 'key' => 'earn_percent', 'value' => '1', 'type' => 'number', 'label' => 'Earn %', 'is_public' => true]);
+        Setting::create(['group' => 'points', 'key' => 'earn_flat', 'value' => '5', 'type' => 'number', 'label' => 'Earn flat', 'is_public' => true]);
+
+        $game = Category::factory()->create(['slug' => 'mobile-legends']);
+        // No override: the storefront must be quoted the global rule, not null —
+        // the checkout summary cannot resolve the fallback itself.
+        $this->sellableProduct($game, ['name' => '100 Diamonds', 'price_member' => 25000, 'point_percent' => null, 'point_flat' => null]);
+        $this->sellableProduct($game, ['name' => '200 Diamonds', 'price_member' => 50000, 'point_percent' => 3, 'point_flat' => 0]);
+
+        $products = collect($this->getJson('/api/v1/games/mobile-legends/products')->assertOk()->json('data.products'))
+            ->keyBy('name');
+
+        $this->assertSame(1.0, (float) $products['100 Diamonds']['point_percent']);
+        $this->assertSame(5, $products['100 Diamonds']['point_flat']);
+        $this->assertSame(3.0, (float) $products['200 Diamonds']['point_percent']);
+        $this->assertSame(0, $products['200 Diamonds']['point_flat']);
     }
 
     public function test_products_endpoint_quotes_the_guest_price_to_anonymous_callers(): void

@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Support\Membership\DefaultPlan;
 use App\Support\Membership\MembershipResolver;
+use App\Support\Points\PointRules;
 use App\Support\Pricing\PlanPrice;
 use App\Support\Storefront\Catalog;
 
@@ -24,6 +25,8 @@ class ListGameProductsAction
     public function execute(Category $game, ?User $user): array
     {
         $planId = MembershipResolver::planIdFor($user);
+        // Read once for the whole ladder rather than per denomination.
+        $pointGlobals = PointRules::globalRule();
 
         $products = Catalog::productsFor($game)
             ->with([
@@ -33,8 +36,8 @@ class ListGameProductsAction
                 // for, and without it one listing becomes N queries.
                 'planPrices' => fn ($q) => $q->whereIn('membership_plan_id', array_filter([$planId, DefaultPlan::id()])),
             ])
-            ->get(['id', 'sub_category_id', 'name', 'code', 'price_member'])
-            ->map(fn (Product $product) => Catalog::denomination($product, PlanPrice::for($product, $user)))
+            ->get(['id', 'sub_category_id', 'name', 'code', 'price_member', 'point_percent', 'point_flat'])
+            ->map(fn (Product $product) => Catalog::denomination($product, PlanPrice::for($product, $user), $pointGlobals))
             // Sorted after pricing, not by `price_member` in SQL. One game is a
             // few dozen denominations, so this is free — and it removes the
             // whole class of bug where the ladder is ordered by the default

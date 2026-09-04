@@ -38,17 +38,51 @@ final class PointRules
             return 0;
         }
 
-        $percent = $product?->point_percent !== null
-            ? (float) $product->point_percent
-            : self::setting(self::KEY_PERCENT, 0.0);
-
-        $flat = $product?->point_flat !== null
-            ? (int) $product->point_flat
-            : (int) self::setting(self::KEY_FLAT, 0.0);
+        ['percent' => $percent, 'flat' => $flat] = self::effectiveRuleFor($product);
 
         $earned = (int) ceil($baseAmount * $percent / 100) + $flat;
 
         return max($earned, 0);
+    }
+
+    /**
+     * The earning rule that actually applies to a product: its own override
+     * where set, the global setting otherwise. Resolved here rather than at
+     * each call site so the storefront can quote the same numbers the grant
+     * will use — a null on the product means "use the global", and only this
+     * class should know that.
+     *
+     * `$globals` is the escape hatch for listings: reading the settings once
+     * for a whole page of denominations instead of twice per row.
+     *
+     * @param  array{percent: float, flat: int}|null  $globals
+     * @return array{percent: float, flat: int}
+     */
+    public static function effectiveRuleFor(?Product $product, ?array $globals = null): array
+    {
+        $globals ??= self::globalRule();
+
+        return [
+            'percent' => $product?->point_percent !== null
+                ? (float) $product->point_percent
+                : $globals['percent'],
+            'flat' => $product?->point_flat !== null
+                ? (int) $product->point_flat
+                : $globals['flat'],
+        ];
+    }
+
+    /**
+     * The site-wide earning rule, used wherever a product sets no override.
+     *
+     * @return array{percent: float, flat: int}
+     */
+    public static function globalRule(): array
+    {
+        return [
+            'percent' => self::setting(self::KEY_PERCENT, 0.0),
+            'flat' => (int) self::setting(self::KEY_FLAT, 0.0),
+        ];
     }
 
     /** Rupiah value of one point when redeemed. Defaults to 1:1. */
