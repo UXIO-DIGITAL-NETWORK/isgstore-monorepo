@@ -22,7 +22,7 @@ async function openRowMenu(user: ReturnType<typeof userEvent.setup>, row = FIRST
 
 /**
  * The row action menu (product_requirements.md §4.6). Every action is wired:
- * Activate/Deactive / Uxiotopup Update / Show Price / Lock Price go through a
+ * Activate/Deactive / Uxiolabs Update / Show Price / Lock Price go through a
  * confirm dialog, Set Price Limit opens its page, and Delete/Edit are unchanged.
  * The lifecycle item's label mirrors the row's Status badge, both directions.
  */
@@ -164,13 +164,13 @@ describe("Main Products row actions", () => {
     expect(spy.mock.calls[1]?.[1]).toBe(true);
   });
 
-  it("confirms a Uxiotopup Update for the single row", async () => {
-    const spy = vi.spyOn(productsService, "bulkUxiotopupUpdate").mockResolvedValue(undefined);
+  it("confirms a Uxiolabs Update for the single row", async () => {
+    const spy = vi.spyOn(productsService, "bulkUxiolabsUpdate").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await openRowMenu(user);
-    await user.click(await screen.findByRole("menuitem", { name: "Uxiotopup Update" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Uxiolabs Update" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Update" }));
 
     expect(spy.mock.calls[0][0]).toHaveLength(1);

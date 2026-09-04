@@ -259,7 +259,7 @@ const DOCUMENTS: Record<string, unknown> = {
   // which is mounted on every admin route.
   "/v1/website-subscription": {
     status: "expiring_soon",
-    service: { id: 1, code: "uxiotopup", name: "Website Topup" },
+    service: { id: 1, code: "uxiolabs", name: "Website Topup" },
     ends_at: "2026-09-14T00:00:00.000Z",
     days_remaining: 9,
     checkout_url: "https://pay.example.test/app/payment-admin/services/1/checkout",
@@ -367,18 +367,18 @@ const toApiTransaction = (row: (typeof TRANSACTIONS)[number], index: number): Ro
   is_manual: false,
   supplier_trx_id: `SUP-${index + 1}`,
   supplier_status: row.invoice_status === "success" ? "success" : "pending",
-  supplier: { id: index + 1, name: "Uxiotopup" },
+  supplier: { id: index + 1, name: "Uxiolabs" },
   created_at: row.created_at,
   updated_at: row.updated_at,
 });
 
 /** Suppliers back the provider select, which submits a real supplier_id. */
-const SUPPLIER_NAMES = ["Uxiotopup", "Zelpoint", "Topupkuy"];
+const SUPPLIER_NAMES = ["Uxiolabs", "Zelpoint", "Topupkuy"];
 
 /**
  * Managed provider products (redesigned Product Provider tab). Served in the
  * `/v1/supplier-products` row shape so the service mapper runs for real. One
- * System row (protected: no checkbox, no delete) and one Uxiotopup row.
+ * System row (protected: no checkbox, no delete) and one Uxiolabs row.
  */
 const SUPPLIER_PRODUCTS = (): Row[] => {
   const priced = (modal: number) => ({
@@ -460,7 +460,7 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
         status: true,
         category: { id: 2, name: "Mobile Legends Indonesia" },
       },
-      supplier: { id: 1, name: "Uxiotopup", is_system: false },
+      supplier: { id: 1, name: "Uxiolabs", is_system: false },
       created_at: "2026-03-10T21:58:00.000000Z",
     },
     // A pooled row: no product behind it, prices are a projection, and it is
@@ -488,7 +488,7 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
       point_flat: null,
       margins: { member: null, vip: null, reseller: null, agent: null },
       product: null,
-      supplier: { id: 1, name: "Uxiotopup", is_system: false },
+      supplier: { id: 1, name: "Uxiolabs", is_system: false },
       created_at: "2026-08-24T10:00:00.000000Z",
     },
     // Pooled and priced — the one row Promote will accept.
@@ -518,7 +518,7 @@ const SUPPLIER_PRODUCTS = (): Row[] => {
       point_flat: 50,
       margins: { member: 20, vip: 15, reseller: 10, agent: 5 },
       product: null,
-      supplier: { id: 1, name: "Uxiotopup", is_system: false },
+      supplier: { id: 1, name: "Uxiolabs", is_system: false },
       created_at: "2026-08-24T10:05:00.000000Z",
     },
   ];
@@ -958,11 +958,11 @@ const SEARCHABLE: Record<string, string[]> = {
 const envelope = <T>(data: T) => ({ status: "success", code: 200, message: "ok", data });
 
 /**
- * Uxiotopup price list (Product Provider tab). Served in the backend's row shape
+ * Uxiolabs price list (Product Provider tab). Served in the backend's row shape
  * so the provider service's mapper runs for real; `X100` is pre-mapped so the
  * "Add" action's disabled/"Mapped" states have something to assert against.
  */
-const UXIOTOPUP_PRICE_LIST: Row[] = [
+const UXIOLABS_PRICE_LIST: Row[] = [
   {
     buyer_sku_code: "X100",
     name: "Xl 100.000",
@@ -1030,10 +1030,10 @@ const UXIOTOPUP_PRICE_LIST: Row[] = [
  * one row per distinct `category`, however many SKUs share it, annotated with
  * whether a Category Provider already maps it.
  */
-const uxiotopupCategories = (): Row[] => {
+const uxiolabsCategories = (): Row[] => {
   const groups = new Map<string, { sku_count: number; available_count: number }>();
 
-  for (const row of UXIOTOPUP_PRICE_LIST) {
+  for (const row of UXIOLABS_PRICE_LIST) {
     const key = String(row.category);
     const group = groups.get(key) ?? { sku_count: 0, available_count: 0 };
     group.sku_count += 1;
@@ -1059,7 +1059,7 @@ const uxiotopupCategories = (): Row[] => {
  * the rule that makes adding a Category Provider the act that surfaces a game's
  * catalogue — and the defaults match the API's (`new` + `available`).
  */
-const uxiotopupPoolCandidates = (params: Record<string, unknown>): Row[] => {
+const uxiolabsPoolCandidates = (params: Record<string, unknown>): Row[] => {
   // Which provider categories have a Category Provider mapping, as the API
   // resolves it from `supplier_categories`. Deliberately independent of the
   // admin-list fixture: that one exists to exercise the table, and coupling the
@@ -1069,7 +1069,7 @@ const uxiotopupPoolCandidates = (params: Record<string, unknown>): Row[] => {
   const availability = (params.availability as string | undefined) ?? "available";
   const search = (params.search as string | undefined)?.toLowerCase();
 
-  return UXIOTOPUP_PRICE_LIST.filter((row) => configured.has(String(row.category)))
+  return UXIOLABS_PRICE_LIST.filter((row) => configured.has(String(row.category)))
     .map((row) => ({
       buyer_sku_code: row.buyer_sku_code,
       name: row.name,
@@ -1094,9 +1094,9 @@ const uxiotopupPoolCandidates = (params: Record<string, unknown>): Row[] => {
     });
 };
 
-const uxiotopupPriceList = (params: Record<string, unknown>): Row[] => {
+const uxiolabsPriceList = (params: Record<string, unknown>): Row[] => {
   const search = (params.search as string | undefined)?.toLowerCase();
-  return UXIOTOPUP_PRICE_LIST.filter((row) => {
+  return UXIOLABS_PRICE_LIST.filter((row) => {
     if (params.only_unmapped && row.already_mapped) return false;
     if (search) {
       const haystack = [row.name, row.buyer_sku_code, row.category]
@@ -1222,15 +1222,15 @@ export function createFakeApi() {
       if (url in DOCUMENTS) return envelope(DOCUMENTS[url]);
       if (url in PARAMETERIZED) return envelope(PARAMETERIZED[url](config?.params ?? {}));
 
-      // Uxiotopup endpoints are documents, not CRUD collections.
-      if (url === "/v1/uxiotopup/price-list") {
-        return paginate(uxiotopupPriceList(config?.params ?? {}), config?.params ?? {});
+      // Uxiolabs endpoints are documents, not CRUD collections.
+      if (url === "/v1/uxiolabs/price-list") {
+        return paginate(uxiolabsPriceList(config?.params ?? {}), config?.params ?? {});
       }
-      if (url === "/v1/uxiotopup/pool-candidates") {
-        return paginate(uxiotopupPoolCandidates(config?.params ?? {}), config?.params ?? {});
+      if (url === "/v1/uxiolabs/pool-candidates") {
+        return paginate(uxiolabsPoolCandidates(config?.params ?? {}), config?.params ?? {});
       }
-      if (url === "/v1/uxiotopup/pool-summary") {
-        const all = uxiotopupPoolCandidates({ pool_state: "all", availability: "all" });
+      if (url === "/v1/uxiolabs/pool-summary") {
+        const all = uxiolabsPoolCandidates({ pool_state: "all", availability: "all" });
         return envelope({
           configured_categories: new Set(all.map((row) => row.provider_category)).size,
           total_candidates: all.length,
@@ -1238,13 +1238,13 @@ export function createFakeApi() {
           new_count: all.filter((row) => !row.already_pooled && row.is_new).length,
         });
       }
-      if (url === "/v1/uxiotopup/categories") {
-        const rows = uxiotopupCategories();
+      if (url === "/v1/uxiolabs/categories") {
+        const rows = uxiolabsCategories();
         return envelope(config?.params?.unmapped ? rows.filter((row) => !row.mapped_category_id) : rows);
       }
-      if (url === "/v1/uxiotopup/sku-preview") {
+      if (url === "/v1/uxiolabs/sku-preview") {
         const sku = String(config?.params?.buyer_sku_code ?? "");
-        const found = UXIOTOPUP_PRICE_LIST.find((row) => row.buyer_sku_code === sku);
+        const found = UXIOLABS_PRICE_LIST.find((row) => row.buyer_sku_code === sku);
         const cost = Number(found?.cost ?? 0);
         return envelope({
           buyer_sku_code: sku,
@@ -1275,7 +1275,7 @@ export function createFakeApi() {
     post: vi.fn(async (url: string, body?: unknown) => {
       // Pool actions are commands, not collection writes — answer them before
       // the generic create/update path tries to parse them as one.
-      if (url === "/v1/uxiotopup/pool") {
+      if (url === "/v1/uxiolabs/pool") {
         const codes = ((body as { buyer_sku_codes?: string[] })?.buyer_sku_codes ?? []) as string[];
         return envelope({ pooled: codes.length, skipped: [] });
       }

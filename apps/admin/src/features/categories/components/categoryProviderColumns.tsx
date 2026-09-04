@@ -9,7 +9,7 @@ import type { ProviderCategoryOption } from "../hooks/useProviderCategoryOptions
 import type { CategoryProvider } from "../types/categoryProvider.type";
 
 /** Matched on the name, as the provider pipeline itself does. */
-const INTEGRATED_PROVIDER = "uxiotopup";
+const INTEGRATED_PROVIDER = "uxiolabs";
 
 /**
  * Columns for the Category Provider list: Provider, Category, Provider Category,

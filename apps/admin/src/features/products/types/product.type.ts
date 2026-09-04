@@ -154,33 +154,33 @@ export interface PriceRangeOption extends SelectOption {
   max?: number;
 }
 
-/* ── Product Provider tab — Uxiotopup price list ──────────────────────────── */
+/* ── Product Provider tab — Uxiolabs price list ──────────────────────────── */
 
 /**
- * One row of the Uxiotopup price list (`GET /v1/uxiotopup/price-list`).
- * Uxiotopup is prepaid-only, so there is no `type` dimension anymore. `id` is
- * the `buyer_sku_code` (the uxiotopup service id) — the SKU is the natural key,
+ * One row of the Uxiolabs price list (`GET /v1/uxiolabs/price-list`).
+ * Uxiolabs is prepaid-only, so there is no `type` dimension anymore. `id` is
+ * the `buyer_sku_code` (the uxiolabs service id) — the SKU is the natural key,
  * and `DataTable<TData extends {id: string}>` needs a string id.
  */
-export interface UxiotopupPriceListItem {
+export interface UxiolabsPriceListItem {
   id: string;
   buyer_sku_code: string;
   name: string;
   category: string;
   /** Supplier cost in IDR at the configured price tier. */
   cost: number;
-  /** The four uxiotopup tier prices, as published. */
+  /** The four uxiolabs tier prices, as published. */
   harga: number;
   harga_gold: number;
   harga_silver: number;
   harga_pro: number;
-  /** Uxiotopup `status === "aktif"`. */
+  /** Uxiolabs `status === "aktif"`. */
   available: boolean;
   /** Already mapped to one of our products (SupplierProduct exists). */
   already_mapped: boolean;
 }
 
-export interface UxiotopupPriceListParams {
+export interface UxiolabsPriceListParams {
   search?: string;
   only_unmapped?: boolean;
   page?: number;
@@ -188,7 +188,7 @@ export interface UxiotopupPriceListParams {
 }
 
 /** Suggested selling prices from the backend's SKU preview (pricing rules). */
-export interface UxiotopupSuggestedPrices {
+export interface UxiolabsSuggestedPrices {
   price_modal: number;
   price_member: number;
   price_vip: number;
@@ -196,16 +196,16 @@ export interface UxiotopupSuggestedPrices {
   price_agent: number;
 }
 
-export interface UxiotopupSkuPreview {
+export interface UxiolabsSkuPreview {
   buyer_sku_code: string;
   name: string;
   cost: number;
   already_mapped: boolean;
-  suggested_prices: UxiotopupSuggestedPrices;
+  suggested_prices: UxiolabsSuggestedPrices;
 }
 
 /** Single add: the admin picks a category and confirms the four tier prices. */
-export interface AddUxiotopupProductInput {
+export interface AddUxiolabsProductInput {
   buyer_sku_code: string;
   category_id: string;
   sub_category_id?: string | null;
@@ -218,14 +218,14 @@ export interface AddUxiotopupProductInput {
 }
 
 /** Bulk add: one shared category, prices derived server-side per SKU. */
-export interface BulkAddUxiotopupInput {
+export interface BulkAddUxiolabsInput {
   category_id: string;
   sub_category_id?: string | null;
   status: boolean;
   buyer_sku_codes: string[];
 }
 
-export interface BulkAddUxiotopupResult {
+export interface BulkAddUxiolabsResult {
   created: number;
   skipped: { buyer_sku_code: string; reason: string }[];
 }

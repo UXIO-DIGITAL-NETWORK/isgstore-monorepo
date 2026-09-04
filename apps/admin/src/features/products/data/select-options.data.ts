@@ -74,8 +74,8 @@ export const NICKNAME_VALIDATION_OPTIONS: SelectOption[] = [
  * Replace wholesale once a Product Provider service lands.
  */
 export const SUPPLIER_PRODUCT_OPTIONS: SelectOption[] = [
-  { value: "uxiotopup-ml-86", label: "Uxiotopup — ML 86 Diamond" },
-  { value: "uxiotopup-ml-172", label: "Uxiotopup — ML 172 Diamond" },
+  { value: "uxiolabs-ml-86", label: "Uxiolabs — ML 86 Diamond" },
+  { value: "uxiolabs-ml-172", label: "Uxiolabs — ML 172 Diamond" },
   { value: "unipin-ff-70", label: "UniPin — FF 70 Diamond" },
   { value: "unipin-genshin-60", label: "UniPin — Genesis Crystal 60" },
   { value: "codashop-pubgm-60", label: "Codashop — PUBGM 60 UC" },

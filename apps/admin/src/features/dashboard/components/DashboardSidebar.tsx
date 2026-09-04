@@ -152,7 +152,7 @@ export function DashboardSidebar() {
                     as="span"
                     className="truncate text-[10px] font-semibold tracking-wider text-muted-foreground uppercase"
                   >
-                    UXIOTOPUP
+                    UXIOLABS
                   </Text>
                 </Box>
               </Link>

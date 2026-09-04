@@ -41,13 +41,13 @@ const EMPTY_VALUES: CategoryProviderFormValues = { supplierId: "", categoryId: "
 /**
  * Suppliers with a live catalogue integration, lower-cased. Matched on the name
  * because that is how the whole provider pipeline resolves it server-side
- * (`Supplier::where('name', 'Uxiotopup')`), and `suppliers` carries no
+ * (`Supplier::where('name', 'Uxiolabs')`), and `suppliers` carries no
  * "integrated" flag to key on — `is_system` marks the internal supplier, not this.
  *
  * The Provider select offers only these. A second integrated supplier is a
  * one-line addition here, not a rework.
  */
-const INTEGRATED_PROVIDERS = ["uxiotopup"];
+const INTEGRATED_PROVIDERS = ["uxiolabs"];
 
 interface CategoryProviderFormDialogProps {
   open: boolean;
@@ -152,8 +152,8 @@ export function CategoryProviderFormDialog({
   const isIntegratedProvider = INTEGRATED_PROVIDERS.includes(selectedProviderName.toLowerCase());
 
   // Only fetch once a provider that actually has a catalogue is chosen — the
-  // endpoint is uxiotopup's, and its "already mapped" answers are computed
-  // against uxiotopup alone.
+  // endpoint is uxiolabs's, and its "already mapped" answers are computed
+  // against uxiolabs alone.
   const { options: providerCategories, isLoading: isLoadingProviderCategories } =
     useProviderCategoryOptions(open && isIntegratedProvider);
 
@@ -421,7 +421,7 @@ export function CategoryProviderFormDialog({
                     variant="small"
                     className="text-muted-foreground"
                   >
-                    Only Uxiotopup exposes a catalogue today, so there is nothing to map for this provider yet.
+                    Only Uxiolabs exposes a catalogue today, so there is nothing to map for this provider yet.
                   </Text>
                 )}
 

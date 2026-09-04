@@ -32,7 +32,7 @@ interface MainProductToolbarProps {
   onRefresh: () => void;
   onAdd: () => void;
   selectedCount: number;
-  onBulkUxiotopup: () => void;
+  onBulkUxiolabs: () => void;
   onBulkShowPrice: () => void;
   onBulkLock: () => void;
   onPublishStateChange: (value?: string) => void;
@@ -44,7 +44,7 @@ interface MainProductToolbarProps {
  * Toolbar for the Main Products list (product_requirements.md §4.6) — search,
  * a category filter, a status filter, a price filter, refresh, and "+ Add Main Products",
  * matching the reference left to right, with the selection action bar
- * (Uxiotopup / Logo / Unpublish / Archive) on its own right-aligned row below.
+ * (Uxiolabs / Logo / Unpublish / Archive) on its own right-aligned row below.
  *
  * The add link derives its target from the current pathname rather than a
  * hardcoded absolute path, so the same component works under both the real
@@ -65,7 +65,7 @@ export function MainProductToolbar({
   onRefresh,
   onAdd,
   selectedCount,
-  onBulkUxiotopup,
+  onBulkUxiolabs,
   onBulkShowPrice,
   onBulkLock,
   onPublishStateChange,
@@ -238,7 +238,7 @@ export function MainProductToolbar({
                 icon: <ImageIcon className="size-4" />,
                 onSelect: announceDeferred("Bulk logo upload lands with the product image endpoint"),
               },
-              { label: "Uxiotopup Update", icon: <RefreshCcw className="size-4" />, onSelect: onBulkUxiotopup },
+              { label: "Uxiolabs Update", icon: <RefreshCcw className="size-4" />, onSelect: onBulkUxiolabs },
               { label: "Show Price", icon: <Eye className="size-4" />, onSelect: onBulkShowPrice },
               { label: "Lock Price", icon: <Lock className="size-4" />, onSelect: onBulkLock },
               { label: "Unpublish", icon: <Archive className="size-4" />, onSelect: onBulkUnpublish },

@@ -11,7 +11,7 @@ import { MainProductFormDialog } from "../components/MainProductFormDialog";
 import { MainProductToolbar } from "../components/MainProductToolbar";
 import {
   useDeleteProducts,
-  useUxiotopupUpdateProducts,
+  useUxiolabsUpdateProducts,
   useLockProducts,
   useProductList,
   useSetProductPublished,
@@ -43,7 +43,7 @@ export default function MainProductsPage() {
   const [bulkUnpublishOpen, setBulkUnpublishOpen] = useState(false);
   const [bulkLockOpen, setBulkLockOpen] = useState(false);
   const [bulkShowOpen, setBulkShowOpen] = useState(false);
-  const [bulkUxiotopupOpen, setBulkUxiotopupOpen] = useState(false);
+  const [bulkUxiolabsOpen, setBulkUxiolabsOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
   const params = useMemo(
@@ -62,7 +62,7 @@ export default function MainProductsPage() {
   const setProductPublished = useSetProductPublished();
   const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
-  const uxiotopupUpdate = useUxiotopupUpdateProducts();
+  const uxiolabsUpdate = useUxiolabsUpdateProducts();
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -108,7 +108,7 @@ export default function MainProductsPage() {
           onRefresh={() => refetch()}
           onAdd={() => setAddOpen(true)}
           selectedCount={selectedIds.length}
-          onBulkUxiotopup={() => setBulkUxiotopupOpen(true)}
+          onBulkUxiolabs={() => setBulkUxiolabsOpen(true)}
           onBulkShowPrice={() => setBulkShowOpen(true)}
           onBulkLock={() => setBulkLockOpen(true)}
           publishState={publishState}
@@ -178,13 +178,13 @@ export default function MainProductsPage() {
       />
 
       <DeleteConfirmDialog
-        open={bulkUxiotopupOpen}
-        onOpenChange={setBulkUxiotopupOpen}
+        open={bulkUxiolabsOpen}
+        onOpenChange={setBulkUxiolabsOpen}
         icon={<RefreshCcw />}
         confirmLabel="Update"
         title={selectedIds.length <= 1 ? "Update this product?" : `Update ${selectedIds.length} products?`}
         description="Re-pull selling prices from each product's supplier cost. Locked prices are left unchanged."
-        onConfirm={() => uxiotopupUpdate.mutate(selectedIds)}
+        onConfirm={() => uxiolabsUpdate.mutate(selectedIds)}
       />
 
       <DeleteConfirmDialog
