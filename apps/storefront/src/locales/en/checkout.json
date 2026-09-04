@@ -151,7 +151,7 @@
   "points": {
     "title": "Use Points",
     "available": "You have {{points}} points (worth {{value}}).",
-    "useMax": "Use All",
+    "useAll": "Use {{points}} points ({{value}}) toward this order",
     "applied": "{{value}} point discount applied.",
     "coversAll": "Points cover the whole order — nothing left to pay.",
     "notAllowed": "Your membership plan already includes a discount, so points cannot be used."

@@ -28,7 +28,7 @@ export default function PromoCode({
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <SectionCard stepNumber={5} title={t("promo.title")} gradientBorder>
+    <SectionCard stepNumber={6} title={t("promo.title")} gradientBorder>
       <Box
         as="button"
         type="button"

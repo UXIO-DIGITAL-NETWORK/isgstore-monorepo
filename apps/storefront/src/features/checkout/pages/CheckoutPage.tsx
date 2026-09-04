@@ -31,7 +31,7 @@ import { normalizeWhatsappNumber } from "@/lib/phone";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePointsBalance } from "@/features/checkout/hooks/usePointsBalance";
-import { applyPoints } from "@/features/checkout/lib/points";
+import { applyPoints, maxRedeemablePoints } from "@/features/checkout/lib/points";
 import PointsRedeem from "@/features/checkout/components/points/PointsRedeem";
 import type { GameInfo, PaymentOption } from "@/features/checkout/types/checkout.type";
 
@@ -151,8 +151,13 @@ export default function CheckoutPage(): React.JSX.Element {
   // Loyalty points. The API re-derives every figure at checkout — this is so
   // the buyer sees the same total before they commit.
   const { data: pointsSummary } = usePointsBalance();
-  const [pointsToSpend, setPointsToSpend] = useState(0);
+  const [usePoints, setUsePoints] = useState(false);
   const pointsRate = pointsSummary?.redeem_rate ?? 1;
+  // Derived, never stored: ticking the box means "spend what this order can
+  // absorb", and the answer changes the moment the buyer picks another package.
+  // Holding a number here would leave a stale one behind.
+  const pointsToSpend =
+    usePoints && pointsSummary ? maxRedeemablePoints(totalPrice, pointsSummary.points, pointsRate) : 0;
   const pointsApplied = pointsSummary
     ? applyPoints(totalPrice, pointsSummary.points, pointsRate, pointsToSpend)
     : { points: 0, discount: 0, coversEverything: false };
@@ -302,6 +307,16 @@ export default function CheckoutPage(): React.JSX.Element {
               onSelectPayment={handleSelectPayment}
             />
 
+            <PointsRedeem
+              stepNumber={4}
+              balance={pointsSummary?.points ?? null}
+              rate={pointsRate}
+              price={totalPrice}
+              checked={usePoints}
+              onToggle={setUsePoints}
+              allowed={pointsSummary?.allows_point_spending ?? true}
+            />
+
             <ContactDetail
               whatsapp={whatsapp}
               onWhatsappChange={setWhatsapp}
@@ -315,16 +330,6 @@ export default function CheckoutPage(): React.JSX.Element {
               applied={appliedPromo}
               onApplied={setAppliedPromo}
               onCleared={() => setAppliedPromo(null)}
-            />
-
-            <PointsRedeem
-              stepNumber={6}
-              balance={pointsSummary?.points ?? null}
-              rate={pointsRate}
-              price={totalPrice}
-              value={pointsToSpend}
-              onChange={setPointsToSpend}
-              allowed={pointsSummary?.allows_point_spending ?? true}
             />
 
             <OrderSummary
