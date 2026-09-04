@@ -6,6 +6,7 @@ namespace App\Support\Storefront;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\Points\PointRules;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -91,9 +92,15 @@ final class Catalog
             : null;
     }
 
-    /** @return array{id: int, name: string, code: string, price: int, group: string, sub_category_id: int|null, amount: int|null} */
-    public static function denomination(Product $product, int $price): array
+    /**
+     * @param  array{percent: float, flat: int}|null  $pointGlobals  Site-wide
+     *                                                               earning rule, read once by the caller when mapping a whole listing.
+     * @return array{id: int, name: string, code: string, price: int, group: string, sub_category_id: int|null, amount: int|null, point_percent: float, point_flat: int}
+     */
+    public static function denomination(Product $product, int $price, ?array $pointGlobals = null): array
     {
+        $points = PointRules::effectiveRuleFor($product, $pointGlobals);
+
         return [
             'id' => $product->id,
             'name' => $product->name,
@@ -102,6 +109,12 @@ final class Catalog
             'group' => $product->subCategory?->name ?? 'Lainnya',
             'sub_category_id' => $product->sub_category_id,
             'amount' => self::amountFromName($product->name),
+            // The earning rule, already resolved against the global settings —
+            // the checkout summary quotes the points a purchase will earn, and
+            // it can only match `GrantTransactionPointsAction` if the fallback
+            // happens here rather than on the client.
+            'point_percent' => $points['percent'],
+            'point_flat' => $points['flat'],
         ];
     }
 }
