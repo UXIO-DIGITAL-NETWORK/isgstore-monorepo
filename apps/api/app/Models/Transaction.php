@@ -23,7 +23,7 @@ class Transaction extends Model
         'status' => TransactionStatus::class,
         // The supplier's half of the lifecycle, kept in lockstep with `status`
         // by TransactionObserver. Not to be confused with `supplier_status`,
-        // which is uxiotopup's own raw wording, kept as evidence.
+        // which is uxiolabs's own raw wording, kept as evidence.
         'provider_status' => ProviderStatus::class,
         'receipt_sent_at' => 'datetime',
         'whatsapp_sent_at' => 'datetime',
@@ -47,7 +47,7 @@ class Transaction extends Model
      * Without it, `ProductResource` (which dereferences `$this->id` on a null
      * resource) 500s the admin transaction list and the dashboard,
      * `GetDashboardPerformanceAction`'s inner join silently drops the row and
-     * its revenue, and `ProcessUxiotopupTransactionAction` — which reaches
+     * its revenue, and `ProcessUxiolabsTransactionAction` — which reaches
      * `$transaction->product->` with no null-safe operator — cannot fulfil an
      * order that was already paid for.
      */

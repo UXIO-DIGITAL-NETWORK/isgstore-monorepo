@@ -1,19 +1,19 @@
-# Payment Gateway & uxiotopup Integration Flow
+# Payment Gateway & uxiolabs Integration Flow
 **Architecture Version:** 1.0
 **Framework:** Laravel 11 (AOA)
-**Services:** Monetapay (Payment Gateway), uxiotopup (Supplier API)
+**Services:** Monetapay (Payment Gateway), uxiolabs (Supplier API)
 
 ---
 
 ## 1. High-Level Architecture Flow
-The system acts as a central broker between the **Customer**, the **Payment Gateway (Monetapay)**, and the **Supplier (uxiotopup)**.
+The system acts as a central broker between the **Customer**, the **Payment Gateway (Monetapay)**, and the **Supplier (uxiolabs)**.
 
 ```mermaid
 sequenceDiagram
     participant C as Customer / Frontend
     participant U as Uxio API (Backend)
     participant M as Monetapay (Gateway)
-    participant D as uxiotopup (Supplier)
+    participant D as uxiolabs (Supplier)
 
     %% 1. Order Creation
     C->>U: Select Product (e.g., 86 Diamond MLBB) & Checkout
@@ -42,8 +42,8 @@ sequenceDiagram
 ### A. Core Master Data (`Supplier` & `Product` Entities)
 Before a transaction can occur, the internal catalog must map to the supplier catalog.
 - **`Product`**: The internal product displayed to the user (e.g., "86 Diamond MLBB"). Has tiered pricing (`price_member`, `price_vip`).
-- **`Supplier`**: The provider of the product (e.g., "Uxiotopup").
-- **`SupplierProduct`**: The mapping bridge linking an internal `product_id` to a `buyer_sku_code` (uxiotopup service id). The `is_active` boolean dictates which supplier fulfills the order if multiple exist.
+- **`Supplier`**: The provider of the product (e.g., "Uxiolabs").
+- **`SupplierProduct`**: The mapping bridge linking an internal `product_id` to a `buyer_sku_code` (uxiolabs service id). The `is_active` boolean dictates which supplier fulfills the order if multiple exist.
 
 ### B. Payment Flow (Monetapay)
 The system leverages **Action-Oriented Architecture (AOA)** for testability and isolation.
@@ -64,23 +64,23 @@ The system leverages **Action-Oriented Architecture (AOA)** for testability and 
   1. Monetapay pushes the payload indicating `status=SUCCESS`.
   2. The action immediately verifies the incoming `signature`. If mismatched, it throws an `Exception`, logs the event, and halts execution (Security constraint).
   3. The local `Transaction` is marked as `SUCCESS`.
-  4. Triggers the internal event/action to fulfill the order via uxiotopup.
+  4. Triggers the internal event/action to fulfill the order via uxiolabs.
 
-### C. Fulfillment Flow (uxiotopup)
-*Note: uxiotopup actions are conceptualized here as part of the overall flow.*
+### C. Fulfillment Flow (uxiolabs)
+*Note: uxiolabs actions are conceptualized here as part of the overall flow.*
 
 #### 1. Top-up Dispatch
 * **Trigger:** Triggered automatically upon a successful Monetapay callback.
 * **Flow:**
   1. The system identifies the `product_id` purchased in the transaction.
   2. It queries `SupplierProduct` where `product_id = X` and `is_active = true` to find the exact `buyer_sku_code`.
-  3. A `ProcessUxiotopupTransactionAction` sends the top-up payload to the uxiotopup API using the `buyer_sku_code` (service id) and our `invoice_number` as `idtrx`.
+  3. A `ProcessUxiolabsTransactionAction` sends the top-up payload to the uxiolabs API using the `buyer_sku_code` (service id) and our `invoice_number` as `idtrx`.
   4. The local Order status is marked as `PROCESSING` or `COMPLETED` based on the synchronous response.
 
-#### 2. uxiotopup Webhook (Asynchronous Fulfillment)
-* **Trigger:** uxiotopup pushes status updates for pending/delayed transactions.
+#### 2. uxiolabs Webhook (Asynchronous Fulfillment)
+* **Trigger:** uxiolabs pushes status updates for pending/delayed transactions.
 * **Flow:**
-  1. Handled by a dedicated `HandleUxiotopupWebhookAction`.
+  1. Handled by a dedicated `HandleUxiolabsWebhookAction`.
   2. The payload carries no signature — it is authenticated by source IP allowlist (103.146.202.50).
   3. The local Order status is finalized (`SUCCESS` or `FAILED`).
   4. If `FAILED`, a refund logic or manual intervention flag is triggered.

@@ -3,7 +3,7 @@
 namespace Tests\Feature\Refund;
 
 use App\Actions\Refund\InitiateRefundAction;
-use App\Actions\Uxiotopup\HandleUxiotopupWebhookAction;
+use App\Actions\Uxiolabs\HandleUxiolabsWebhookAction;
 use App\Enums\PaymentStatus;
 use App\Enums\TransactionStatus;
 use App\Models\BalanceMutation;
@@ -20,7 +20,7 @@ use Tests\TestCase;
  * REFUNDED is a terminal transaction status, and every guard that lists the
  * terminal states has to know it.
  *
- * uxiotopup can redeliver `cancel` and then `success`. Before REFUNDED was ever
+ * uxiolabs can redeliver `cancel` and then `success`. Before REFUNDED was ever
  * written this was harmless; now a guard that has not been widened would let
  * that late success flip an already-refunded order back to COMPLETED — after
  * the member's wallet was credited or a guest was wired their money. We would
@@ -60,7 +60,7 @@ class RefundTerminalGuardTest extends TestCase
         $transaction = $this->refundedMemberOrder();
         $this->assertSame(TransactionStatus::REFUNDED, $transaction->status);
 
-        app(HandleUxiotopupWebhookAction::class)->execute([
+        app(HandleUxiolabsWebhookAction::class)->execute([
             'idtrx' => $transaction->invoice_number,
             'id' => 'UXORDER-1',
             'keterangan' => 'SN-LATE-999',
@@ -80,7 +80,7 @@ class RefundTerminalGuardTest extends TestCase
 
         $this->assertSame(12000, (int) $member->fresh()->balance);
 
-        app(HandleUxiotopupWebhookAction::class)->execute([
+        app(HandleUxiolabsWebhookAction::class)->execute([
             'idtrx' => $transaction->invoice_number,
             'id' => 'UXORDER-1',
             'keterangan' => '',

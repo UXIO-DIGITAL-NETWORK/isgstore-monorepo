@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
  * Single choke point for realtime transaction broadcasts, and for keeping
  * `provider_status` honest.
  *
- * Status changes happen in many places (Monetapay webhook, the uxiotopup jobs,
+ * Status changes happen in many places (Monetapay webhook, the uxiolabs jobs,
  * refunds). Rather than dispatch from each, we observe the model: any created
  * row or any update that actually changed `status` fires one broadcast event.
  * Combined with the event's ShouldDispatchAfterCommit, no transition is missed
@@ -90,7 +90,7 @@ class TransactionObserver
      * inside it.
      *
      * Both webhook handlers do their writes inside a DB::transaction(). Throwing
-     * there returns a non-2xx, and Monetapay and uxiotopup both retry a non-2xx
+     * there returns a non-2xx, and Monetapay and uxiolabs both retry a non-2xx
      * callback — indefinitely. A money path must not wedge over a bookkeeping
      * disagreement, and an impossible pair can only come from new code, which the
      * tests catch long before a deploy. So: throw where a developer will see it,

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Schema;
  * `categories.order_form_fields` and is a different thing entirely.
  *
  * It now holds the provider's own `kategori` string (the only categorisation the
- * uxiotopup price list carries), which is what decides WHICH provider SKUs get
+ * uxiolabs price list carries), which is what decides WHICH provider SKUs get
  * offered for a category. One column, one meaning.
  */
 return new class extends Migration

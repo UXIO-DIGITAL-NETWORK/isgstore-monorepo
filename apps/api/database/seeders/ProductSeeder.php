@@ -29,7 +29,7 @@ class ProductSeeder extends Seeder
                 'category_id' => $mlbbCategoryId,
                 'sub_category_id' => $service['sub'],
                 'name' => $service['name'],
-                'code' => $service['id'], // = uxiotopup service id = buyer_sku_code
+                'code' => $service['id'], // = uxiolabs service id = buyer_sku_code
                 'price_modal' => $prices['price_modal'],
                 'price_member' => $prices['price_member'],
                 'price_vip' => $prices['price_vip'],
@@ -47,7 +47,7 @@ class ProductSeeder extends Seeder
     }
 
     /**
-     * Real uxiotopup Mobile Legends price-list (service id = code = buyer_sku_code).
+     * Real uxiolabs Mobile Legends price-list (service id = code = buyer_sku_code).
      * Shared with SupplierProductSeeder so cost/availability stay in one place.
      *
      * sub: 1 = Diamond, 2 = Membership/Pass (mlbb sub_categories).

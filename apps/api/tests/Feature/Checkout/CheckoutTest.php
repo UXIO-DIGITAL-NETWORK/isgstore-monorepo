@@ -24,7 +24,7 @@ class CheckoutTest extends TestCase
     {
         parent::setUp();
 
-        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        config(['services.uxiolabs.api_key' => 'test-api-key']);
 
         $this->product = Product::factory()->create([
             'price_member' => 12000,

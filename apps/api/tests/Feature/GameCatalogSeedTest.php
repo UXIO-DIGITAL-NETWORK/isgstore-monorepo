@@ -25,7 +25,7 @@ use Tests\TestCase;
  *
  * It used to seed one game (Mobile Legends) and 56 of its SKUs, so every fresh
  * install began by deleting someone else's inventory. Inventory now arrives
- * through `uxiotopup:sync-products` or the admin's own Add Product form.
+ * through `uxiolabs:sync-products` or the admin's own Add Product form.
  */
 class GameCatalogSeedTest extends TestCase
 {
@@ -63,8 +63,8 @@ class GameCatalogSeedTest extends TestCase
         $this->assertTrue((bool) CategoryType::where('name', 'Voucher')->value('is_voucher'));
         $this->assertFalse((bool) CategoryType::where('name', 'Mobile Game')->value('is_voucher'));
 
-        // Two uxiotopup actions resolve this row with firstOrFail.
-        $this->assertNotNull(Supplier::where('name', 'Uxiotopup')->first());
+        // Two uxiolabs actions resolve this row with firstOrFail.
+        $this->assertNotNull(Supplier::where('name', 'Uxiolabs')->first());
 
         // Markup rules are only editable once the rows exist; PricingService
         // falls back to the same numbers when they do not.
@@ -115,7 +115,7 @@ class GameCatalogSeedTest extends TestCase
         // above and still lock the operator out.
         $token = $this->postJson('/api/v1/auth/login', [
             'email' => 'admin@uxiotopup.id',
-            'password' => 'uxiotopupJaya123',
+            'password' => 'uxiolabsJaya123',
         ])->assertOk()->json('data.access_token');
 
         // **The deployment consequence, pinned here on purpose.** A seeded (or
@@ -150,7 +150,7 @@ class GameCatalogSeedTest extends TestCase
 
         $challenge = $this->postJson('/api/v1/auth/login', [
             'email' => 'admin@uxiotopup.id',
-            'password' => 'uxiotopupJaya123',
+            'password' => 'uxiolabsJaya123',
         ])->assertOk()->json('data.challenge_token');
 
         $this->assertNotNull($challenge, 'A password alone must no longer open the panel.');

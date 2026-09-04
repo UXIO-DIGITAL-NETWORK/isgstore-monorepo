@@ -3,7 +3,7 @@
 ## 1. Functional Requirements
 
 - **Hybrid API Engine:** Laravel 13 acts as a Headless API, serving both the React SPA (Admin/B2C) and the H2H APIs (B2B).
-- **Supplier Redundancy:** The ability to switch suppliers (e.g., uxiotopup to an alternative) instantly via the admin dashboard to ensure zero downtime.
+- **Supplier Redundancy:** The ability to switch suppliers (e.g., uxiolabs to an alternative) instantly via the admin dashboard to ensure zero downtime.
 - **Tiered Pricing:** Prices automatically adjust based on the user's role (Member, VIP, Reseller, Agent) by applying dynamic margins to the supplier's base price.
 - **Leaderboard System:** Displays "Top Spender" rankings efficiently utilizing the pre-calculated `user_spendings` aggregation table.
 

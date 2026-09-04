@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A supporting service kita sells to its payment-page clients (uxiotopup,
+ * A supporting service kita sells to its payment-page clients (uxiolabs,
  * Monetapay, email, domain, WhatsApp API).
  *
  * Not to be confused with `app/Services/*`, which is the outbound HTTP-client
- * layer (UxiotopupService, MonetapayService). This is a sellable catalogue row.
+ * layer (UxiolabsService, MonetapayService). This is a sellable catalogue row.
  */
 class Service extends Model
 {

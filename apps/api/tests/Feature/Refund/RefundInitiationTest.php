@@ -37,7 +37,12 @@ class RefundInitiationTest extends TestCase
         return User::factory()->create(['role_id' => $role->id, 'balance' => $balance]);
     }
 
-    private function paidTransaction(?User $user, int $gross = 12000): Transaction
+    /**
+     * A paid order the supplier then failed. The admin fee is deliberately
+     * non-zero: the customer paid 12.900, and only the 12.000 product price is
+     * refundable — the fee bought a payment that really did go through.
+     */
+    private function paidTransaction(?User $user, int $base = 12000, int $adminFee = 900): Transaction
     {
         $channel = PaymentChannel::factory()->create();
 
@@ -47,12 +52,16 @@ class RefundInitiationTest extends TestCase
             'status' => TransactionStatus::FAILED_PROVIDER->value,
             'contact_email' => 'guest@example.com',
             'guest_contact' => '081234567890',
+            'amount_base' => $base,
+            'amount_fee' => $adminFee,
+            'amount_total' => $base + $adminFee,
         ]);
 
         Payment::factory()->create([
             'transaction_id' => $transaction->id,
             'payment_channel_id' => $channel->id,
-            'gross_amount' => $gross,
+            'gross_amount' => $base + $adminFee,
+            'admin_fee' => $adminFee,
             'status' => PaymentStatus::SUCCESS->value,
         ]);
 
@@ -68,7 +77,10 @@ class RefundInitiationTest extends TestCase
 
         $this->assertSame(RefundMethod::BALANCE, $refund->method);
         $this->assertSame(RefundStatus::COMPLETED, $refund->status);
+
+        // 5.000 + the 12.000 product price. The 900 admin fee is NOT returned.
         $this->assertSame(17000, (int) $member->fresh()->balance);
+        $this->assertSame(12000, (int) $refund->amount);
 
         // The blind spot in the old test: the balance moved but nothing proved
         // it went through the ledger, which is how the bypass survived.

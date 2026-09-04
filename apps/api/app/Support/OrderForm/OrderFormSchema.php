@@ -58,7 +58,7 @@ class OrderFormSchema
         }
 
         // A legacy list (or a schema without an explicit template) has no template
-        // string; build the default. uxiotopup expects the pipe form
+        // string; build the default. uxiolabs expects the pipe form
         // "dataId|zoneId" — the same separator the unconfigured fallback uses — so
         // join with "|", NOT bare concatenation (which sent "dataId zoneId" glued
         // together and made every multi-field order fail at the supplier).

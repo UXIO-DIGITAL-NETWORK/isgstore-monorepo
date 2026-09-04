@@ -1,7 +1,7 @@
 # Artifact: Transactions & Payments API Specification
 
 ## Overview
-This module acts as the central nervous system of the application. It orchestrates the creation of user orders, links them to exact payment bills (Monetapay), and prepares the data format required for supplier fulfillment (uxiotopup). 
+This module acts as the central nervous system of the application. It orchestrates the creation of user orders, links them to exact payment bills (Monetapay), and prepares the data format required for supplier fulfillment (uxiolabs). 
 
 ## Architecture Stack
 * **Framework:** Laravel 11

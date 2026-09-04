@@ -36,7 +36,7 @@ class WebsiteSubscriptionTest extends TestCase
 
     private function websiteService(): Service
     {
-        return Service::factory()->create(['code' => 'uxiotopup', 'name' => 'Website Topup']);
+        return Service::factory()->create(['code' => 'uxiolabs', 'name' => 'Website Topup']);
     }
 
     private function subscription(User $merchant, Service $service, string $endsAt, string $status = 'ACTIVE'): ServiceSubscription
@@ -59,7 +59,7 @@ class WebsiteSubscriptionTest extends TestCase
         $this->getJson('/api/v1/website-subscription')
             ->assertOk()
             ->assertJsonPath('data.status', 'active')
-            ->assertJsonPath('data.service.code', 'uxiotopup')
+            ->assertJsonPath('data.service.code', 'uxiolabs')
             ->assertJsonPath('data.days_remaining', 60)
             ->assertJsonPath('data.checkout_url', config('services.payment_page.url')."/app/payment-admin/services/{$service->id}/checkout");
     }
@@ -135,7 +135,7 @@ class WebsiteSubscriptionTest extends TestCase
     {
         $this->actingAsAdmin();
         $merchant = $this->merchant();
-        Service::factory()->create(['code' => 'uxiotopup', 'name' => 'Default']);
+        Service::factory()->create(['code' => 'uxiolabs', 'name' => 'Default']);
         $custom = Service::factory()->create(['code' => 'my-site', 'name' => 'My Site']);
 
         Setting::create([

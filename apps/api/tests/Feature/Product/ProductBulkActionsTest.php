@@ -112,7 +112,7 @@ class ProductBulkActionsTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id, 'price_agent' => 11800, 'price_member' => 12000]);
     }
 
-    public function test_uxiotopup_update_recomputes_from_cost_and_skips_locked(): void
+    public function test_uxiolabs_update_recomputes_from_cost_and_skips_locked(): void
     {
         $this->actingAsAdmin();
         $product = $this->product(['price_member' => 0]);
@@ -123,19 +123,19 @@ class ProductBulkActionsTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->postJson('/api/v1/products/bulk/uxiotopup-update', ['ids' => [$product->id]])->assertOk();
+        $this->postJson('/api/v1/products/bulk/uxiolabs-update', ['ids' => [$product->id]])->assertOk();
         // Recomputed member = ceil(10000 * 1.2) = 12000.
         $this->assertDatabaseHas('products', ['id' => $product->id, 'price_member' => 12000]);
 
         // Lock, then raise the supplier cost: a locked product ignores the update.
         $product->update(['is_price_locked' => true]);
         $mapping->update(['price' => 20000]);
-        $this->postJson('/api/v1/products/bulk/uxiotopup-update', ['ids' => [$product->id]])->assertOk();
+        $this->postJson('/api/v1/products/bulk/uxiolabs-update', ['ids' => [$product->id]])->assertOk();
         $this->assertDatabaseHas('products', ['id' => $product->id, 'price_member' => 12000]);
 
         // Unlock: the same update now recomputes from the new cost (24000).
         $product->update(['is_price_locked' => false]);
-        $this->postJson('/api/v1/products/bulk/uxiotopup-update', ['ids' => [$product->id]])->assertOk();
+        $this->postJson('/api/v1/products/bulk/uxiolabs-update', ['ids' => [$product->id]])->assertOk();
         $this->assertDatabaseHas('products', ['id' => $product->id, 'price_member' => 24000]);
     }
 

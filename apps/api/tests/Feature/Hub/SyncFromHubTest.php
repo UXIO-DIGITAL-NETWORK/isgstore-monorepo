@@ -44,8 +44,8 @@ class SyncFromHubTest extends TestCase
     private function catalogRow(array $overrides = []): array
     {
         return array_merge([
-            'code' => 'uxiotopup',
-            'name' => 'Uxiotopup Supplier',
+            'code' => 'uxiolabs',
+            'name' => 'Uxiolabs Supplier',
             'category' => 'supplier',
             'description' => null,
             'features' => ['API topup'],
@@ -59,7 +59,7 @@ class SyncFromHubTest extends TestCase
     public function test_catalog_sync_creates_and_updates_by_code(): void
     {
         Service::create([
-            'code' => 'uxiotopup', 'name' => 'Nama Lama', 'category' => 'supplier',
+            'code' => 'uxiolabs', 'name' => 'Nama Lama', 'category' => 'supplier',
             'cost_price' => 100000, 'selling_price' => 200000, 'duration_days' => 30,
         ]);
         $this->fakeCatalog([
@@ -71,7 +71,7 @@ class SyncFromHubTest extends TestCase
 
         $this->assertSame(['created' => 1, 'updated' => 1, 'deactivated' => 0], $report);
 
-        $existing = Service::where('code', 'uxiotopup')->firstOrFail();
+        $existing = Service::where('code', 'uxiolabs')->firstOrFail();
         $this->assertSame('Nama Baru', $existing->name);
         $this->assertSame(300000, (int) $existing->selling_price);
         // cost_price is the Hub's private margin data — never synced down.
@@ -100,7 +100,7 @@ class SyncFromHubTest extends TestCase
     {
         $channel = PaymentChannel::factory()->create();
         Service::create([
-            'code' => 'uxiotopup', 'name' => 'X', 'category' => 'supplier',
+            'code' => 'uxiolabs', 'name' => 'X', 'category' => 'supplier',
             'selling_price' => 200000, 'duration_days' => 30,
             'payment_channel_id' => $channel->id,
         ]);
@@ -108,13 +108,13 @@ class SyncFromHubTest extends TestCase
 
         app(SyncCatalogFromHubAction::class)->execute();
 
-        $this->assertSame($channel->id, Service::where('code', 'uxiotopup')->first()->payment_channel_id);
+        $this->assertSame($channel->id, Service::where('code', 'uxiolabs')->first()->payment_channel_id);
     }
 
     public function test_an_error_envelope_aborts_instead_of_emptying_the_catalog(): void
     {
         Service::create([
-            'code' => 'uxiotopup', 'name' => 'X', 'category' => 'supplier',
+            'code' => 'uxiolabs', 'name' => 'X', 'category' => 'supplier',
             'selling_price' => 200000, 'duration_days' => 30, 'is_active' => true,
         ]);
         Http::fake(['hub.test/*' => Http::response([
@@ -127,7 +127,7 @@ class SyncFromHubTest extends TestCase
             app(SyncCatalogFromHubAction::class)->execute();
         } finally {
             // Nothing was deactivated by the refused pull.
-            $this->assertTrue((bool) Service::where('code', 'uxiotopup')->first()->is_active);
+            $this->assertTrue((bool) Service::where('code', 'uxiolabs')->first()->is_active);
         }
     }
 

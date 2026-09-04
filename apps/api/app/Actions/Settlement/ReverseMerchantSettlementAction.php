@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions\Settlement;
 
+use App\Models\BalanceMutation;
 use App\Models\PlatformMutation;
 use App\Models\RefundRequest;
 use App\Services\DiscordWebhookService;
-use App\Support\Ledger\PlatformLedger;
 use App\Support\Wallet\WalletLedger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,23 +22,24 @@ use Throwable;
  * credit, on `complete` for a guest's manual transfer. Never at request time: a
  * REJECTED guest refund must leave the merchant's settlement intact.
  *
- * Three things move, and each has a reason:
+ * **Only the merchant's leg moves**, and only `amount_base`. A refund returns
+ * the product price alone (`InitiateRefundAction`) — the channel fee stays with
+ * the platform — so the platform's books are already correct: it keeps
+ * `admin_fee` and it paid `gateway_fee + tax_amount`, exactly what settlement
+ * booked as profit. Reversing the markup here and then re-booking the gateway
+ * cost would net to `-admin_fee`, charging the platform for a fee it never gave
+ * back. **Do not re-add a platform leg without changing what the refund pays.**
  *
- *  1. **The merchant's wallet mirror** (`users.balance`), best-effort. The
- *     merchant's *withdrawable* balance is derived by `MerchantBalance` from
- *     `transactions.status`, so it already corrects itself the moment the order
- *     leaves `paidStates()`. This leg exists only so `balance_mutations` — what
- *     the merchant actually reads — tells the same story.
- *  2. **The platform markup**, un-booked by exactly what settlement booked.
- *  3. **The gateway fee and PPN as a refund cost.** Monetapay kept its cut and
- *     the tax was levied; refunding the customer the full gross means that
- *     money is genuinely gone. Without this leg the platform ledger overstates
- *     income by `gateway_fee + tax_amount` on every single refund.
+ * The one leg is the merchant's wallet mirror (`users.balance`), best-effort.
+ * The merchant's *withdrawable* balance is derived by `MerchantBalance` from
+ * `transactions.status`, so it already corrects itself the moment the order
+ * leaves `paidStates()`. This leg exists only so `balance_mutations` — what the
+ * merchant actually reads — tells the same story.
  *
- * Both platform legs are typed `markup`, **not** a new `*_reversal` type:
- * `PlatformBalance::income()` whitelists `['markup','withdrawal_fee','service_revenue']`
- * and would silently ignore anything else, leaving kita's withdrawable balance
- * inflated by every refund. The sign carries the direction, not the type.
+ * Should a platform leg ever be needed again it must be typed `markup` with a
+ * negative amount, **not** a new `*_reversal` type: `PlatformBalance::income()`
+ * whitelists `['markup','withdrawal_fee','service_revenue']` and would silently
+ * ignore anything else, leaving kita's withdrawable balance inflated.
  *
  * Every reversal leg references `RFD-{invoice}` rather than the bare invoice
  * number: `SettleMerchantTransactionAction` guards idempotency on
@@ -60,7 +61,7 @@ class ReverseMerchantSettlementAction
      */
     public function execute(RefundRequest $refund): bool
     {
-        $refund->loadMissing(['transaction.payment']);
+        $refund->loadMissing(['transaction']);
         $transaction = $refund->transaction;
 
         if (! $transaction) {
@@ -79,10 +80,16 @@ class ReverseMerchantSettlementAction
         try {
             DB::transaction(function () use ($refund, $transaction, $merchantId, $reference, &$walletFailure) {
                 // Idempotency marker that survives a crash between the ledger
-                // write and the timestamp: the platform mutation itself.
+                // write and the timestamp: the mutation this action leaves
+                // behind. Both tables are checked — legacy reversals (which
+                // booked platform legs) are recognised by the platform row,
+                // current ones by the merchant's.
                 $alreadyReversed = PlatformMutation::query()
                     ->where('reference', $reference)
-                    ->exists();
+                    ->exists()
+                    || BalanceMutation::query()
+                        ->where('reference', $reference)
+                        ->exists();
 
                 if ($alreadyReversed) {
                     $refund->forceFill(['settlement_reversed_at' => now()])->save();
@@ -91,11 +98,8 @@ class ReverseMerchantSettlementAction
                 }
 
                 $amountBase = (int) $transaction->amount_base;
-                $adminFee = (int) $transaction->amount_fee;
-                $gatewayFee = (int) ($transaction->payment?->gateway_fee ?? 0);
-                $taxAmount = (int) ($transaction->payment?->tax_amount ?? 0);
 
-                // ── 1. Merchant wallet mirror (best effort) ──────────────────
+                // ── The merchant's wallet mirror (best effort) ───────────────
                 if ($merchantId && $amountBase > 0) {
                     try {
                         WalletLedger::record(
@@ -111,30 +115,6 @@ class ReverseMerchantSettlementAction
                         // customer's refund is not held hostage to that.
                         $walletFailure = $e->getMessage();
                     }
-                }
-
-                // ── 2. Un-book the markup settlement kept ───────────────────
-                // Read the same columns SettleMerchantTransactionAction reads,
-                // so the two figures can never drift.
-                $platformProfit = $adminFee - $gatewayFee - $taxAmount;
-                if ($platformProfit !== 0) {
-                    PlatformLedger::record(
-                        amount: -$platformProfit,
-                        type: 'markup',
-                        reference: $reference,
-                        description: "Pembatalan markup (refund) {$transaction->invoice_number}",
-                    );
-                }
-
-                // ── 3. Book the unrecoverable cost of the refund ────────────
-                $refundCost = $gatewayFee + $taxAmount;
-                if ($refundCost > 0) {
-                    PlatformLedger::record(
-                        amount: -$refundCost,
-                        type: 'markup',
-                        reference: $reference,
-                        description: "Biaya refund (MDR + PPN) {$transaction->invoice_number}",
-                    );
                 }
 
                 $refund->forceFill(['settlement_reversed_at' => now()])->save();

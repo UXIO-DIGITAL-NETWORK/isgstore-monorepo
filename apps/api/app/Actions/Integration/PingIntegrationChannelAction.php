@@ -25,7 +25,7 @@ class PingIntegrationChannelAction
         // main-merchant entry, so that's the one to forget.
         match ($provider) {
             'monetapay' => Cache::forget(MonetapayService::balanceCacheKey()),
-            'uxiotopup' => Cache::forget('uxiotopup:balance'),
+            'uxiolabs' => Cache::forget('uxiolabs:balance'),
             default => null,
         };
 

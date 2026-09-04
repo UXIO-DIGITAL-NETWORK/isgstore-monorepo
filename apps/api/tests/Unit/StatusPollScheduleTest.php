@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Support\Uxiotopup\StatusPollSchedule;
+use App\Support\Uxiolabs\StatusPollSchedule;
 use PHPUnit\Framework\TestCase;
 
 class StatusPollScheduleTest extends TestCase

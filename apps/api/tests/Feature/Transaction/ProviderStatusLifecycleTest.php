@@ -5,7 +5,7 @@ namespace Tests\Feature\Transaction;
 use App\Enums\PaymentStatus;
 use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
-use App\Jobs\ProcessUxiotopupTopup;
+use App\Jobs\ProcessUxiolabsTopup;
 use App\Models\Payment;
 use App\Models\Transaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +26,7 @@ class ProviderStatusLifecycleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['services.uxiotopup.callback_ips' => '127.0.0.1']);
+        config(['services.uxiolabs.callback_ips' => '127.0.0.1']);
     }
 
     public function test_a_new_order_has_not_been_sent_to_the_supplier(): void
@@ -64,7 +64,7 @@ class ProviderStatusLifecycleTest extends TestCase
             'status' => PaymentStatus::SUCCESS,
         ]);
 
-        (new ProcessUxiotopupTopup($transaction))->failed(new \RuntimeException('supplier unreachable'));
+        (new ProcessUxiolabsTopup($transaction))->failed(new \RuntimeException('supplier unreachable'));
 
         $fresh = $transaction->fresh();
 
@@ -87,7 +87,7 @@ class ProviderStatusLifecycleTest extends TestCase
             'status' => PaymentStatus::SUCCESS,
         ]);
 
-        $this->postJson('/api/v1/uxiotopup/callback', [
+        $this->postJson('/api/v1/uxiolabs/callback', [
             'id' => 'UX-1',
             'idtrx' => $transaction->invoice_number,
             'status' => 'cancel',
@@ -103,7 +103,7 @@ class ProviderStatusLifecycleTest extends TestCase
     {
         $transaction = Transaction::factory()->create(['status' => TransactionStatus::PROCESSING]);
 
-        $this->postJson('/api/v1/uxiotopup/callback', [
+        $this->postJson('/api/v1/uxiolabs/callback', [
             'id' => 'UX-2',
             'idtrx' => $transaction->invoice_number,
             'keterangan' => 'SN-1',
@@ -123,7 +123,7 @@ class ProviderStatusLifecycleTest extends TestCase
     {
         $transaction = Transaction::factory()->create(['status' => TransactionStatus::PROCESSING]);
 
-        $this->postJson('/api/v1/uxiotopup/callback', [
+        $this->postJson('/api/v1/uxiolabs/callback', [
             'id' => 'UX-3',
             'idtrx' => $transaction->invoice_number,
             'status' => 'processing',
@@ -139,12 +139,12 @@ class ProviderStatusLifecycleTest extends TestCase
             'supplier_trx_id' => null,
         ]);
 
-        $this->postJson('/api/v1/uxiotopup/callback', [
+        $this->postJson('/api/v1/uxiolabs/callback', [
             'idtrx' => $transaction->invoice_number,
             'status' => 'pending',
         ])->assertOk();
 
-        // uxiotopup has the order but we hold no id for it, and /status has no
+        // uxiolabs has the order but we hold no id for it, and /status has no
         // lookup by our own reference — so nothing can poll this one. The reaper
         // finds these; naming the state is what lets it say why.
         $this->assertSame(ProviderStatus::UNCONFIRMED, $transaction->fresh()->provider_status);

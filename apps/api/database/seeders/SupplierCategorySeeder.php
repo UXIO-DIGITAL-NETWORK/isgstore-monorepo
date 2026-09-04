@@ -13,12 +13,12 @@ class SupplierCategorySeeder extends Seeder
         $items = [];
 
         // Our category id => the provider's own `kategori` string. This mapping is
-        // what decides which uxiotopup SKUs are offered for the category.
-        $uxiotopupCategories = [
+        // what decides which uxiolabs SKUs are offered for the category.
+        $uxiolabsCategories = [
             1 => 'Mobile Legends',
         ];
 
-        foreach ($uxiotopupCategories as $catId => $code) {
+        foreach ($uxiolabsCategories as $catId => $code) {
             $items[] = [
                 'category_id' => $catId,
                 'supplier_id' => 1,

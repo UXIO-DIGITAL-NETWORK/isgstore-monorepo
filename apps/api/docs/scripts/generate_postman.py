@@ -59,7 +59,7 @@ login_req = {
     "event":[{"listen":"test","script":{"exec":["var jsonData = pm.response.json();","if (jsonData.status === 'success') {","    pm.environment.set('access_token', jsonData.data.access_token);","    pm.environment.set('refresh_token', jsonData.data.refresh_token);","}"],"type":"text/javascript"}}],
     "request":{
         "method":"POST","header":hdr(),
-        "body":body({"email":"admin@uxiotopup.id","password":"uxiotopupJaya123"}),  # UserSeeder's admin
+        "body":body({"email":"admin@uxiotopup.id","password":"uxiolabsJaya123"}),  # UserSeeder's admin
         "url":url("v1/auth/login")
     }
 }
@@ -134,9 +134,9 @@ collection["item"].append({"name":"Server Category Options","item":[
 # --- Suppliers ---
 collection["item"].append({"name":"Suppliers","item":[
     get("Get All Suppliers", "v1/suppliers"),
-    post("Create Supplier", "v1/suppliers", {"name":"Uxiotopup","status":True}),
+    post("Create Supplier", "v1/suppliers", {"name":"Uxiolabs","status":True}),
     get("Get Supplier Detail", "v1/suppliers/1"),
-    put("Update Supplier", "v1/suppliers/1", {"name":"Uxiotopup V2","status":True}),
+    put("Update Supplier", "v1/suppliers/1", {"name":"Uxiolabs V2","status":True}),
     delete("Delete Supplier", "v1/suppliers/1")
 ]})
 

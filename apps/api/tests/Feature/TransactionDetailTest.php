@@ -48,7 +48,7 @@ class TransactionDetailTest extends TestCase
     public function test_show_includes_the_payment_and_supplier_detail(): void
     {
         $this->actingAsAdmin();
-        $supplier = Supplier::factory()->create(['name' => 'Uxiotopup']);
+        $supplier = Supplier::factory()->create(['name' => 'Uxiolabs']);
         $transaction = Transaction::factory()->create([
             'supplier_id' => $supplier->id,
             'amount_base' => 12000,
@@ -68,7 +68,7 @@ class TransactionDetailTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.amount_base', 12000)
             ->assertJsonPath('data.channel_fee', 1000)
-            ->assertJsonPath('data.supplier.name', 'Uxiotopup')
+            ->assertJsonPath('data.supplier.name', 'Uxiolabs')
             ->assertJsonPath('data.supplier_trx_id', 'SUP-77')
             ->assertJsonPath('data.supplier_status', 'success')
             ->assertJsonPath('data.payment.reference_id', 'PAY-REF-01')

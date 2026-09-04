@@ -7,7 +7,7 @@ use App\Actions\Points\GrantTransactionPointsAction;
 use App\Actions\Settlement\SettleMerchantTransactionAction;
 use App\Actions\Storefront\ValidateGameIdAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
-use App\Actions\Uxiotopup\ProcessUxiotopupTransactionAction;
+use App\Actions\Uxiolabs\ProcessUxiolabsTransactionAction;
 use App\DTOs\Checkout\CheckoutDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\PaymentStatus;
@@ -36,7 +36,7 @@ use Illuminate\Support\Str;
 class CheckoutAction
 {
     public function __construct(
-        private readonly ProcessUxiotopupTransactionAction $uxiotopupAction,
+        private readonly ProcessUxiolabsTransactionAction $uxiolabsAction,
         private readonly CreateActivityLogAction $logAction,
         private readonly MonetapayService $monetapayService,
         private readonly SendTransactionReceiptAction $sendReceiptAction,
@@ -486,13 +486,13 @@ class CheckoutAction
                 // and record kita's markup — no-op if platform-owned.
                 $this->settleAction->execute($transaction);
 
-                // uxiotopup fulfilment stays inside the transaction so an
+                // uxiolabs fulfilment stays inside the transaction so an
                 // infrastructure *exception* rolls the wallet charge back with
                 // it; the lock held is the buyer's own row (per-user contention),
-                // not the shared promo row. (A FAILED_PROVIDER *result* — uxiotopup
+                // not the shared promo row. (A FAILED_PROVIDER *result* — uxiolabs
                 // "cancel"/"refund" — is a normal return, not an exception, so it
                 // commits; refunding that case is unchanged by this refactor.)
-                $transaction = $this->uxiotopupAction->execute($transaction);
+                $transaction = $this->uxiolabsAction->execute($transaction);
                 $transactionStatus = $transaction->status; // COMPLETED / PROCESSING / FAILED_PROVIDER
 
                 // Fulfilled synchronously from balance — email the receipt now.

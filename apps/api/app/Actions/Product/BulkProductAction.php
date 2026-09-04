@@ -72,9 +72,9 @@ class BulkProductAction
      * @param  int[]  $ids
      * @return array{updated:int}
      */
-    public function uxiotopupUpdate(array $ids): array
+    public function uxiolabsUpdate(array $ids): array
     {
-        return $this->each($ids, fn (Product $p) => $this->priceControl->uxiotopupUpdate($p));
+        return $this->each($ids, fn (Product $p) => $this->priceControl->uxiolabsUpdate($p));
     }
 
     /**

@@ -15,7 +15,7 @@ use Throwable;
  * `categories.validasi_nickname` names the provider to ask. Only URL templates
  * (http/https) are understood — a free third-party lookup endpoint. The legacy
  * supplier-backed providers (`digiflazz:{sku}` / `product:{id}`) are gone:
- * uxiotopup has no cek-username endpoint, so those values now resolve to
+ * uxiolabs has no cek-username endpoint, so those values now resolve to
  * "unsupported" (nickname null) rather than erroring.
  *
  * Most games have no provider configured, and that is a normal state — not an
@@ -44,7 +44,7 @@ class ValidateGameIdAction
 
         // A free third-party URL template. Anything else — including leftover
         // supplier-backed values (`digiflazz:`/`product:`) from before the
-        // uxiotopup migration — is unsupported, never an error.
+        // uxiolabs migration — is unsupported, never an error.
         if (str_starts_with($provider, 'http://') || str_starts_with($provider, 'https://')) {
             return $this->resolveViaUrl($game, $provider, $userId, $serverId);
         }

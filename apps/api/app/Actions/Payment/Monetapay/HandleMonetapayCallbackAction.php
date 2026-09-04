@@ -13,7 +13,7 @@ use App\DTOs\Withdrawal\DisbursementCallbackDTO;
 use App\Enums\PaymentStatus;
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\TransactionStatus;
-use App\Jobs\ProcessUxiotopupTopup;
+use App\Jobs\ProcessUxiolabsTopup;
 use App\Models\BalanceTopup;
 use App\Models\Payment;
 use App\Models\ServiceInvoice;
@@ -165,7 +165,7 @@ class HandleMonetapayCallbackAction
             $notifyData = [$freshTransaction, $isSuccess];
         });
 
-        // ── Dispatch uxiotopup job after commit ──────────────────────────────
+        // ── Dispatch uxiolabs job after commit ──────────────────────────────
         // At this point DB::transaction() has returned, meaning the commit is done.
         // The queue worker will always see the PAID rows when it picks up the job.
         if ($paidTransaction) {
@@ -173,7 +173,7 @@ class HandleMonetapayCallbackAction
             // confirmed. No-op for platform-owned sales (merchant_id = null).
             $this->settleAction->execute($paidTransaction);
 
-            ProcessUxiotopupTopup::dispatch($paidTransaction);
+            ProcessUxiolabsTopup::dispatch($paidTransaction);
         }
 
         if ($notifyData !== null) {
@@ -408,7 +408,7 @@ class HandleMonetapayCallbackAction
         }
     }
 
-    /** Customer checkout (product purchase) payment result — before uxiotopup fulfilment even starts. */
+    /** Customer checkout (product purchase) payment result — before uxiolabs fulfilment even starts. */
     private function notifyCheckoutDiscord(Transaction $transaction, bool $isSuccess): void
     {
         $this->discord->sendEmbed(

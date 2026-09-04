@@ -12,7 +12,7 @@ class CategorySeeder extends Seeder
         $now = now();
 
         // Games only — this is a game top-up platform. Mobile Legends is the only
-        // seeded game for now (real uxiotopup catalogue). `slug` is required for
+        // seeded game for now (real uxiolabs catalogue). `slug` is required for
         // the storefront's slug-based URLs (Catalog::resolveGame);
         // `order_form_fields` is filled by OrderFormSchemaSeeder, which runs after.
         $categories = [

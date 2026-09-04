@@ -18,7 +18,7 @@ use Tests\TestCase;
 
 /**
  * Discord visibility for the Monetapay PAY-IN side (checkout + wallet top-up)
- * — previously only the uxiotopup order-fulfilment webhook notified Discord;
+ * — previously only the uxiolabs order-fulfilment webhook notified Discord;
  * a customer's payment itself (success or expiry) was silent.
  */
 class MonetapayPaymentDiscordNotificationTest extends TestCase
@@ -31,7 +31,7 @@ class MonetapayPaymentDiscordNotificationTest extends TestCase
 
         config(['services.discord.webhook_log_url' => 'https://discord.test/hook']);
         Http::fake();
-        // The success path also dispatches ProcessUxiotopupTopup — irrelevant to
+        // The success path also dispatches ProcessUxiolabsTopup — irrelevant to
         // what this file asserts, and faking the queue keeps the test isolated
         // from supplier-order fulfilment (already covered elsewhere).
         Queue::fake();

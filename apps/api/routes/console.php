@@ -52,16 +52,16 @@ Schedule::command('withdrawals:sync-processing')
     ->runInBackground()
     ->onFailure($alertFailure('withdrawals:sync-processing'));
 
-// Uxiotopup order-status recovery: the supplier callback is unreliable, so each
-// in-flight order runs a self-rescheduling PollUxiotopupStatusJob (5s → widening).
+// Uxiolabs order-status recovery: the supplier callback is unreliable, so each
+// in-flight order runs a self-rescheduling PollUxiolabsStatusJob (5s → widening).
 // This is only the safety net — it re-arms chains that died and alerts orders that
 // cannot be polled (no supplier_trx_id). Five minutes: a paid order awaiting its
 // product should not sit unnoticed for long.
-Schedule::command('uxiotopup:sync-processing')
+Schedule::command('uxiolabs:sync-processing')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground()
-    ->onFailure($alertFailure('uxiotopup:sync-processing'));
+    ->onFailure($alertFailure('uxiolabs:sync-processing'));
 
 // Is anyone consuming the queue at all? Every safety net above assumes a live
 // worker; if it died, a paid order never reaches the supplier and NOTHING errors.
@@ -82,11 +82,11 @@ Schedule::command('queue:health')
 // Price checker: updates supplier cost/availability, auto-reprices live products
 // from the margin rules, and records a price-change log. No success/before Discord
 // embeds — 288 runs/day would be spam.
-Schedule::command('uxiotopup:check-prices')
+Schedule::command('uxiolabs:check-prices')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground()
-    ->onFailure($alertFailure('uxiotopup:check-prices'));
+    ->onFailure($alertFailure('uxiolabs:check-prices'));
 
 // Gateway-fee reconciliation: audits each channel's gateway fee against the
 // Monetapay contract, re-checks the frozen fee on recent settled payments, and

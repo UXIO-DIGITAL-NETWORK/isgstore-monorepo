@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * `status` answers two questions at once — did the customer pay, and did the
  * supplier deliver — which is why an operator staring at PROCESSING cannot tell
- * whether uxiotopup has the order or the queue worker simply has not sent it yet.
+ * whether uxiolabs has the order or the queue worker simply has not sent it yet.
  * This column answers only the second, so both can be read and filtered apart.
  *
  * `string`, not a native DB enum. `transactions.status` is the last native enum

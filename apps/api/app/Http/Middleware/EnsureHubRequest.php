@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Gates the site's Hub reporting endpoints (/v1/hub/*): an API key issued by
  * the Hub, sent as X-Hub-Key, plus an optional source-IP allowlist — the same
- * two-factor shape as the uxiotopup callback gate.
+ * two-factor shape as the uxiolabs callback gate.
  *
  * With no key configured the endpoints are dead, not open: a standalone
  * deployment that never registers with a Hub exposes nothing.
@@ -27,7 +27,7 @@ class EnsureHubRequest
 
         // Optional allowlist; empty means the key alone gates. Requires
         // TrustProxies to be correct behind a LB or $request->ip() rejects
-        // every pull — same caveat as the uxiotopup webhook.
+        // every pull — same caveat as the uxiolabs webhook.
         $allowedIps = array_filter(array_map('trim', explode(',', (string) config('services.hub.allowed_ips'))));
 
         if ($allowedIps !== [] && ! in_array($request->ip(), $allowedIps, true)) {

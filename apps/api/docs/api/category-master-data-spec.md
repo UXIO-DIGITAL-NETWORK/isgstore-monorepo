@@ -1,7 +1,7 @@
 # Artifact: Category Master Data API Specification
 
 ## Overview
-This module handles the core catalog hierarchy for the Top-up platform, defining what products can be sold and how they are categorized. The structure is heavily normalized to support complex supplier integrations (like uxiotopup).
+This module handles the core catalog hierarchy for the Top-up platform, defining what products can be sold and how they are categorized. The structure is heavily normalized to support complex supplier integrations (like uxiolabs).
 
 ## Architecture Stack
 * **Framework:** Laravel 11

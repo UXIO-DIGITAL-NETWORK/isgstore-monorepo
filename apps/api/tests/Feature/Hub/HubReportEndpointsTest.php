@@ -203,14 +203,14 @@ class HubReportEndpointsTest extends TestCase
         $role = Role::firstOrCreate(['name' => 'Payment-Admin']);
         $merchant = User::factory()->create(['role_id' => $role->id, 'name' => 'Klien A']);
         $service = Service::create([
-            'code' => 'uxiotopup', 'name' => 'Uxiotopup', 'category' => 'supplier',
+            'code' => 'uxiolabs', 'name' => 'Uxiolabs', 'category' => 'supplier',
             'selling_price' => 250000, 'duration_days' => 30,
         ]);
         ServiceInvoice::create([
             'invoice_number' => 'SINV-202608-TEST01',
             'merchant_id' => $merchant->id,
             'service_id' => $service->id,
-            'service_name' => 'Uxiotopup',
+            'service_name' => 'Uxiolabs',
             'amount' => 250000, 'duration_days' => 30, 'status' => 'UNPAID',
         ]);
 
@@ -218,7 +218,7 @@ class HubReportEndpointsTest extends TestCase
 
         $this->assertCount(1, $rows);
         $this->assertSame('SINV-202608-TEST01', $rows[0]['invoice_number']);
-        $this->assertSame('uxiotopup', $rows[0]['service_code']);
+        $this->assertSame('uxiolabs', $rows[0]['service_code']);
         $this->assertSame('Klien A', $rows[0]['merchant_name']);
         $this->assertSame('UNPAID', $rows[0]['status']);
     }

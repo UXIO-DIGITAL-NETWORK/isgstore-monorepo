@@ -78,7 +78,7 @@ return new class extends Migration
         // Stamping it keeps the UI from retroactively flagging live rows as unpriced.
         //
         // Chunked in PHP rather than an UPDATE ... JOIN so this runs on every driver —
-        // the same approach 2026_08_22_000002_migrate_supplier_to_uxiotopup.php takes.
+        // the same approach 2026_08_22_000002_migrate_supplier_to_uxiolabs.php takes.
         DB::table('supplier_products')
             ->whereNotNull('product_id')
             ->orderBy('id')

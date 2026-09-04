@@ -113,7 +113,7 @@ class ShowInvoiceAction
                 'refunded_at' => $refund->refunded_at?->toIso8601String(),
             ] : null,
 
-            // Voucher / serial number, present once uxiotopup has fulfilled.
+            // Voucher / serial number, present once uxiolabs has fulfilled.
             'sn' => $transaction->sn,
             'created_at' => $transaction->created_at?->toIso8601String(),
         ];

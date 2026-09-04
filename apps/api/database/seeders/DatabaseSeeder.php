@@ -11,20 +11,20 @@ class DatabaseSeeder extends Seeder
      *
      * The catalogue is deliberately empty: no games, no products, no supplier
      * mappings. Those are the operator's own inventory and arrive through
-     * `uxiotopup:sync-products` → Set Margin → Promote → Publish, or the admin's
+     * `uxiolabs:sync-products` → Set Margin → Promote → Publish, or the admin's
      * Add Product form. Seeding a sample game meant every fresh install started
      * with someone else's Mobile Legends SKUs to delete first.
      *
      * What is seeded is only what the app cannot start without, or what is
      * configuration rather than inventory: roles, three known logins, payment
-     * channels, pricing rules, the Uxiotopup supplier, category types, plus CMS
+     * channels, pricing rules, the Uxiolabs supplier, category types, plus CMS
      * content and the plans/services catalogues.
      *
      * The catalogue seeders (Category, SubCategory, ServerCategory,
      * ServerCategoryOption, OrderFormSchema, Product, SupplierCategory,
      * SupplierProduct) still exist and still work — they are simply not called.
      * `ProductSeeder::services()` in particular is a useful reference for the
-     * shape of a uxiotopup SKU.
+     * shape of a uxiolabs SKU.
      *
      * Order still follows the foreign keys:
      * 1. Foundation (roles, category types, suppliers, payment channels, pricing)
@@ -55,7 +55,7 @@ class DatabaseSeeder extends Seeder
             // ProductSeeder, SupplierCategorySeeder, SupplierProductSeeder.
             // See the class docblock: inventory belongs to the operator.
 
-            // Guarantees the one supplier row two uxiotopup actions resolve with
+            // Guarantees the one supplier row two uxiolabs actions resolve with
             // firstOrFail. Runs on its own now that no catalogue precedes it.
             MasterDataSeeder::class,
 

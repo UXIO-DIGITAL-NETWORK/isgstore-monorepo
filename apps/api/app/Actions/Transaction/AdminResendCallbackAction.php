@@ -3,7 +3,7 @@
 namespace App\Actions\Transaction;
 
 use App\Actions\Log\CreateActivityLogAction;
-use App\Actions\Uxiotopup\CheckUxiotopupTransactionStatusAction;
+use App\Actions\Uxiolabs\CheckUxiolabsTransactionStatusAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
@@ -11,15 +11,15 @@ use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 
 /**
- * "Resend Callback" — re-polls uxiotopup for this transaction's current
+ * "Resend Callback" — re-polls uxiolabs for this transaction's current
  * status and syncs our record, for a transaction stuck mid-flight instead of
  * waiting on their webhook. Only meaningful for a PROCESSING transaction
- * (see CheckUxiotopupTransactionStatusAction).
+ * (see CheckUxiolabsTransactionStatusAction).
  */
 class AdminResendCallbackAction
 {
     public function __construct(
-        private CheckUxiotopupTransactionStatusAction $checkStatusAction,
+        private CheckUxiolabsTransactionStatusAction $checkStatusAction,
         private CreateActivityLogAction $activityLogAction
     ) {}
 

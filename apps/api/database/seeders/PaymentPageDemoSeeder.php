@@ -204,7 +204,7 @@ class PaymentPageDemoSeeder extends Seeder
 
         $details = [
             ['Username', 'uxio-prod', false],
-            ['Webhook URL', 'https://api.uxio.test/callback/uxiotopup', false],
+            ['Webhook URL', 'https://api.uxio.test/callback/uxiolabs', false],
             ['API Key', 'sk_live_'.Str::random(24), true],
         ];
 

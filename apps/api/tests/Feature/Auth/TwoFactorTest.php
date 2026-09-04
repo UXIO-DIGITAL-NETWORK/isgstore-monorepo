@@ -26,7 +26,7 @@ class TwoFactorTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const PASSWORD = 'uxiotopupJaya123';
+    private const PASSWORD = 'uxiolabsJaya123';
 
     private function admin(bool $enrolled = false, ?string $secret = null): User
     {

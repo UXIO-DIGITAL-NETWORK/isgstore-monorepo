@@ -26,7 +26,7 @@ class DefaultMerchantAttributionTest extends TestCase
     {
         parent::setUp();
 
-        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        config(['services.uxiolabs.api_key' => 'test-api-key']);
 
         Http::fake([
             '*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']]),

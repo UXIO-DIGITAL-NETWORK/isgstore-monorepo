@@ -73,9 +73,9 @@ return [
             'replace_placeholders' => true,
         ],
 
-        'uxiotopup' => [
+        'uxiolabs' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/uxiotopup.log'),
+            'path' => storage_path('logs/uxiolabs.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,

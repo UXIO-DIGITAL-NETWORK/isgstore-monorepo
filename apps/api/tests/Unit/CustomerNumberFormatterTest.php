@@ -39,7 +39,7 @@ class CustomerNumberFormatterTest extends TestCase
 
     public function test_unconfigured_category_uses_the_pipe_joined_default(): void
     {
-        // uxiotopup's documented target shape: "dataId|zoneId", or just the
+        // uxiolabs's documented target shape: "dataId|zoneId", or just the
         // dataId when there is no zone/server component.
         $this->assertSame('123456789|2001', $this->formatter->format($this->category(null), '123456789', '2001'));
         $this->assertSame('123456789', $this->formatter->format($this->category(null), '123456789', null));
@@ -88,7 +88,7 @@ class CustomerNumberFormatterTest extends TestCase
 
     public function test_legacy_list_shape_defaults_to_the_pipe_joined_form(): void
     {
-        // No explicit template → default to uxiotopup's "dataId|zoneId" (pipe),
+        // No explicit template → default to uxiolabs's "dataId|zoneId" (pipe),
         // not bare concatenation which the supplier rejects.
         $legacyList = [
             ['key' => 'user_id', 'label' => 'User ID', 'required' => true],

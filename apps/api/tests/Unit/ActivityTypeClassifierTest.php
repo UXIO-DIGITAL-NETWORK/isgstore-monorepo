@@ -28,7 +28,7 @@ class ActivityTypeClassifierTest extends TestCase
             'transaction by link' => ['Some note', 42, 'transaction'],
             'topup' => ['Membuka isi saldo Rp 50000 via BCA', null, 'transaction'],
             'data crud' => ['Created new Product: Mobile Legends', null, 'data'],
-            'data delete' => ['Deleted Supplier: Uxiotopup', null, 'data'],
+            'data delete' => ['Deleted Supplier: Uxiolabs', null, 'data'],
             'security' => ['Password reset completed', null, 'security'],
             'unknown' => ['Something entirely unclassifiable zzz', null, null],
         ];

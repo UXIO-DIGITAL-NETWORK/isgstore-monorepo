@@ -82,11 +82,11 @@ class TotpTest extends TestCase
 
     public function test_the_provisioning_uri_carries_what_an_app_needs(): void
     {
-        $uri = Totp::provisioningUri('JBSWY3DPEHPK3PXP', 'admin@uxiotopup.id', 'UXIOTOPUP');
+        $uri = Totp::provisioningUri('JBSWY3DPEHPK3PXP', 'admin@uxiotopup.id', 'UXIOLABS');
 
         $this->assertStringStartsWith('otpauth://totp/', $uri);
         $this->assertStringContainsString('secret=JBSWY3DPEHPK3PXP', $uri);
-        $this->assertStringContainsString('issuer=UXIOTOPUP', $uri);
+        $this->assertStringContainsString('issuer=UXIOLABS', $uri);
         $this->assertStringContainsString('digits=6', $uri);
     }
 }

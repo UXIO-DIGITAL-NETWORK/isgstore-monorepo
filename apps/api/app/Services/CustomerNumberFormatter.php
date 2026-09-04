@@ -12,7 +12,7 @@ use RuntimeException;
  * Composes the target sent to the supplier.
  *
  * This is the single place that decides how target_uid and target_server are
- * joined — do not hardcode that expression anywhere else. uxiotopup expects
+ * joined — do not hardcode that expression anywhere else. uxiolabs expects
  * the pipe form "dataId|zoneId" (templates like `{user_id}|{zone_id}`).
  */
 class CustomerNumberFormatter
@@ -35,7 +35,7 @@ class CustomerNumberFormatter
         $schema = OrderFormSchema::forCategory($category);
         $values = [trim((string) $targetUid), trim((string) $targetServer)];
 
-        // Unconfigured category → uxiotopup's default "dataId|zoneId" shape
+        // Unconfigured category → uxiolabs's default "dataId|zoneId" shape
         // (just dataId when there is no zone/server component).
         if (! $schema) {
             return $values[1] === '' ? $values[0] : $values[0].'|'.$values[1];
@@ -67,7 +67,7 @@ class CustomerNumberFormatter
         }
 
         // Drop empty pipe segments so an optional field left blank (e.g. no
-        // zone/server) never emits a dangling separator like "dataId|" — uxiotopup
+        // zone/server) never emits a dangling separator like "dataId|" — uxiolabs
         // wants "dataId|zoneId" or just "dataId", never a trailing pipe.
         if (str_contains($customerNo, '|')) {
             $customerNo = implode('|', array_filter(

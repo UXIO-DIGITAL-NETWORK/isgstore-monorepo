@@ -16,7 +16,7 @@ use Throwable;
  *
  * A 200-with-error-envelope is a hard failure, not an empty result: treating a
  * refused response as "empty catalog" would deactivate every service on the
- * next sync — the same failure mode UxiotopupService guards against.
+ * next sync — the same failure mode UxiolabsService guards against.
  */
 class HubClient
 {

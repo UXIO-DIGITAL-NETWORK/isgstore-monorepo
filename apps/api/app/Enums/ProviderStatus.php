@@ -5,24 +5,24 @@ declare(strict_types=1);
 namespace App\Enums;
 
 /**
- * transactions.provider_status — did the SUPPLIER (uxiotopup) deliver?
+ * transactions.provider_status — did the SUPPLIER (uxiolabs) deliver?
  *
  * `TransactionStatus` conflates two independent lifecycles: whether the customer
- * paid (Monetapay) and whether the supplier delivered (uxiotopup). This enum owns
+ * paid (Monetapay) and whether the supplier delivered (uxiolabs). This enum owns
  * the second half alone, so the two can be read, filtered and reported on
  * separately.
  *
  * Three cases name situations `TransactionStatus` flattens today, and each one
  * an operator acts on differently:
  *
- * - REJECTED vs UNDELIVERED. `ProcessUxiotopupTopup::failed()` (retries exhausted,
+ * - REJECTED vs UNDELIVERED. `ProcessUxiolabsTopup::failed()` (retries exhausted,
  *   we never got a verdict) writes exactly the same FAILED_PROVIDER as an explicit
  *   `cancel` from the supplier. The right response is opposite: retry the first,
  *   refund the second.
- * - UNCONFIRMED. `SyncProcessingUxiotopupCommand` already alerts on this state and
+ * - UNCONFIRMED. `SyncProcessingUxiolabsCommand` already alerts on this state and
  *   recognises it by guessing at `supplier_trx_id IS NULL`. Naming it replaces a
  *   heuristic with a fact, and lets the alert say which of the two happened: the
- *   worker died mid-call, or uxiotopup holds our order and we lost its id.
+ *   worker died mid-call, or uxiolabs holds our order and we lost its id.
  *
  * Stored as a plain string with an enum cast, not a native DB enum — see the
  * migration for why.
@@ -38,11 +38,11 @@ enum ProviderStatus: string
     /** The `/order` call is in flight, or between queue retries. */
     case SENDING = 'SENDING';
 
-    /** uxiotopup accepted it; we hold `supplier_trx_id`, so it is pollable. */
+    /** uxiolabs accepted it; we hold `supplier_trx_id`, so it is pollable. */
     case ORDERED = 'ORDERED';
 
     /**
-     * The order reached uxiotopup — it answered "idtrx sudah ada" — but we hold
+     * The order reached uxiolabs — it answered "idtrx sudah ada" — but we hold
      * no order id, and `/status` has no lookup by our own reference. Not pollable;
      * only the callback can finish it.
      */
@@ -70,7 +70,7 @@ enum ProviderStatus: string
 
     /**
      * States where an order is out but we cannot poll for its result — the two
-     * the reaper (`SyncProcessingUxiotopupCommand`) has to chase by hand.
+     * the reaper (`SyncProcessingUxiolabsCommand`) has to chase by hand.
      */
     public static function unpollable(): array
     {
@@ -86,14 +86,14 @@ enum ProviderStatus: string
      * apply within a given `TransactionStatus`.
      *
      * `sn` is deliberately NOT read as evidence of success —
-     * `ProcessUxiotopupTransactionAction` writes it from `keterangan` even on a
+     * `ProcessUxiolabsTransactionAction` writes it from `keterangan` even on a
      * PROCESSING response.
      */
     public static function backfillFor(string $status, ?string $supplierTrxId, ?string $supplierStatus): self
     {
         $said = strtolower(trim((string) $supplierStatus));
 
-        // uxiotopup's documented vocabulary is pending|processing|paid|success|
+        // uxiolabs's documented vocabulary is pending|processing|paid|success|
         // cancel|refund. The Indonesian words are legacy from the Digiflazz era
         // the column comment still mentions; accepting both costs nothing.
         $saidDelivered = in_array($said, ['success', 'sukses'], true);

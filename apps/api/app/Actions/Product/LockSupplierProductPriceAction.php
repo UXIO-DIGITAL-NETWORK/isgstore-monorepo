@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
  *
  * The lock guards the *selling* price, not the supplier cost. `ProductPriceControlAction`
  * reads it (via `products.is_price_locked`) and refuses to re-derive a product's four
- * selling prices from a changed cost. `CheckUxiotopupPricesAction` deliberately does NOT
+ * selling prices from a changed cost. `CheckUxiolabsPricesAction` deliberately does NOT
  * read it: the 5-minute sync only ever writes `supplier_products.price`, which is the
  * supplier's own cost — a fact, not a decision. Freezing that would leave a stale cost
  * behind checkout's margin guard and silently sell below cost.

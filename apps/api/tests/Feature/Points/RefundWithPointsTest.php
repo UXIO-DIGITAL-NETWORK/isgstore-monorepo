@@ -46,7 +46,9 @@ class RefundWithPointsTest extends TestCase
             'product_id' => $product->id,
             'payment_channel_id' => $channel->id,
             'status' => TransactionStatus::FAILED_PROVIDER->value,
-            'amount_base' => $cash + $pointsSpent,
+            // Points come off before the fee, so `amount_base` is the cash part
+            // of the product price — exactly what a refund gives back.
+            'amount_base' => $cash,
             'points_spent' => $pointsSpent,
             'points_spent_amount' => $pointsSpent,
         ]);

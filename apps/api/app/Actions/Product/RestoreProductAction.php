@@ -66,7 +66,7 @@ class RestoreProductAction
     }
 
     /**
-     * The archived product's own code is the uxiotopup service id — every path
+     * The archived product's own code is the uxiolabs service id — every path
      * that creates one (promote, manual add, Excel import) copies it across.
      *
      * @return array<int,string>
