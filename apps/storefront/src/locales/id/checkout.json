@@ -151,7 +151,7 @@
   "points": {
     "title": "Pakai Poin",
     "available": "Kamu punya {{points}} poin (setara {{value}}).",
-    "useMax": "Pakai Semua",
+    "useAll": "Pakai {{points}} poin ({{value}}) untuk memotong harga",
     "applied": "Potongan poin {{value}} diterapkan.",
     "coversAll": "Poin menutupi seluruh pembayaran — tidak ada yang perlu dibayar.",
     "notAllowed": "Paket membership kamu sudah termasuk potongan harga, jadi poin tidak bisa dipakai."

@@ -26,7 +26,7 @@ export default function ContactDetail({ whatsapp, onWhatsappChange, email, onEma
   const emailError = emailTouched && (emailEmpty || emailInvalidFormat);
 
   return (
-    <SectionCard stepNumber={4} title={t("contact.title")} gradientBorder>
+    <SectionCard stepNumber={5} title={t("contact.title")} gradientBorder>
       <Box className="flex flex-col gap-3">
         {/* WhatsApp field */}
         <Box className="flex flex-col gap-1.5">

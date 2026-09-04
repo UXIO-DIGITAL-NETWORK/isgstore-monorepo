@@ -4,8 +4,7 @@ import { Coins } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import SectionCard from "@/features/checkout/components/SectionCard";
 import { applyPoints, maxRedeemablePoints } from "@/features/checkout/lib/points";
 import { formatCurrency, formatNumber } from "@/lib/format";
@@ -18,8 +17,8 @@ interface Props {
   rate: number;
   /** The package price the points are applied to. */
   price: number;
-  value: number;
-  onChange: (points: number) => void;
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
   /** False when the member's plan already buys a discount. */
   allowed: boolean;
 }
@@ -31,14 +30,19 @@ interface Props {
  * cover part of an order, and modelling them as a channel would make a small
  * balance useless until it grew. When they do cover everything, the order simply
  * owes nothing and no gateway is called.
+ *
+ * One checkbox, no amount to type: ticking it spends as many points as the
+ * order can absorb. A part-redemption never made anyone better off — points are
+ * worth a fixed rate whenever they are spent — so the number input was friction
+ * charging the customer a decision it could make for them.
  */
 export default function PointsRedeem({
   stepNumber,
   balance,
   rate,
   price,
-  value,
-  onChange,
+  checked,
+  onToggle,
   allowed,
 }: Props): React.JSX.Element | null {
   const { t, i18n } = useTranslation("checkout");
@@ -48,7 +52,7 @@ export default function PointsRedeem({
   if (balance === null || balance <= 0) return null;
 
   const max = maxRedeemablePoints(price, balance, rate);
-  const applied = applyPoints(price, balance, rate, value);
+  const applied = applyPoints(price, balance, rate, checked ? max : 0);
 
   return (
     <SectionCard stepNumber={stepNumber} title={t("points.title")} gradientBorder>
@@ -68,26 +72,24 @@ export default function PointsRedeem({
           </Box>
         ) : (
           <>
-            <Box className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={0}
-                max={max}
-                value={value === 0 ? "" : String(value)}
-                onChange={(e) => {
-                  const next = Number(e.target.value);
-                  onChange(Number.isFinite(next) ? Math.max(0, Math.min(next, max)) : 0);
-                }}
-                placeholder="0"
+            <Box
+              as="label"
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 cursor-pointer hover:border-[#3B82F6]/40 transition-colors"
+            >
+              <Checkbox
+                checked={checked}
+                // Nothing to redeem against an empty cart — the order has to be
+                // worth at least one point before the choice means anything.
+                disabled={max <= 0}
+                onChange={(e) => onToggle(e.target.checked)}
               />
-              <Button
-                type="button"
-                onClick={() => onChange(max)}
-                className="shrink-0 px-4 py-2.5 text-[12px]"
-              >
-                <Coins className="w-3.5 h-3.5 shrink-0" />
-                {t("points.useMax")}
-              </Button>
+              <Coins className="w-4 h-4 text-[#C084FC] shrink-0" />
+              <Text as="span" className="font-inter text-[12px] text-white/80 leading-snug">
+                {t("points.useAll", {
+                  points: formatNumber(max, locale),
+                  value: formatCurrency(max * rate, locale),
+                })}
+              </Text>
             </Box>
 
             {applied.points > 0 && (
