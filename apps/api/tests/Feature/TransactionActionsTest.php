@@ -96,7 +96,7 @@ class TransactionActionsTest extends TestCase
             ->assertUnprocessable();
     }
 
-    public function test_resend_callback_syncs_status_from_uxiotopup(): void
+    public function test_resend_callback_syncs_status_from_uxiolabs(): void
     {
         $this->actingAsAdmin();
         $product = Product::factory()->create();
@@ -104,7 +104,7 @@ class TransactionActionsTest extends TestCase
         $transaction = Transaction::factory()->create([
             'product_id' => $product->id,
             'status' => 'PROCESSING',
-            'supplier_trx_id' => 'UXORDER-999', // /status polls by uxiotopup's own invoice
+            'supplier_trx_id' => 'UXORDER-999', // /status polls by uxiolabs's own invoice
         ]);
 
         Http::fake(['*/status' => Http::response([
@@ -119,7 +119,7 @@ class TransactionActionsTest extends TestCase
             ->assertJsonPath('data.sn', 'SN-999');
     }
 
-    public function test_retry_redispatches_to_uxiotopup(): void
+    public function test_retry_redispatches_to_uxiolabs(): void
     {
         $this->actingAsAdmin();
         $product = Product::factory()->create();
@@ -139,7 +139,7 @@ class TransactionActionsTest extends TestCase
     }
 
     /**
-     * A retried order that already reached uxiotopup hits their duplicate-idtrx
+     * A retried order that already reached uxiolabs hits their duplicate-idtrx
      * guard — the retry must settle to PROCESSING (awaiting callback), never
      * double-order or error out.
      */

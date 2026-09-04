@@ -58,9 +58,9 @@ class ProviderProductActionsTest extends TestCase
     {
         $this->actingAsAdmin();
         $system = Supplier::factory()->create(['is_system' => true]);
-        $uxiotopup = Supplier::factory()->create(['is_system' => false]);
+        $uxiolabs = Supplier::factory()->create(['is_system' => false]);
         $this->pooledFor($system);
-        $this->pooledFor($uxiotopup);
+        $this->pooledFor($uxiolabs);
 
         $this->getJson("/api/v1/supplier-products?supplier_id={$system->id}")
             ->assertOk()

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  * Is the queue worker actually consuming?
  *
  * A dead worker is the most damaging silent failure this app has: the customer
- * pays, ProcessUxiotopupTopup never runs, and the order simply never reaches the
+ * pays, ProcessUxiolabsTopup never runs, and the order simply never reaches the
  * supplier. Nothing errors — the job just sits in `jobs` forever. Config sync,
  * status polling and merchant payouts stop with it.
  *
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
  * process from supervisor, so it can still speak when the worker cannot.
  *
  * The signal is deliberately "due and untouched", not "queue is non-empty":
- * PollUxiotopupStatusJob re-schedules itself minutes into the future by design,
+ * PollUxiolabsStatusJob re-schedules itself minutes into the future by design,
  * so a healthy queue is often far from empty. Only a job whose `available_at`
  * passed a while ago proves nobody is picking work up.
  */

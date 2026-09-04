@@ -167,10 +167,10 @@ class ProductController extends Controller
         );
     }
 
-    public function bulkUxiotopupUpdate(BulkProductActionRequest $request, BulkProductAction $action)
+    public function bulkUxiolabsUpdate(BulkProductActionRequest $request, BulkProductAction $action)
     {
         return $this->successResponse(
-            $action->uxiotopupUpdate($request->validated('ids')),
+            $action->uxiolabsUpdate($request->validated('ids')),
             'Products updated from supplier successfully'
         );
     }

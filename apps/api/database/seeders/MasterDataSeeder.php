@@ -10,10 +10,10 @@ class MasterDataSeeder extends Seeder
 {
     /**
      * Idempotent safety net for the master data the integration cannot run
-     * without — currently just the Uxiotopup supplier.
+     * without — currently just the Uxiolabs supplier.
      *
-     * `CreateUxiotopupProductAction` and `CheckUxiotopupPricesAction` both
-     * resolve it with `Supplier::where('name', 'Uxiotopup')->firstOrFail()`, so a
+     * `CreateUxiolabsProductAction` and `CheckUxiolabsPricesAction` both
+     * resolve it with `Supplier::where('name', 'Uxiolabs')->firstOrFail()`, so a
      * missing row is a 500 on the price checker and on every SKU import. It is
      * repeated here rather than left to SupplierSeeder because SupplierSeeder
      * uses a raw insert with fixed ids — it cannot run twice, and it does not run
@@ -28,7 +28,7 @@ class MasterDataSeeder extends Seeder
         $now = Carbon::now();
 
         DB::table('suppliers')->updateOrInsert(
-            ['name' => 'Uxiotopup'],
+            ['name' => 'Uxiolabs'],
             ['status' => true, 'created_at' => $now, 'updated_at' => $now]
         );
     }

@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\PaymentStatus;
 use App\Enums\TransactionStatus;
-use App\Jobs\ProcessUxiotopupTopup;
+use App\Jobs\ProcessUxiolabsTopup;
 use App\Models\Payment;
 use App\Services\Payment\MonetapayService;
 use App\Support\Payment\PaymentExpiry;
@@ -143,7 +143,7 @@ class SyncExpiredPaymentsCommand extends Command
             });
 
             if ($dispatched) {
-                ProcessUxiotopupTopup::dispatch($payment->transaction->fresh());
+                ProcessUxiolabsTopup::dispatch($payment->transaction->fresh());
             }
 
             Log::info('payments:sync-expired updated', [

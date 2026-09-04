@@ -7,7 +7,7 @@ readonly class CreateSupplierProductDTO
     /**
      * `productId` is nullable because a mapping can sit in the provider pool
      * before it is promoted to a Main Product. The admin CRUD endpoint still
-     * requires one; pooling goes through PoolUxiotopupSkusAction.
+     * requires one; pooling goes through PoolUxiolabsSkusAction.
      */
     public function __construct(
         public ?int $productId,

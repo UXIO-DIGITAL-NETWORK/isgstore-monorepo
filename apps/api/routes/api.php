@@ -91,17 +91,17 @@ use App\Http\Controllers\Api\Supplier\SupplierController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\User\SyncTimezoneController;
 use App\Http\Controllers\Api\User\UserController;
-use App\Http\Controllers\Api\Uxiotopup\PriceChangeLogController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupBalanceController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupCategoryController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupPoolController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupPriceListController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupProductController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupProductImportController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupSkuLookupController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupSyncController;
-use App\Http\Controllers\Api\Uxiotopup\UxiotopupTransactionStatusController;
-use App\Http\Controllers\Api\Uxiotopup\WebhookUxiotopupController;
+use App\Http\Controllers\Api\Uxiolabs\PriceChangeLogController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsBalanceController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsCategoryController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsPoolController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsPriceListController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsProductController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsProductImportController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsSkuLookupController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsSyncController;
+use App\Http\Controllers\Api\Uxiolabs\UxiolabsTransactionStatusController;
+use App\Http\Controllers\Api\Uxiolabs\WebhookUxiolabsController;
 use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -133,7 +133,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/monetapay/subscription/callback/active', [MonetapaySubscriptionCallbackController::class, 'active']);
         Route::post('/monetapay/subscription/callback/deduct/before', [MonetapaySubscriptionCallbackController::class, 'beforeDeduct']);
         Route::post('/monetapay/subscription/callback/deduct/after', [MonetapaySubscriptionCallbackController::class, 'afterDeduct']);
-        Route::post('/uxiotopup/callback', [WebhookUxiotopupController::class, 'handle']);
+        Route::post('/uxiolabs/callback', [WebhookUxiolabsController::class, 'handle']);
+        // Legacy path, kept alive on purpose: the callback URL is sent to the
+        // supplier on every /order, so orders placed before the rename are
+        // still holding this one. Remove it once none of those can be open.
+        Route::post('/uxiotopup/callback', [WebhookUxiolabsController::class, 'handle']);
         // Payout (disbursement) result callback (7.4.2) — drives a withdrawal to
         // SETTLED/FAILED. Point Monetapay's disbursement callback URL here.
         Route::post('/disbursement/merchant/callback', DisbursementCallbackController::class);
@@ -453,7 +457,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
         Route::post('/bulk/lock-price', [ProductController::class, 'bulkLockPrice']);
         Route::post('/bulk/show-price', [ProductController::class, 'bulkShowPrice']);
         Route::post('/bulk/publish', [ProductController::class, 'bulkPublish']);
-        Route::post('/bulk/uxiotopup-update', [ProductController::class, 'bulkUxiotopupUpdate']);
+        Route::post('/bulk/uxiolabs-update', [ProductController::class, 'bulkUxiolabsUpdate']);
         Route::post('/bulk/delete', [ProductController::class, 'bulkDelete']);
         Route::get('/{product}', [ProductController::class, 'show']);
         Route::put('/{product}', [ProductController::class, 'update']);
@@ -489,7 +493,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
         Route::post('/{supplierProduct}/publish', [SupplierProductController::class, 'publish']);
     });
 
-    // Pricing Rules (markup config used by the uxiotopup price sync)
+    // Pricing Rules (markup config used by the uxiolabs price sync)
     Route::apiResource('pricing-rules', PricingRuleController::class);
 
     // Membership plans (loyalty tiers) — admin CRUD; storefront reads its own
@@ -514,32 +518,32 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
     Route::put('/settings', [SettingController::class, 'update']);
     Route::post('/settings/upload', [SettingController::class, 'upload']);
 
-    // Uxiotopup Admin Tools
-    Route::get('/uxiotopup/balance', [UxiotopupBalanceController::class, 'index']);
-    Route::post('/uxiotopup/check-status', [UxiotopupTransactionStatusController::class, 'check']);
-    Route::post('/uxiotopup/sync-products', [UxiotopupSyncController::class, 'sync']);
+    // Uxiolabs Admin Tools
+    Route::get('/uxiolabs/balance', [UxiolabsBalanceController::class, 'index']);
+    Route::post('/uxiolabs/check-status', [UxiolabsTransactionStatusController::class, 'check']);
+    Route::post('/uxiolabs/sync-products', [UxiolabsSyncController::class, 'sync']);
 
-    // Uxiotopup Manual Product Management (products are never auto-created)
-    // Browse the whole uxiotopup price list (Product Provider tab) — reads the
-    // shared 5-min cache, so paging/searching never hits uxiotopup upstream.
-    Route::get('/uxiotopup/price-list', [UxiotopupPriceListController::class, 'index']);
+    // Uxiolabs Manual Product Management (products are never auto-created)
+    // Browse the whole uxiolabs price list (Product Provider tab) — reads the
+    // shared 5-min cache, so paging/searching never hits uxiolabs upstream.
+    Route::get('/uxiolabs/price-list', [UxiolabsPriceListController::class, 'index']);
     // The provider's own `kategori` values, for the Category Provider dropdown.
     // Free text upstream, so offering the live list is what stops an admin
     // mapping a category that matches nothing.
-    Route::get('/uxiotopup/categories', [UxiotopupCategoryController::class, 'index']);
+    Route::get('/uxiolabs/categories', [UxiolabsCategoryController::class, 'index']);
     // The Add-panel feed: SKUs whose kategori has a configured Category Provider.
-    Route::get('/uxiotopup/pool-candidates', [UxiotopupPoolController::class, 'candidates']);
-    Route::get('/uxiotopup/pool-summary', [UxiotopupPoolController::class, 'summary']);
-    Route::post('/uxiotopup/pool', [UxiotopupPoolController::class, 'store']);
-    Route::get('/uxiotopup/sku-preview', [UxiotopupSkuLookupController::class, 'show']);
-    Route::post('/uxiotopup/products', [UxiotopupProductController::class, 'store']);
-    Route::post('/uxiotopup/products/bulk', [UxiotopupProductController::class, 'bulkStore']);
-    Route::get('/uxiotopup/products/import-template', [UxiotopupProductImportController::class, 'template']);
-    Route::post('/uxiotopup/products/import', [UxiotopupProductImportController::class, 'import']);
+    Route::get('/uxiolabs/pool-candidates', [UxiolabsPoolController::class, 'candidates']);
+    Route::get('/uxiolabs/pool-summary', [UxiolabsPoolController::class, 'summary']);
+    Route::post('/uxiolabs/pool', [UxiolabsPoolController::class, 'store']);
+    Route::get('/uxiolabs/sku-preview', [UxiolabsSkuLookupController::class, 'show']);
+    Route::post('/uxiolabs/products', [UxiolabsProductController::class, 'store']);
+    Route::post('/uxiolabs/products/bulk', [UxiolabsProductController::class, 'bulkStore']);
+    Route::get('/uxiolabs/products/import-template', [UxiolabsProductImportController::class, 'template']);
+    Route::post('/uxiolabs/products/import', [UxiolabsProductImportController::class, 'import']);
 
-    // Uxiotopup Price Change Log — read-only audit trail of what the 5-minute
+    // Uxiolabs Price Change Log — read-only audit trail of what the 5-minute
     // checker auto-repriced, skipped (locked) or flagged (deactivated / negative margin).
-    Route::get('/uxiotopup/price-change-logs', [PriceChangeLogController::class, 'index']);
+    Route::get('/uxiolabs/price-change-logs', [PriceChangeLogController::class, 'index']);
 
     // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.
     // Outbound signed calls to Monetapay; mirror the spec's query endpoints.

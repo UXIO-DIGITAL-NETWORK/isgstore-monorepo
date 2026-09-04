@@ -71,7 +71,7 @@ class ShowIntegrationChannelAction
             'monetapay' => filter_var($cfg['is_production'] ?? false, FILTER_VALIDATE_BOOLEAN)
                 ? 'https://api.monetapay.net'
                 : 'https://sandbox-api.monetapay.net',
-            'uxiotopup' => (string) ($cfg['base_url'] ?? 'https://api.uxiotopup.id'),
+            'uxiolabs' => (string) ($cfg['base_url'] ?? 'https://api.uxiotopup.id'),
             'piwapi' => (string) ($cfg['api_url'] ?? 'https://piwapi.com/api/send/whatsapp'),
             default => null,
         };

@@ -39,7 +39,7 @@ class TransactionResource extends JsonResource
             // order's combined lifecycle (unchanged, still what every guard reads);
             // `provider_status` is the supplier's half alone, normalized;
             // `payment_status` is the gateway's half, as a word rather than the
-            // '1'..'4' storage code; `supplier_status` is uxiotopup's own raw
+            // '1'..'4' storage code; `supplier_status` is uxiolabs's own raw
             // wording, kept as evidence and never authoritative.
             'status' => $this->status,
             'provider_status' => $this->provider_status,

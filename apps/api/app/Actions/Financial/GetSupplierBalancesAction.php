@@ -3,19 +3,19 @@
 namespace App\Actions\Financial;
 
 use App\Models\Supplier;
-use App\Services\UxiotopupService;
+use App\Services\UxiolabsService;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Only uxiotopup has a live balance-check integration (UxiotopupService).
+ * Only uxiolabs has a live balance-check integration (UxiolabsService).
  * Other suppliers (e.g. "VIP Reseller", "Internal System" — see
  * SupplierSeeder) have no such API, so their balance is null rather than
  * a fabricated number.
  */
 class GetSupplierBalancesAction
 {
-    public function __construct(private readonly UxiotopupService $uxiotopupService) {}
+    public function __construct(private readonly UxiolabsService $uxiolabsService) {}
 
     public function execute(): array
     {
@@ -25,26 +25,26 @@ class GetSupplierBalancesAction
             ->map(fn (Supplier $supplier) => [
                 'id' => $supplier->id,
                 'name' => $supplier->name,
-                'balance' => $this->isUxiotopup($supplier) ? $this->uxiotopupBalance() : null,
+                'balance' => $this->isUxiolabs($supplier) ? $this->uxiolabsBalance() : null,
             ])
             ->all();
     }
 
-    private function isUxiotopup(Supplier $supplier): bool
+    private function isUxiolabs(Supplier $supplier): bool
     {
-        return strtolower($supplier->name) === 'uxiotopup';
+        return strtolower($supplier->name) === 'uxiolabs';
     }
 
-    private function uxiotopupBalance(): ?float
+    private function uxiolabsBalance(): ?float
     {
         try {
-            // Cached (60s) so the admin panel + integration poll never hit uxiotopup
+            // Cached (60s) so the admin panel + integration poll never hit uxiolabs
             // live on every request — that live call is what hangs the server.
-            $data = $this->uxiotopupService->getBalanceCached();
+            $data = $this->uxiolabsService->getBalanceCached();
 
             return isset($data['saldo']) && is_numeric($data['saldo']) ? (float) $data['saldo'] : null;
         } catch (Exception $e) {
-            Log::warning('GetSupplierBalancesAction: uxiotopup balance check failed', ['message' => $e->getMessage()]);
+            Log::warning('GetSupplierBalancesAction: uxiolabs balance check failed', ['message' => $e->getMessage()]);
 
             return null;
         }

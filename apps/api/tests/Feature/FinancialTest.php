@@ -99,10 +99,10 @@ class FinancialTest extends TestCase
             ->assertJsonPath('data.0.held_balance', null);
     }
 
-    public function test_suppliers_returns_uxiotopup_balance_and_null_for_others(): void
+    public function test_suppliers_returns_uxiolabs_balance_and_null_for_others(): void
     {
         $this->actingAsAdmin();
-        Supplier::factory()->create(['name' => 'Uxiotopup']);
+        Supplier::factory()->create(['name' => 'Uxiolabs']);
         Supplier::factory()->create(['name' => 'VIP Reseller']);
         Supplier::factory()->create(['name' => 'Internal System']);
         Http::fake(['*/saldo' => Http::response(['status' => true, 'msg' => 'berhasil', 'data' => ['saldo' => 500000]], 200)]);
@@ -110,7 +110,7 @@ class FinancialTest extends TestCase
         $response = $this->getJson('/api/v1/financial/suppliers')->assertOk();
         $suppliers = collect($response->json('data'))->keyBy('name');
 
-        $this->assertEquals(500000, $suppliers['Uxiotopup']['balance']);
+        $this->assertEquals(500000, $suppliers['Uxiolabs']['balance']);
         $this->assertNull($suppliers['VIP Reseller']['balance']);
         $this->assertNull($suppliers['Internal System']['balance']);
     }

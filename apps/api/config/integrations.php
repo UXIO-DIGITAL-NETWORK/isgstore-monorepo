@@ -13,7 +13,7 @@
  */
 return [
     'monetapay' => [
-        'label' => 'Monetapay',
+        'label' => 'Payment Gateway',
         'type' => 'payment_gateway',
         'fields' => [
             ['key' => 'mch_id', 'label' => 'Merchant ID', 'type' => 'text', 'secret' => false],
@@ -27,8 +27,8 @@ return [
         ],
     ],
 
-    'uxiotopup' => [
-        'label' => 'Uxiotopup',
+    'uxiolabs' => [
+        'label' => 'Uxiolabs',
         'type' => 'supplier',
         'fields' => [
             ['key' => 'api_key', 'label' => 'API Key', 'type' => 'password', 'secret' => true],

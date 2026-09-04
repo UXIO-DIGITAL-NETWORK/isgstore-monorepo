@@ -66,7 +66,7 @@ class OrderFormSchemaSeeder extends Seeder
             // between accounts and regions, so only "required" and digits-only are
             // enforced. Fixed-format fields further down (phone, meter) keep theirs.
             'mlbb' => [
-                // uxiotopup targets are pipe-joined: "dataId|zoneId".
+                // uxiolabs targets are pipe-joined: "dataId|zoneId".
                 'customer_no_template' => '{user_id}|{zone_id}',
                 'fields' => [
                     [

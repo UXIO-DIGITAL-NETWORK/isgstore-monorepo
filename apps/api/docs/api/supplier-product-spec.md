@@ -1,7 +1,7 @@
 # Artifact: Supplier & Product API Specification
 
 ## Overview
-This module handles the core inventory, multi-tier pricing strategies, and third-party supplier mappings (e.g., uxiotopup). It isolates our internal SKUs (`products`) from external provider SKUs (`supplier_products`), allowing seamless switching of providers without affecting the frontend user experience.
+This module handles the core inventory, multi-tier pricing strategies, and third-party supplier mappings (e.g., uxiolabs). It isolates our internal SKUs (`products`) from external provider SKUs (`supplier_products`), allowing seamless switching of providers without affecting the frontend user experience.
 
 ## Architecture Stack
 * **Framework:** Laravel 11
@@ -10,7 +10,7 @@ This module handles the core inventory, multi-tier pricing strategies, and third
 * **Security:** Sanctum Authentication, Explicit Audit Trails
 
 ## Entity Relationships & Strategy
-1. **Suppliers:** Master data for external providers (e.g., uxiotopup, VIP Reseller).
+1. **Suppliers:** Master data for external providers (e.g., uxiolabs, VIP Reseller).
 2. **Supplier Categories:** Maps our internal `category_id` to the supplier's category code (e.g., Mobile Legends might be "MLBB" at the supplier).
 3. **Products:** Our internal catalog with multi-tier pricing (`price_member`, `price_vip`, etc.). Uses a unique internal `code`.
 4. **Supplier Products:** The bridge. Maps our internal `product_id` to the external `buyer_sku_code`.

@@ -208,7 +208,7 @@
         <section id="webhooks">
             <div class="sec-head"><h2>Payment Webhooks</h2><span class="badge b-webhook">Webhook</span></div>
             <p class="sec-desc">
-                Inbound callbacks from Monetapay (pay-in, disbursement, subscription) and the uxiotopup supplier.
+                Inbound callbacks from Monetapay (pay-in, disbursement, subscription) and the uxiolabs supplier.
                 Public routes, throttled per IP — the real gate is the signature / source-IP check inside each handler.
             </p>
             <div class="grid">
@@ -229,9 +229,9 @@
                     <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/monetapay/subscription/callback/deduct/after</span></div>
                 </div>
                 <div class="group">
-                    <div class="group-title">Uxiotopup supplier</div>
+                    <div class="group-title">Uxiolabs supplier</div>
                     <div class="group-note">Order fulfilment result. Authenticated by source IP (no signature) — finalises the transaction to COMPLETED / FAILED_PROVIDER.</div>
-                    <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/uxiotopup/callback</span></div>
+                    <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/uxiolabs/callback</span></div>
                 </div>
             </div>
         </section>
@@ -355,7 +355,7 @@
             <div class="sec-head"><h2>Admin Management</h2><span class="badge b-admin">Admin</span></div>
             <p class="sec-desc">
                 The back-office CRUD — <code>auth:sanctum</code> + the <code>admin</code> role gate. Catalog, pricing, content,
-                the uxiotopup price checker and the Monetapay operator tools all live here.
+                the uxiolabs price checker and the Monetapay operator tools all live here.
             </p>
             <div class="grid">
                 <div class="group">
@@ -385,16 +385,16 @@
                     <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/pricing-rules</span></div>
                 </div>
                 <div class="group">
-                    <div class="group-title">Uxiotopup tools</div>
+                    <div class="group-title">Uxiolabs tools</div>
                     <div class="group-note">Supplier balance, the manual price sync, pooled-SKU onboarding and the auto-repricer audit trail.</div>
-                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiotopup/balance</span></div>
-                    <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/uxiotopup/sync-products</span></div>
-                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiotopup/price-list</span></div>
-                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiotopup/pool-candidates</span></div>
-                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiotopup/sku-preview</span></div>
-                    <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/uxiotopup/products</span></div>
-                    <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/uxiotopup/products/import</span></div>
-                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiotopup/price-change-logs</span></div>
+                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiolabs/balance</span></div>
+                    <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/uxiolabs/sync-products</span></div>
+                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiolabs/price-list</span></div>
+                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiolabs/pool-candidates</span></div>
+                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiolabs/sku-preview</span></div>
+                    <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/uxiolabs/products</span></div>
+                    <div class="ep"><span class="method m-post">POST</span><span class="path">/v1/uxiolabs/products/import</span></div>
+                    <div class="ep"><span class="method m-get">GET</span><span class="path">/v1/uxiolabs/price-change-logs</span></div>
                 </div>
                 <div class="group">
                     <div class="group-title">Monetapay operator</div>

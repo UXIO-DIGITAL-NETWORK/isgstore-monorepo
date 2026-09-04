@@ -25,12 +25,12 @@ class BalanceCachingTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
-        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        config(['services.uxiolabs.api_key' => 'test-api-key']);
     }
 
-    public function test_supplier_balance_hits_uxiotopup_only_once_within_the_cache_window(): void
+    public function test_supplier_balance_hits_uxiolabs_only_once_within_the_cache_window(): void
     {
-        Supplier::factory()->create(['name' => 'Uxiotopup']);
+        Supplier::factory()->create(['name' => 'Uxiolabs']);
         Http::fake(['*/saldo' => Http::response(['status' => true, 'msg' => 'berhasil', 'data' => ['saldo' => 500000]], 200)]);
 
         $action = app(GetSupplierBalancesAction::class);
@@ -57,7 +57,7 @@ class BalanceCachingTest extends TestCase
 
     public function test_a_failing_upstream_returns_a_null_balance_rather_than_erroring(): void
     {
-        Supplier::factory()->create(['name' => 'Uxiotopup']);
+        Supplier::factory()->create(['name' => 'Uxiolabs']);
         Http::fake(['*/saldo' => Http::response(['message' => 'error'], 500)]);
 
         $result = app(GetSupplierBalancesAction::class)->execute();

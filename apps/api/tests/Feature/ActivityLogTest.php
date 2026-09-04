@@ -68,14 +68,14 @@ class ActivityLogTest extends TestCase
     {
         $this->actingAsAdmin();
 
-        ActivityLog::factory()->system()->create(['message' => 'Uxiotopup order sent for INV-20260822-0001. Status: pending']);
+        ActivityLog::factory()->system()->create(['message' => 'Uxiolabs order sent for INV-20260822-0001. Status: pending']);
         ActivityLog::factory()->system()->create(['message' => 'Callback processed — Monetapay status: 3 | Ref: PAY-INV-20260822-0001-01']);
         ActivityLog::factory()->create(['user_id' => null, 'message' => 'Checkout INV-20260822-0001 — Diamonds (Guest)']);
 
         $messages = collect($this->getJson('/api/v1/activity-logs')->assertOk()->json('data.data'))
             ->pluck('message');
 
-        $this->assertFalse($messages->contains('Uxiotopup order sent for INV-20260822-0001. Status: pending'));
+        $this->assertFalse($messages->contains('Uxiolabs order sent for INV-20260822-0001. Status: pending'));
         $this->assertFalse($messages->contains('Callback processed — Monetapay status: 3 | Ref: PAY-INV-20260822-0001-01'));
         $this->assertTrue($messages->contains('Checkout INV-20260822-0001 — Diamonds (Guest)'));
     }
@@ -98,13 +98,13 @@ class ActivityLogTest extends TestCase
         $transaction = Transaction::factory()->create();
         ActivityLog::factory()->system()->create([
             'transaction_id' => $transaction->id,
-            'message' => 'Uxiotopup order sent for INV-20260822-0003. Status: pending',
+            'message' => 'Uxiolabs order sent for INV-20260822-0003. Status: pending',
         ]);
 
         $response = $this->getJson("/api/v1/activity-logs?transaction_id={$transaction->id}")->assertOk();
         $messages = collect($response->json('data.data'))->pluck('message');
 
-        $this->assertTrue($messages->contains('Uxiotopup order sent for INV-20260822-0003. Status: pending'));
+        $this->assertTrue($messages->contains('Uxiolabs order sent for INV-20260822-0003. Status: pending'));
         $response->assertJsonPath('data.data.0.actor', 'System');
     }
 

@@ -61,7 +61,7 @@ class TwoFactorAction
             'otpauth_uri' => Totp::provisioningUri(
                 $secret,
                 (string) $user->email,
-                (string) config('services.storefront.brand', 'UXIOTOPUP'),
+                (string) config('services.storefront.brand', 'UXIOLABS'),
             ),
         ];
     }

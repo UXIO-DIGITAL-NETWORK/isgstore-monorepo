@@ -59,8 +59,8 @@ class UnifiedTransactionListTest extends TestCase
     {
         return ServiceInvoice::factory()->create(array_merge([
             'merchant_id' => $merchant->id,
-            'service_id' => Service::factory()->create(['name' => 'Uxiotopup'])->id,
-            'service_name' => 'Uxiotopup',
+            'service_id' => Service::factory()->create(['name' => 'Uxiolabs'])->id,
+            'service_name' => 'Uxiolabs',
             'amount' => 250000,
         ], $over));
     }
@@ -98,7 +98,7 @@ class UnifiedTransactionListTest extends TestCase
 
         $this->assertSame('out', $rows['service']['direction']);
         $this->assertSame(250000, $rows['service']['amount']);
-        $this->assertSame('Uxiotopup', $rows['service']['title']);
+        $this->assertSame('Uxiolabs', $rows['service']['title']);
         $this->assertNull($rows['service']['payment_channel']);
     }
 

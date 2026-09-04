@@ -22,7 +22,7 @@ use App\Models\Setting;
  */
 final class WebsiteService
 {
-    private const DEFAULT_CODE = 'uxiotopup';
+    private const DEFAULT_CODE = 'uxiolabs';
 
     public static function code(): string
     {

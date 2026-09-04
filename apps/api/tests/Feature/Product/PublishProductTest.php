@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Product;
 
-use App\Actions\Uxiotopup\CheckUxiotopupPricesAction;
+use App\Actions\Uxiolabs\CheckUxiolabsPricesAction;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Role;
@@ -28,7 +28,7 @@ class PublishProductTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Supplier $uxiotopup;
+    private Supplier $uxiolabs;
 
     protected function setUp(): void
     {
@@ -36,7 +36,7 @@ class PublishProductTest extends TestCase
 
         $role = Role::factory()->create(['name' => 'Admin']);
         Sanctum::actingAs(User::factory()->create(['role_id' => $role->id]), ['access-api']);
-        $this->uxiotopup = Supplier::factory()->create(['name' => 'Uxiotopup']);
+        $this->uxiolabs = Supplier::factory()->create(['name' => 'Uxiolabs']);
         Cache::flush();
     }
 
@@ -58,7 +58,7 @@ class PublishProductTest extends TestCase
 
     private function mappingFor(Product $product, array $overrides = []): SupplierProduct
     {
-        return SupplierProduct::factory()->for($product)->for($this->uxiotopup)->create([
+        return SupplierProduct::factory()->for($product)->for($this->uxiolabs)->create([
             'buyer_sku_code' => 'ML5',
             'price' => 10000,
             'is_active' => false,
@@ -133,7 +133,7 @@ class PublishProductTest extends TestCase
                 'category' => 'Games',
                 'brand' => 'MOBILE LEGENDS',
                 'type' => 'Umum',
-                'seller_name' => 'Uxiotopup',
+                'seller_name' => 'Uxiolabs',
                 'price' => 10000,
                 'harga' => 10000,
                 'buyer_sku_code' => 'ML5',
@@ -152,7 +152,7 @@ class PublishProductTest extends TestCase
             ]],
         ])]);
 
-        app(CheckUxiotopupPricesAction::class)->execute();
+        app(CheckUxiolabsPricesAction::class)->execute();
 
         $this->assertFalse((bool) $mapping->fresh()->is_active, 'The checker must not undo an admin decision.');
         $this->assertFalse((bool) $product->fresh()->status);

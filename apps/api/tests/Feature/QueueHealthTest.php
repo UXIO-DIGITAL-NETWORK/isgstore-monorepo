@@ -13,7 +13,7 @@ use Tests\TestCase;
  * The alarm for a silently dead queue worker.
  *
  * Its signal is deliberately "due and untouched" rather than "queue is
- * non-empty": PollUxiotopupStatusJob parks itself minutes into the future by
+ * non-empty": PollUxiolabsStatusJob parks itself minutes into the future by
  * design, so a perfectly healthy queue is routinely full of rows that nobody
  * should be consuming yet.
  */

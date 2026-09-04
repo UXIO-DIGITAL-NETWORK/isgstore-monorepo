@@ -90,7 +90,7 @@ class ServiceCatalogTest extends TestCase
      */
     public function test_cost_price_is_internal_only(): void
     {
-        Service::factory()->create(['code' => 'uxiotopup', 'cost_price' => 180000, 'selling_price' => 250000]);
+        Service::factory()->create(['code' => 'uxiolabs', 'cost_price' => 180000, 'selling_price' => 250000]);
 
         Sanctum::actingAs($this->internal(), ['access-api']);
         $this->getJson('/api/v1/payment-internal/services')
@@ -137,14 +137,14 @@ class ServiceCatalogTest extends TestCase
 
     public function test_client_catalog_hides_inactive_services(): void
     {
-        Service::factory()->create(['name' => 'Uxiotopup']);
+        Service::factory()->create(['name' => 'Uxiolabs']);
         Service::factory()->inactive()->create(['name' => 'Layanan Lama']);
         Sanctum::actingAs($this->merchant(), ['access-api']);
 
         $response = $this->getJson('/api/v1/payment-admin/services')->assertOk();
 
         $names = array_column($response->json('data.data'), 'name');
-        $this->assertContains('Uxiotopup', $names);
+        $this->assertContains('Uxiolabs', $names);
         $this->assertNotContains('Layanan Lama', $names);
     }
 

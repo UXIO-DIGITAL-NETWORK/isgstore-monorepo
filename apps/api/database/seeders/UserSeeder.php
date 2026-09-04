@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Hash;
 class UserSeeder extends Seeder
 {
     /** Shared starting password. Change it from the profile page after first login. */
-    private const PASSWORD = 'uxiotopupJaya123';
+    private const PASSWORD = 'uxiolabsJaya123';
 
     public function run(): void
     {

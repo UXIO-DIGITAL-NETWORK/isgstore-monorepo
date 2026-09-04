@@ -34,7 +34,7 @@ class TransactionReceiptTest extends TestCase
         Mail::fake();
         Http::fake(['*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'success', 'keterangan' => 'SN-1', 'id' => 'UX1']])]);
 
-        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        config(['services.uxiolabs.api_key' => 'test-api-key']);
         $product = Product::factory()->create(['price_member' => 12000]);
         SupplierProduct::factory()->for($product)->create(['price' => 10000]);
         $channel = PaymentChannel::factory()->balance()->create();

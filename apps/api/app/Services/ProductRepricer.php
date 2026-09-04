@@ -9,8 +9,8 @@ use App\Support\Membership\DefaultPlan;
 
 /**
  * The single wiring of "a mapping's cost + its authored margins + the product's
- * limits → selling prices". Both the scheduled checker (CheckUxiotopupPricesAction)
- * and the manual "Uxiotopup Update" (ProductPriceControlAction) run through this,
+ * limits → selling prices". Both the scheduled checker (CheckUxiolabsPricesAction)
+ * and the manual "Uxiolabs Update" (ProductPriceControlAction) run through this,
  * so the two can never drift on how a price is derived.
  *
  * Margins are authored per membership plan (`supplier_product_margins`). The

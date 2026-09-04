@@ -70,7 +70,7 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 3. Price is plan-resolved by `App\Support\Pricing\PlanPrice` — see **Membership-plan pricing**. Guests resolve to the default (free) plan.
 4. Margin guard: aborts if `selling_price - supplier_price < 0`. The price/margin are frozen into the Transaction row at checkout — a later supplier price change (daily sync) is margin variance, not a correctness bug.
 5. Creates `Transaction` (status: `PENDING`) then `Payment` (status: `'1'`) inside a single `DB::transaction()`.
-6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, debits through `WalletLedger::record(type: 'purchase')` (not a raw `decrement` — a statement showing a refund credit with no matching debit is worse than no statement), marks Payment `'3'`, calls `ProcessUxiotopupTransactionAction` synchronously.
+6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, debits through `WalletLedger::record(type: 'purchase')` (not a raw `decrement` — a statement showing a refund credit with no matching debit is worse than no statement), marks Payment `'3'`, calls `ProcessUxiolabsTransactionAction` synchronously.
 7. **External path**: calls `MonetapayService::createTransaction()`, returns `qr_string` or `virtual_account` to the client.
 
 Rate limiting (named limiters in `AppServiceProvider`): `throttle:checkout` (10/min) on checkout + postpaid endpoints, `throttle:webhooks` (120/min per IP) on all callback routes, `throttle:login` (5/min per IP), and a global `throttle:api` (120/min) via `bootstrap/app.php`.
@@ -84,23 +84,23 @@ PENDING → PAID → PROCESSING → COMPLETED
 ```
 
 - `EXPIRED` — payment window timed out; customer never paid (set by Monetapay callback or `payments:sync-expired`).
-- `FAILED_PROVIDER` — customer paid; the uxiotopup supplier failed to fulfil the order (status `cancel`/`refund`).
+- `FAILED_PROVIDER` — customer paid; the uxiolabs supplier failed to fulfil the order (status `cancel`/`refund`).
 - `REFUNDED` — the money has gone back. A member's order reaches it immediately (the wallet is credited inline); a guest's stays on `FAILED_PROVIDER` until an admin completes the manual transfer.
 
-**`REFUNDED` is terminal, and every terminal-state guard must list it.** uxiotopup can redeliver `cancel` then `success`; without it a late success flips a refunded order to `COMPLETED` after the customer was already paid back. The two guards are `HandleUxiotopupWebhookAction` and `HandleMonetapayCallbackAction`. `ManualReviewTransactionRequest` deliberately **rejects** `REFUNDED` — the status now asserts that money moved, so only the refund flow may write it — and `AdminRetryTransactionAction` refuses a transaction with a non-`REJECTED` refund, or the customer would get the item *and* their money.
+**`REFUNDED` is terminal, and every terminal-state guard must list it.** uxiolabs can redeliver `cancel` then `success`; without it a late success flips a refunded order to `COMPLETED` after the customer was already paid back. The two guards are `HandleUxiolabsWebhookAction` and `HandleMonetapayCallbackAction`. `ManualReviewTransactionRequest` deliberately **rejects** `REFUNDED` — the status now asserts that money moved, so only the refund flow may write it — and `AdminRetryTransactionAction` refuses a transaction with a non-`REJECTED` refund, or the customer would get the item *and* their money.
 
 Statuses are backed enums cast on the models: `App\Enums\TransactionStatus` (values are the exact uppercase strings above) and `App\Enums\PaymentStatus`. `$model->status` returns the enum instance — compare against enum cases, never raw strings; JSON output is unchanged (enums serialize to their values).
 
 ### The two lifecycles: `provider_status` vs `status`
 
-`transactions.status` answers two questions at once — did the customer pay, and did the supplier deliver — which is why `PROCESSING` cannot tell an operator whether uxiotopup has the order or the queue worker simply has not sent it yet. **`transactions.provider_status` (`App\Enums\ProviderStatus`) owns the supplier's half alone**, so the two can be read and filtered apart. `App\Enums\GatewayStatus` is the matching vocabulary for the payment half — a *projection*, not a column, over `payments.status` (`'1'..'4'`) and `service_invoices.status`, so the union feed and the frontends speak one alphabet.
+`transactions.status` answers two questions at once — did the customer pay, and did the supplier deliver — which is why `PROCESSING` cannot tell an operator whether uxiolabs has the order or the queue worker simply has not sent it yet. **`transactions.provider_status` (`App\Enums\ProviderStatus`) owns the supplier's half alone**, so the two can be read and filtered apart. `App\Enums\GatewayStatus` is the matching vocabulary for the payment half — a *projection*, not a column, over `payments.status` (`'1'..'4'`) and `service_invoices.status`, so the union feed and the frontends speak one alphabet.
 
 Three provider states name situations `TransactionStatus` flattens, and each is acted on differently:
 
 - **`REJECTED` vs `UNDELIVERED`** — an explicit supplier `cancel` versus retries running out with no verdict. Both used to write the same `FAILED_PROVIDER`; the second is worth retrying by hand, the first is not.
-- **`UNCONFIRMED`** — the duplicate-idtrx path: uxiotopup has the order but we hold no id for it, and `/status` has no lookup by our own reference, so nothing can poll it. `SyncProcessingUxiotopupCommand` already chased this state by guessing at `supplier_trx_id IS NULL`.
+- **`UNCONFIRMED`** — the duplicate-idtrx path: uxiolabs has the order but we hold no id for it, and `/status` has no lookup by our own reference, so nothing can poll it. `SyncProcessingUxiolabsCommand` already chased this state by guessing at `supplier_trx_id IS NULL`.
 
-**Never maintain `provider_status` by hand at a call site.** `App\Support\Transaction\ProviderStatusPolicy` holds the matrix (a default plus an allowed set per status) and `TransactionObserver::saving()` applies it to every save: a writer that touches only `status` gets a correct value automatically, and a contradictory pair is refused. A dozen places write `status`; a convention would have lasted until the thirteenth. Only four places write the column explicitly, and only because they know something the status cannot express (`ProcessUxiotopupTransactionAction`, `ProcessUxiotopupTopup::failed()`, `HandleUxiotopupWebhookAction`, `CheckUxiotopupTransactionStatusAction`).
+**Never maintain `provider_status` by hand at a call site.** `App\Support\Transaction\ProviderStatusPolicy` holds the matrix (a default plus an allowed set per status) and `TransactionObserver::saving()` applies it to every save: a writer that touches only `status` gets a correct value automatically, and a contradictory pair is refused. A dozen places write `status`; a convention would have lasted until the thirteenth. Only four places write the column explicitly, and only because they know something the status cannot express (`ProcessUxiolabsTransactionAction`, `ProcessUxiolabsTopup::failed()`, `HandleUxiolabsWebhookAction`, `CheckUxiolabsTransactionStatusAction`).
 
 **`REFUNDED` preserves the previous provider value rather than defaulting.** A refund records that money came back, never whether the supplier delivered — without this rule, "the supplier failed and we refunded" and "the supplier delivered and an admin refunded as goodwill" become indistinguishable. It is also why the refund actions need no changes.
 
@@ -120,7 +120,11 @@ Two rules that keep the guard airtight:
 
 ### Refunds
 
-**There is no automatic gateway refund.** `InitiateRefundAction` (`app/Actions/Refund/`) is the single entry point, idempotent three ways over: a transaction row lock, a `PaymentStatus::SUCCESS` gate, and a unique `refund_requests.transaction_id`. Its four callers are unchanged (uxiotopup webhook, status poll, `ProcessUxiotopupTopup::failed()`, admin). Every refund ends up in a wallet — the only question is whose, and how soon:
+**There is no automatic gateway refund.** `InitiateRefundAction` (`app/Actions/Refund/`) is the single entry point, idempotent three ways over: a transaction row lock, a `PaymentStatus::SUCCESS` gate, and a unique `refund_requests.transaction_id`. Its four callers are unchanged (uxiolabs webhook, status poll, `ProcessUxiolabsTopup::failed()`, admin).
+
+**Only the product price comes back.** The refunded figure is `transactions.amount_base` — the frozen selling price, already net of promo and of any points spent — and it deliberately **excludes the channel fee** (`payments.admin_fee`): that fee bought a payment that really did settle, and Monetapay kept its cut of it either way. Do not "simplify" this back to `payments.gross_amount`; that returned the fee too and cost the platform `admin_fee` on every refund. Points spent come back separately, as points.
+
+Every refund ends up in a wallet — the only question is whose, and how soon:
 
 - **Member → wallet, immediately.** `WalletLedger::record(type: 'refund')` — never a raw `increment`, so it lands in `balance_mutations` with before/after figures. `payments.status` and `transactions.status` both go `REFUNDED` in the same transaction, and the merchant settlement is reversed post-commit. Method `balance`, born `COMPLETED`, zero admin actions.
 - **Guest → the claim queue.** Method `balance_claim`, born `WAITING_ACCOUNT`, with a claim link emailed and WhatsApped. There is no account to credit yet: the customer follows the link, creates or signs in to an account, and an admin verifies it before the balance moves.
@@ -154,11 +158,11 @@ Two rules that keep the guard airtight:
 
 **`transactions.user_id` is never rewritten on a claim.** It drives merchant/member attribution, `UnifiedTransactionQuery` and every report; retro-assigning it would move a guest sale into a member's history for a period when the account did not exist. The consequence is designed for, not ignored: the failed order does **not** appear in the member's order history, so the credit shows up in `balance_mutations` (referenced by invoice number) and in `GET /v1/me/refunds`, which backs the storefront's "Pengembalian Dana" page. Do not paper over this by unioning claimed transactions into the order-history query.
 
-`ReverseMerchantSettlementAction` (`app/Actions/Settlement/`) mirrors `SettleMerchantTransactionAction` **at the moment money leaves** — inline for a member, on `complete` for a guest (either scheme), never on `REJECTED`. Three rules it must keep:
+`ReverseMerchantSettlementAction` (`app/Actions/Settlement/`) mirrors `SettleMerchantTransactionAction` **at the moment money leaves** — inline for a member, on `complete` for a guest (either scheme), never on `REJECTED`. Rules it must keep:
 
-- Platform legs are typed **`markup` with a negative amount**, not `markup_reversal`: `PlatformBalance::income()` whitelists `['markup','withdrawal_fee','service_revenue']` and would silently ignore anything else, leaving kita's withdrawable balance inflated by every refund.
-- Every leg references **`RFD-{invoice}`**, never the bare invoice number, or settlement's own `(type: settlement, reference: invoice)` idempotency guard would match a reversal.
-- A third leg books `gateway_fee + tax_amount` as a refund cost — Monetapay kept its cut and the PPN was levied, so refunding the full gross really is out of pocket by that much.
+- **It writes exactly one leg: the merchant's `-amount_base`.** The platform's books need no correction, because the platform did not refund anything — it keeps `admin_fee` and it paid `gateway_fee + tax_amount` out of it, which is precisely what settlement booked as profit. It used to un-book the markup and then re-book the gateway cost; together those netted to `-admin_fee`, correct only while the customer was refunded the full gross. **Do not re-add a platform leg without also changing what the refund pays.**
+- Should a platform leg ever return it must be typed **`markup` with a negative amount**, not `markup_reversal`: `PlatformBalance::income()` whitelists `['markup','withdrawal_fee','service_revenue']` and would silently ignore anything else, leaving kita's withdrawable balance inflated by every refund.
+- Every leg references **`RFD-{invoice}`**, never the bare invoice number, or settlement's own `(type: settlement, reference: invoice)` idempotency guard would match a reversal. That reference is also the crash-safe idempotency marker, now read from `balance_mutations` (and still from `platform_mutations`, for reversals booked under the old three-leg scheme).
 - It **never fails a refund.** `WalletLedger` throws when a merchant's balance would go negative (they already spent it); that is caught, alerted to Discord, and the refund proceeds.
 
 `MonetapayService::refundTransaction()` and `POST /v1/monetapay/refund` stay as the manual admin tool, deliberately outside every automatic path. Legacy rows refunded by the old flow are backfilled as `method = legacy_gateway`, so the refund page is authoritative for all of history rather than only since the rewrite.
@@ -181,7 +185,7 @@ Two rules that keep the guard airtight:
 - `MonetapayService` — settles in IDR to Indonesian banks and e-wallets, where on an e-wallet charge the phone *is* the wallet identity. `account_phone` goes through `toIndonesianLocal()` and falls back to the existing placeholder rather than forwarding a foreign number.
 - `ProcessWithdrawalPayoutJob` — the explicit `account_phone` is validated Indonesian and passes through; the **`merchant?->phone` fallback** is guarded, because that is the one path a now-international contact number could leak into a disbursement and fail only after money moved.
 
-`kontak` on the uxiotopup order is left raw — its own fallback is the literal `'0000000000'`, so it is not a format-validated field. The four PiWAPI senders are left alone: E.164 is exactly what they want.
+`kontak` on the uxiolabs order is left raw — its own fallback is the literal `'0000000000'`, so it is not a format-validated field. The four PiWAPI senders are left alone: E.164 is exactly what they want.
 
 Accepted and documented in the helper: a foreign number typed **bare** (a Singaporean `91234567`, no plus) reads as local. That is inherent to supporting country codes without a picker — an exact collision, not enumeration.
 
@@ -261,8 +265,8 @@ get wrong:
   the Rp 0 refund are guarded on `> 0`. This is the single most likely crash in
   the feature.
 
-**On refund**, points come back as points (`refund_return`) and only the rupiah
-remainder as balance — converting them would turn a deliberately failed purchase
+**On refund**, points come back as points (`refund_return`) and only the product
+price in cash (`amount_base`, which points already reduced) as balance — converting them would turn a deliberately failed purchase
 into a way to cash points out. A **goodwill refund of a delivered order** is
 reachable (`RefundEligibility` checks the *payment* status), so earned points are
 clawed back as `earn_reversal` — **capped at the remaining balance, never
@@ -381,64 +385,64 @@ at request time and freezes `fee`/`nett`.
   no-op, so retries never double-book a fee or double-refund. Covered by `WithdrawalTest` and
   `DisbursementCallbackTest`.
 
-### uxiotopup (Product Supplier)
+### uxiolabs (Product Supplier)
 
-- Auth: a single `api_key` sent in every JSON request body (no signing, no dev/prod key split). The caller's server IP must additionally be whitelisted in the uxiotopup dashboard, or every call fails.
-- Endpoints (all POST JSON to `UXIOTOPUP_BASE_URL`, default `https://api.uxiotopup.id`): `/service` (price list), `/order`, `/status`, `/saldo`. Errors come back as HTTP 200 with `{status:false, msg}` — `UxiotopupService` rejects those envelopes rather than passing them through.
-- `target` sent to uxiotopup = pipe-joined `target_uid|target_server` (just the uid when there is no server) — composed by `CustomerNumberFormatter` from `categories.order_form_fields` templates like `{user_id}|{zone_id}`.
-- `invoice_number` is used as the uxiotopup `idtrx`. The order response's `data.id` is uxiotopup's OWN invoice and is persisted to `transactions.supplier_trx_id` — it is the only key `/status` accepts (there is no lookup by idtrx). `keterangan` carries the SN.
+- Auth: a single `api_key` sent in every JSON request body (no signing, no dev/prod key split). The caller's server IP must additionally be whitelisted in the uxiolabs dashboard, or every call fails.
+- Endpoints (all POST JSON to `UXIOLABS_BASE_URL`, default `https://api.uxiotopup.id`): `/service` (price list), `/order`, `/status`, `/saldo`. Errors come back as HTTP 200 with `{status:false, msg}` — `UxiolabsService` rejects those envelopes rather than passing them through.
+- `target` sent to uxiolabs = pipe-joined `target_uid|target_server` (just the uid when there is no server) — composed by `CustomerNumberFormatter` from `categories.order_form_fields` templates like `{user_id}|{zone_id}`.
+- `invoice_number` is used as the uxiolabs `idtrx`. The order response's `data.id` is uxiolabs's OWN invoice and is persisted to `transactions.supplier_trx_id` — it is the only key `/status` accepts (there is no lookup by idtrx). `keterangan` carries the SN.
 - `kontak` (phone) is required on `/order`: member phone → `guest_contact` → `'0000000000'` fallback.
-- Duplicate `idtrx` ("idtrx sudah ada") means a previous attempt already placed the order — `UxiotopupDuplicateOrderException` is caught in `ProcessUxiotopupTransactionAction`, which settles the row to PROCESSING and waits for the callback instead of re-ordering or refunding.
-- Supplier cost = the configured tier column from `/service` (`UXIOTOPUP_PRICE_TIER`: harga | harga_gold | harga_silver | harga_pro, default `harga`).
-- Config keys: `services.uxiotopup.{api_key, base_url, callback_url, price_tier, callback_ips}`.
-- Inbound webhook (`POST /v1/uxiotopup/callback`) carries **no signature** — authenticated only by source IP against `UXIOTOPUP_CALLBACK_IP` (comma-separated; default `103.146.202.50`). TrustProxies must be correct behind a LB or `$request->ip()` rejects every callback. Payload is flat: `{id, idtrx, keterangan, status, url_cb}`; statuses `pending|processing|paid` → PROCESSING, `success` → COMPLETED, `cancel|refund` → FAILED_PROVIDER (+refund).
+- Duplicate `idtrx` ("idtrx sudah ada") means a previous attempt already placed the order — `UxiolabsDuplicateOrderException` is caught in `ProcessUxiolabsTransactionAction`, which settles the row to PROCESSING and waits for the callback instead of re-ordering or refunding.
+- Supplier cost = the configured tier column from `/service` (`UXIOLABS_PRICE_TIER`: harga | harga_gold | harga_silver | harga_pro, default `harga`).
+- Config keys: `services.uxiolabs.{api_key, base_url, callback_url, price_tier, callback_ips}`.
+- Inbound webhook (`POST /v1/uxiolabs/callback`) carries **no signature** — authenticated only by source IP against `UXIOLABS_CALLBACK_IP` (comma-separated; default `103.146.202.50`). TrustProxies must be correct behind a LB or `$request->ip()` rejects every callback. Payload is flat: `{id, idtrx, keterangan, status, url_cb}`; statuses `pending|processing|paid` → PROCESSING, `success` → COMPLETED, `cancel|refund` → FAILED_PROVIDER (+refund).
 
 ### Discord (Operational Notifications)
 
 - All Discord sends go through `App\Services\DiscordWebhookService` (`sendEmbed`/`sendAlert`) — never `Http::post` a webhook URL directly.
 - Silently no-ops (and never throws) if `services.discord.webhook_log_url` is not set — safe to omit in dev.
-- Used by: uxiotopup status transitions, the manual price-check report, refund claim alerts, and scheduler `onFailure` alerts.
+- Used by: uxiolabs status transitions, the manual price-check report, refund claim alerts, and scheduler `onFailure` alerts.
 
 ---
 
-## uxiotopup Price Checker & Manual Product Management
+## uxiolabs Price Checker & Manual Product Management
 
-Core principle: **supplier cost is fact (auto-updated), selling price auto-follows the configured margin rules unless the admin locks it, products are never auto-created**. Full admin guide: `docs/uxiotopup-product-management.md`.
+Core principle: **supplier cost is fact (auto-updated), selling price auto-follows the configured margin rules unless the admin locks it, products are never auto-created**. Full admin guide: `docs/uxiolabs-product-management.md`.
 
 ### 5-minute price checker
 
-`uxiotopup:check-prices` (scheduled `everyFiveMinutes` in `routes/console.php`, Discord alert only on failure) runs `CheckUxiotopupPricesAction`:
+`uxiolabs:check-prices` (scheduled `everyFiveMinutes` in `routes/console.php`, Discord alert only on failure) runs `CheckUxiolabsPricesAction`:
 
-- Fetches the price list (warming the shared cache `uxiotopup:price-list`, TTL 300s — `UxiotopupService::getPriceListCached()` / `findServiceInPriceList()` read it). `supplier_products.buyer_sku_code` stores the uxiotopup service `id`.
-- Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Availability = `status === "aktif"`, mirrored into both `buyer_product_status` and `seller_product_status`. Postpaid/pasca is gone — uxiotopup is prepaid-only.
+- Fetches the price list (warming the shared cache `uxiolabs:price-list`, TTL 300s — `UxiolabsService::getPriceListCached()` / `findServiceInPriceList()` read it). `supplier_products.buyer_sku_code` stores the uxiolabs service `id`.
+- Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Availability = `status === "aktif"`, mirrored into both `buyer_product_status` and `seller_product_status`. Postpaid/pasca is gone — uxiolabs is prepaid-only.
 - **Availability**: unavailable SKUs get `is_active = false` + `sync_deactivated_at` stamp; only stamped rows are ever auto-reactivated, so a manual admin deactivation is never overridden.
-- **Cost changes auto-reprice** a LIVE mapped product (`product_id` set + `is_active`): selling prices are recomputed from the margin rules via `ProductRepricer` (shared with the manual "Uxiotopup Update" so the two never drift), `products.price_modal` follows cost, and a `price_change_logs` row `applied` is written. Pooled rows (no product) are never repriced/logged — their cost still updates and their preview prices move with it.
+- **Cost changes auto-reprice** a LIVE mapped product (`product_id` set + `is_active`): selling prices are recomputed from the margin rules via `ProductRepricer` (shared with the manual "Uxiolabs Update" so the two never drift), `products.price_modal` follows cost, and a `price_change_logs` row `applied` is written. Pooled rows (no product) are never repriced/logged — their cost still updates and their preview prices move with it.
 - **Locked prices** (`products.is_price_locked`) are NOT repriced — a `locked` log row is written so the admin can review the shifted margin. (NB: read `products.is_price_locked`, not the separate/unsynced `supplier_products.is_price_locked` — known drift, do not "fix" here.)
 - **Needs-attention log rows**: `deactivated` (SKU went inactive at the provider) and `negative_margin` (after markup + `price_max` clamp, member price is still below cost). Everything is append-only — a cost that moves twice leaves two rows; there is no dedupe/acknowledge.
 - **Never** creates products (unknown SKUs are only counted/sampled in the report).
 - Report DTO: `PriceCheckReportDTO` (total_fetched, price_changed, repriced, locked, negative_margin_count, deactivated_logged, deactivated/reactivated, negative_margin detail, unknown_count/sample).
 
-`uxiotopup:sync-products` (name kept; also `POST /v1/uxiotopup/sync-products`) is the **manual** run of the same action with a console table + Discord report — it does not auto-create products.
+`uxiolabs:sync-products` (name kept; also `POST /v1/uxiolabs/sync-products`) is the **manual** run of the same action with a console table + Discord report — it does not auto-create products.
 
 ### Manual product creation
 
-- `GET /v1/uxiotopup/sku-preview` — previews a service from the cached price list (name/category/cost/availability, `already_mapped`, `suggested_prices` from `PricingService`).
-- `POST /v1/uxiotopup/products` — `CreateUxiotopupProductAction`: creates Product (price_modal = uxiotopup tier cost) + SupplierProduct mapping; admin supplies all 4 selling prices. Business-rule failures throw `App\Exceptions\UxiotopupProductException` → 422.
-- `POST /v1/uxiotopup/products/import` — Excel bulk import (`ImportUxiotopupProductsAction`, PhpSpreadsheet): headers matched by NAME on row 1 (`buyer_sku_code, category_code, name, code, price_member..price_agent, status`), max 500 rows, per-row validation + transaction so bad rows never abort the batch; blank prices default from `PricingService`.
-- `GET /v1/uxiotopup/products/import-template` — generated xlsx (sheet "Produk" + "Petunjuk" with live category codes). **Binary response — intentional deviation from the ApiResponse envelope.**
-- `GET /v1/uxiotopup/price-change-logs` — paginated read-only audit trail of the checker's actions (filters: `status` = applied|locked|deactivated|negative_margin|all, `search` name/sku, `date_from`/`date_to`). Replaces the old manual price-alert acknowledge endpoints.
+- `GET /v1/uxiolabs/sku-preview` — previews a service from the cached price list (name/category/cost/availability, `already_mapped`, `suggested_prices` from `PricingService`).
+- `POST /v1/uxiolabs/products` — `CreateUxiolabsProductAction`: creates Product (price_modal = uxiolabs tier cost) + SupplierProduct mapping; admin supplies all 4 selling prices. Business-rule failures throw `App\Exceptions\UxiolabsProductException` → 422.
+- `POST /v1/uxiolabs/products/import` — Excel bulk import (`ImportUxiolabsProductsAction`, PhpSpreadsheet): headers matched by NAME on row 1 (`buyer_sku_code, category_code, name, code, price_member..price_agent, status`), max 500 rows, per-row validation + transaction so bad rows never abort the batch; blank prices default from `PricingService`.
+- `GET /v1/uxiolabs/products/import-template` — generated xlsx (sheet "Produk" + "Petunjuk" with live category codes). **Binary response — intentional deviation from the ApiResponse envelope.**
+- `GET /v1/uxiolabs/price-change-logs` — paginated read-only audit trail of the checker's actions (filters: `status` = applied|locked|deactivated|negative_margin|all, `search` name/sku, `date_from`/`date_to`). Replaces the old manual price-alert acknowledge endpoints.
 
 `products.auto_price` was **dropped** — category is always explicit admin input. `PricingService` + `pricing-rules` CRUD remain for suggested/default prices only (member 20 / vip 15 / reseller 10 / agent 5 % built-in fallback).
 
 ---
 
-## Async Job: `ProcessUxiotopupTopup`
+## Async Job: `ProcessUxiolabsTopup`
 
 Dispatched by `HandleMonetapayCallbackAction` after a successful Monetapay payment. Configured with `$tries = 3`, `$backoff = 30` seconds.
 
 Flow inside the job:
 1. Sets Transaction → `PROCESSING`.
-2. Calls `ProcessUxiotopupTransactionAction::execute(Transaction)` — places the `/order`, persists `supplier_trx_id`; a duplicate-idtrx reject is settled to PROCESSING (never retried/refunded, the callback finalises it).
+2. Calls `ProcessUxiolabsTransactionAction::execute(Transaction)` — places the `/order`, persists `supplier_trx_id`; a duplicate-idtrx reject is settled to PROCESSING (never retried/refunded, the callback finalises it).
 3. On infrastructure exception: re-throws so the queue retries; `failed()` marks `FAILED_PROVIDER` + refunds after all retries are exhausted.
 
 Queue driver is `database` by default (`QUEUE_CONNECTION=database`). Tests run with `sync`.
@@ -457,7 +461,7 @@ and nothing anywhere errors. Three things guard that, and all three must stay:
 - `queue:health` (scheduled every 10 min) alerts Discord when a *due* job has sat
   untouched for 5 minutes. It runs on the scheduler — a separate process from
   supervisor — so it can still speak when the worker cannot. It counts only
-  overdue jobs on purpose: `PollUxiotopupStatusJob` re-schedules itself into the
+  overdue jobs on purpose: `PollUxiolabsStatusJob` re-schedules itself into the
   future, so a healthy queue is often far from empty.
 
 ---
@@ -565,7 +569,7 @@ users (nullable) ──── transactions ──── payments ──── pa
 
 Three tiers, all under `/api/v1`:
 
-1. **Public** — the customer-facing storefront plus the gateway callbacks. `POST /v1/checkout`, `POST /v1/payment/callback` and `POST /v1/uxiotopup/callback` were always public; the storefront read endpoints below joined them.
+1. **Public** — the customer-facing storefront plus the gateway callbacks. `POST /v1/checkout`, `POST /v1/payment/callback` and `POST /v1/uxiolabs/callback` were always public; the storefront read endpoints below joined them.
 2. **`auth:sanctum`** — `GET /v1/user`, `PATCH /v1/users/sync-timezone` and the whole `/v1/me/*` group. Any authenticated user.
 3. **`auth:sanctum` + `admin`** — everything else (the back-office CRUD).
 
@@ -716,11 +720,11 @@ HUB_PUSH_ORDERS=                  # real-time service-order push to the Hub; def
 HUB_WRITE_ENABLED=false           # money-path write channel (Hub approving/raising withdrawals, confirming invoices)
 HUB_WRITE_API_KEY=                # the SECOND key that channel needs; minted per site in the Hub panel
 
-UXIOTOPUP_API_KEY=
-UXIOTOPUP_BASE_URL=https://api.uxiotopup.id
-UXIOTOPUP_CALLBACK_URL=        # points at {app}/api/v1/uxiotopup/callback; sent on every /order
-UXIOTOPUP_PRICE_TIER=harga     # harga | harga_gold | harga_silver | harga_pro
-UXIOTOPUP_CALLBACK_IP=103.146.202.50   # webhook source-IP allowlist (comma-separated)
+UXIOLABS_API_KEY=
+UXIOLABS_BASE_URL=https://api.uxiotopup.id
+UXIOLABS_CALLBACK_URL=        # points at {app}/api/v1/uxiolabs/callback; sent on every /order
+UXIOLABS_PRICE_TIER=harga     # harga | harga_gold | harga_silver | harga_pro
+UXIOLABS_CALLBACK_IP=103.146.202.50   # webhook source-IP allowlist (comma-separated)
 
 DISCORD_WEBHOOK_LOG_URL=   # optional
 ```

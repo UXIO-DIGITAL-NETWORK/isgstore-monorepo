@@ -31,7 +31,7 @@ use Illuminate\Support\Str;
  * worker's failed() hook (no HTTP request context is assumed). The transaction
  * row is locked FOR UPDATE, the payment must still be Success, and
  * `refund_requests.transaction_id` is unique — so the three racing callers
- * (uxiotopup webhook, status poll, `ProcessUxiotopupTopup::failed()`) open
+ * (uxiolabs webhook, status poll, `ProcessUxiolabsTopup::failed()`) open
  * exactly one refund between them.
  *
  * Two paths, chosen by whether the buyer had an account:
@@ -99,11 +99,15 @@ class InitiateRefundAction
                 return;
             }
 
-            // Points were subtracted before the fee was computed, so
-            // `gross_amount` is already the rupiah remainder — the split needs
-            // no arithmetic. Points go back as points; only cash goes back as
-            // balance, or a redemption would become a way to cash points out.
-            $amount = (int) $payment->gross_amount;
+            // Only the product itself is refunded. `amount_base` is the frozen
+            // selling price the customer actually paid cash for — promo and
+            // points already came off it — and it deliberately excludes the
+            // channel fee: that fee bought a payment that really did happen,
+            // and the gateway kept its cut of it either way.
+            //
+            // Points go back as points; only cash goes back as balance, or a
+            // redemption would become a way to cash points out.
+            $amount = (int) $locked->amount_base;
             $pointsBack = (int) $locked->points_spent;
 
             // Belt and braces. `transactions.user_id` is restrictOnDelete, so a

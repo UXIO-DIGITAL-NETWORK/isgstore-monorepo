@@ -199,7 +199,7 @@ class StorefrontOrderTest extends TestCase
     }
 
     /**
-     * uxiotopup has no cek-username endpoint, so the legacy supplier-backed
+     * uxiolabs has no cek-username endpoint, so the legacy supplier-backed
      * providers (`digiflazz:{sku}` / `product:{id}`) resolve to "unsupported"
      * — nickname null, HTTP 200, no supplier call. A stale prod value must
      * degrade exactly like an unconfigured game, never error.
@@ -247,7 +247,7 @@ class StorefrontOrderTest extends TestCase
 
     public function test_checkout_recognises_a_member_from_their_bearer_token(): void
     {
-        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        config(['services.uxiolabs.api_key' => 'test-api-key']);
         Http::fake(['*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']])]);
 
         $product = Product::factory()->create(['status' => true, 'price_member' => 25000]);
@@ -282,7 +282,7 @@ class StorefrontOrderTest extends TestCase
 
     public function test_checkout_stores_the_confirmed_nickname(): void
     {
-        config(['services.uxiotopup.api_key' => 'test-api-key']);
+        config(['services.uxiolabs.api_key' => 'test-api-key']);
         Http::fake(['*/order' => Http::response(['status' => true, 'msg' => 'ok', 'data' => ['status' => 'pending', 'id' => 'UX1']])]);
 
         $game = Category::factory()->create();

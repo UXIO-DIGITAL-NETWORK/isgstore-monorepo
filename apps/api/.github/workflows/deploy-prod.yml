@@ -83,7 +83,7 @@ jobs:
           envs: ENV_FILE_CONTENT
           script: |
             # 0. Bootstrap: clone repo on first deploy if prod dir isn't a git repo yet
-            # Deploy target: server baru uxiotopup-provider
+            # Deploy target: server baru uxiolabs-provider
             PROD_DIR="/home/uxioserver1/web-topup-uxiotopup-provider/api"
             if [ ! -d "$PROD_DIR/.git" ]; then
               echo "First-time setup: removing stale dir and cloning repo into $PROD_DIR..."
@@ -145,7 +145,7 @@ jobs:
             # sweeps, the status-poll reaper and queue:health. Losing it silently
             # would take out every safety net at once.
             crontab -l | grep -q "schedule:run" || {
-              echo "::error::Cron scheduler tidak terpasang — payments:sync-expired, uxiotopup:sync-processing dan queue:health tidak akan pernah berjalan."
+              echo "::error::Cron scheduler tidak terpasang — payments:sync-expired, uxiolabs:sync-processing dan queue:health tidak akan pernah berjalan."
               exit 1
             }
             crontab -l | grep "schedule:run"
@@ -202,7 +202,7 @@ jobs:
             # queue:work meng-cache kode di memory, jadi harus di-reload tiap deploy.
             # queue:restart menyuruh worker menyelesaikan job yang sedang jalan lalu exit;
             # supervisor (autorestart) langsung menghidupkannya lagi dengan kode baru —
-            # tidak memutus ProcessUxiotopupTopup/refund di tengah seperti hard-restart.
+            # tidak memutus ProcessUxiolabsTopup/refund di tengah seperti hard-restart.
             sudo supervisorctl start api-prod-worker:* 2>/dev/null || true
             php artisan queue:restart
 

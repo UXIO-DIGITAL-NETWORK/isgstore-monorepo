@@ -23,10 +23,10 @@ class SupplierProductSeeder extends Seeder
 
             $items[] = [
                 'product_id' => $product->id,
-                'supplier_id' => 1, // Uxiotopup
-                'buyer_sku_code' => $product->code, // uxiotopup service id
+                'supplier_id' => 1, // Uxiolabs
+                'buyer_sku_code' => $product->code, // uxiolabs service id
                 'price' => $service['cost'] ?? $product->price_modal,
-                // uxiotopup "Unavailable" ⇒ seeded inactive; the 5-minute price
+                // uxiolabs "Unavailable" ⇒ seeded inactive; the 5-minute price
                 // checker flips it back on when the service returns to "aktif".
                 'buyer_product_status' => $available,
                 'seller_product_status' => $available,
