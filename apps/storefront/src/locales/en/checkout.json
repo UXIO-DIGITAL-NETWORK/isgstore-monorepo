@@ -127,7 +127,9 @@
     "processing": "Processing...",
     "checkingId": "Checking ID...",
     "instantProcess": "Instant processing time",
-    "pointsDiscount": "Point Discount"
+    "pointsDiscount": "Point Discount",
+    "pointsEarned": "Points earned",
+    "pointsEarnedGuest": "Sign in to earn {{points}} points from this order"
   },
   "confirmModal": {
     "title": "PURCHASE CONFIRMATION",

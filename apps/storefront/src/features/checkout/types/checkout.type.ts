@@ -25,6 +25,10 @@ export interface DiamondPackage {
   bonusVariant?: 1 | 2 | 3;
   /** Numeric product id sent to the checkout endpoint. */
   productId: number;
+  /** Percentage of the paid amount earned back as points. */
+  pointPercent: number;
+  /** Flat points added on top of the percentage. */
+  pointFlat: number;
 }
 
 export interface CategoryTab {

@@ -47,6 +47,10 @@ export function toDiamondPackages(response: GameProductsResponse): DiamondPackag
     amount: product.amount ?? 0,
     price: product.price,
     category: product.group,
+    // Defaulted rather than required: an API that predates the point fields
+    // should quote zero points, not render NaN in the summary.
+    pointPercent: product.point_percent ?? 0,
+    pointFlat: product.point_flat ?? 0,
   }));
 }
 

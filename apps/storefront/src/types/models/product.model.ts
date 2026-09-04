@@ -15,6 +15,13 @@ export interface ProductModel {
   sub_category_id: number | null;
   /** Digits parsed from the name ("100 Diamonds" → 100), null when absent. */
   amount: number | null;
+  /**
+   * Point earning rule for this denomination, already resolved against the
+   * site-wide setting by the API — never null, so the checkout summary can
+   * quote the same number the order will actually earn.
+   */
+  point_percent: number;
+  point_flat: number;
 }
 
 export interface GameProductsResponse {

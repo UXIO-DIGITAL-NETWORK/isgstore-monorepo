@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/Button";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 interface Props {
   isOpen: boolean;
@@ -21,6 +21,10 @@ interface Props {
   /** "Biaya Admin" — the payment method's fee; hidden when 0. */
   adminFee?: number;
   total: number;
+  /** Points this order will earn; hidden when 0. */
+  pointsEarned?: number;
+  /** True when nobody is signed in — points are only granted to an account. */
+  isGuest?: boolean;
 }
 
 // ── Local helper: one label/value row ────────────────────────────────────────
@@ -98,6 +102,8 @@ export default function OrderConfirmModal({
   paymentName,
   adminFee = 0,
   total,
+  pointsEarned = 0,
+  isGuest = false,
 }: Props): React.ReactPortal | null {
   const { t, i18n } = useTranslation("checkout");
   const locale = i18n.language;
@@ -192,6 +198,21 @@ export default function OrderConfirmModal({
             numeric
             bold
           />
+
+          {pointsEarned > 0 &&
+            (isGuest ? (
+              // Points land on an account, and a guest order has none — say so
+              // here rather than let the buyer expect points that never arrive.
+              <Text as="span" className="font-inter text-[12px] text-violet-lavender/70 leading-snug">
+                {t("summary.pointsEarnedGuest", { points: formatNumber(pointsEarned, locale) })}
+              </Text>
+            ) : (
+              <Field
+                label={t("summary.pointsEarned")}
+                value={`+${formatNumber(pointsEarned, locale)}`}
+                numeric
+              />
+            ))}
         </InfoCard>
 
         {/* Action buttons */}

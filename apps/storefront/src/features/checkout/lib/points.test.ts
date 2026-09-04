@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { applyPoints, maxRedeemablePoints, totalAfterPoints } from "./points";
+import { applyPoints, maxRedeemablePoints, pointsEarned, totalAfterPoints } from "./points";
 
 describe("maxRedeemablePoints", () => {
   it("is capped by the wallet of points", () => {
@@ -58,5 +58,33 @@ describe("totalAfterPoints", () => {
 
   it("never goes negative when points overshoot", () => {
     expect(totalAfterPoints(12000, 1000, 20000)).toBe(0);
+  });
+});
+
+describe("pointsEarned", () => {
+  it("adds the flat bonus to the rounded-up percentage", () => {
+    // 25.000 * 1% = 250, plus a flat 5.
+    expect(pointsEarned(25000, 0, 1, 5)).toBe(255);
+  });
+
+  it("rounds the percentage up, never against the customer", () => {
+    // 10.010 * 1% = 100,1.
+    expect(pointsEarned(10010, 0, 1, 0)).toBe(101);
+  });
+
+  it("earns on the amount left after points are redeemed", () => {
+    expect(pointsEarned(25000, 10000, 1, 0)).toBe(150);
+  });
+
+  it("earns nothing when points cover the whole order", () => {
+    expect(pointsEarned(25000, 25000, 1, 5)).toBe(0);
+  });
+
+  it("still earns the flat bonus with no percentage configured", () => {
+    expect(pointsEarned(25000, 0, 0, 10)).toBe(10);
+  });
+
+  it("earns nothing with no rule configured", () => {
+    expect(pointsEarned(25000, 0, 0, 0)).toBe(0);
   });
 });
