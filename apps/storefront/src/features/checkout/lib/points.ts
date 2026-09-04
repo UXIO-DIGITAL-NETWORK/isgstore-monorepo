@@ -48,3 +48,22 @@ export function applyPoints(price: number, balance: number, rate: number, reques
 export function totalAfterPoints(price: number, adminFee: number, discount: number): number {
   return Math.max(0, price - discount) + (price - discount > 0 ? adminFee : 0);
 }
+
+/**
+ * Points this order will earn.
+ *
+ * Mirrors `PointRules::earnedFor` on the server: the percentage is charged on
+ * what the customer actually pays for the item — the channel fee earns nothing,
+ * and neither does the part settled with points — the flat bonus is added on
+ * top, and the percentage rounds **up**, the one direction that never shorts
+ * the customer against the number they were shown.
+ */
+export function pointsEarned(price: number, pointsDiscount: number, percent: number, flat: number): number {
+  const base = Math.max(0, price - pointsDiscount);
+
+  // An order fully covered by points earns nothing — there is no spend left to
+  // reward, and the server grants on the same base.
+  if (base <= 0) return 0;
+
+  return Math.max(0, Math.ceil((base * percent) / 100) + Math.max(0, flat));
+}

@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { totalAfterPoints } from "@/features/checkout/lib/points";
+import { pointsEarned, totalAfterPoints } from "@/features/checkout/lib/points";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { PriceText } from "@/components/common/PriceText";
 import { Button } from "@/components/ui/Button";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatNumber } from "@/lib/format";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { DiamondPackage } from "@/features/checkout/types/checkout.type";
 import OrderConfirmModal from "./OrderConfirmModal";
 
@@ -78,6 +79,16 @@ export default function OrderSummary({
   // recomputes, so the number shown is the number charged.
   const total = totalAfterPoints(totalPrice, adminFee, pointsDiscount);
 
+  // Points are only ever granted to an account, so a guest sees the number as
+  // an invitation rather than a promise.
+  const isGuest = useAuthStore((state) => state.user) === null;
+  const earnedPoints = pointsEarned(
+    totalPrice,
+    pointsDiscount,
+    selectedPackage?.pointPercent ?? 0,
+    selectedPackage?.pointFlat ?? 0,
+  );
+
   const handleTopUp = async () => {
     if (!onRequestConfirm) {
       setConfirmOpen(true);
@@ -146,6 +157,20 @@ export default function OrderSummary({
         <PriceText className="text-[20px] leading-tight">{formatCurrency(total, locale)}</PriceText>
       </Box>
 
+      {/* Points this order earns — the same base the API grants on. */}
+      {earnedPoints > 0 && (
+        <Box className="mx-4 mb-3 rounded-xl border border-[rgba(147,51,234,0.35)] bg-[rgba(147,51,234,0.12)] px-3 py-2 flex items-center justify-between gap-3">
+          <Text as="span" className="font-inter text-[12px] text-violet-lavender/80 leading-snug">
+            {isGuest ? t("summary.pointsEarnedGuest", { points: formatNumber(earnedPoints, locale) }) : t("summary.pointsEarned")}
+          </Text>
+          {!isGuest && (
+            <Text as="span" className="font-plex font-bold text-[14px] text-violet-lavender leading-none whitespace-nowrap">
+              +{formatNumber(earnedPoints, locale)}
+            </Text>
+          )}
+        </Box>
+      )}
+
       {/* CTA button */}
       <Box className="px-4 pb-4">
         <Button
@@ -193,6 +218,8 @@ export default function OrderSummary({
         paymentName={selectedPaymentName}
         adminFee={adminFee}
         total={total}
+        pointsEarned={earnedPoints}
+        isGuest={isGuest}
       />
     </Box>
   );

@@ -30,7 +30,7 @@ const game = (over: Partial<GameDetailModel> = {}): GameDetailModel =>
 const products = (over: Partial<GameProductsResponse> = {}): GameProductsResponse => ({
   groups: ["Diamond"],
   products: [
-    { id: 9, name: "100 Diamonds", code: "ML100", price: 24000, group: "Diamond", sub_category_id: 3, amount: 100 },
+    { id: 9, name: "100 Diamonds", code: "ML100", price: 24000, group: "Diamond", sub_category_id: 3, amount: 100, point_percent: 1, point_flat: 5 },
   ],
   ...over,
 });
@@ -78,13 +78,20 @@ describe("toDiamondPackages", () => {
     const [pkg] = toDiamondPackages(
       products({
         products: [
-          { id: 12, name: "Weekly Pass", code: "WP", price: 27000, group: "Pass", sub_category_id: 4, amount: null },
+          { id: 12, name: "Weekly Pass", code: "WP", price: 27000, group: "Pass", sub_category_id: 4, amount: null, point_percent: 0, point_flat: 0 },
         ],
       }),
     );
 
     expect(pkg.name).toBe("Weekly Pass");
     expect(pkg.amount).toBe(0);
+  });
+
+  it("carries the point earning rule through for the summary to quote", () => {
+    const [pkg] = toDiamondPackages(products());
+
+    expect(pkg.pointPercent).toBe(1);
+    expect(pkg.pointFlat).toBe(5);
   });
 });
 
