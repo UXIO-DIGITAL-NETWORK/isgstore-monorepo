@@ -23,7 +23,7 @@ function renderField({ enabled, value }: { enabled: boolean; value: string }) {
 
 /**
  * The supplier-side lookup options (product SKU / cek-username SKU) are gone —
- * Uxiotopup has no cek-username API, so the only provider is a third-party
+ * Uxiolabs has no cek-username API, so the only provider is a third-party
  * lookup URL. The field is now a master switch plus a URL input.
  */
 describe("NicknameCheckField", () => {

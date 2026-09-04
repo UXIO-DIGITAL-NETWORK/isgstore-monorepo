@@ -35,14 +35,14 @@ interface ProviderCategoryApiRow {
  * each value appears exactly once no matter how many SKUs share it, and reports
  * whether it is already mapped.
  *
- * Only uxiotopup has a catalogue integration, so this is meaningless for any other
+ * Only uxiolabs has a catalogue integration, so this is meaningless for any other
  * supplier — callers pass `enabled: false` there rather than showing stale options.
  */
 export const useProviderCategoryOptions = (enabled = true) => {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["uxiotopup", "provider-categories"],
+    queryKey: ["uxiolabs", "provider-categories"],
     queryFn: async () => {
-      const response: ApiResponse<ProviderCategoryApiRow[]> = await api.get(`${API_VERSION}/uxiotopup/categories`);
+      const response: ApiResponse<ProviderCategoryApiRow[]> = await api.get(`${API_VERSION}/uxiolabs/categories`);
       return (response.data ?? []).map<ProviderCategoryOption>((row) => ({
         value: row.value,
         sku_count: row.sku_count,

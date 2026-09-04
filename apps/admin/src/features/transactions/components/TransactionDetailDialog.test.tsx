@@ -48,7 +48,7 @@ const detail: TransactionDetail = {
     gross_amount: 4752,
     paid_at: "2026-07-01T14:57:00.000Z",
   },
-  supplier: { name: "Uxiotopup", trx_id: "SUP-77", status: "success" },
+  supplier: { name: "Uxiolabs", trx_id: "SUP-77", status: "success" },
   created_at: "2026-07-01T14:56:37.000Z",
   updated_at: "2026-07-01T14:58:00.000Z",
 };
@@ -90,7 +90,7 @@ describe("TransactionDetailDialog", () => {
     expect(within(dialog).getByText("19 Diamond")).toBeInTheDocument();
     expect(within(dialog).getByText("ProPlayerFF")).toBeInTheDocument();
     expect(within(dialog).getByText("SN-123")).toBeInTheDocument();
-    expect(within(dialog).getByText("Uxiotopup")).toBeInTheDocument();
+    expect(within(dialog).getByText("Uxiolabs")).toBeInTheDocument();
     expect(within(dialog).getByText("SUP-77")).toBeInTheDocument();
     expect(within(dialog).getByText("PAY-REF-01")).toBeInTheDocument();
     expect(within(dialog).getByText("QRIS")).toBeInTheDocument();

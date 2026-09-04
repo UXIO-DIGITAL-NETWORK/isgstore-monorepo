@@ -30,7 +30,7 @@ describe("providerService.priceList", () => {
 
     const result = await providerService.priceList({});
 
-    expect(api.get).toHaveBeenCalledWith("/v1/uxiotopup/price-list", { params: {} });
+    expect(api.get).toHaveBeenCalledWith("/v1/uxiolabs/price-list", { params: {} });
     expect(result.data[0].id).toBe("X100");
     expect(result.data[0]).toMatchObject({ name: "Xl 100.000", cost: 98000, already_mapped: false });
   });
@@ -40,7 +40,7 @@ describe("providerService.priceList", () => {
 
     await providerService.priceList({ search: "pln", only_unmapped: true, page: 2, per_page: 20 });
 
-    expect(api.get).toHaveBeenCalledWith("/v1/uxiotopup/price-list", {
+    expect(api.get).toHaveBeenCalledWith("/v1/uxiolabs/price-list", {
       params: { search: "pln", only_unmapped: 1, page: 2, per_page: 20 },
     });
   });
@@ -50,7 +50,7 @@ describe("providerService.priceList", () => {
 
     await providerService.priceList({ only_unmapped: false });
 
-    expect(api.get).toHaveBeenLastCalledWith("/v1/uxiotopup/price-list", { params: {} });
+    expect(api.get).toHaveBeenLastCalledWith("/v1/uxiolabs/price-list", { params: {} });
   });
 });
 
@@ -60,7 +60,7 @@ describe("providerService.skuPreview", () => {
 
     await providerService.skuPreview("X100", "7");
 
-    expect(api.get).toHaveBeenCalledWith("/v1/uxiotopup/sku-preview", {
+    expect(api.get).toHaveBeenCalledWith("/v1/uxiolabs/sku-preview", {
       params: { buyer_sku_code: "X100", category_id: 7 },
     });
   });
@@ -70,7 +70,7 @@ describe("providerService.skuPreview", () => {
 
     await providerService.skuPreview("X100");
 
-    expect(api.get).toHaveBeenCalledWith("/v1/uxiotopup/sku-preview", {
+    expect(api.get).toHaveBeenCalledWith("/v1/uxiolabs/sku-preview", {
       params: { buyer_sku_code: "X100" },
     });
   });
@@ -91,7 +91,7 @@ describe("providerService.add", () => {
     });
 
     const [url, body] = vi.mocked(api.post).mock.calls[0];
-    expect(url).toBe("/v1/uxiotopup/products");
+    expect(url).toBe("/v1/uxiolabs/products");
     expect(body).toMatchObject({
       buyer_sku_code: "X100",
       category_id: 7,
@@ -115,7 +115,7 @@ describe("providerService.bulkAdd", () => {
     });
 
     const [url, body] = vi.mocked(api.post).mock.calls[0];
-    expect(url).toBe("/v1/uxiotopup/products/bulk");
+    expect(url).toBe("/v1/uxiolabs/products/bulk");
     expect(body).toMatchObject({ category_id: 7, buyer_sku_codes: ["X100", "S5"], status: true });
     expect(body).not.toHaveProperty("price_member");
     expect(body).not.toHaveProperty("type");
@@ -154,7 +154,7 @@ describe("providerService.list — pooled row prices", () => {
     point_flat: 50,
     margins: { member: 20, vip: null, reseller: null, agent: null },
     product: null,
-    supplier: { id: 1, name: "Uxiotopup", is_system: false },
+    supplier: { id: 1, name: "Uxiolabs", is_system: false },
     created_at: "2026-08-24T10:05:00.000000Z",
     ...over,
   });

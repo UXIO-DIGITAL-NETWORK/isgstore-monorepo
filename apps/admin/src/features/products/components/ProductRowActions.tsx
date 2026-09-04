@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   useDeleteProducts,
-  useUxiotopupUpdateProducts,
+  useUxiolabsUpdateProducts,
   useLockProducts,
   useRestoreProduct,
   useSetProductPublished,
@@ -43,7 +43,7 @@ interface ProductRowActionsProps {
 
 /**
  * Row menu for the Main Products list, in the reference's order. Each action is
- * wired: Uxiotopup Update / Show Price / Lock Price go through a confirm dialog,
+ * wired: Uxiolabs Update / Show Price / Lock Price go through a confirm dialog,
  * Set Price Limit opens its page, and the lifecycle toggle / Edit / Delete are
  * unchanged.
  * The single-row paths reuse the bulk hooks with a one-id selection.
@@ -68,14 +68,14 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
   const [publishOpen, setPublishOpen] = useState(false);
   const [lockOpen, setLockOpen] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
-  const [uxiotopupOpen, setUxiotopupOpen] = useState(false);
+  const [uxiolabsOpen, setUxiolabsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteProducts = useDeleteProducts();
   const setProductPublished = useSetProductPublished();
   const restoreProduct = useRestoreProduct();
   const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
-  const uxiotopupUpdate = useUxiotopupUpdateProducts();
+  const uxiolabsUpdate = useUxiolabsUpdateProducts();
 
   // Each toggle names what the click would do, not what the row currently is.
   const isArchived = product.publish_state === "archived";
@@ -111,9 +111,9 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
             </Can>
           ) : (
             <Can permission="products.edit">
-              <DropdownMenuItem onSelect={() => setUxiotopupOpen(true)}>
+              <DropdownMenuItem onSelect={() => setUxiolabsOpen(true)}>
                 <RefreshCcw />
-                Uxiotopup Update
+                Uxiolabs Update
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setShowOpen(true)}>
                 {nextHidden ? <EyeOff /> : <Eye />}
@@ -173,13 +173,13 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
       </DropdownMenu>
 
       <DeleteConfirmDialog
-        open={uxiotopupOpen}
-        onOpenChange={setUxiotopupOpen}
+        open={uxiolabsOpen}
+        onOpenChange={setUxiolabsOpen}
         icon={<RefreshCcw />}
         confirmLabel="Update"
         title="Update this product?"
         description="Re-pull this product's selling prices from its supplier cost. A locked price is left unchanged."
-        onConfirm={() => uxiotopupUpdate.mutate([product.id])}
+        onConfirm={() => uxiolabsUpdate.mutate([product.id])}
       />
 
       <DeleteConfirmDialog

@@ -275,7 +275,7 @@ export function TransactionDetailDialog({ transactionId, open, onOpenChange }: T
                   label="supplier transaction id"
                 />
               </Row>
-              {/* uxiotopup's own wording, kept as evidence. Deliberately plain
+              {/* uxiolabs's own wording, kept as evidence. Deliberately plain
                   text next to the normalized Provider Status above, so it reads
                   as the raw source rather than a competing verdict. */}
               <Row label="Provider Status (raw)">

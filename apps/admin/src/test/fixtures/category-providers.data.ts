@@ -18,7 +18,7 @@ import type { CategoryProvider } from "@/features/categories/types/categoryProvi
 export const CATEGORY_PROVIDERS: CategoryProvider[] = [
   {
     id: "cprov-1",
-    provider_name: "Uxiotopup",
+    provider_name: "Uxiolabs",
     supplier_id: "1",
     category_id: "cat-1",
     provider_category: "Mobile Legends",

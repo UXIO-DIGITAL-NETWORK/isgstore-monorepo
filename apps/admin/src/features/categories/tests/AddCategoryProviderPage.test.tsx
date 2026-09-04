@@ -49,7 +49,7 @@ describe("AddCategoryProviderDialog", () => {
     // Provider is preselected — with one integrated supplier there is no choice to
     // make, so its placeholder never appears. Asserted on the trigger itself:
     // Radix also renders a hidden native select carrying the same text.
-    await waitFor(() => expect(within(dialog).getByLabelText("Provider")).toHaveTextContent("Uxiotopup"));
+    await waitFor(() => expect(within(dialog).getByLabelText("Provider")).toHaveTextContent("Uxiolabs"));
     for (const hint of ["Select a category", "Select a provider category"]) {
       expect(await within(dialog).findByText(hint)).toBeInTheDocument();
     }
@@ -73,7 +73,7 @@ describe("AddCategoryProviderDialog", () => {
     const dialog = await openAdd(user);
 
     await user.click(within(dialog).getByLabelText("Provider"));
-    await user.click(await screen.findByRole("option", { name: "Uxiotopup" }));
+    await user.click(await screen.findByRole("option", { name: "Uxiolabs" }));
 
     await user.click(within(dialog).getByLabelText("Category"));
     await user.click(await screen.findByRole("option", { name: "Genshin Impact" }));
@@ -96,7 +96,7 @@ describe("AddCategoryProviderDialog", () => {
     const dialog = await openAdd(user);
 
     await user.click(within(dialog).getByLabelText("Provider"));
-    await user.click(await screen.findByRole("option", { name: "Uxiotopup" }));
+    await user.click(await screen.findByRole("option", { name: "Uxiolabs" }));
     await user.click(within(dialog).getByLabelText("Provider Category"));
 
     // Two Valorant SKUs upstream (one inactive) collapse into a single option.
@@ -110,7 +110,7 @@ describe("AddCategoryProviderDialog", () => {
     const dialog = await openAdd(user);
 
     await user.click(within(dialog).getByLabelText("Provider"));
-    await user.click(await screen.findByRole("option", { name: "Uxiotopup" }));
+    await user.click(await screen.findByRole("option", { name: "Uxiolabs" }));
     await user.click(within(dialog).getByLabelText("Provider Category"));
 
     expect(await screen.findByText("Already added")).toBeInTheDocument();
@@ -129,7 +129,7 @@ describe("AddCategoryProviderDialog", () => {
     await user.click(within(dialog).getByLabelText("Provider"));
 
     // Zelpoint and Topupkuy have no catalogue, so mapping one could only ever dead-end.
-    expect(await screen.findByRole("option", { name: "Uxiotopup" })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Uxiolabs" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Zelpoint" })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Topupkuy" })).not.toBeInTheDocument();
   });

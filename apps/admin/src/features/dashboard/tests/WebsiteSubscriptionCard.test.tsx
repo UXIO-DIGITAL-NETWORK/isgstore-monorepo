@@ -35,7 +35,7 @@ describe("WebsiteSubscriptionCard", () => {
     // The moment the CTA matters most.
     vi.spyOn(websiteSubscriptionService, "get").mockResolvedValue({
       status: "none",
-      service: { id: 1, code: "uxiotopup", name: "Website Topup" },
+      service: { id: 1, code: "uxiolabs", name: "Website Topup" },
       ends_at: null,
       days_remaining: null,
       checkout_url: "https://pay.example.test/app/payment-admin/services/1/checkout",

@@ -24,7 +24,7 @@ describe("CategoryProvider delete flow", () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
-    await user.click(await screen.findByRole("button", { name: /Actions for Uxiotopup/i }));
+    await user.click(await screen.findByRole("button", { name: /Actions for Uxiolabs/i }));
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
 
     const dialog = await screen.findByRole("alertdialog");
@@ -42,7 +42,7 @@ describe("CategoryProvider delete flow", () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
-    await screen.findByText("Uxiotopup");
+    await screen.findByText("Uxiolabs");
     expect(screen.queryByRole("button", { name: /^Delete \(/ })).not.toBeInTheDocument();
 
     const rowCheckboxes = screen.getAllByRole("checkbox", { name: "Select row" });
@@ -58,7 +58,7 @@ describe("CategoryProvider delete flow", () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
-    await screen.findByText("Uxiotopup");
+    await screen.findByText("Uxiolabs");
     const rowCheckboxes = screen.getAllByRole("checkbox", { name: "Select row" });
     await user.click(rowCheckboxes[0]);
     await user.click(rowCheckboxes[1]);
@@ -80,7 +80,7 @@ describe("CategoryProvider delete flow", () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
-    await user.click(await screen.findByRole("button", { name: /Actions for Uxiotopup/i }));
+    await user.click(await screen.findByRole("button", { name: /Actions for Uxiolabs/i }));
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
 
     const dialog = await screen.findByRole("alertdialog");

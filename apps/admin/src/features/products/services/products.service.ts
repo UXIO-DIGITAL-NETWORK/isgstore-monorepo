@@ -278,8 +278,8 @@ export const productsService = {
     await api.post(`${BASE}/${toFk(id)}/restore`);
   },
 
-  bulkUxiotopupUpdate: async (ids: string[]): Promise<void> => {
-    await api.post(`${BASE}/bulk/uxiotopup-update`, { ids: ids.map(toFk) });
+  bulkUxiolabsUpdate: async (ids: string[]): Promise<void> => {
+    await api.post(`${BASE}/bulk/uxiolabs-update`, { ids: ids.map(toFk) });
   },
 
   bulkDelete: async (ids: string[]): Promise<void> => {

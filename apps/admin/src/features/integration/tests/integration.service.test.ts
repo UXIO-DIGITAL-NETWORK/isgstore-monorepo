@@ -14,9 +14,9 @@ describe("integrationService.getChannels", () => {
     vi.mocked(api.get).mockResolvedValue(
       envelope([
         {
-          id: "uxiotopup",
+          id: "uxiolabs",
           type: "supplier",
-          name: "Uxiotopup",
+          name: "Uxiolabs",
           connection_status: "connected",
           balance: 6324067,
           last_ping_at: "2026-07-10T08:12:00.000Z",
@@ -28,9 +28,9 @@ describe("integrationService.getChannels", () => {
 
     expect(api.get).toHaveBeenCalledWith("/v1/integration/channels");
     expect(result[0]).toMatchObject({
-      id: "uxiotopup",
+      id: "uxiolabs",
       type: "supplier",
-      name: "Uxiotopup",
+      name: "Uxiolabs",
       connection_status: "connected",
       balance: 6324067,
     });

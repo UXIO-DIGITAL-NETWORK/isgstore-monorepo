@@ -11,7 +11,7 @@ import type { PriceChangeLog, PriceChangeLogListParams, PriceChangeStatus } from
  *
  * Its own service because it is a distinct read surface: no mutations, one endpoint.
  */
-const BASE = `${API_VERSION}/uxiotopup/price-change-logs`;
+const BASE = `${API_VERSION}/uxiolabs/price-change-logs`;
 
 interface PriceChangeLogApiRow {
   id: number;

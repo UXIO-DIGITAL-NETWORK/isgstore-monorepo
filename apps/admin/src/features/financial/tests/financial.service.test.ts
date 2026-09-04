@@ -68,7 +68,7 @@ describe("financialService.getSuppliers", () => {
   it("preserves a null balance rather than coercing it to zero", async () => {
     vi.mocked(api.get).mockResolvedValue(
       envelope([
-        { id: 1, name: "Uxiotopup", balance: 15231.89 },
+        { id: 1, name: "Uxiolabs", balance: 15231.89 },
         { id: 2, name: "Zelpoint", balance: null },
       ]),
     );
@@ -76,7 +76,7 @@ describe("financialService.getSuppliers", () => {
     const result = await financialService.getSuppliers();
 
     expect(api.get).toHaveBeenCalledWith("/v1/financial/suppliers");
-    expect(result[0]).toEqual({ id: "1", name: "Uxiotopup", logoUrl: "", balance: 15231.89 });
+    expect(result[0]).toEqual({ id: "1", name: "Uxiolabs", logoUrl: "", balance: 15231.89 });
     expect(result[1].balance).toBeNull();
   });
 });

@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/utils/currency";
 import { useBulkCreateProducts, useSuppliers } from "../hooks/useProducts";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
-import { useUxiotopupPriceList } from "../hooks/useProviderProducts";
+import { useUxiolabsPriceList } from "../hooks/useProviderProducts";
 
 interface RowState {
   selected: boolean;
@@ -22,7 +22,7 @@ interface RowState {
 
 /**
  * Add Product (Bulk) — pick a Supplier and Category, then select rows from the
- * supplier's catalogue (the Uxiotopup price list, the only live source today)
+ * supplier's catalogue (the Uxiolabs price list, the only live source today)
  * and create them as Main Products in one save. Prices are derived server-side
  * from each item's cost via the pricing rules.
  */
@@ -38,7 +38,7 @@ export default function MainProductAddBulkPage() {
 
   const ready = Boolean(supplierId && categoryId);
 
-  const { data: candidates } = useUxiotopupPriceList(
+  const { data: candidates } = useUxiolabsPriceList(
     ready ? { only_unmapped: true, per_page: 100 } : { per_page: 0 },
   );
   const items = useMemo(() => (ready ? (candidates?.data ?? []) : []), [ready, candidates]);

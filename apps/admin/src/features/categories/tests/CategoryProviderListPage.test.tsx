@@ -72,7 +72,7 @@ describe("CategoryProviderListPage", () => {
 
     // The same supplier names already fixtured in financial/integration
     // (§4.5 line 239) — not invented ones, and not the shadcn demo dataset.
-    expect(await screen.findByText("Uxiotopup")).toBeInTheDocument();
+    expect(await screen.findByText("Uxiolabs")).toBeInTheDocument();
     expect(screen.getAllByText("Zelpoint").length).toBeGreaterThan(0);
     // The provider's own category string, reconciled against its live catalogue.
     expect(screen.getAllByText("Mobile Legends").length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ describe("CategoryProviderListPage", () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
-    await user.click(await screen.findByRole("button", { name: /Actions for Uxiotopup/i }));
+    await user.click(await screen.findByRole("button", { name: /Actions for Uxiolabs/i }));
 
     // Exactly two: no deactivate/activate, since this entity has no status.
     const items = await screen.findAllByRole("menuitem");

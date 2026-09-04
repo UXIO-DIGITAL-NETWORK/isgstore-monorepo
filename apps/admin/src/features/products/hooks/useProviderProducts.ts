@@ -3,35 +3,35 @@ import { toast } from "sonner";
 
 import { providerService } from "../services/provider.service";
 import type {
-  AddUxiotopupProductInput,
-  BulkAddUxiotopupInput,
+  AddUxiolabsProductInput,
+  BulkAddUxiolabsInput,
   ProviderProductListParams,
   SetProviderMarginInput,
-  UxiotopupPriceListParams,
+  UxiolabsPriceListParams,
 } from "../types/product.type";
 
-export const useUxiotopupPriceList = (params: UxiotopupPriceListParams) =>
+export const useUxiolabsPriceList = (params: UxiolabsPriceListParams) =>
   useQuery({
-    queryKey: ["uxiotopup", "price-list", params],
+    queryKey: ["uxiolabs", "price-list", params],
     queryFn: () => providerService.priceList(params),
   });
 
 /** Suggested prices for the add dialog; only runs once a SKU is selected. */
-export const useUxiotopupSkuPreview = (sku?: string, categoryId?: string) =>
+export const useUxiolabsSkuPreview = (sku?: string, categoryId?: string) =>
   useQuery({
-    queryKey: ["uxiotopup", "sku-preview", sku, categoryId],
+    queryKey: ["uxiolabs", "sku-preview", sku, categoryId],
     queryFn: () => providerService.skuPreview(sku as string, categoryId),
     enabled: Boolean(sku),
   });
 
 /** Single "Add to products" — the Main Products list is invalidated too. */
-export const useAddUxiotopupProduct = () => {
+export const useAddUxiolabsProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: AddUxiotopupProductInput) => providerService.add(input),
+    mutationFn: (input: AddUxiolabsProductInput) => providerService.add(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["uxiotopup", "price-list"] });
+      queryClient.invalidateQueries({ queryKey: ["uxiolabs", "price-list"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product added to your catalog");
     },
@@ -158,13 +158,13 @@ export const useBulkDeleteProviderProducts = () => {
 };
 
 /** Bulk add — the toast reports how many were created vs skipped. */
-export const useBulkAddUxiotopupProducts = () => {
+export const useBulkAddUxiolabsProducts = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: BulkAddUxiotopupInput) => providerService.bulkAdd(input),
+    mutationFn: (input: BulkAddUxiolabsInput) => providerService.bulkAdd(input),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["uxiotopup", "price-list"] });
+      queryClient.invalidateQueries({ queryKey: ["uxiolabs", "price-list"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(
         result.skipped.length === 0

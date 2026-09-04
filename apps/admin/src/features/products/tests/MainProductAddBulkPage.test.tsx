@@ -41,7 +41,7 @@ describe("MainProductAddBulkPage", () => {
     await pickFirst(user, "Supplier");
     await pickFirst(user, "Category");
 
-    // Unmapped Uxiotopup candidate from fakeApi.
+    // Unmapped Uxiolabs candidate from fakeApi.
     const row = (await screen.findByText("S5")).closest("tr") as HTMLElement;
     await user.click(within(row).getByLabelText("Select S5"));
 

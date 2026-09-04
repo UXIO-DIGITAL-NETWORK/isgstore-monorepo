@@ -15,7 +15,7 @@ import type {
  * describing a state that no longer existed.
  */
 const invalidateProductAndPool = (queryClient: ReturnType<typeof useQueryClient>) => {
-  for (const queryKey of [["products"], ["supplier-products"], ["uxiotopup", "pool-candidates"]]) {
+  for (const queryKey of [["products"], ["supplier-products"], ["uxiolabs", "pool-candidates"]]) {
     queryClient.invalidateQueries({ queryKey });
   }
 };
@@ -50,7 +50,7 @@ export const useBulkCreateProducts = () => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["supplier-products"] });
-      queryClient.invalidateQueries({ queryKey: ["uxiotopup", "price-list"] });
+      queryClient.invalidateQueries({ queryKey: ["uxiolabs", "price-list"] });
       toast.success(
         result.skipped.length === 0
           ? `${result.created} products added`
@@ -192,11 +192,11 @@ export const useShowProducts = () => {
 };
 
 /** Re-pull selling prices from the supplier cost (row `[id]` or bulk). */
-export const useUxiotopupUpdateProducts = () => {
+export const useUxiolabsUpdateProducts = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ids: string[]) => productsService.bulkUxiotopupUpdate(ids),
+    mutationFn: (ids: string[]) => productsService.bulkUxiolabsUpdate(ids),
     onSuccess: (_result, ids) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(ids.length === 1 ? "Product updated from supplier" : `${ids.length} products updated from supplier`);

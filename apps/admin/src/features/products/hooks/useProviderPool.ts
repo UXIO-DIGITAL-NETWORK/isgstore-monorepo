@@ -5,7 +5,7 @@ import { providerPoolService } from "../services/providerPool.service";
 import type { PoolCandidateListParams } from "../types/product.type";
 
 /** Everything the pool touches, invalidated together. */
-const POOL_KEYS = [["supplier-products"], ["products"], ["uxiotopup", "pool-candidates"], ["uxiotopup", "pool-summary"]];
+const POOL_KEYS = [["supplier-products"], ["products"], ["uxiolabs", "pool-candidates"], ["uxiolabs", "pool-summary"]];
 
 const invalidatePool = (queryClient: ReturnType<typeof useQueryClient>) => {
   for (const queryKey of POOL_KEYS) queryClient.invalidateQueries({ queryKey });
@@ -13,14 +13,14 @@ const invalidatePool = (queryClient: ReturnType<typeof useQueryClient>) => {
 
 export const usePoolCandidates = (params: PoolCandidateListParams, enabled = true) =>
   useQuery({
-    queryKey: ["uxiotopup", "pool-candidates", params],
+    queryKey: ["uxiolabs", "pool-candidates", params],
     queryFn: () => providerPoolService.candidates(params),
     enabled,
   });
 
 export const usePoolSummary = () =>
   useQuery({
-    queryKey: ["uxiotopup", "pool-summary"],
+    queryKey: ["uxiolabs", "pool-summary"],
     queryFn: () => providerPoolService.summary(),
   });
 

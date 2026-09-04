@@ -14,10 +14,10 @@ import type { IntegrationChannel } from "../types/integration.type";
  */
 export const CHANNELS: IntegrationChannel[] = [
   {
-    id: "uxiotopup",
-    provider: "uxiotopup",
+    id: "uxiolabs",
+    provider: "uxiolabs",
     type: "supplier",
-    name: "Uxiotopup",
+    name: "Uxiolabs",
     logo_url: "",
     currency_config: "Indonesia Rupiah (Rp) IDR - Rp 1",
     connection_status: "connected",
@@ -66,7 +66,7 @@ export const CHANNELS: IntegrationChannel[] = [
   {
     id: "monetapay",
     type: "payment_gateway",
-    name: "Monetapay",
+    name: "Payment Gateway",
     logo_url: "",
     currency_config: "Indonesia Rupiah (Rp) IDR - Rp 1",
     connection_status: "disconnected",

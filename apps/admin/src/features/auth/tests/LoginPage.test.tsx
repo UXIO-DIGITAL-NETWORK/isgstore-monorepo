@@ -28,7 +28,7 @@ vi.mock("../services/auth.service", () => ({
  * Content correctness:
  * - The page heading reads "Sign in".
  * - The subcopy "Enter your credentials to access the admin dashboard." is present.
- * - AuthSideHero shows the "UDN Admin" wordmark and "UXIOTOPUP" subtitle.
+ * - AuthSideHero shows the "UDN Admin" wordmark and "UXIOLABS" subtitle.
  * - AuthSideHero shows a headline and subcopy describing the UDN top-up platform.
  * - No text or link related to registration exists anywhere on the page.
  * - None of the old placeholder strings remain.
@@ -94,11 +94,11 @@ describe("LoginPage", () => {
     expect(screen.getByText("Enter your credentials to access the admin dashboard.")).toBeInTheDocument();
   });
 
-  it("shows the UDN Admin wordmark and UXIOTOPUP subtitle in the hero", async () => {
+  it("shows the UDN Admin wordmark and UXIOLABS subtitle in the hero", async () => {
     await renderRoute("/login");
 
     expect(screen.getByText("UDN Admin")).toBeInTheDocument();
-    expect(screen.getByText("UXIOTOPUP")).toBeInTheDocument();
+    expect(screen.getByText("UXIOLABS")).toBeInTheDocument();
   });
 
   it("shows a hero headline and subcopy about the UDN top-up platform", async () => {

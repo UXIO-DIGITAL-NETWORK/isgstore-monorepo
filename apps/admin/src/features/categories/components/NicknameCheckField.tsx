@@ -22,7 +22,7 @@ interface NicknameCheckFieldProps {
  * The category form's "Cek Username" control. A master Switch decides whether
  * the game needs the check; when on, a lookup-URL template configures how the
  * name is resolved (stored verbatim in `categories.validasi_nickname`).
- * Supplier-side SKU/product lookups no longer exist — Uxiotopup has no
+ * Supplier-side SKU/product lookups no longer exist — Uxiolabs has no
  * cek-username API, so a third-party URL is the only provider. Disabling never
  * clears the URL, so a game can be flipped back on without re-entering it.
  */

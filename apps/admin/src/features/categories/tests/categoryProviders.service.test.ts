@@ -13,7 +13,7 @@ const apiRow = (over: Record<string, unknown> = {}) => ({
   category_id: 1,
   supplier_id: 4,
   provider_category: "mlbb",
-  supplier: { id: 4, name: "Uxiotopup" },
+  supplier: { id: 4, name: "Uxiolabs" },
   created_at: "2026-07-01T00:00:00.000000Z",
   updated_at: "2026-07-01T00:00:00.000000Z",
   ...over,
@@ -36,7 +36,7 @@ describe("categoryProvidersService.list", () => {
     expect(result.data[0]).toMatchObject({
       id: "9",
       category_id: "1",
-      provider_name: "Uxiotopup",
+      provider_name: "Uxiolabs",
       provider_category: "mlbb",
     });
   });
@@ -71,7 +71,7 @@ describe("categoryProvidersService mutations", () => {
     await categoryProvidersService.create({
       category_id: "1",
       supplier_id: "4",
-      provider_name: "Uxiotopup",
+      provider_name: "Uxiolabs",
       provider_category: "mlbb",
     });
 

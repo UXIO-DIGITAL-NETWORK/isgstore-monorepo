@@ -334,7 +334,7 @@ const detailRow = (over: Record<string, unknown> = {}) => ({
   is_manual: false,
   supplier_trx_id: "SUP-77",
   supplier_status: "success",
-  supplier: { id: 3, name: "Uxiotopup" },
+  supplier: { id: 3, name: "Uxiolabs" },
   payment: {
     status: "3",
     reference_id: "PAY-REF-01",

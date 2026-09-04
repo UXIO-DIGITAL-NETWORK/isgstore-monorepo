@@ -20,7 +20,7 @@ import type {
  * exist) because this half is about SKUs that are not ours yet — a different
  * lifecycle, a different set of endpoints.
  */
-const UXIOTOPUP = `${API_VERSION}/uxiotopup`;
+const UXIOLABS = `${API_VERSION}/uxiolabs`;
 const SUPPLIER_PRODUCTS = `${API_VERSION}/supplier-products`;
 
 interface PoolCandidateApiRow {
@@ -43,7 +43,7 @@ export const providerPoolService = {
    */
   candidates: async (params: PoolCandidateListParams = {}): Promise<PaginatedResponse<PoolCandidate>> => {
     const response: ApiResponse<PaginatedResponse<PoolCandidateApiRow>> = await api.get(
-      `${UXIOTOPUP}/pool-candidates`,
+      `${UXIOLABS}/pool-candidates`,
       { params },
     );
     // DataTable is generic over `{ id: string }`; the SKU is the natural key here.
@@ -51,13 +51,13 @@ export const providerPoolService = {
   },
 
   summary: async (): Promise<PoolSummary> => {
-    const response: ApiResponse<PoolSummary> = await api.get(`${UXIOTOPUP}/pool-summary`);
+    const response: ApiResponse<PoolSummary> = await api.get(`${UXIOLABS}/pool-summary`);
     return response.data;
   },
 
   /** Pull SKUs into the pool. Single add is the same call with one code. */
   pool: async (buyerSkuCodes: string[]): Promise<PoolResult> => {
-    const response: ApiResponse<PoolResult> = await api.post(`${UXIOTOPUP}/pool`, {
+    const response: ApiResponse<PoolResult> = await api.post(`${UXIOLABS}/pool`, {
       buyer_sku_codes: buyerSkuCodes,
     });
     return response.data;
