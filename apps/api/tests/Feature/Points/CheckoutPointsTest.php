@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Points;
 
+use App\Actions\Points\GrantTransactionPointsAction;
+use App\Enums\TransactionStatus;
 use App\Models\MembershipPlan;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
@@ -9,10 +11,12 @@ use App\Models\PointLedgerEntry;
 use App\Models\Product;
 use App\Models\ProductPlanPrice;
 use App\Models\Role;
+use App\Models\Setting;
 use App\Models\SupplierProduct;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Support\Membership\DefaultPlan;
+use App\Support\Points\PointRules;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
@@ -175,5 +179,39 @@ class CheckoutPointsTest extends TestCase
             'guest_contact' => '+6281234567890',
             'points_to_spend' => 1000,
         ])->assertStatus(400);
+    }
+
+    /**
+     * The number the storefront quotes and the number the customer is actually
+     * granted must be the same number.
+     *
+     * This is the only test that puts checkout and the grant end to end, and it
+     * is here because the unit test alone could not catch the double deduction:
+     * it built its own fixture, so it never had to agree with what checkout
+     * writes. Redeeming points is what makes the two diverge, so this case
+     * redeems some.
+     */
+    public function test_the_points_granted_match_the_base_checkout_stored(): void
+    {
+        Setting::create([
+            'group' => 'points', 'key' => 'earn_percent', 'value' => '2',
+            'type' => 'number', 'label' => 'Earn %', 'is_public' => true,
+        ]);
+        $user = $this->member(balance: 100000, points: 2000);
+
+        $this->checkout(['points_to_spend' => 2000])->assertCreated();
+
+        $transaction = Transaction::first();
+        $transaction->update(['status' => TransactionStatus::COMPLETED]);
+
+        app(GrantTransactionPointsAction::class)->execute($transaction);
+
+        // 12.000 price - 2.000 paid in points = 10.000 cash, at 2% = 200.
+        $expected = PointRules::earnedFor($this->product, (int) $transaction->amount_base);
+
+        $this->assertSame(200, $expected, 'The rule itself must earn on the stored base.');
+        $this->assertSame($expected, (int) $transaction->fresh()->points_earned);
+        // The spent points are gone and the earned ones have landed.
+        $this->assertSame($expected, (int) $user->fresh()->point);
     }
 }
