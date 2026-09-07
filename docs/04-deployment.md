@@ -19,23 +19,24 @@ Pemicunya `push` ke `main`, dengan **path filter** — mengubah storefront tidak
 
 Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
-1. **Clone monorepo** ke direktori baru, misalnya `…/provider/repo`.
-2. **Arahkan ulang root nginx untuk API** dari `…/provider/api/public` ke `…/provider/repo/apps/api/public`.
+1. **Clone monorepo** ke `<base>/api` (lihat langkah 6). Deploy juga meng-clone sendiri kalau direktorinya masih kosong.
+2. **Arahkan ulang root nginx untuk API** dari `…/provider/api/public` ke `<base>/api/apps/api/public`.
 3. **Perbarui path supervisor.** `supervisor/api-prod-worker.conf` menjalankan `php <dir>/artisan queue:work`; `<dir>` harus menunjuk lokasi baru.
 4. **Perbarui entri cron** `schedule:run` ke path baru.
 5. **Pindahkan berkas yang tidak ikut git**: isi `storage/app/public` (banner, logo kategori, bukti transfer) dan `.env`.
-6. **Satukan tujuan ketiga frontend di bawah satu induk**, satu subdirektori per app, lalu arahkan ulang `root` tiap vhost ke sana:
+6. **Satukan keempat app di bawah satu induk**, satu subdirektori per app, lalu arahkan ulang `root` tiap vhost ke sana:
 
-   ```
-   <base>/admin        ← root vhost admin.<domain>
-   <base>/payment      ← root vhost pay.<domain>
-   <base>/storefront   ← root vhost <domain> (domain utama)
-   ```
+   | Direktori | Isi | `root` nginx |
+   |---|---|---|
+   | `<base>/admin` | isi `dist/` | `<base>/admin` — `admin.<domain>` |
+   | `<base>/payment` | isi `dist/` | `<base>/payment` — `pay.<domain>` |
+   | `<base>/storefront` | isi `dist/` | `<base>/storefront` — `<domain>`, domain utama |
+   | `<base>/api` | **klon monorepo** | `<base>/api/apps/api/public` — `api.<domain>` |
 
-   API tidak ikut pola ini — ia dilayani dari `…/repo/apps/api/public` (langkah 2), bukan dari `dist/`. Yang dikirim ke ketiga direktori di atas tetap isi folder `dist/`.
+   `api` adalah satu-satunya yang berbeda isinya: Laravel dijalankan dari source, bukan dari hasil build, jadi yang tinggal di sana adalah repo ini seutuhnya — dan `root` nginx-nya menunjuk ke `apps/api/public` **di dalam** direktori itu, bukan ke direktorinya langsung.
 
-   Buat ketiganya lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
-7. **Tambahkan satu secret baru** di GitHub: `DEPLOY_BASE_PATH`, berisi `<base>` di atas tanpa nama app. Workflow yang menyusun `<base>/<app>`, jadi nama direktori **wajib** sama persis dengan nama folder di `apps/` — `admin`, `storefront`, `payment`.
+   Buat `<base>` dan ketiga direktori frontend lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. `<base>/api` boleh dibiarkan kosong; deploy meng-clone sendiri. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
+7. **Tambahkan satu secret baru** di GitHub: `DEPLOY_BASE_PATH`, berisi `<base>` di atas tanpa nama app. Workflow yang menyusun `<base>/<app>`, jadi nama direktori **wajib** sama persis dengan nama folder di `apps/` — `admin`, `storefront`, `payment`, `api`.
 8. **Pindahkan `VITE_GOOGLE_CLIENT_ID` ke secret** — sebelumnya di-hardcode di YAML storefront.
 9. **Pastikan `PasswordAuthentication yes` aktif** di `/etc/ssh/sshd_config`, lalu `sudo systemctl reload ssh`. Deploy memakai autentikasi kata sandi, bukan kunci.
 
@@ -46,7 +47,7 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 | `SSH_HOST`, `SSH_PORT`, `SSH_USERNAME` | Alamat dan pengguna server |
 | `SSH_PASSWORD` | Kata sandi SSH |
 | `ENV_FILE` | **Seluruh isi `.env` produksi**, bukan satu nilai. Ditulis ulang ke server tiap deploy |
-| `DEPLOY_BASE_PATH` | Induk tujuan rsync. Workflow menambahkan `/<app>` sendiri — jangan sertakan nama app |
+| `DEPLOY_BASE_PATH` | Induk keempat app. Workflow menambahkan `/<app>` sendiri — jangan sertakan nama app |
 | `VITE_API_BASE_URL`, `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER` | Build ketiga frontend |
 | `VITE_GOOGLE_CLIENT_ID` | Login Google di storefront |
 | `DISCORD_WEBHOOK_LOG_URL` | Opsional. Kosong = notifikasi dilewati |
