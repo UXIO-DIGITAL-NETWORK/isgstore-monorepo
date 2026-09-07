@@ -1,0 +1,23 @@
+# Dependencies — never committed; each app installs its own.
+node_modules/
+vendor/
+
+# Build output
+dist/
+build/
+
+# Environment — secrets. Every app keeps its own .env, tracked only as .env.example.
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Test + tooling caches
+.phpunit.result.cache
+coverage/
+*.tsbuildinfo
