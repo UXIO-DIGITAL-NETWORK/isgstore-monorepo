@@ -51,13 +51,13 @@ jobs:
           items=''
           add() { items="${items:+$items,}$1"; }
           if [ "$ADMIN" = 'true' ]; then
-            add '{"app":"admin","deploy_path_secret":"DEPLOY_PATH_ADMIN","label":"Admin Dashboard"}'
+            add '{"app":"admin","label":"Admin Dashboard"}'
           fi
           if [ "$STOREFRONT" = 'true' ]; then
-            add '{"app":"storefront","deploy_path_secret":"DEPLOY_PATH_STOREFRONT","label":"Storefront"}'
+            add '{"app":"storefront","label":"Storefront"}'
           fi
           if [ "$PAYMENT" = 'true' ]; then
-            add '{"app":"payment","deploy_path_secret":"DEPLOY_PATH_PAYMENT","label":"Payment Page"}'
+            add '{"app":"payment","label":"Payment Page"}'
           fi
           echo "frontend={\"include\":[$items]}" >> "$GITHUB_OUTPUT"
 
@@ -274,10 +274,17 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-          DEPLOY_PATH: ${{ secrets[matrix.deploy_path_secret] }}
+          # Satu base path, subdirektori per app. Root nginx tiap vhost
+          # (subdomain admin/payment, domain utama untuk storefront) menunjuk
+          # ke $DEPLOY_BASE_PATH/<app>.
+          DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
           APP: ${{ matrix.app }}
         run: |
           set -euo pipefail
+          # rsync --delete menghapus apa pun di tujuan yang tidak ada di dist/,
+          # jadi base path yang kosong akan mengarahkannya ke "/<app>".
+          test -n "$DEPLOY_BASE_PATH" || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+          DEPLOY_PATH="${DEPLOY_BASE_PATH%/}/$APP"
           test -d "apps/$APP/dist" || { echo "::error::apps/$APP/dist tidak ada — build gagal?"; exit 1; }
           sshpass -e rsync -avzr --delete             -e "ssh -p $SSH_PORT -o BatchMode=no"             "apps/$APP/dist/"             "$SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH"
 
