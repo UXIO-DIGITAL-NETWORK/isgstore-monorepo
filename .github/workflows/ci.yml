@@ -25,6 +25,7 @@ jobs:
       admin: ${{ steps.filter.outputs.admin }}
       storefront: ${{ steps.filter.outputs.storefront }}
       payment: ${{ steps.filter.outputs.payment }}
+      frontend: ${{ steps.matrix.outputs.frontend }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -43,6 +44,23 @@ jobs:
             payment:
               - 'apps/payment/**'
               - '.github/workflows/**'
+
+      # `matrix` tidak tersedia di `if:` level job, jadi matriksnya disusun di
+      # sini sebagai JSON dan hanya memuat app yang benar-benar berubah.
+      - name: Susun matrix frontend
+        id: matrix
+        env:
+          ADMIN: ${{ steps.filter.outputs.admin }}
+          STOREFRONT: ${{ steps.filter.outputs.storefront }}
+          PAYMENT: ${{ steps.filter.outputs.payment }}
+        run: |
+          set -euo pipefail
+          items=''
+          add() { items="${items:+$items,}\"$1\""; }
+          [ "$ADMIN" = 'true' ] && add admin || true
+          [ "$STOREFRONT" = 'true' ] && add storefront || true
+          [ "$PAYMENT" = 'true' ] && add payment || true
+          echo "frontend={\"app\":[$items]}" >> "$GITHUB_OUTPUT"
 
   api:
     name: API — test + Pint
@@ -67,17 +85,13 @@ jobs:
   frontend:
     name: ${{ matrix.app }} — lint + typecheck + test
     needs: changes
+    # Matriks kosong membuat GitHub menolak workflow, jadi job-nya dilewati
+    # sepenuhnya kalau tidak ada frontend yang berubah.
+    if: needs.changes.outputs.frontend != '{"app":[]}'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        app: [admin, storefront, payment]
-    # Jalankan hanya app yang berubah. `needs.changes.outputs[matrix.app]`
-    # tidak bisa dipakai di `if:` job, jadi disaring per-app di bawah.
-    if: |
-      (matrix.app == 'admin' && needs.changes.outputs.admin == 'true') ||
-      (matrix.app == 'storefront' && needs.changes.outputs.storefront == 'true') ||
-      (matrix.app == 'payment' && needs.changes.outputs.payment == 'true')
+      matrix: ${{ fromJson(needs.changes.outputs.frontend) }}
     defaults:
       run:
         working-directory: apps/${{ matrix.app }}

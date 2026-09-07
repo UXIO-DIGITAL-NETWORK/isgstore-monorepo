@@ -25,6 +25,7 @@ jobs:
       admin: ${{ steps.filter.outputs.admin }}
       storefront: ${{ steps.filter.outputs.storefront }}
       payment: ${{ steps.filter.outputs.payment }}
+      frontend: ${{ steps.matrix.outputs.frontend }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -35,6 +36,30 @@ jobs:
             admin: ['apps/admin/**', '.github/workflows/**']
             storefront: ['apps/storefront/**', '.github/workflows/**']
             payment: ['apps/payment/**', '.github/workflows/**']
+
+      # `matrix` tidak tersedia di `if:` level job, jadi penyaringan app yang
+      # berubah tidak bisa ditulis di sana. Matriksnya disusun di sini sebagai
+      # JSON, dan job frontend hanya menerima app yang benar-benar berubah.
+      - name: Susun matrix frontend
+        id: matrix
+        env:
+          ADMIN: ${{ steps.filter.outputs.admin }}
+          STOREFRONT: ${{ steps.filter.outputs.storefront }}
+          PAYMENT: ${{ steps.filter.outputs.payment }}
+        run: |
+          set -euo pipefail
+          items=''
+          add() { items="${items:+$items,}$1"; }
+          if [ "$ADMIN" = 'true' ]; then
+            add '{"app":"admin","deploy_path_secret":"DEPLOY_PATH_ADMIN","label":"Admin Dashboard"}'
+          fi
+          if [ "$STOREFRONT" = 'true' ]; then
+            add '{"app":"storefront","deploy_path_secret":"DEPLOY_PATH_STOREFRONT","label":"Storefront"}'
+          fi
+          if [ "$PAYMENT" = 'true' ]; then
+            add '{"app":"payment","deploy_path_secret":"DEPLOY_PATH_PAYMENT","label":"Payment Page"}'
+          fi
+          echo "frontend={\"include\":[$items]}" >> "$GITHUB_OUTPUT"
 
   # ── API ────────────────────────────────────────────────────────────────────
   api-test:
@@ -178,26 +203,15 @@ jobs:
 
   # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
-    name: ${{ matrix.app }} — build + deploy
+    name: ${{ matrix.label }} — build + deploy
     needs: changes
+    # Matriks kosong membuat GitHub menolak workflow, jadi job-nya dilewati
+    # sepenuhnya kalau tidak ada frontend yang berubah.
+    if: needs.changes.outputs.frontend != '{"include":[]}'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - app: admin
-            deploy_path_secret: DEPLOY_PATH_ADMIN
-            label: Admin Dashboard
-          - app: storefront
-            deploy_path_secret: DEPLOY_PATH_STOREFRONT
-            label: Storefront
-          - app: payment
-            deploy_path_secret: DEPLOY_PATH_PAYMENT
-            label: Payment Page
-    if: |
-      (matrix.app == 'admin' && needs.changes.outputs.admin == 'true') ||
-      (matrix.app == 'storefront' && needs.changes.outputs.storefront == 'true') ||
-      (matrix.app == 'payment' && needs.changes.outputs.payment == 'true')
+      matrix: ${{ fromJson(needs.changes.outputs.frontend) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
