@@ -109,9 +109,11 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          # Autentikasi kata sandi, bukan kunci. Server harus mengizinkan
-          # `PasswordAuthentication yes` di sshd_config.
-          password: ${{ secrets.SSH_PASSWORD }}
+          # Autentikasi kunci, bukan kata sandi. Privat-nya di secret
+          # SSH_PRIVATE_KEY, publiknya di ~/.ssh/authorized_keys user deploy.
+          # BUKAN kunci yang sama dengan deploy key di langkah 9 doc: yang itu
+          # arahnya server → GitHub, yang ini GitHub Actions → server.
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH
           script: |
@@ -296,28 +298,33 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
 
-      # burnett01/rsync-deployments hanya menerima kunci privat, jadi tidak bisa
-      # dipakai untuk autentikasi kata sandi. rsync dijalankan manual lewat
-      # sshpass sebagai gantinya.
-      - name: Pasang sshpass
-        run: sudo apt-get update -qq && sudo apt-get install -y sshpass
-
-      - name: Percayai host key server
+      # rsync tetap dijalankan manual, bukan lewat
+      # burnett01/rsync-deployments, supaya penyiapan known_hosts tetap
+      # terlihat di langkah tersendiri di bawah — action itu mengurusnya
+      # sendiri, di luar jangkauan berkas ini.
+      - name: Siapkan kunci SSH
         env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY" || { echo "::error::secret SSH_PRIVATE_KEY belum diisi"; exit 1; }
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          # Lewat variabel, bukan argumen baris perintah: argumen terbaca di
+          # daftar proses runner.
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
           # Merekam host key lebih dulu, supaya rsync tidak perlu dijalankan
-          # dengan StrictHostKeyChecking=no — server palsu tetap ditolak.
+          # dengan StrictHostKeyChecking=no. Batasnya: ssh-keyscan mempercayai
+          # apa pun yang menjawab saat itu, jadi ini BUKAN perlindungan
+          # terhadap server palsu — lihat docs/04-deployment.md §Catatan
+          # keamanan.
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           chmod 600 ~/.ssh/known_hosts
 
       - name: Deploy via rsync
         env:
-          # sshpass -e membaca kata sandi dari variabel ini, bukan dari argumen
-          # baris perintah — `-p` akan membocorkannya ke daftar proses runner.
-          SSHPASS: ${{ secrets.SSH_PASSWORD }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
@@ -333,11 +340,18 @@ jobs:
           test -n "$DEPLOY_BASE_PATH" || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
           DEPLOY_PATH="${DEPLOY_BASE_PATH%/}/$APP"
           test -d "apps/$APP/dist" || { echo "::error::apps/$APP/dist tidak ada — build gagal?"; exit 1; }
-          sshpass -e rsync -avzr --delete             -e "ssh -p $SSH_PORT -o BatchMode=no"             "apps/$APP/dist/"             "$SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH"
+          # BatchMode=yes: tidak ada lagi yang perlu diketik, jadi prompt apa
+          # pun berarti kunci ditolak — lebih baik gagal seketika daripada
+          # menggantung sampai job timeout. IdentitiesOnly=yes: pakai
+          # deploy_key saja, jangan menawarkan kunci lain milik runner.
+          rsync -avzr --delete \
+            -e "ssh -i $HOME/.ssh/deploy_key -p $SSH_PORT -o BatchMode=yes -o IdentitiesOnly=yes" \
+            "apps/$APP/dist/" \
+            "$SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH"
 
-      - name: Bersihkan known_hosts
+      - name: Bersihkan kunci SSH
         if: always()
-        run: rm -f ~/.ssh/known_hosts
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts
 
       - name: Notify Discord — hasil
         if: always()
