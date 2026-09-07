@@ -2,9 +2,11 @@
 #
 # PERUBAHAN DI SISI SERVER YANG DIBUTUHKAN — baca docs/04-deployment.md §Migrasi
 # ke monorepo sebelum menjalankan ini. Sebelumnya server meng-clone empat repo
-# ke empat direktori. Sekarang satu repo di-clone ke $REPO_DIR, dan API hidup di
-# $REPO_DIR/apps/api — jadi root nginx dan path supervisor harus diarahkan ulang.
-# Ketiga frontend tidak terpengaruh: yang dikirim tetap isi folder dist/.
+# ke empat direktori. Sekarang keempat app berbagi satu induk, secret
+# DEPLOY_BASE_PATH: frontend menerima isi dist/ di $DEPLOY_BASE_PATH/<app>,
+# sedangkan monorepo-nya sendiri di-clone ke $DEPLOY_BASE_PATH/api dan API
+# dilayani dari apps/api/public di dalamnya — jadi root nginx keempat vhost
+# harus diarahkan ulang.
 name: Deploy Production
 
 on:
@@ -103,6 +105,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
+          DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -110,10 +113,15 @@ jobs:
           # `PasswordAuthentication yes` di sshd_config.
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
-          envs: ENV_FILE_CONTENT
+          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH
           script: |
             set -e
-            REPO_DIR="/home/uxioserver1/web-topup-uxiotopup-provider/repo"
+            # Satu base path untuk keempat app. Frontend menerima isi dist/ di
+            # $DEPLOY_BASE_PATH/<app>; API bukan hasil build, jadi yang tinggal
+            # di $DEPLOY_BASE_PATH/api adalah klon monorepo-nya sendiri dan root
+            # nginx api.<domain> menunjuk ke apps/api/public di dalamnya.
+            [ -n "$DEPLOY_BASE_PATH" ] || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+            REPO_DIR="${DEPLOY_BASE_PATH%/}/api"
             API_DIR="$REPO_DIR/apps/api"
 
             # 0. Bootstrap: clone monorepo saat deploy pertama
@@ -157,7 +165,7 @@ jobs:
             php artisan storage:link || true
 
             # 8. Permission
-            sudo chown -R uxioserver1:www-data "$API_DIR"
+            sudo chown -R "$(id -un):www-data" "$API_DIR"
             sudo chmod -R 775 "$API_DIR/storage" "$API_DIR/bootstrap/cache"
 
             # 8b. Reload php-fpm — OPcache akan menyajikan bytecode lama tanpa ini
@@ -174,7 +182,12 @@ jobs:
             command -v supervisorctl >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y supervisor; }
             sudo systemctl enable --now supervisor
             sudo mkdir -p /etc/supervisor/conf.d
-            sudo cp "$API_DIR/supervisor/api-prod-worker.conf" /etc/supervisor/conf.d/
+            # Conf-nya template: path worker mengikuti $API_DIR, bukan nilai
+            # yang ditulis tetap di dalam berkas. Tanpa ini worker menunjuk ke
+            # direktori pra-monorepo dan langkah 15 menggagalkan deploy.
+            sed -e "s|__API_DIR__|$API_DIR|g" -e "s|__DEPLOY_USER__|$(id -un)|g" \
+              "$API_DIR/supervisor/api-prod-worker.conf" \
+              | sudo tee /etc/supervisor/conf.d/api-prod-worker.conf >/dev/null
             sudo supervisorctl reread && sudo supervisorctl update
 
             # 14. Restart worker
