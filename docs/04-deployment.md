@@ -47,7 +47,7 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
    Tempel isinya ke **Settings → Deploy keys → Add deploy key** di repo (read-only cukup — deploy tidak pernah push). Uji dengan `ssh -T git@github.com`; jawaban "successfully authenticated" berarti beres.
 
-   Host key GitHub tidak perlu disiapkan manual — deploy menuliskannya ke `known_hosts` sendiri.
+   Host key GitHub tidak perlu disiapkan manual — deploy menuliskannya ke `known_hosts` sendiri, dan juga memasang `~/.ssh/config` yang melewatkan `github.com` ke `ssh.github.com:443`. Port 22 keluar diblokir di server ini; tanpa jalur 443 itu `git pull` menggantung sampai *Connection timed out*. Uji dengan `ssh -T git@github.com` — kalau menjawab "successfully authenticated", keduanya beres sekaligus.
 10. **Pastikan `PasswordAuthentication yes` aktif** di `/etc/ssh/sshd_config`, lalu `sudo systemctl reload ssh`. Deploy memakai autentikasi kata sandi, bukan kunci.
 
 ## Secret GitHub
