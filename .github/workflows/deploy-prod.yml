@@ -131,9 +131,24 @@ jobs:
             #     mempercayai apa pun yang menjawab, sehingga justru membuang
             #     perlindungan yang membuat verifikasi host key ada gunanya.
             mkdir -p ~/.ssh && chmod 700 ~/.ssh
-            GH_HOSTKEY='github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl'
+            GH_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl'
             touch ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts
-            grep -qxF "$GH_HOSTKEY" ~/.ssh/known_hosts || echo "$GH_HOSTKEY" >> ~/.ssh/known_hosts
+            for H in "github.com" "[ssh.github.com]:443"; do
+              grep -qxF "$H $GH_KEY" ~/.ssh/known_hosts || echo "$H $GH_KEY" >> ~/.ssh/known_hosts
+            done
+
+            # 0b. Lewatkan Git ke SSH-over-443 milik GitHub. Port 22 keluar
+            #     diblokir di server ini — gejalanya "Connection timed out",
+            #     bukan penolakan, jadi Git menggantung sampai batas waktu.
+            #     ssh.github.com:443 adalah endpoint resmi GitHub untuk itu,
+            #     dan kunci hostnya sama, jadi deploy key yang sama tetap
+            #     dipakai tanpa perubahan apa pun di sisi GitHub.
+            touch ~/.ssh/config && chmod 600 ~/.ssh/config
+            grep -q '^Host github.com$' ~/.ssh/config || printf '%s\n' \
+              'Host github.com' \
+              '  Hostname ssh.github.com' \
+              '  Port 443' \
+              '  User git' >> ~/.ssh/config
 
             # 0. Bootstrap: clone monorepo saat deploy pertama
             if [ ! -d "$REPO_DIR/.git" ]; then
