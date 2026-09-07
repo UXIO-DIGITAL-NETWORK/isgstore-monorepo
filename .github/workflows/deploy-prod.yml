@@ -95,7 +95,7 @@ jobs:
             if [ ! -d "$REPO_DIR/.git" ]; then
               echo "Setup pertama: clone monorepo ke $REPO_DIR"
               rm -rf "$REPO_DIR"
-              git clone git@github.com:UXIO-DIGITAL-NETWORK/uxiotopup-monorepo.git "$REPO_DIR"
+              git clone git@github.com:UXIO-DIGITAL-NETWORK/isgstore-monorepo.git "$REPO_DIR"
               git -C "$REPO_DIR" checkout main
             fi
 
