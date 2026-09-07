@@ -52,15 +52,43 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
 ## Secret GitHub
 
-| Secret | Untuk |
-|---|---|
-| `SSH_HOST`, `SSH_PORT`, `SSH_USERNAME` | Alamat dan pengguna server |
-| `SSH_PASSWORD` | Kata sandi SSH |
-| `ENV_FILE` | **Seluruh isi `.env` produksi**, bukan satu nilai. Ditulis ulang ke server tiap deploy |
-| `DEPLOY_BASE_PATH` | Induk keempat app. Workflow menambahkan `/<app>` sendiri — jangan sertakan nama app |
-| `VITE_API_BASE_URL`, `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER` | Build ketiga frontend |
-| `VITE_GOOGLE_CLIENT_ID` | Login Google di storefront |
-| `DISCORD_WEBHOOK_LOG_URL` | Opsional. Kosong = notifikasi dilewati |
+Sebelas secret, **sepuluh di antaranya wajib**. Dipasang di
+**Settings → Secrets and variables → Actions → New repository secret**.
+
+Daftar ini lengkap: tidak ada nilai lain yang dibaca `deploy-prod.yml` maupun
+`ci.yml`. Untuk membuktikannya kembali setelah repo berubah:
+
+```bash
+grep -oh 'secrets\.[A-Z_0-9]*' .github/workflows/*.yml | sort -u
+```
+
+| # | Secret | Wajib | Dipakai | Isi / contoh |
+|---|---|---|---|---|
+| 1 | `SSH_HOST` | ✅ | API + 3 frontend | IP atau hostname server. `203.0.113.10` |
+| 2 | `SSH_PORT` | ✅ | API + 3 frontend | Port sshd. `22` |
+| 3 | `SSH_USERNAME` | ✅ | API + 3 frontend | User SSH, pemilik direktori deploy. `uxioserver1` |
+| 4 | `SSH_PASSWORD` | ✅ | API + 3 frontend | Kata sandi user di atas. Deploy memakai kata sandi, bukan kunci — lihat catatan di bawah |
+| 5 | `DEPLOY_BASE_PATH` | ✅ | API + 3 frontend | Induk keempat app, **tanpa** nama app. `/home/uxioserver1/web-topup-uxiotopup-provider/dist` |
+| 6 | `ENV_FILE` | ✅ | API | **Seluruh isi `.env` produksi**, bukan satu nilai. Ditulis ulang ke server tiap deploy — server bukan sumber kebenarannya, secret ini yang jadi sumber |
+| 7 | `VITE_API_BASE_URL` | ✅ | 3 frontend | Base URL API, dipakai ketiganya. `https://api.isgstore.id` |
+| 8 | `VITE_PUSHER_APP_KEY` | ✅ | 3 frontend | Key Pusher |
+| 9 | `VITE_PUSHER_APP_CLUSTER` | ✅ | 3 frontend | Cluster Pusher. `ap1` |
+| 10 | `VITE_GOOGLE_CLIENT_ID` | ✅ | 3 frontend | OAuth client ID Google. Dulu di-hardcode di YAML storefront |
+| 11 | `DISCORD_WEBHOOK_LOG_URL` | — | API + 3 frontend | Opsional. Kosong = notifikasi dilewati, deploy tetap jalan |
+
+Beberapa hal yang tidak terlihat dari tabel dan pernah memakan waktu:
+
+- **Nomor 1–4 dibaca dua jalur berbeda.** API memakainya lewat
+  `appleboy/ssh-action`; ketiga frontend lewat `sshpass` + `rsync` manual,
+  karena `burnett01/rsync-deployments` hanya menerima kunci privat. Satu nilai
+  salah menggagalkan keempatnya.
+- **Nomor 7–10 adalah variabel *build-time*.** Vite memanggangnya ke dalam
+  bundle, jadi mengubahnya di server tidak berpengaruh apa pun — harus
+  diubah di sini lalu di-deploy ulang.
+- **Nomor 6 ditimpa tiap deploy.** Mengedit `.env` langsung di server akan
+  hilang pada deploy berikutnya tanpa peringatan.
+- **Tidak ada secret untuk akses Git.** Server meng-clone dengan deploy key
+  miliknya sendiri (langkah 9 di atas), bukan dengan kredensial dari sini.
 
 ### Catatan tentang autentikasi kata sandi
 
