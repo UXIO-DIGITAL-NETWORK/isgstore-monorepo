@@ -79,7 +79,34 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
     - **`true` wajib ikut terdaftar.** Preflight di `deploy-prod.yml` menjalankan `sudo -n true`, dan sudoers menolak perintah yang tidak ada di daftar. Tanpa entri itu deploy tetap berhenti di preflight walaupun `chown`, `supervisorctl`, dan sisanya sudah diizinkan.
     - **Path harus persis seperti yang dijalankan.** Pastikan dengan `command -v true chown chmod tee mkdir supervisorctl systemctl apt-get`. Di Debian/Ubuntu modern `/bin` hanyalah symlink ke `/usr/bin`, dan sudoers **tidak** mengikuti symlink — `/bin/chown` di sudoers tidak cocok dengan `/usr/bin/chown` yang benar-benar dieksekusi.
 
-11. **Pastikan `PasswordAuthentication yes` aktif** di `/etc/ssh/sshd_config`, lalu `sudo systemctl reload ssh`. Deploy memakai autentikasi kata sandi, bukan kunci — dan itu permukaan serangan terbesar setup ini, jadi baca [§Catatan keamanan](#catatan-keamanan) sebelum membiarkannya begitu.
+11. **Pasang kunci SSH untuk GitHub Actions.** Deploy masuk ke server dengan kunci, bukan kata sandi. Ini kunci **kedua**, dan arahnya berlawanan dengan langkah 9: yang di langkah 9 dipakai *server* untuk menarik dari GitHub, yang ini dipakai *GitHub Actions* untuk masuk ke server. Jangan pakai ulang kunci yang sama untuk keduanya.
+
+    Buat pasangannya **di mesin Anda**, bukan di server — privat-nya tidak boleh pernah tinggal di server:
+
+    ```bash
+    ssh-keygen -t ed25519 -C "github-actions@<domain>" -f ~/.ssh/isgstore_deploy -N ''
+    ```
+
+    Pasang yang publik ke user deploy di server. Ini langkah terakhir yang masih memerlukan kata sandi user tersebut:
+
+    ```bash
+    ssh-copy-id -i ~/.ssh/isgstore_deploy.pub -p <SSH_PORT> <SSH_USERNAME>@<SSH_HOST>
+    ```
+
+    Uji dari mesin Anda — harus masuk tanpa ditanya apa pun:
+
+    ```bash
+    ssh -i ~/.ssh/isgstore_deploy -o IdentitiesOnly=yes -p <SSH_PORT> <SSH_USERNAME>@<SSH_HOST> 'echo OK'
+    ```
+
+    Lalu tempel **seluruh isi berkas privat** ke secret `SSH_PRIVATE_KEY` — `cat ~/.ssh/isgstore_deploy`, termasuk baris `-----BEGIN…`, `-----END…`, dan baris kosong di akhirnya. Kunci yang terpotong adalah penyebab paling sering dari `Permission denied (publickey)` di langkah ini.
+12. **Matikan autentikasi kata sandi** — setelah satu deploy dengan kunci benar-benar berhasil, dan setelah memastikan Anda masih punya jalan masuk lain (sesi SSH yang sedang terbuka, atau konsol VPS dari panel penyedia). Di `/etc/ssh/sshd_config`:
+
+    ```
+    PasswordAuthentication no
+    ```
+
+    Lalu `sudo sshd -t && sudo systemctl reload ssh`. Urutannya penting: `sshd -t` hanya memeriksa sintaks, bukan apakah kunci Anda benar-benar terpasang, jadi mematikan kata sandi sebelum kunci terbukti jalan bisa mengunci Anda dari server sendiri. Sekalian batasi `AllowUsers <SSH_USERNAME>` dan pasang `fail2ban`; lihat [§Catatan keamanan](#catatan-keamanan).
 
 ## Secret GitHub
 
@@ -98,7 +125,7 @@ grep -oh 'secrets\.[A-Z_0-9]*' .github/workflows/*.yml | sort -u
 | 1 | `SSH_HOST` | ✅ | API + 3 frontend | IP atau hostname server. `203.0.113.10` |
 | 2 | `SSH_PORT` | ✅ | API + 3 frontend | Port sshd. `22` |
 | 3 | `SSH_USERNAME` | ✅ | API + 3 frontend | User SSH, pemilik direktori deploy. `uxioserver1` |
-| 4 | `SSH_PASSWORD` | ✅ | API + 3 frontend | Kata sandi user di atas. Deploy memakai kata sandi, bukan kunci — lihat catatan di bawah |
+| 4 | `SSH_PRIVATE_KEY` | ✅ | API + 3 frontend | **Seluruh isi** kunci privat OpenSSH dari langkah 11, `-----BEGIN…` sampai `-----END…`. Pasangan publiknya ada di `authorized_keys` server. Bukan deploy key langkah 9 — lihat catatan di bawah |
 | 5 | `DEPLOY_BASE_PATH` | ✅ | API + 3 frontend | Induk keempat app, **tanpa** nama app. `/home/uxioserver1/web-topup-uxiotopup-provider/dist` |
 | 6 | `ENV_FILE` | ✅ | API | **Seluruh isi `.env` produksi**, bukan satu nilai. Ditulis ulang ke server tiap deploy — server bukan sumber kebenarannya, secret ini yang jadi sumber |
 | 7 | `VITE_API_BASE_URL` | ✅ | 3 frontend | Base URL API, dipakai ketiganya. `https://api.isgstore.id` |
@@ -110,9 +137,9 @@ grep -oh 'secrets\.[A-Z_0-9]*' .github/workflows/*.yml | sort -u
 Beberapa hal yang tidak terlihat dari tabel dan pernah memakan waktu:
 
 - **Nomor 1–4 dibaca dua jalur berbeda.** API memakainya lewat
-  `appleboy/ssh-action`; ketiga frontend lewat `sshpass` + `rsync` manual,
-  karena `burnett01/rsync-deployments` hanya menerima kunci privat. Satu nilai
-  salah menggagalkan keempatnya.
+  `appleboy/ssh-action`; ketiga frontend lewat `rsync` manual dengan kunci
+  yang ditulis ke `~/.ssh/deploy_key` di runner. Satu nilai salah
+  menggagalkan keempatnya.
 - **Nomor 7–10 adalah variabel *build-time*.** Vite memanggangnya ke dalam
   bundle, jadi mengubahnya di server tidak berpengaruh apa pun — harus
   diubah di sini lalu di-deploy ulang.
@@ -121,14 +148,15 @@ Beberapa hal yang tidak terlihat dari tabel dan pernah memakan waktu:
 - **Tidak ada secret untuk akses Git.** Server meng-clone dengan deploy key
   miliknya sendiri (langkah 9 di atas), bukan dengan kredensial dari sini.
 
-### Catatan tentang autentikasi kata sandi
+### Catatan tentang autentikasi SSH
 
-Deploy memakai kata sandi, bukan kunci privat. Dua akibat yang perlu diketahui:
+Deploy masuk ke server dengan kunci privat (`SSH_PRIVATE_KEY`), bukan kata sandi. Tiga hal yang perlu diketahui:
 
-- **`burnett01/rsync-deployments` tidak bisa dipakai** — action itu hanya menerima kunci. Ketiga frontend memakai `rsync` manual lewat `sshpass`. Kata sandinya diberikan lewat variabel `SSHPASS` dan `sshpass -e`, bukan lewat argumen `-p`, karena argumen baris perintah terbaca di daftar proses runner.
+- **Ada dua kunci berbeda dan arahnya berlawanan.** Langkah 9 memasang deploy key milik *server*, supaya server bisa `git clone` dari GitHub. Langkah 11 memasang kunci milik *GitHub Actions*, supaya Actions bisa masuk ke server. Menukar keduanya adalah kekeliruan yang paling mudah terjadi di sini, dan gejalanya sama persis: `Permission denied (publickey)`.
+- **`rsync` tetap dijalankan manual**, walaupun `burnett01/rsync-deployments` sekarang sudah bisa dipakai. Alasannya bukan lagi soal autentikasi, melainkan supaya penyiapan `known_hosts` tetap terlihat di `deploy-prod.yml` — action itu mengurusnya sendiri, di luar jangkauan berkas ini. Kunci ditulis ke `~/.ssh/deploy_key` lewat variabel (argumen baris perintah terbaca di daftar proses runner) dan dihapus di langkah `Bersihkan kunci SSH` yang berjalan `if: always()`.
 - **Host key server direkam lebih dulu** dengan `ssh-keyscan`, supaya `rsync` tidak perlu dijalankan dengan `StrictHostKeyChecking=no`. Ketahui batasnya: `ssh-keyscan` mempercayai apa pun yang menjawab saat itu juga, jadi ini merapikan bentuk perintahnya — bukan perlindungan terhadap server palsu — dan tiap run mempercayai ulang dari nol. Bandingkan dengan job API, yang menuliskan host key GitHub secara tetap justru karena alasan ini. Untuk benar-benar menutupnya, simpan host key server sebagai secret (mis. `SSH_HOST_KEY`) dan tulis langsung ke `known_hosts`.
 
-Kunci privat tetap lebih aman daripada kata sandi untuk deploy otomatis: kunci bisa dibatasi ke satu perintah, tidak bisa dipakai login interaktif, dan dicabut tanpa mengganti kredensial siapa pun. Kalau nanti ingin pindah, yang berubah hanya dua langkah di `deploy-prod.yml`.
+`rsync` dijalankan dengan `BatchMode=yes`, jadi kunci yang salah gagal seketika alih-alih menggantung menunggu prompt sampai job timeout, dan `IdentitiesOnly=yes`, supaya hanya `deploy_key` yang ditawarkan.
 
 Sampai langkah 1–4 selesai, **jangan** jalankan deploy dari repo ini.
 
@@ -157,21 +185,22 @@ ia rutin mematahkan deploy setiap kali script berubah. Batas keamanan yang
 sesungguhnya bukan isi sudoers, melainkan **siapa yang bisa memicu `sudo` itu**
 — dua bagian berikutnya.
 
-### Kata sandi SSH adalah risiko terbesarnya
+### Autentikasi SSH: CI sudah pakai kunci, sisanya di sisi server
 
-`PasswordAuthentication yes` (langkah 11) berarti satu kata sandi tertebak sama
-dengan root produksi, dan port SSH yang terbuka ke internet menerima percobaan
-brute force terus-menerus. Ini jauh lebih besar daripada soal cakupan sudo di
-atas.
+Deploy dulu memakai kata sandi, yang berarti satu kata sandi tertebak sama
+dengan root produksi — dan sshd yang terbuka ke internet menerima percobaan
+brute force tanpa henti. Sejak deploy memakai `SSH_PRIVATE_KEY`, jalur itu
+tertutup dari sisi CI. Yang masih harus dikerjakan di server:
 
-- **Pindah ke autentikasi kunci.** `appleboy/ssh-action` menerima `key:` sebagai
-  ganti `password:`, dan job frontend bisa kembali memakai
-  `burnett01/rsync-deployments` — `sshpass` ada di sana semata-mata karena
-  dipaksa memakai kata sandi. Sesudah itu setel `PasswordAuthentication no`.
-- **Selama kata sandi masih dipakai:** isinya harus acak dan panjang (≥40
-  karakter — tidak ada yang perlu menghafalnya, ia hanya tinggal di secret
-  `SSH_PASSWORD`), pasang `fail2ban`, dan batasi `AllowUsers <user-deploy>` di
-  `sshd_config`.
+- **`PasswordAuthentication no`** (langkah 12). Selama masih `yes`, memindahkan
+  CI ke kunci belum menutup apa pun — pintunya tetap terbuka bagi penebak, dan
+  user itu sekarang punya root tanpa kata sandi.
+- **`AllowUsers <user-deploy>`** dan **`fail2ban`**, supaya sisa permukaan yang
+  memang harus terbuka tidak dibiarkan bebas.
+- **Kunci deploy belum dibatasi ke satu perintah.** `command=` di
+  `authorized_keys` bisa menguncinya, tapi isi script deploy ikut berubah tiap
+  kali workflow berubah, jadi belum dipasang. `from=` tidak bisa dipakai:
+  alamat runner GitHub berubah-ubah.
 
 ### Akses push ke `main` sama dengan root di server
 
@@ -197,7 +226,7 @@ pun yang memberi CI akses ke server; yang penting kontrolnya ada:
   `bootstrap/cache`. Perbaikannya satu baris tepat setelah penulisan:
   `chmod 640 .env && sudo chown "$(id -un):www-data" .env`.
 - **`ssh-keyscan` di job frontend tidak menutup MITM.** Lihat
-  [§Catatan tentang autentikasi kata sandi](#catatan-tentang-autentikasi-kata-sandi).
+  [§Catatan tentang autentikasi SSH](#catatan-tentang-autentikasi-ssh).
 
 ---
 
