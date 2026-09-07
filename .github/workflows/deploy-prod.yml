@@ -81,7 +81,9 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
+          # Autentikasi kata sandi, bukan kunci. Server harus mengizinkan
+          # `PasswordAuthentication yes` di sshd_config.
+          password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           envs: ENV_FILE_CONTENT
           script: |
@@ -233,16 +235,41 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
 
+      # burnett01/rsync-deployments hanya menerima kunci privat, jadi tidak bisa
+      # dipakai untuk autentikasi kata sandi. rsync dijalankan manual lewat
+      # sshpass sebagai gantinya.
+      - name: Pasang sshpass
+        run: sudo apt-get update -qq && sudo apt-get install -y sshpass
+
+      - name: Percayai host key server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          # Merekam host key lebih dulu, supaya rsync tidak perlu dijalankan
+          # dengan StrictHostKeyChecking=no — server palsu tetap ditolak.
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 600 ~/.ssh/known_hosts
+
       - name: Deploy via rsync
-        uses: burnett01/rsync-deployments@7.0.1
-        with:
-          switches: -avzr --delete
-          path: apps/${{ matrix.app }}/dist/
-          remote_path: ${{ secrets[matrix.deploy_path_secret] }}
-          remote_host: ${{ secrets.SSH_HOST }}
-          remote_port: ${{ secrets.SSH_PORT }}
-          remote_user: ${{ secrets.SSH_USERNAME }}
-          remote_key: ${{ secrets.SSH_KEY }}
+        env:
+          # sshpass -e membaca kata sandi dari variabel ini, bukan dari argumen
+          # baris perintah — `-p` akan membocorkannya ke daftar proses runner.
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          DEPLOY_PATH: ${{ secrets[matrix.deploy_path_secret] }}
+          APP: ${{ matrix.app }}
+        run: |
+          set -euo pipefail
+          test -d "apps/$APP/dist" || { echo "::error::apps/$APP/dist tidak ada — build gagal?"; exit 1; }
+          sshpass -e rsync -avzr --delete             -e "ssh -p $SSH_PORT -o BatchMode=no"             "apps/$APP/dist/"             "$SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH"
+
+      - name: Bersihkan known_hosts
+        if: always()
+        run: rm -f ~/.ssh/known_hosts
 
       - name: Notify Discord — hasil
         if: always()

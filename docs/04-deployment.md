@@ -27,6 +27,28 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 6. **Ketiga root nginx frontend tidak berubah** — yang dikirim tetap isi folder `dist/`.
 7. **Tambahkan tiga secret baru** di GitHub: `DEPLOY_PATH_ADMIN`, `DEPLOY_PATH_STOREFRONT`, `DEPLOY_PATH_PAYMENT`. Satu `DEPLOY_PATH` tidak cukup untuk tiga tujuan dalam satu repo.
 8. **Pindahkan `VITE_GOOGLE_CLIENT_ID` ke secret** — sebelumnya di-hardcode di YAML storefront.
+9. **Pastikan `PasswordAuthentication yes` aktif** di `/etc/ssh/sshd_config`, lalu `sudo systemctl reload ssh`. Deploy memakai autentikasi kata sandi, bukan kunci.
+
+## Secret GitHub
+
+| Secret | Untuk |
+|---|---|
+| `SSH_HOST`, `SSH_PORT`, `SSH_USERNAME` | Alamat dan pengguna server |
+| `SSH_PASSWORD` | Kata sandi SSH |
+| `ENV_FILE` | **Seluruh isi `.env` produksi**, bukan satu nilai. Ditulis ulang ke server tiap deploy |
+| `DEPLOY_PATH_ADMIN`, `DEPLOY_PATH_STOREFRONT`, `DEPLOY_PATH_PAYMENT` | Tujuan rsync tiap frontend |
+| `VITE_API_BASE_URL`, `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER` | Build ketiga frontend |
+| `VITE_GOOGLE_CLIENT_ID` | Login Google di storefront |
+| `DISCORD_WEBHOOK_LOG_URL` | Opsional. Kosong = notifikasi dilewati |
+
+### Catatan tentang autentikasi kata sandi
+
+Deploy memakai kata sandi, bukan kunci privat. Dua akibat yang perlu diketahui:
+
+- **`burnett01/rsync-deployments` tidak bisa dipakai** — action itu hanya menerima kunci. Ketiga frontend memakai `rsync` manual lewat `sshpass`. Kata sandinya diberikan lewat variabel `SSHPASS` dan `sshpass -e`, bukan lewat argumen `-p`, karena argumen baris perintah terbaca di daftar proses runner.
+- **Host key server direkam lebih dulu** dengan `ssh-keyscan`, supaya `rsync` tidak perlu dijalankan dengan `StrictHostKeyChecking=no`. Tanpa itu, server palsu yang menyamar di alamat yang sama akan diterima begitu saja.
+
+Kunci privat tetap lebih aman daripada kata sandi untuk deploy otomatis: kunci bisa dibatasi ke satu perintah, tidak bisa dipakai login interaktif, dan dicabut tanpa mengganti kredensial siapa pun. Kalau nanti ingin pindah, yang berubah hanya dua langkah di `deploy-prod.yml`.
 
 Sampai langkah 1–4 selesai, **jangan** jalankan deploy dari repo ini.
 
