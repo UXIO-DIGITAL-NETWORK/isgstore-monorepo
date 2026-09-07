@@ -1,0 +1,159 @@
+{
+  "title": "Top Up",
+  "gameId": "Game ID",
+  "gameIdPlaceholder": "Masukkan Game ID kamu",
+  "whatsapp": "Nomor WhatsApp",
+  "whatsappPlaceholder": "08xxxxxxxxxx",
+  "selectProduct": "Pilih Nominal",
+  "paymentMethod": "Metode Pembayaran",
+  "totalPrice": "Total Harga",
+  "submit": "Bayar Sekarang",
+  "loading": "Memproses...",
+  "gameInfo": {
+    "badges": {
+      "fastProcess": "Proses Cepat",
+      "safe": "Aman 100%",
+      "official": "Resmi"
+    }
+  },
+  "accountDetail": {
+    "title": "Masukan Detail Akun",
+    "userId": "User ID",
+    "userIdPlaceholder": "Masukkan User ID",
+    "serverId": "Server ID",
+    "serverIdPlaceholder": "Masukkan ID Server",
+    "helper": "Pastikan User ID dan ID Server sudah benar sebelum melanjutkan",
+    "nickname": "Nickname",
+    "nicknamePending": "Masukkan ID untuk melihat nickname",
+    "nicknameLoading": "Memvalidasi...",
+    "nicknameError": "ID tidak ditemukan",
+    "checkUsername": "Cek Username",
+    "viewGuide": "Lihat Panduan Pengisian",
+    "errors": {
+      "required": "Wajib diisi",
+      "numeric": "Hanya boleh angka",
+      "minLength": "Minimal {{length}} karakter",
+      "maxLength": "Maksimal {{length}} karakter",
+      "pattern": "Format tidak sesuai",
+      "fixFields": "Lengkapi detail akun dengan benar"
+    }
+  },
+  "packages": {
+    "title": "Pilih Paket Diamond",
+    "categories": {
+      "all": "Semua",
+      "weekly": "Weekly Diamonds Pass",
+      "firstTopUp": "First TopUp",
+      "diamonds": "Diamonds",
+      "special": "Special Items"
+    },
+    "groupTitles": {
+      "weekly": "Weekly Diamonds Pass",
+      "firstTopUp": "First Top Up",
+      "diamonds": "Diamonds",
+      "special": "Special Items"
+    },
+    "unit": "Diamond",
+    "popular": "Terlaris",
+    "bonus": "Bonus",
+    "instantDelivery": "Pengiriman\nInstan"
+  },
+  "payment": {
+    "title": "Metode Pembayaran",
+    "selectOption": "Pilih metode pembayaran",
+    "memberOnly": "Khusus Member",
+    "credits": "Credits",
+    "groups": {
+      "ewallet": "E-Wallet",
+      "qris": "QRIS",
+      "va": "Virtual Account"
+    }
+  },
+  "contact": {
+    "title": "Detail Kontak",
+    "whatsapp": "No. WhatsApp",
+    "whatsappPlaceholder": "08xxxxxxxxxx atau +65xxxxxxxx",
+    "helperNote": "Nomor ini akan dihubungi jika terjadi masalah",
+    "whatsappRequired": "Nomor WhatsApp wajib diisi",
+    "email": "Email",
+    "emailPlaceholder": "nama@email.com",
+    "emailHelperNote": "Bukti pembelian akan kami kirim ke email ini",
+    "emailRequired": "Email wajib diisi",
+    "emailInvalid": "Format email tidak valid",
+    "receiptNote": "Bukti pembelian akan kami kirim ke email dan WhatsApp yang kamu isi di atas."
+  },
+  "promo": {
+    "title": "Kode Promo",
+    "trigger": {
+      "title": "Pakai voucher",
+      "subtitle": "Kode promo & voucher publik — untuk semua pengguna",
+      "cta": "Pilih",
+      "applied": "Hemat {{amount}}",
+      "change": "Ubah",
+      "remove": "Hapus kode promo"
+    },
+    "modal": {
+      "close": "Tutup",
+      "eyebrow": "Voucher Publik",
+      "title": "Dapatkan potongan harga",
+      "description": "Pakai kode voucher manual atau pilih dari daftar yang berlaku untuk produk yang kamu pilih.",
+      "inputPlaceholder": "Masukkan kode voucher",
+      "apply": "Pakai kode",
+      "availableTitle": "Voucher tersedia untuk semua",
+      "empty": "Belum ada voucher publik yang bisa dipakai saat ini.",
+      "error": "Gagal memeriksa kode promo. Coba lagi.",
+      "minPurchase": "Min. pembelian {{amount}}"
+    }
+  },
+  "reviews": {
+    "title": "Ulasan Pelanggan",
+    "basedOn": "Berdasarkan {{count}} ulasan",
+    "seeAll": "Lihat Semua Ulasan",
+    "hide": "Sembunyikan Ulasan",
+    "satisfactionText": "{{rate}}% pembeli merasa puas dengan produk ini.",
+    "fromCount": "Dari {{count}} Ulasan.",
+    "ratingLabel": "Rating",
+    "anonymous": "Pengguna Anonim"
+  },
+  "summary": {
+    "selectedPackage": "Paket yang dipilih",
+    "noPackageSelected": "Belum ada paket yang dipilih",
+    "total": "Total Pembayaran",
+    "totalLabel": "Total Bayar",
+    "price": "Harga",
+    "adminFee": "Biaya Admin",
+    "totalPayment": "Total Pembayaran",
+    "buyNow": "Top Up Sekarang",
+    "processing": "Memproses...",
+    "checkingId": "Mengecek ID...",
+    "instantProcess": "Waktu proses instan",
+    "pointsDiscount": "Potongan Poin",
+    "pointsEarned": "Poin didapat",
+    "pointsEarnedGuest": "Login untuk dapat {{points}} poin dari transaksi ini"
+  },
+  "confirmModal": {
+    "title": "KONFIRMASI PEMBELIAN",
+    "subtitle": "Pastikan data akun dan produk yang anda pilih valid dan sesuai.",
+    "dataPlayer": "Data Player",
+    "userId": "User ID",
+    "serverId": "Server ID",
+    "username": "Username",
+    "orderSummary": "Ringkasan Pesanan",
+    "item": "Item",
+    "product": "Produk",
+    "price": "Harga",
+    "method": "Metode",
+    "adminFee": "Biaya Admin",
+    "totalPay": "Total Bayar",
+    "confirm": "Pesan Sekarang",
+    "cancel": "Batalkan"
+  },
+  "points": {
+    "title": "Pakai Poin",
+    "available": "Kamu punya {{points}} poin (setara {{value}}).",
+    "useAll": "Pakai {{points}} poin ({{value}}) untuk memotong harga",
+    "applied": "Potongan poin {{value}} diterapkan.",
+    "coversAll": "Poin menutupi seluruh pembayaran — tidak ada yang perlu dibayar.",
+    "notAllowed": "Paket membership kamu sudah termasuk potongan harga, jadi poin tidak bisa dipakai."
+  }
+}

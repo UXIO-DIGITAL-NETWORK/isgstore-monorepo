@@ -1,0 +1,93 @@
+{
+  "heading": "WAITING FOR PAYMENT",
+  "subtitle": "Please complete the payment using your selected method.",
+  "timer": {
+    "hours": "Hours",
+    "minutes": "Minutes",
+    "seconds": "Seconds"
+  },
+  "orderDetail": {
+    "title": "Order Detail",
+    "userId": "User ID",
+    "serverId": "Server ID",
+    "username": "Username",
+    "price": "Price",
+    "adminFee": "Admin Fee",
+    "totalPayment": "Total Payment",
+    "pointsEstimate": "Points you will earn",
+    "pointsEarned": "Points earned",
+    "pointsGuestNote": "This order earns no points because it was placed without an account."
+  },
+  "instructions": {
+    "title": "Payment Instructions",
+    "steps": [
+      "Open a payment application that supports QRIS (DANA, OVO, GoPay, ShopeePay, Mobile Banking, or any other e-wallet app).",
+      "Scan the QR code displayed on the payment page.",
+      "Make sure the payment amount matches the total bill.",
+      "Continue and complete the transaction in your payment application.",
+      "Once payment is successful, the system will automatically verify your transaction within a few seconds.",
+      "Do not close this page until the transaction has been processed successfully."
+    ]
+  },
+  "paymentMethod": {
+    "title": "Payment Method",
+    "qrisLabel": "QRIS All Payment",
+    "invoiceNumber": "Invoice Number",
+    "paymentStatus": "Payment Status",
+    "transactionStatus": "Transaction Status",
+    "message": "Message",
+    "scanMessage": "Use an e-wallet app, mobile banking, or camera to scan the QR code below:",
+    "unpaid": "UNPAID",
+    "pending": "PENDING",
+    "downloadQr": "Download QR Code",
+    "verifyNote": "After making payment, please wait for the system to verify your payment automatically",
+    "copySuccess": "Copied!"
+  },
+  "review": {
+    "title": "RATE YOUR TRANSACTION",
+    "subtitle": "How was your experience after the transaction?",
+    "quickReviewLabel": "Quick Review (optional)",
+    "chips": {
+      "fastProcess": "Fast Process",
+      "cheapPrice": "Affordable Price",
+      "friendlyService": "Friendly Service",
+      "easyPayment": "Easy Payment",
+      "recommended": "Recommended"
+    },
+    "placeholder": "Write your top-up experience here...",
+    "skip": "Skip",
+    "submit": "Submit Review",
+    "submitting": "Submitting...",
+    "thanks": "Thanks for your review",
+    "failed": "Failed to submit review."
+  },
+  "failed": {
+    "heading": "PAYMENT FAILED",
+    "subtitle": "The transaction could not be processed",
+    "failed": "FAILED",
+    "time": "Time",
+    "refundNote": "The order could not be processed. If you were charged, a refund will be arranged and its status will appear here.",
+    "retryPayment": "Try Payment Again",
+    "choosePaymentMethod": "Choose Payment Method",
+    "banner": {
+      "title": "NEED HELP?",
+      "subtitle": "Our support team is ready to help you 24/7.",
+      "chatWhatsApp": "Chat WhatsApp"
+    }
+  },
+  "success": {
+    "heading": "PAYMENT SUCCESSFUL",
+    "subtitle": "Your transaction was completed successfully",
+    "paid": "PAID",
+    "success": "SUCCESS",
+    "itemDeliveredNote": "Item has been successfully delivered to the target account. If the item has not been received within a few minutes, please contact",
+    "customerSupport": "Customer Support",
+    "downloadInvoice": "Download Invoice",
+    "banner": {
+      "title": "WANT TO TOP UP MORE GAMES?",
+      "subtitle": "Fast, safe & trusted — only at Topupgame.id",
+      "topUpAgain": "Top Up Again",
+      "backToHome": "Back to Home"
+    }
+  }
+}

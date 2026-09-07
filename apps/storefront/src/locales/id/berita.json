@@ -1,0 +1,36 @@
+{
+  "title": "ARTIKEL SEPUTAR GAME",
+  "subtitle": "Temukan informasi, tips, dan update terbaru seputar top up game, promo menarik",
+  "empty": "Tidak ada artikel untuk kategori ini.",
+  "categories": {
+    "semua": "Semua",
+    "promo": "Promo",
+    "mobile-legend": "Mobile Legend",
+    "free-fire": "Free Fire",
+    "honor-of-kings": "Honor Of Kings",
+    "valorant": "Valorant",
+    "lainnya": "Lainnya"
+  },
+  "pagination": {
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "breadcrumb": {
+    "home": "Beranda",
+    "news": "Berita"
+  },
+  "detail": {
+    "related": "ARTIKEL TERKAIT LAINNYA",
+    "share": "Bagikan:",
+    "notFound": "Artikel tidak ditemukan.",
+    "loading": "Memuat artikel..."
+  },
+  "shareLabels": {
+    "facebook": "Bagikan ke Facebook",
+    "twitter": "Bagikan ke X (Twitter)",
+    "linkedin": "Bagikan ke LinkedIn",
+    "whatsapp": "Bagikan ke WhatsApp",
+    "copy": "Salin tautan",
+    "copied": "Tersalin!"
+  }
+}

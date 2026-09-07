@@ -1,0 +1,159 @@
+{
+  "title": "Top Up",
+  "gameId": "Game ID",
+  "gameIdPlaceholder": "Enter your Game ID",
+  "whatsapp": "WhatsApp Number",
+  "whatsappPlaceholder": "08xxxxxxxxxx",
+  "selectProduct": "Select Amount",
+  "paymentMethod": "Payment Method",
+  "totalPrice": "Total Price",
+  "submit": "Pay Now",
+  "loading": "Processing...",
+  "gameInfo": {
+    "badges": {
+      "fastProcess": "Fast Process",
+      "safe": "100% Safe",
+      "official": "Official"
+    }
+  },
+  "accountDetail": {
+    "title": "Insert Account Detail",
+    "userId": "User ID",
+    "userIdPlaceholder": "Enter your User ID",
+    "serverId": "Server ID",
+    "serverIdPlaceholder": "Enter your Server ID",
+    "helper": "Make sure your User ID and Server ID are correct before continuing",
+    "nickname": "Nickname",
+    "nicknamePending": "Enter ID to see nickname",
+    "nicknameLoading": "Validating...",
+    "nicknameError": "ID not found",
+    "checkUsername": "Check Username",
+    "viewGuide": "View Account Guide",
+    "errors": {
+      "required": "Required",
+      "numeric": "Numbers only",
+      "minLength": "Must be at least {{length}} characters",
+      "maxLength": "Must be at most {{length}} characters",
+      "pattern": "Invalid format",
+      "fixFields": "Please complete your account details"
+    }
+  },
+  "packages": {
+    "title": "Select Diamond Package",
+    "categories": {
+      "all": "All",
+      "weekly": "Weekly Diamonds Pass",
+      "firstTopUp": "First TopUp",
+      "diamonds": "Diamonds",
+      "special": "Special Items"
+    },
+    "groupTitles": {
+      "weekly": "Weekly Diamonds Pass",
+      "firstTopUp": "First Top Up",
+      "diamonds": "Diamonds",
+      "special": "Special Items"
+    },
+    "unit": "Diamonds",
+    "popular": "Best Seller",
+    "bonus": "Bonus",
+    "instantDelivery": "Instant\nDelivery"
+  },
+  "payment": {
+    "title": "Payment Method",
+    "selectOption": "Select payment method",
+    "memberOnly": "Member Only",
+    "credits": "Credits",
+    "groups": {
+      "ewallet": "E-Wallet",
+      "qris": "QRIS",
+      "va": "Virtual Account"
+    }
+  },
+  "contact": {
+    "title": "Contact Details",
+    "whatsapp": "WhatsApp No.",
+    "whatsappPlaceholder": "08xxxxxxxxxx or +65xxxxxxxx",
+    "helperNote": "This number will be contacted if an issue occurs",
+    "whatsappRequired": "WhatsApp number is required",
+    "email": "Email",
+    "emailPlaceholder": "you@email.com",
+    "emailHelperNote": "Your purchase receipt will be sent to this email",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email format",
+    "receiptNote": "We will send your purchase receipt to the email and WhatsApp number you entered above."
+  },
+  "promo": {
+    "title": "Promo Code",
+    "trigger": {
+      "title": "Use voucher",
+      "subtitle": "Promo code & public voucher — for all users",
+      "cta": "Select",
+      "applied": "Save {{amount}}",
+      "change": "Change",
+      "remove": "Remove promo code"
+    },
+    "modal": {
+      "close": "Close",
+      "eyebrow": "Public Voucher",
+      "title": "Get a discount",
+      "description": "Use a voucher code manually, or pick one from the list valid for your selected product.",
+      "inputPlaceholder": "Enter voucher code",
+      "apply": "Apply code",
+      "availableTitle": "Vouchers available for everyone",
+      "empty": "No public vouchers available right now.",
+      "error": "Could not check that promo code. Please try again.",
+      "minPurchase": "Min. purchase {{amount}}"
+    }
+  },
+  "reviews": {
+    "title": "Customer Reviews",
+    "basedOn": "Based on {{count}} reviews",
+    "seeAll": "See All Reviews",
+    "hide": "Hide Reviews",
+    "satisfactionText": "{{rate}}% buyers are satisfied with this product.",
+    "fromCount": "From {{count}} Reviews.",
+    "ratingLabel": "Rating",
+    "anonymous": "Anonymous User"
+  },
+  "summary": {
+    "selectedPackage": "Selected package",
+    "noPackageSelected": "No package selected",
+    "total": "Total Payment",
+    "totalLabel": "Total Payable",
+    "price": "Price",
+    "adminFee": "Admin Fee",
+    "totalPayment": "Total Payment",
+    "buyNow": "Top Up Now",
+    "processing": "Processing...",
+    "checkingId": "Checking ID...",
+    "instantProcess": "Instant processing time",
+    "pointsDiscount": "Point Discount",
+    "pointsEarned": "Points earned",
+    "pointsEarnedGuest": "Sign in to earn {{points}} points from this order"
+  },
+  "confirmModal": {
+    "title": "PURCHASE CONFIRMATION",
+    "subtitle": "Make sure your account data and selected product are valid and correct.",
+    "dataPlayer": "Player Data",
+    "userId": "User ID",
+    "serverId": "Server ID",
+    "username": "Username",
+    "orderSummary": "Order Summary",
+    "item": "Item",
+    "product": "Product",
+    "price": "Price",
+    "method": "Method",
+    "adminFee": "Admin Fee",
+    "totalPay": "Total Payable",
+    "confirm": "Order Now",
+    "cancel": "Cancel"
+  },
+  "points": {
+    "title": "Use Points",
+    "available": "You have {{points}} points (worth {{value}}).",
+    "useAll": "Use {{points}} points ({{value}}) toward this order",
+    "applied": "{{value}} point discount applied.",
+    "coversAll": "Points cover the whole order — nothing left to pay.",
+    "notAllowed": "Your membership plan already includes a discount, so points cannot be used."
+  }
+}

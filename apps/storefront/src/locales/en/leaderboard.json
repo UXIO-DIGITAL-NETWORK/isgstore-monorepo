@@ -1,0 +1,16 @@
+{
+  "hero": {
+    "title": "LEADERBOARD TOPUPGAME.ID",
+    "subtitle": "Top 10 highest purchases made by our customers. Data is updated automatically and in real-time from our system."
+  },
+  "periods": {
+    "today": "Today",
+    "week": "This Week",
+    "month": "This Month"
+  },
+  "table": {
+    "no": "No",
+    "player": "Player",
+    "totalTransaction": "Total Transaction"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "hero": {
+    "title": "FREQUENTLY ASKED QUESTIONS (FAQ)",
+    "subtitle": "Find answers to common questions in our help center."
+  },
+  "items": [
+    {
+      "question": "How do I top up at TopUpGame.ID?",
+      "answer": "Simply choose the game you want to top up, enter your User ID or character ID, select the top-up amount, then complete the payment using an available method. Once payment is successful, the item or diamond will be processed automatically."
+    },
+    {
+      "question": "How long does the top-up process take?",
+      "answer": "The top-up process is usually completed within minutes after payment is confirmed. We use an automated system that operates 24 hours a day."
+    },
+    {
+      "question": "What payment methods are available?",
+      "answer": "We support a wide range of popular payment methods including GoPay, DANA, OVO, QRIS, and ShopeePay. Available payment options are displayed at checkout based on the selected amount."
+    },
+    {
+      "question": "Do I need to log in to make a top-up?",
+      "answer": "No. You only need to enter your Game ID and WhatsApp number to complete a transaction as a guest. Registration is optional and gives access to extra features such as transaction history."
+    },
+    {
+      "question": "What if the top-up hasn't arrived in my account?",
+      "answer": "If the top-up has not arrived within 15 minutes after payment, please contact our support team via WhatsApp Chat. Have your invoice number and proof of payment ready to speed up the verification process."
+    }
+  ],
+  "contact": {
+    "title": "CAN'T FIND AN ANSWER?",
+    "subtitle": "If you have any other questions, please contact us via WhatsApp chat",
+    "chatWhatsApp": "Chat WhatsApp"
+  }
+}

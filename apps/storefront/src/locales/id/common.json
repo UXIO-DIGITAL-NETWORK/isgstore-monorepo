@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "topup": "TOPUP",
+    "checkOrder": "CEK PESANAN",
+    "priceList": "DAFTAR HARGA",
+    "leaderboard": "LEADERBOARD",
+    "news": "BERITA",
+    "calculator": "KALKULATOR",
+    "calculatorWinRate": "KALKULATOR WIN RATE",
+    "calculatorZodiac": "KALKULATOR ZODIAC",
+    "calculatorMagicWheel": "KALKULATOR MAGIC WHEEL"
+  },
+  "action": {
+    "login": "Masuk",
+    "register": "Daftar",
+    "logout": "Keluar",
+    "search": "Cari game untuk top up..."
+  },
+  "userMenu": {
+    "memberBadge": "MEMBER",
+    "dashboardMember": "Dashboard Member",
+    "topUpBalance": "Isi Saldo",
+    "transactions": "Transaksi",
+    "accountSettings": "Pengaturan Akun",
+    "logout": "Keluar"
+  },
+  "language": {
+    "id": "Indonesia",
+    "en": "English"
+  },
+  "search": {
+    "popular": "Pencarian Populer",
+    "noResults": "Game tidak ditemukan"
+  },
+  "maintenance": {
+    "title": "Sedang Dalam Perbaikan",
+    "description": "Kami sedang melakukan pemeliharaan sistem. Silakan kembali beberapa saat lagi — hubungi kami jika ada yang mendesak."
+  },
+  "footer": {
+    "description": "Platform top up game yang menyediakan layanan cepat, aman, dan praktis untuk berbagai kebutuhan digital Anda. Didukung sistem otomatis dan metode pembayaran lengkap, kami hadir untuk memberikan pengalaman transaksi yang lebih mudah dan terpercaya.",
+    "needHelp": "Butuh Bantuan?",
+    "chatWhatsApp": "Chat WhatsApp",
+    "operationalHoursLabel": "Jam Operasional",
+    "emailLabel": "E-mail",
+    "menuLink": "Menu Link",
+    "legalitas": "Legalitas",
+    "paymentMethods": "Metode Pembayaran",
+    "transactionGuarantee": "Jaminan Transaksi",
+    "transactionGuaranteeValue": "100% Legal & Aman",
+    "followUs": "Follow Kami:",
+    "copyright": "© 2026 Topup Game. All Rights Reserved. All trademarks,",
+    "copyrightOwners": "logos and brand names are the property of their respective owners.",
+    "menu": {
+      "dashboard": "Dashboard",
+      "priceList": "Daftar Harga",
+      "leaderboard": "Leaderboard",
+      "news": "Berita",
+      "calculator": "Kalkulator",
+      "faq": "FAQ"
+    },
+    "legal": {
+      "refundPolicy": "Kebijakan Pengembalian",
+      "privacyPolicy": "Kebijakan Privasi",
+      "termsConditions": "Syarat & Ketentuan"
+    }
+  }
+}

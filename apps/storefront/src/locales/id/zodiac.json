@@ -1,0 +1,19 @@
+{
+  "hero": {
+    "title": "KALKULATOR ZODIAC",
+    "subtitle": "Hitung estimasi maksimal Diamond yang dibutuhkan untuk mendapatkan Skin Zodiac."
+  },
+  "slider": {
+    "label": "STAR POWER SAAT INI",
+    "description": "Jumlah poin star power yang anda miliki saat ini"
+  },
+  "howItWorks": {
+    "title": "Cara Kerja",
+    "description": "Semakin banyak star power yang anda miliki, semakin sedikit diamond yang dibutuhkan"
+  },
+  "result": {
+    "title": "Estimasi Diamond yang dibutuhkan",
+    "unit": "Diamond"
+  },
+  "cta": "Top Up Sekarang"
+}

@@ -1,0 +1,33 @@
+{
+  "hero": {
+    "title": "PERTANYAAN UMUM (FAQ)",
+    "subtitle": "Cari jawaban atas pertanyaan umum di pusat bantuan kami."
+  },
+  "items": [
+    {
+      "question": "Bagaimana cara melakukan top up di TopUpGame.ID?",
+      "answer": "Cukup pilih game yang ingin diisi, masukkan User ID atau ID karakter, pilih nominal top up, lalu selesaikan pembayaran menggunakan metode yang tersedia. Setelah pembayaran berhasil, item atau diamond akan diproses secara otomatis."
+    },
+    {
+      "question": "Berapa lama proses top up berlangsung?",
+      "answer": "Proses top up biasanya selesai dalam hitungan menit setelah pembayaran dikonfirmasi. Kami menggunakan sistem otomatis yang beroperasi 24 jam sehari."
+    },
+    {
+      "question": "Metode pembayaran apa saja yang tersedia?",
+      "answer": "Kami mendukung berbagai metode pembayaran populer seperti GoPay, DANA, OVO, QRIS, dan ShopeePay. Pilihan metode pembayaran ditampilkan saat checkout berdasarkan nominal yang dipilih."
+    },
+    {
+      "question": "Apakah saya perlu login untuk melakukan top up?",
+      "answer": "Tidak perlu. Anda cukup memasukkan Game ID dan nomor WhatsApp untuk menyelesaikan transaksi sebagai tamu. Registrasi bersifat opsional dan memberikan akses ke fitur tambahan seperti riwayat transaksi."
+    },
+    {
+      "question": "Bagaimana jika top up belum masuk ke akun saya?",
+      "answer": "Jika top up tidak berhasil dalam 15 menit setelah pembayaran, hubungi tim support kami melalui Chat WhatsApp. Siapkan nomor invoice dan bukti pembayaran untuk mempercepat proses pengecekan."
+    }
+  ],
+  "contact": {
+    "title": "BELUM MENEMUKAN JAWABAN?",
+    "subtitle": "Jika Anda memiliki pertanyaan lain, silakan hubungi kami melalui chat WhatsApp",
+    "chatWhatsApp": "Chat WhatsApp"
+  }
+}

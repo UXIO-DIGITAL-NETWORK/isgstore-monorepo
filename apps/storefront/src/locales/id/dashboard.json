@@ -1,0 +1,367 @@
+{
+  "title": "Dashboard Member",
+  "history": "Riwayat Transaksi",
+  "savedProfiles": "Profil Game Tersimpan",
+  "noTransactions": "Belum ada transaksi",
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "transactions": "Transaksi",
+    "topUpBalance": "Isi Saldo",
+    "refunds": "Pengembalian Dana",
+    "integrations": "Integrasi",
+    "upgradeMembership": "Upgrade Membership",
+    "activityLog": "Log Aktivitas",
+    "accountSettings": "Pengaturan Akun",
+    "logout": "Keluar"
+  },
+  "banner": {
+    "title": "TINGKATKAN LEVEL MEMBERSHIP ANDA",
+    "subtitle": "Anda saat ini berada di Level Member. Upgrade sekarang!"
+  },
+  "memberCard": {
+    "title": "MEMBER ID",
+    "editProfile": "Edit Profil",
+    "memberBadge": "MEMBER"
+  },
+  "wallet": {
+    "title": "Dompet Anda",
+    "points": "Points",
+    "topUpBalance": "+ Isi saldo",
+    "transactionHistory": "Riwayat Transaksi"
+  },
+  "stats": {
+    "title": "STATISTIK TRANSAKSI HARI INI",
+    "pending": "Menunggu",
+    "inProcess": "Dalam Proses",
+    "success": "Sukses",
+    "failed": "Gagal",
+    "totalTransactions": "Total Transaksi",
+    "totalSales": "Total Penjualan"
+  },
+  "filter": {
+    "searchPlaceholder": "Cari transaksi...",
+    "all": "Semua",
+    "pending": "Menunggu",
+    "success": "Sukses",
+    "failed": "Gagal"
+  },
+  "recentTransactions": {
+    "title": "RIWAYAT TRANSAKSI TERBARU",
+    "viewAll": "Lihat Semua Transaksi",
+    "colService": "Layanan",
+    "colInvoice": "Nomer Invoice",
+    "colDate": "Tanggal",
+    "colPrice": "Harga",
+    "colStatus": "Status",
+    "statusPending": "PENDING",
+    "statusProcess": "PROSES",
+    "statusSuccess": "SUKSES",
+    "statusFailed": "GAGAL"
+  },
+  "isiSaldo": {
+    "title": "ISI SALDO AKUN",
+    "subtitle": "Isi saldo akun Anda dengan metode pembayaran otomatis.",
+    "nominal": {
+      "sectionTitle": "PILIH NOMINAL",
+      "label": "Nominal Top Up (Rp)",
+      "hint": "Pilih nominal untuk isi saldo akun anda",
+      "placeholder": "Rp 0"
+    },
+    "voucher": {
+      "title": "Masukkan Kode Voucher",
+      "subtitle": "Masukkan kode voucher Anda disini",
+      "placeholder": "Contoh: GAME-XXX-XXX",
+      "button": "Klaim Voucher",
+      "note": "Voucher hanya bisa digunakan 1 kali dan tidak dapat diuangkan",
+      "applied": "Voucher berhasil diterapkan!"
+    },
+    "payment": {
+      "sectionTitle": "PILIH PEMBAYARAN",
+      "groups": {
+        "ewallet": "E-Wallet",
+        "va": "Virtual Account",
+        "qris": "QRIS"
+      }
+    },
+    "summary": {
+      "title": "Ringkasan",
+      "discountLabel": "Discount Voucher ({{percent}}%)",
+      "totalLabel": "Total Bayar",
+      "submitButton": "Isi Saldo Sekarang"
+    },
+    "saldo": {
+      "title": "Saldo Anda",
+      "secureNote": "100% Transaksi Aman",
+      "secureSubtitle": "Semua transaksi diproses otomatis oleh sistem"
+    }
+  },
+  "upgradeMembership": {
+    "title": "PILIH PAKET MEMBERSHIP",
+    "subtitle": "Pilih paket membership yang sesuai dengan kebutuhan top up kami.",
+    "planSectionTitle": "PILIH PAKET",
+    "selectButton": "Pilih Paket",
+    "selectedButton": "Paket Terpilih",
+    "popularBadge": "POPULER",
+    "plans": {
+      "basic": {
+        "name": "BASIC",
+        "benefits": [
+          "Mendapatkan POINT setiap transaksi top up.",
+          "Bisa menggunakan pembayaran saldo akun.",
+          "Akses semua produk top up game."
+        ]
+      },
+      "platinum": {
+        "name": "PLATINUM",
+        "benefits": [
+          "Mendapatkan POINT setiap transaksi top up.",
+          "Bisa menggunakan pembayaran saldo akun.",
+          "Bonus saldo +2% setiap isi saldo.",
+          "Prioritas proses transaksi."
+        ]
+      },
+      "gold": {
+        "name": "GOLD",
+        "benefits": [
+          "Mendapatkan POINT setiap transaksi top up.",
+          "Bisa menggunakan pembayaran saldo akun.",
+          "Bonus saldo +5% setiap isi saldo.",
+          "Prioritas proses transaksi.",
+          "Badge akun GOLD eksklusif!"
+        ]
+      }
+    },
+    "payment": {
+      "saldoTitle": "Saldo Saya",
+      "creditsLabel": "Credits",
+      "sectionTitle": "METODE PEMBAYARAN",
+      "groups": {
+        "ewallet": "E-Wallet",
+        "va": "Virtual Account",
+        "qris": "QRIS"
+      }
+    },
+    "summary": {
+      "planLabel": "Paket {{plan}}",
+      "adminFeeLabel": "Biaya Admin",
+      "paymentSuffix": "Payment",
+      "totalLabel": "Total Bayar",
+      "submitButton": "Upgrade Sekarang"
+    },
+    "submitSuccess": "Upgrade ke Paket {{plan}} berhasil dikirim!"
+  },
+  "integrasi": {
+    "title": "INTEGRASI",
+    "subtitle": "Integrasikan layanan kami dengan mudah untuk meningkatkan pengalaman pengguna Anda.",
+    "apiKey": {
+      "title": "Key & Dokumentasi",
+      "docButton": "Dokumentasi",
+      "showLabel": "Tampilkan API key",
+      "hideLabel": "Sembunyikan API key",
+      "regenerateLabel": "Regenerasi API key",
+      "notice": "Informasi ini bersifat rahasia jadi berhati-hatilah dengan apa yang Anda bagikan. Kebocoran informasi bukan tanggung jawab kami."
+    },
+    "callback": {
+      "title": "URL Callback",
+      "placeholder": "Masukkan URL callback Anda di sini",
+      "submitButton": "Kirim",
+      "notice": "Callback akan dikirim menggunakan metode HTTP POST ke Callback URL yang telah Anda tetapkan."
+    },
+    "whitelist": {
+      "title": "Whitelist IP Address",
+      "placeholder": "Masukkan Alamat IP, contoh: xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx",
+      "addButton": "Tambahkan Alamat IP"
+    }
+  },
+  "pengaturanAkun": {
+    "title": "PENGATURAN AKUN",
+    "subtitle": "Kelola informasi profil, keamanan, dan preferensi akun Anda.",
+    "personalInfo": {
+      "sectionTitle": "INFORMASI PRIBADI",
+      "photoTitle": "Foto Profil",
+      "photoUploadButton": "Tambahkan Foto Profil",
+      "photoRemoveButton": "Hapus",
+      "photoHint": "Format JPG, PNG, atau WEBP — dioptimalkan otomatis",
+      "photoNotAnImage": "File harus berupa gambar (JPG, PNG, atau WEBP).",
+      "photoTooLarge": "Ukuran file tidak boleh melebihi 2MB.",
+      "fullName": "Nama Lengkap",
+      "username": "Username",
+      "email": "Email",
+      "whatsapp": "No. WhatsApp",
+      "whatsappNote": "Nomor akan disimpan dalam format internasional. Ketik \"+\" beserta kode negara untuk nomor di luar Indonesia.",
+      "saveButton": "Simpan Perubahan"
+    },
+    "password": {
+      "sectionTitle": "UBAH PASSWORD",
+      "current": "Password Saat Ini",
+      "new": "Password Baru",
+      "confirm": "Konfirmasi Password Baru",
+      "saveButton": "Simpan Perubahan",
+      "placeholder": "Password"
+    },
+    "twoFactor": {
+      "title": "Autentikasi Dua Faktor",
+      "description": "2FA Authenticator adalah kode keamanan yang akan digenerate secara berkala. Ini dapat menambah perlindungan akun Anda. Kami sangat mengimbau untuk selalu mengaktifkan 2FA ini.",
+      "button": "Autentikasi 2FA"
+    }
+  },
+  "transactionHistory": {
+    "title": "RIWAYAT TRANSAKSI",
+    "subtitle": "Pantau semua riwayat pembelian dan status transaksi Anda.",
+    "adminFee": "Biaya Admin",
+    "searchCard": {
+      "title": "Cari Invoice",
+      "placeholder": "Contoh: INV-12345678",
+      "button": "Cari"
+    },
+    "statusLabel": "STATUS",
+    "filters": {
+      "all": "Semua",
+      "pending": "Menunggu",
+      "process": "Proses",
+      "success": "Sukses",
+      "failed": "Gagal"
+    },
+    "columns": {
+      "invoice": "Nomer Invoice",
+      "service": "Layanan",
+      "target": "Target",
+      "price": "Harga",
+      "date": "Tanggal",
+      "status": "Status"
+    },
+    "filterButton": "Filter",
+    "sort": {
+      "newest": "Terbaru",
+      "oldest": "Terlama",
+      "priceHigh": "Harga Tertinggi",
+      "priceLow": "Harga Terendah"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next"
+    },
+    "noTransactions": "Belum ada transaksi",
+    "filterPanel": {
+      "service": "Layanan",
+      "allServices": "Semua Layanan",
+      "paymentMethod": "Metode Pembayaran",
+      "allMethods": "Semua Metode",
+      "date": "Tanggal",
+      "resetFilter": "Reset Filter",
+      "applyFilter": "Terapkan Filter",
+      "paymentMethods": {
+        "bank_transfer": "Transfer Bank",
+        "qris": "QRIS",
+        "ewallet": "E-Wallet"
+      }
+    }
+  },
+  "activityLog": {
+    "title": "LOG AKTIVITAS",
+    "subtitle": "Pantau semua aktivitas penting di Top up game.",
+    "exportButton": "Ekspor Log",
+    "filter": {
+      "dateLabel": "Tanggal",
+      "statusLabel": "Status",
+      "ipLabel": "IP Address",
+      "ipPlaceholder": "Cari Lokasi atau IP Address",
+      "allActions": "Semua Aksi",
+      "reset": "Reset Filter",
+      "apply": "Terapkan Filter",
+      "statusOptions": {
+        "login": "Login",
+        "membership": "Membership",
+        "transaction": "Transaksi",
+        "security": "Keamanan",
+        "verification": "Verifikasi",
+        "failed": "Gagal"
+      }
+    },
+    "stats": {
+      "totalActivity": "Total Aktivitas",
+      "loginSuccess": "Login Sukses",
+      "transactions": "Transaksi",
+      "dataChanges": "Perubahan Data",
+      "last7days": "Dari 7 hari terakhir"
+    },
+    "sectionTitle": "AKTIVITAS AKUN ANDA",
+    "columns": {
+      "activity": "Aktivitas",
+      "time": "Waktu",
+      "ip": "IP Address",
+      "status": "Status"
+    },
+    "badge": {
+      "login": "LOGIN",
+      "membership": "MEMBERSHIP",
+      "transaction": "TRANSAKSI",
+      "security": "KEAMANAN",
+      "verification": "VERIFIKASI",
+      "failed": "GAGAL"
+    },
+    "activities": {
+      "loginBerhasil": {
+        "title": "Login Berhasil",
+        "desc": "Login via Chrome di Windows"
+      },
+      "membershipUpgrade": {
+        "title": "Membership Upgrade",
+        "desc": "Anda mengupgrade ke Platinum"
+      },
+      "topUpBerhasil": {
+        "title": "Top Up Berhasil",
+        "desc": "Top Up 50 Diamond Free Fire Legends"
+      },
+      "passwordDiubah": {
+        "title": "Password Diubah",
+        "desc": "Perubahan password akun berhasil"
+      },
+      "pembayaranBerhasil": {
+        "title": "Pembayaran Berhasil",
+        "desc": "Pembayaran via OVO"
+      },
+      "loginGagal": {
+        "title": "Login Gagal",
+        "desc": "Upaya login dengan password salah"
+      },
+      "perangkatBaru": {
+        "title": "Perangkat Baru Terdeteksi",
+        "desc": "Login dari Chrome di iOS (Mac)"
+      },
+      "verifikasiBerhasil": {
+        "title": "Verifikasi Berhasil",
+        "desc": "Akun WhatsApp berhasil diverifikasi"
+      },
+      "topUpGagal": {
+        "title": "Top Up Gagal",
+        "desc": "Transaksi dibatalkan oleh sistem"
+      },
+      "profilDiperbarui": {
+        "title": "Profil Diperbarui",
+        "desc": "Informasi profil berhasil diperbarui"
+      },
+      "membershipBaru": {
+        "title": "Membership Upgrade",
+        "desc": "Anda mengupgrade ke Basic"
+      },
+      "emailVerifikasi": {
+        "title": "Verifikasi Email",
+        "desc": "Email akun berhasil diverifikasi"
+      }
+    },
+    "noActivity": "Belum ada aktivitas"
+  },
+  "balanceHistory": {
+    "title": "Riwayat Saldo",
+    "loading": "Memuat riwayat saldo...",
+    "empty": "Belum ada mutasi saldo.",
+    "types": {
+      "topup": "Isi Saldo",
+      "purchase": "Pembelian",
+      "refund": "Pengembalian Dana",
+      "adjustment": "Penyesuaian Admin",
+      "settlement": "Settlement"
+    }
+  }
+}

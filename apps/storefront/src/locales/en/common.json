@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "topup": "TOP UP",
+    "checkOrder": "TRACK ORDER",
+    "priceList": "PRICE LIST",
+    "leaderboard": "LEADERBOARD",
+    "news": "NEWS",
+    "calculator": "CALCULATOR",
+    "calculatorWinRate": "WIN RATE",
+    "calculatorZodiac": "ZODIAC",
+    "calculatorMagicWheel": "MAGIC WHEEL"
+  },
+  "action": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "search": "Search game to top up..."
+  },
+  "userMenu": {
+    "memberBadge": "MEMBER",
+    "dashboardMember": "Dashboard Member",
+    "topUpBalance": "Top Up Balance",
+    "transactions": "Transactions",
+    "accountSettings": "Account Settings",
+    "logout": "Logout"
+  },
+  "language": {
+    "id": "Indonesia",
+    "en": "English"
+  },
+  "search": {
+    "popular": "Popular Searches",
+    "noResults": "No games found"
+  },
+  "maintenance": {
+    "title": "Under Maintenance",
+    "description": "We are performing scheduled maintenance. Please check back shortly — reach out if anything is urgent."
+  },
+  "footer": {
+    "description": "A game top-up platform providing fast, secure, and practical services for all your digital needs. Supported by an automated system and complete payment methods, we are here to provide an easier and more trusted transaction experience.",
+    "needHelp": "Need Help?",
+    "chatWhatsApp": "Chat WhatsApp",
+    "operationalHoursLabel": "Operational Hours",
+    "emailLabel": "E-mail",
+    "menuLink": "Menu Link",
+    "legalitas": "Legal",
+    "paymentMethods": "Payment Methods",
+    "transactionGuarantee": "Transaction Guarantee",
+    "transactionGuaranteeValue": "100% Legal & Secure",
+    "followUs": "Follow Us:",
+    "copyright": "© 2026 Topup Game. All Rights Reserved. All trademarks,",
+    "copyrightOwners": "logos and brand names are the property of their respective owners.",
+    "menu": {
+      "dashboard": "Dashboard",
+      "priceList": "Price List",
+      "leaderboard": "Leaderboard",
+      "news": "News",
+      "calculator": "Calculator",
+      "faq": "FAQ"
+    },
+    "legal": {
+      "refundPolicy": "Refund Policy",
+      "privacyPolicy": "Privacy Policy",
+      "termsConditions": "Terms & Conditions"
+    }
+  }
+}

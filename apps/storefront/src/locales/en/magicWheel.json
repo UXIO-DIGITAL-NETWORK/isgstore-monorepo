@@ -1,0 +1,19 @@
+{
+  "hero": {
+    "title": "MAGIC WHEEL CALCULATOR",
+    "subtitle": "Calculate the maximum Diamond estimate needed to obtain a Legends Skin."
+  },
+  "slider": {
+    "label": "CURRENT MAGIC POINTS",
+    "description": "The number of magic points you currently have"
+  },
+  "note": {
+    "title": "Note:",
+    "description": "Calculation is based on the average Magic Wheel estimate. Actual results may vary depending on the number of spins and ongoing events."
+  },
+  "result": {
+    "title": "Maximum Cost Estimate",
+    "unit": "Diamond"
+  },
+  "cta": "Top Up Now"
+}

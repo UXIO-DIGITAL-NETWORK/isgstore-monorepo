@@ -1,0 +1,40 @@
+{
+  "hero": {
+    "title": "KALKULATOR WIN RATE",
+    "subtitle": "Hitung estimasi kemenangan yang dibutuhkan untuk mencapai target Rank Anda."
+  },
+
+  "form": {
+    "totalMatch": {
+      "label": "Total Match",
+      "placeholder": "Contoh: 400"
+    },
+    "currentWR": {
+      "label": "WR Saat Ini (%)",
+      "placeholder": "Contoh: 55"
+    },
+    "targetWR": {
+      "label": "Target WR (%)",
+      "placeholder": "Contoh: 70"
+    },
+    "submit": "Hitung Hasil"
+  },
+
+  "result": {
+    "title": "Estimasi Kemenangan",
+    "matchSuffix": "Match",
+    "description": "Anda harus <b>menang beruntun</b> tanpa kalah,\nuntuk mencapai target win rate",
+    "targetWrLabel": "Target WR",
+    "footer": "Terus tingkatkan performa bermainmu dan raih Rank impianmu!",
+    "reached": "🎉 Selamat! Target Win Rate sudah tercapai. Pertahankan performamu!",
+    "impossible": "⚠️ Target Win Rate tidak mungkin dicapai. Kurangi target atau mainkan lebih banyak match."
+  },
+
+  "validation": {
+    "totalMatchRequired": "Total match harus berupa angka.",
+    "totalMatchInteger": "Total match harus bilangan bulat.",
+    "totalMatchMin": "Total match minimal 1.",
+    "wrRequired": "Win rate harus berupa angka.",
+    "wrRange": "Win rate harus antara 0 dan 100."
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "notFound": "Page not found",
+  "serverError": "An error occurred on the server",
+  "unauthorized": "You do not have access to this page",
+  "invalidCredentials": "Invalid email or password"
+}

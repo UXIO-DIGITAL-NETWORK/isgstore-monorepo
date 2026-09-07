@@ -1,0 +1,367 @@
+{
+  "title": "Member Dashboard",
+  "history": "Transaction History",
+  "savedProfiles": "Saved Game Profiles",
+  "noTransactions": "No transactions yet",
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "topUpBalance": "Top Up Balance",
+    "refunds": "Refunds",
+    "integrations": "Integrations",
+    "upgradeMembership": "Upgrade Membership",
+    "activityLog": "Activity Log",
+    "accountSettings": "Account Settings",
+    "logout": "Logout"
+  },
+  "banner": {
+    "title": "UPGRADE YOUR MEMBERSHIP LEVEL",
+    "subtitle": "You are currently at Member Level. Upgrade now!"
+  },
+  "memberCard": {
+    "title": "MEMBER ID",
+    "editProfile": "Edit Profile",
+    "memberBadge": "MEMBER"
+  },
+  "wallet": {
+    "title": "Your Wallet",
+    "points": "Points",
+    "topUpBalance": "+ Top Up Balance",
+    "transactionHistory": "Transaction History"
+  },
+  "stats": {
+    "title": "TODAY'S TRANSACTION STATISTICS",
+    "pending": "Pending",
+    "inProcess": "In Process",
+    "success": "Success",
+    "failed": "Failed",
+    "totalTransactions": "Total Transactions",
+    "totalSales": "Total Sales"
+  },
+  "filter": {
+    "searchPlaceholder": "Search transactions...",
+    "all": "All",
+    "pending": "Pending",
+    "success": "Success",
+    "failed": "Failed"
+  },
+  "recentTransactions": {
+    "title": "RECENT TRANSACTION HISTORY",
+    "viewAll": "View All Transactions",
+    "colService": "Service",
+    "colInvoice": "Invoice Number",
+    "colDate": "Date",
+    "colPrice": "Price",
+    "colStatus": "Status",
+    "statusPending": "PENDING",
+    "statusProcess": "PROCESS",
+    "statusSuccess": "SUCCESS",
+    "statusFailed": "FAILED"
+  },
+  "isiSaldo": {
+    "title": "TOP UP BALANCE",
+    "subtitle": "Top up your account balance with automatic payment methods.",
+    "nominal": {
+      "sectionTitle": "SELECT AMOUNT",
+      "label": "Top Up Amount (Rp)",
+      "hint": "Select an amount to top up your account balance",
+      "placeholder": "Rp 0"
+    },
+    "voucher": {
+      "title": "Enter Voucher Code",
+      "subtitle": "Enter your voucher code here",
+      "placeholder": "e.g. GAME-XXX-XXX",
+      "button": "Claim Voucher",
+      "note": "Voucher can only be used once and cannot be converted to cash",
+      "applied": "Voucher successfully applied!"
+    },
+    "payment": {
+      "sectionTitle": "SELECT PAYMENT",
+      "groups": {
+        "ewallet": "E-Wallet",
+        "va": "Virtual Account",
+        "qris": "QRIS"
+      }
+    },
+    "summary": {
+      "title": "Summary",
+      "discountLabel": "Voucher Discount ({{percent}}%)",
+      "totalLabel": "Total Payment",
+      "submitButton": "Top Up Balance Now"
+    },
+    "saldo": {
+      "title": "Your Balance",
+      "secureNote": "100% Secure Transaction",
+      "secureSubtitle": "All transactions are processed automatically by the system"
+    }
+  },
+  "upgradeMembership": {
+    "title": "CHOOSE MEMBERSHIP PLAN",
+    "subtitle": "Choose the membership plan that suits your top up needs.",
+    "planSectionTitle": "CHOOSE PLAN",
+    "selectButton": "Choose Plan",
+    "selectedButton": "Selected Plan",
+    "popularBadge": "POPULAR",
+    "plans": {
+      "basic": {
+        "name": "BASIC",
+        "benefits": [
+          "Earn POINTS on every top up transaction.",
+          "Pay using account balance.",
+          "Access all top up game products."
+        ]
+      },
+      "platinum": {
+        "name": "PLATINUM",
+        "benefits": [
+          "Earn POINTS on every top up transaction.",
+          "Pay using account balance.",
+          "Bonus balance +2% on every top up.",
+          "Priority transaction processing."
+        ]
+      },
+      "gold": {
+        "name": "GOLD",
+        "benefits": [
+          "Earn POINTS on every top up transaction.",
+          "Pay using account balance.",
+          "Bonus balance +5% on every top up.",
+          "Priority transaction processing.",
+          "Exclusive GOLD account badge!"
+        ]
+      }
+    },
+    "payment": {
+      "saldoTitle": "My Balance",
+      "creditsLabel": "Credits",
+      "sectionTitle": "PAYMENT METHOD",
+      "groups": {
+        "ewallet": "E-Wallet",
+        "va": "Virtual Account",
+        "qris": "QRIS"
+      }
+    },
+    "summary": {
+      "planLabel": "{{plan}} Plan",
+      "adminFeeLabel": "Admin Fee",
+      "paymentSuffix": "Payment",
+      "totalLabel": "Total Payment",
+      "submitButton": "Upgrade Now"
+    },
+    "submitSuccess": "Upgrade to {{plan}} Plan submitted successfully!"
+  },
+  "integrasi": {
+    "title": "INTEGRATIONS",
+    "subtitle": "Easily integrate our services to enhance your user experience.",
+    "apiKey": {
+      "title": "Key & Documentation",
+      "docButton": "Documentation",
+      "showLabel": "Show API key",
+      "hideLabel": "Hide API key",
+      "regenerateLabel": "Regenerate API key",
+      "notice": "This information is confidential — be careful about what you share. We are not responsible for any information leaks."
+    },
+    "callback": {
+      "title": "Callback URL",
+      "placeholder": "Enter your callback URL here",
+      "submitButton": "Send",
+      "notice": "Callbacks will be sent using the HTTP POST method to the Callback URL you have set."
+    },
+    "whitelist": {
+      "title": "Whitelist IP Address",
+      "placeholder": "Enter IP address, e.g. xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx",
+      "addButton": "Add IP Address"
+    }
+  },
+  "pengaturanAkun": {
+    "title": "ACCOUNT SETTINGS",
+    "subtitle": "Manage your profile information, security, and account preferences.",
+    "personalInfo": {
+      "sectionTitle": "PERSONAL INFORMATION",
+      "photoTitle": "Profile Photo",
+      "photoUploadButton": "Add Profile Photo",
+      "photoRemoveButton": "Remove",
+      "photoHint": "JPG, PNG, or WEBP — optimised automatically",
+      "photoNotAnImage": "The file must be an image (JPG, PNG, or WEBP).",
+      "photoTooLarge": "The file must be 2MB or smaller.",
+      "fullName": "Full Name",
+      "username": "Username",
+      "email": "Email",
+      "whatsapp": "WhatsApp Number",
+      "whatsappNote": "Your number is stored in international format. Type \"+\" and the country code for numbers outside Indonesia.",
+      "saveButton": "Save Changes"
+    },
+    "password": {
+      "sectionTitle": "CHANGE PASSWORD",
+      "current": "Current Password",
+      "new": "New Password",
+      "confirm": "Confirm New Password",
+      "saveButton": "Save Changes",
+      "placeholder": "Password"
+    },
+    "twoFactor": {
+      "title": "Two-Factor Authentication",
+      "description": "2FA Authenticator is a security code generated periodically. It adds extra protection to your account. We strongly recommend enabling 2FA at all times.",
+      "button": "Setup 2FA"
+    }
+  },
+  "transactionHistory": {
+    "title": "TRANSACTION HISTORY",
+    "subtitle": "Monitor all your purchase history and transaction status.",
+    "adminFee": "Admin Fee",
+    "searchCard": {
+      "title": "Search Invoice",
+      "placeholder": "e.g. INV-12345678",
+      "button": "Search"
+    },
+    "statusLabel": "STATUS",
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "process": "Process",
+      "success": "Success",
+      "failed": "Failed"
+    },
+    "columns": {
+      "invoice": "Invoice Number",
+      "service": "Service",
+      "target": "Target",
+      "price": "Price",
+      "date": "Date",
+      "status": "Status"
+    },
+    "filterButton": "Filter",
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "priceHigh": "Price High to Low",
+      "priceLow": "Price Low to High"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next"
+    },
+    "noTransactions": "No transactions yet",
+    "filterPanel": {
+      "service": "Service",
+      "allServices": "All Services",
+      "paymentMethod": "Payment Method",
+      "allMethods": "All Methods",
+      "date": "Date",
+      "resetFilter": "Reset Filter",
+      "applyFilter": "Apply Filter",
+      "paymentMethods": {
+        "bank_transfer": "Bank Transfer",
+        "qris": "QRIS",
+        "ewallet": "E-Wallet"
+      }
+    }
+  },
+  "activityLog": {
+    "title": "ACTIVITY LOG",
+    "subtitle": "Monitor all important activities on your Top up game account.",
+    "exportButton": "Export Log",
+    "filter": {
+      "dateLabel": "Date",
+      "statusLabel": "Status",
+      "ipLabel": "IP Address",
+      "ipPlaceholder": "Search Location or IP Address",
+      "allActions": "All Actions",
+      "reset": "Reset Filter",
+      "apply": "Apply Filter",
+      "statusOptions": {
+        "login": "Login",
+        "membership": "Membership",
+        "transaction": "Transaction",
+        "security": "Security",
+        "verification": "Verification",
+        "failed": "Failed"
+      }
+    },
+    "stats": {
+      "totalActivity": "Total Activity",
+      "loginSuccess": "Successful Logins",
+      "transactions": "Transactions",
+      "dataChanges": "Data Changes",
+      "last7days": "From the last 7 days"
+    },
+    "sectionTitle": "YOUR ACCOUNT ACTIVITY",
+    "columns": {
+      "activity": "Activity",
+      "time": "Time",
+      "ip": "IP Address",
+      "status": "Status"
+    },
+    "badge": {
+      "login": "LOGIN",
+      "membership": "MEMBERSHIP",
+      "transaction": "TRANSACTION",
+      "security": "SECURITY",
+      "verification": "VERIFICATION",
+      "failed": "FAILED"
+    },
+    "activities": {
+      "loginBerhasil": {
+        "title": "Login Successful",
+        "desc": "Logged in via Chrome on Windows"
+      },
+      "membershipUpgrade": {
+        "title": "Membership Upgrade",
+        "desc": "You upgraded to Platinum"
+      },
+      "topUpBerhasil": {
+        "title": "Top Up Successful",
+        "desc": "Top Up 50 Diamond Free Fire Legends"
+      },
+      "passwordDiubah": {
+        "title": "Password Changed",
+        "desc": "Account password changed successfully"
+      },
+      "pembayaranBerhasil": {
+        "title": "Payment Successful",
+        "desc": "Payment via OVO"
+      },
+      "loginGagal": {
+        "title": "Login Failed",
+        "desc": "Login attempt with wrong password"
+      },
+      "perangkatBaru": {
+        "title": "New Device Detected",
+        "desc": "Login from Chrome on iOS (Mac)"
+      },
+      "verifikasiBerhasil": {
+        "title": "Verification Successful",
+        "desc": "WhatsApp account verified successfully"
+      },
+      "topUpGagal": {
+        "title": "Top Up Failed",
+        "desc": "Transaction cancelled by system"
+      },
+      "profilDiperbarui": {
+        "title": "Profile Updated",
+        "desc": "Profile information updated successfully"
+      },
+      "membershipBaru": {
+        "title": "Membership Upgrade",
+        "desc": "You upgraded to Basic"
+      },
+      "emailVerifikasi": {
+        "title": "Email Verification",
+        "desc": "Account email verified successfully"
+      }
+    },
+    "noActivity": "No activity yet"
+  },
+  "balanceHistory": {
+    "title": "Balance History",
+    "loading": "Loading balance history...",
+    "empty": "No balance activity yet.",
+    "types": {
+      "topup": "Top Up",
+      "purchase": "Purchase",
+      "refund": "Refund",
+      "adjustment": "Admin Adjustment",
+      "settlement": "Settlement"
+    }
+  }
+}

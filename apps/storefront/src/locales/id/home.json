@@ -1,0 +1,75 @@
+{
+  "flashSale": {
+    "title": "Flash Sale",
+    "endsIn": "Berakhir dalam",
+    "available": "Tersedia",
+    "topUpNow": "Top Up Sekarang",
+    "subtitle": "Pesan sekarang! Persediaan terbatas"
+  },
+  "popular": {
+    "title": "Game Populer Hari Ini",
+    "subtitle": "Pilih kategori favoritmu dan lakukan top up dengan proses cepat, aman, dan tanpa ribet.",
+    "topUp": "Top Up",
+    "ariaList": "Game populer",
+    "badges": {
+      "trending": "TRENDING",
+      "bestSeller": "BEST SELLER"
+    },
+    "regions": {
+      "indonesia": "Indonesia",
+      "global": "Global"
+    }
+  },
+  "topUpGame": {
+    "title": "Top Up Game",
+    "subtitle": "Pilih game favoritmu dan lakukan top up dengan cepat, aman, dan praktis.",
+    "showMore": "Tampilkan Lebih Banyak",
+    "categories": {
+      "semua": "Semua",
+      "moba": "MOBA",
+      "battle-royale": "Battle Royale",
+      "fps": "FPS",
+      "pc-games": "PC Games",
+      "voucher": "Voucher"
+    }
+  },
+  "keunggulan": {
+    "title": "Keunggulan Layanan Kami",
+    "subtitle": "Solusi top up cepat, aman, dan praktis dalam satu platform.",
+    "secure": {
+      "title": "Pembayaran Aman",
+      "desc": "Kami menggunakan sistem enkripsi berstandar tinggi untuk memastikan setiap transaksi selalu terlindungi.",
+      "pci": "Terlindungi standar keamanan PCI DSS",
+      "fraud": "Sistem pencegahan fraud aktif"
+    },
+    "instant": {
+      "title": "Pengiriman Instan",
+      "desc": "Tidak perlu menunggu. Sistem otomatis kami memproses dan mengirimkan top up dalam hitungan detik.",
+      "auto": "Sistem Otomatis Aktif"
+    },
+    "support": {
+      "title": "24/7 Support",
+      "desc": "Tim support kami siap membantu Anda kapan saja melalui live chat atau WhatsApp.",
+      "contact": "Hubungi Admin"
+    }
+  },
+  "artikel": {
+    "title": "Artikel Terbaru Seputar Game",
+    "subtitle": "Temukan informasi, tips, dan update terbaru seputar top up game, promo menarik",
+    "viewAll": "Lihat Semua Artikel"
+  },
+  "cta": {
+    "title": "Buat Akun & Nikmati Lebih Banyak Keuntungan",
+    "subtitle": "Dapatkan harga lebih hemat, riwayat transaksi, dan proses top up yang lebih cepat dalam satu akun.",
+    "register": "Daftar Sekarang",
+    "login": "Masuk",
+    "mascotAlt": "Maskot UDN"
+  },
+  "hero": {
+    "register": "Daftar Sekarang",
+    "topUp": "Top Up Sekarang",
+    "prevSlide": "Banner sebelumnya",
+    "nextSlide": "Banner berikutnya",
+    "slide": "Slide {{number}}"
+  }
+}
