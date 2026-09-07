@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { PriceText } from "@/components/common/PriceText";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatNumber } from "@/lib/format";
+import { pointsRowState } from "../lib/pointsRow";
 import type { PendingOrder } from "@/store/useCheckoutStore";
 
 interface Props {
@@ -54,6 +55,11 @@ function PriceRow({ label, value }: { label: string; value: string }) {
 export default function OrderDetailCard({ order }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("invoice");
   const locale = i18n.language;
+  const points = pointsRowState({
+    earned: order.pointsEarned,
+    isEstimate: order.pointsAreEstimate,
+    eligible: order.pointsEligible,
+  });
 
   return (
     <Box className="rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] overflow-hidden">
@@ -114,6 +120,27 @@ export default function OrderDetailCard({ order }: Props): React.JSX.Element {
           {formatCurrency(order.total, locale)}
         </PriceText>
       </Box>
+
+      {/* Points. Same violet chip as the checkout summary's, so the figure the
+          customer saw before paying and the one they see after read as one
+          thing rather than two unrelated numbers. */}
+      {points.kind !== "none" && (
+        <Box className="mx-4 mb-3 rounded-xl border border-[rgba(147,51,234,0.35)] bg-[rgba(147,51,234,0.12)] px-3 py-2 flex items-center justify-between gap-3">
+          <Text as="span" className="font-inter text-[12px] text-violet-lavender/80 leading-snug">
+            {points.kind === "guest"
+              ? t("orderDetail.pointsGuestNote")
+              : t(points.kind === "estimate" ? "orderDetail.pointsEstimate" : "orderDetail.pointsEarned")}
+          </Text>
+          {points.kind !== "guest" && (
+            <Text
+              as="span"
+              className="font-plex font-bold text-[14px] text-violet-lavender leading-none whitespace-nowrap"
+            >
+              +{formatNumber(points.points, locale)}
+            </Text>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }

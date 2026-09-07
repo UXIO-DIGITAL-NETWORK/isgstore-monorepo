@@ -22,6 +22,11 @@ export function toOrder(invoice: InvoiceModel): PendingOrder {
     price: invoice.amount.base,
     adminFee: invoice.amount.admin_fee,
     total: invoice.amount.total,
+    // Left undefined when the API sends no points block, so the row stays
+    // silent rather than rendering a zero it cannot vouch for.
+    pointsEarned: invoice.points?.earned,
+    pointsAreEstimate: invoice.points?.is_estimate,
+    pointsEligible: invoice.points?.eligible,
     createdAt: Date.parse(invoice.created_at),
   };
 }

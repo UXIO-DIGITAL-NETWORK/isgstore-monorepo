@@ -62,6 +62,14 @@ export interface InvoiceModel {
     nickname: string | null;
   };
   amount: { base: number; fee: number; admin_fee: number; total: number };
+  /**
+   * Loyalty points for this order. Optional because the three repos deploy
+   * independently — an API that predates this block must not break the page.
+   *
+   * `earned` is a projection while `is_estimate` is true and the granted figure
+   * once it is false; `eligible` is false for a guest order, which earns none.
+   */
+  points?: { earned: number; is_estimate: boolean; eligible: boolean };
   payment: {
     channel: string | null;
     channel_code: string | null;
