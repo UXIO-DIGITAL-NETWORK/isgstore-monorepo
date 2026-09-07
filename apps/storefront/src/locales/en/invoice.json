@@ -13,7 +13,10 @@
     "username": "Username",
     "price": "Price",
     "adminFee": "Admin Fee",
-    "totalPayment": "Total Payment"
+    "totalPayment": "Total Payment",
+    "pointsEstimate": "Points you will earn",
+    "pointsEarned": "Points earned",
+    "pointsGuestNote": "This order earns no points because it was placed without an account."
   },
   "instructions": {
     "title": "Payment Instructions",

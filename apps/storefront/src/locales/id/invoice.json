@@ -13,7 +13,10 @@
     "username": "Username",
     "price": "Harga",
     "adminFee": "Biaya Admin",
-    "totalPayment": "Total Pembayaran"
+    "totalPayment": "Total Pembayaran",
+    "pointsEstimate": "Poin yang akan didapat",
+    "pointsEarned": "Poin didapat",
+    "pointsGuestNote": "Transaksi ini tidak menghasilkan poin karena dipesan tanpa akun."
   },
   "instructions": {
     "title": "Instruksi Pembayaran",

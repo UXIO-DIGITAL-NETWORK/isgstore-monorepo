@@ -31,7 +31,7 @@ import { normalizeWhatsappNumber } from "@/lib/phone";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePointsBalance } from "@/features/checkout/hooks/usePointsBalance";
-import { applyPoints, maxRedeemablePoints } from "@/features/checkout/lib/points";
+import { applyPoints, maxRedeemablePoints, pointsEarned } from "@/features/checkout/lib/points";
 import PointsRedeem from "@/features/checkout/components/points/PointsRedeem";
 import type { GameInfo, PaymentOption } from "@/features/checkout/types/checkout.type";
 
@@ -228,6 +228,18 @@ export default function CheckoutPage(): React.JSX.Element {
             price: result.product.price,
             adminFee: result.payment.admin_fee,
             total: result.payment.amount,
+            // Seeded so the invoice's points row does not flicker in from zero
+            // before the invoice query resolves. It is still an estimate, and
+            // the server's answer overwrites it a moment later.
+            pointsEarned: pointsEarned(
+              totalPrice,
+              pointsApplied.discount,
+              selectedPackage.pointPercent,
+              selectedPackage.pointFlat,
+            ),
+            pointsAreEstimate: true,
+            // Points are credited to an account; a guest order earns none.
+            pointsEligible: authEmail !== undefined && authEmail !== null,
             createdAt: Date.now(),
           });
 
