@@ -48,7 +48,28 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
    Tempel isinya ke **Settings → Deploy keys → Add deploy key** di repo (read-only cukup — deploy tidak pernah push). Uji dengan `ssh -T git@github.com`; jawaban "successfully authenticated" berarti beres.
 
    Host key GitHub tidak perlu disiapkan manual — deploy menuliskannya ke `known_hosts` sendiri, dan juga memasang `~/.ssh/config` yang melewatkan `github.com` ke `ssh.github.com:443`. Port 22 keluar diblokir di server ini; tanpa jalur 443 itu `git pull` menggantung sampai *Connection timed out*. Uji dengan `ssh -T git@github.com` — kalau menjawab "successfully authenticated", keduanya beres sekaligus.
-10. **Pastikan `PasswordAuthentication yes` aktif** di `/etc/ssh/sshd_config`, lalu `sudo systemctl reload ssh`. Deploy memakai autentikasi kata sandi, bukan kunci.
+10. **Beri user SSH sudo tanpa kata sandi.** Deploy memakai `sudo` untuk `chown`, reload php-fpm, dan seluruh pengelolaan supervisor. Sesi non-interaktif tidak bisa mengetik kata sandi, jadi tanpa ini deploy mati dengan *"sudo: a terminal is required to read the password"*.
+
+    Periksa: `sudo -n true && echo OK`. Kalau belum, buat berkas drop-in — **selalu lewat `visudo`**, karena sintaks yang salah di sudoers bisa mengunci Anda dari sudo sepenuhnya:
+
+    ```bash
+    sudo visudo -f /etc/sudoers.d/deploy
+    ```
+
+    Isinya, dibatasi hanya pada yang benar-benar dipakai script (ganti `uxioserver1` dengan `SSH_USERNAME` Anda):
+
+    ```
+    uxioserver1 ALL=(root) NOPASSWD: /bin/chown, /bin/chmod, \
+      /usr/bin/tee /etc/supervisor/conf.d/api-prod-worker.conf, \
+      /bin/mkdir -p /etc/supervisor/conf.d, \
+      /usr/bin/supervisorctl, /bin/systemctl, \
+      /usr/bin/apt-get
+    ```
+
+    Lalu `sudo chmod 0440 /etc/sudoers.d/deploy`. Path binari bisa berbeda antar distro — pastikan dengan `command -v chown tee supervisorctl systemctl apt-get`; di Debian/Ubuntu modern `/bin` adalah symlink ke `/usr/bin`, dan sudoers **tidak** mengikuti symlink, jadi tulis path yang persis muncul di `command -v`.
+
+    `NOPASSWD: ALL` juga bekerja dan jauh lebih ringkas. Daftar terbatas di atas lebih baik hanya kalau user itu dipakai untuk hal lain juga; kalau ia murni akun deploy, `ALL` tidak menambah risiko berarti karena `apt-get` dan `systemctl` di daftar itu sendiri sudah setara akses root.
+11. **Pastikan `PasswordAuthentication yes` aktif** di `/etc/ssh/sshd_config`, lalu `sudo systemctl reload ssh`. Deploy memakai autentikasi kata sandi, bukan kunci.
 
 ## Secret GitHub
 
