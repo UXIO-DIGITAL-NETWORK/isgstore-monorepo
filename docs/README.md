@@ -13,6 +13,7 @@ ikut terender di kedua tempat.
 | [03 — Referensi API](03-api.md) | Endpoint apa saja yang ada, siapa yang boleh memanggilnya |
 | [04 — Deployment](04-deployment.md) | Cara menaikkan ke produksi tanpa merusak apa pun |
 | [05 — Basis data](05-basis-data.md) | Arti tiap kolom uang, dan relasi antar tabel |
+| [06 — Referensi rute API](06-referensi-rute-api.md) | Peta 152 endpoint per grup rute. Dulu dilayani publik di `GET /` |
 
 ## Urutan acuan bila dokumen bertentangan
 
