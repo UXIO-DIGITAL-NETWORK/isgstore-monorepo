@@ -1,0 +1,18 @@
+# Testing patterns
+
+Vitest + React Testing Library on `jsdom`, config in `vitest.config.ts` (separate from `vite.config.ts`; no `globals: true`). Harness lives in `src/test/`: `setup.ts` (jest-dom matchers + a `window.matchMedia` stub, `next-themes`' `ThemeProvider` needs it and jsdom doesn't implement it) and `test-utils.tsx` (`renderRoute(initialPath)` — real router from `routeTree.gen.ts` + `createMemoryHistory`, fresh `QueryClientProvider` with `retry: false`, wrapped in `ThemeProvider`). Tests are colocated (`Thing.tsx` + `Thing.test.tsx`). Build every page/component test-first: define cases in plain language against the PRD spec, write failing tests, implement to green. Test accessible content/behavior (`getByRole`/`getByLabelText`), never className/token strings — that's `/qa-audit`'s job. Charts/animation are smoke-tested only. Scripts: `npm run test` / `npm run test:watch`.
+
+## Testing a route behind `requireAuth`
+Seed `useAuthStore.setState({ token: "test-token" })` in `beforeEach` (and reset to `null` in `afterEach`) before `renderRoute(path)` — it's a real Zustand singleton read synchronously by `beforeLoad`, no mocking needed. Pattern proven on `DashboardPage.test.tsx`. Screens that display the operator identity (navbar user menu, welcome banner) read `useAuthStore`'s `user` — seed it too, via `makeUser(overrides?)` exported from `src/test/test-utils.tsx` (the canonical mock of the confirmed staging login user; its name/email deliberately collide with no fixture so exact-text queries stay unambiguous).
+
+## Query-loaded content needs `find*`, not `get*`
+`renderRoute`'s `await router.load()` only waits for the route to resolve, not for a component's own `useQuery` calls (even mock-backed ones resolve on a microtask after that). Any assertion on content that comes from a hook like `useStatCards()` must use `await screen.findByRole(...)`/`findByText(...)`, or it flakes/fails depending on timing. `getByRole` is fine for content that's present on first synchronous render (static labels, headings that don't depend on query data).
+
+## Clipboard testing
+`src/test/setup.ts` stubs `navigator.clipboard.writeText` as a `vi.fn()` via `Object.defineProperty(navigator, "clipboard", { writable: true, configurable: true, value: { writeText: vi.fn() } })` — `configurable: true` is required, or a later `Object.defineProperty` throws "Cannot redefine property". **`@testing-library/user-event`'s `userEvent.setup()` installs its own clipboard stub on setup**, clobbering this spy (assertions on `navigator.clipboard.writeText` silently see a non-spy function). For any interaction test that asserts on `navigator.clipboard.writeText`, use RTL's plain `fireEvent.click(...)` instead of `userEvent`, or the spy assertion fails with "is not a spy or a call to a spy". `user-event` is still fine for interactions that don't touch the clipboard.
+
+## Hidden file-input uploads
+Same category of gotcha: `user-event`'s `upload()` silently no-ops on a visually-hidden (`display:none`) native `<input type="file">`. Use `fireEvent.change(fileInput, { target: { files: [file] } })` instead — see `topics/transactions-feature.md`.
+
+## Never scope a query by className
+Even to disambiguate (e.g. "the combobox inside this specific card" when there are 2 on the page). Add a real accessible landmark instead (`<Box as="section" aria-label="...">` -> `screen.getByRole("region", { name: "..." })`) and scope with `within()`. Cheaper than it sounds and is itself an a11y win. Concrete collisions hit so far: Monthly Performance card's combobox, Transaction filter bar's "Invoice Status"/"Search" labels vs. the Edit dialog/sidebar (see `topics/transactions-feature.md`).

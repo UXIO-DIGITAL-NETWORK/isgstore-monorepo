@@ -1,0 +1,26 @@
+{
+  "//": "Project MCP servers for the UDN Admin Dashboard. Never commit secrets — use env vars. Optional: set CONTEXT7_API_KEY in your shell for higher Context7 rate limits (free key at context7.com/dashboard).",
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "//": "Up-to-date docs for TanStack Router/Query/Table, Tailwind v4, shadcn/ui, Zod, Axios while coding. Prefer over memory for API syntax."
+    },
+    "shadcn": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"],
+      "//": "Official shadcn registry MCP — browse/search/install components (new-york, base neutral). Pairs with /add-shadcn."
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"],
+      "//": "Official Google. Screenshots, console/network, performance traces — used by /qa-audit for browser checks (light+dark render, a11y)."
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp",
+      "//": "Figma remote MCP — pull frames/tokens from the UDN Admin Dashboard file (key l7izBcDr0PtS2FUdMdHFk3; Dashboard node 22011-2008, components 22078-1614). Requires Figma auth in your client. Alternative: the local Dev Mode MCP server (http://127.0.0.1:3845/sse) if you run the Figma desktop app."
+    }
+  }
+}

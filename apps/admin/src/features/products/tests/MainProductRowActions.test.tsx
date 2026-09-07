@@ -1,0 +1,259 @@
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
+
+import { renderRoute, screen, within } from "@/test/test-utils";
+import { useAuthStore } from "@/store/useAuthStore";
+import { productsService } from "../services/products.service";
+
+const LIST_PATH = "/admin/products-preview/main";
+const FIRST_ROW = "Weekly Diamond Pass (One Week)";
+/** The one fixture row that is not live — it reads Draft. */
+const INACTIVE_ROW = "Diamond Top Up 355";
+/** Promoted, but the provider has the SKU switched off. */
+const BLOCKED_ROW = "Genesis Crystal 60";
+/** Soft-deleted; only reachable through the Archived filter. */
+const ARCHIVED_ROW = "Blessing of the Welkin Moon";
+/** The one fixture row that ships `is_price_locked` and `is_price_hidden`. */
+const LOCKED_ROW = "Diamond Top Up 86";
+
+async function openRowMenu(user: ReturnType<typeof userEvent.setup>, row = FIRST_ROW) {
+  await user.click(await screen.findByRole("button", { name: `Actions for ${row}` }));
+}
+
+/**
+ * The row action menu (product_requirements.md §4.6). Every action is wired:
+ * Activate/Deactive / Uxiolabs Update / Show Price / Lock Price go through a
+ * confirm dialog, Set Price Limit opens its page, and Delete/Edit are unchanged.
+ * The lifecycle item's label mirrors the row's Status badge, both directions.
+ */
+describe("Main Products row actions", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("unpublishes a live row only after the confirmation is accepted", async () => {
+    const spy = vi.spyOn(productsService, "bulkSetPublished").mockResolvedValue({ updated: 1, skipped: [] });
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await openRowMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "Unpublish" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Unpublish this product?")).toBeInTheDocument();
+    expect(spy).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole("button", { name: "Unpublish" }));
+    // A single id, from the API row (not a hand-written fixture string).
+    expect(spy.mock.calls[0][0]).toEqual([expect.stringMatching(/^\d+$/)]);
+    expect(spy.mock.calls[0][1]).toBe(false);
+  });
+
+  // The label has to follow the Status column: offering "Unpublish" on a row
+  // that already reads Draft is a no-op the admin cannot tell apart from a
+  // failure.
+  it("offers Publish on a row that is not live, and publishes it", async () => {
+    const spy = vi.spyOn(productsService, "bulkSetPublished").mockResolvedValue({ updated: 1, skipped: [] });
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await openRowMenu(user, INACTIVE_ROW);
+    expect(screen.queryByRole("menuitem", { name: "Unpublish" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("menuitem", { name: "Publish" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Publish this product?")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Publish" }));
+    expect(spy.mock.calls[0][1]).toBe(true);
+  });
+
+  it("offers Unpublish, not Publish, on a live row", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await openRowMenu(user);
+    expect(await screen.findByRole("menuitem", { name: "Unpublish" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Publish" })).not.toBeInTheDocument();
+  });
+
+  /**
+   * Publishing needs a supplier to order from. The server refuses and says why,
+   * so the menu disables the item and repeats that reason rather than letting
+   * the admin click into a 422.
+   */
+  it("disables Publish and shows the server's reason when it cannot publish", async () => {
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await openRowMenu(user, BLOCKED_ROW);
+    const item = await screen.findByRole("menuitem", { name: /Publish/ });
+    expect(item).toHaveAttribute("aria-disabled", "true");
+    expect(within(item).getByText("SKU sedang nonaktif di provider.")).toBeInTheDocument();
+  });
+
+  it("an archived row offers only Restore", async () => {
+    const spy = vi.spyOn(productsService, "restore").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    // Archived rows are out of the list until the Status filter asks for them.
+    await user.click(await screen.findByLabelText("Status"));
+    await user.click(await screen.findByRole("option", { name: "Archived" }));
+
+    await openRowMenu(user, ARCHIVED_ROW);
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual(["Restore"]);
+
+    await user.click(items[0]);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("confirms a Lock Price and fires it for the single row", async () => {
+    const spy = vi.spyOn(productsService, "bulkLockPrice").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await openRowMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "Lock Price" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Lock this price?")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Lock" }));
+
+    expect(spy.mock.calls[0]?.[0]).toHaveLength(1);
+    expect(spy.mock.calls[0]?.[1]).toBe(true);
+  });
+
+  // Same failure the lifecycle item had: without reading the row, a locked price
+  // still offered "Lock Price" and nothing in this menu could ever unlock it.
+  it("offers Unlock Price on a locked row, and unlocks it", async () => {
+    const spy = vi.spyOn(productsService, "bulkLockPrice").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await openRowMenu(user, LOCKED_ROW);
+    expect(screen.queryByRole("menuitem", { name: "Lock Price" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("menuitem", { name: "Unlock Price" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Unlock this price?")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Unlock" }));
+
+    expect(spy.mock.calls[0]?.[1]).toBe(false);
+  });
+
+  it("offers Hide Price on a visible row, and Show Price on a hidden one", async () => {
+    const spy = vi.spyOn(productsService, "bulkShowPrice").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    // A visible row: the only thing left to do is hide it.
+    await openRowMenu(user, LOCKED_ROW);
+    await user.click(await screen.findByRole("menuitem", { name: "Show Price" }));
+    let dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Show price for this product?")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Show" }));
+    expect(spy.mock.calls[0]?.[1]).toBe(false);
+
+    await openRowMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "Hide Price" }));
+    dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Hide price for this product?")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Hide" }));
+    expect(spy.mock.calls[1]?.[1]).toBe(true);
+  });
+
+  it("confirms a Uxiolabs Update for the single row", async () => {
+    const spy = vi.spyOn(productsService, "bulkUxiolabsUpdate").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    await renderRoute(LIST_PATH);
+
+    await openRowMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "Uxiolabs Update" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Update" }));
+
+    expect(spy.mock.calls[0][0]).toHaveLength(1);
+  });
+
+  it("navigates to the Set Price Limit page", async () => {
+    // Set Price Limit is a real protected route (not a preview twin), so this
+    // one runs authenticated against /admin/products/main.
+    useAuthStore.setState({ token: "test-token", permissions: ["*"] });
+    const user = userEvent.setup();
+    await renderRoute("/admin/products/main");
+
+    await openRowMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "Set Price Limit" }));
+
+    expect(await screen.findByRole("heading", { name: "Set Price limit" })).toBeInTheDocument();
+    useAuthStore.setState({ token: null, permissions: [] });
+  });
+});
+
+/**
+ * Editing an existing product's pricing. Margins are what the platform prices
+ * on now, so the form has to show what the product currently sells at and be
+ * able to change it — the five money fields it replaced were never written by
+ * anything at all.
+ */
+describe("Edit Main Product — pricing", () => {
+  beforeEach(() => {
+    // The Edit item is `<Can permission="products.update">`-gated.
+    useAuthStore.setState({ token: "test-token", permissions: ["*"] });
+  });
+
+  afterEach(() => {
+    useAuthStore.setState({ token: null, permissions: [] });
+    vi.restoreAllMocks();
+  });
+
+  async function openEdit(user: ReturnType<typeof userEvent.setup>) {
+    await renderRoute(LIST_PATH);
+    await openRowMenu(user);
+    await user.click(await screen.findByRole("menuitem", { name: "Edit Product" }));
+    return screen.findByRole("dialog", { name: "Edit Main Product" });
+  }
+
+  it("splits the form into Product, Pricing & Margin and Product Mix", async () => {
+    const user = userEvent.setup();
+    const dialog = await openEdit(user);
+
+    expect(within(dialog).getByRole("tab", { name: "Product" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("tab", { name: "Pricing & Margin" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("tab", { name: "Product Mix" })).toBeInTheDocument();
+  });
+
+  it("prefills the margin each plan currently sells at", async () => {
+    const user = userEvent.setup();
+    const dialog = await openEdit(user);
+
+    await user.click(within(dialog).getByRole("tab", { name: "Pricing & Margin" }));
+
+    // The fixture's default tier sells at cost × 1.07 — the markup the price
+    // cell shows as 7.0%, read back into the field an admin edits.
+    const field = await within(dialog).findByLabelText("Basic (free) margin (%) · default tier");
+    await vi.waitFor(() => expect(field).toHaveValue("7"));
+  });
+
+  it("sends the edited margin to the product's own pricing endpoint", async () => {
+    const marginSpy = vi.spyOn(productsService, "setMargin");
+    const user = userEvent.setup();
+    const dialog = await openEdit(user);
+
+    await user.click(within(dialog).getByRole("tab", { name: "Pricing & Margin" }));
+    const field = await within(dialog).findByLabelText("Basic (free) margin (%) · default tier");
+    await user.clear(field);
+    await user.type(field, "25");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    const [id, input] = (await vi.waitFor(() => {
+      expect(marginSpy).toHaveBeenCalled();
+      return marginSpy.mock.calls[0];
+    })) as [string, { margins: Record<number, number | null> }];
+
+    // The list is served by the fake API, so the row carries its numeric id.
+    expect(id).toBe("1");
+    expect(Object.values(input.margins)).toContain(25);
+  });
+});
