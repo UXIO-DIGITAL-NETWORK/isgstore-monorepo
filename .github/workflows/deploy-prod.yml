@@ -124,6 +124,17 @@ jobs:
             REPO_DIR="${DEPLOY_BASE_PATH%/}/api"
             API_DIR="$REPO_DIR/apps/api"
 
+            # 0a. Percayai host key GitHub. Tanpa ini `git clone`/`git pull`
+            #     non-interaktif mati dengan "Host key verification failed" —
+            #     tidak ada yang bisa menjawab prompt konfirmasi SSH.
+            #     Kuncinya ditulis tetap, bukan hasil `ssh-keyscan`: keyscan
+            #     mempercayai apa pun yang menjawab, sehingga justru membuang
+            #     perlindungan yang membuat verifikasi host key ada gunanya.
+            mkdir -p ~/.ssh && chmod 700 ~/.ssh
+            GH_HOSTKEY='github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl'
+            touch ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts
+            grep -qxF "$GH_HOSTKEY" ~/.ssh/known_hosts || echo "$GH_HOSTKEY" >> ~/.ssh/known_hosts
+
             # 0. Bootstrap: clone monorepo saat deploy pertama
             if [ ! -d "$REPO_DIR/.git" ]; then
               echo "Setup pertama: clone monorepo ke $REPO_DIR"
