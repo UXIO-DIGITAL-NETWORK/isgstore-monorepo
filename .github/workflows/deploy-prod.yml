@@ -1,0 +1,259 @@
+# Deploy produksi untuk keempat aplikasi, dari satu repo.
+#
+# PERUBAHAN DI SISI SERVER YANG DIBUTUHKAN — baca docs/04-deployment.md §Migrasi
+# ke monorepo sebelum menjalankan ini. Sebelumnya server meng-clone empat repo
+# ke empat direktori. Sekarang satu repo di-clone ke $REPO_DIR, dan API hidup di
+# $REPO_DIR/apps/api — jadi root nginx dan path supervisor harus diarahkan ulang.
+# Ketiga frontend tidak terpengaruh: yang dikirim tetap isi folder dist/.
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false # deploy tidak boleh dibatalkan di tengah jalan
+
+jobs:
+  changes:
+    name: Deteksi app yang berubah
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      admin: ${{ steps.filter.outputs.admin }}
+      storefront: ${{ steps.filter.outputs.storefront }}
+      payment: ${{ steps.filter.outputs.payment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api: ['apps/api/**', '.github/workflows/**']
+            admin: ['apps/admin/**', '.github/workflows/**']
+            storefront: ['apps/storefront/**', '.github/workflows/**']
+            payment: ['apps/payment/**', '.github/workflows/**']
+
+  # ── API ────────────────────────────────────────────────────────────────────
+  api-test:
+    name: API — test
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: sqlite3, pdo_sqlite, gd, exif
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test
+
+  api-deploy:
+    name: API — deploy
+    needs: api-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Discord — deploy started
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"🚀 API Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_SHA:0:7}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372}]}" || true
+
+      - name: Execute deployment via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: ENV_FILE_CONTENT
+          script: |
+            set -e
+            REPO_DIR="/home/uxioserver1/web-topup-uxiotopup-provider/repo"
+            API_DIR="$REPO_DIR/apps/api"
+
+            # 0. Bootstrap: clone monorepo saat deploy pertama
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              echo "Setup pertama: clone monorepo ke $REPO_DIR"
+              rm -rf "$REPO_DIR"
+              git clone git@github.com:UXIO-DIGITAL-NETWORK/uxiotopup-monorepo.git "$REPO_DIR"
+              git -C "$REPO_DIR" checkout main
+            fi
+
+            # 1-2. Tarik kode terbaru. Gagal di sini membatalkan deploy SEBELUM
+            #      cache lama dibuang, jadi situs tetap hidup dengan kode lama.
+            cd "$REPO_DIR"
+            git pull origin main || { echo "::error::git pull gagal — deploy dibatalkan."; exit 1; }
+
+            cd "$API_DIR"
+
+            # 3. Tulis .env dari GitHub Secrets
+            echo "$ENV_FILE_CONTENT" > .env
+
+            # 4. Dependensi produksi
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+            # 5. Migrasi
+            php artisan migrate --force
+
+            # 5b. Harga per membership plan WAJIB di-backfill satu langkah dengan
+            #     migrasi. Tanpa ini `product_plan_prices` kosong dan setiap member
+            #     dijual di harga tingkat dasar — tidak ada error, hanya kebocoran
+            #     pendapatan yang senyap. `pricing:verify` menggagalkan deploy bila
+            #     hasilnya menyimpang. Ini yang HILANG di pipeline lama.
+            php artisan pricing:backfill-plan-prices
+            php artisan pricing:verify || { echo "::error::Harga per plan menyimpang setelah backfill."; exit 1; }
+
+            # 6. Cache konfigurasi & rute
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+
+            # 7. Symlink storage publik
+            php artisan storage:link || true
+
+            # 8. Permission
+            sudo chown -R uxioserver1:www-data "$API_DIR"
+            sudo chmod -R 775 "$API_DIR/storage" "$API_DIR/bootstrap/cache"
+
+            # 8b. Reload php-fpm — OPcache akan menyajikan bytecode lama tanpa ini
+            FPM=$(systemctl list-units --type=service --state=running 'php*-fpm.service' --no-legend | awk '{print $1}' | head -1)
+            if [ -n "$FPM" ]; then sudo systemctl reload "$FPM"; else echo "::warning::php-fpm tidak ditemukan"; fi
+
+            # 9. Cron scheduler — deploy GAGAL bila hilang, karena tanpa ini
+            #    13 perintah terjadwal berhenti diam-diam
+            CRON_ENTRY="* * * * * cd $API_DIR && php artisan schedule:run >> /dev/null 2>&1"
+            ( crontab -l 2>/dev/null | grep -vF "artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
+            crontab -l | grep -q "schedule:run" || { echo "::error::Cron scheduler tidak terpasang."; exit 1; }
+
+            # 10-13. Supervisor untuk queue worker
+            command -v supervisorctl >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y supervisor; }
+            sudo systemctl enable --now supervisor
+            sudo mkdir -p /etc/supervisor/conf.d
+            sudo cp "$API_DIR/supervisor/api-prod-worker.conf" /etc/supervisor/conf.d/
+            sudo supervisorctl reread && sudo supervisorctl update
+
+            # 14. Restart worker
+            sudo supervisorctl start api-prod-worker:* || true
+            php artisan queue:restart
+
+            # 15. Worker WAJIB berjalan. Kalau tidak, pembayaran masuk tapi
+            #     pesanan tidak pernah dikirim ke supplier — dan tidak ada
+            #     yang error di mana pun.
+            sleep 5
+            sudo supervisorctl status api-prod-worker:* | grep -q RUNNING || {
+              echo "::error::Queue worker TIDAK berjalan. Order berbayar tidak akan diproses."; exit 1; }
+
+      - name: Notify Discord — hasil
+        if: always()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          STATUS: ${{ job.status }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          if [ "$STATUS" = "success" ]; then T="✅ API Deploy Succeeded"; C=5763719; else T="❌ API Deploy Failed"; C=15548997; fi
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_SHA:0:7}**\",\"color\":$C}]}" || true
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    name: ${{ matrix.app }} — build + deploy
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: admin
+            deploy_path_secret: DEPLOY_PATH_ADMIN
+            label: Admin Dashboard
+          - app: storefront
+            deploy_path_secret: DEPLOY_PATH_STOREFRONT
+            label: Storefront
+          - app: payment
+            deploy_path_secret: DEPLOY_PATH_PAYMENT
+            label: Payment Page
+    if: |
+      (matrix.app == 'admin' && needs.changes.outputs.admin == 'true') ||
+      (matrix.app == 'storefront' && needs.changes.outputs.storefront == 'true') ||
+      (matrix.app == 'payment' && needs.changes.outputs.payment == 'true')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/${{ matrix.app }}/package-lock.json
+
+      - name: Install
+        working-directory: apps/${{ matrix.app }}
+        run: npm ci
+
+      # Lint dan typecheck dijalankan untuk KETIGA app sebelum deploy. Di pipeline
+      # lama hanya storefront yang menjalankan lint, dan tidak satu pun menjalankan
+      # typecheck — dua app bisa mendarat di produksi dengan error TypeScript.
+      - name: Typecheck
+        working-directory: apps/${{ matrix.app }}
+        run: npx tsc -b --noEmit
+
+      - name: Lint
+        working-directory: apps/${{ matrix.app }}
+        run: npm run lint
+
+      - name: Test
+        working-directory: apps/${{ matrix.app }}
+        run: npm run test
+
+      - name: Build
+        working-directory: apps/${{ matrix.app }}
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_PUSHER_APP_KEY: ${{ secrets.VITE_PUSHER_APP_KEY }}
+          VITE_PUSHER_APP_CLUSTER: ${{ secrets.VITE_PUSHER_APP_CLUSTER }}
+          # Dulu di-hardcode di YAML storefront. Sekarang secret.
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+        run: npm run build
+
+      - name: Deploy via rsync
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avzr --delete
+          path: apps/${{ matrix.app }}/dist/
+          remote_path: ${{ secrets[matrix.deploy_path_secret] }}
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_port: ${{ secrets.SSH_PORT }}
+          remote_user: ${{ secrets.SSH_USERNAME }}
+          remote_key: ${{ secrets.SSH_KEY }}
+
+      - name: Notify Discord — hasil
+        if: always()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          STATUS: ${{ job.status }}
+          LABEL: ${{ matrix.label }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          if [ "$STATUS" = "success" ]; then T="✅ $LABEL Deploy Succeeded"; C=5763719; else T="❌ $LABEL Deploy Failed"; C=15548997; fi
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_SHA:0:7}**\",\"color\":$C}]}" || true

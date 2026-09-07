@@ -1,0 +1,99 @@
+# Satu CI untuk empat aplikasi.
+#
+# Path filter membuat perubahan di storefront tidak memicu build admin. Ini
+# alasan utama pipeline-nya digabung: sebelumnya ada empat workflow terpisah
+# yang tidak pernah menguji kontrak antar-aplikasi sekali pun.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Deteksi app yang berubah
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      admin: ${{ steps.filter.outputs.admin }}
+      storefront: ${{ steps.filter.outputs.storefront }}
+      payment: ${{ steps.filter.outputs.payment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - '.github/workflows/**'
+            admin:
+              - 'apps/admin/**'
+              - '.github/workflows/**'
+            storefront:
+              - 'apps/storefront/**'
+              - '.github/workflows/**'
+            payment:
+              - 'apps/payment/**'
+              - '.github/workflows/**'
+
+  api:
+    name: API — test + Pint
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: sqlite3, pdo_sqlite, gd, exif
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test
+      - run: ./vendor/bin/pint --test
+
+  frontend:
+    name: ${{ matrix.app }} — lint + typecheck + test
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [admin, storefront, payment]
+    # Jalankan hanya app yang berubah. `needs.changes.outputs[matrix.app]`
+    # tidak bisa dipakai di `if:` job, jadi disaring per-app di bawah.
+    if: |
+      (matrix.app == 'admin' && needs.changes.outputs.admin == 'true') ||
+      (matrix.app == 'storefront' && needs.changes.outputs.storefront == 'true') ||
+      (matrix.app == 'payment' && needs.changes.outputs.payment == 'true')
+    defaults:
+      run:
+        working-directory: apps/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          # Tiap app punya lockfile sendiri supaya `npm ci` mereproduksi versi
+          # yang persis sama dengan repo lama — lihat docs/04-deployment.md.
+          cache-dependency-path: apps/${{ matrix.app }}/package-lock.json
+      - run: npm ci
+      # Ketiganya dijalankan untuk SEMUA app. Sebelum digabung, hanya storefront
+      # yang menjalankan lint di jalur deploy dan tidak satu pun menjalankan
+      # typecheck — dua app bisa lolos ke produksi dengan error TypeScript.
+      - run: npx tsc -b --noEmit
+      - run: npm run lint
+      - run: npm run test
