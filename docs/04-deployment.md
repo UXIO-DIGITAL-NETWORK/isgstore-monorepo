@@ -48,7 +48,7 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
    Tempel isinya ke **Settings → Deploy keys → Add deploy key** di repo (read-only cukup — deploy tidak pernah push). Uji dengan `ssh -T git@github.com`; jawaban "successfully authenticated" berarti beres.
 
    Host key GitHub tidak perlu disiapkan manual — deploy menuliskannya ke `known_hosts` sendiri, dan juga memasang `~/.ssh/config` yang melewatkan `github.com` ke `ssh.github.com:443`. Port 22 keluar diblokir di server ini; tanpa jalur 443 itu `git pull` menggantung sampai *Connection timed out*. Uji dengan `ssh -T git@github.com` — kalau menjawab "successfully authenticated", keduanya beres sekaligus.
-10. **Beri user SSH sudo tanpa kata sandi.** Deploy memakai `sudo` untuk `chown`, reload php-fpm, dan seluruh pengelolaan supervisor. Sesi non-interaktif tidak bisa mengetik kata sandi, jadi tanpa ini deploy mati dengan *"sudo: a terminal is required to read the password"*.
+10. **Beri user SSH sudo tanpa kata sandi.** Deploy memakai `sudo` untuk `chown`, reload php-fpm, dan seluruh pengelolaan supervisor. Sesi non-interaktif tidak bisa mengetik kata sandi, jadi tanpa ini deploy berhenti di preflight dengan *"User … butuh sudo tanpa kata sandi"* — sebelum `.env` ditulis dan migrasi dijalankan, jadi tidak ada deploy setengah jadi yang perlu dibereskan.
 
     Periksa: `sudo -n true && echo OK`. Kalau belum, buat berkas drop-in — **selalu lewat `visudo`**, karena sintaks yang salah di sudoers bisa mengunci Anda dari sudo sepenuhnya:
 
@@ -56,20 +56,30 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
     sudo visudo -f /etc/sudoers.d/deploy
     ```
 
-    Isinya, dibatasi hanya pada yang benar-benar dipakai script (ganti `uxioserver1` dengan `SSH_USERNAME` Anda):
+    Isinya satu baris (ganti `uxioserver1` dengan isi `SSH_USERNAME` Anda — kalau nama user-nya salah, gejalanya identik dengan tidak punya sudo sama sekali):
 
     ```
-    uxioserver1 ALL=(root) NOPASSWD: /bin/chown, /bin/chmod, \
+    uxioserver1 ALL=(root) NOPASSWD: ALL
+    ```
+
+    Lalu `sudo chmod 0440 /etc/sudoers.d/deploy`, dan periksa ulang dengan `sudo -n true && echo OK`.
+
+    **Kenapa `ALL`, bukan daftar perintah terbatas?** Karena untuk akun deploy murni daftar terbatas tidak menambah keamanan yang berarti — alasannya di [§Catatan keamanan](#catatan-keamanan). Kalau user itu memang dipakai untuk hal lain juga sehingga harus dibatasi, daftarnya seperti ini:
+
+    ```
+    uxioserver1 ALL=(root) NOPASSWD: /usr/bin/true, /usr/bin/chown, /usr/bin/chmod, \
       /usr/bin/tee /etc/supervisor/conf.d/api-prod-worker.conf, \
-      /bin/mkdir -p /etc/supervisor/conf.d, \
-      /usr/bin/supervisorctl, /bin/systemctl, \
+      /usr/bin/mkdir -p /etc/supervisor/conf.d, \
+      /usr/bin/supervisorctl, /usr/bin/systemctl, \
       /usr/bin/apt-get
     ```
 
-    Lalu `sudo chmod 0440 /etc/sudoers.d/deploy`. Path binari bisa berbeda antar distro — pastikan dengan `command -v chown tee supervisorctl systemctl apt-get`; di Debian/Ubuntu modern `/bin` adalah symlink ke `/usr/bin`, dan sudoers **tidak** mengikuti symlink, jadi tulis path yang persis muncul di `command -v`.
+    Dua hal yang membuat daftar semacam ini gagal, dan keduanya gagal dengan pesan yang menyesatkan:
 
-    `NOPASSWD: ALL` juga bekerja dan jauh lebih ringkas. Daftar terbatas di atas lebih baik hanya kalau user itu dipakai untuk hal lain juga; kalau ia murni akun deploy, `ALL` tidak menambah risiko berarti karena `apt-get` dan `systemctl` di daftar itu sendiri sudah setara akses root.
-11. **Pastikan `PasswordAuthentication yes` aktif** di `/etc/ssh/sshd_config`, lalu `sudo systemctl reload ssh`. Deploy memakai autentikasi kata sandi, bukan kunci.
+    - **`true` wajib ikut terdaftar.** Preflight di `deploy-prod.yml` menjalankan `sudo -n true`, dan sudoers menolak perintah yang tidak ada di daftar. Tanpa entri itu deploy tetap berhenti di preflight walaupun `chown`, `supervisorctl`, dan sisanya sudah diizinkan.
+    - **Path harus persis seperti yang dijalankan.** Pastikan dengan `command -v true chown chmod tee mkdir supervisorctl systemctl apt-get`. Di Debian/Ubuntu modern `/bin` hanyalah symlink ke `/usr/bin`, dan sudoers **tidak** mengikuti symlink — `/bin/chown` di sudoers tidak cocok dengan `/usr/bin/chown` yang benar-benar dieksekusi.
+
+11. **Pastikan `PasswordAuthentication yes` aktif** di `/etc/ssh/sshd_config`, lalu `sudo systemctl reload ssh`. Deploy memakai autentikasi kata sandi, bukan kunci — dan itu permukaan serangan terbesar setup ini, jadi baca [§Catatan keamanan](#catatan-keamanan) sebelum membiarkannya begitu.
 
 ## Secret GitHub
 
@@ -116,11 +126,78 @@ Beberapa hal yang tidak terlihat dari tabel dan pernah memakan waktu:
 Deploy memakai kata sandi, bukan kunci privat. Dua akibat yang perlu diketahui:
 
 - **`burnett01/rsync-deployments` tidak bisa dipakai** — action itu hanya menerima kunci. Ketiga frontend memakai `rsync` manual lewat `sshpass`. Kata sandinya diberikan lewat variabel `SSHPASS` dan `sshpass -e`, bukan lewat argumen `-p`, karena argumen baris perintah terbaca di daftar proses runner.
-- **Host key server direkam lebih dulu** dengan `ssh-keyscan`, supaya `rsync` tidak perlu dijalankan dengan `StrictHostKeyChecking=no`. Tanpa itu, server palsu yang menyamar di alamat yang sama akan diterima begitu saja.
+- **Host key server direkam lebih dulu** dengan `ssh-keyscan`, supaya `rsync` tidak perlu dijalankan dengan `StrictHostKeyChecking=no`. Ketahui batasnya: `ssh-keyscan` mempercayai apa pun yang menjawab saat itu juga, jadi ini merapikan bentuk perintahnya — bukan perlindungan terhadap server palsu — dan tiap run mempercayai ulang dari nol. Bandingkan dengan job API, yang menuliskan host key GitHub secara tetap justru karena alasan ini. Untuk benar-benar menutupnya, simpan host key server sebagai secret (mis. `SSH_HOST_KEY`) dan tulis langsung ke `known_hosts`.
 
 Kunci privat tetap lebih aman daripada kata sandi untuk deploy otomatis: kunci bisa dibatasi ke satu perintah, tidak bisa dipakai login interaktif, dan dicabut tanpa mengganti kredensial siapa pun. Kalau nanti ingin pindah, yang berubah hanya dua langkah di `deploy-prod.yml`.
 
 Sampai langkah 1–4 selesai, **jangan** jalankan deploy dari repo ini.
+
+---
+
+## Catatan keamanan
+
+Empat hal yang perlu diketahui siapa pun yang menyentuh deploy ini, diurutkan
+dari yang paling berdampak.
+
+### Sudo tanpa kata sandi bukan titik lemahnya
+
+Daftar `NOPASSWD` yang dibatasi terasa lebih aman daripada `ALL`, tapi di kasus
+ini tidak: perintah yang memang dibutuhkan script sudah setara akses root satu
+sama lain.
+
+| Diizinkan | Jalan pintas ke root |
+|---|---|
+| `systemctl` | membuat lalu menyalakan unit apa pun sebagai root |
+| `apt-get` | `-o APT::Update::Pre-Invoke::=…`, atau paket dengan skrip `postinst` |
+| `chown` / `chmod` dengan argumen bebas | mengambil alih `/etc/sudoers.d`, membuka `/etc/shadow` |
+| `tee` ke conf supervisor | supervisord berjalan sebagai root; `user=root` di conf menjalankan apa pun |
+
+Jadi memperketat daftarnya menaikkan effort penyerang beberapa detik, sementara
+ia rutin mematahkan deploy setiap kali script berubah. Batas keamanan yang
+sesungguhnya bukan isi sudoers, melainkan **siapa yang bisa memicu `sudo` itu**
+— dua bagian berikutnya.
+
+### Kata sandi SSH adalah risiko terbesarnya
+
+`PasswordAuthentication yes` (langkah 11) berarti satu kata sandi tertebak sama
+dengan root produksi, dan port SSH yang terbuka ke internet menerima percobaan
+brute force terus-menerus. Ini jauh lebih besar daripada soal cakupan sudo di
+atas.
+
+- **Pindah ke autentikasi kunci.** `appleboy/ssh-action` menerima `key:` sebagai
+  ganti `password:`, dan job frontend bisa kembali memakai
+  `burnett01/rsync-deployments` — `sshpass` ada di sana semata-mata karena
+  dipaksa memakai kata sandi. Sesudah itu setel `PasswordAuthentication no`.
+- **Selama kata sandi masih dipakai:** isinya harus acak dan panjang (≥40
+  karakter — tidak ada yang perlu menghafalnya, ia hanya tinggal di secret
+  `SSH_PASSWORD`), pasang `fail2ban`, dan batasi `AllowUsers <user-deploy>` di
+  `sshd_config`.
+
+### Akses push ke `main` sama dengan root di server
+
+`deploy-prod.yml` ikut dalam path filter-nya sendiri, dan blok `script:`-nya
+berjalan dengan sudo tanpa kata sandi. Siapa pun yang bisa push atau merge ke
+`main` karena itu bisa menjalankan perintah apa pun sebagai root di server
+produksi, sekaligus membaca seluruh secret. Ini berlaku pada desain deploy mana
+pun yang memberi CI akses ke server; yang penting kontrolnya ada:
+
+- **Branch protection** di `main`: wajib lewat PR, minimal satu review, tanpa
+  force-push.
+- **GitHub Environment** `production` dengan *required reviewers*, dipasang
+  sebagai `environment:` di job `api-deploy` dan `frontend`, dengan secret
+  dipindahkan ke environment itu — sehingga tidak ada workflow lain di repo ini
+  yang bisa membacanya.
+
+### Dua hal yang masih terbuka di `deploy-prod.yml`
+
+- **`.env` ditulis dengan permission default.** Langkah 3
+  (`echo "$ENV_FILE_CONTENT" > .env`) menghasilkan mode 644 pada umask biasa,
+  sehingga kredensial database, `APP_KEY`, dan kunci gateway pembayaran terbaca
+  oleh setiap user di server — langkah 8 hanya meng-`chmod` `storage` dan
+  `bootstrap/cache`. Perbaikannya satu baris tepat setelah penulisan:
+  `chmod 640 .env && sudo chown "$(id -un):www-data" .env`.
+- **`ssh-keyscan` di job frontend tidak menutup MITM.** Lihat
+  [§Catatan tentang autentikasi kata sandi](#catatan-tentang-autentikasi-kata-sandi).
 
 ---
 
