@@ -1,0 +1,657 @@
+<?php
+
+/*
+|--------------------------------------------------------------------------
+| Monetapay SIT scenario registry
+|--------------------------------------------------------------------------
+| Drives `php artisan monetapay:sit`. Each row mirrors a line in the official
+| "Monetapay Test Scenario Template" and declares HOW it is executed against
+| the deployed API.
+|
+| exec types:
+|   http            -> real HTTP call to {base}/api/v1{path}
+|   manual          -> cannot be forced automatically (stateful / sandbox-only); recorded as MANUAL
+|   not_implemented -> endpoint not built in this API; recorded as NOT_IMPLEMENTED
+|
+| http fields:
+|   method, path, auth(bool), body{}, expect_code, expect_http
+|   capture{as, from{field => dot.path.in.response}}   (optional — stash ids for later rows)
+|   body values may reference captured ids: "{{qris.order_no}}"
+|
+| `route` + `files` are surfaced in the HTML report ("which route is hit / which file is used").
+*/
+
+// Staging seeded payment_channel ids (confirmed): 1=bca_va, 3=bni_va, 5=qris, 6=gopay.
+// VA channels enforce min Rp 10,000 → use a pricier product (id 4, Rp 33,596).
+// NOTE: scenarios 2.2/2.3/2.4 (static VA, 4012, 7003) required dedicated SIT-only
+//       VA channels that have been removed from the seeder — they are recorded as
+//       NOT_IMPLEMENTED below.
+$VA = 1;       // bca_va   (virtual_account, dynamic is_single_use=1)
+$EW = 6;       // gopay    (ewallet)
+$QR = 5;       // qris
+$PROD_VA = 4;       // VA-eligible product (>= Rp 10,000)
+$PROD_LOW = 1;       // QRIS/e-wallet product (>= Rp 1,000)
+
+return [
+
+    /* ============================ Balance Inquiry ============================ */
+    ['no' => '1.1', 'sheet' => 'Balance Inquiry', 'service' => 'Balance Inquiry', 'scenario' => 'Success Balance Inquiry',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/balance', 'auth' => true, 'body' => [],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/balance',
+        'files' => ['MonetapayController@balance', 'QueryMonetapayAction', 'MonetapayService::inquiryBalance']],
+
+    ['no' => '1.2', 'sheet' => 'Balance Inquiry', 'service' => 'Balance Inquiry', 'scenario' => 'Disabled Support Currency',
+        'exec' => 'manual', 'expect_code' => '4019', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/balance', 'files' => ['MonetapayService::inquiryBalance'],
+        'note' => 'Our balance route exposes no currency param; the 4019 path is a Monetapay-side merchant config and cannot be triggered from our API.'],
+
+    ['no' => '1.3', 'sheet' => 'Balance Inquiry', 'service' => 'Bill Flow Inquiry', 'scenario' => 'Successful Bill Flow Inquiry',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/flow', 'auth' => true,
+        'body' => ['start_time' => '{{now.month_start}}', 'end_time' => '{{now.today}}', 'page' => '1', 'page_size' => '20'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/bills/flow', 'files' => ['MonetapayController@billFlow', 'MonetapayService::billFlowInquiry']],
+
+    ['no' => '1.4', 'sheet' => 'Balance Inquiry', 'service' => 'Bill Flow Inquiry', 'scenario' => 'Datetime Range Required',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/flow', 'auth' => true, 'body' => [],
+        'expect_code' => '-1', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/bills/flow', 'files' => ['MonetapayService::billFlowInquiry'],
+        'note' => 'passThrough() always returns HTTP 200; Monetapay error code is in the response body.'],
+
+    ['no' => '1.5', 'sheet' => 'Balance Inquiry', 'service' => 'Bill Flow Inquiry', 'scenario' => 'Invalid Date Format',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/flow', 'auth' => true,
+        'body' => ['start_time' => '01-2026-99', 'end_time' => 'not-a-date'],
+        'expect_code' => '-1', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/bills/flow', 'files' => ['MonetapayService::billFlowInquiry'],
+        'note' => 'passThrough() always returns HTTP 200; Monetapay error code is in the response body.'],
+
+    ['no' => '1.6', 'sheet' => 'Balance Inquiry', 'service' => 'Daily Bill Inquiry', 'scenario' => 'Successful Daily Bill Inquiry',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/daily', 'auth' => true,
+        'body' => ['start_date' => '{{now.month_start_date}}', 'end_date' => '{{now.today_date}}', 'currency' => 'IDR', 'page' => '1', 'page_size' => '20'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/bills/daily', 'files' => ['MonetapayController@dailyBill', 'MonetapayService::dailyBillInquiry']],
+
+    ['no' => '1.7', 'sheet' => 'Balance Inquiry', 'service' => 'Daily Bill Inquiry', 'scenario' => 'Date Range Required',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/daily', 'auth' => true, 'body' => [],
+        'expect_code' => '-1', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/bills/daily', 'files' => ['MonetapayController@dailyBill'],
+        'note' => 'passThrough() returns HTTP 200; Monetapay returns code=-1 for missing date range in response body.'],
+
+    ['no' => '1.8', 'sheet' => 'Balance Inquiry', 'service' => 'Daily Bill Inquiry', 'scenario' => 'Invalid Date Format',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/bills/daily', 'auth' => true,
+        'body' => ['start_date' => '2026/99/99', 'end_date' => 'xx'],
+        'expect_code' => '-1', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/bills/daily', 'files' => ['MonetapayService::dailyBillInquiry'],
+        'note' => 'passThrough() returns HTTP 200; Monetapay returns code=-1 for invalid date format in response body.'],
+
+    /* ============================ Virtual Account ============================ */
+    ['no' => '2.1', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Successful Dynamic VA Creation',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
+        'body' => ['product_id' => $PROD_VA, 'payment_channel_id' => $VA, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
+        'capture' => ['as' => 'va', 'from' => ['order_no' => 'data.payment.instructions.order_no', 'mch_order_no' => 'data.reference_id']],
+        'expect_code' => '0', 'expect_http' => 201,
+        'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutController', 'CheckoutAction', 'MonetapayService::createTransaction']],
+
+    ['no' => '2.2', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Successful Static VA Creation',
+        'exec' => 'not_implemented', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction', 'MonetapayService::createTransaction'],
+        'note' => 'Required the SIT-only static-VA channel (bni_va_s), which has been removed from the seeder.'],
+
+    ['no' => '2.3', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Not support VA bank codes',
+        'exec' => 'not_implemented', 'expect_code' => '4012', 'expect_http' => 400,
+        'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction', 'MonetapayService::createTransaction'],
+        'note' => 'Required the SIT-only test_va channel (account_bank_code=TEST → 4012), which has been removed from the seeder.'],
+
+    ['no' => '2.4', 'sheet' => 'Virtual Account', 'service' => 'VA Create', 'scenario' => 'Unexpected Bank Error',
+        'exec' => 'not_implemented', 'expect_code' => '7003', 'expect_http' => 400,
+        'route' => 'POST /api/v1/checkout', 'files' => ['MonetapayService::createTransaction'],
+        'note' => 'Required the SIT-only bnc_va channel (account_bank_code=BNC → 7003), which has been removed from the seeder.'],
+
+    ['no' => '2.5', 'sheet' => 'Virtual Account', 'service' => 'VA Inquiry', 'scenario' => 'Successful VA Inquiry',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/virtual-account/query', 'auth' => true,
+        'body' => ['mch_order_no' => '{{va.mch_order_no}}'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/virtual-account/query', 'files' => ['MonetapayController@virtualAccount', 'MonetapayService::inquiryVirtualAccount']],
+
+    ['no' => '2.6', 'sheet' => 'Virtual Account', 'service' => 'VA Inquiry', 'scenario' => 'Processing Inquiry',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/virtual-account/query', 'files' => ['MonetapayService::inquiryVirtualAccount'],
+        'note' => 'Requires a VA mid-payment (status processing); pay the VA in the sandbox then inquire.'],
+
+    ['no' => '2.7', 'sheet' => 'Virtual Account', 'service' => 'VA Inquiry', 'scenario' => 'Expired VA Inquiry',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/virtual-account/query', 'files' => ['MonetapayService::inquiryVirtualAccount'],
+        'note' => 'Requires waiting out the VA expiry window; cannot be forced synchronously.'],
+
+    ['no' => '2.8', 'sheet' => 'Virtual Account', 'service' => 'VA Inquiry', 'scenario' => 'Create Fail VA inquiry',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/virtual-account/query', 'auth' => true,
+        'body' => ['mch_order_no' => 'INV-DOES-NOT-EXIST-0001'],
+        'expect_code' => '4010', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/virtual-account/query', 'files' => ['MonetapayService::inquiryVirtualAccount']],
+
+    ['no' => '2.9', 'sheet' => 'Virtual Account', 'service' => 'VA Merchant Callback', 'scenario' => 'Successful Callback',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController', 'HandleMonetapayCallbackAction'],
+        'note' => 'Inbound callback is invoked by Monetapay with a server-signed en_data; cannot be forged without the production AES key/token.'],
+
+    /* ================================ eWallet ================================ */
+    ['no' => '3.1', 'sheet' => 'eWallet', 'service' => 'eWallet Create', 'scenario' => 'Successful eWallet Creation',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
+        'body' => ['product_id' => $PROD_LOW, 'payment_channel_id' => $EW, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
+        'capture' => ['as' => 'ewallet', 'from' => ['order_no' => 'data.payment.instructions.order_no', 'mch_order_no' => 'data.reference_id']],
+        'expect_code' => '0', 'expect_http' => 201,
+        'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction', 'MonetapayService::createTransaction']],
+
+    ['no' => '3.2', 'sheet' => 'eWallet', 'service' => 'eWallet Create', 'scenario' => 'Invalid Amount',
+        'exec' => 'manual', 'expect_code' => '-1', 'expect_http' => 400,
+        'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction'],
+        'note' => 'Amount is derived from the product price (valid); a sub-minimum amount cannot be supplied through checkout.'],
+
+    ['no' => '3.3', 'sheet' => 'eWallet', 'service' => 'eWallet Create', 'scenario' => 'Invalid Channel Code',
+        'exec' => 'manual', 'expect_code' => '-1', 'expect_http' => 400,
+        'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction'],
+        'note' => 'Seeded channels are valid; invalid channel rejected by our lookup before Monetapay.'],
+
+    ['no' => '3.4', 'sheet' => 'eWallet', 'service' => 'eWallet Create', 'scenario' => 'Creation Failed',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/checkout', 'files' => ['MonetapayService::createTransaction'],
+        'note' => 'Sandbox-only failure injection.'],
+
+    ['no' => '3.5', 'sheet' => 'eWallet', 'service' => 'eWallet Inquiry', 'scenario' => 'eWallet Processing Payment',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/ewallet/query', 'auth' => true,
+        'body' => ['mch_order_no' => '{{ewallet.mch_order_no}}'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/ewallet/query', 'files' => ['MonetapayController@ewallet', 'MonetapayService::inquiryEwallet']],
+
+    ['no' => '3.6', 'sheet' => 'eWallet', 'service' => 'eWallet Inquiry', 'scenario' => 'Expired eWallet Payment',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/ewallet/query', 'files' => ['MonetapayService::inquiryEwallet'],
+        'note' => 'Requires waiting out the e-wallet charge expiry.'],
+
+    ['no' => '3.7', 'sheet' => 'eWallet', 'service' => 'eWallet Inquiry', 'scenario' => 'Successful eWallet Inquiry',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/ewallet/query', 'auth' => true,
+        'body' => ['mch_order_no' => '{{ewallet.mch_order_no}}'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/ewallet/query', 'files' => ['MonetapayService::inquiryEwallet'],
+        'note' => 'Same order as 3.5; status will read pending until paid in the sandbox.'],
+
+    ['no' => '3.8', 'sheet' => 'eWallet', 'service' => 'eWallet Merchant Callback', 'scenario' => 'Successful Callback',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController'],
+        'note' => 'Inbound, server-signed by Monetapay.'],
+
+    /* ================================= QRIS ================================= */
+    ['no' => '4.1', 'sheet' => 'QRIS', 'service' => 'QRIS Create', 'scenario' => 'Successful QRIS Creation',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/checkout', 'auth' => false,
+        'body' => ['product_id' => $PROD_LOW, 'payment_channel_id' => $QR, 'target_uid' => '08123456789', 'guest_contact' => '08123456789'],
+        'capture' => ['as' => 'qris', 'from' => ['order_no' => 'data.payment.instructions.order_no', 'mch_order_no' => 'data.reference_id']],
+        'expect_code' => '0', 'expect_http' => 201,
+        'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction', 'MonetapayService::createTransaction']],
+
+    ['no' => '4.2', 'sheet' => 'QRIS', 'service' => 'QRIS Create', 'scenario' => 'Invalid Amount',
+        'exec' => 'manual', 'expect_code' => '4008', 'expect_http' => 400,
+        'route' => 'POST /api/v1/checkout', 'files' => ['CheckoutAction'],
+        'note' => 'Amount from product price (valid); cannot supply an out-of-range amount via checkout.'],
+
+    ['no' => '4.3', 'sheet' => 'QRIS', 'service' => 'QRIS Cancel', 'scenario' => 'Successful QRIS Cancellation',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/cancel', 'auth' => true,
+        'body' => ['order_no' => '{{qris.order_no}}', 'mch_order_no' => '{{qris.mch_order_no}}'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/cancel', 'files' => ['MonetapayController@cancel', 'CancelTransactionAction', 'MonetapayService::cancelTransaction']],
+
+    ['no' => '4.4', 'sheet' => 'QRIS', 'service' => 'QRIS Cancel', 'scenario' => 'Already Paid QRIS',
+        'exec' => 'manual', 'expect_code' => '', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/cancel', 'files' => ['MonetapayService::cancelTransaction'],
+        'note' => 'Requires a paid QRIS order to attempt cancellation.'],
+
+    ['no' => '4.5', 'sheet' => 'QRIS', 'service' => 'QRIS inquiry', 'scenario' => 'Successful Inquiry',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/qris/query', 'auth' => true,
+        'body' => ['mch_order_no' => '{{qris.mch_order_no}}'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/qris/query', 'files' => ['MonetapayController@qris', 'MonetapayService::inquiryQris']],
+
+    ['no' => '4.6', 'sheet' => 'QRIS', 'service' => 'QRIS inquiry', 'scenario' => 'Processing Inquiry',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/qris/query', 'files' => ['MonetapayService::inquiryQris'], 'note' => 'Requires a QR being paid.'],
+
+    ['no' => '4.7', 'sheet' => 'QRIS', 'service' => 'QRIS inquiry', 'scenario' => 'Expired QR Code',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/qris/query', 'files' => ['MonetapayService::inquiryQris'], 'note' => 'Requires QR expiry.'],
+
+    ['no' => '4.8', 'sheet' => 'QRIS', 'service' => 'QRIS inquiry', 'scenario' => 'Invalid QR Code',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/qris/query', 'auth' => true,
+        'body' => ['mch_order_no' => 'INV-QRIS-NOPE-0001'],
+        'expect_code' => '4010', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/qris/query', 'files' => ['MonetapayService::inquiryQris']],
+
+    ['no' => '4.9', 'sheet' => 'QRIS', 'service' => 'QRIS Callback', 'scenario' => 'Successful Callback',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController'], 'note' => 'Inbound, server-signed.'],
+
+    ['no' => '4.10', 'sheet' => 'QRIS', 'service' => 'QRIS Refund', 'scenario' => 'Successful QRIS Refund',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/refund', 'files' => ['RefundTransactionAction', 'MonetapayService::refundTransaction'],
+        'note' => 'Refund requires a settled (paid) QRIS order; our created QR is unpaid.'],
+
+    ['no' => '4.11', 'sheet' => 'QRIS', 'service' => 'QRIS Refund', 'scenario' => 'Processing Refund',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 202,
+        'route' => 'POST /api/v1/monetapay/refund', 'files' => ['MonetapayService::refundTransaction'], 'note' => 'Needs settled order.'],
+
+    ['no' => '4.12', 'sheet' => 'QRIS', 'service' => 'QRIS Refund', 'scenario' => 'Refund Exceeds Limit',
+        'exec' => 'manual', 'expect_code' => '-1', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/refund', 'files' => ['MonetapayService::refundTransaction'], 'note' => 'Needs settled order.'],
+
+    ['no' => '4.13', 'sheet' => 'QRIS', 'service' => 'QRIS Refund', 'scenario' => 'Insufficient Balance',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/refund', 'files' => ['MonetapayService::refundTransaction'], 'note' => 'Sandbox balance state.'],
+
+    ['no' => '4.14', 'sheet' => 'QRIS', 'service' => 'QRIS Refund Inquiry', 'scenario' => 'Successful Refund Inquiry',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/refund/query', 'files' => ['MonetapayController@refundQuery', 'MonetapayService::inquiryRefund'],
+        'note' => 'Requires a settled (paid) QRIS order. The QRIS created in 4.1 is cancelled in 4.3 and cannot be refunded. Needs manual sandbox payment before running.'],
+
+    ['no' => '4.15', 'sheet' => 'QRIS', 'service' => 'QRIS Refund Inquiry', 'scenario' => 'Processing Refund Inquiry',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/refund/query', 'files' => ['MonetapayService::inquiryRefund'], 'note' => 'Needs an in-progress refund.'],
+
+    ['no' => '4.16', 'sheet' => 'QRIS', 'service' => 'QRIS Refund Inquiry', 'scenario' => 'Invalid Refund Request',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/refund/query', 'auth' => true,
+        'body' => ['payment_order_no' => 'NO-SUCH-ORDER-0001'],
+        'expect_code' => '9999', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/refund/query', 'files' => ['MonetapayService::inquiryRefund'],
+        'note' => 'Sandbox returns 9999 (SYSTEM_ERROR) for unknown refund order_no instead of documented 4010.'],
+
+    ['no' => '4.17', 'sheet' => 'QRIS', 'service' => 'QRIS Refund Merchant Callback', 'scenario' => 'Successful Refund Callback',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/payment/callback', 'files' => ['MonetapayCallbackController'], 'note' => 'Inbound, server-signed.'],
+
+    /* ============================== Payment Link ============================== */
+    ['no' => '5.1', 'sheet' => 'Payment Link', 'service' => 'Payment Link Create', 'scenario' => 'Successful Payment Link Creation',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/payment-link/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-PL1',
+            'amount' => '10000',
+            'currency' => 'IDR',
+            'expire_seconds' => '36000',
+            'terminal_type' => 'WAP',
+            'regular_bank_codes' => 'BNI,PERMATA',
+            'ewallet_bank_codes' => 'DANA',
+            'qris_bank_code' => 'QRIS',
+            'sender_name' => 'SIT Tester',
+            'account_name' => 'SIT Tester',
+            'account_phone' => '628123456789',
+            'account_bank_code' => '',
+            'fixed_bank_code' => '0',
+            'success_redirect_url' => 'https://example.com',
+            'product_id' => 'SIT-PRODUCT-001',
+            'product_name' => 'SIT Product',
+            'product_category' => 'Toys',
+            'product_sub_category' => 'Game',
+            'product_price' => '10000',
+            'product_quantity' => '1',
+            'product_type' => 'PRODUCT',
+            'product_description' => 'SIT payment link test',
+        ],
+        'capture' => ['as' => 'payment_link', 'from' => ['order_no' => 'data.data.order_no', 'mch_order_no' => 'data.data.mch_order_no']],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/payment-link/create', 'files' => ['MonetapayController@paymentLinkCreate', 'MonetapayService::createPaymentLink']],
+
+    ['no' => '5.2', 'sheet' => 'Payment Link', 'service' => 'Payment Link Create', 'scenario' => 'Invalid Amount',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/payment-link/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-PL2',
+            'amount' => '-1',
+            'currency' => 'IDR',
+            'terminal_type' => 'WAP',
+        ],
+        'expect_code' => '4009', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/payment-link/create', 'files' => ['MonetapayService::createPaymentLink']],
+
+    ['no' => '5.3', 'sheet' => 'Payment Link', 'service' => 'Payment Link Inquiry', 'scenario' => 'Successful Payment',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/payment-link/query', 'files' => ['MonetapayService::inquiryPaymentLink'],
+        'note' => 'Requires a paid payment link; automate 5.1 first, then pay manually in sandbox.'],
+
+    ['no' => '5.4', 'sheet' => 'Payment Link', 'service' => 'Payment Link Inquiry', 'scenario' => 'Processing Payment',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/payment-link/query', 'files' => ['MonetapayService::inquiryPaymentLink'], 'note' => 'Requires in-progress payment state.'],
+
+    ['no' => '5.5', 'sheet' => 'Payment Link', 'service' => 'Payment Link Inquiry', 'scenario' => 'Expired Payment Link',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/payment-link/query', 'files' => ['MonetapayService::inquiryPaymentLink'], 'note' => 'Requires waiting out the link expiry.'],
+
+    ['no' => '5.6', 'sheet' => 'Payment Link', 'service' => 'Payment Link Inquiry', 'scenario' => 'Payment Link Failed',
+        'exec' => 'manual', 'expect_code' => '1000', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/payment-link/query', 'files' => ['MonetapayService::inquiryPaymentLink'], 'note' => 'Sandbox-specific failure state.'],
+
+    /* ================================ Subscribe ============================== */
+    ['no' => '6.1', 'sheet' => 'Subscribe', 'service' => 'Customer', 'scenario' => 'Create Customer Success',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/customer/create', 'auth' => true,
+        'body' => [
+            'mch_customer_id' => '{{run.uid}}CUST',
+            'type' => 'INDIVIDUAL',
+            'mobile_number' => '+62123123',
+            'address_category' => 'HOME',
+            'address_country' => 'ID',
+            'address_street_line1' => 'home',
+            'address_postal_code' => 'home',
+            'address_city' => 'test',
+            'shipping_address' => 'test',
+            'address_is_primary' => '1',
+            'individual_identity_expiration_date' => '2029-01-01 23:59:59',
+            'individual_surname' => 'test',
+            'individual_given_names' => 'test',
+        ],
+        'capture' => ['as' => 'customer', 'from' => ['mch_customer_id' => 'data.data.mch_customer_id']],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/customer/create', 'files' => ['MonetapayController@customerCreate', 'MonetapayService::createCustomer']],
+
+    ['no' => '6.2', 'sheet' => 'Subscribe', 'service' => 'Customer', 'scenario' => 'Mch Customer Id Exists',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/customer/create', 'auth' => true,
+        'body' => [
+            'mch_customer_id' => '{{customer.mch_customer_id}}',
+            'type' => 'INDIVIDUAL',
+            'mobile_number' => '+62123456789',
+            'address_category' => 'HOME',
+            'address_country' => 'ID',
+            'address_street_line1' => 'Jl. Test No. 1',
+            'address_postal_code' => '12345',
+            'address_city' => 'Jakarta',
+            'address_is_primary' => '1',
+            'individual_surname' => 'Tester',
+            'individual_given_names' => 'SIT Duplicate',
+        ],
+        'expect_code' => '-1', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/customer/create', 'files' => ['MonetapayService::createCustomer']],
+
+    ['no' => '6.3', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Create Subscription Success',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-SUB1',
+            'mch_customer_id' => '{{customer.mch_customer_id}}',
+            'amount' => '100',
+            'interval' => 'MONTH',
+            'interval_count' => '1',
+            'channel_code' => 'DANA',
+            'account_phone' => '628123456789',
+            'should_retry' => '1',
+            'total_retry' => '1',
+            'retry_interval_count' => '5',
+            'retry_interval' => 'DAY',
+            'has_recurrence' => '0',
+            'order_items' => [
+                ['type' => 'PRODUCT', 'mch_order_item_id' => 1, 'name' => 'Subscription', 'net_unit_amount' => 1, 'quantity' => 1, 'category' => 'test'],
+            ],
+        ],
+        'capture' => ['as' => 'subscription', 'from' => ['order_no' => 'data.data.order_no', 'mch_order_no' => 'data.data.mch_order_no']],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayController@subscriptionCreate', 'MonetapayService::createSubscription']],
+
+    ['no' => '6.4', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Mch Order No Exists',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{subscription.mch_order_no}}',
+            'mch_customer_id' => '{{customer.mch_customer_id}}',
+            'amount' => '100',
+            'interval' => 'MONTH',
+            'interval_count' => '1',
+            'channel_code' => 'DANA',
+            'account_phone' => '628123456789',
+            'order_items' => [
+                ['type' => 'PRODUCT', 'mch_order_item_id' => 1, 'name' => 'Subscription', 'net_unit_amount' => 1, 'quantity' => 1, 'category' => 'test'],
+            ],
+        ],
+        'expect_code' => '4001', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayService::createSubscription'],
+        'note' => 'Monetapay returns code=4001 in HTTP 200 body; our run() wraps this as HTTP 400.'],
+
+    ['no' => '6.5', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Invalid interval unit',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-SUB2',
+            'mch_customer_id' => '{{customer.mch_customer_id}}',
+            'amount' => '100',
+            'interval' => 'year',
+            'interval_count' => '1',
+            'channel_code' => 'DANA',
+            'account_phone' => '628123456789',
+            'order_items' => [
+                ['type' => 'PRODUCT', 'mch_order_item_id' => 1, 'name' => 'Subscription', 'net_unit_amount' => 1, 'quantity' => 1, 'category' => 'test'],
+            ],
+        ],
+        'expect_code' => '-1', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/subscription/create', 'files' => ['MonetapayService::createSubscription']],
+
+    ['no' => '6.6', 'sheet' => 'Subscribe', 'service' => 'Subscribe Inquiry', 'scenario' => 'Subscribe Inquiry Request Success',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/query', 'auth' => true,
+        'body' => ['mch_order_no' => '{{subscription.mch_order_no}}'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/subscription/query', 'files' => ['MonetapayService::inquirySubscription']],
+
+    ['no' => '6.7', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Subscription Cancellation Successful',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/deactivate', 'auth' => true,
+        'body' => ['order_no' => '{{subscription.order_no}}'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/subscription/deactivate', 'files' => ['MonetapayController@subscriptionDeactivate', 'MonetapayService::deactivateSubscription']],
+
+    ['no' => '6.8', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Subscription Cancellation Fail',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/subscription/deactivate', 'auth' => true,
+        'body' => ['order_no' => '{{subscription.order_no}}'],
+        'expect_code' => '4023', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/subscription/deactivate', 'files' => ['MonetapayService::deactivateSubscription'],
+        'note' => 'Monetapay returns code=4023 in HTTP 200 body; our run() wraps this as HTTP 400.'],
+    ['no' => '6.9', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Merchant Callback First Active Success',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200, 'route' => '(callback)', 'files' => ['—'], 'note' => 'Inbound subscription callback, server-signed.'],
+    ['no' => '6.10', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Merchant Callback Cancel',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200, 'route' => '(callback)', 'files' => ['—'], 'note' => 'Inbound callback.'],
+    ['no' => '6.11', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Merchant Callback Before Deduction',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200, 'route' => '(callback)', 'files' => ['—'], 'note' => 'Inbound callback.'],
+    ['no' => '6.12', 'sheet' => 'Subscribe', 'service' => 'Subscribe', 'scenario' => 'Merchant Callback After Deduction Result',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200, 'route' => '(callback)', 'files' => ['—'], 'note' => 'Inbound callback.'],
+
+    /* ============================ Pay-out Services =========================== */
+    ['no' => '7.1', 'sheet' => 'Pay-out Services', 'service' => 'Disbursement', 'scenario' => 'Processing Disbursement',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/disbursement/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-DIS1',
+            'amount' => '10000',
+            'currency' => 'IDR',
+            'account_bank_code' => 'BCA',
+            'account_number' => '8762763873',
+            'account_name' => 'SIT Tester',
+            'account_phone' => '62898273821',
+            'notes' => 'SIT disbursement test',
+            'custom_extra' => 'sit',
+        ],
+        'capture' => ['as' => 'disbursement', 'from' => ['order_no' => 'data.data.order_no']],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/disbursement/create', 'files' => ['MonetapayController@disbursementCreate', 'MonetapayService::createDisbursement']],
+
+    ['no' => '7.2', 'sheet' => 'Pay-out Services', 'service' => 'Disbursement', 'scenario' => 'Field required',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/disbursement/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-DIS2',
+            'amount' => '10000',
+            'currency' => 'IDR',
+            'account_bank_code' => 'BCA',
+            'account_name' => 'SIT Tester',
+            'account_number' => '',   // empty → Monetapay returns 4004
+            'account_phone' => '62898273821',
+        ],
+        'expect_code' => '4004', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/disbursement/create', 'files' => ['MonetapayService::createDisbursement'],
+        'note' => 'Monetapay returns code=4004 in HTTP 200 body; our run() wraps this as HTTP 400.'],
+
+    ['no' => '7.3', 'sheet' => 'Pay-out Services', 'service' => 'Disbursement', 'scenario' => 'Insufficient Balance',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/disbursement/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-DIS3',
+            'amount' => '1000000000',
+            'currency' => 'IDR',
+            'account_bank_code' => 'BCA',
+            'account_number' => '821783783833',
+            'account_name' => 'SIT Tester',
+            'account_phone' => '62898273821',
+            'notes' => 'SIT insufficient balance',
+        ],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/disbursement/create', 'files' => ['MonetapayService::createDisbursement'],
+        'note' => 'Monetapay accepts the request (code=0) but the payout fails at settlement due to insufficient balance.'],
+
+    ['no' => '7.4', 'sheet' => 'Pay-out Services', 'service' => 'Large Payout', 'scenario' => 'Processing Large Payout',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/large-payout/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-LP1',
+            'amount' => '100000001',
+            'currency' => 'IDR',
+            'account_bank_code' => 'BCA',
+            'account_number' => '721373672',
+            'account_name' => 'SIT Tester',
+            'account_phone' => '628551953373',
+            'notes' => 'SIT large payout test',
+            'custom_extra' => 'sit',
+            'beneficiary_address' => 'Jl. Test No. 1',
+            'beneficiary_type' => '1',
+        ],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/large-payout/create', 'files' => ['MonetapayController@largePayoutCreate', 'MonetapayService::createLargePayout']],
+
+    ['no' => '7.5', 'sheet' => 'Pay-out Services', 'service' => 'Large Payout', 'scenario' => 'Minimum, Maximum Amount Limited',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/large-payout/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-LP2',
+            'amount' => '10000',   // below large-payout minimum
+            'currency' => 'IDR',
+            'account_bank_code' => 'BCA',
+            'account_number' => '721373672',
+            'account_name' => 'SIT Tester',
+            'account_phone' => '628551953373',
+            'beneficiary_address' => 'Jl. Test No. 1',
+            'beneficiary_type' => '1',
+        ],
+        'expect_code' => '4008', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/large-payout/create', 'files' => ['MonetapayService::createLargePayout'],
+        'note' => 'Monetapay returns code=4008 in HTTP 200 body; our run() wraps this as HTTP 400.'],
+
+    ['no' => '7.6', 'sheet' => 'Pay-out Services', 'service' => 'Large Payout', 'scenario' => 'Field Invalid',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/large-payout/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-LP3',
+            'amount' => '100000001',
+            'currency' => 'IDR',
+            'account_bank_code' => 'BCA',
+            'account_number' => '721373672',
+            'account_name' => 'SIT Tester',
+            'account_phone' => '628551953373',
+            'beneficiary_address' => 'Jl. Test No. 1',
+            'beneficiary_type' => '8',   // invalid type → code=-1
+        ],
+        'expect_code' => '-1', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/large-payout/create', 'files' => ['MonetapayService::createLargePayout'],
+        'note' => 'beneficiary_type=8 is invalid; Monetapay returns code=-1 in HTTP 200 body; our run() wraps as HTTP 400.'],
+
+    ['no' => '7.7', 'sheet' => 'Pay-out Services', 'service' => 'Payout to EWallet', 'scenario' => 'Processing Disbursement',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/ewallet-payout/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-EP1',
+            'amount' => '10000',
+            'currency' => 'IDR',
+            'account_bank_code' => 'DANA',   // e-wallet provider code
+            'account_phone' => '62876543210',
+            'account_name' => 'SIT Tester',
+            'notes' => 'SIT ewallet payout',
+            'custom_extra' => 'sit',
+        ],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/ewallet-payout/create', 'files' => ['MonetapayController@ewalletPayoutCreate', 'MonetapayService::createEwalletPayout']],
+
+    ['no' => '7.8', 'sheet' => 'Pay-out Services', 'service' => 'Payout to EWallet', 'scenario' => 'Wrong Recipient Info',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/ewallet-payout/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-EP2',
+            'amount' => '10000',
+            'currency' => 'IDR',
+            'account_bank_code' => 'DANA',
+            'account_phone' => '',   // empty → Monetapay returns 4005
+            'account_name' => 'SIT Tester',
+            'notes' => 'SIT wrong recipient',
+        ],
+        'expect_code' => '4005', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/ewallet-payout/create', 'files' => ['MonetapayService::createEwalletPayout'],
+        'note' => 'Monetapay returns code=4005 in HTTP 200 body; our run() wraps as HTTP 400.'],
+
+    ['no' => '7.9', 'sheet' => 'Pay-out Services', 'service' => 'Payout to EWallet', 'scenario' => 'Unsupported Bank',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/ewallet-payout/create', 'auth' => true,
+        'body' => [
+            'mch_order_no' => '{{run.uid}}-EP3',
+            'amount' => '10000',
+            'currency' => 'IDR',
+            'account_bank_code' => 'BNC',   // unsupported e-wallet → code=-1
+            'account_phone' => '62876543210',
+            'account_name' => 'SIT Tester',
+        ],
+        'expect_code' => '-1', 'expect_http' => 400,
+        'route' => 'POST /api/v1/monetapay/ewallet-payout/create', 'files' => ['MonetapayService::createEwalletPayout'],
+        'note' => 'Monetapay returns code=-1 in HTTP 200 body for unsupported e-wallet provider; our run() wraps as HTTP 400.'],
+
+    ['no' => '7.10', 'sheet' => 'Pay-out Services', 'service' => 'Payout Order Inquiry', 'scenario' => 'Successful Payout Inquiry',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/disbursement/query', 'auth' => true,
+        'body' => ['order_no' => '{{disbursement.order_no}}'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/disbursement/query', 'files' => ['MonetapayController@disbursement', 'MonetapayService::inquiryDisbursement']],
+
+    ['no' => '7.11', 'sheet' => 'Pay-out Services', 'service' => 'Payout Order Inquiry', 'scenario' => 'Payout Still Processing',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200, 'route' => 'POST /api/v1/monetapay/disbursement/query',
+        'files' => ['MonetapayService::inquiryDisbursement'], 'note' => 'Requires a disbursement in processing state.'],
+
+    ['no' => '7.12', 'sheet' => 'Pay-out Services', 'service' => 'Payout Order Inquiry', 'scenario' => 'SYSTEM_ERROR',
+        'exec' => 'manual', 'expect_code' => '9999', 'expect_http' => 200, 'route' => 'POST /api/v1/monetapay/disbursement/query',
+        'files' => ['MonetapayService::inquiryDisbursement'], 'note' => 'Sandbox fault injection.'],
+
+    ['no' => '7.13', 'sheet' => 'Pay-out Services', 'service' => 'Payout Merchant Callback', 'scenario' => 'Successful Merchant Callback',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200, 'route' => '(callback)', 'files' => ['—'], 'note' => 'Inbound payout callback, server-signed by Monetapay.'],
+
+    ['no' => '7.14', 'sheet' => 'Pay-out Services', 'service' => 'Payout Merchant Callback', 'scenario' => 'Failure in Merchant Callback',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200, 'route' => '(callback)', 'files' => ['—'], 'note' => 'Inbound payout callback, server-signed by Monetapay.'],
+
+    /* =========================== Account Validation ========================= */
+    ['no' => '8.1', 'sheet' => 'Account Validation', 'service' => 'Account Validation', 'scenario' => 'Successful Account Validation',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/inquiry-account', 'auth' => true,
+        'body' => ['mch_order_no' => '{{run.uid}}-AV1', 'account_bank_code' => 'BNI', 'account_number' => '1234567890', 'account_type' => '1'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/inquiry-account', 'files' => ['MonetapayController@accountValidation', 'MonetapayService::accountValidation']],
+
+    ['no' => '8.2', 'sheet' => 'Account Validation', 'service' => 'Account Validation', 'scenario' => 'Invalid Account Number',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/inquiry-account', 'auth' => true,
+        'body' => ['mch_order_no' => '{{run.uid}}-AV2', 'account_bank_code' => 'BNI', 'account_number' => '0000', 'account_type' => '1'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/inquiry-account', 'files' => ['MonetapayService::accountValidation']],
+
+    ['no' => '8.3', 'sheet' => 'Account Validation', 'service' => 'Account Validation', 'scenario' => 'Bank Internal Error',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/inquiry-account', 'auth' => true,
+        'body' => ['mch_order_no' => '{{run.uid}}-AV3', 'account_bank_code' => 'BCA', 'account_number' => '5150383218', 'account_type' => '1'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/inquiry-account', 'files' => ['MonetapayService::accountValidation'],
+        'note' => 'Bank-internal-error path is sandbox-dependent; recorded response is whatever the sandbox returns.'],
+
+    ['no' => '8.4', 'sheet' => 'Account Validation', 'service' => 'Account Validation (Phase II)', 'scenario' => 'Successful Card Validation (Name & Number)',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/inquiry-account', 'auth' => true,
+        'body' => ['mch_order_no' => '{{run.uid}}-AV4', 'account_bank_code' => 'BNI', 'account_number' => '0315747263', 'account_type' => '1', 'ori_account_name' => 'MOCK MOCK'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/inquiry-account', 'files' => ['MonetapayService::accountValidation']],
+
+    ['no' => '8.5', 'sheet' => 'Account Validation', 'service' => 'Account Validation (Phase II)', 'scenario' => 'Name Mismatch Error',
+        'exec' => 'http', 'method' => 'POST', 'path' => '/monetapay/inquiry-account', 'auth' => true,
+        'body' => ['mch_order_no' => '{{run.uid}}-AV5', 'account_bank_code' => 'BNI', 'account_number' => '0315747263', 'account_type' => '1', 'ori_account_name' => 'WRONG NAME'],
+        'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/inquiry-account', 'files' => ['MonetapayService::accountValidation'],
+        'note' => 'Phase II returns account_name_match_result=2 (not matching) within a code 0 envelope.'],
+
+    ['no' => '8.6', 'sheet' => 'Account Validation', 'service' => 'Account Validation (Phase II)', 'scenario' => 'Card Expired',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/inquiry-account', 'files' => ['MonetapayService::accountValidation'], 'note' => 'Sandbox-specific card state.'],
+
+    ['no' => '8.7', 'sheet' => 'Account Validation', 'service' => 'Account Validation (Phase II)', 'scenario' => 'Bank System Maintenance',
+        'exec' => 'manual', 'expect_code' => '0', 'expect_http' => 200,
+        'route' => 'POST /api/v1/monetapay/inquiry-account', 'files' => ['MonetapayService::accountValidation'], 'note' => 'Sandbox-specific maintenance window.'],
+];

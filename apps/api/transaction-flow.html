@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Flow — Uxio TopUp API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#e0e7ff',
+                primaryTextColor: '#1e1b4b',
+                primaryBorderColor: '#6366f1',
+                lineColor: '#64748b',
+                secondaryColor: '#f8fafc',
+                tertiaryColor: '#ecfdf5',
+                noteBkgColor: '#fef9c3',
+                noteTextColor: '#713f12',
+                noteBorderColor: '#eab308',
+                activationBkgColor: '#ede9fe',
+                activationBorderColor: '#7c3aed',
+                sequenceNumberColor: '#fff',
+                loopTextColor: '#1e293b',
+                fontSize: '13px',
+            },
+            sequence: {
+                diagramMarginX: 30,
+                diagramMarginY: 20,
+                actorMargin: 70,
+                width: 155,
+                height: 55,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 12,
+                messageMargin: 40,
+                mirrorActors: true,
+                useMaxWidth: true,
+                rightAngles: false,
+                showSequenceNumbers: false,
+            }
+        });
+    </script>
+    <style>
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+        .mermaid svg { max-width: 100%; height: auto; }
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.78em;
+        }
+        .phase-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .arrow-right {
+            display: flex;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 1.4rem;
+            padding: 0 6px;
+            padding-top: 24px;
+        }
+        .state-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            border-width: 2px;
+            padding: 12px 20px;
+            min-width: 120px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         HEADER
+    ════════════════════════════════════════════════════════════ -->
+    <header class="bg-slate-900 text-white">
+        <div class="max-w-7xl mx-auto px-6 py-10">
+            <div class="flex flex-wrap items-center gap-3 mb-3">
+                <span class="bg-indigo-500 text-white text-xs font-black px-2.5 py-0.5 rounded tracking-wide uppercase">Internal Docs</span>
+                <span class="bg-slate-700 text-slate-300 text-xs font-mono px-2.5 py-0.5 rounded">v1.0 · 2026-06-05</span>
+                <span class="bg-emerald-800 text-emerald-200 text-xs font-mono px-2.5 py-0.5 rounded">Laravel 11</span>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight">Transaction Flow Documentation</h1>
+            <p class="text-slate-400 mt-2 max-w-3xl text-sm leading-relaxed">
+                End-to-end data flow for the <strong class="text-white">Uxio TopUp API</strong> — covering Monetapay (pay-in gateway)
+                and Digiflazz (product provider) integrations, async queue workers, webhook callbacks, and the full
+                Transaction status state machine.
+            </p>
+            <!-- Quick Nav -->
+            <nav class="mt-6 flex flex-wrap gap-2 text-xs">
+                <a href="#overview"        class="bg-slate-700 hover:bg-indigo-600 px-3 py-1.5 rounded-full text-slate-200 transition-colors duration-150">Architecture Overview</a>
+                <a href="#sequence"        class="bg-slate-700 hover:bg-indigo-600 px-3 py-1.5 rounded-full text-slate-200 transition-colors duration-150">Sequence Diagram</a>
+                <a href="#phases"          class="bg-slate-700 hover:bg-indigo-600 px-3 py-1.5 rounded-full text-slate-200 transition-colors duration-150">Phase Breakdown</a>
+                <a href="#status-machine"  class="bg-slate-700 hover:bg-indigo-600 px-3 py-1.5 rounded-full text-slate-200 transition-colors duration-150">Status Machine</a>
+                <a href="#reference"       class="bg-slate-700 hover:bg-indigo-600 px-3 py-1.5 rounded-full text-slate-200 transition-colors duration-150">Reference Tables</a>
+                <a href="#tech-notes"      class="bg-slate-700 hover:bg-indigo-600 px-3 py-1.5 rounded-full text-slate-200 transition-colors duration-150">Technical Notes</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-12 space-y-20">
+
+        <!-- ═══════════════════════════════════════════════════════════
+             SECTION 0 — ARCHITECTURE OVERVIEW
+        ════════════════════════════════════════════════════════════ -->
+        <section id="overview">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="flex-shrink-0 w-8 h-8 bg-slate-800 text-white text-sm font-extrabold rounded-lg flex items-center justify-center">0</span>
+                <h2 class="text-xl font-extrabold text-slate-900">Architecture Overview</h2>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white border border-blue-200 rounded-2xl p-5 shadow-sm">
+                    <div class="text-3xl mb-3">👤</div>
+                    <h3 class="font-bold text-slate-800 text-sm mb-1">User / Client</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Initiates checkout. Completes payment via QRIS scan or VA transfer. Supports both authenticated and guest flows.</p>
+                </div>
+                <div class="bg-white border border-indigo-200 rounded-2xl p-5 shadow-sm">
+                    <div class="text-3xl mb-3">⚙️</div>
+                    <h3 class="font-bold text-slate-800 text-sm mb-1">Laravel 11 Backend</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Strict pipeline: <code class="bg-slate-100 px-1 rounded">Route → FormRequest → Controller → Action → ApiResponse</code>. All business logic isolated in Actions. DTOs bridge Controller ↔ Action.</p>
+                </div>
+                <div class="bg-white border border-emerald-200 rounded-2xl p-5 shadow-sm">
+                    <div class="text-3xl mb-3">💳</div>
+                    <h3 class="font-bold text-slate-800 text-sm mb-1">Monetapay</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Pay-in gateway for QRIS, Virtual Account, E-Wallet. Payloads are AES-128-CBC encrypted. Signatures use Double MD5 with custom delimiters.</p>
+                </div>
+                <div class="bg-white border border-amber-200 rounded-2xl p-5 shadow-sm">
+                    <div class="text-3xl mb-3">🎮</div>
+                    <h3 class="font-bold text-slate-800 text-sm mb-1">Digiflazz</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Product supplier for game top-up, pulsa, PPOB. MD5-signed outbound requests. HMAC-SHA1 authenticates inbound webhooks via <code class="bg-slate-100 px-1 rounded">X-Hub-Signature</code>.</p>
+                </div>
+            </div>
+
+            <!-- Data Flow Pipeline Summary -->
+            <div class="mt-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Mandatory Request Pipeline (no exceptions)</p>
+                <div class="flex flex-wrap items-center gap-1 text-sm font-mono">
+                    <span class="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-lg font-bold">Route</span>
+                    <span class="text-slate-400 text-base">→</span>
+                    <span class="bg-violet-100 text-violet-800 px-3 py-1.5 rounded-lg font-bold">FormRequest</span>
+                    <span class="text-slate-400 text-xs italic ml-1 mr-1">(validation)</span>
+                    <span class="text-slate-400 text-base">→</span>
+                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-lg font-bold">Controller</span>
+                    <span class="text-slate-400 text-xs italic ml-1 mr-1">(maps DTO)</span>
+                    <span class="text-slate-400 text-base">→</span>
+                    <span class="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg font-bold">Action</span>
+                    <span class="text-slate-400 text-xs italic ml-1 mr-1">(business logic + DB::transaction)</span>
+                    <span class="text-slate-400 text-base">→</span>
+                    <span class="bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg font-bold">ApiResponse</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-3">
+                    <strong class="text-slate-500">Exception:</strong> <code class="bg-slate-100 px-1 rounded">CheckoutController</code> validates inline (not via FormRequest) because
+                    <code class="bg-slate-100 px-1 rounded">guest_contact</code> validation is dynamic — required for guests, nullable for authenticated users.
+                </p>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             SECTION 1 — SEQUENCE DIAGRAM
+        ════════════════════════════════════════════════════════════ -->
+        <section id="sequence">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="flex-shrink-0 w-8 h-8 bg-slate-800 text-white text-sm font-extrabold rounded-lg flex items-center justify-center">1</span>
+                <h2 class="text-xl font-extrabold text-slate-900">Full Sequence Diagram</h2>
+            </div>
+            <p class="text-sm text-slate-500 mb-6 ml-11">
+                Complete async flow across all 5 phases. Includes the happy path and both Digiflazz failure/pending alternatives.
+                Color bands correspond to each phase.
+            </p>
+
+            <!-- Phase color legend -->
+            <div class="flex flex-wrap gap-3 mb-5 ml-11">
+                <div class="flex items-center gap-1.5 text-xs text-slate-600"><span class="w-3 h-3 rounded" style="background:#dbeafe"></span> Phase 1 — Checkout</div>
+                <div class="flex items-center gap-1.5 text-xs text-slate-600"><span class="w-3 h-3 rounded" style="background:#fef3c7"></span> Phase 2 — Payment</div>
+                <div class="flex items-center gap-1.5 text-xs text-slate-600"><span class="w-3 h-3 rounded" style="background:#d1fae5"></span> Phase 3 — Monetapay Callback</div>
+                <div class="flex items-center gap-1.5 text-xs text-slate-600"><span class="w-3 h-3 rounded" style="background:#ede9fe"></span> Phase 4 — Digiflazz Job</div>
+                <div class="flex items-center gap-1.5 text-xs text-slate-600"><span class="w-3 h-3 rounded" style="background:#fefce8"></span> Phase 5 — Digiflazz Webhook</div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm overflow-x-auto">
+                <div class="mermaid">
+sequenceDiagram
+    actor User as User / Client
+    participant BE as Laravel Backend
+    participant DB as Database
+    participant MP as Monetapay API
+    participant Q as Queue Driver (DB)
+    participant QW as Queue Worker
+    participant DF as Digiflazz API
+
+    rect rgb(219, 234, 254)
+        Note over User,MP: PHASE 1 — Checkout and Payment Initialization
+        User->>+BE: POST /v1/checkout
+        Note right of User: product_id, payment_channel_code, target_uid, target_server
+        BE->>DB: Resolve User (nullable), Product w/ SupplierProducts, PaymentChannel
+        DB-->>BE: Entities loaded
+        BE->>BE: Role-based price resolution (vip → reseller → agent → member → guest)
+        BE->>BE: Margin guard — abort if selling_price < supplier_price
+        BE->>DB: DB::transaction() — INSERT transactions (status: PENDING)
+        BE->>DB: DB::transaction() — INSERT payments (status: 1 = Pending)
+        BE->>+MP: POST /v1.0.0/qris or /v1.0.0/virtual_account
+        Note right of BE: AES-128-CBC encrypted en_data + partner_key in body
+        MP-->>-MP: Validates Double MD5 signature, decrypts, creates order
+        MP-->>BE: qr_string or virtual_account + order_no
+        BE-->>-User: 200 OK — payment_data (qr_string or virtual_account, amount, expired_at)
+    end
+
+    rect rgb(254, 243, 199)
+        Note over User,MP: PHASE 2 — User Completes Payment (Out-of-band)
+        User->>MP: Scans QRIS or transfers to Virtual Account
+        MP-->>User: Payment confirmed by payment network
+    end
+
+    rect rgb(209, 250, 229)
+        Note over MP,Q: PHASE 3 — Monetapay Asynchronous Webhook Callback
+        MP->>+BE: POST /v1/payment/callback
+        Note right of MP: Payload includes status (1, 3, or success), amount, sign, timestamp
+        BE->>BE: verifyCallbackSignature() — Double MD5 HMAC via hash_equals()
+        BE->>BE: Anti-fraud check — gross_amount must exactly match dto.amount
+        BE->>DB: SELECT payments WHERE reference_id ... lockForUpdate()
+        BE->>BE: Idempotency guard — return 200 no-op if transaction already PAID or beyond
+        Note right of BE: status 1 (VA/Paid), 3 (QRIS/Settled), or success — all treated as success
+        BE->>DB: UPDATE payments SET status=3, paid_at=now()
+        BE->>DB: UPDATE transactions SET status=PAID
+        DB-->>BE: Rows committed
+        BE->>Q: Dispatch ProcessDigiflazzTopup — AFTER DB commit
+        Note right of BE: transaction->fresh() ensures latest state is passed to job
+        BE-->>-MP: HTTP 200 OK
+    end
+
+    rect rgb(237, 233, 254)
+        Note over Q,DF: PHASE 4 — Digiflazz Fulfillment via Queue Job
+        Q->>+QW: ProcessDigiflazzTopup dequeued (tries=3, backoff=30s)
+        QW->>DB: UPDATE transactions SET status=PROCESSING
+        QW->>+DF: POST /transaction — prepaid or postpaid endpoint
+        Note right of QW: sign = md5(username + key + ref_id), customer_no = target_uid + target_server
+
+        alt Digiflazz rc=00 — Sukses
+            DF-->>QW: status: Sukses
+            QW->>DB: UPDATE transactions SET status=COMPLETED
+            QW->>QW: Notify Discord — embed on COMPLETED
+        else Digiflazz — Gagal
+            DF-->>QW: status: Gagal
+            QW->>DB: UPDATE transactions SET status=FAILED_PROVIDER
+            QW->>DB: Refund user.balance if channel was balance payment
+            QW->>QW: Notify Discord — embed on FAILED_PROVIDER
+        else Digiflazz — Pending
+            DF-->>-QW: status: Pending
+            QW->>DB: Leave transactions at status=PROCESSING
+            Note over QW: Digiflazz will push async webhook (Phase 5) when order resolves
+        end
+
+        QW-->>-Q: Job acknowledged / completed
+    end
+
+    rect rgb(254, 252, 232)
+        Note over DF,DB: PHASE 5 — Digiflazz Async Webhook (Triggered only if Phase 4 was Pending)
+        DF->>+BE: POST /v1/digiflazz/callback
+        Note right of DF: HMAC-SHA1 on raw request body — verified via X-Hub-Signature header
+        BE->>BE: Verify HMAC-SHA1 against DIGIFLAZZ_WEBHOOK_SECRET
+        BE->>DB: UPDATE transactions SET status = COMPLETED or FAILED_PROVIDER
+        BE->>BE: Notify Discord — embed on every transition (silently skipped if URL not set)
+        BE-->>-DF: HTTP 200 OK
+    end
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             SECTION 2 — PHASE BREAKDOWN
+        ════════════════════════════════════════════════════════════ -->
+        <section id="phases">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="flex-shrink-0 w-8 h-8 bg-slate-800 text-white text-sm font-extrabold rounded-lg flex items-center justify-center">2</span>
+                <h2 class="text-xl font-extrabold text-slate-900">Phase-by-Phase Breakdown</h2>
+            </div>
+
+            <div class="space-y-5">
+
+                <!-- PHASE 1 -->
+                <div class="bg-white border border-blue-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="bg-blue-50 border-b border-blue-200 px-6 py-4 flex flex-wrap items-center gap-3">
+                        <span class="phase-pill bg-blue-200 text-blue-800">Phase 1</span>
+                        <h3 class="font-extrabold text-blue-900">Checkout &amp; Payment Initialization</h3>
+                        <code class="ml-auto text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg">POST /v1/checkout</code>
+                    </div>
+                    <div class="px-6 py-5 grid md:grid-cols-2 gap-8">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Execution Steps</p>
+                            <ol class="text-xs text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+                                <li>Resolves <strong>User</strong> (nullable for guests), <strong>Product</strong> (with active <code class="bg-slate-100 px-1 rounded">SupplierProducts</code> eager-loaded), and <strong>PaymentChannel</strong>.</li>
+                                <li>Role-based price resolution: <code class="bg-slate-100 px-1 rounded">vip → reseller → agent → member → guest</code>. Guests receive <code class="bg-slate-100 px-1 rounded">price_member</code>.</li>
+                                <li>Margin guard: aborts 400 if <code class="bg-slate-100 px-1 rounded">selling_price − supplier_price &lt; 0</code>.</li>
+                                <li>Creates <code class="bg-slate-100 px-1 rounded">Transaction (PENDING)</code> and <code class="bg-slate-100 px-1 rounded">Payment (status: '1')</code> inside a single <code class="bg-slate-100 px-1 rounded">DB::transaction()</code>.</li>
+                                <li>Calls <code class="bg-slate-100 px-1 rounded">MonetapayService::createTransaction()</code> — routes to <code class="bg-slate-100 px-1 rounded">/v1.0.0/qris</code> or <code class="bg-slate-100 px-1 rounded">/v1.0.0/virtual_account</code> based on <code class="bg-slate-100 px-1 rounded">payment_type</code> on PaymentChannel.</li>
+                                <li>Returns <code class="bg-slate-100 px-1 rounded">qr_string</code> or <code class="bg-slate-100 px-1 rounded">virtual_account</code> to the client for display.</li>
+                            </ol>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Key Files</p>
+                                <div class="space-y-1.5 font-mono text-xs">
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Http/Controllers/CheckoutController.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Actions/Checkout/CheckoutAction.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Services/Payment/MonetapayService.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">DTOs/Checkout/CheckoutDTO.php</div>
+                                </div>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                <p class="text-xs font-bold text-amber-800 mb-1">Balance Payment — Special Path</p>
+                                <p class="text-xs text-amber-700 leading-relaxed">
+                                    If <code class="bg-amber-100 px-1 rounded">channel_code === 'balance'</code>, Monetapay is bypassed entirely.
+                                    The user's balance is deducted, Payment is set to <code class="bg-amber-100 px-1 rounded">status '3'</code>, and
+                                    <code class="bg-amber-100 px-1 rounded">ProcessDigiflazzTransactionAction</code> is called <strong>synchronously</strong> (no queue).
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PHASE 3 -->
+                <div class="bg-white border border-emerald-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="bg-emerald-50 border-b border-emerald-200 px-6 py-4 flex flex-wrap items-center gap-3">
+                        <span class="phase-pill bg-emerald-200 text-emerald-800">Phase 3</span>
+                        <h3 class="font-extrabold text-emerald-900">Monetapay Webhook Callback</h3>
+                        <code class="ml-auto text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg">POST /v1/payment/callback</code>
+                    </div>
+                    <div class="px-6 py-5 grid md:grid-cols-2 gap-8">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Execution Steps</p>
+                            <ol class="text-xs text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+                                <li>Decodes payload, verifies Double MD5 HMAC: <code class="bg-slate-100 px-1 rounded">md5(md5(TOKEN + "*|*" + sortedParams + "@!@" + ts))</code> using <code class="bg-slate-100 px-1 rounded">hash_equals()</code>.</li>
+                                <li>Anti-fraud: <code class="bg-slate-100 px-1 rounded">gross_amount</code> from DB must exactly match <code class="bg-slate-100 px-1 rounded">dto.amount</code>. Throws on mismatch.</li>
+                                <li>Fetches Payment row with <code class="bg-slate-100 px-1 rounded">lockForUpdate()</code> to block concurrent webhook replays.</li>
+                                <li>Idempotency guard: returns HTTP 200 without re-processing if <code class="bg-slate-100 px-1 rounded">status ∈ {PAID, PROCESSING, COMPLETED}</code>.</li>
+                                <li>Success signals accepted: <code class="bg-slate-100 px-1 rounded">"1"</code> (VA/Paid), <code class="bg-slate-100 px-1 rounded">"3"</code> (QRIS/Settled), <code class="bg-slate-100 px-1 rounded">"success"</code> (legacy). Evaluated via <code class="bg-slate-100 px-1 rounded">in_array(strtolower($status), ['1','3','success'])</code>.</li>
+                                <li>Updates <code class="bg-slate-100 px-1 rounded">payments.status = '3'</code> and <code class="bg-slate-100 px-1 rounded">transactions.status = PAID</code>.</li>
+                                <li>Dispatches <code class="bg-slate-100 px-1 rounded">ProcessDigiflazzTopup</code> job <strong>after</strong> the <code class="bg-slate-100 px-1 rounded">DB::transaction()</code> block returns.</li>
+                            </ol>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Key Files</p>
+                                <div class="space-y-1.5 font-mono text-xs">
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Actions/Payment/HandleMonetapayCallbackAction.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">DTOs/Payment/MonetapayCallbackDTO.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Services/Payment/MonetapayService.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Jobs/ProcessDigiflazzTopup.php</div>
+                                </div>
+                            </div>
+                            <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                                <p class="text-xs font-bold text-rose-800 mb-1">Critical — Job Dispatch Timing</p>
+                                <p class="text-xs text-rose-700 leading-relaxed">
+                                    <code class="bg-rose-100 px-1 rounded">ProcessDigiflazzTopup::dispatch()</code> is called <em>outside</em>
+                                    the <code class="bg-rose-100 px-1 rounded">DB::transaction()</code> closure. This prevents a race condition where
+                                    a queue worker picks up the job before the Payment/Transaction rows are committed and visible.
+                                    <code class="bg-rose-100 px-1 rounded">$transaction->fresh()</code> is called before dispatch.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PHASE 4 -->
+                <div class="bg-white border border-violet-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="bg-violet-50 border-b border-violet-200 px-6 py-4 flex flex-wrap items-center gap-3">
+                        <span class="phase-pill bg-violet-200 text-violet-800">Phase 4</span>
+                        <h3 class="font-extrabold text-violet-900">Digiflazz Fulfillment — Queue Job</h3>
+                        <code class="ml-auto text-xs bg-violet-100 text-violet-700 px-2.5 py-1 rounded-lg">ProcessDigiflazzTopup.php</code>
+                    </div>
+                    <div class="px-6 py-5 grid md:grid-cols-2 gap-8">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Execution Steps</p>
+                            <ol class="text-xs text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+                                <li>Sets <code class="bg-slate-100 px-1 rounded">transactions.status = PROCESSING</code>.</li>
+                                <li>Calls <code class="bg-slate-100 px-1 rounded">ProcessDigiflazzTransactionAction::execute(Transaction)</code>.</li>
+                                <li>Builds Digiflazz payload — key fields: <code class="bg-slate-100 px-1 rounded">customer_no = target_uid . target_server</code> (concatenated, no separator), <code class="bg-slate-100 px-1 rounded">ref_id = invoice_number</code>.</li>
+                                <li>Signs request: <code class="bg-slate-100 px-1 rounded">md5(username + key + ref_id)</code>.</li>
+                                <li>Parses sync response: <code class="bg-slate-100 px-1 rounded">Sukses → COMPLETED</code>, <code class="bg-slate-100 px-1 rounded">Gagal → FAILED_PROVIDER</code>, <code class="bg-slate-100 px-1 rounded">Pending → PROCESSING</code> (await webhook).</li>
+                                <li>On infrastructure exception: marks <code class="bg-slate-100 px-1 rounded">FAILED_PROVIDER</code>, re-throws so the queue can retry.</li>
+                            </ol>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Key Files</p>
+                                <div class="space-y-1.5 font-mono text-xs">
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Jobs/ProcessDigiflazzTopup.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Actions/Digiflazz/ProcessDigiflazzTransactionAction.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Services/Digiflazz/DigiflazzService.php</div>
+                                </div>
+                            </div>
+                            <div class="bg-violet-50 border border-violet-200 rounded-xl p-4">
+                                <p class="text-xs font-bold text-violet-800 mb-1">Job Retry Configuration</p>
+                                <ul class="text-xs text-violet-700 space-y-1 list-disc list-inside">
+                                    <li><code class="bg-violet-100 px-1 rounded">$tries = 3</code> — max 3 attempts</li>
+                                    <li><code class="bg-violet-100 px-1 rounded">$backoff = 30</code> seconds between retries</li>
+                                    <li>Queue driver: <code class="bg-violet-100 px-1 rounded">database</code> in production, <code class="bg-violet-100 px-1 rounded">sync</code> in tests</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PHASE 5 -->
+                <div class="bg-white border border-amber-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="bg-amber-50 border-b border-amber-200 px-6 py-4 flex flex-wrap items-center gap-3">
+                        <span class="phase-pill bg-amber-200 text-amber-800">Phase 5</span>
+                        <h3 class="font-extrabold text-amber-900">Digiflazz Async Webhook</h3>
+                        <span class="ml-1 text-xs text-amber-600 italic">(Optional — only if Phase 4 returned Pending)</span>
+                        <code class="ml-auto text-xs bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg">POST /v1/digiflazz/callback</code>
+                    </div>
+                    <div class="px-6 py-5 grid md:grid-cols-2 gap-8">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Execution Steps</p>
+                            <ol class="text-xs text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
+                                <li>Triggered by Digiflazz only when Phase 4 sync response was <code class="bg-slate-100 px-1 rounded">Pending</code>.</li>
+                                <li>Verifies HMAC-SHA1 on raw request body against <code class="bg-slate-100 px-1 rounded">X-Hub-Signature</code> header using <code class="bg-slate-100 px-1 rounded">DIGIFLAZZ_WEBHOOK_SECRET</code>.</li>
+                                <li>Updates Transaction to <code class="bg-slate-100 px-1 rounded">COMPLETED</code> or <code class="bg-slate-100 px-1 rounded">FAILED_PROVIDER</code> based on webhook payload.</li>
+                                <li>Sends Discord embed notification on every status transition.</li>
+                                <li>Discord step is silently skipped if <code class="bg-slate-100 px-1 rounded">DISCORD_WEBHOOK_LOG_URL</code> is not configured — safe to omit in dev.</li>
+                            </ol>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Key Files</p>
+                                <div class="space-y-1.5 font-mono text-xs">
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Actions/Log/HandleDigiflazzWebhookAction.php</div>
+                                    <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600">Http/Controllers/DigiflazzWebhookController.php</div>
+                                </div>
+                            </div>
+                            <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                                <p class="text-xs font-bold text-rose-800 mb-1">Route is Public — No Sanctum Auth</p>
+                                <p class="text-xs text-rose-700 leading-relaxed">
+                                    Security relies entirely on HMAC-SHA1 signature verification.
+                                    This is intentional — Digiflazz cannot send auth tokens. The
+                                    <code class="bg-rose-100 px-1 rounded">DIGIFLAZZ_WEBHOOK_SECRET</code>
+                                    must be kept private and rotated if compromised.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             SECTION 3 — STATUS MACHINE
+        ════════════════════════════════════════════════════════════ -->
+        <section id="status-machine">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="flex-shrink-0 w-8 h-8 bg-slate-800 text-white text-sm font-extrabold rounded-lg flex items-center justify-center">3</span>
+                <h2 class="text-xl font-extrabold text-slate-900">Transaction Status State Machine</h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+
+                <!-- Visual state diagram -->
+                <div class="overflow-x-auto">
+                    <div class="flex items-start justify-start gap-1 min-w-max py-4">
+
+                        <!-- PENDING -->
+                        <div class="flex flex-col items-center">
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Initial State</div>
+                            <div class="state-node border-slate-300 bg-slate-50">
+                                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Status</div>
+                                <div class="text-base font-extrabold text-slate-700">PENDING</div>
+                                <div class="text-xs text-slate-400 mt-1">Transaction created</div>
+                            </div>
+                        </div>
+
+                        <!-- Arrow 1 -->
+                        <div class="flex flex-col items-center pt-14 px-2">
+                            <div class="text-xs text-emerald-600 font-semibold whitespace-nowrap mb-1">Monetapay callback</div>
+                            <div class="text-xs text-slate-400 whitespace-nowrap mb-1">status: 1 or 3 or success</div>
+                            <div class="text-2xl text-emerald-500">→</div>
+                        </div>
+
+                        <!-- PAID -->
+                        <div class="flex flex-col items-center">
+                            <div class="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-2">After Callback</div>
+                            <div class="state-node border-emerald-400 bg-emerald-50">
+                                <div class="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1">Status</div>
+                                <div class="text-base font-extrabold text-emerald-700">PAID</div>
+                                <div class="text-xs text-emerald-500 mt-1">Payment confirmed</div>
+                            </div>
+                        </div>
+
+                        <!-- Arrow 2 -->
+                        <div class="flex flex-col items-center pt-14 px-2">
+                            <div class="text-xs text-violet-600 font-semibold whitespace-nowrap mb-1">Queue job starts</div>
+                            <div class="text-xs text-slate-400 whitespace-nowrap mb-1">ProcessDigiflazzTopup</div>
+                            <div class="text-2xl text-violet-500">→</div>
+                        </div>
+
+                        <!-- PROCESSING -->
+                        <div class="flex flex-col items-center">
+                            <div class="text-xs font-bold text-violet-500 uppercase tracking-widest mb-2">While Waiting</div>
+                            <div class="state-node border-violet-400 bg-violet-50">
+                                <div class="text-xs font-bold text-violet-500 uppercase tracking-wider mb-1">Status</div>
+                                <div class="text-base font-extrabold text-violet-700">PROCESSING</div>
+                                <div class="text-xs text-violet-500 mt-1">Digiflazz called</div>
+                            </div>
+                        </div>
+
+                        <!-- Diverging arrows -->
+                        <div class="flex flex-col gap-4 pt-4 px-2">
+                            <!-- to COMPLETED -->
+                            <div class="flex items-center gap-2">
+                                <div class="text-2xl text-teal-500">→</div>
+                                <span class="text-xs text-teal-600 font-semibold whitespace-nowrap">Sukses (rc: 00)</span>
+                                <div class="text-2xl text-teal-500">→</div>
+                                <div class="state-node border-teal-400 bg-teal-50">
+                                    <div class="text-xs font-bold text-teal-500 uppercase tracking-wider mb-1">Terminal ✓</div>
+                                    <div class="text-base font-extrabold text-teal-700">COMPLETED</div>
+                                    <div class="text-xs text-teal-500 mt-1">Order fulfilled</div>
+                                </div>
+                            </div>
+                            <!-- to FAILED_PROVIDER -->
+                            <div class="flex items-center gap-2">
+                                <div class="text-2xl text-rose-400">→</div>
+                                <span class="text-xs text-rose-600 font-semibold whitespace-nowrap">Gagal / error</span>
+                                <div class="text-2xl text-rose-400">→</div>
+                                <div class="state-node border-rose-400 bg-rose-50">
+                                    <div class="text-xs font-bold text-rose-500 uppercase tracking-wider mb-1">Terminal ✗</div>
+                                    <div class="text-sm font-extrabold text-rose-700">FAILED_PROVIDER</div>
+                                    <div class="text-xs text-rose-400 mt-1">auto-refund if balance</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Pending loop explanation -->
+                <div class="mt-8 grid md:grid-cols-2 gap-4">
+                    <div class="bg-violet-50 border border-violet-200 rounded-xl p-4">
+                        <p class="text-xs font-bold text-violet-800 mb-2">Pending Loop (Phase 4 → Phase 5)</p>
+                        <p class="text-xs text-violet-700 leading-relaxed">
+                            If Digiflazz responds <code class="bg-violet-100 px-1 rounded">Pending</code>, the Transaction stays at
+                            <code class="bg-violet-100 px-1 rounded">PROCESSING</code>. No retry is queued. The Transaction remains
+                            in <code class="bg-violet-100 px-1 rounded">PROCESSING</code> until Digiflazz sends its own async webhook
+                            (<code class="bg-violet-100 px-1 rounded">POST /v1/digiflazz/callback</code>), which transitions it to
+                            <code class="bg-violet-100 px-1 rounded">COMPLETED</code> or <code class="bg-violet-100 px-1 rounded">FAILED_PROVIDER</code>.
+                        </p>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                        <p class="text-xs font-bold text-rose-800 mb-2">FAILED_PROVIDER → Auto-Refund</p>
+                        <p class="text-xs text-rose-700 leading-relaxed">
+                            When a transaction hits <code class="bg-rose-100 px-1 rounded">FAILED_PROVIDER</code> and the original payment
+                            was via the <code class="bg-rose-100 px-1 rounded">balance</code> channel, the user's balance is automatically
+                            refunded. External payment channels (Monetapay) do not auto-refund — those require a manual or
+                            provider-initiated reverse.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             SECTION 4 — REFERENCE TABLES
+        ════════════════════════════════════════════════════════════ -->
+        <section id="reference">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="flex-shrink-0 w-8 h-8 bg-slate-800 text-white text-sm font-extrabold rounded-lg flex items-center justify-center">4</span>
+                <h2 class="text-xl font-extrabold text-slate-900">Reference Tables</h2>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6">
+
+                <!-- Payment Status Codes -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="bg-slate-800 text-white px-5 py-4">
+                        <h3 class="font-bold text-sm">Payment Status Codes</h3>
+                        <p class="text-slate-400 text-xs mt-0.5">Stored as <code>string</code> in <code>payments.status</code> column</p>
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Value</th>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Meaning</th>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Set By</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold text-sm">'1'</code></td>
+                                <td class="px-5 py-3 text-xs text-slate-600">Pending</td>
+                                <td class="px-5 py-3 text-xs text-slate-400">CheckoutAction on insert</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold text-sm">'2'</code></td>
+                                <td class="px-5 py-3 text-xs text-slate-600">Expired / Failed</td>
+                                <td class="px-5 py-3 text-xs text-slate-400">HandleMonetapayCallbackAction (non-success)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-sm">'3'</code></td>
+                                <td class="px-5 py-3 text-xs text-slate-600">Success / Paid</td>
+                                <td class="px-5 py-3 text-xs text-slate-400">HandleMonetapayCallbackAction (success) or balance path</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold text-sm">'4'</code></td>
+                                <td class="px-5 py-3 text-xs text-slate-600">Refunded</td>
+                                <td class="px-5 py-3 text-xs text-slate-400">On FAILED_PROVIDER + balance refund path</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Monetapay Inbound Status -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="bg-emerald-800 text-white px-5 py-4">
+                        <h3 class="font-bold text-sm">Monetapay Webhook — Inbound Status Values</h3>
+                        <p class="text-emerald-300 text-xs mt-0.5">Values received in <code>status</code> field of callback payload</p>
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Meaning</th>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">isSuccess</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold">"1"</code></td>
+                                <td class="px-5 py-3 text-xs text-slate-600">Paid — standard VA / redirect flow</td>
+                                <td class="px-5 py-3"><span class="text-emerald-600 font-bold text-sm">✓ true</span></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold">"3"</code></td>
+                                <td class="px-5 py-3 text-xs text-slate-600">Settled — instant methods (QRIS, E-Wallet)</td>
+                                <td class="px-5 py-3"><span class="text-emerald-600 font-bold text-sm">✓ true</span></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold">"success"</code></td>
+                                <td class="px-5 py-3 text-xs text-slate-600">Legacy string variant (case-insensitive)</td>
+                                <td class="px-5 py-3"><span class="text-emerald-600 font-bold text-sm">✓ true</span></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold">other</code></td>
+                                <td class="px-5 py-3 text-xs text-slate-600">Any other value — unrecognised signal</td>
+                                <td class="px-5 py-3"><span class="text-rose-600 font-bold text-sm">✗ false</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="px-5 py-3 bg-slate-50 border-t border-slate-200">
+                        <code class="text-xs text-slate-500">in_array(\strtolower($dto->status), ['1', '3', 'success'], true)</code>
+                    </div>
+                </div>
+
+                <!-- Digiflazz Response Status -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="bg-violet-800 text-white px-5 py-4">
+                        <h3 class="font-bold text-sm">Digiflazz Response — Status Values</h3>
+                        <p class="text-violet-300 text-xs mt-0.5">Values in <code>data.status</code> of Digiflazz API response / webhook</p>
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Digiflazz Status</th>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Transaction Update</th>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Side Effects</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-bold">Sukses</code></td>
+                                <td class="px-5 py-3"><span class="bg-teal-100 text-teal-700 px-2 py-0.5 rounded text-xs font-bold">COMPLETED</span></td>
+                                <td class="px-5 py-3 text-xs text-slate-500">Notify Discord</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold">Gagal</code></td>
+                                <td class="px-5 py-3"><span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-xs font-bold">FAILED_PROVIDER</span></td>
+                                <td class="px-5 py-3 text-xs text-slate-500">Refund balance (if applicable); Notify Discord</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3"><code class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold">Pending</code></td>
+                                <td class="px-5 py-3"><span class="bg-violet-100 text-violet-700 px-2 py-0.5 rounded text-xs font-bold">PROCESSING</span></td>
+                                <td class="px-5 py-3 text-xs text-slate-500">Await async webhook (Phase 5)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Route Auth Matrix -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="bg-slate-700 text-white px-5 py-4">
+                        <h3 class="font-bold text-sm">Route Authentication Matrix</h3>
+                        <p class="text-slate-400 text-xs mt-0.5">Auth requirements per public-facing endpoint</p>
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Endpoint</th>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Auth</th>
+                                <th class="text-left px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Security Mechanism</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3 font-mono text-xs">POST /v1/checkout</td>
+                                <td class="px-5 py-3"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold">Public</span></td>
+                                <td class="px-5 py-3 text-xs text-slate-500">Guest-friendly; optional Sanctum token</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3 font-mono text-xs">POST /v1/payment/callback</td>
+                                <td class="px-5 py-3"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold">Public</span></td>
+                                <td class="px-5 py-3 text-xs text-slate-500">Double MD5 signature + exact amount check</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3 font-mono text-xs">POST /v1/digiflazz/callback</td>
+                                <td class="px-5 py-3"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold">Public</span></td>
+                                <td class="px-5 py-3 text-xs text-slate-500">HMAC-SHA1 via <code class="bg-slate-100 px-1 rounded">X-Hub-Signature</code></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-5 py-3 font-mono text-xs">All management routes</td>
+                                <td class="px-5 py-3"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold">Sanctum</span></td>
+                                <td class="px-5 py-3 text-xs text-slate-500"><code class="bg-slate-100 px-1 rounded">auth:sanctum</code> middleware</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             SECTION 5 — TECHNICAL NOTES
+        ════════════════════════════════════════════════════════════ -->
+        <section id="tech-notes">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="flex-shrink-0 w-8 h-8 bg-slate-800 text-white text-sm font-extrabold rounded-lg flex items-center justify-center">5</span>
+                <h2 class="text-xl font-extrabold text-slate-900">Technical Notes &amp; Invariants</h2>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-6 h-6 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold flex items-center justify-center">1</span>
+                        <h3 class="font-bold text-slate-800 text-sm">Monetapay Cryptography</h3>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-2 list-disc list-inside leading-relaxed">
+                        <li>Cipher: <strong>AES-128-CBC</strong>. Key and IV padded to 16 bytes with <code class="bg-slate-100 px-1 rounded">\0</code> null bytes — never <code class="bg-slate-100 px-1 rounded">"0"</code> character.</li>
+                        <li>Signature: <code class="bg-slate-100 px-1 rounded">md5(md5(TOKEN + "*|*" + sortedParams + "@!@" + ts))</code></li>
+                        <li>Inbound callbacks verified with <code class="bg-slate-100 px-1 rounded">hash_equals()</code> to prevent timing attacks.</li>
+                        <li class="font-semibold text-rose-700">Do NOT alter cryptography in MonetapayService — stabilized against official PHP SDK.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-6 h-6 bg-violet-100 text-violet-700 rounded-lg text-xs font-bold flex items-center justify-center">2</span>
+                        <h3 class="font-bold text-slate-800 text-sm">Job Dispatch After Commit</h3>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-2 list-disc list-inside leading-relaxed">
+                        <li><code class="bg-slate-100 px-1 rounded">ProcessDigiflazzTopup::dispatch()</code> is always called <strong>outside</strong> <code class="bg-slate-100 px-1 rounded">DB::transaction()</code>.</li>
+                        <li>Prevents race: worker picks up job before Payment/Transaction rows are committed.</li>
+                        <li><code class="bg-slate-100 px-1 rounded">$transaction->fresh()</code> is called to ensure the dispatched model reflects the latest committed state.</li>
+                        <li>The captured <code class="bg-slate-100 px-1 rounded">$paidTransaction</code> variable bridges the closure to the outer dispatch call.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-6 h-6 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold flex items-center justify-center">3</span>
+                        <h3 class="font-bold text-slate-800 text-sm">Idempotency &amp; Replay Safety</h3>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-2 list-disc list-inside leading-relaxed">
+                        <li>Monetapay may retry the same webhook multiple times.</li>
+                        <li>Guard: if <code class="bg-slate-100 px-1 rounded">transaction.status ∈ {PAID, PROCESSING, COMPLETED}</code>, return HTTP 200 with no side effects.</li>
+                        <li><code class="bg-slate-100 px-1 rounded">lockForUpdate()</code> on the Payment row blocks concurrent execution of the same webhook.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-6 h-6 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold flex items-center justify-center">4</span>
+                        <h3 class="font-bold text-slate-800 text-sm">Digiflazz Specifics</h3>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-2 list-disc list-inside leading-relaxed">
+                        <li>Signature: <code class="bg-slate-100 px-1 rounded">md5(username + key + ref_id)</code></li>
+                        <li><code class="bg-slate-100 px-1 rounded">customer_no = target_uid . target_server</code> — concatenated, no separator.</li>
+                        <li><code class="bg-slate-100 px-1 rounded">invoice_number</code> is used as the Digiflazz <code class="bg-slate-100 px-1 rounded">ref_id</code>.</li>
+                        <li>Inbound webhook: HMAC-SHA1 on raw body verified against <code class="bg-slate-100 px-1 rounded">X-Hub-Signature</code>.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-6 h-6 bg-rose-100 text-rose-700 rounded-lg text-xs font-bold flex items-center justify-center">5</span>
+                        <h3 class="font-bold text-slate-800 text-sm">Database Key Relationships</h3>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-2 list-disc list-inside leading-relaxed">
+                        <li><code class="bg-slate-100 px-1 rounded">transactions.user_id</code> is <strong>nullable</strong> — guest checkouts are supported.</li>
+                        <li><code class="bg-slate-100 px-1 rounded">transactions.guest_contact</code> stores WhatsApp/phone number for guests.</li>
+                        <li><code class="bg-slate-100 px-1 rounded">supplier_products.is_active</code> gates availability — only the first active record per product is used.</li>
+                        <li><code class="bg-slate-100 px-1 rounded">$adminFee = 0</code> hardcoded in CheckoutAction. Extend there when fee logic is needed.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-6 h-6 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center">6</span>
+                        <h3 class="font-bold text-slate-800 text-sm">Architecture Invariants</h3>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-2 list-disc list-inside leading-relaxed">
+                        <li><strong>Controllers:</strong> pure routers — validate, build DTO, call one Action, return response. No DB calls, no conditionals.</li>
+                        <li><strong>Actions:</strong> own all logic. One Action = one task. State changes run inside <code class="bg-slate-100 px-1 rounded">DB::transaction()</code>.</li>
+                        <li><strong>DTOs:</strong> <code class="bg-slate-100 px-1 rounded">readonly</code> PHP 8.2+ value objects — the only thing passed between Controller and Action.</li>
+                        <li><strong>Exception:</strong> <code class="bg-slate-100 px-1 rounded">CheckoutController</code> validates inline (dynamic <code class="bg-slate-100 px-1 rounded">guest_contact</code> rule).</li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Required ENV Keys -->
+            <div class="mt-6 bg-slate-900 text-slate-100 rounded-2xl p-6 font-mono text-xs shadow-sm">
+                <p class="text-slate-400 font-sans font-bold text-xs uppercase tracking-widest mb-4">Required .env Keys (Beyond Laravel Defaults)</p>
+                <div class="grid sm:grid-cols-2 gap-x-10 gap-y-1">
+                    <div><span class="text-emerald-400">MONETAPAY_MCH_ID</span>=<span class="text-slate-400"># app_id sent in encrypted payload</span></div>
+                    <div><span class="text-emerald-400">DIGIFLAZZ_USERNAME</span>=</div>
+                    <div><span class="text-emerald-400">MONETAPAY_PARTNER_KEY</span>=<span class="text-slate-400"># sent plaintext in request body</span></div>
+                    <div><span class="text-emerald-400">DIGIFLAZZ_KEY</span>=</div>
+                    <div><span class="text-emerald-400">MONETAPAY_TOKEN</span>=<span class="text-slate-400"># used in signature computation</span></div>
+                    <div><span class="text-emerald-400">DIGIFLAZZ_BASE_URL</span>=<span class="text-slate-400">https://api.digiflazz.com/v1</span></div>
+                    <div><span class="text-emerald-400">MONETAPAY_AES_KEY</span>=<span class="text-slate-400"># 16 bytes for AES-128-CBC</span></div>
+                    <div><span class="text-emerald-400">DIGIFLAZZ_WEBHOOK_SECRET</span>=</div>
+                    <div><span class="text-emerald-400">MONETAPAY_AES_IV</span>=<span class="text-slate-400"># 16 bytes for AES-128-CBC</span></div>
+                    <div><span class="text-amber-400">DISCORD_WEBHOOK_LOG_URL</span>=<span class="text-slate-400"># optional — silently skipped if unset</span></div>
+                    <div><span class="text-emerald-400">MONETAPAY_IS_PRODUCTION</span>=<span class="text-rose-400">false</span></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-slate-200 bg-white mt-20">
+        <div class="max-w-7xl mx-auto px-6 py-6 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
+            <span><strong class="text-slate-600">Uxio TopUp API</strong> — Internal Documentation · Laravel 11 · Monetapay + Digiflazz</span>
+            <span>Generated 2026-06-05 · For internal use only</span>
+        </div>
+    </footer>
+
+</body>
+</html>

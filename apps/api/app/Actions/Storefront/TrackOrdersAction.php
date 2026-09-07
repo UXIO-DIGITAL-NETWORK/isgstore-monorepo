@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Storefront;
+
+use App\Models\Transaction;
+use App\Support\Phone;
+use App\Support\Storefront\MediaUrl;
+use Illuminate\Database\Eloquent\Builder;
+
+/**
+ * "Cek Pesanan" — look up your own orders without logging in.
+ *
+ * Matches an exact invoice number, an exact contact number (the guest's
+ * WhatsApp, or a registered user's phone), or an exact email (the checkout
+ * `contact_email`, or a registered user's email). Exact match only: a LIKE
+ * search on phone/email would let someone walk the table by prefix.
+ */
+class TrackOrdersAction
+{
+    private const LIMIT = 50;
+
+    /** @return list<array<string, mixed>> */
+    public function execute(string $query): array
+    {
+        $query = trim($query);
+
+        if ($query === '') {
+            return [];
+        }
+
+        $contacts = Phone::candidates($query);
+        $email = $this->emailCandidate($query);
+
+        return Transaction::query()
+            ->where(function (Builder $q) use ($query, $contacts, $email) {
+                $q->where('invoice_number', $query);
+
+                if ($contacts !== []) {
+                    $q->orWhereIn('guest_contact', $contacts)
+                        ->orWhereHas('user', fn (Builder $u) => $u->whereIn('phone', $contacts));
+                }
+
+                if ($email !== null) {
+                    // Case-insensitive exact match — emails are stored as typed.
+                    $q->orWhereRaw('lower(contact_email) = ?', [$email])
+                        ->orWhereHas('user', fn (Builder $u) => $u->whereRaw('lower(email) = ?', [$email]));
+                }
+            })
+            ->with([
+                'product:id,category_id,name',
+                'product.category:id,name,slug,code,logo',
+            ])
+            ->latest('id')
+            ->limit(self::LIMIT)
+            ->get(['id', 'invoice_number', 'product_id', 'amount_base', 'channel_fee', 'amount_total', 'status', 'created_at'])
+            ->map(fn (Transaction $transaction) => [
+                'invoice_number' => $transaction->invoice_number,
+                'service' => $transaction->product?->name,
+                'amount' => (int) $transaction->amount_total,
+                'base' => (int) $transaction->amount_base,
+                'admin_fee' => (int) $transaction->channel_fee,
+                'status' => $transaction->status?->value,
+                'game_id' => $transaction->product?->category_id,
+                'game_name' => $transaction->product?->category?->name,
+                'game_slug' => $transaction->product?->category?->slug ?: $transaction->product?->category?->code,
+                'game_logo_url' => MediaUrl::for($transaction->product?->category?->logo),
+                'created_at' => $transaction->created_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** The lowercased email if the query is a valid email address, else null. */
+    private function emailCandidate(string $value): ?string
+    {
+        return filter_var($value, FILTER_VALIDATE_EMAIL) ? strtolower($value) : null;
+    }
+}

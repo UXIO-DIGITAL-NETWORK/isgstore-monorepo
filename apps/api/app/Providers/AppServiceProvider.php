@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Providers;
+
+use App\Support\Storefront\Catalog;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        $this->configureRateLimiting();
+        $this->configureRouteBindings();
+    }
+
+    /**
+     * Storefront URLs address a game by slug, but `categories.slug` is nullable
+     * on rows created before it existed and the admin panel links by `code`.
+     * Binding through Catalog::resolveGame accepts slug, code or id so no game
+     * is unreachable, and it filters inactive games out at the routing layer.
+     */
+    private function configureRouteBindings(): void
+    {
+        Route::bind('game', function (string $value) {
+            return Catalog::resolveGame($value) ?? abort(404, 'Game tidak ditemukan.');
+        });
+    }
+
+    private function configureRateLimiting(): void
+    {
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('checkout', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Generous on purpose: legitimate gateway retry bursts must never be
+        // dropped — signature verification is the real gate on these routes.
+        RateLimiter::for('webhooks', function (Request $request) {
+            return Limit::perMinute(120)->by($request->ip());
+        });
+
+        // Two limits, not one. Keyed on the email as well as the IP because a
+        // shared office egresses through a single address: five colleagues
+        // signing in at 09:00 used to exhaust the whole allowance, and since
+        // /register, /forgot-password and /reset-password share this limiter it
+        // locked out password recovery for everyone behind that IP too.
+        //
+        // The per-email limit is the one that actually stops credential
+        // stuffing against an account; the per-IP ceiling is the loose backstop
+        // against a single host hammering many accounts.
+        RateLimiter::for('login', function (Request $request) {
+            $email = Str::lower(trim((string) $request->input('email')));
+
+            return [
+                Limit::perMinute(5)->by($email.'|'.$request->ip()),
+                Limit::perMinute(30)->by($request->ip()),
+            ];
+        });
+
+        // Second-factor verification. Keyed on the challenge, not the IP: a
+        // per-IP limit is useless against distributed guessing and harmful in a
+        // shared office. The real control is the per-challenge attempt counter
+        // — this is the backstop against hammering one challenge.
+        RateLimiter::for('two-factor', function (Request $request) {
+            $challenge = (string) $request->input('challenge_token');
+
+            return Limit::perMinute(10)->by($challenge !== '' ? hash('sha256', $challenge) : $request->ip());
+        });
+
+        // Public refund claim. Tighter than checkout because the prize is
+        // different: this surface decides where money is sent, so a scripted
+        // sweep of invoice/contact pairs must die early. A real customer needs
+        // two or three requests, not six.
+        RateLimiter::for('refund-claim', function (Request $request) {
+            return Limit::perMinute(6)->by($request->ip());
+        });
+
+        // Hub money-path writes: one caller (the Hub) driving a human's clicks,
+        // so a modest ceiling — enough for real review bursts, tight enough to
+        // blunt a leaked-write-key abuse window.
+        RateLimiter::for('hub-write', function (Request $request) {
+            return Limit::perMinute(30)->by($request->ip());
+        });
+
+        // Config-sync pokes from the Hub. One caller, and the job behind it is
+        // unique-for-60s anyway, so this only has to blunt a loop — a panel
+        // save burst of a dozen in a minute is normal and must pass.
+        RateLimiter::for('hub-sync', function (Request $request) {
+            return Limit::perMinute(12)->by($request->ip());
+        });
+    }
+}
