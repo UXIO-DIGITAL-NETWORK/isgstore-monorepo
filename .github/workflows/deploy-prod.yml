@@ -132,6 +132,17 @@ jobs:
             REPO_DIR="${DEPLOY_BASE_PATH%/}/api"
             API_DIR="$REPO_DIR/apps/api"
 
+            # 0c. Direktori tujuan keempat app. rsync hanya membuat komponen
+            #     TERAKHIR dari sebuah path, bukan seluruh rantainya, jadi
+            #     deploy frontend di server yang masih baru gagal kalau
+            #     induknya belum ada. Dibuat di sini supaya tidak ada langkah
+            #     manual yang tersisa untuk itu.
+            for D in "$REPO_DIR" "${DEPLOY_BASE_PATH%/}/admin" "${DEPLOY_BASE_PATH%/}/storefront" "${DEPLOY_BASE_PATH%/}/payment"; do
+              if [ ! -d "$D" ]; then
+                mkdir -p "$D" 2>/dev/null || { sudo mkdir -p "$D"; sudo chown "$(id -un):www-data" "$D"; }
+              fi
+            done
+
             # 0a. Percayai host key GitHub. Tanpa ini `git clone`/`git pull`
             #     non-interaktif mati dengan "Host key verification failed" —
             #     tidak ada yang bisa menjawab prompt konfirmasi SSH.
@@ -207,8 +218,20 @@ jobs:
             if [ -n "$FPM" ]; then sudo systemctl reload "$FPM"; else echo "::warning::php-fpm tidak ditemukan"; fi
 
             # 9. Cron scheduler — deploy GAGAL bila hilang, karena tanpa ini
-            #    13 perintah terjadwal berhenti diam-diam
-            command -v crontab >/dev/null || { echo "::error::crontab tidak ada di server — pasang paket cron lebih dulu."; exit 1; }
+            #    13 perintah terjadwal berhenti diam-diam.
+            #
+            #    Ada DUA hal terpisah di sini dan dua-duanya wajib: ENTRI di
+            #    crontab user, dan DAEMON cron yang membacanya. Entri tanpa
+            #    daemon adalah kegagalan paling senyap di berkas ini —
+            #    `crontab -l` memperlihatkan barisnya dengan rapi, dan tidak
+            #    satu pun pernah dieksekusi.
+            command -v crontab >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y cron; }
+            # Debian/Ubuntu menamainya cron.service, RHEL crond.service.
+            # `|| true` supaya pola yang tidak cocok tidak menjatuhkan deploy
+            # di tengah pipeline — pesan errornya ada di baris berikutnya.
+            CRON_SVC=$(systemctl list-unit-files --no-legend 'cron.service' 'crond.service' 2>/dev/null | awk '{print $1}' | head -1 || true)
+            [ -n "$CRON_SVC" ] || { echo "::error::Unit systemd untuk cron tidak ditemukan meski paketnya terpasang."; exit 1; }
+            sudo systemctl enable --now "$CRON_SVC"
             CRON_ENTRY="* * * * * cd $API_DIR && php artisan schedule:run >> /dev/null 2>&1"
             # `|| true` di sini bukan hiasan. Kalau `grep -v` tidak menyisakan
             # apa-apa — crontab masih kosong, atau isinya HANYA baris
@@ -218,7 +241,9 @@ jobs:
             # tanpa mengeluh, dan memasang crontab KOSONG: entri lama ikut
             # terhapus dan yang baru tidak pernah masuk.
             { crontab -l 2>/dev/null | grep -vF "artisan schedule:run" || true; echo "$CRON_ENTRY"; } | crontab -
-            crontab -l | grep -qF "artisan schedule:run" || { echo "::error::Cron scheduler tidak terpasang."; exit 1; }
+            crontab -l | grep -qF "artisan schedule:run" || { echo "::error::Entri cron scheduler tidak terpasang."; exit 1; }
+            systemctl is-active --quiet "$CRON_SVC" || {
+              echo "::error::Daemon $CRON_SVC tidak berjalan — entri terpasang tapi tidak akan pernah dieksekusi."; exit 1; }
 
             # 10-13. Supervisor untuk queue worker
             command -v supervisorctl >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y supervisor; }
@@ -242,6 +267,10 @@ jobs:
             sleep 5
             sudo supervisorctl status api-prod-worker:* | grep -q RUNNING || {
               echo "::error::Queue worker TIDAK berjalan. Order berbayar tidak akan diproses."; exit 1; }
+
+            # 16. Ringkasan, supaya satu run deploy bisa dibaca sebagai satu
+            #     pernyataan tentang keadaan server sesudahnya.
+            echo "Selesai. Kode & migrasi terpasang, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker supervisor RUNNING."
 
       - name: Notify Discord — hasil
         if: always()
