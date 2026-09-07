@@ -121,6 +121,14 @@ jobs:
             # di $DEPLOY_BASE_PATH/api adalah klon monorepo-nya sendiri dan root
             # nginx api.<domain> menunjuk ke apps/api/public di dalamnya.
             [ -n "$DEPLOY_BASE_PATH" ] || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+
+            # Preflight sudo. Langkah 8 dan seterusnya butuh sudo tanpa kata
+            # sandi, dan sesi non-interaktif tidak bisa mengetikkannya. Diperiksa
+            # DI SINI, sebelum .env ditulis dan migrasi dijalankan — kegagalan di
+            # tengah meninggalkan database yang sudah termigrasi dengan worker
+            # yang tidak pernah di-restart.
+            sudo -n true 2>/dev/null || {
+              echo "::error::User $(id -un) butuh sudo tanpa kata sandi. Lihat docs/04-deployment.md langkah 10."; exit 1; }
             REPO_DIR="${DEPLOY_BASE_PATH%/}/api"
             API_DIR="$REPO_DIR/apps/api"
 
