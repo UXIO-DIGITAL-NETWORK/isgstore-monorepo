@@ -2,6 +2,10 @@
 
 Enam dokumen, ditulis dari kode yang benar-benar ada di repo ini per 7 September 2026.
 
+Bisa dibaca di dua tempat: langsung di GitHub, atau sebagai halaman web di
+**<https://uxio-digital-network.github.io/web-topup-monorepo/>** — diagram alurnya
+ikut terender di kedua tempat.
+
 | Dokumen | Untuk menjawab |
 |---|---|
 | [01 — Alur website](01-alur-website.md) | Apa yang terjadi ketika pelanggan memesan, membayar, gagal, atau minta uangnya kembali |

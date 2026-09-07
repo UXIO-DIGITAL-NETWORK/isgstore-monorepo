@@ -1,0 +1,34 @@
+<!--
+  Mermaid untuk GitHub Pages.
+
+  Diagram di dokumen ini ditulis sebagai blok kode ```mermaid. GitHub.com
+  merendernya sendiri, tapi Jekyll tidak — di Pages ia hanya keluar sebagai
+  blok kode mentah. Skrip ini mengubah setiap blok itu menjadi diagram,
+  sehingga satu berkas markdown terbaca benar di kedua tempat.
+-->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var blocks = document.querySelectorAll(
+      'pre > code.language-mermaid, code.language-mermaid, div.language-mermaid pre'
+    );
+    blocks.forEach(function (block) {
+      var pre = block.closest("pre") || block;
+      var host = pre.closest("div.language-mermaid") || pre;
+      var el = document.createElement("div");
+      el.className = "mermaid";
+      el.textContent = block.textContent;
+      host.replaceWith(el);
+    });
+
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "default" });
+  });
+</script>
+<style>
+  /* Cayman memberi <table> lebar penuh tanpa gulir; tabel referensi API di sini
+     lebih lebar dari kolom teksnya. */
+  .main-content table { display: block; overflow-x: auto; }
+  .main-content .mermaid { text-align: center; margin: 1.5rem 0; }
+  .main-content pre { overflow-x: auto; }
+</style>

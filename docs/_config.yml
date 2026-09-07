@@ -1,0 +1,22 @@
+title: Dokumentasi Website Topup
+description: Alur website, arsitektur kode, referensi API, deployment, dan basis data.
+theme: jekyll-theme-cayman
+lang: id
+
+# jekyll-optional-front-matter  → memproses berkas .md tanpa front matter,
+#                                 sehingga dokumen tetap enak dibaca di GitHub.
+# jekyll-relative-links         → menulis ulang tautan antar-dokumen (.md → .html),
+#                                 tanpa ini setiap tautan di halaman Pages jadi 404.
+# jekyll-readme-index           → menjadikan README.md sebagai halaman depan.
+plugins:
+  - jekyll-optional-front-matter
+  - jekyll-relative-links
+  - jekyll-readme-index
+
+relative_links:
+  enabled: true
+  collections: true
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
