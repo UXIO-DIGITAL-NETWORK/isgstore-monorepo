@@ -3,10 +3,16 @@
 use App\Http\Controllers\Web\TopupPageController;
 use Illuminate\Support\Facades\Route;
 
-// API landing page — documents every route group (public, member, admin,
-// payment-page merchant/internal, Hub). The API itself lives under /api/v1.
+// Root answers with the service identity and nothing else. It used to render a
+// landing page documenting every route group — including the admin,
+// payment-internal and Hub ones — to anyone who opened api.<domain>. That map
+// now lives in docs/06-referensi-rute-api.md, in the private repo, where
+// documentation costs nothing to serve and leaks nothing.
 Route::get('/', function () {
-    return view('api-landing');
+    return response()->json([
+        'name' => config('app.name'),
+        'version' => 'v1',
+    ]);
 });
 
 // Public top-up page. Checkout itself is performed by the page against the
