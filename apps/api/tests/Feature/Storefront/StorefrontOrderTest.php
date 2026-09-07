@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\Product;
 use App\Models\Role;
+use App\Models\Setting;
 use App\Models\SupplierProduct;
 use App\Models\Transaction;
 use App\Models\User;
@@ -308,5 +309,96 @@ class StorefrontOrderTest extends TestCase
             'target_uid' => '337850017',
             'target_nickname' => 'Ramonezz',
         ]);
+    }
+
+    private function member(): User
+    {
+        $role = Role::factory()->create(['name' => 'Member']);
+
+        return User::factory()->create(['role_id' => $role->id]);
+    }
+
+    public function test_an_open_member_order_projects_the_points_it_will_earn(): void
+    {
+        Setting::create([
+            'group' => 'points', 'key' => 'earn_percent', 'value' => '2',
+            'type' => 'number', 'label' => 'Earn %', 'is_public' => true,
+        ]);
+        $this->order(['user_id' => $this->member()->id, 'amount_base' => 25000]);
+
+        $this->getJson('/api/v1/invoices/INV-20260731-ABC123')
+            ->assertOk()
+            ->assertJsonPath('data.points.earned', 500)
+            ->assertJsonPath('data.points.is_estimate', true)
+            ->assertJsonPath('data.points.eligible', true);
+    }
+
+    /**
+     * The product's own rule must win over the global setting. This is the case
+     * that catches the eager-load trap: `point_percent` is not selected by
+     * default, strict mode is off, and a missing column reads back as null —
+     * which would silently quote the global 2% instead of this product's 5%.
+     */
+    public function test_the_projection_honours_the_products_own_earning_rule(): void
+    {
+        Setting::create([
+            'group' => 'points', 'key' => 'earn_percent', 'value' => '2',
+            'type' => 'number', 'label' => 'Earn %', 'is_public' => true,
+        ]);
+        $product = Product::factory()->create(['point_percent' => 5, 'point_flat' => 0]);
+        $this->order([
+            'user_id' => $this->member()->id,
+            'product_id' => $product->id,
+            'amount_base' => 25000,
+        ]);
+
+        $this->getJson('/api/v1/invoices/INV-20260731-ABC123')
+            ->assertOk()
+            ->assertJsonPath('data.points.earned', 1250);
+    }
+
+    public function test_a_completed_order_reports_the_points_actually_granted(): void
+    {
+        $this->order([
+            'user_id' => $this->member()->id,
+            'status' => TransactionStatus::COMPLETED,
+            'points_earned' => 700,
+        ]);
+
+        $this->getJson('/api/v1/invoices/INV-20260731-ABC123')
+            ->assertOk()
+            ->assertJsonPath('data.points.earned', 700)
+            ->assertJsonPath('data.points.is_estimate', false);
+    }
+
+    public function test_a_guest_order_is_never_promised_points(): void
+    {
+        Setting::create([
+            'group' => 'points', 'key' => 'earn_percent', 'value' => '2',
+            'type' => 'number', 'label' => 'Earn %', 'is_public' => true,
+        ]);
+        $this->order(['user_id' => null]);
+
+        $this->getJson('/api/v1/invoices/INV-20260731-ABC123')
+            ->assertOk()
+            ->assertJsonPath('data.points.eligible', false)
+            ->assertJsonPath('data.points.earned', 0);
+    }
+
+    public function test_a_failed_order_shows_no_projection(): void
+    {
+        Setting::create([
+            'group' => 'points', 'key' => 'earn_percent', 'value' => '2',
+            'type' => 'number', 'label' => 'Earn %', 'is_public' => true,
+        ]);
+        $this->order([
+            'user_id' => $this->member()->id,
+            'status' => TransactionStatus::EXPIRED,
+        ]);
+
+        $this->getJson('/api/v1/invoices/INV-20260731-ABC123')
+            ->assertOk()
+            ->assertJsonPath('data.points.earned', 0)
+            ->assertJsonPath('data.points.is_estimate', false);
     }
 }

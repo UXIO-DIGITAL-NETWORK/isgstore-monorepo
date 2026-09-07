@@ -54,9 +54,17 @@ class GrantTransactionPointsAction
                 return;
             }
 
-            // The discounted selling price, minus whatever points already paid
-            // for: no points on the channel fee, and no points earned on points.
-            $base = (int) $locked->amount_base - (int) $locked->points_spent_amount;
+            // `amount_base` IS the base: the channel fee lives in its own column,
+            // so points are never earned on it.
+            //
+            // Do NOT subtract `points_spent_amount` here. "No points earned on
+            // points" is already true, because CheckoutAction subtracts the
+            // redeemed rupiah from `$sellingPrice` *before* writing it as
+            // `amount_base`. Subtracting again is a double deduction that
+            // silently under-grants every order that redeemed points, and it
+            // makes this disagree with the figure the storefront quoted the
+            // customer at checkout.
+            $base = (int) $locked->amount_base;
 
             $earned = PointRules::earnedFor($locked->product, $base);
 

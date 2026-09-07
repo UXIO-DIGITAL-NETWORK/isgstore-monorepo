@@ -7,6 +7,7 @@ namespace App\Actions\Storefront;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
 use App\Support\Payment\PaymentExpiry;
+use App\Support\Points\PointRules;
 use App\Support\Storefront\MediaUrl;
 
 /**
@@ -34,7 +35,11 @@ class ShowInvoiceAction
         $transaction = Transaction::query()
             ->where('invoice_number', $invoiceNumber)
             ->with([
-                'product:id,category_id,name',
+                // point_percent/point_flat are selected because pointsFor() reads
+                // them. Eloquent strict mode is off here, so a column left out of
+                // this list would read back as null and silently fall through to
+                // the global rule — quoting a different figure than checkout did.
+                'product:id,category_id,name,point_percent,point_flat',
                 'product.category:id,name,slug,code,region,logo,thumbnail',
                 'paymentChannel:id,name,channel_code,payment_type',
                 'payment:id,transaction_id,payment_channel_id,reference_id,gross_amount,admin_fee,payment_data,status,paid_at,created_at',
@@ -85,6 +90,8 @@ class ShowInvoiceAction
                 'total' => (int) $transaction->amount_total,
             ],
 
+            'points' => $this->pointsFor($transaction),
+
             'payment' => [
                 'channel' => $transaction->paymentChannel?->name,
                 'channel_code' => $transaction->paymentChannel?->channel_code,
@@ -116,6 +123,49 @@ class ShowInvoiceAction
             // Voucher / serial number, present once uxiolabs has fulfilled.
             'sn' => $transaction->sn,
             'created_at' => $transaction->created_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Loyalty points for this order, from the customer's point of view.
+     *
+     * Three states, not two. While the order is still open the figure is a
+     * projection; once COMPLETED it is the granted amount read straight off the
+     * row; and an order that ended any other way earns nothing, so it must not
+     * show a projection it will never honour.
+     *
+     * The projection goes through `PointRules::earnedFor` on `amount_base` —
+     * the very same helper and the very same column `GrantTransactionPointsAction`
+     * uses — so the two cannot drift apart.
+     *
+     * @return array{earned: int, is_estimate: bool, eligible: bool}
+     */
+    private function pointsFor(Transaction $transaction): array
+    {
+        // Points are credited to an account. A guest order earns none, and
+        // saying otherwise would be a promise the grant refuses to keep.
+        $eligible = $transaction->user_id !== null;
+
+        if ($transaction->status === TransactionStatus::COMPLETED) {
+            return [
+                'earned' => (int) $transaction->points_earned,
+                'is_estimate' => false,
+                'eligible' => $eligible,
+            ];
+        }
+
+        $isOpen = ! in_array($transaction->status, self::TERMINAL_STATUSES, true);
+
+        // Only the open-and-eligible case costs anything: PointRules reads two
+        // uncached `settings` rows, and this endpoint is polled every 5s.
+        $earned = $isOpen && $eligible
+            ? PointRules::earnedFor($transaction->product, (int) $transaction->amount_base)
+            : 0;
+
+        return [
+            'earned' => $earned,
+            'is_estimate' => $isOpen,
+            'eligible' => $eligible,
         ];
     }
 }

@@ -119,8 +119,20 @@ class GrantTransactionPointsTest extends TestCase
     public function test_points_are_not_earned_on_the_part_paid_with_points(): void
     {
         // Otherwise a customer harvests points from points, forever.
+        //
+        // The fixture is shaped the way CheckoutAction actually writes one: it
+        // subtracts the redeemed rupiah from the selling price BEFORE storing
+        // `amount_base`, so a 100.000 order settled half in points is stored as
+        // `amount_base` 50.000. An earlier version of this test set
+        // `amount_base` to 100.000 alongside `points_spent_amount` 50.000 — a
+        // row checkout can never produce — which is exactly why it kept passing
+        // while the action deducted the points a second time.
         $user = $this->member();
-        $transaction = $this->order($user, ['amount_base' => 100000, 'points_spent' => 50000, 'points_spent_amount' => 50000]);
+        $transaction = $this->order($user, [
+            'amount_base' => 50000,
+            'points_spent' => 50000,
+            'points_spent_amount' => 50000,
+        ]);
 
         app(GrantTransactionPointsAction::class)->execute($transaction);
 

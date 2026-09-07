@@ -172,6 +172,10 @@ class CheckoutAction
             // is actually worth, rounding down so redemption cannot overshoot.
             $pointsSpent = min($dto->pointsToSpend, PointRules::pointsToCover($sellingPrice));
             $pointsSpentAmount = PointRules::rupiahFor($pointsSpent);
+            // NOTE: `amount_base` is written from `$sellingPrice` below, so it
+            // lands NET of this deduction. GrantTransactionPointsAction earns on
+            // `amount_base` as-is for that reason — subtracting the points there
+            // too would deduct them twice.
             $sellingPrice -= $pointsSpentAmount;
         }
 
