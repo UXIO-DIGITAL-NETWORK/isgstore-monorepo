@@ -1,0 +1,27 @@
+{
+  "name": "uxiotopup-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Website topup: satu API Laravel dan tiga frontend React, satu repo.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "install:all": "npm --prefix apps/admin ci && npm --prefix apps/storefront ci && npm --prefix apps/payment ci",
+    "dev:admin": "npm --prefix apps/admin run dev",
+    "dev:storefront": "npm --prefix apps/storefront run dev",
+    "dev:payment": "npm --prefix apps/payment run dev",
+    "build": "npm --prefix apps/admin run build && npm --prefix apps/storefront run build && npm --prefix apps/payment run build",
+    "build:admin": "npm --prefix apps/admin run build",
+    "build:storefront": "npm --prefix apps/storefront run build",
+    "build:payment": "npm --prefix apps/payment run build",
+    "test": "npm --prefix apps/admin run test && npm --prefix apps/storefront run test && npm --prefix apps/payment run test",
+    "test:admin": "npm --prefix apps/admin run test",
+    "test:storefront": "npm --prefix apps/storefront run test",
+    "test:payment": "npm --prefix apps/payment run test",
+    "lint": "npm --prefix apps/admin run lint && npm --prefix apps/storefront run lint && npm --prefix apps/payment run lint",
+    "lint:admin": "npm --prefix apps/admin run lint",
+    "lint:storefront": "npm --prefix apps/storefront run lint",
+    "lint:payment": "npm --prefix apps/payment run lint"
+  }
+}
