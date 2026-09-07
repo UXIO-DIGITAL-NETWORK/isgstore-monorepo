@@ -208,9 +208,17 @@ jobs:
 
             # 9. Cron scheduler — deploy GAGAL bila hilang, karena tanpa ini
             #    13 perintah terjadwal berhenti diam-diam
+            command -v crontab >/dev/null || { echo "::error::crontab tidak ada di server — pasang paket cron lebih dulu."; exit 1; }
             CRON_ENTRY="* * * * * cd $API_DIR && php artisan schedule:run >> /dev/null 2>&1"
-            ( crontab -l 2>/dev/null | grep -vF "artisan schedule:run" ; echo "$CRON_ENTRY" ) | crontab -
-            crontab -l | grep -q "schedule:run" || { echo "::error::Cron scheduler tidak terpasang."; exit 1; }
+            # `|| true` di sini bukan hiasan. Kalau `grep -v` tidak menyisakan
+            # apa-apa — crontab masih kosong, atau isinya HANYA baris
+            # schedule:run lama yang memang sedang disaring — grep keluar
+            # dengan status 1, dan `set -e` membunuh subshell sebelum `echo`
+            # sempat dijalankan. `crontab -` lalu menerima nol byte, menerimanya
+            # tanpa mengeluh, dan memasang crontab KOSONG: entri lama ikut
+            # terhapus dan yang baru tidak pernah masuk.
+            { crontab -l 2>/dev/null | grep -vF "artisan schedule:run" || true; echo "$CRON_ENTRY"; } | crontab -
+            crontab -l | grep -qF "artisan schedule:run" || { echo "::error::Cron scheduler tidak terpasang."; exit 1; }
 
             # 10-13. Supervisor untuk queue worker
             command -v supervisorctl >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y supervisor; }
