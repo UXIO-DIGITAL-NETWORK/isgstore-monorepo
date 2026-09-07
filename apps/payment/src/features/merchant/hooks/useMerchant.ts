@@ -1,0 +1,160 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useEchoConnected } from "@/hooks/useEchoConnected";
+import type { ListParams } from "@/lib/list";
+import { merchantService } from "../services/merchant.service";
+import type { CreateWithdrawalPayload } from "../types/merchant.type";
+
+export const useMerchantDashboard = () =>
+  useQuery({ queryKey: ["merchant", "dashboard"], queryFn: merchantService.dashboard });
+
+export const useMerchantTransactions = (params: ListParams) =>
+  useQuery({ queryKey: ["merchant", "transactions", params], queryFn: () => merchantService.transactions(params) });
+
+export const useMerchantTransactionSummary = (params: ListParams) =>
+  useQuery({
+    queryKey: ["merchant", "transactions", "summary", params],
+    queryFn: () => merchantService.transactionSummary(params),
+  });
+
+export const useMerchantMutations = (params: ListParams) =>
+  useQuery({ queryKey: ["merchant", "mutations", params], queryFn: () => merchantService.mutations(params) });
+
+/**
+ * Realtime-primary: the `merchant.{id}.withdrawals` Pusher channel invalidates
+ * this on every status change (see usePaymentRealtime). Polling stays only as a
+ * fallback while a payout is mid-flight — slow when the socket is up, fast when
+ * it's down. The server owns the terminal state, never a client-side guess.
+ */
+export const useMerchantWithdrawals = (params: ListParams) => {
+  const connected = useEchoConnected();
+  return useQuery({
+    queryKey: ["merchant", "withdrawals", params],
+    queryFn: () => merchantService.withdrawals(params),
+    refetchInterval: (query) => {
+      const inFlight = query.state.data?.rows.some((w) => w.status === "PENDING" || w.status === "PROCESSING");
+      if (!inFlight) return false;
+      return connected ? 30_000 : 5_000;
+    },
+  });
+};
+
+export const useCreateWithdrawal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateWithdrawalPayload) => merchantService.createWithdrawal(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["merchant"] });
+      toast.success("Permintaan penarikan berhasil dibuat");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal membuat penarikan");
+    },
+  });
+};
+
+// ── Services bought from kita ────────────────────────────────────────────────
+
+export const useMerchantServices = (params: ListParams) =>
+  useQuery({ queryKey: ["merchant", "services", params], queryFn: () => merchantService.services(params) });
+
+export const useMerchantSubscriptions = (params: ListParams) =>
+  useQuery({
+    queryKey: ["merchant", "service-subscriptions", params],
+    queryFn: () => merchantService.subscriptions(params),
+  });
+
+export const useMerchantServiceInvoices = (params: ListParams) =>
+  useQuery({
+    queryKey: ["merchant", "service-invoices", params],
+    queryFn: () => merchantService.serviceInvoices(params),
+  });
+
+export const useServicePaymentChannels = () =>
+  useQuery({
+    queryKey: ["merchant", "payment-channels"],
+    queryFn: merchantService.paymentChannels,
+    // The method list changes when kita edits a channel, not while a client is
+    // picking one.
+    staleTime: 5 * 60_000,
+  });
+
+export const useSubscribeService = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { service_id: number; payment_channel_id: number; notes?: string }) =>
+      merchantService.subscribe(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["merchant"] });
+      toast.success("Invoice dibuat, silakan selesaikan pembayaran");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal membuat langganan");
+    },
+  });
+};
+
+export const usePayServiceInvoice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, paymentChannelId }: { id: number; paymentChannelId: number }) =>
+      merchantService.payInvoice(id, paymentChannelId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["merchant"] });
+      toast.success("Pembayaran baru dibuka");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal membuka pembayaran");
+    },
+  });
+};
+
+export const useServiceStatus = () =>
+  useQuery({ queryKey: ["merchant", "service-status"], queryFn: merchantService.serviceStatus });
+
+// ── Checkout, invoice detail & installation ─────────────────────────────────
+
+export const useMerchantServiceDetail = (id: number) =>
+  useQuery({ queryKey: ["merchant", "service-detail", id], queryFn: () => merchantService.serviceDetail(id) });
+
+/**
+ * Realtime-primary: the `merchant.{id}.service-invoices` Pusher channel
+ * invalidates this the moment the webhook flips the bill to PAID. Polling stays
+ * as a fallback while it is still UNPAID — slow when the socket is up, fast when
+ * it's down. Stops on a status the *server* declares terminal, never a
+ * client-side guess.
+ */
+export const useMerchantServiceInvoice = (id: number) => {
+  const connected = useEchoConnected();
+  return useQuery({
+    queryKey: ["merchant", "service-invoice", id],
+    queryFn: () => merchantService.serviceInvoice(id),
+    refetchInterval: (query) => {
+      if (query.state.data?.status !== "UNPAID") return false;
+      return connected ? 30_000 : 5_000;
+    },
+    refetchIntervalInBackground: true,
+  });
+};
+
+export const useMerchantInstallation = (subscriptionId: number | undefined) =>
+  useQuery({
+    queryKey: ["merchant", "installation", subscriptionId],
+    queryFn: () => merchantService.installation(subscriptionId as number),
+    enabled: Boolean(subscriptionId),
+  });
+
+/**
+ * A mutation on purpose, never a query: a cached query would put the plaintext
+ * credential in the TanStack Query cache, where the devtools panel renders it.
+ */
+export const useRevealDetail = () =>
+  useMutation({
+    mutationFn: (id: number) => merchantService.revealDetail(id),
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message ?? "Gagal menampilkan nilai");
+    },
+  });
