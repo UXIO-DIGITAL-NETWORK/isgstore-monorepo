@@ -115,7 +115,7 @@ class GameCatalogSeedTest extends TestCase
         // above and still lock the operator out.
         $token = $this->postJson('/api/v1/auth/login', [
             'email' => 'admin@isgstore.id',
-            'password' => 'uxiolabsJaya123',
+            'password' => 'isgStore#@$8',
         ])->assertOk()->json('data.access_token');
 
         // **The deployment consequence, pinned here on purpose.** A seeded (or
@@ -150,7 +150,7 @@ class GameCatalogSeedTest extends TestCase
 
         $challenge = $this->postJson('/api/v1/auth/login', [
             'email' => 'admin@isgstore.id',
-            'password' => 'uxiolabsJaya123',
+            'password' => 'isgStore#@$8',
         ])->assertOk()->json('data.challenge_token');
 
         $this->assertNotNull($challenge, 'A password alone must no longer open the panel.');
