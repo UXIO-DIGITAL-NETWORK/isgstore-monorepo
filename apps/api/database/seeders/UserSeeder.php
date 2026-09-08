@@ -38,9 +38,9 @@ class UserSeeder extends Seeder
         $users = [
             // role, name, username, email, phone, balance
             [RoleType::ADMIN, 'Super Admin', 'superadmin', 'admin@isgstore.id', '6281200000001', 0],
-            // Payment page: internal team (verifies) and client (requests withdrawals).
+            // Payment page: internal team (verifies) and merchant (requests withdrawals).
             [RoleType::PAYMENT_INTERNAL, 'Internal Finance', 'internal', 'internal@isgstore.id', '6281200000002', 0],
-            [RoleType::PAYMENT_ADMIN, 'Client Merchant', 'client', 'payment@isgstore.id', '6281200000003', 0],
+            [RoleType::PAYMENT_ADMIN, 'ISG Store', 'isgstore', 'payment@isgstore.id', '6281200000003', 0],
         ];
 
         foreach ($users as [$role, $name, $username, $email, $phone, $balance]) {
