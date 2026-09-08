@@ -53,7 +53,7 @@ class RefundMail extends Mailable implements ShouldQueue
         return new Content(
             view: 'emails.refund',
             with: [
-                'brand' => (string) config('services.storefront.brand', 'TOPUP GAME'),
+                'brand' => (string) config('services.storefront.brand', 'ISG Store'),
                 'variant' => $this->variant,
                 'invoice' => $refund->transaction?->invoice_number ?? $refund->refund_number,
                 'productName' => $refund->transaction?->product?->name,

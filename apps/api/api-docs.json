@@ -2,7 +2,7 @@
     "info": {
         "_postman_id": "uxio-topup-platform-api-v1",
         "name": "Uxio Top-up Platform API",
-        "description": "Complete Postman collection for the Uxio Digital Network headless API. Covers Auth, Users, Master Data (Categories, Suppliers, Products), Transactions (Orders, Payments), CMS (Banners, Announcements), Leaderboard, and Activity Logs.",
+        "description": "Complete Postman collection for the ISG Store headless API. Covers Auth, Users, Master Data (Categories, Suppliers, Products), Transactions (Orders, Payments), CMS (Banners, Announcements), Leaderboard, and Activity Logs.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "variable": [

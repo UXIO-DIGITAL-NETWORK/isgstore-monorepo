@@ -92,7 +92,7 @@ return [
         // Consumer storefront base URL, used to build the "Track Order" link in
         // the receipt email. The tracker lives at /{locale}/cek-pesanan.
         'url' => env('STOREFRONT_URL', 'http://localhost:5173'),
-        'brand' => env('STOREFRONT_BRAND', 'TOPUP GAME'),
+        'brand' => env('STOREFRONT_BRAND', 'ISG Store'),
 
         // Applied by `App\Support\Phone` only to a number that carries no
         // country code of its own — a customer who types "+65…" is always taken

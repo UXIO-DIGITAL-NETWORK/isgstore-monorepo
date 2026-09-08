@@ -241,7 +241,7 @@ const DOCUMENTS: Record<string, unknown> = {
     })),
   },
   "/v1/settings": [
-    { id: 1, group: "general", key: "site_name", value: "TopUpGame.ID", type: "string", label: "Site Name", is_public: true },
+    { id: 1, group: "general", key: "site_name", value: "ISG Store", type: "string", label: "Site Name", is_public: true },
     { id: 2, group: "contact", key: "contact_whatsapp", value: "6281234567890", type: "string", label: "WhatsApp", is_public: true },
     { id: 3, group: "general", key: "maintenance_mode", value: "0", type: "boolean", label: "Maintenance Mode", is_public: true },
     {

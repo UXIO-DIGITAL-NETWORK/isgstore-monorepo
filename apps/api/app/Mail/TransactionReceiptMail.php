@@ -43,7 +43,7 @@ class TransactionReceiptMail extends Mailable implements ShouldQueue
         return new Content(
             view: 'emails.transaction-receipt',
             with: [
-                'brand' => (string) config('services.storefront.brand', 'TOPUP GAME'),
+                'brand' => (string) config('services.storefront.brand', 'ISG Store'),
                 'invoice' => $t->invoice_number,
                 'date' => optional($t->created_at)->translatedFormat('d M Y, H:i'),
                 'gameName' => $t->product?->category?->name,

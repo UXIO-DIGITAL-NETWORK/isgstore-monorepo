@@ -13,7 +13,7 @@ class AnnouncementSeeder extends Seeder
 
         $items = [
             ['category_id' => null, 'content' => 'Server maintenance terjadwal pada hari Minggu, 27 April 2026, pukul 00:00 - 02:00 WIB. Mohon maaf atas ketidaknyamanannya.', 'image_path' => null, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
-            ['category_id' => null, 'content' => 'Selamat datang di Uxio Digital Network! Platform top-up game & voucher terpercaya dengan harga terbaik.', 'image_path' => '/announcements/welcome.jpg', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+            ['category_id' => null, 'content' => 'Selamat datang di ISG Store! Platform top-up game & voucher terpercaya dengan harga terbaik.', 'image_path' => '/announcements/welcome.jpg', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
 
             // Kategori Game yang Valid (1: MLBB)
             ['category_id' => null, 'content' => 'Promo spesial MLBB! Diskon 10% untuk pembelian Diamond 240 ke atas. Berlaku hingga 30 April 2026.', 'image_path' => '/announcements/mlbb-promo.jpg', 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],

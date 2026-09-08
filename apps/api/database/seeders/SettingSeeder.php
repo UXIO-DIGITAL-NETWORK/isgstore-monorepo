@@ -17,7 +17,7 @@ class SettingSeeder extends Seeder
     {
         $settings = [
             // group, key, value, type, label, is_public
-            ['general', 'site_name', 'TopUpGame.ID', 'string', 'Site Name', true],
+            ['general', 'site_name', 'ISG Store', 'string', 'Site Name', true],
             ['general', 'site_tagline', 'Top Up Game Termurah & Tercepat', 'string', 'Tagline', true],
             ['general', 'logo', null, 'image', 'Logo', true],
             ['general', 'favicon', null, 'image', 'Favicon', true],
@@ -36,21 +36,21 @@ class SettingSeeder extends Seeder
             ['general', 'copyright_text', null, 'text', 'Copyright Text', true],
 
             ['contact', 'contact_whatsapp', '6281234567890', 'string', 'WhatsApp', true],
-            ['contact', 'contact_email', 'support@topupgame.id', 'string', 'Support Email', true],
+            ['contact', 'contact_email', 'support@isgstore.id', 'string', 'Support Email', true],
             ['contact', 'contact_address', 'Jakarta, Indonesia', 'string', 'Address', true],
             ['contact', 'operational_hours', '24 Jam', 'string', 'Operational Hours', true],
 
-            ['social', 'social_instagram', 'https://instagram.com/topupgame.id', 'string', 'Instagram', true],
-            ['social', 'social_tiktok', 'https://tiktok.com/@topupgame.id', 'string', 'TikTok', true],
-            ['social', 'social_youtube', 'https://youtube.com/@topupgameid', 'string', 'YouTube', true],
-            ['social', 'social_facebook', 'https://facebook.com/topupgameid', 'string', 'Facebook', true],
+            ['social', 'social_instagram', 'https://instagram.com/isgstore.id', 'string', 'Instagram', true],
+            ['social', 'social_tiktok', 'https://tiktok.com/@isgstore.id', 'string', 'TikTok', true],
+            ['social', 'social_youtube', 'https://youtube.com/@isgstoreid', 'string', 'YouTube', true],
+            ['social', 'social_facebook', 'https://facebook.com/isgstoreid', 'string', 'Facebook', true],
             // Left empty on purpose: the storefront renders only the networks
             // that have a URL, so an unused account is simply absent rather
             // than a dead icon.
             ['social', 'social_x', null, 'string', 'X (Twitter)', true],
             ['social', 'social_linkedin', null, 'string', 'LinkedIn', true],
 
-            ['seo', 'meta_title', 'TopUpGame.ID — Top Up Game Murah, Cepat, Aman', 'string', 'Meta Title', true],
+            ['seo', 'meta_title', 'ISG Store — Top Up Game Murah, Cepat, Aman', 'string', 'Meta Title', true],
             [
                 'seo',
                 'meta_description',
@@ -79,7 +79,7 @@ class SettingSeeder extends Seeder
 
             // Operational — never exposed publicly.
             ['operational', 'order_auto_expire_minutes', '15', 'number', 'Order Expiry (minutes)', false],
-            ['operational', 'support_notification_email', 'ops@topupgame.id', 'string', 'Ops Notification Email', false],
+            ['operational', 'support_notification_email', 'ops@isgstore.id', 'string', 'Ops Notification Email', false],
         ];
 
         foreach ($settings as [$group, $key, $value, $type, $label, $isPublic]) {

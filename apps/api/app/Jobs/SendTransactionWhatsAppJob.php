@@ -64,7 +64,7 @@ class SendTransactionWhatsAppJob implements ShouldQueue
         $product = trim(($game ? $game.' — ' : '').($t->product?->name ?? ''));
 
         $replace = [
-            'brand' => (string) config('services.storefront.brand', 'TOPUP GAME'),
+            'brand' => (string) config('services.storefront.brand', 'ISG Store'),
             'invoice' => (string) $t->invoice_number,
             'product' => $product !== '' ? $product : (string) $t->invoice_number,
             'target' => $target,

@@ -35,7 +35,7 @@ collection = {
     "info": {
         "_postman_id": "uxio-topup-platform-api-v1",
         "name": "Uxio Top-up Platform API",
-        "description": "Complete Postman collection for the Uxio Digital Network headless API. Covers Auth, Users, Master Data (Categories, Suppliers, Products), Transactions (Orders, Payments), CMS (Banners, Announcements), Leaderboard, and Activity Logs.",
+        "description": "Complete Postman collection for the ISG Store headless API. Covers Auth, Users, Master Data (Categories, Suppliers, Products), Transactions (Orders, Payments), CMS (Banners, Announcements), Leaderboard, and Activity Logs.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "variable": [
@@ -59,7 +59,7 @@ login_req = {
     "event":[{"listen":"test","script":{"exec":["var jsonData = pm.response.json();","if (jsonData.status === 'success') {","    pm.environment.set('access_token', jsonData.data.access_token);","    pm.environment.set('refresh_token', jsonData.data.refresh_token);","}"],"type":"text/javascript"}}],
     "request":{
         "method":"POST","header":hdr(),
-        "body":body({"email":"admin@uxiotopup.id","password":"uxiolabsJaya123"}),  # UserSeeder's admin
+        "body":body({"email":"admin@isgstore.id","password":"uxiolabsJaya123"}),  # UserSeeder's admin
         "url":url("v1/auth/login")
     }
 }

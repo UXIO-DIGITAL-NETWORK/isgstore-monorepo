@@ -96,9 +96,9 @@ class GameCatalogSeedTest extends TestCase
         $this->assertSame(3, User::whereNot('email', HubSystemUser::EMAIL)->count());
 
         foreach ([
-            'admin@uxiotopup.id' => RoleType::ADMIN,
-            'internal@uxiotopup.id' => RoleType::PAYMENT_INTERNAL,
-            'client@uxiotopup.id' => RoleType::PAYMENT_ADMIN,
+            'admin@isgstore.id' => RoleType::ADMIN,
+            'internal@isgstore.id' => RoleType::PAYMENT_INTERNAL,
+            'client@isgstore.id' => RoleType::PAYMENT_ADMIN,
         ] as $email => $role) {
             $user = User::where('email', $email)->first();
             $this->assertNotNull($user, "{$email} must be seeded.");
@@ -114,7 +114,7 @@ class GameCatalogSeedTest extends TestCase
         // on the role NAME — a mis-seeded role_id would pass every assertion
         // above and still lock the operator out.
         $token = $this->postJson('/api/v1/auth/login', [
-            'email' => 'admin@uxiotopup.id',
+            'email' => 'admin@isgstore.id',
             'password' => 'uxiolabsJaya123',
         ])->assertOk()->json('data.access_token');
 
@@ -144,12 +144,12 @@ class GameCatalogSeedTest extends TestCase
     {
         $this->seed();
 
-        $admin = User::where('email', 'admin@uxiotopup.id')->firstOrFail();
+        $admin = User::where('email', 'admin@isgstore.id')->firstOrFail();
         $secret = Base32::randomSecret();
         $admin->forceFill(['two_factor_secret' => $secret, 'two_factor_confirmed_at' => now()])->save();
 
         $challenge = $this->postJson('/api/v1/auth/login', [
-            'email' => 'admin@uxiotopup.id',
+            'email' => 'admin@isgstore.id',
             'password' => 'uxiolabsJaya123',
         ])->assertOk()->json('data.challenge_token');
 

@@ -32,7 +32,7 @@ class SendRefundCompletedNotificationAction
         $recipient = Phone::toE164($refund->contact_phone);
         if ($recipient !== null) {
             SendRefundWhatsAppJob::dispatch($recipient, __('refund.wa_done', [
-                'brand' => (string) config('services.storefront.brand', 'TOPUP GAME'),
+                'brand' => (string) config('services.storefront.brand', 'ISG Store'),
                 'invoice' => $refund->transaction?->invoice_number ?? $refund->refund_number,
                 'amount' => 'Rp '.number_format((int) $refund->amount, 0, ',', '.'),
                 'destination' => $this->destination($refund),

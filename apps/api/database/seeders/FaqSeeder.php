@@ -15,7 +15,7 @@ class FaqSeeder extends Seeder
     {
         $faqs = [
             [
-                'question' => 'Bagaimana cara melakukan top up di TopUpGame.ID?',
+                'question' => 'Bagaimana cara melakukan top up di ISG Store?',
                 'answer' => 'Cukup pilih game yang ingin diisi, masukkan User ID atau ID karakter, pilih nominal top up, lalu selesaikan pembayaran menggunakan metode yang tersedia. Setelah pembayaran berhasil, item atau diamond akan diproses secara otomatis.',
                 'locale' => 'id',
                 'sort_order' => 0,
@@ -45,7 +45,7 @@ class FaqSeeder extends Seeder
                 'sort_order' => 4,
             ],
             [
-                'question' => 'How do I top up at TopUpGame.ID?',
+                'question' => 'How do I top up at ISG Store?',
                 'answer' => 'Simply choose the game you want to top up, enter your User ID or character ID, select the top-up amount, then complete the payment using an available method. Once payment is successful, the item or diamond will be processed automatically.',
                 'locale' => 'en',
                 'sort_order' => 0,

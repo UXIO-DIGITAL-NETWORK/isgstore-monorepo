@@ -21,7 +21,7 @@ class GenerateInvoicePdfAction
         $target = trim(($t->target_uid ?? '').($t->target_server ? ' ('.$t->target_server.')' : ''));
 
         $data = [
-            'brand' => (string) config('services.storefront.brand', 'TOPUP GAME'),
+            'brand' => (string) config('services.storefront.brand', 'ISG Store'),
             'statusText' => $t->status instanceof \BackedEnum ? $t->status->value : (string) $t->status,
             'invoice' => $t->invoice_number,
             'gameName' => $t->product?->category?->name,

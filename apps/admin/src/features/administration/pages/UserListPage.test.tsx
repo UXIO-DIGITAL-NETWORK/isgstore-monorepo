@@ -10,7 +10,7 @@ const adminUser = (overrides: Partial<AdminUser> = {}): AdminUser => ({
   role_id: "1",
   role: "admin",
   name: "Super Admin",
-  email: "admin@uxiotopup.id",
+  email: "admin@isgstore.id",
   phone: "6281200000001",
   balance: 0,
   point: 0,

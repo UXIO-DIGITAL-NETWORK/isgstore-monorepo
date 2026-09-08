@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 interface SiteLogoProps {
   /** Height of the mark, in Tailwind sizing classes (mark and image share it). */
   className?: string;
-  /** Wordmark size; the bundled brand splits colour at "TOPUP|GAME". */
+  /** Wordmark size; the bundled brand splits colour at "ISG|STORE". */
   textClassName?: string;
   showText?: boolean;
 }
@@ -17,7 +17,7 @@ interface SiteLogoProps {
 /**
  * The brand mark, driven by the `logo` / `site_name` settings.
  *
- * The bundled gamepad mark and the two-tone "TOPUPGAME" wordmark stay as the
+ * The bundled gamepad mark and the two-tone "ISGSTORE" wordmark stay as the
  * fallback rather than being deleted: a site whose admin has not uploaded a
  * logo yet must still render a brand, and an empty header is a worse default
  * than a generic one. Once a logo is uploaded it replaces both — an uploaded
@@ -66,12 +66,12 @@ export function SiteLogo({
             siteName
           ) : (
             <>
-              TOPUP
+              ISG
               <Text
                 as="span"
                 className={cn("text-[#9234EA] font-outfit font-black", textClassName)}
               >
-                GAME
+                STORE
               </Text>
             </>
           )}
