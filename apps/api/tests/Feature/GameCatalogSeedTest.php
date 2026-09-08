@@ -98,7 +98,7 @@ class GameCatalogSeedTest extends TestCase
         foreach ([
             'admin@isgstore.id' => RoleType::ADMIN,
             'internal@isgstore.id' => RoleType::PAYMENT_INTERNAL,
-            'client@isgstore.id' => RoleType::PAYMENT_ADMIN,
+            'payment@isgstore.id' => RoleType::PAYMENT_ADMIN,
         ] as $email => $role) {
             $user = User::where('email', $email)->first();
             $this->assertNotNull($user, "{$email} must be seeded.");
