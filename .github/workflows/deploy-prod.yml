@@ -106,6 +106,7 @@ jobs:
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
           DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
+          GH_REPOSITORY: ${{ github.repository }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -115,7 +116,7 @@ jobs:
           # arahnya server → GitHub, yang ini GitHub Actions → server.
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH
+          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY
           script: |
             set -e
             # Satu base path untuk keempat app. Frontend menerima isi dist/ di
@@ -171,11 +172,15 @@ jobs:
               '  Port 443' \
               '  User git' >> ~/.ssh/config
 
-            # 0. Bootstrap: clone monorepo saat deploy pertama
+            # 0. Bootstrap: clone monorepo saat deploy pertama.
+            #    URL-nya diturunkan dari repo yang sedang menjalankan workflow
+            #    ($GH_REPOSITORY), bukan ditulis tetap: template ini dipakai
+            #    ulang per situs, dan nama repo yang ter-hardcode akan mengkloning
+            #    kode situs lain tanpa satu pun langkah yang gagal.
             if [ ! -d "$REPO_DIR/.git" ]; then
-              echo "Setup pertama: clone monorepo ke $REPO_DIR"
+              echo "Setup pertama: clone $GH_REPOSITORY ke $REPO_DIR"
               rm -rf "$REPO_DIR"
-              git clone git@github.com:UXIO-DIGITAL-NETWORK/isgstore-monorepo.git "$REPO_DIR"
+              git clone "git@github.com:${GH_REPOSITORY}.git" "$REPO_DIR"
               git -C "$REPO_DIR" checkout main
             fi
 

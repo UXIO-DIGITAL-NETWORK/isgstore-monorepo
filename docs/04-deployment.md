@@ -56,10 +56,10 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
     sudo visudo -f /etc/sudoers.d/deploy
     ```
 
-    Isinya satu baris (ganti `uxioserver1` dengan isi `SSH_USERNAME` Anda — kalau nama user-nya salah, gejalanya identik dengan tidak punya sudo sama sekali):
+    Isinya satu baris (ganti `<SSH_USERNAME>` dengan isi `SSH_USERNAME` Anda — kalau nama user-nya salah, gejalanya identik dengan tidak punya sudo sama sekali):
 
     ```
-    uxioserver1 ALL=(root) NOPASSWD: ALL
+    <SSH_USERNAME> ALL=(root) NOPASSWD: ALL
     ```
 
     Lalu `sudo chmod 0440 /etc/sudoers.d/deploy`, dan periksa ulang dengan `sudo -n true && echo OK`.
@@ -67,7 +67,7 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
     **Kenapa `ALL`, bukan daftar perintah terbatas?** Karena untuk akun deploy murni daftar terbatas tidak menambah keamanan yang berarti — alasannya di [§Catatan keamanan](#catatan-keamanan). Kalau user itu memang dipakai untuk hal lain juga sehingga harus dibatasi, daftarnya seperti ini:
 
     ```
-    uxioserver1 ALL=(root) NOPASSWD: /usr/bin/true, /usr/bin/chown, /usr/bin/chmod, \
+    <SSH_USERNAME> ALL=(root) NOPASSWD: /usr/bin/true, /usr/bin/chown, /usr/bin/chmod, \
       /usr/bin/tee /etc/supervisor/conf.d/api-prod-worker.conf, \
       /usr/bin/mkdir -p /etc/supervisor/conf.d, \
       /usr/bin/supervisorctl, /usr/bin/systemctl, \
@@ -84,22 +84,22 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
     Buat pasangannya **di mesin Anda**, bukan di server — privat-nya tidak boleh pernah tinggal di server:
 
     ```bash
-    ssh-keygen -t ed25519 -C "github-actions@<domain>" -f ~/.ssh/isgstore_deploy -N ''
+    ssh-keygen -t ed25519 -C "github-actions@<domain>" -f ~/.ssh/github_actions_deploy -N ''
     ```
 
     Pasang yang publik ke user deploy di server. Ini langkah terakhir yang masih memerlukan kata sandi user tersebut:
 
     ```bash
-    ssh-copy-id -i ~/.ssh/isgstore_deploy.pub -p <SSH_PORT> <SSH_USERNAME>@<SSH_HOST>
+    ssh-copy-id -i ~/.ssh/github_actions_deploy.pub -p <SSH_PORT> <SSH_USERNAME>@<SSH_HOST>
     ```
 
     Uji dari mesin Anda — harus masuk tanpa ditanya apa pun:
 
     ```bash
-    ssh -i ~/.ssh/isgstore_deploy -o IdentitiesOnly=yes -p <SSH_PORT> <SSH_USERNAME>@<SSH_HOST> 'echo OK'
+    ssh -i ~/.ssh/github_actions_deploy -o IdentitiesOnly=yes -p <SSH_PORT> <SSH_USERNAME>@<SSH_HOST> 'echo OK'
     ```
 
-    Lalu tempel **seluruh isi berkas privat** ke secret `SSH_PRIVATE_KEY` — `cat ~/.ssh/isgstore_deploy`, termasuk baris `-----BEGIN…`, `-----END…`, dan baris kosong di akhirnya. Kunci yang terpotong adalah penyebab paling sering dari `Permission denied (publickey)` di langkah ini.
+    Lalu tempel **seluruh isi berkas privat** ke secret `SSH_PRIVATE_KEY` — `cat ~/.ssh/github_actions_deploy`, termasuk baris `-----BEGIN…`, `-----END…`, dan baris kosong di akhirnya. Kunci yang terpotong adalah penyebab paling sering dari `Permission denied (publickey)` di langkah ini.
 12. **Matikan autentikasi kata sandi** — setelah satu deploy dengan kunci benar-benar berhasil, dan setelah memastikan Anda masih punya jalan masuk lain (sesi SSH yang sedang terbuka, atau konsol VPS dari panel penyedia). Di `/etc/ssh/sshd_config`:
 
     ```
@@ -124,11 +124,11 @@ grep -oh 'secrets\.[A-Z_0-9]*' .github/workflows/*.yml | sort -u
 |---|---|---|---|---|
 | 1 | `SSH_HOST` | ✅ | API + 3 frontend | IP atau hostname server. `203.0.113.10` |
 | 2 | `SSH_PORT` | ✅ | API + 3 frontend | Port sshd. `22` |
-| 3 | `SSH_USERNAME` | ✅ | API + 3 frontend | User SSH, pemilik direktori deploy. `uxioserver1` |
+| 3 | `SSH_USERNAME` | ✅ | API + 3 frontend | User SSH, pemilik direktori deploy. `deployer` |
 | 4 | `SSH_PRIVATE_KEY` | ✅ | API + 3 frontend | **Seluruh isi** kunci privat OpenSSH dari langkah 11, `-----BEGIN…` sampai `-----END…`. Pasangan publiknya ada di `authorized_keys` server. Bukan deploy key langkah 9 — lihat catatan di bawah |
-| 5 | `DEPLOY_BASE_PATH` | ✅ | API + 3 frontend | Induk keempat app, **tanpa** nama app. `/home/uxioserver1/web-topup-uxiotopup-provider/dist` |
+| 5 | `DEPLOY_BASE_PATH` | ✅ | API + 3 frontend | Induk keempat app, **tanpa** nama app. `/home/<SSH_USERNAME>/<nama-situs>/dist` |
 | 6 | `ENV_FILE` | ✅ | API | **Seluruh isi `.env` produksi**, bukan satu nilai. Ditulis ulang ke server tiap deploy — server bukan sumber kebenarannya, secret ini yang jadi sumber |
-| 7 | `VITE_API_BASE_URL` | ✅ | 3 frontend | Base URL API, dipakai ketiganya. `https://api.isgstore.id` |
+| 7 | `VITE_API_BASE_URL` | ✅ | 3 frontend | Base URL API, dipakai ketiganya. `https://api.contoh.id` |
 | 8 | `VITE_PUSHER_APP_KEY` | ✅ | 3 frontend | Key Pusher |
 | 9 | `VITE_PUSHER_APP_CLUSTER` | ✅ | 3 frontend | Cluster Pusher. `ap1` |
 | 10 | `VITE_GOOGLE_CLIENT_ID` | ✅ | 3 frontend | OAuth client ID Google. Dulu di-hardcode di YAML storefront |
