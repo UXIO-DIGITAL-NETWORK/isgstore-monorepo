@@ -29,7 +29,7 @@ vi.mock("../services/auth.service", () => ({
  * - The page heading reads "Sign in".
  * - The subcopy "Enter your credentials to access the admin dashboard." is present.
  * - AuthSideHero shows the "Uxiolabs Pay" wordmark and "UXIOLABS" subtitle.
- * - AuthSideHero shows a headline and subcopy describing the UDN top-up platform.
+ * - AuthSideHero shows a headline and subcopy describing the ISG Store top-up platform.
  * - No text or link related to registration exists anywhere on the page.
  * - None of the old placeholder strings remain.
  */
@@ -63,7 +63,7 @@ describe("LoginPage", () => {
     vi.mocked(authService.login).mockReturnValue(new Promise(() => {}));
 
     await renderRoute("/login");
-    await user.type(screen.getByLabelText("Email"), "admin@udn.com");
+    await user.type(screen.getByLabelText("Email"), "admin@isgstore.id");
     await user.type(screen.getByLabelText("Password"), "password123");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
@@ -101,10 +101,10 @@ describe("LoginPage", () => {
     expect(screen.getByText("UXIOLABS")).toBeInTheDocument();
   });
 
-  it("shows a hero headline and subcopy about the UDN top-up platform", async () => {
+  it("shows a hero headline and subcopy about the ISG Store top-up platform", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText(/udn top-up platform/i)).toBeInTheDocument();
+    expect(screen.getByText(/isg store top-up platform/i)).toBeInTheDocument();
     expect(screen.getByText(/top-up operations/i)).toBeInTheDocument();
   });
 

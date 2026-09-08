@@ -1,5 +1,5 @@
 {
-  "//": "Project MCP servers for the UDN Admin Dashboard. Never commit secrets — use env vars. Optional: set CONTEXT7_API_KEY in your shell for higher Context7 rate limits (free key at context7.com/dashboard).",
+  "//": "Project MCP servers for the ISG Store Admin Dashboard. Never commit secrets — use env vars. Optional: set CONTEXT7_API_KEY in your shell for higher Context7 rate limits (free key at context7.com/dashboard).",
   "mcpServers": {
     "context7": {
       "command": "npx",
@@ -20,7 +20,7 @@
     "figma": {
       "type": "http",
       "url": "https://mcp.figma.com/mcp",
-      "//": "Figma remote MCP — pull frames/tokens from the UDN Admin Dashboard file (key l7izBcDr0PtS2FUdMdHFk3; Dashboard node 22011-2008, components 22078-1614). Requires Figma auth in your client. Alternative: the local Dev Mode MCP server (http://127.0.0.1:3845/sse) if you run the Figma desktop app."
+      "//": "Figma remote MCP — pull frames/tokens from the ISG Store Admin Dashboard file (key l7izBcDr0PtS2FUdMdHFk3; Dashboard node 22011-2008, components 22078-1614). Requires Figma auth in your client. Alternative: the local Dev Mode MCP server (http://127.0.0.1:3845/sse) if you run the Figma desktop app."
     }
   }
 }

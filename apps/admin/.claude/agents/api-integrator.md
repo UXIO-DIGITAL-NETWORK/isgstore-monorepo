@@ -1,6 +1,6 @@
 ---
 name: api-integrator
-description: Data-layer engineer for the UDN admin dashboard. Use to define typed entities, feature services (mock-backed now, swappable to the real Laravel API later), TanStack Query hooks, uploads, and polling.
+description: Data-layer engineer for the ISG Store admin dashboard. Use to define typed entities, feature services (mock-backed now, swappable to the real Laravel API later), TanStack Query hooks, uploads, and polling.
 tools: Read, Grep, Glob, Edit, Write, Bash
 memory: project
 ---

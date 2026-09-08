@@ -1,10 +1,10 @@
-# CLAUDE.md — UDN Admin Dashboard
+# CLAUDE.md — ISG Store Admin Dashboard
 
 Master brief for Claude Code in this repo. It points at the deeper specs; it does **not** duplicate them.
 
 ## What this is
 
-An internal back-office SPA to manage the UDN multi-game top-up platform. **Monochrome** (shadcn `neutral`), **Inter** everywhere, **light + dark (dark default)**. Stack: **React 19 + Vite + TypeScript (strict) + Tailwind v4 (`@theme`, no config file) + shadcn/ui (`new-york`) + TanStack Router/Query/Table + Zustand + React Hook Form + Zod + Axios + recharts + sonner + next-themes**. Testing: **Vitest + React Testing Library**, TDD-first.
+An internal back-office SPA to manage the ISG Store multi-game top-up platform. **Monochrome** (shadcn `neutral`), **Inter** everywhere, **light + dark (dark default)**. Stack: **React 19 + Vite + TypeScript (strict) + Tailwind v4 (`@theme`, no config file) + shadcn/ui (`new-york`) + TanStack Router/Query/Table + Zustand + React Hook Form + Zod + Axios + recharts + sonner + next-themes**. Testing: **Vitest + React Testing Library**, TDD-first.
 
 ## Authoritative documents (read before any task)
 

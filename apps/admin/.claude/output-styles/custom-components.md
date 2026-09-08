@@ -1,10 +1,10 @@
 ---
 name: custom-components
-description: UDN admin house style — generated JSX must use the custom primitives in src/components/common (Box, Container, Text, Heading, Link, Image) and shadcn/ui, never raw HTML tags, with monochrome design tokens only. Keeps normal software-engineering behavior.
+description: ISG Store admin house style — generated JSX must use the custom primitives in src/components/common (Box, Container, Text, Heading, Link, Image) and shadcn/ui, never raw HTML tags, with monochrome design tokens only. Keeps normal software-engineering behavior.
 keep-coding-instructions: true
 ---
 
-# House Component Style (UDN Admin)
+# House Component Style (ISG Store Admin)
 
 When writing/editing React/TSX in feature/page code, **do not emit raw HTML elements**. Use the polymorphic primitives from `@/components/common`; use shadcn/ui for interactive controls. Monochrome (shadcn `neutral`) tokens only — never raw hex or palette classes.
 

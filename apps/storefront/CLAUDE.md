@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**UDN Top Up Website** is a multi-game in-game currency top-up platform built as a responsive SPA (desktop-first). The primary user flow is **guest checkout** — users complete a purchase by entering only their Game ID and WhatsApp number, without registration. Registration is optional and unlocks a Member Dashboard (transaction history, saved game IDs).
+**ISG Store Website** is a multi-game in-game currency top-up platform built as a responsive SPA (desktop-first). The primary user flow is **guest checkout** — users complete a purchase by entering only their Game ID and WhatsApp number, without registration. Registration is optional and unlocks a Member Dashboard (transaction history, saved game IDs).
 
 Payment is processed exclusively through **Monetapay** (the frontend never calls Monetapay directly — the backend proxies all communication). The app is **multi-locale** with Indonesian (`id`, default) and English (`en`), reflected as a URL prefix (e.g. `/id/checkout/mobile-legends`).
 

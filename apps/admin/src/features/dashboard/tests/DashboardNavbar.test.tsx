@@ -25,7 +25,7 @@ describe("DashboardNavbar user menu", () => {
     await renderRoute("/admin/dashboard");
 
     expect(screen.getByText("Dimas Sufyan")).toBeInTheDocument();
-    expect(screen.getByText("dimas@udn.com")).toBeInTheDocument();
+    expect(screen.getByText("dimas@isgstore.id")).toBeInTheDocument();
   });
 
   it("no longer renders the mock operator fixture identity", async () => {

@@ -1,6 +1,6 @@
 # STACK 
 
-This document describes the primary technology stack, languages, frameworks, and core dependencies used in the UDN Multi-Game Top-Up Platform platform frontend.
+This document describes the primary technology stack, languages, frameworks, and core dependencies used in the ISG Store Multi-Game Top-Up Platform platform frontend.
 
 ## Core Stack
 - **Language**: TypeScript (`~5.9.3`)

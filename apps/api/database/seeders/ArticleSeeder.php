@@ -238,7 +238,7 @@ class ArticleSeeder extends Seeder
             [
                 'slug' => 'cashback-20-top-up-udn-april',
                 'category_key' => 'promo',
-                'title' => 'Cashback 20% Setiap Top Up via UDN, Berlaku Sepanjang Bulan April',
+                'title' => 'Cashback 20% Setiap Top Up via ISG Store, Berlaku Sepanjang Bulan April',
                 'published_at' => '2026-03-25 09:00:00',
             ],
             [

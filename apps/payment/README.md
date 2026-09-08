@@ -1,6 +1,6 @@
-# UDN Admin Dashboard
+# ISG Store Admin Dashboard
 
-Internal back-office single-page application for managing the **UDN multi-game top-up platform** — monitoring, financial oversight, and transaction operations for a single Super Admin operator.
+Internal back-office single-page application for managing the **ISG Store multi-game top-up platform** — monitoring, financial oversight, and transaction operations for a single Super Admin operator.
 
 > Monochrome (shadcn `neutral`) · React 19 · TypeScript strict · Tailwind CSS v4 · TanStack Router/Query/Table
 
@@ -28,13 +28,13 @@ Internal back-office single-page application for managing the **UDN multi-game t
 
 ## Overview
 
-UDN Admin Dashboard gives a single operator ("Super Admin") a data-dense control surface to:
+ISG Store Admin Dashboard gives a single operator ("Super Admin") a data-dense control surface to:
 
 - **Monitor** platform health — balances, daily sales, revenue vs. net income trends, pending order queues, recent activity.
 - **Oversee finances** — aggregate money movement, revenue/net-income reporting, exportable financial recaps.
 - **Operate transactions** — search, filter, inspect, and act on every top-up transaction (status override, refund, re-trigger provider callback, resend receipt, export, recaps).
 
-This admin app runs against a **separate backend/service** from the public-facing "UDN Top Up Website" (the consumer platform). It does not share the consumer frontend, database, or design identity — the consumer site uses a Near-Black + Neon Violet brand; this admin uses **pure monochrome**.
+This admin app runs against a **separate backend/service** from the public-facing "ISG Store Website" (the consumer platform). It does not share the consumer frontend, database, or design identity — the consumer site uses a Near-Black + Neon Violet brand; this admin uses **pure monochrome**.
 
 ## Project Status
 
@@ -46,7 +46,7 @@ This admin app runs against a **separate backend/service** from the public-facin
 | ----------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Auth** (`features/auth`)                                        | ✅ Built                | Login/Register/Logout, token in cookie, "remember me". 2FA fields reserved, not active.                                                                                                                                                                                                                                                                            |
 | **App shell** (`DashboardLayout`, sidebar, topbar, `ThemeToggle`) | ✅ Built                | Needs the monochrome retune (see below) and full nav per the target IA.                                                                                                                                                                                                                                                                                            |
-| **Dashboard** (`features/dashboard`)                              | 🚧 Placeholder          | Currently holds **template/demo widgets** (`OverviewCards`, `PaymentsTable`, `SprintProgress`, `SubscriptionsChart`, `TeamActivity`, `TeamMembersList`, `SaleActivityChart`) that must be **replaced** with the real UDN dashboard (welcome banner, balance stat cards, Monthly Performance chart, Pending Orders, Recent Log Activity, tabbed performance table). |
+| **Dashboard** (`features/dashboard`)                              | 🚧 Placeholder          | Currently holds **template/demo widgets** (`OverviewCards`, `PaymentsTable`, `SprintProgress`, `SubscriptionsChart`, `TeamActivity`, `TeamMembersList`, `SaleActivityChart`) that must be **replaced** with the real ISG Store dashboard (welcome banner, balance stat cards, Monthly Performance chart, Pending Orders, Recent Log Activity, tabbed performance table). |
 | **Financial**                                                     | 📋 Not started          | MVP, next after Dashboard. Business logic (settlement/fees) is intentionally TBD — see PRD.                                                                                                                                                                                                                                                                        |
 | **Transaction**                                                   | 📋 Not started          | MVP, last of the three.                                                                                                                                                                                                                                                                                                                                            |
 | **Design tokens** (`src/index.css`)                               | ⚠️ Needs retune         | Currently ships shadcn's default **blue-tinted** palette. Target is true-neutral monochrome + a new `--success` token — see [`design_system.md §3.1`](.agents/context/design_system.md) for the paste-in replacement.                                                                                                                                              |
@@ -210,7 +210,7 @@ The full, authoritative rules live in [`.agents/context/system_architecture.md`]
 
 ## Design System
 
-Full spec: [`.agents/context/design_system.md`](.agents/context/design_system.md). Pixel source of truth: the [UDN Admin Dashboard Figma file](https://www.figma.com/design/l7izBcDr0PtS2FUdMdHFk3/UDN-Admin-Dashboard) (Dashboard frame `22011-2008`, components `22078-1614`).
+Full spec: [`.agents/context/design_system.md`](.agents/context/design_system.md). Pixel source of truth: the [ISG Store Admin Dashboard Figma file](https://www.figma.com/design/l7izBcDr0PtS2FUdMdHFk3/UDN-Admin-Dashboard) (Dashboard frame `22011-2008`, components `22078-1614`).
 
 - **Palette:** pure monochrome, shadcn `neutral` base color. Color is used only functionally — green (`text-success`) for positive trends, red (`text-destructive`) for negative/destructive actions, blue/green for the two chart series.
 - **Themes:** light + dark, **dark is default**. Both must reach full parity.
@@ -282,4 +282,4 @@ Full detail: [`product_requirements.md §5`](.agents/context/product_requirement
 
 ## License
 
-Proprietary — internal tool for the UDN top-up platform. Not licensed for external use or distribution.
+Proprietary — internal tool for the ISG Store top-up platform. Not licensed for external use or distribution.

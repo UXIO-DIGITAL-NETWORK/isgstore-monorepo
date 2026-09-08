@@ -26,7 +26,7 @@ export function WebsiteServicesCard({ activeUntil }: WebsiteServicesCardProps) {
         variant="small"
         className="text-muted-foreground"
       >
-        Access and manage all your services and payment gateway balance through the UDN Client Dashboard.
+        Access and manage all your services and payment gateway balance through the ISG Store Client Dashboard.
       </Text>
 
       {activeUntil && (

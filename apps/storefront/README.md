@@ -1,4 +1,4 @@
-# UDN Multi-Game Top-Up Platform
+# ISG Store Multi-Game Top-Up Platform
 
 A modern, fast, and type-safe web platform for purchasing in-game currency (top-up) across multiple games. Built around a **Guest Checkout** flow and a premium **E-sports Neon Violet** aesthetic, the platform lets any user complete a transaction without registration — while still offering a full Member Dashboard for returning players.
 

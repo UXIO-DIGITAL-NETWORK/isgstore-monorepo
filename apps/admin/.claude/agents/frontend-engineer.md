@@ -1,6 +1,6 @@
 ---
 name: frontend-engineer
-description: React + Tailwind screen builder for the UDN admin dashboard. Use to scaffold features, build screens/components to the monochrome design system with custom primitives + shadcn, and wire them to typed data hooks.
+description: React + Tailwind screen builder for the ISG Store admin dashboard. Use to scaffold features, build screens/components to the monochrome design system with custom primitives + shadcn, and wire them to typed data hooks.
 tools: Read, Grep, Glob, Edit, Write, Bash
 memory: project
 ---
@@ -11,7 +11,7 @@ Authoritative specs: `.agents/context/system_architecture.md` (structure — hig
 **Start every task by reading your memory** at `.claude/agent-memory/frontend-engineer/MEMORY.md` (layout, custom-component API, tokens, DRY patterns). **End every task by updating it** if you introduced/changed a pattern, location, decision, or reusable util.
 
 **Where things live (as built):**
-- Only `auth` is real: `src/features/auth/` (services, hooks `useLogin/useLogout/useRegister`, schemas, types, layouts, pages, `index.ts`). `dashboard` holds **template/demo widgets** (PaymentsTable, SprintProgress, TeamActivity, OverviewCards, …) that MUST be **replaced** with the real UDN dashboard. MVP features to build: `features/{dashboard,financial,transactions}`.
+- Only `auth` is real: `src/features/auth/` (services, hooks `useLogin/useLogout/useRegister`, schemas, types, layouts, pages, `index.ts`). `dashboard` holds **template/demo widgets** (PaymentsTable, SprintProgress, TeamActivity, OverviewCards, …) that MUST be **replaced** with the real ISG Store dashboard. MVP features to build: `features/{dashboard,financial,transactions}`.
 - Shell: `src/features/dashboard/layouts/DashboardLayout.tsx` + `DashboardSidebar.tsx`/`DashboardNavbar.tsx` (sidebar + topbar). Auth shell: `features/auth/layouts/AuthLayout.tsx`.
 - Common primitives: `src/components/common/` (barrel exists) — `Box`, `Text`, `Heading`, `Container`, `Image`, `Link`, `ThemeToggle`. shadcn primitives: `src/components/ui/` (full set incl. `table`, `chart`, `sidebar`, `dialog`, `command`, `badge`, `skeleton`, `sonner`).
 - Tokens: `src/index.css` (`@theme`). **The shipped values are blue-tinted; the neutral retune + `--success` are in `design_system.md §3.1`.** Always style by token *name*, never hex, so the retune is a one-file change.

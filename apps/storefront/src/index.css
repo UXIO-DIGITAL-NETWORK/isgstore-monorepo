@@ -2,7 +2,7 @@
 @import "@heroui/styles";
 
 @theme {
-  /* ── UDN Color System ───────────────────────────────────────────── */
+  /* ── ISG Store Color System ───────────────────────────────────────────── */
   --color-primary: #9234ea;           /* violet — CTA, buttons */
   --color-azure-60: #3b82f6;          /* azure — CTA gradient pair */
   --color-surface-base: #0a0a0c;      /* page background (not pure black) */

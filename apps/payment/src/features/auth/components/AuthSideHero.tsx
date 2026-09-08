@@ -28,7 +28,7 @@ export function AuthSideHero() {
           level={1}
           className="text-[64px] leading-[1.05] text-white font-extrabold tracking-tight mb-8"
         >
-          Manage the UDN top-up platform.
+          Manage the ISG Store top-up platform.
         </Heading>
 
         <Text className="text-[17px] font-medium text-slate-300 leading-relaxed max-w-md mb-8">
@@ -38,7 +38,7 @@ export function AuthSideHero() {
 
       <Box className="absolute bottom-12 left-16">
         <Text className="text-white text-xs font-medium font-mono tracking-wide">
-          © 2026 UDN. Internal use only.
+          © 2026 ISG Store. Internal use only.
         </Text>
       </Box>
     </Box>

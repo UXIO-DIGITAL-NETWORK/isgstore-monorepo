@@ -1,10 +1,10 @@
-# AGENTS.md — UDN Admin Dashboard
+# AGENTS.md — ISG Store Admin Dashboard
 
 Cross-tool overview for any coding agent. The **portable, agent-agnostic source of truth is `.agents/`**; Claude Code users also have the native `.claude/` layer and `CLAUDE.md`, which point back here. Keep all three in sync when conventions change.
 
 ## Project
 
-Internal back-office SPA for the UDN multi-game top-up platform. Monochrome (shadcn `neutral`), Inter everywhere, light + dark (dark default). React 19 + Vite + TypeScript strict + Tailwind v4 (`@theme`, no config file) + shadcn/ui + TanStack Router/Query/Table + Zustand + RHF/Zod + Axios + recharts + sonner + next-themes. Testing: Vitest + React Testing Library, TDD-first.
+Internal back-office SPA for the ISG Store multi-game top-up platform. Monochrome (shadcn `neutral`), Inter everywhere, light + dark (dark default). React 19 + Vite + TypeScript strict + Tailwind v4 (`@theme`, no config file) + shadcn/ui + TanStack Router/Query/Table + Zustand + RHF/Zod + Axios + recharts + sonner + next-themes. Testing: Vitest + React Testing Library, TDD-first.
 
 ## Read-first (precedence)
 
@@ -39,7 +39,7 @@ Knowledge: `tanstack-router`, `tailwind-v4-shadcn`, `typescript-react-strict`, `
 
 ## MCP (`.mcp.json`)
 
-`context7`, `shadcn`, `chrome-devtools`, `figma` (UDN Admin Dashboard file `l7izBcDr0PtS2FUdMdHFk3`).
+`context7`, `shadcn`, `chrome-devtools`, `figma` (ISG Store Admin Dashboard file `l7izBcDr0PtS2FUdMdHFk3`).
 
 ## Artifact protocol (strict)
 

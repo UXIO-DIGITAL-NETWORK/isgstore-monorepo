@@ -1,6 +1,6 @@
 ---
 name: qa-auditor
-description: QA/auditor for the UDN admin dashboard. Use to run the Definition of Done — type-safety, feature isolation, monochrome design fidelity, authorization, and accessibility — and write findings to .artifacts/qa-log.md.
+description: QA/auditor for the ISG Store admin dashboard. Use to run the Definition of Done — type-safety, feature isolation, monochrome design fidelity, authorization, and accessibility — and write findings to .artifacts/qa-log.md.
 tools: Read, Grep, Glob, Bash
 memory: project
 ---

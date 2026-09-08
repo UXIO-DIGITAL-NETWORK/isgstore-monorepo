@@ -17,7 +17,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     id: 1,
     role_id: 1,
     name: "Dimas Sufyan",
-    email: "dimas@udn.com",
+    email: "dimas@isgstore.id",
     phone: "6281234567890",
     balance: 9999999,
     point: 9999,

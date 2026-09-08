@@ -28,8 +28,8 @@ vi.mock("../services/auth.service", () => ({
  * Content correctness:
  * - The page heading reads "Sign in".
  * - The subcopy "Enter your credentials to access the admin dashboard." is present.
- * - AuthSideHero shows the "UDN Admin" wordmark and "UXIOLABS" subtitle.
- * - AuthSideHero shows a headline and subcopy describing the UDN top-up platform.
+ * - AuthSideHero shows the "ISG Store Admin" wordmark and "UXIOLABS" subtitle.
+ * - AuthSideHero shows a headline and subcopy describing the ISG Store top-up platform.
  * - No text or link related to registration exists anywhere on the page.
  * - None of the old placeholder strings remain.
  */
@@ -63,7 +63,7 @@ describe("LoginPage", () => {
     vi.mocked(authService.login).mockReturnValue(new Promise(() => {}));
 
     await renderRoute("/login");
-    await user.type(screen.getByLabelText("Email"), "admin@udn.com");
+    await user.type(screen.getByLabelText("Email"), "admin@isgstore.id");
     await user.type(screen.getByLabelText("Password"), "password123");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
@@ -83,7 +83,7 @@ describe("LoginPage", () => {
   it("renders the hero panel alongside the form", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText("UDN Admin")).toBeInTheDocument();
+    expect(screen.getByText("ISG Store Admin")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
   });
 
@@ -94,17 +94,17 @@ describe("LoginPage", () => {
     expect(screen.getByText("Enter your credentials to access the admin dashboard.")).toBeInTheDocument();
   });
 
-  it("shows the UDN Admin wordmark and UXIOLABS subtitle in the hero", async () => {
+  it("shows the ISG Store Admin wordmark and UXIOLABS subtitle in the hero", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText("UDN Admin")).toBeInTheDocument();
+    expect(screen.getByText("ISG Store Admin")).toBeInTheDocument();
     expect(screen.getByText("UXIOLABS")).toBeInTheDocument();
   });
 
-  it("shows a hero headline and subcopy about the UDN top-up platform", async () => {
+  it("shows a hero headline and subcopy about the ISG Store top-up platform", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText(/udn top-up platform/i)).toBeInTheDocument();
+    expect(screen.getByText(/isg store top-up platform/i)).toBeInTheDocument();
     expect(screen.getByText(/top-up operations/i)).toBeInTheDocument();
   });
 
