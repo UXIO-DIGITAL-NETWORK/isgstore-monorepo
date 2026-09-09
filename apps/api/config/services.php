@@ -54,17 +54,17 @@ return [
         ],
     ],
     'uxiolabs' => [
-        'api_key' => env('UXIOLABS_API_KEY'),
-        'base_url' => env('UXIOLABS_BASE_URL', 'https://api.uxiotopup.id'),
+        'api_key' => env('UXIOTOPUP_API_KEY'),
+        'base_url' => env('UXIOTOPUP_BASE_URL', 'https://api.uxiotopup.id'),
         // Sent as the `callback` field on every /order so uxiolabs knows where
         // to POST status updates (should point at /api/v1/uxiolabs/callback).
-        'callback_url' => env('UXIOLABS_CALLBACK_URL'),
+        'callback_url' => env('UXIOTOPUP_CALLBACK_URL'),
         // Which price tier from /service is booked as our supplier cost:
         // harga | harga_gold | harga_silver | harga_pro.
-        'price_tier' => env('UXIOLABS_PRICE_TIER', 'harga'),
+        'price_tier' => env('UXIOTOPUP_PRICE_TIER', 'harga'),
         // The webhook carries no signature — the only authentication is the
         // source IP. Comma-separated to allow extra IPs without a deploy.
-        'callback_ips' => env('UXIOLABS_CALLBACK_IP', '103.146.202.50'),
+        'callback_ips' => env('UXIOTOPUP_CALLBACK_IP', '103.146.202.50'),
     ],
 
     'discord' => [
@@ -153,6 +153,12 @@ return [
         // Hub owns: the service catalog and the channel fee schedule.
         'managed_catalog' => (bool) env('HUB_MANAGED_CATALOG', true),
         'managed_channels' => (bool) env('HUB_MANAGED_CHANNELS', true),
+        // The Hub also owns this site's own licence term, and enforcing it is
+        // what makes a lapsed or suspended site stop serving the public. This
+        // is the rollback switch for that whole mechanism: set it false and the
+        // gate goes inert, the sync stops writing, and the site bills itself as
+        // it always did.
+        'managed_licence' => (bool) env('HUB_MANAGED_LICENCE', true),
         // Real-time push of a merchant's service order to the Hub (the one
         // site→Hub write, on top of the Hub's own 5-min pull). Kill-switch that
         // defaults to on whenever the Hub is enabled; set HUB_PUSH_ORDERS=false

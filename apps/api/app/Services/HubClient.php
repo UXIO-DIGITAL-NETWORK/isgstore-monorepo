@@ -37,6 +37,42 @@ class HubClient
     }
 
     /**
+     * This site's own licence: how long it is paid up for, and whether the Hub
+     * has switched it off.
+     *
+     * An object, not a list, so it goes through its own reader — and it is the
+     * one pull that keeps working when the Hub has suspended or de-registered
+     * us. That is deliberate on the Hub's side: it is how we learn we have been
+     * switched back on.
+     *
+     * @return array<string, mixed>
+     */
+    public function licence(): array
+    {
+        $data = $this->request('/api/v1/sites/licence', 'licence');
+
+        if (array_is_list($data)) {
+            throw new Exception('Hub licence error: unexpected shape');
+        }
+
+        return $data;
+    }
+
+    /**
+     * Report a paid renewal to the Hub, which owns the term.
+     *
+     * The Hub is idempotent on our invoice number, so a retry — or a later
+     * redelivery — extends nothing twice. Throws so the calling job retries;
+     * it must never be allowed to fail the payment that triggered it.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function pushLicenceRenewal(array $payload): void
+    {
+        $this->post('/api/v1/sites/licence-renewal', $payload, 'licence renewal');
+    }
+
+    /**
      * Record a merchant's service purchase on the Hub in real time — the one
      * outbound WRITE (everything else here is a pull). The Hub upserts by
      * invoice_number, so re-sending the same order (a retry, or a later status
@@ -48,29 +84,35 @@ class HubClient
      */
     public function pushServiceOrder(array $payload): void
     {
-        $baseUrl = rtrim((string) config('services.hub.base_url'), '/');
-        $apiKey = (string) config('services.hub.api_key');
+        $this->post('/api/v1/sites/service-orders', $payload, 'service-order push');
+    }
 
-        if ($baseUrl === '' || $apiKey === '') {
-            throw new Exception('Hub belum dikonfigurasi (HUB_BASE_URL / HUB_SITE_API_KEY kosong).');
-        }
+    /**
+     * A site→Hub write. Same failure discipline as the pulls: a non-2xx or an
+     * error envelope throws, so the caller (a retrying job) can try again.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function post(string $path, array $payload, string $label): void
+    {
+        [$baseUrl, $apiKey] = $this->credentials();
 
         $response = $this->client()
             ->withHeaders(['X-Site-Key' => $apiKey])
-            ->post($baseUrl.'/api/v1/sites/service-orders', $payload);
+            ->post($baseUrl.$path, $payload);
 
         if (! $response->successful()) {
-            Log::error('Hub service-order push failed', [
+            Log::error("Hub {$label} failed", [
                 'http_status' => $response->status(),
                 'body' => $response->body(),
             ]);
-            throw new Exception("Hub service-order push error: HTTP {$response->status()}");
+            throw new Exception("Hub {$label} error: HTTP {$response->status()}");
         }
 
         if (($response->json('status') ?? null) !== 'success') {
             $message = (string) ($response->json('message') ?? 'Unexpected response');
-            Log::error('Hub service-order push error envelope', ['message' => $message]);
-            throw new Exception("Hub service-order push error: {$message}");
+            Log::error("Hub {$label} error envelope", ['message' => $message]);
+            throw new Exception("Hub {$label} error: {$message}");
         }
     }
 
@@ -113,15 +155,33 @@ class HubClient
         }
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * A pull that must be a list — the catalog and the fee schedule.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     private function get(string $path, string $label): array
     {
-        $baseUrl = rtrim((string) config('services.hub.base_url'), '/');
-        $apiKey = (string) config('services.hub.api_key');
+        $data = $this->request($path, $label);
 
-        if ($baseUrl === '' || $apiKey === '') {
-            throw new Exception('Hub belum dikonfigurasi (HUB_BASE_URL / HUB_SITE_API_KEY kosong).');
+        if (! array_is_list($data)) {
+            Log::error("Hub {$label} error envelope", ['message' => 'Expected a list']);
+            throw new Exception("Hub {$label} error: unexpected shape");
         }
+
+        return $data;
+    }
+
+    /**
+     * The shared pull. A 200-with-error-envelope is a hard failure, not an
+     * empty result: reading a refusal as "empty catalog" would deactivate every
+     * service on the next sync.
+     *
+     * @return array<mixed>
+     */
+    private function request(string $path, string $label): array
+    {
+        [$baseUrl, $apiKey] = $this->credentials();
 
         try {
             $response = $this->client()
@@ -139,7 +199,7 @@ class HubClient
             $envelope = $response->json();
             $data = $envelope['data'] ?? null;
 
-            if (($envelope['status'] ?? null) !== 'success' || ! is_array($data) || ! array_is_list($data)) {
+            if (($envelope['status'] ?? null) !== 'success' || ! is_array($data)) {
                 $message = (string) ($envelope['message'] ?? 'Unexpected response');
                 Log::error("Hub {$label} error envelope", ['message' => $message]);
                 throw new Exception("Hub {$label} error: {$message}");
@@ -150,6 +210,19 @@ class HubClient
             Log::error("Hub {$label} exception", ['message' => $e->getMessage()]);
             throw $e;
         }
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function credentials(): array
+    {
+        $baseUrl = rtrim((string) config('services.hub.base_url'), '/');
+        $apiKey = (string) config('services.hub.api_key');
+
+        if ($baseUrl === '' || $apiKey === '') {
+            throw new Exception('Hub belum dikonfigurasi (HUB_BASE_URL / HUB_SITE_API_KEY kosong).');
+        }
+
+        return [$baseUrl, $apiKey];
     }
 
     private function client(): PendingRequest
