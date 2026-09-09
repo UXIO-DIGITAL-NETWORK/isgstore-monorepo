@@ -16,6 +16,7 @@ use App\Models\ServiceSubscription;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
+use App\Support\Payment\WebsiteSubscriptionStatus;
 use App\Support\Payout\BankCatalog;
 use App\Support\Wallet\PlatformBalance;
 use App\Support\Withdrawal\WithdrawalFeeCalculator;
@@ -74,6 +75,13 @@ class HubReportController extends Controller
             // is unreachable — a summary pull must never fail because Monetapay
             // is slow.
             'gateway_balance' => $this->gatewayBalance(),
+            // This site's OWN yearly licence — not `active_subscriptions_count`
+            // above, which counts the merchants subscribed *on* this site. The
+            // Hub needs the site's own expiry to chase a renewal before the
+            // deployment lapses, and reads the identical answer the site's own
+            // sidebar card shows. Never throws: unconfigured billing is a
+            // status string, not a failed pull.
+            'website_subscription' => WebsiteSubscriptionStatus::resolve(),
             // Finance breakdown so the Hub can render the same headline cards the
             // site's own payment-internal dashboard shows. Additive to this
             // contract; older sites simply omit these keys.
