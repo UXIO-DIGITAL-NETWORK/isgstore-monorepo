@@ -153,6 +153,12 @@ return [
         // Hub owns: the service catalog and the channel fee schedule.
         'managed_catalog' => (bool) env('HUB_MANAGED_CATALOG', true),
         'managed_channels' => (bool) env('HUB_MANAGED_CHANNELS', true),
+        // The Hub also owns this site's own licence term, and enforcing it is
+        // what makes a lapsed or suspended site stop serving the public. This
+        // is the rollback switch for that whole mechanism: set it false and the
+        // gate goes inert, the sync stops writing, and the site bills itself as
+        // it always did.
+        'managed_licence' => (bool) env('HUB_MANAGED_LICENCE', true),
         // Real-time push of a merchant's service order to the Hub (the one
         // site→Hub write, on top of the Hub's own 5-min pull). Kill-switch that
         // defaults to on whenever the Hub is enabled; set HUB_PUSH_ORDERS=false

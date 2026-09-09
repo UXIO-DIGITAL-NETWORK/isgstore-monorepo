@@ -47,6 +47,11 @@ class HubSyncTriggerTest extends TestCase
         Http::fake([
             'hub.test/api/v1/sites/channel-settings' => Http::response(['status' => 'success', 'data' => $channels]),
             'hub.test/api/v1/sites/catalog' => Http::response(['status' => 'success', 'data' => $catalog]),
+            'hub.test/api/v1/sites/licence' => Http::response(['status' => 'success', 'data' => [
+                'status' => 'active',
+                'is_serving' => true,
+                'ends_at' => now()->addYear()->toIso8601String(),
+            ]]),
         ]);
     }
 
@@ -81,13 +86,16 @@ class HubSyncTriggerTest extends TestCase
         $this->assertSame(1.25, (float) PaymentChannel::where('channel_code', 'qris')->value('fee_percent'));
     }
 
-    public function test_it_defaults_to_both_targets(): void
+    public function test_it_defaults_to_every_target(): void
     {
+        // The licence joined the default set deliberately: a bare poke is the
+        // Hub saying "something of yours changed", and the one change that can
+        // switch this site off should not need to be asked for by name.
         $this->fakeHub();
 
         $this->postJson('/api/v1/hub/sync', [], ['X-Hub-Key' => self::READ])
             ->assertOk()
-            ->assertJsonPath('data.targets', ['channels', 'catalog']);
+            ->assertJsonPath('data.targets', ['channels', 'catalog', 'licence']);
     }
 
     /**
