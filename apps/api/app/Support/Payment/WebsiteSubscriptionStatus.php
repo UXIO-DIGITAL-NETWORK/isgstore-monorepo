@@ -86,7 +86,9 @@ final class WebsiteSubscriptionStatus
             'service' => $service ? [
                 'id' => $service->id,
                 'code' => $service->code,
-                'name' => $service->name,
+                // The site's own name for it, not the Hub's — see
+                // WebsiteService::label().
+                'name' => WebsiteService::label(),
             ] : null,
             'ends_at' => $endsAt?->toIso8601String(),
             'days_remaining' => $daysRemaining,

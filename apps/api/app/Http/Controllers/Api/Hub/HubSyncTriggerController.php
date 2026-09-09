@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Hub;
 
+use App\Actions\Hub\ApplyHubLicenceAction;
 use App\Actions\Hub\SyncCatalogFromHubAction;
 use App\Actions\Hub\SyncChannelSettingsFromHubAction;
 use App\Http\Controllers\Controller;
@@ -40,13 +41,14 @@ class HubSyncTriggerController extends Controller
         Request $request,
         SyncChannelSettingsFromHubAction $channels,
         SyncCatalogFromHubAction $catalog,
+        ApplyHubLicenceAction $licence,
     ) {
         $validated = $request->validate([
             'targets' => ['sometimes', 'array'],
-            'targets.*' => ['string', 'in:channels,catalog'],
+            'targets.*' => ['string', 'in:channels,catalog,licence'],
         ]);
 
-        $targets = array_values(array_unique($validated['targets'] ?? ['channels', 'catalog']));
+        $targets = array_values(array_unique($validated['targets'] ?? ['channels', 'catalog', 'licence']));
 
         $results = [];
 
@@ -57,6 +59,13 @@ class HubSyncTriggerController extends Controller
 
             if (in_array('catalog', $targets, true)) {
                 $results['catalog'] = $catalog->execute();
+            }
+
+            // The Hub pokes this one the moment an operator suspends or renews,
+            // so a client's site comes back within a second of being paid for
+            // rather than at the next five-minute tick.
+            if (in_array('licence', $targets, true)) {
+                $results['licence'] = $licence->execute();
             }
         } catch (Throwable $e) {
             Log::error('Hub sync (poked) failed', ['targets' => $targets, 'error' => $e->getMessage()]);

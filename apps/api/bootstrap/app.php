@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureCatalogNotHubManaged;
 use App\Http\Middleware\EnsureHubRequest;
 use App\Http\Middleware\EnsureHubWriteRequest;
+use App\Http\Middleware\EnsureSiteIsServing;
 use App\Http\Middleware\EnsureTwoFactorSatisfied;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentAdmin;
@@ -32,6 +33,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi();
+        // The one globally appended middleware in this app. It is global, not
+        // per-group, so a public route added later is closed by default rather
+        // than silently escaping the kill switch — see EnsureSiteIsServing for
+        // the exception list and the test that walks the whole route table.
+        $middleware->appendToGroup('api', EnsureSiteIsServing::class);
         $middleware->alias([
             // Sanctum ships this but registers no alias. Without it
             // `auth:sanctum` accepts any unexpired token no matter what it was

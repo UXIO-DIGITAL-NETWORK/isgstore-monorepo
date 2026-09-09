@@ -691,6 +691,60 @@ default) schedules nothing, calls nowhere, exposes nothing.
   `MonetapayService::balanceCacheKey()` is the shared key helper for
   cache-busting callers.
 
+### The Hub owns this site's licence (and can switch it off)
+
+`hub:sync-licence` (every **5** minutes, tighter than the 15-minute catalog sync
+because this one decides whether the site serves) pulls `GET /api/v1/sites/licence`
+and `ApplyHubLicenceAction` lands it in two places:
+
+- **The gate** — private `Setting`s in group `licence`, read through
+  `App\Support\SiteLicenceState` (cached 60s) by `EnsureSiteIsServing`.
+- **The term** — ONE `ServiceSubscription` row for `DefaultMerchant` +
+  `WebsiteService`, `service_invoice_id = null`, `source = 'hub'`, updated in
+  place. That is what makes the admin sidebar card and the client's "Langganan
+  Saya" tab show it **with no new read path**; renewals stack at the Hub, and
+  stacking the mirror too would double-count against the `MAX(ends_at)` every
+  reader uses.
+
+Rules that are load-bearing:
+
+- **`EnsureSiteIsServing` is the only globally appended middleware in this app,
+  and it is global on purpose.** Per-group would mean a public route added later
+  silently escapes the gate, and a kill switch with a hole in it is not a lever.
+  The exceptions are listed in the class, and
+  `tests/Feature/Hub/SiteAvailabilityTest` pins the **exact** unauthenticated
+  exempt set — never widen that list to make a test pass.
+- **What must never be gated:** `v1/hub/*` (the Hub could not switch the site
+  back on), `v1/auth/*` and the admin / payment-admin / payment-internal groups
+  (the client has to reach the panel where they pay), the gateway callbacks
+  (money in flight, and the path a renewal arrives on), and
+  `v1/storefront/settings` (the down-page renders the client's own branding).
+- **An unreachable Hub changes nothing.** The last synced answer stands, so a
+  Hub outage cannot darken five storefronts, and a site that never synced
+  serves. There is deliberately **no amnesty** after N hours of silence — that
+  would teach a delinquent client that blocking the Hub revives their site.
+- **`services:expire` will flip the hub row to EXPIRED overnight** once the term
+  lapses. The sync resets `status` to ACTIVE on renewal; without that a paid-up
+  site stays dark, because the sidebar card counts only ACTIVE rows.
+- **A client renewing here reports it up.** `ActivateServiceSubscriptionAction`
+  dispatches `PushLicenceRenewalJob` when the service bought is this site's own;
+  the Hub is idempotent on the invoice number. There is no pull-based backstop
+  for this one, so a permanent failure alerts Discord — an operator extending
+  the term by hand is the fallback.
+- **Rollback is `HUB_MANAGED_LICENCE=false`**: the gate goes inert, the sync
+  stops writing, and the local subscription rows keep working as before.
+
+### The site's own name, not the Hub's
+
+`hub:sync-catalog` rewrites `services.name` every 15 minutes, so the website
+service cannot be renamed locally — it is "Uxiolabs" at the Hub because that is
+what kita sells. But the client's panels are the client's own product.
+`WebsiteService::label()` resolves the display name from
+`payment.website_service_label` → `general.site_name` →
+`services.storefront.brand`, and `WebsiteSubscriptionStatus` +
+`ServiceSubscriptionResource` use it **for that one service code only**. The
+rest of the catalog keeps the Hub's names.
+
 ## Required `.env` Keys Beyond Laravel Defaults
 
 ```
@@ -715,6 +769,8 @@ HUB_BASE_URL=                     # the Hub API root, e.g. https://hub.uxiotopup
 HUB_ALLOWED_IPS=                  # optional source-IP allowlist for the Hub's pulls
 HUB_MANAGED_CATALOG=true          # local catalog writes 422 while the Hub owns the catalog
 HUB_MANAGED_CHANNELS=true         # local edits 422 for Hub-synced channels (fees + is_active + min_amount)
+HUB_MANAGED_LICENCE=true          # the Hub owns this site's licence AND can switch the public side off.
+                                  # Set false to roll the whole kill switch back — the gate goes inert.
 HUB_PUSH_ORDERS=                  # real-time service-order push to the Hub; defaults to HUB_ENABLED.
                                   # Leave UNSET — an empty value reads as false and silently disables it.
 HUB_WRITE_ENABLED=false           # money-path write channel (Hub approving/raising withdrawals, confirming invoices)

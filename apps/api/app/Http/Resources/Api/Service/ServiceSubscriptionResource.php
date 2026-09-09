@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\Service;
 
 use App\Models\ServiceSubscription;
+use App\Support\Payment\WebsiteService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,7 +17,12 @@ class ServiceSubscriptionResource extends JsonResource
             'service' => $this->whenLoaded('service', fn () => [
                 'id' => $this->service->id,
                 'code' => $this->service->code,
-                'name' => $this->service->name,
+                // This site's own subscription carries the site's own name; the
+                // rest of the catalog keeps the Hub's, because those really are
+                // kita's products. See WebsiteService::label().
+                'name' => $this->service->code === WebsiteService::code()
+                    ? WebsiteService::label()
+                    : $this->service->name,
                 'category' => $this->service->category?->value,
             ]),
             'merchant' => $this->whenLoaded('merchant', fn () => [
