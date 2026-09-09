@@ -388,14 +388,14 @@ at request time and freezes `fee`/`nett`.
 ### uxiolabs (Product Supplier)
 
 - Auth: a single `api_key` sent in every JSON request body (no signing, no dev/prod key split). The caller's server IP must additionally be whitelisted in the uxiolabs dashboard, or every call fails.
-- Endpoints (all POST JSON to `UXIOLABS_BASE_URL`, default `https://api.uxiotopup.id`): `/service` (price list), `/order`, `/status`, `/saldo`. Errors come back as HTTP 200 with `{status:false, msg}` — `UxiolabsService` rejects those envelopes rather than passing them through.
+- Endpoints (all POST JSON to `UXIOTOPUP_BASE_URL`, default `https://api.uxiotopup.id`): `/service` (price list), `/order`, `/status`, `/saldo`. Errors come back as HTTP 200 with `{status:false, msg}` — `UxiolabsService` rejects those envelopes rather than passing them through.
 - `target` sent to uxiolabs = pipe-joined `target_uid|target_server` (just the uid when there is no server) — composed by `CustomerNumberFormatter` from `categories.order_form_fields` templates like `{user_id}|{zone_id}`.
 - `invoice_number` is used as the uxiolabs `idtrx`. The order response's `data.id` is uxiolabs's OWN invoice and is persisted to `transactions.supplier_trx_id` — it is the only key `/status` accepts (there is no lookup by idtrx). `keterangan` carries the SN.
 - `kontak` (phone) is required on `/order`: member phone → `guest_contact` → `'0000000000'` fallback.
 - Duplicate `idtrx` ("idtrx sudah ada") means a previous attempt already placed the order — `UxiolabsDuplicateOrderException` is caught in `ProcessUxiolabsTransactionAction`, which settles the row to PROCESSING and waits for the callback instead of re-ordering or refunding.
-- Supplier cost = the configured tier column from `/service` (`UXIOLABS_PRICE_TIER`: harga | harga_gold | harga_silver | harga_pro, default `harga`).
+- Supplier cost = the configured tier column from `/service` (`UXIOTOPUP_PRICE_TIER`: harga | harga_gold | harga_silver | harga_pro, default `harga`).
 - Config keys: `services.uxiolabs.{api_key, base_url, callback_url, price_tier, callback_ips}`.
-- Inbound webhook (`POST /v1/uxiolabs/callback`) carries **no signature** — authenticated only by source IP against `UXIOLABS_CALLBACK_IP` (comma-separated; default `103.146.202.50`). TrustProxies must be correct behind a LB or `$request->ip()` rejects every callback. Payload is flat: `{id, idtrx, keterangan, status, url_cb}`; statuses `pending|processing|paid` → PROCESSING, `success` → COMPLETED, `cancel|refund` → FAILED_PROVIDER (+refund).
+- Inbound webhook (`POST /v1/uxiolabs/callback`) carries **no signature** — authenticated only by source IP against `UXIOTOPUP_CALLBACK_IP` (comma-separated; default `103.146.202.50`). TrustProxies must be correct behind a LB or `$request->ip()` rejects every callback. Payload is flat: `{id, idtrx, keterangan, status, url_cb}`; statuses `pending|processing|paid` → PROCESSING, `success` → COMPLETED, `cancel|refund` → FAILED_PROVIDER (+refund).
 
 ### Discord (Operational Notifications)
 
@@ -776,11 +776,11 @@ HUB_PUSH_ORDERS=                  # real-time service-order push to the Hub; def
 HUB_WRITE_ENABLED=false           # money-path write channel (Hub approving/raising withdrawals, confirming invoices)
 HUB_WRITE_API_KEY=                # the SECOND key that channel needs; minted per site in the Hub panel
 
-UXIOLABS_API_KEY=
-UXIOLABS_BASE_URL=https://api.uxiotopup.id
-UXIOLABS_CALLBACK_URL=        # points at {app}/api/v1/uxiolabs/callback; sent on every /order
-UXIOLABS_PRICE_TIER=harga     # harga | harga_gold | harga_silver | harga_pro
-UXIOLABS_CALLBACK_IP=103.146.202.50   # webhook source-IP allowlist (comma-separated)
+UXIOTOPUP_API_KEY=
+UXIOTOPUP_BASE_URL=https://api.uxiotopup.id
+UXIOTOPUP_CALLBACK_URL=        # points at {app}/api/v1/uxiolabs/callback; sent on every /order
+UXIOTOPUP_PRICE_TIER=harga     # harga | harga_gold | harga_silver | harga_pro
+UXIOTOPUP_CALLBACK_IP=103.146.202.50   # webhook source-IP allowlist (comma-separated)
 
 DISCORD_WEBHOOK_LOG_URL=   # optional
 ```

@@ -76,7 +76,7 @@ SKU yang sama akan ditolak selama produk lamanya belum di-restore atau kodenya d
 Menu: **Tools & Integrations → Uxiolabs Tools → tab "Tambah Produk"**
 
 1. Masukkan **kode layanan (service id) dari uxiolabs** (contoh: `ML86`), klik **Cek SKU**. (uxiolabs hanya prepaid — tidak ada pilihan tipe lagi.)
-2. Sistem menampilkan data dari price list uxiolabs: nama layanan, kategori, **harga modal** (tier sesuai `UXIOLABS_PRICE_TIER`), dan status ketersediaan. Jika layanan sudah pernah ditambahkan, muncul peringatan dan tidak bisa disimpan lagi.
+2. Sistem menampilkan data dari price list uxiolabs: nama layanan, kategori, **harga modal** (tier sesuai `UXIOTOPUP_PRICE_TIER`), dan status ketersediaan. Jika layanan sudah pernah ditambahkan, muncul peringatan dan tidak bisa disimpan lagi.
 3. Pilih **Kategori** (wajib). Nama & kode produk terisi otomatis — boleh diubah.
 4. Empat kolom **harga jual** (Member/VIP/Reseller/Agent) terisi otomatis dari aturan markup (Pricing Rules) sebagai saran — **ubah sesuai kebutuhan**. Kolom akan memberi peringatan merah jika harga di bawah modal.
 5. Centang **"Langsung aktif di storefront"** jika produk ingin langsung dijual, lalu **Simpan Produk**.

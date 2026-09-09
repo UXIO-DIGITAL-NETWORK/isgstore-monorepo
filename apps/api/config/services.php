@@ -54,17 +54,17 @@ return [
         ],
     ],
     'uxiolabs' => [
-        'api_key' => env('UXIOLABS_API_KEY'),
-        'base_url' => env('UXIOLABS_BASE_URL', 'https://api.uxiotopup.id'),
+        'api_key' => env('UXIOTOPUP_API_KEY'),
+        'base_url' => env('UXIOTOPUP_BASE_URL', 'https://api.uxiotopup.id'),
         // Sent as the `callback` field on every /order so uxiolabs knows where
         // to POST status updates (should point at /api/v1/uxiolabs/callback).
-        'callback_url' => env('UXIOLABS_CALLBACK_URL'),
+        'callback_url' => env('UXIOTOPUP_CALLBACK_URL'),
         // Which price tier from /service is booked as our supplier cost:
         // harga | harga_gold | harga_silver | harga_pro.
-        'price_tier' => env('UXIOLABS_PRICE_TIER', 'harga'),
+        'price_tier' => env('UXIOTOPUP_PRICE_TIER', 'harga'),
         // The webhook carries no signature — the only authentication is the
         // source IP. Comma-separated to allow extra IPs without a deploy.
-        'callback_ips' => env('UXIOLABS_CALLBACK_IP', '103.146.202.50'),
+        'callback_ips' => env('UXIOTOPUP_CALLBACK_IP', '103.146.202.50'),
     ],
 
     'discord' => [
