@@ -15,6 +15,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import { useBranding } from "@/hooks/useBranding";
 import { Box } from "@/components/common/Box";
 import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
@@ -61,6 +62,8 @@ const PAYMENT_INTERNAL_NAV: NavItem[] = [
 ];
 
 export function DashboardSidebar() {
+  const { siteName } = useBranding();
+
   const { pathname } = useLocation();
   const user = useAuthStore((state) => state.user);
   const isInternal = user?.role === ROLES.INTERNAL;
@@ -77,7 +80,7 @@ export function DashboardSidebar() {
             as="span"
             className="text-base font-semibold"
           >
-            Uxiolabs Pay
+            {siteName}
           </Text>
         </Box>
       </SidebarHeader>
