@@ -34,10 +34,26 @@ function SubscriptionCard({ subscription }: { subscription: ServiceSubscription 
       <Text
         as="span"
         variant="small"
-        className="text-success tabular-nums"
+        className={
+          subscription.days_remaining <= 14
+            ? "text-warning tabular-nums"
+            : "text-success tabular-nums"
+        }
       >
         {subscription.days_remaining} hari tersisa
       </Text>
+      {/* No invoice means the term was granted rather than bought here — the
+          website licence the Hub keeps in step. Saying so beats a blank line
+          where every other card shows a purchase. */}
+      {!subscription.invoice_number && (
+        <Text
+          as="span"
+          variant="small"
+          className="text-muted-foreground"
+        >
+          Termasuk langganan website
+        </Text>
+      )}
     </Box>
   );
 }

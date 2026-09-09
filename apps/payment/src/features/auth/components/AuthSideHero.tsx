@@ -3,8 +3,11 @@ import { Link } from "@/components/common/Link";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
+import { useBranding } from "@/hooks/useBranding";
 
 export function AuthSideHero() {
+  const { siteName } = useBranding();
+
   return (
     <Box className="hidden lg:flex w-[60%] flex-col relative px-16 py-12 justify-center text-white overflow-hidden bg-radial-[at_top_left] from-black via-neutral-800 to-white">
       <Link
@@ -13,8 +16,10 @@ export function AuthSideHero() {
       >
         <Gem className="w-8 h-8 text-white drop-shadow-md" />
         <Box>
-          <Text className="text-xl text-white font-bold tracking-tight drop-shadow-md">Uxiolabs Pay</Text>
-          <Text className="text-xs text-slate-300 tracking-wide">UXIOLABS</Text>
+          {/* The client's own name, not kita's: this is the first screen their
+              staff see every morning. */}
+          <Text className="text-xl text-white font-bold tracking-tight drop-shadow-md">{siteName}</Text>
+          <Text className="text-xs text-slate-300 tracking-wide">{siteName.toUpperCase()}</Text>
         </Box>
       </Link>
 
@@ -28,7 +33,7 @@ export function AuthSideHero() {
           level={1}
           className="text-[64px] leading-[1.05] text-white font-extrabold tracking-tight mb-8"
         >
-          Manage the UDN top-up platform.
+          Manage the {siteName} top-up platform.
         </Heading>
 
         <Text className="text-[17px] font-medium text-slate-300 leading-relaxed max-w-md mb-8">
@@ -38,7 +43,7 @@ export function AuthSideHero() {
 
       <Box className="absolute bottom-12 left-16">
         <Text className="text-white text-xs font-medium font-mono tracking-wide">
-          © 2026 UDN. Internal use only.
+          © 2026 {siteName}. Internal use only.
         </Text>
       </Box>
     </Box>

@@ -24,6 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import { useBranding } from "@/hooks/useBranding";
 import { Box } from "@/components/common/Box";
 import {
   CommandDialog,
@@ -107,6 +108,8 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 export function DashboardSidebar() {
+  const { siteName } = useBranding();
+
   const [commandOpen, setCommandOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -152,7 +155,7 @@ export function DashboardSidebar() {
                     as="span"
                     className="truncate text-[10px] font-semibold tracking-wider text-muted-foreground uppercase"
                   >
-                    UXIOLABS
+                    {siteName}
                   </Text>
                 </Box>
               </Link>
