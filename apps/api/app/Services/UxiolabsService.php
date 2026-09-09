@@ -48,7 +48,16 @@ class UxiolabsService
     /** A pending HTTP request with sane timeouts, so a stalled upstream fails fast instead of hanging the worker. */
     private function client(): PendingRequest
     {
-        return Http::timeout(self::HTTP_TIMEOUT)->connectTimeout(self::HTTP_CONNECT_TIMEOUT);
+        return Http::timeout(self::HTTP_TIMEOUT)
+            ->connectTimeout(self::HTTP_CONNECT_TIMEOUT)
+            // uxiotopup.id sits behind Cloudflare, and its allowlist is keyed on
+            // this server's IPv4 address. Left to itself curl prefers the AAAA
+            // record, so every call went out from the (unlisted) IPv6 address and
+            // came back as a Cloudflare "you have been blocked" HTML page — which
+            // surfaces here as a 502 on every price-list-backed endpoint. Pinning
+            // the resolver to IPv4 keeps the source address the one that is
+            // actually allowlisted.
+            ->withOptions(['curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]]);
     }
 
     /**

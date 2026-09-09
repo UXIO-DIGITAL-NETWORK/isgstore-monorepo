@@ -387,7 +387,7 @@ at request time and freezes `fee`/`nett`.
 
 ### uxiolabs (Product Supplier)
 
-- Auth: a single `api_key` sent in every JSON request body (no signing, no dev/prod key split). The caller's server IP must additionally be whitelisted in the uxiolabs dashboard, or every call fails.
+- Auth: a single `api_key` sent in every JSON request body (no signing, no dev/prod key split). The caller's server IP must additionally be whitelisted in the uxiolabs dashboard, or every call fails. **The allowlist is keyed on the IPv4 address, so `client()` pins `CURLOPT_IPRESOLVE` to v4** — left to itself curl prefers the AAAA record, the call goes out from an unlisted IPv6 address, and Cloudflare answers a "you have been blocked" HTML page that surfaces as a 502 on every price-list-backed endpoint.
 - Endpoints (all POST JSON to `UXIOTOPUP_BASE_URL`, default `https://api.uxiotopup.id`): `/service` (price list), `/order`, `/status`, `/saldo`. Errors come back as HTTP 200 with `{status:false, msg}` — `UxiolabsService` rejects those envelopes rather than passing them through.
 - `target` sent to uxiolabs = pipe-joined `target_uid|target_server` (just the uid when there is no server) — composed by `CustomerNumberFormatter` from `categories.order_form_fields` templates like `{user_id}|{zone_id}`.
 - `invoice_number` is used as the uxiolabs `idtrx`. The order response's `data.id` is uxiolabs's OWN invoice and is persisted to `transactions.supplier_trx_id` — it is the only key `/status` accepts (there is no lookup by idtrx). `keterangan` carries the SN.
