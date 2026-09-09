@@ -15,15 +15,23 @@ export type WebsiteSubscriptionStatus =
   /** Never subscribed. The CTA still carries a link — that is the point. */
   | "none"
   /** No default merchant or no matching service; the card renders nothing. */
-  | "unconfigured";
+  | "unconfigured"
+  /**
+   * Switched off from the Uxio Hub. Outranks every date — the storefront is
+   * already refusing customers, whatever `ends_at` says.
+   */
+  | "suspended";
 
 export interface WebsiteSubscription {
   status: WebsiteSubscriptionStatus;
   service: { id: number; code: string; name: string } | null;
   ends_at: string | null;
   days_remaining: number | null;
-  /** Deep link into Uxiolabs Pay; the client signs in there. */
+  /** Deep link into the site's payment panel; the client signs in there. */
   checkout_url: string | null;
+  /** Whether the public side is actually up. Optional — an older API omits it. */
+  is_serving?: boolean;
+  suspend_reason?: string | null;
 }
 
 export const websiteSubscriptionService = {

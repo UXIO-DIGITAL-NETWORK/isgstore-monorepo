@@ -83,7 +83,7 @@ describe("LoginPage", () => {
   it("renders the hero panel alongside the form", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText("Uxiolabs Pay")).toBeInTheDocument();
+    expect(screen.getAllByText("ISG Store").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
   });
 
@@ -94,11 +94,16 @@ describe("LoginPage", () => {
     expect(screen.getByText("Enter your credentials to access the admin dashboard.")).toBeInTheDocument();
   });
 
-  it("shows the Uxiolabs Pay wordmark and UXIOLABS subtitle in the hero", async () => {
+  it("brands the hero with the site's own name, not kita's", async () => {
+    // This panel belongs to the client. Their staff open it every morning, so
+    // it says who they are — falling back to the compiled-in name when the
+    // public settings have not loaded, never to a blank header.
     await renderRoute("/login");
 
-    expect(screen.getByText("Uxiolabs Pay")).toBeInTheDocument();
-    expect(screen.getByText("UXIOLABS")).toBeInTheDocument();
+    expect(screen.getAllByText("ISG Store").length).toBeGreaterThan(0);
+    expect(screen.getByText("ISG STORE")).toBeInTheDocument();
+    expect(screen.queryByText("Uxiolabs Pay")).not.toBeInTheDocument();
+    expect(screen.queryByText("UXIOLABS")).not.toBeInTheDocument();
   });
 
   it("shows a hero headline and subcopy about the ISG Store top-up platform", async () => {

@@ -2,6 +2,7 @@ import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestCo
 import { API_VERSION, ENV } from "@/config/env";
 import { useAuthStore } from "@/store/useAuthStore";
 import { clearClientSession } from "@/lib/session";
+import { closureFromError, setSiteClosure } from "@/lib/siteClosed";
 
 export const api = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -89,8 +90,25 @@ function redirectToLogin(): void {
 api.interceptors.response.use(
   // Unwrap to the response body, so callers work with the API envelope
   // directly instead of reaching through `response.data` every time.
-  (response) => response.data,
+  (response) => {
+    // A successful call is the site telling us it is open again — which is how
+    // the notice clears itself after the Hub re-activates, without a reload.
+    setSiteClosure(null);
+
+    return response.data;
+  },
   async (error: AxiosError) => {
+    // The Hub switched this deployment off, or its licence lapsed. Recorded
+    // before anything else: every public request is failing the same way, and
+    // the customer deserves an explanation rather than a wall of toasts.
+    const closure = closureFromError(error);
+
+    if (closure) {
+      setSiteClosure(closure);
+
+      return Promise.reject(error);
+    }
+
     const config = error.config as RetriableConfig | undefined;
     const isUnauthorized = error.response?.status === 401;
     const isAuthRequest = config?.url?.startsWith(AUTH_PATH) ?? false;

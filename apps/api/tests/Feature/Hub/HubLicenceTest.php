@@ -177,6 +177,15 @@ class HubLicenceTest extends TestCase
 
         $this->assertFalse(SiteLicenceState::isServing());
         $this->assertSame('Belum bayar', SiteLicenceState::closure()['reason']);
+
+        // And the client's own admin card says so, rather than reading "aktif,
+        // 200 hari tersisa" while their storefront answers 503 to every
+        // customer — the one screen that should explain the outage denying it.
+        $card = WebsiteSubscriptionStatus::resolve();
+        $this->assertSame('suspended', $card['status']);
+        $this->assertFalse($card['is_serving']);
+        $this->assertSame('Belum bayar', $card['suspend_reason']);
+        $this->assertNotNull($card['checkout_url']);
     }
 
     public function test_an_unreachable_hub_changes_nothing(): void

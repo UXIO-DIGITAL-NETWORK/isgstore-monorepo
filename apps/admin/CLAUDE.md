@@ -68,6 +68,15 @@ Precedence when they conflict:
 - `.claude/` — Claude Code native layer: `agents/` (subagents), `agent-memory/` (per-agent MEMORY.md — read before, update after), `commands/`, `rules/` (always-on enforcement mirrors), `skills/` (incl. vendored **impeccable**), `output-styles/custom-components.md`, `hooks/format.sh`, `settings.json`.
 - `src/` (per `system_architecture.md §3`): `features/*` (the app — isolated slices), `components/{ui,common,layouts}`, `routes/` (registry-only), `middlewares/authMiddleware.ts`, `store/`, `lib/{axios,react-query,utils}`, `types/{api.type,models}`, `config/env.ts`, `utils/`, `test/` (Vitest harness — `setup.ts`, `test-utils.tsx`), `index.css`. `routeTree.gen.ts` is generated — never hand-edit.
 
+## Branding
+
+This panel belongs to the CLIENT, not to kita. `src/hooks/useBranding.ts` reads
+`site_name` from the public `/v1/storefront/settings` (unauthenticated, so the
+login screen is branded too) and the sidebar wordmark render it — never a hardcoded
+"Uxiolabs". One deployment says "ISG Store", the next says whatever it is
+called. The fallback is a real name rather than a blank, because a header that
+flickers empty on every cold load looks broken.
+
 ## Commands
 
 | Command                       | Does                                                                        |
