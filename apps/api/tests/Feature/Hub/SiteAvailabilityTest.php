@@ -229,6 +229,12 @@ class SiteAvailabilityTest extends TestCase
             'GET api/v1/storefront/settings',
             'POST api/v1/auth/2fa/confirm',
             'POST api/v1/auth/2fa/disable',
+            // Same standing as setup/confirm above: still behind
+            // `auth:sanctum`, and an admin has to be able to move their
+            // authenticator to reach the panel where they pay to switch the
+            // site back on.
+            'POST api/v1/auth/2fa/rotate',
+            'POST api/v1/auth/2fa/rotate/confirm',
             'POST api/v1/auth/2fa/setup',
             'POST api/v1/auth/2fa/verify',
             'POST api/v1/auth/forgot-password',

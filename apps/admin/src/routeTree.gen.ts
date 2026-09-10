@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as EnrolmentRouteImport } from './routes/_enrolment'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminErrorPreviewRouteImport } from './routes/admin/error-preview'
 import { Route as AdminProtectedRouteImport } from './routes/admin/_protected'
 import { Route as AdminPreviewRouteImport } from './routes/admin/_preview'
+import { Route as EnrolmentTwoFactorSetupIndexRouteImport } from './routes/_enrolment/two-factor-setup/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
 import { Route as AdminProtectedTransactionsRouteRouteImport } from './routes/admin/_protected/transactions/route'
 import { Route as AdminProtectedProductsRouteRouteImport } from './routes/admin/_protected/products/route'
@@ -48,7 +50,7 @@ import { Route as AdminPreviewDashboardPreviewIndexRouteImport } from './routes/
 import { Route as AdminPreviewCategoriesPreviewIndexRouteImport } from './routes/admin/_preview/categories-preview/index'
 import { Route as AdminProtectedTransactionsManualIndexRouteImport } from './routes/admin/_protected/transactions/manual/index'
 import { Route as AdminProtectedTransactionsAutomaticIndexRouteImport } from './routes/admin/_protected/transactions/automatic/index'
-import { Route as AdminProtectedSecurityTwoFactorIndexRouteImport } from './routes/admin/_protected/security/two-factor/index'
+import { Route as AdminProtectedSettingsSecurityIndexRouteImport } from './routes/admin/_protected/settings/security/index'
 import { Route as AdminProtectedProductsProviderIndexRouteImport } from './routes/admin/_protected/products/provider/index'
 import { Route as AdminProtectedProductsPriceLogIndexRouteImport } from './routes/admin/_protected/products/price-log/index'
 import { Route as AdminProtectedProductsMainIndexRouteImport } from './routes/admin/_protected/products/main/index'
@@ -81,6 +83,10 @@ import { Route as AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport } 
 import { Route as AdminProtectedTransactionsManualInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/manual/$invoiceNo/edit/index'
 import { Route as AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/automatic/$invoiceNo/edit/index'
 
+const EnrolmentRoute = EnrolmentRouteImport.update({
+  id: '/_enrolment',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
@@ -105,6 +111,12 @@ const AdminPreviewRoute = AdminPreviewRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EnrolmentTwoFactorSetupIndexRoute =
+  EnrolmentTwoFactorSetupIndexRouteImport.update({
+    id: '/two-factor-setup/',
+    path: '/two-factor-setup/',
+    getParentRoute: () => EnrolmentRoute,
+  } as any)
 const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
   id: '/login/',
   path: '/login/',
@@ -308,10 +320,10 @@ const AdminProtectedTransactionsAutomaticIndexRoute =
     path: '/automatic/',
     getParentRoute: () => AdminProtectedTransactionsRouteRoute,
   } as any)
-const AdminProtectedSecurityTwoFactorIndexRoute =
-  AdminProtectedSecurityTwoFactorIndexRouteImport.update({
-    id: '/security/two-factor/',
-    path: '/security/two-factor/',
+const AdminProtectedSettingsSecurityIndexRoute =
+  AdminProtectedSettingsSecurityIndexRouteImport.update({
+    id: '/settings/security/',
+    path: '/settings/security/',
     getParentRoute: () => AdminProtectedRoute,
   } as any)
 const AdminProtectedProductsProviderIndexRoute =
@@ -512,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProtectedProductsRouteRouteWithChildren
   '/admin/transactions': typeof AdminProtectedTransactionsRouteRouteWithChildren
   '/login/': typeof AuthLoginIndexRoute
+  '/two-factor-setup/': typeof EnrolmentTwoFactorSetupIndexRoute
   '/admin/categories-preview/': typeof AdminPreviewCategoriesPreviewIndexRoute
   '/admin/dashboard-preview/': typeof AdminPreviewDashboardPreviewIndexRoute
   '/admin/finance-preview/': typeof AdminPreviewFinancePreviewIndexRoute
@@ -561,7 +574,7 @@ export interface FileRoutesByFullPath {
   '/admin/products/main/': typeof AdminProtectedProductsMainIndexRoute
   '/admin/products/price-log/': typeof AdminProtectedProductsPriceLogIndexRoute
   '/admin/products/provider/': typeof AdminProtectedProductsProviderIndexRoute
-  '/admin/security/two-factor/': typeof AdminProtectedSecurityTwoFactorIndexRoute
+  '/admin/settings/security/': typeof AdminProtectedSettingsSecurityIndexRoute
   '/admin/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
@@ -577,6 +590,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminProtectedRouteWithChildren
   '/admin/error-preview': typeof AdminErrorPreviewRoute
   '/login': typeof AuthLoginIndexRoute
+  '/two-factor-setup': typeof EnrolmentTwoFactorSetupIndexRoute
   '/admin/categories-preview': typeof AdminPreviewCategoriesPreviewIndexRoute
   '/admin/dashboard-preview': typeof AdminPreviewDashboardPreviewIndexRoute
   '/admin/finance-preview': typeof AdminPreviewFinancePreviewIndexRoute
@@ -626,7 +640,7 @@ export interface FileRoutesByTo {
   '/admin/products/main': typeof AdminProtectedProductsMainIndexRoute
   '/admin/products/price-log': typeof AdminProtectedProductsPriceLogIndexRoute
   '/admin/products/provider': typeof AdminProtectedProductsProviderIndexRoute
-  '/admin/security/two-factor': typeof AdminProtectedSecurityTwoFactorIndexRoute
+  '/admin/settings/security': typeof AdminProtectedSettingsSecurityIndexRoute
   '/admin/transactions/automatic': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
@@ -641,6 +655,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteRouteWithChildren
+  '/_enrolment': typeof EnrolmentRouteWithChildren
   '/admin/_preview': typeof AdminPreviewRouteWithChildren
   '/admin/_protected': typeof AdminProtectedRouteWithChildren
   '/admin/error-preview': typeof AdminErrorPreviewRoute
@@ -651,6 +666,7 @@ export interface FileRoutesById {
   '/admin/_protected/products': typeof AdminProtectedProductsRouteRouteWithChildren
   '/admin/_protected/transactions': typeof AdminProtectedTransactionsRouteRouteWithChildren
   '/_auth/login/': typeof AuthLoginIndexRoute
+  '/_enrolment/two-factor-setup/': typeof EnrolmentTwoFactorSetupIndexRoute
   '/admin/_preview/categories-preview/': typeof AdminPreviewCategoriesPreviewIndexRoute
   '/admin/_preview/dashboard-preview/': typeof AdminPreviewDashboardPreviewIndexRoute
   '/admin/_preview/finance-preview/': typeof AdminPreviewFinancePreviewIndexRoute
@@ -700,7 +716,7 @@ export interface FileRoutesById {
   '/admin/_protected/products/main/': typeof AdminProtectedProductsMainIndexRoute
   '/admin/_protected/products/price-log/': typeof AdminProtectedProductsPriceLogIndexRoute
   '/admin/_protected/products/provider/': typeof AdminProtectedProductsProviderIndexRoute
-  '/admin/_protected/security/two-factor/': typeof AdminProtectedSecurityTwoFactorIndexRoute
+  '/admin/_protected/settings/security/': typeof AdminProtectedSettingsSecurityIndexRoute
   '/admin/_protected/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/_protected/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/_preview/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
@@ -724,6 +740,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/transactions'
     | '/login/'
+    | '/two-factor-setup/'
     | '/admin/categories-preview/'
     | '/admin/dashboard-preview/'
     | '/admin/finance-preview/'
@@ -773,7 +790,7 @@ export interface FileRouteTypes {
     | '/admin/products/main/'
     | '/admin/products/price-log/'
     | '/admin/products/provider/'
-    | '/admin/security/two-factor/'
+    | '/admin/settings/security/'
     | '/admin/transactions/automatic/'
     | '/admin/transactions/manual/'
     | '/admin/transaction-preview/$invoiceNo/edit/'
@@ -789,6 +806,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/error-preview'
     | '/login'
+    | '/two-factor-setup'
     | '/admin/categories-preview'
     | '/admin/dashboard-preview'
     | '/admin/finance-preview'
@@ -838,7 +856,7 @@ export interface FileRouteTypes {
     | '/admin/products/main'
     | '/admin/products/price-log'
     | '/admin/products/provider'
-    | '/admin/security/two-factor'
+    | '/admin/settings/security'
     | '/admin/transactions/automatic'
     | '/admin/transactions/manual'
     | '/admin/transaction-preview/$invoiceNo/edit'
@@ -852,6 +870,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_auth'
+    | '/_enrolment'
     | '/admin/_preview'
     | '/admin/_protected'
     | '/admin/error-preview'
@@ -862,6 +881,7 @@ export interface FileRouteTypes {
     | '/admin/_protected/products'
     | '/admin/_protected/transactions'
     | '/_auth/login/'
+    | '/_enrolment/two-factor-setup/'
     | '/admin/_preview/categories-preview/'
     | '/admin/_preview/dashboard-preview/'
     | '/admin/_preview/finance-preview/'
@@ -911,7 +931,7 @@ export interface FileRouteTypes {
     | '/admin/_protected/products/main/'
     | '/admin/_protected/products/price-log/'
     | '/admin/_protected/products/provider/'
-    | '/admin/_protected/security/two-factor/'
+    | '/admin/_protected/settings/security/'
     | '/admin/_protected/transactions/automatic/'
     | '/admin/_protected/transactions/manual/'
     | '/admin/_preview/transaction-preview/$invoiceNo/edit/'
@@ -926,6 +946,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  EnrolmentRoute: typeof EnrolmentRouteWithChildren
   AdminPreviewRoute: typeof AdminPreviewRouteWithChildren
   AdminProtectedRoute: typeof AdminProtectedRouteWithChildren
   AdminErrorPreviewRoute: typeof AdminErrorPreviewRoute
@@ -933,6 +954,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_enrolment': {
+      id: '/_enrolment'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof EnrolmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth': {
       id: '/_auth'
       path: ''
@@ -967,6 +995,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AdminPreviewRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_enrolment/two-factor-setup/': {
+      id: '/_enrolment/two-factor-setup/'
+      path: '/two-factor-setup'
+      fullPath: '/two-factor-setup/'
+      preLoaderRoute: typeof EnrolmentTwoFactorSetupIndexRouteImport
+      parentRoute: typeof EnrolmentRoute
     }
     '/_auth/login/': {
       id: '/_auth/login/'
@@ -1206,11 +1241,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedTransactionsAutomaticIndexRouteImport
       parentRoute: typeof AdminProtectedTransactionsRouteRoute
     }
-    '/admin/_protected/security/two-factor/': {
-      id: '/admin/_protected/security/two-factor/'
-      path: '/security/two-factor'
-      fullPath: '/admin/security/two-factor/'
-      preLoaderRoute: typeof AdminProtectedSecurityTwoFactorIndexRouteImport
+    '/admin/_protected/settings/security/': {
+      id: '/admin/_protected/settings/security/'
+      path: '/settings/security'
+      fullPath: '/admin/settings/security/'
+      preLoaderRoute: typeof AdminProtectedSettingsSecurityIndexRouteImport
       parentRoute: typeof AdminProtectedRoute
     }
     '/admin/_protected/products/provider/': {
@@ -1445,6 +1480,18 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
 )
 
+interface EnrolmentRouteChildren {
+  EnrolmentTwoFactorSetupIndexRoute: typeof EnrolmentTwoFactorSetupIndexRoute
+}
+
+const EnrolmentRouteChildren: EnrolmentRouteChildren = {
+  EnrolmentTwoFactorSetupIndexRoute: EnrolmentTwoFactorSetupIndexRoute,
+}
+
+const EnrolmentRouteWithChildren = EnrolmentRoute._addFileChildren(
+  EnrolmentRouteChildren,
+)
+
 interface AdminPreviewCategoriesPreviewRouteRouteChildren {
   AdminPreviewCategoriesPreviewIndexRoute: typeof AdminPreviewCategoriesPreviewIndexRoute
   AdminPreviewCategoriesPreviewCategoryProviderIndexRoute: typeof AdminPreviewCategoriesPreviewCategoryProviderIndexRoute
@@ -1674,7 +1721,7 @@ interface AdminProtectedRouteChildren {
   AdminProtectedReportsIndexRoute: typeof AdminProtectedReportsIndexRoute
   AdminProtectedSettingsIndexRoute: typeof AdminProtectedSettingsIndexRoute
   AdminProtectedUsersIndexRoute: typeof AdminProtectedUsersIndexRoute
-  AdminProtectedSecurityTwoFactorIndexRoute: typeof AdminProtectedSecurityTwoFactorIndexRoute
+  AdminProtectedSettingsSecurityIndexRoute: typeof AdminProtectedSettingsSecurityIndexRoute
 }
 
 const AdminProtectedRouteChildren: AdminProtectedRouteChildren = {
@@ -1699,8 +1746,8 @@ const AdminProtectedRouteChildren: AdminProtectedRouteChildren = {
   AdminProtectedReportsIndexRoute: AdminProtectedReportsIndexRoute,
   AdminProtectedSettingsIndexRoute: AdminProtectedSettingsIndexRoute,
   AdminProtectedUsersIndexRoute: AdminProtectedUsersIndexRoute,
-  AdminProtectedSecurityTwoFactorIndexRoute:
-    AdminProtectedSecurityTwoFactorIndexRoute,
+  AdminProtectedSettingsSecurityIndexRoute:
+    AdminProtectedSettingsSecurityIndexRoute,
 }
 
 const AdminProtectedRouteWithChildren = AdminProtectedRoute._addFileChildren(
@@ -1710,6 +1757,7 @@ const AdminProtectedRouteWithChildren = AdminProtectedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  EnrolmentRoute: EnrolmentRouteWithChildren,
   AdminPreviewRoute: AdminPreviewRouteWithChildren,
   AdminProtectedRoute: AdminProtectedRouteWithChildren,
   AdminErrorPreviewRoute: AdminErrorPreviewRoute,

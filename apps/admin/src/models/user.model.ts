@@ -13,11 +13,20 @@ export interface User {
   locale: string;
   timezone: string;
   email_verified_at: string | null;
-  /** Set once the account has enrolled an authenticator. */
-  two_factor_confirmed_at?: string | null;
+  /**
+   * True once the account has enrolled an authenticator.
+   *
+   * This is the only field that answers that question. `two_factor_confirmed_at`
+   * used to be declared here too and was what the setup page actually read —
+   * but `UserResource` has never emitted it, so the check was permanently
+   * false and an enrolled admin was offered a "Start setup" that could only
+   * 409. It is gone so the mistake cannot be made twice.
+   */
   two_factor_enabled?: boolean;
   /** True for roles that must enrol before the panel opens (admins). */
   two_factor_required?: boolean;
+  /** An authenticator move that was started but never confirmed. */
+  two_factor_pending?: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -34,6 +34,10 @@ class User extends Authenticatable
             // Encrypted at rest: a database read must not hand over a shared
             // secret. Note this couples enrolment to APP_KEY — see the migration.
             'two_factor_secret' => 'encrypted',
+            // A rotation in progress. Never the secret in force — that stays in
+            // `two_factor_secret` until a code from the new device proves it.
+            'two_factor_pending_secret' => 'encrypted',
+            'two_factor_pending_created_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             'two_factor_last_used_timestep' => 'integer',
         ];

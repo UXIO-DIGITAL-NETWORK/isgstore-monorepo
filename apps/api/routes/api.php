@@ -268,6 +268,12 @@ Route::prefix('v1')->group(function () {
             Route::post('/2fa/setup', [TwoFactorController::class, 'setup']);
             Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm']);
             Route::post('/2fa/disable', [TwoFactorController::class, 'disable']);
+
+            // Moving the authenticator to another device. Throttled like the
+            // login challenge: `rotate` takes a TOTP code, so it is somewhere
+            // a hijacked session could sit and guess.
+            Route::post('/2fa/rotate', [TwoFactorController::class, 'rotate'])->middleware('throttle:two-factor');
+            Route::post('/2fa/rotate/confirm', [TwoFactorController::class, 'confirmRotation'])->middleware('throttle:two-factor');
         });
     });
 });
