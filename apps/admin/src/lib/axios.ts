@@ -47,8 +47,15 @@ type RetriableConfig = AxiosRequestConfig & { _retried?: boolean };
  * token the server has already invalidated — logging the admin out precisely
  * when the refresh was supposed to keep them in.
  */
-/** Where an admin owing a second factor is sent to enrol. */
-const TWO_FACTOR_SETUP_PATH = "/admin/security/two-factor";
+/**
+ * Where an admin owing a second factor is sent to enrol.
+ *
+ * This branch is the safety net, not the main road: the `_protected` route
+ * guard now routes on `two_factor_required`/`two_factor_enabled` before any
+ * request is fired. What still lands here is a session from before that guard
+ * existed, whose `auth_user` cookie carries no 2FA fields for it to read.
+ */
+const TWO_FACTOR_SETUP_PATH = "/two-factor-setup";
 
 let refreshInFlight: Promise<string | null> | null = null;
 

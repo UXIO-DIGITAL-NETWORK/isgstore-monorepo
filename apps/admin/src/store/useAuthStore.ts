@@ -31,6 +31,16 @@ const permissionsForRole = (roleId: number): string[] => (roleId === 1 ? ["*"] :
 // guess the lifetime and would silently up- or down-grade the session.
 const readRememberCookie = (): boolean => Cookies.get("auth_remember") === "1";
 
+/**
+ * The "remember me" choice this session was created with.
+ *
+ * Exported for the callers that re-issue a session mid-flight — enrolling or
+ * moving an authenticator revokes every token and hands back a new pair, and
+ * `setAuth` defaults `remember` to false. Passing this keeps a remembered
+ * login remembered instead of silently demoting it to a session-only one.
+ */
+export const readRememberChoice = readRememberCookie;
+
 const readUserCookie = (): User | null => {
   const raw = Cookies.get("auth_user");
   if (!raw) return null;

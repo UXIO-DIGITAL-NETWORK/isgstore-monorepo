@@ -57,6 +57,10 @@ class DisableTwoFactor extends Command
         DB::transaction(function () use ($user) {
             $user->forceFill([
                 'two_factor_secret' => null,
+                // Including an unfinished authenticator move — this is the
+                // recovery path, so it must leave nothing behind.
+                'two_factor_pending_secret' => null,
+                'two_factor_pending_created_at' => null,
                 'two_factor_confirmed_at' => null,
                 'two_factor_last_used_timestep' => null,
             ])->save();

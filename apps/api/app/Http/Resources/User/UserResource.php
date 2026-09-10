@@ -28,6 +28,10 @@ class UserResource extends JsonResource
             // to setup before firing a request that will be refused.
             'two_factor_enabled' => $this->two_factor_confirmed_at !== null,
             'two_factor_required' => strtolower((string) ($this->role?->name ?? '')) === RoleType::ADMIN->value,
+            // An authenticator move that was started but never confirmed. The
+            // panel resumes it rather than offering to start over, which would
+            // only fail against the secret already waiting.
+            'two_factor_pending' => $this->two_factor_pending_secret !== null,
             'status' => $this->status ?? 'active',
             'locale' => $this->locale,
             'timezone' => $this->timezone,

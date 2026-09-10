@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Search,
   Settings,
+  ShieldCheck,
   Star,
   Users2,
   Tag,
@@ -94,6 +95,9 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Users", href: "/admin/users", icon: Users2 },
       { label: "Settings", href: "/admin/settings", icon: Settings },
+      // Account security — the authenticator this admin holds. Previously
+      // reachable only by being thrown here from a failed request.
+      { label: "Security", href: "/admin/settings/security", icon: ShieldCheck },
     ],
   },
   {
