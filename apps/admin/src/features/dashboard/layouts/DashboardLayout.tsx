@@ -8,7 +8,9 @@ import { useTimezoneSync } from "@/hooks/useTimezoneSync";
 export function DashboardLayout() {
   // Mounted here rather than in the navbar: this layout is the one thing that
   // stays mounted for the whole admin session, and it only renders once the
-  // panel is genuinely unlocked (requireAuth + the API's two-factor gate).
+  // panel is genuinely unlocked — `_protected` runs `requireAuth` and
+  // `requireTwoFactorSatisfied` before this mounts, so an admin still owing an
+  // authenticator is on the enrolment screen instead, where no sync belongs.
   useTimezoneSync();
 
   return (

@@ -2,9 +2,21 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getBrowserTimezone } from "@/utils/getBrowserTimezone";
+import { TWO_FACTOR_SETUP_ROUTE } from "@/middlewares/authMiddleware";
+import type { User } from "@/models/user.model";
 import { authService } from "../services/auth.service";
 import type { LoginFormValues } from "../schemas/auth.schema";
 import { isTwoFactorChallenge } from "../types/auth.type";
+
+/**
+ * Where a freshly signed-in user actually belongs.
+ *
+ * The `_protected` guard would bounce an un-enrolled admin anyway, but routing
+ * straight there avoids mounting the dashboard for a frame only to throw it
+ * away — and every request that frame fires would 403.
+ */
+const landingRoute = (user: User) =>
+  user.two_factor_required && !user.two_factor_enabled ? TWO_FACTOR_SETUP_ROUTE : "/admin/dashboard";
 
 /**
  * @param onChallenge Called instead of signing in when the account owes a
@@ -26,7 +38,7 @@ export const useLogin = (onChallenge?: (challengeToken: string) => void) => {
       }
 
       setAuth(response.data, variables.remember);
-      navigate({ to: "/admin/dashboard" });
+      navigate({ to: landingRoute(response.data.user) });
     },
   });
 };
@@ -41,7 +53,7 @@ export const useVerifyTwoFactor = () => {
       authService.verifyTwoFactor(challengeToken, code),
     onSuccess: (response, variables) => {
       setAuth(response.data, variables.remember ?? false);
-      navigate({ to: "/admin/dashboard" });
+      navigate({ to: landingRoute(response.data.user) });
     },
   });
 };

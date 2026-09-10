@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Actions\Auth\TwoFactorAction;
 use App\Models\Role;
 use App\Models\TwoFactorChallenge;
 use App\Models\User;
@@ -173,18 +174,44 @@ class TwoFactorTest extends TestCase
         $secret = $this->postJson('/api/v1/auth/2fa/setup')->assertOk()->json('data.secret');
         $stale = $user->createToken('access_token', ['access-api'])->plainTextToken;
 
-        $this->postJson('/api/v1/auth/2fa/confirm', [
+        $fresh = $this->postJson('/api/v1/auth/2fa/confirm', [
             'code' => Totp::at($secret, Totp::timestep()),
-        ])->assertOk();
+        ])->assertOk()->json('data');
 
         $this->assertNotNull($user->fresh()->two_factor_confirmed_at);
 
         // `Sanctum::actingAs` pins a user onto the guard for the whole test, so
-        // clear it before judging the token itself.
+        // clear it before judging the tokens themselves.
         $this->app['auth']->forgetGuards();
 
         $this->getJson('/api/v1/user', ['Authorization' => "Bearer {$stale}"])->assertUnauthorized();
-        $this->assertSame(0, $user->fresh()->tokens()->count());
+    }
+
+    public function test_confirm_hands_back_a_working_session_so_enrolment_is_one_step(): void
+    {
+        // Enrolment is a step *inside* signing in, not an interruption to it:
+        // the panel gates the dashboard on it, so making the admin type their
+        // password a second time is friction with nothing behind it. The
+        // revocation above is what protects the account; minting afterwards only
+        // spares the person who just proved a code.
+        $user = $this->admin(enrolled: false);
+        Sanctum::actingAs($user, ['access-api']);
+
+        $secret = $this->postJson('/api/v1/auth/2fa/setup')->assertOk()->json('data.secret');
+
+        $session = $this->postJson('/api/v1/auth/2fa/confirm', [
+            'code' => Totp::at($secret, Totp::timestep()),
+        ])->assertOk()->json('data');
+
+        $this->assertNotNull($session['access_token'] ?? null);
+        $this->assertNotNull($session['refresh_token'] ?? null);
+        $this->assertTrue($session['user']['two_factor_enabled']);
+
+        $this->app['auth']->forgetGuards();
+
+        // The pair it just minted is the only one left standing.
+        $this->assertSame(2, $user->fresh()->tokens()->count());
+        $this->getJson('/api/v1/user', ['Authorization' => "Bearer {$session['access_token']}"])->assertOk();
     }
 
     public function test_confirm_refuses_a_wrong_code_and_leaves_it_off(): void
@@ -220,6 +247,208 @@ class TwoFactorTest extends TestCase
 
         $this->postJson('/api/v1/auth/2fa/disable', ['password' => self::PASSWORD])->assertOk();
         $this->assertNull($user->fresh()->two_factor_confirmed_at);
+    }
+
+    // ── Rotation (moving the authenticator to another device) ───────────────
+
+    public function test_rotation_requires_the_password_and_a_code_from_the_live_authenticator(): void
+    {
+        // A hijacked session must not be able to move the authenticator: the
+        // password stops it on its own, and the live code means whoever is
+        // asking still holds the device that is being replaced.
+        $secret = Base32::randomSecret();
+        $user = $this->admin(enrolled: true, secret: $secret);
+        Sanctum::actingAs($user, ['access-api']);
+
+        $code = Totp::at($secret, Totp::timestep());
+
+        $this->postJson('/api/v1/auth/2fa/rotate', ['password' => 'wrong', 'code' => $code])
+            ->assertUnprocessable();
+
+        $this->postJson('/api/v1/auth/2fa/rotate', ['password' => self::PASSWORD, 'code' => '000000'])
+            ->assertUnprocessable();
+
+        $this->assertNull($user->fresh()->two_factor_pending_secret);
+    }
+
+    public function test_rotation_refuses_an_account_that_has_nothing_to_move(): void
+    {
+        $user = $this->admin(enrolled: false);
+        Sanctum::actingAs($user, ['access-api']);
+
+        $this->postJson('/api/v1/auth/2fa/rotate', ['password' => self::PASSWORD, 'code' => '000000'])
+            ->assertUnprocessable();
+    }
+
+    public function test_rotation_cannot_reuse_the_code_that_was_just_spent_logging_in(): void
+    {
+        // The realistic attack on TOTP is a proxy relaying a code the victim
+        // just typed. Without the spent-timestep check that relayed code would
+        // be enough to move the authenticator to the attacker's device.
+        $secret = Base32::randomSecret();
+        $step = Totp::timestep();
+        $user = $this->admin(enrolled: true, secret: $secret);
+        $user->forceFill(['two_factor_last_used_timestep' => $step])->save();
+
+        Sanctum::actingAs($user, ['access-api']);
+
+        $this->postJson('/api/v1/auth/2fa/rotate', [
+            'password' => self::PASSWORD,
+            'code' => Totp::at($secret, $step),
+        ])->assertUnprocessable();
+
+        $this->assertNull($user->fresh()->two_factor_pending_secret);
+    }
+
+    public function test_a_started_rotation_leaves_the_old_authenticator_in_force(): void
+    {
+        // The whole reason the pending secret is its own column. An admin who
+        // closes the tab here — or scans the QR onto the wrong phone — still
+        // has a working second factor, and is not locked out of their panel.
+        $secret = Base32::randomSecret();
+        $user = $this->admin(enrolled: true, secret: $secret);
+        Sanctum::actingAs($user, ['access-api']);
+        $existing = $user->createToken('access_token', ['access-api'])->plainTextToken;
+
+        $pending = $this->postJson('/api/v1/auth/2fa/rotate', [
+            'password' => self::PASSWORD,
+            'code' => Totp::at($secret, Totp::timestep()),
+        ])->assertOk()->json('data.secret');
+
+        $user->refresh();
+
+        $this->assertNotSame($secret, $pending);
+        $this->assertSame($secret, $user->two_factor_secret, 'The live secret must be untouched.');
+        $this->assertSame($pending, $user->two_factor_pending_secret);
+        $this->assertNotNull($user->two_factor_confirmed_at, '2FA must never switch itself off mid-rotation.');
+
+        // Sessions survive too — the admin is in the middle of an act, and
+        // signing them out here is what would leave the rotation half-done.
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/v1/user', ['Authorization' => "Bearer {$existing}"])->assertOk();
+
+        // And the old device still gets through the login challenge. Reset the
+        // default guard first: `Sanctum::actingAs` points it at the sanctum
+        // request guard, which has no `attempt()` for the login endpoint to call.
+        $this->app['auth']->forgetGuards();
+        config(['auth.defaults.guard' => 'web']);
+
+        $challenge = $this->login()['challenge_token'];
+        $this->postJson('/api/v1/auth/2fa/verify', [
+            'challenge_token' => $challenge,
+            'code' => Totp::at($secret, Totp::timestep() + 1),
+        ])->assertOk();
+    }
+
+    public function test_confirming_a_rotation_promotes_the_new_secret_and_issues_a_fresh_session(): void
+    {
+        $old = Base32::randomSecret();
+        $new = Base32::randomSecret();
+        $user = $this->admin(enrolled: true, secret: $old);
+        $user->forceFill([
+            'two_factor_pending_secret' => $new,
+            'two_factor_pending_created_at' => now(),
+        ])->save();
+
+        $confirmedAt = $user->two_factor_confirmed_at;
+        Sanctum::actingAs($user, ['access-api']);
+        $stale = $user->createToken('access_token', ['access-api'])->plainTextToken;
+
+        $session = $this->postJson('/api/v1/auth/2fa/rotate/confirm', [
+            'code' => Totp::at($new, Totp::timestep()),
+        ])->assertOk()->json('data');
+
+        $user->refresh();
+
+        $this->assertSame($new, $user->two_factor_secret);
+        $this->assertNull($user->two_factor_pending_secret);
+        $this->assertNull($user->two_factor_pending_created_at);
+        // A rotation is not a new enrolment — the date 2FA has been on since
+        // is a fact about the account, not about the device.
+        $this->assertEquals($confirmedAt, $user->two_factor_confirmed_at);
+
+        $this->app['auth']->forgetGuards();
+
+        $this->getJson('/api/v1/user', ['Authorization' => "Bearer {$stale}"])->assertUnauthorized();
+        $this->getJson('/api/v1/user', ['Authorization' => "Bearer {$session['access_token']}"])->assertOk();
+    }
+
+    public function test_confirming_a_rotation_refuses_a_code_from_the_old_authenticator(): void
+    {
+        // Otherwise the confirmation proves nothing: the point of the step is
+        // evidence that the NEW device was scanned correctly.
+        $old = Base32::randomSecret();
+        $new = Base32::randomSecret();
+        $user = $this->admin(enrolled: true, secret: $old);
+        $user->forceFill([
+            'two_factor_pending_secret' => $new,
+            'two_factor_pending_created_at' => now(),
+        ])->save();
+
+        Sanctum::actingAs($user, ['access-api']);
+
+        $this->postJson('/api/v1/auth/2fa/rotate/confirm', [
+            'code' => Totp::at($old, Totp::timestep()),
+        ])->assertUnprocessable();
+
+        $this->assertSame($old, $user->fresh()->two_factor_secret);
+    }
+
+    public function test_an_abandoned_rotation_expires_instead_of_waiting_forever(): void
+    {
+        // A secret left sitting for weeks is material for a silent enrolment if
+        // the session it was created in ever leaked.
+        $old = Base32::randomSecret();
+        $new = Base32::randomSecret();
+        $user = $this->admin(enrolled: true, secret: $old);
+        $user->forceFill([
+            'two_factor_pending_secret' => $new,
+            'two_factor_pending_created_at' => now()->subMinutes(TwoFactorAction::PENDING_TTL_MINUTES + 1),
+        ])->save();
+
+        Sanctum::actingAs($user, ['access-api']);
+
+        $this->postJson('/api/v1/auth/2fa/rotate/confirm', [
+            'code' => Totp::at($new, Totp::timestep()),
+        ])->assertUnprocessable();
+
+        $user->refresh();
+        $this->assertSame($old, $user->two_factor_secret);
+        $this->assertNull($user->two_factor_pending_secret, 'The dead secret must be cleared, not left to linger.');
+    }
+
+    public function test_disabling_clears_an_unfinished_rotation(): void
+    {
+        // Otherwise the leftover pending secret attaches itself to whatever
+        // enrolment happens next.
+        $user = $this->admin(enrolled: true);
+        $user->forceFill([
+            'two_factor_pending_secret' => Base32::randomSecret(),
+            'two_factor_pending_created_at' => now(),
+        ])->save();
+
+        Sanctum::actingAs($user, ['access-api']);
+
+        $this->postJson('/api/v1/auth/2fa/disable', ['password' => self::PASSWORD])->assertOk();
+
+        $this->assertNull($user->fresh()->two_factor_pending_secret);
+    }
+
+    public function test_the_user_payload_reports_an_unfinished_rotation(): void
+    {
+        // The panel resumes a rotation rather than offering to start from
+        // scratch, which would 422 on the confirm step.
+        $user = $this->admin(enrolled: true);
+        $user->forceFill([
+            'two_factor_pending_secret' => Base32::randomSecret(),
+            'two_factor_pending_created_at' => now(),
+        ])->save();
+
+        Sanctum::actingAs($user, ['access-api']);
+
+        $this->getJson('/api/v1/user')
+            ->assertOk()
+            ->assertJsonPath('data.two_factor_pending', true);
     }
 
     // ── Enforcement ─────────────────────────────────────────────────────────
