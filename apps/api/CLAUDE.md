@@ -399,10 +399,41 @@ Key points:
 - Outbound signature: `md5(md5(TOKEN + "*|*" + sortedParams + "@!@" + timestamp))`.
 - Inbound callback: same Double MD5 algorithm, verified via `verifyCallbackSignature()` using `hash_equals()`.
 - Endpoint selection is driven by `payment_type` on `PaymentChannel`: `'qris'` → `/v1.0.0/qris`, anything else → `/v1.0.0/virtual_account`.
-- Config keys: `services.monetapay.{mch_id, collection_app_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
-- Three distinct identifiers — do not conflate them: `mch_id` is the merchant identity (only sent where the gateway expects a real `mch_id`/`parent_app_id`, e.g. `merchant_permission`, `sub_merchant`); `collection_app_id` is the pay-in `app_id` (checkout/`createTransaction`, refund, and all collection inquiries); `disbursement_app_id` is the payout `app_id`.
+- Config keys: `services.monetapay.{mch_id, sub_mch_id, collection_app_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
+- Four distinct identifiers — do not conflate them: `mch_id` is the merchant identity (only sent where the gateway expects a real `mch_id`/`parent_app_id`, e.g. `merchant_permission`, `sub_merchant`); `sub_mch_id` is the sub-merchant the site trades AS (see below); `collection_app_id` is the pay-in `app_id` (checkout/`createTransaction`, refund, and all collection inquiries); `disbursement_app_id` is the payout `app_id`.
 - `collection_app_id` has **no fallback** — set `MONETAPAY_COLLECTION_APP_ID` explicitly per environment or collection calls sign with a blank `app_id`.
 - `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement, plus the account-validation pre-payout check); defaults to `mch_id` if unset.
+
+#### Sub-merchant (`sub_mch_id`)
+
+The site trades as **one** Monetapay sub-merchant under the parent `mch_id`, on the
+parent's credentials — `sub_mch_id` is the only field that tells the gateway whose
+books a call belongs to. It is set once (`MONETAPAY_SUB_MCH_ID`, or the admin's
+"Sub-Merchant ID" field) and injected in exactly two places:
+
+- **`postSigned()`** — covers every signed endpoint (inquiries, cancel, refund,
+  subscriptions, bills, payouts) in one stroke instead of ~30 call sites. An
+  explicit `sub_mch_id` from the caller still wins, so the operator tools can
+  inspect a different sub-merchant.
+- **`createTransaction()`** — added **before** `ksort()`, so it is part of the
+  signed TreeMap. A field appended after signing travels but never verifies.
+
+Two rules follow from how Monetapay re-signs a request:
+
+- **Blank must be absent, not empty.** Monetapay drops blank fields from the
+  TreeMap it recomputes the signature over, so `sub_mch_id=` would break the sign.
+  The `array_filter` in `postSigned` and the `!== ''` guard in `createTransaction`
+  keep an unset value out entirely — which is also why leaving it blank reproduces
+  pre-sub-merchant behaviour exactly.
+- **`inquirySubMerchant()` opts out** (`withSubMch: false`). 6.7.4 asks the PARENT
+  about a registration; stamping our own `sub_mch_id` on it answers a different
+  question.
+
+`balanceCacheKey(null)` resolves through the *same* default, so the finance panel's
+read and a ping's cache-bust land on one entry rather than two that drift apart.
+Inbound callbacks naming a different `sub_mch_id` are **logged, not rejected** —
+the order is matched by our own `mch_order_no`, and refusing on a field never seen
+in a live payload would drop real payments. A warning there means the config is wrong.
 
 ### Withdrawal / Payout (Monetapay disbursement)
 
@@ -731,7 +762,9 @@ default) schedules nothing, calls nowhere, exposes nothing.
 - BCA VA is deactivated (not in the Monetapay contract; row kept for history).
 - Monetapay balance cache is keyed per `(sub_mch_id, currency)` —
   `MonetapayService::balanceCacheKey()` is the shared key helper for
-  cache-busting callers.
+  cache-busting callers, and with no argument it resolves the configured
+  sub-merchant. Never key it off an **app id**: that names an entry nothing
+  writes, and the read silently falls through to the snapshot.
 
 ### The Hub owns this site's licence (and can switch it off)
 
