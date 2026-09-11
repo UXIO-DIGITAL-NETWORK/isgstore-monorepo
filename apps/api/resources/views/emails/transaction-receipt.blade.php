@@ -115,7 +115,10 @@
                                 </tr>
                             </table>
 
-                            {{-- CTA --}}
+                            {{-- CTA. Omitted when the storefront base URL is not
+                                 publicly reachable: a dead "track your order"
+                                 button is worse than no button. --}}
+                            @if ($trackUrl)
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;">
                                 <tr>
                                     <td align="center">
@@ -127,6 +130,7 @@
                                     </td>
                                 </tr>
                             </table>
+                            @endif
 
                             {{-- Help --}}
                             <div style="margin-top:28px; padding:16px 18px; border:1px dashed rgba(255,255,255,0.15); border-radius:12px;">

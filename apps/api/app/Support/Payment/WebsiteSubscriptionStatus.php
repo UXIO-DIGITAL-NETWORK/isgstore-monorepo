@@ -7,6 +7,7 @@ namespace App\Support\Payment;
 use App\Enums\SubscriptionStatus;
 use App\Models\Service;
 use App\Models\ServiceSubscription;
+use App\Support\PublicUrl;
 use App\Support\SiteLicenceState;
 use Illuminate\Support\Carbon;
 
@@ -98,15 +99,23 @@ final class WebsiteSubscriptionStatus
         return self::payload($status, $service, $endsAt, $daysRemaining, $checkoutUrl);
     }
 
-    /** Where the client goes to pay. Null when there is no service to buy. */
+    /**
+     * Where the client goes to pay.
+     *
+     * Null when there is no service to buy — and equally when the payment page
+     * base is not an address they could open. The card already handles a null
+     * here by showing no button, which beats a button pointing at whoever
+     * deployed this.
+     */
     private static function checkoutUrl(?Service $service): ?string
     {
-        if (! $service) {
+        $base = PublicUrl::paymentPage();
+
+        if (! $service || $base === null) {
             return null;
         }
 
-        return rtrim((string) config('services.payment_page.url'), '/')
-            .'/app/payment-admin/services/'.$service->id.'/checkout';
+        return $base.'/app/payment-admin/services/'.$service->id.'/checkout';
     }
 
     /** @return array<string, mixed> */

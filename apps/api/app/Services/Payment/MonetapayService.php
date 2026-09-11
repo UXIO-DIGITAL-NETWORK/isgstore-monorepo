@@ -4,6 +4,7 @@ namespace App\Services\Payment;
 
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Phone;
+use App\Support\PublicUrl;
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -260,7 +261,16 @@ class MonetapayService
             $requestParams['product_type'] = 'PRODUCT';
             $requestParams['product_category'] = $customerData['product_category'] ?? 'General';
             $requestParams['account_phone'] = self::indonesianAccountPhone($customerData);
-            $requestParams['success_redirect_url'] = config('services.monetapay.success_redirect_url', 'https://example.com');
+            // The gateway bounces a paying customer here after an e-wallet
+            // charge, so it is one more link that must not point at a dev box
+            // or at IANA's documentation domain. Unset, the field is simply not
+            // sent — the gateway's own default applies, which beats sending a
+            // destination nobody can open.
+            $successRedirect = PublicUrl::base('services.monetapay.success_redirect_url');
+
+            if ($successRedirect !== null) {
+                $requestParams['success_redirect_url'] = $successRedirect;
+            }
             $requestParams['expire_seconds'] = '7200';
         } else {
             $requestParams['account_name'] = (string) ($customerData['customer_name'] ?? 'Guest');
