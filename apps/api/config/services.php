@@ -41,7 +41,10 @@ return [
         'disbursement_aes_key' => env('MONETAPAY_DISBURSEMENT_AES_KEY', env('MONETAPAY_AES_KEY')),
         'disbursement_aes_iv' => env('MONETAPAY_DISBURSEMENT_AES_IV', env('MONETAPAY_AES_IV')),
         'is_production' => env('MONETAPAY_IS_PRODUCTION', false),
-        'success_redirect_url' => env('MONETAPAY_SUCCESS_REDIRECT_URL', 'https://example.com'),
+        // No `https://example.com` default: this one is handed to a live
+        // payment gateway, which then bounces a paying customer to a domain
+        // IANA reserved for documentation.
+        'success_redirect_url' => env('MONETAPAY_SUCCESS_REDIRECT_URL'),
         'failed_redirect_url' => env('MONETAPAY_FAILED_REDIRECT_URL', ''),
     ],
 
@@ -73,6 +76,13 @@ return [
 
     'discord' => [
         'webhook_log_url' => env('DISCORD_WEBHOOK_LOG_URL'),
+
+        // Off outside production on purpose. A seeder run on a box whose
+        // webhook pointed at the live channel once put twenty-nine messages
+        // there in a minute — all factory data — and buried the one that
+        // needed a human. Turn this on where a staging feed is genuinely
+        // wanted; it arrives prefixed with the environment name.
+        'send_outside_production' => env('DISCORD_SEND_OUTSIDE_PRODUCTION', false),
     ],
 
     'google' => [
@@ -95,7 +105,13 @@ return [
     'storefront' => [
         // Consumer storefront base URL, used to build the "Track Order" link in
         // the receipt email. The tracker lives at /{locale}/cek-pesanan.
-        'url' => env('STOREFRONT_URL', 'http://localhost:5173'),
+        // **No default.** It used to fall back to a dev server, which meant a
+        // deployment that never set the variable sent real buyers a
+        // `http://localhost:5173/...` refund claim link — and reported the send
+        // as successful. Absent is now absent; `App\Support\PublicUrl` stops
+        // the send rather than building a dead link. `.env.example` carries the
+        // local value, which is what that file is for.
+        'url' => env('STOREFRONT_URL'),
         'brand' => env('STOREFRONT_BRAND', 'ISG Store'),
 
         // Applied by `App\Support\Phone` only to a number that carries no
@@ -110,7 +126,8 @@ return [
         // website. The admin panel builds a deep link to the checkout page from
         // this; every route there is behind a login, so the client signs in
         // with their own payment-admin account on arrival.
-        'url' => env('PAYMENT_PAGE_URL', 'http://localhost:5174'),
+        // No default, same reasoning as `storefront.url` above.
+        'url' => env('PAYMENT_PAGE_URL'),
     ],
 
     'service_invoice' => [
