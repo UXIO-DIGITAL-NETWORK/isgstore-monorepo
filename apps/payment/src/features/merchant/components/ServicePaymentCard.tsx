@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -48,6 +49,7 @@ export function ServicePaymentCard({
 
   // A lapsed attempt is not payable, and neither is a page left open past the
   // window — so the picker is what replaces the instructions in both cases.
+  const { t } = useTranslation("merchant");
   const lapsed = !payment || payment.status !== "PENDING" || payment.is_expired;
 
   if (lapsed) {
@@ -55,18 +57,18 @@ export function ServicePaymentCard({
 
     return (
       <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
-        <Heading level={3}>Pembayaran</Heading>
+        <Heading level={3}>{t("payment.title")}</Heading>
         <Text
           variant="small"
           className="text-muted-foreground"
         >
           {payment
-            ? "Pembayaran sebelumnya sudah kedaluwarsa. Pilih metode untuk membuat pembayaran baru."
-            : "Belum ada pembayaran yang dibuka. Pilih metode untuk melanjutkan."}
+            ? t("payment.lapsed")
+            : t("payment.notOpened")}
         </Text>
 
         <Box className="flex flex-col gap-3">
-          <Label>Metode Pembayaran</Label>
+          <Label>{t("payment.method")}</Label>
           <PaymentChannelPicker
             channels={channels}
             selectedId={channel?.id ?? null}
@@ -77,11 +79,11 @@ export function ServicePaymentCard({
 
         <Box className="flex flex-col gap-2 border-t border-border pt-4">
           <Row
-            label="Biaya Admin"
+            label={t("payment.adminFee")}
             value={money(adminFee)}
           />
           <Row
-            label="Total"
+            label={t("payment.total")}
             value={money(amount + adminFee)}
           />
         </Box>
@@ -90,7 +92,7 @@ export function ServicePaymentCard({
           disabled={!channel || isReopening}
           onClick={() => channel && onReopen(channel)}
         >
-          {isReopening ? "Memproses…" : "Buat Pembayaran"}
+          {isReopening ? t("payment.creating") : t("payment.create")}
         </Button>
       </Box>
     );
@@ -99,7 +101,7 @@ export function ServicePaymentCard({
   return (
     <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
       <Box className="flex flex-wrap items-center justify-between gap-2">
-        <Heading level={3}>Pembayaran</Heading>
+        <Heading level={3}>{t("payment.title")}</Heading>
         <Text
           as="span"
           variant="small"
@@ -114,21 +116,21 @@ export function ServicePaymentCard({
           <Box
             as="img"
             src={qrDataUrl}
-            alt="Kode QRIS untuk pembayaran"
+            alt={t("payment.qrAlt")}
             className="h-48 w-48 rounded-xl border border-border bg-white p-2"
           />
           <Text
             variant="small"
             className="text-muted-foreground"
           >
-            Pindai dengan aplikasi pembayaran apa pun yang mendukung QRIS.
+            {t("payment.qrHint")}
           </Text>
         </Box>
       )}
 
       {instructions?.virtual_account && (
         <Row
-          label={`Nomor VA${instructions.bank_code ? ` ${instructions.bank_code}` : ""}`}
+          label={`${t("payment.vaNumber")}${instructions.bank_code ? ` ${instructions.bank_code}` : ""}`}
           value={instructions.virtual_account}
           copyable
         />
@@ -140,30 +142,30 @@ export function ServicePaymentCard({
           target="_blank"
           rel="noreferrer"
         >
-          <Button className="w-full">Lanjutkan ke Aplikasi Pembayaran</Button>
+          <Button className="w-full">{t("payment.continueToApp")}</Button>
         </Link>
       )}
 
       <Box className="flex flex-col gap-2 border-t border-border pt-4">
         <Row
-          label="Nominal"
+          label={t("payment.amount")}
           value={money(payment.amount)}
         />
         {payment.admin_fee > 0 && (
           <Row
-            label="Biaya Admin"
+            label={t("payment.adminFee")}
             value={money(payment.admin_fee)}
           />
         )}
         <Row
-          label="Total Bayar"
+          label={t("payment.totalDue")}
           value={money(payment.total)}
           copyable
           copyValue={String(payment.total)}
         />
         {payment.expires_at && (
           <Row
-            label="Bayar sebelum"
+            label={t("payment.payBefore")}
             value={<Countdown until={payment.expires_at} />}
           />
         )}
@@ -173,7 +175,7 @@ export function ServicePaymentCard({
         variant="small"
         className="text-muted-foreground"
       >
-        Halaman ini memperbarui sendiri begitu pembayaran diterima.
+        {t("payment.autoRefresh")}
       </Text>
     </Box>
   );
@@ -224,6 +226,7 @@ function Row({
  * serves to flip this component over to the re-open state on the next poll.
  */
 function Countdown({ until }: { until: string }) {
+  const { t } = useTranslation("merchant");
   // Held together with the deadline it was measured against, so a new deadline
   // is reflected in the same render it arrives — no reset from inside an
   // effect, which would cost a cascading render every second.
@@ -237,7 +240,7 @@ function Countdown({ until }: { until: string }) {
 
   const remaining = tick.until === until ? tick.remaining : secondsUntil(until);
 
-  if (remaining <= 0) return <>Kedaluwarsa</>;
+  if (remaining <= 0) return <>{t("payment.expired")}</>;
 
   const minutes = Math.floor(remaining / 60);
   const seconds = remaining % 60;

@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Box } from "@/components/common/Box";
@@ -13,10 +14,14 @@ import type { PoolCandidate } from "../types/product.type";
  * visible (so the admin can see the catalogue is covered) but is not selectable,
  * which is what stops the same SKU being added twice.
  */
-export const poolCandidateColumns: ColumnDef<PoolCandidate>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const poolCandidateColumnsFor = (t: TFunction<"products">): ColumnDef<PoolCandidate>[] => [
   {
     accessorKey: "name",
-    header: "Service",
+    header: t("colService"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -37,7 +42,7 @@ export const poolCandidateColumns: ColumnDef<PoolCandidate>[] = [
   },
   {
     accessorKey: "provider_category",
-    header: "Provider Category",
+    header: t("colProviderCategoryHeader"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text as="span">{row.original.provider_category}</Text>
@@ -53,7 +58,7 @@ export const poolCandidateColumns: ColumnDef<PoolCandidate>[] = [
   },
   {
     accessorKey: "cost",
-    header: "Cost",
+    header: t("cost"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -65,16 +70,16 @@ export const poolCandidateColumns: ColumnDef<PoolCandidate>[] = [
   },
   {
     id: "state",
-    header: "State",
+    header: t("colState"),
     cell: ({ row }) => {
       const { already_promoted, already_pooled, is_new, available } = row.original;
 
       return (
         <Box className="flex flex-wrap items-center gap-1.5">
-          {already_promoted && <Badge variant="secondary">In catalogue</Badge>}
-          {already_pooled && !already_promoted && <Badge variant="secondary">In pool</Badge>}
-          {!already_pooled && is_new && <Badge variant="outline">New</Badge>}
-          {!available && <Badge variant="destructive">Unavailable</Badge>}
+          {already_promoted && <Badge variant="secondary">{t("inCatalogue")}</Badge>}
+          {already_pooled && !already_promoted && <Badge variant="secondary">{t("inPool")}</Badge>}
+          {!already_pooled && is_new && <Badge variant="outline">{t("newBadge")}</Badge>}
+          {!available && <Badge variant="destructive">{t("unavailable")}</Badge>}
         </Box>
       );
     },

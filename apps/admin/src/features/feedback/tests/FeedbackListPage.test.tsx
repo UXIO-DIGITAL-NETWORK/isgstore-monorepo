@@ -14,7 +14,7 @@ describe("FeedbackListPage", () => {
   });
 
   it("renders the header and the feedback table columns", async () => {
-    renderRoute("/admin/feedback");
+    await renderRoute("/admin/feedback");
 
     expect(await screen.findByRole("heading", { name: /feedback/i })).toBeInTheDocument();
 
@@ -25,7 +25,7 @@ describe("FeedbackListPage", () => {
   });
 
   it("shows a member review and a guest review with its badge", async () => {
-    renderRoute("/admin/feedback");
+    await renderRoute("/admin/feedback");
 
     expect(await screen.findByText("Budi Santoso")).toBeInTheDocument();
     expect(screen.getByText("Guest K48213")).toBeInTheDocument();

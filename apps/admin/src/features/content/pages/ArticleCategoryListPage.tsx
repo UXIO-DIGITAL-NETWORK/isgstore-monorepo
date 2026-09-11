@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
@@ -11,6 +12,7 @@ import { useArticleCategoryList, useDeleteArticleCategories } from "../hooks/use
 const DEFAULT_PAGE_SIZE = 10;
 
 export function ArticleCategoryListPage() {
+  const { t } = useTranslation("content");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -31,15 +33,15 @@ export function ArticleCategoryListPage() {
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
   const columns = useMemo(
-    () => articleCategoryColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
-    [deleteRows],
+    () => articleCategoryColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id), t),
+    [deleteRows, t],
   );
 
   return (
     <>
       <ContentListShell
-        title="Article Categories"
-        description="The category pills the storefront filters articles by. The key is the stable identifier."
+        title={t("articleCategoriesTitle")}
+        description={t("articleCategoriesSubtitle")}
         toolbar={
           <ContentToolbar
             idPrefix="article-category"
@@ -63,8 +65,8 @@ export function ArticleCategoryListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="categories"
-            emptyMessage="No categories yet."
+            entityLabel={t("articleCategoriesEntity")}
+            emptyMessage={t("articleCategoriesEmpty")}
             showRowNumber
             enableSelection
             onSelectionChange={handleSelectionChange}
@@ -85,7 +87,7 @@ export function ArticleCategoryListPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
-        description="This action cannot be undone. The selected rows will be removed from the storefront."
+        description={t("irreversible")}
         onConfirm={() => deleteRows.mutate(selectedIds)}
       />
 

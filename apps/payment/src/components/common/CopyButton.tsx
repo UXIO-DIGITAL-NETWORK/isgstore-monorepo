@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
@@ -17,7 +18,9 @@ interface CopyButtonProps {
 }
 
 /** Copies a value to the clipboard and says so, briefly. */
-export function CopyButton({ value, getValue, label = "Nilai" }: CopyButtonProps) {
+export function CopyButton({ value, getValue, label }: CopyButtonProps) {
+  const { t } = useTranslation("common");
+  const name = label ?? t("copy.defaultLabel");
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -31,18 +34,18 @@ export function CopyButton({ value, getValue, label = "Nilai" }: CopyButtonProps
       // Absent in jsdom and over plain HTTP; failing loudly here would be
       // worse than telling the user to copy manually.
       if (!navigator.clipboard?.writeText) {
-        toast.error("Clipboard tidak tersedia di browser ini");
+        toast.error(t("toast.clipboardUnavailable"));
         return;
       }
 
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.success(`${label} disalin`);
+      toast.success(t("copy.copied", { label: name }));
 
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error(`Gagal menyalin ${label.toLowerCase()}`);
+      toast.error(t("copy.failed", { label: name.toLowerCase() }));
     }
   };
 
@@ -52,7 +55,7 @@ export function CopyButton({ value, getValue, label = "Nilai" }: CopyButtonProps
       size="icon"
       variant="ghost"
       className="size-7"
-      aria-label={`Salin ${label}`}
+      aria-label={t("copy.aria", { label: name })}
       onClick={copy}
     >
       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "@tanstack/react-router";
 
 import { Box } from "@/components/common/Box";
@@ -5,11 +6,11 @@ import { Link } from "@/components/common/Link";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TAB_SEGMENTS = [
-  { value: "category", label: "Category", segment: "category" },
-  { value: "sub-category", label: "Sub Category", segment: "sub-category" },
-  { value: "category-type", label: "Category Type", segment: "category-type" },
-  { value: "category-server", label: "Category Server", segment: "category-server" },
-  { value: "category-provider", label: "Category Provider", segment: "category-provider" },
+  { value: "category", labelKey: "category", segment: "category" },
+  { value: "sub-category", labelKey: "tabSubCategory", segment: "sub-category" },
+  { value: "category-type", labelKey: "colCategoryType", segment: "category-type" },
+  { value: "category-server", labelKey: "tabCategoryServer", segment: "category-server" },
+  { value: "category-provider", labelKey: "tabCategoryProvider", segment: "category-provider" },
 ];
 
 const PREVIEW_BASE = "/admin/categories-preview";
@@ -30,6 +31,7 @@ const REAL_BASE = "/admin/categories";
  * "/admin/categories".
  */
 export function CategoryTabsLayout() {
+  const { t } = useTranslation("categories");
   const { pathname } = useLocation();
   const base = pathname.startsWith(PREVIEW_BASE) ? PREVIEW_BASE : REAL_BASE;
   const activeSegment = pathname.slice(base.length).split("/").filter(Boolean)[0];
@@ -47,7 +49,7 @@ export function CategoryTabsLayout() {
                 value={tab.value}
                 asChild
               >
-                <Link href={`${base}/${tab.segment}`}>{tab.label}</Link>
+                <Link href={`${base}/${tab.segment}`}>{t(tab.labelKey)}</Link>
               </TabsTrigger>
             ))}
           </TabsList>

@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Clock } from "lucide-react";
@@ -25,18 +26,22 @@ import { ProviderStatusBadge } from "./ProviderStatusBadge";
 function resolvedOutcome(
   provider: Transaction["provider_status"],
   payment: Transaction["payment_status"],
-): { label: string; className: string } {
-  if (provider === "delivered") return { label: "Delivered", className: "text-success" };
+): { labelKey: string; className: string } {
+  if (provider === "delivered") return { labelKey: "badgeDelivered", className: "text-success" };
   if (provider === "rejected" || provider === "undelivered")
-    return { label: "Failed", className: "text-destructive" };
-  if (payment === "expired") return { label: "Expired", className: "text-muted-foreground" };
-  return { label: "Resolved", className: "text-muted-foreground" };
+    return { labelKey: "pillFailed", className: "text-destructive" };
+  if (payment === "expired") return { labelKey: "badgeExpired", className: "text-muted-foreground" };
+  return { labelKey: "badgeResolved", className: "text-muted-foreground" };
 }
 
-export const automaticColumns: ColumnDef<Transaction>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const automaticColumnsFor = (t: TFunction<"transactions">): ColumnDef<Transaction>[] => [
   {
     accessorKey: "invoice_no",
-    header: "Invoice No.",
+    header: t("invoiceNo"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -58,7 +63,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "user",
-    header: "User",
+    header: t("colUser"),
     cell: ({ row }) => {
       const { customer } = row.original;
       return (
@@ -94,7 +99,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "product",
-    header: "Product",
+    header: t("product"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text as="span">{row.original.product.name}</Text>
@@ -109,7 +114,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "cost",
-    header: "Cost",
+    header: t("colCost"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -137,7 +142,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   },
   {
     accessorKey: "target_ref",
-    header: "Target",
+    header: t("colTarget"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text as="span">{row.original.target_ref ?? "—"}</Text>
@@ -151,7 +156,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "payment_status",
-    header: "Payment",
+    header: t("capPayment"),
     cell: ({ row }) => <PaymentStatusBadge status={row.original.payment_status} />,
   },
   {
@@ -159,12 +164,12 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
     // already but named neither, so a green "Success" over an amber
     // "Processing" gave an operator no way to tell which half was which.
     id: "provider_status",
-    header: "Provider",
+    header: t("colProvider"),
     cell: ({ row }) => <ProviderStatusBadge status={row.original.provider_status} />,
   },
   {
     id: "method",
-    header: "Method",
+    header: t("method"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text as="span">{row.original.payment_method}</Text>
@@ -187,7 +192,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "time",
-    header: "Time",
+    header: t("colTime"),
     cell: ({ row }) => {
       const tx = row.original;
       // Reads the provider lifecycle, which is what "resolved" actually means
@@ -208,7 +213,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
               as="span"
               className={outcome.className}
             >
-              {outcome.label}: {format(new Date(tx.resolved_at), "MMM d, HH:mm")}
+              {t(outcome.labelKey)}: {format(new Date(tx.resolved_at), "MMM d, HH:mm")}
             </Text>
           )}
           {tx.elapsed_seconds !== undefined && (
@@ -226,7 +231,7 @@ export const automaticColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "action",
-    header: "Action",
+    header: t("colAction"),
     enableSorting: false,
     cell: ({ row }) => <RowActionMenu transaction={row.original} />,
   },

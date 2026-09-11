@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -15,6 +16,7 @@ const DEFAULT_PAGE_SIZE = 15;
  * which is the only write it has.
  */
 export default function FeedbackListPage() {
+  const { t } = useTranslation("feedback");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
@@ -24,7 +26,7 @@ export default function FeedbackListPage() {
 
   // `mutate` is referentially stable, so the columns are built once rather
   // than on every render.
-  const columns = useMemo(() => feedbackColumns(deleteFeedback), [deleteFeedback]);
+  const columns = useMemo(() => feedbackColumns(deleteFeedback, t), [deleteFeedback, t]);
 
   return (
     <Box className="flex flex-col gap-6">
@@ -32,12 +34,8 @@ export default function FeedbackListPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Feedback
-        </Heading>
-        <Text variant="muted">
-          Ratings and reviews customers left after their purchases — from members and guests alike, newest first.
-        </Text>
+        >{t("title")}</Heading>
+        <Text variant="muted">{t("subtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -47,7 +45,7 @@ export default function FeedbackListPage() {
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          entityLabel="feedback"
+          entityLabel={t("entity")}
           showRowNumber
           page={data?.meta.current_page ?? page}
           pageSize={data?.meta.per_page ?? pageSize}

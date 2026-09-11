@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -17,33 +18,36 @@ export const useBanner = (id?: string) =>
   });
 
 export const useCreateBanner = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: BannerInput) => bannersService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Banner created");
+      toast.success(t("bannerCreated"));
     },
-    onError: () => toast.error("Failed to create banner"),
+    onError: () => toast.error(t("bannerCreateFailed")),
   });
 };
 
 export const useUpdateBanner = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<BannerInput> }) => bannersService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Banner updated");
+      toast.success(t("bannerUpdated"));
     },
-    onError: () => toast.error("Failed to update banner"),
+    onError: () => toast.error(t("bannerUpdateFailed")),
   });
 };
 
 /** One mutation for both delete paths — row menu and bulk toolbar. */
 export const useDeleteBanners = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -52,6 +56,6 @@ export const useDeleteBanners = () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
       toast.success(ids.length === 1 ? "Banner deleted" : `${ids.length} banners deleted`);
     },
-    onError: () => toast.error("Failed to delete banners"),
+    onError: () => toast.error(t("bannerDeleteFailed")),
   });
 };

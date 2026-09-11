@@ -1,0 +1,15 @@
+{
+  "title": "Ulasan",
+  "subtitle": "Penilaian dan ulasan yang ditinggalkan pelanggan setelah pembelian — dari member maupun tamu, terbaru lebih dulu.",
+  "entity": "ulasan",
+  "colReviewer": "Pengulas",
+  "colRating": "Penilaian",
+  "colComment": "Komentar",
+  "colProduct": "Produk",
+  "colTime": "Waktu",
+  "guest": "Tamu",
+  "delete": "Hapus",
+  "deleteTitle": "Hapus ulasan ini?",
+  "deleted": "Ulasan dihapus",
+  "deleteFailed": "Gagal menghapus ulasan"
+}

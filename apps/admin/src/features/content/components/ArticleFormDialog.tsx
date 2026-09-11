@@ -1,3 +1,5 @@
+import { translateOptions } from "@/lib/i18nOptions";
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -25,8 +27,8 @@ import { articleFormSchema, type ArticleFormValues } from "../schemas/contentFor
 import type { ArticleType } from "../types/content.type";
 
 const LOCALE_OPTIONS = [
-  { value: "id", label: "Indonesian" },
-  { value: "en", label: "English" },
+  { value: "id", labelKey: "indonesian" },
+  { value: "en", labelKey: "english" },
 ];
 
 interface ArticleFormDialogProps {
@@ -39,6 +41,7 @@ interface ArticleFormDialogProps {
 
 /** Add / Edit for both articles and news — one form, the type fixed by prop. */
 export function ArticleFormDialog({ open, onOpenChange, type, articleId }: ArticleFormDialogProps) {
+  const { t } = useTranslation("content");
   const isEdit = Boolean(articleId);
 
   const { data: existing } = useArticle(open ? articleId : undefined);
@@ -145,11 +148,11 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
         >
           <Box className="flex flex-col gap-4">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="article-title">Title</Label>
+              <Label htmlFor="article-title">{t("title")}</Label>
               <Input
                 id="article-title"
                 className="rounded-xl"
-                placeholder="e.g. Cara Top Up Diamond Lebih Hemat"
+                placeholder={t("articleTitlePlaceholder")}
                 {...register("title")}
               />
               {errors.title && (
@@ -169,7 +172,7 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
                 render={({ field }) => (
                   <SelectField
                     id="article-category"
-                    label="Category"
+                    label={t("category")}
                     options={categoryOptions}
                     value={field.value}
                     onChange={field.onChange}
@@ -186,8 +189,8 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
                 render={({ field }) => (
                   <SelectField
                     id="article-locale"
-                    label="Language"
-                    options={LOCALE_OPTIONS}
+                    label={t("language")}
+                    options={translateOptions(LOCALE_OPTIONS, t)}
                     value={field.value}
                     onChange={field.onChange}
                     error={errors.locale?.message}
@@ -198,31 +201,29 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
 
             <Box className="grid gap-4 sm:grid-cols-2">
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="article-category-label">Badge Label</Label>
+                <Label htmlFor="article-category-label">{t("badgeLabel")}</Label>
                 <Input
                   id="article-category-label"
                   className="rounded-xl"
-                  placeholder="Optional — defaults to the category name"
+                  placeholder={t("badgeLabelPlaceholder")}
                   {...register("categoryLabel")}
                 />
-                <Text variant="muted">
-                  Set this only when the badge should differ from the category, e.g. a PUBG article filed under Lainnya.
-                </Text>
+                <Text variant="muted">{t("badgeLabelHint")}</Text>
               </Box>
 
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="article-slug">Slug</Label>
+                <Label htmlFor="article-slug">{t("slug")}</Label>
                 <Input
                   id="article-slug"
                   className="rounded-xl"
-                  placeholder="Optional — generated from the title"
+                  placeholder={t("slugPlaceholder")}
                   {...register("slug")}
                 />
               </Box>
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="article-author">Author</Label>
+              <Label htmlFor="article-author">{t("colAuthor")}</Label>
               <Input
                 id="article-author"
                 className="rounded-xl"
@@ -239,12 +240,12 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="article-excerpt">Excerpt</Label>
+              <Label htmlFor="article-excerpt">{t("excerpt")}</Label>
               <Textarea
                 id="article-excerpt"
                 rows={3}
                 className="rounded-xl"
-                placeholder="Short summary shown on the card. Max 300 characters."
+                placeholder={t("excerptPlaceholder")}
                 {...register("excerpt")}
               />
               {errors.excerpt && (
@@ -270,9 +271,7 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
             <Heading
               level={2}
               variant="subtitle"
-            >
-              Publication & SEO
-            </Heading>
+            >{t("publicationSeo")}</Heading>
 
             <Box className="flex flex-col gap-3 sm:flex-row sm:gap-8">
               <Controller
@@ -285,7 +284,7 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />
-                    <Label htmlFor="article-published">Published</Label>
+                    <Label htmlFor="article-published">{t("published")}</Label>
                   </Box>
                 )}
               />
@@ -299,7 +298,7 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />
-                    <Label htmlFor="article-featured">Featured</Label>
+                    <Label htmlFor="article-featured">{t("featured")}</Label>
                   </Box>
                 )}
               />
@@ -307,7 +306,7 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
 
             <Box className="grid gap-4 sm:grid-cols-2">
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="article-meta-title">Meta Title</Label>
+                <Label htmlFor="article-meta-title">{t("metaTitle")}</Label>
                 <Input
                   id="article-meta-title"
                   className="rounded-xl"
@@ -315,18 +314,18 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
                 />
               </Box>
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="article-meta-robots">Meta Robots</Label>
+                <Label htmlFor="article-meta-robots">{t("metaRobots")}</Label>
                 <Input
                   id="article-meta-robots"
                   className="rounded-xl"
-                  placeholder="index,follow"
+                  placeholder={t("metaRobotsPlaceholder")}
                   {...register("metaRobots")}
                 />
               </Box>
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="article-meta-description">Meta Description</Label>
+              <Label htmlFor="article-meta-description">{t("metaDescription")}</Label>
               <Textarea
                 id="article-meta-description"
                 rows={3}
@@ -350,9 +349,7 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

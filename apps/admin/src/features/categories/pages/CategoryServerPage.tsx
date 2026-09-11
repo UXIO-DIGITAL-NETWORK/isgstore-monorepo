@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -6,7 +7,7 @@ import { Text } from "@/components/common/Text";
 import { DataTable } from "@/components/common/DataTable";
 import { CategoryServerFormDialog } from "../components/CategoryServerFormDialog";
 import { CategoryServerToolbar } from "../components/CategoryServerToolbar";
-import { categoryServerColumns } from "../components/categoryServerColumns";
+import { categoryServerColumnsFor } from "../components/categoryServerColumns";
 import { useCategoryServerList } from "../hooks/useCategoryServers";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -20,6 +21,7 @@ const DEFAULT_PAGE_SIZE = 10;
  * selection, and a two-item row menu.
  */
 export default function CategoryServerPage() {
+  const { t } = useTranslation("categories");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -39,12 +41,8 @@ export default function CategoryServerPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Category Server
-        </Heading>
-        <Text variant="muted">
-          Server and region choices buyers pick from when a game runs its accounts on separate servers.
-        </Text>
+        >{t("tabCategoryServer")}</Heading>
+        <Text variant="muted">{t("serverSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -58,13 +56,13 @@ export default function CategoryServerPage() {
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <DataTable
-          columns={categoryServerColumns}
+          columns={categoryServerColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          emptyMessage="No category servers found."
-          entityLabel="category servers"
+          emptyMessage={t("serverEmpty")}
+          entityLabel={t("serverEntity")}
           showRowNumber
           enableSelection={false}
           page={data?.meta.current_page ?? page}

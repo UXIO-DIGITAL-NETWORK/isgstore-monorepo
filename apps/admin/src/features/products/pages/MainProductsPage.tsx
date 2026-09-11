@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 import { Archive, Eye, Lock, RefreshCcw } from "lucide-react";
 
@@ -6,7 +7,7 @@ import { DataTable } from "@/components/common/DataTable";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
-import { mainProductColumns } from "../components/mainProductColumns";
+import { mainProductColumnsFor } from "../components/mainProductColumns";
 import { MainProductFormDialog } from "../components/MainProductFormDialog";
 import { MainProductToolbar } from "../components/MainProductToolbar";
 import {
@@ -31,6 +32,7 @@ const DEFAULT_PAGE_SIZE = 10;
  * copy-pasted "9999999 transactions".
  */
 export default function MainProductsPage() {
+  const { t } = useTranslation("products");
   const [search, setSearch] = useState("");
   // A real category id now, not its name — see products.service `list()`.
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
@@ -89,12 +91,8 @@ export default function MainProductsPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Main Products
-        </Heading>
-        <Text variant="muted">
-          The nominals buyers can purchase for each game, with their variants, pricing and storefront availability.
-        </Text>
+        >{t("tabMainProducts")}</Heading>
+        <Text variant="muted">{t("mainProductsSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -123,12 +121,12 @@ export default function MainProductsPage() {
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <DataTable
-          columns={mainProductColumns}
+          columns={mainProductColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          entityLabel="products"
+          entityLabel={t("productsEntity")}
           showRowNumber
           formatPageSizeLabel={(size) => `${size} Row`}
           onSelectionChange={handleSelectionChange}
@@ -147,7 +145,7 @@ export default function MainProductsPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         icon={<Archive />}
-        confirmLabel="Archive"
+        confirmLabel={t("archive")}
         title={selectedIds.length <= 1 ? "Archive this product?" : `Archive ${selectedIds.length} products?`}
         description={
           selectedIds.length <= 1
@@ -167,7 +165,7 @@ export default function MainProductsPage() {
         open={bulkUnpublishOpen}
         onOpenChange={setBulkUnpublishOpen}
         icon={<Archive />}
-        confirmLabel="Unpublish"
+        confirmLabel={t("unpublish")}
         title={selectedIds.length <= 1 ? "Unpublish this product?" : `Unpublish ${selectedIds.length} products?`}
         description={
           selectedIds.length <= 1
@@ -181,9 +179,9 @@ export default function MainProductsPage() {
         open={bulkUxiolabsOpen}
         onOpenChange={setBulkUxiolabsOpen}
         icon={<RefreshCcw />}
-        confirmLabel="Update"
+        confirmLabel={t("update")}
         title={selectedIds.length <= 1 ? "Update this product?" : `Update ${selectedIds.length} products?`}
-        description="Re-pull selling prices from each product's supplier cost. Locked prices are left unchanged."
+        description={t("bulkUpdateDescription")}
         onConfirm={() => uxiolabsUpdate.mutate(selectedIds)}
       />
 
@@ -191,9 +189,9 @@ export default function MainProductsPage() {
         open={bulkShowOpen}
         onOpenChange={setBulkShowOpen}
         icon={<Eye />}
-        confirmLabel="Show"
+        confirmLabel={t("show")}
         title={selectedIds.length <= 1 ? "Show this price?" : `Show ${selectedIds.length} prices?`}
-        description="The selected prices will be visible on the storefront."
+        description={t("bulkShowDescription")}
         onConfirm={() => showProducts.mutate({ ids: selectedIds, hidden: false })}
       />
 
@@ -201,9 +199,9 @@ export default function MainProductsPage() {
         open={bulkLockOpen}
         onOpenChange={setBulkLockOpen}
         icon={<Lock />}
-        confirmLabel="Lock"
+        confirmLabel={t("lock")}
         title={selectedIds.length <= 1 ? "Lock this price?" : `Lock ${selectedIds.length} prices?`}
-        description="The supplier sync will stop overwriting the selected prices until they are unlocked."
+        description={t("bulkLockDescription")}
         onConfirm={() => lockProducts.mutate({ ids: selectedIds, locked: true })}
       />
 

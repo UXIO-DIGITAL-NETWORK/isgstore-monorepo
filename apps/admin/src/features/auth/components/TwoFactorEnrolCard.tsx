@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,6 +50,7 @@ export function TwoFactorEnrolCard({
   confirmLabel = "Confirm and enable",
   footnote,
 }: TwoFactorEnrolCardProps) {
+  const { t } = useTranslation("auth");
   // Rendered in the browser — the secret is already in this payload and has no
   // business making another round trip to be turned into an image.
   const qrDataUrl = useQrDataUrl(otpauthUri);
@@ -67,19 +69,18 @@ export function TwoFactorEnrolCard({
             />
           </Box>
         ) : (
-          <Text variant="muted">Preparing the QR code…</Text>
+          <Text variant="muted">{t("preparingQr")}</Text>
         )}
         <Text
           variant="small"
           className="text-muted-foreground"
-        >
-          In Google Authenticator: <strong>+</strong> → <strong>Scan a QR code</strong>. No camera? Use{" "}
-          <strong>Enter a setup key</strong> with the key below.
+        >{t("inGoogleAuthenticator")}<strong>+</strong> → <strong>{t("scanAQrCode")}</strong>. No camera? Use{" "}
+          <strong>{t("enterASetupKey")}</strong> with the key below.
         </Text>
       </Box>
 
       <Box className="flex flex-col gap-1.5">
-        <Label>Or add this key by hand</Label>
+        <Label>{t("addKeyByHand")}</Label>
         <Box className="flex items-center gap-2">
           <Input
             readOnly
@@ -91,10 +92,10 @@ export function TwoFactorEnrolCard({
             type="button"
             variant="outline"
             className="rounded-xl"
-            aria-label="Copy setup key"
+            aria-label={t("copySetupKey")}
             onClick={() => {
               void navigator.clipboard.writeText(secret);
-              toast.success("Key copied");
+              toast.success(t("keyCopied"));
             }}
           >
             <Copy className="size-4" />

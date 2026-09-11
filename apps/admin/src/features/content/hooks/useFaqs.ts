@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -20,28 +21,30 @@ export const useFaq = (id?: string) =>
   });
 
 export const useCreateFaq = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: FaqInput) => faqsService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("FAQ created");
+      toast.success(t("faqCreated"));
     },
-    onError: () => toast.error("Failed to create FAQ"),
+    onError: () => toast.error(t("faqCreateFailed")),
   });
 };
 
 export const useUpdateFaq = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<FaqInput> }) => faqsService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("FAQ updated");
+      toast.success(t("faqUpdated"));
     },
-    onError: () => toast.error("Failed to update FAQ"),
+    onError: () => toast.error(t("faqUpdateFailed")),
   });
 };
 

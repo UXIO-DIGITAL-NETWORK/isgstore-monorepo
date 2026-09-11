@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -27,6 +28,7 @@ interface RowState {
  * from each item's cost via the pricing rules.
  */
 export default function MainProductAddBulkPage() {
+  const { t } = useTranslation("products");
   const navigate = useNavigate();
   const { data: suppliers } = useSuppliers();
   const { categoryOptions } = useProductSelectOptions(undefined);
@@ -67,19 +69,17 @@ export default function MainProductAddBulkPage() {
   return (
     <Box className="flex flex-col gap-6">
       <Box className="rounded-2xl border border-border bg-card p-6">
-        <Heading level={1} variant="section">
-          Add Product (Bulk)
-        </Heading>
-        <Text variant="muted">Select a supplier and category, then choose the products to add.</Text>
+        <Heading level={1} variant="section">{t("addProductBulk")}</Heading>
+        <Text variant="muted">{t("bulkSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-6">
         <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="bulk-supplier">Supplier</Label>
+            <Label htmlFor="bulk-supplier">{t("supplier")}</Label>
             <Select value={supplierId} onValueChange={setSupplierId}>
               <SelectTrigger id="bulk-supplier">
-                <SelectValue placeholder="Select a supplier" />
+                <SelectValue placeholder={t("selectSupplier")} />
               </SelectTrigger>
               <SelectContent>
                 {(suppliers ?? []).map((s) => (
@@ -91,10 +91,10 @@ export default function MainProductAddBulkPage() {
             </Select>
           </Box>
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="bulk-category">Category</Label>
+            <Label htmlFor="bulk-category">{t("category")}</Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
               <SelectTrigger id="bulk-category">
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder={t("selectCategory")} />
               </SelectTrigger>
               <SelectContent>
                 {categoryOptions.map((c) => (
@@ -110,24 +110,22 @@ export default function MainProductAddBulkPage() {
         <Box className="mt-6">
           {!ready ? (
             <Box className="rounded-xl border border-border bg-muted/40 px-4 py-8 text-center">
-              <Text variant="muted">Select a supplier and category first.</Text>
+              <Text variant="muted">{t("selectSupplierFirst")}</Text>
             </Box>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10" />
-                  <TableHead>Code</TableHead>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead className="text-right">Cost</TableHead>
+                  <TableHead>{t("code")}</TableHead>
+                  <TableHead>{t("productName")}</TableHead>
+                  <TableHead className="text-right">{t("cost")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
-                      No products available for this supplier and category.
-                    </TableCell>
+                    <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">{t("noProductsForSelection")}</TableCell>
                   </TableRow>
                 ) : (
                   items.map((item) => {
@@ -172,9 +170,7 @@ export default function MainProductAddBulkPage() {
         </Box>
 
         <Box className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => navigate({ to: "/admin/products/main" })}>
-            Cancel
-          </Button>
+          <Button type="button" variant="outline" onClick={() => navigate({ to: "/admin/products/main" })}>{t("cancel")}</Button>
           <Button type="button" onClick={onSubmit} disabled={bulkCreate.isPending || selectedItems.length === 0}>
             {bulkCreate.isPending ? "Saving…" : `Save${selectedItems.length ? ` (${selectedItems.length})` : ""}`}
           </Button>

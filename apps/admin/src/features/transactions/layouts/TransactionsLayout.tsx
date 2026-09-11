@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "@tanstack/react-router";
 
 import { Box } from "@/components/common/Box";
@@ -5,8 +6,8 @@ import { Link } from "@/components/common/Link";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TABS = [
-  { value: "automatic", label: "Automatic", href: "/admin/transactions/automatic" },
-  { value: "manual", label: "Manual", href: "/admin/transactions/manual" },
+  { value: "automatic", labelKey: "tabAutomatic", href: "/admin/transactions/automatic" },
+  { value: "manual", labelKey: "tabManual", href: "/admin/transactions/manual" },
 ];
 
 /**
@@ -15,6 +16,7 @@ const TABS = [
  * URL/breadcrumb ("Transaction › Automatic").
  */
 export function TransactionsLayout() {
+  const { t } = useTranslation("transactions");
   const { pathname } = useLocation();
   const activeTab = TABS.find((tab) => pathname.startsWith(tab.href))?.value ?? "automatic";
   // The nested Edit Transaction page is a full-page form, not a third tab —
@@ -32,7 +34,7 @@ export function TransactionsLayout() {
                 value={tab.value}
                 asChild
               >
-                <Link href={tab.href}>{tab.label}</Link>
+                <Link href={tab.href}>{t(tab.labelKey)}</Link>
               </TabsTrigger>
             ))}
           </TabsList>

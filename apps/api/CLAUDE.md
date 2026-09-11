@@ -337,6 +337,39 @@ Things that are load-bearing and easy to undo:
 
 **Deployment consequence, pinned by `GameCatalogSeedTest`:** every pre-existing admin is refused the panel until they enrol. The way out is always open because `/2fa/setup` and `/2fa/confirm` live outside the admin group.
 
+### Language (ID/EN)
+
+**`App\Support\Locale\SupportedLocale` is the one definition of which languages exist.** The set
+used to be implied in three places that disagreed: `config('app.locale')` said `en`, the
+`users.locale` column default said `id`, and `GenerateInvoicePdfAction` carried its own whitelist.
+The visible consequence was that every Google sign-up was stored as an English speaker while
+password sign-ups were Indonesian. **The platform default is now `id`** — the market is Indonesia,
+prices are in rupiah, and a bare phone number is assumed to be `62`.
+
+**`SetLocale` is appended to the `api` group**, alongside `EnsureSiteIsServing`, and global for the
+same reason: the language of a response must not depend on which endpoint was hit. Resolution runs
+`users.locale` → `Accept-Language` → `config('app.locale')`, and an unsupported value at any rung is
+skipped rather than rejected — a browser set to Japanese is not a bad request, and a `users.locale`
+written before the column was constrained should degrade, not break the account. It reads
+`$request->user('sanctum')`, not `user()`: it runs on unauthenticated routes too, where the default
+guard is `web` and cannot see a bearer token.
+
+**`lang/id/validation.php` and `APP_LOCALE=id` are one change, not two.** Flipping the locale without
+the file leaves every message falling back to English, which is worse than where it started. Before
+this, twelve FormRequests overrode `messages()` in Indonesian while ~150 fell through to Laravel's
+English defaults — so the language of an error depended on the endpoint. English still works with no
+`lang/en/validation.php` because the framework ships its own.
+
+**`PATCH /v1/me/locale` is its own endpoint, not a field on `sync-timezone`.** That route's name
+promises one thing, and the two are different kinds of fact: a timezone is detected from the browser
+and synced silently, a language is chosen by a person.
+
+**Still outstanding:** `ApiResponse` and the ~4,000 literals across `app/Http/Controllers` and
+`app/Actions` are untouched, so most `message` fields remain hardcoded and mixed
+("Login successful" next to "Autentikasi dua faktor aktif." in the same controller). That needs
+triage into the few hundred a user actually reads, not a sweep. `lang/{en,id}` already holds
+`receipt`, `refund`, `whatsapp` and `locale`.
+
 ### Money formatting
 
 `App\Support\Money::rupiah(int)` is the one customer-facing format. It exists because most of `app/` called bare `number_format($n)`, which uses **US separators** — an error message read "Rp 1,500,000" for the very transaction whose invoice PDF said "Rp 1.500.000". Three Blade views each defined the identical closure. Console output (`$this->table()`, dry-run listings) deliberately does not use it: alignment and greppability matter more there.

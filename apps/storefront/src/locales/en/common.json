@@ -63,5 +63,18 @@
       "privacyPolicy": "Privacy Policy",
       "termsConditions": "Terms & Conditions"
     }
+  },
+  "notFound": {
+    "title": "This page could not be found",
+    "description": "The page you were looking for may have moved, been removed, or the link was mistyped.",
+    "backHome": "Back to home"
+  },
+  "siteClosed": {
+    "title": "{{site}} is currently unavailable",
+    "fallbackSiteName": "This site",
+    "description": "The service is paused and new orders cannot be processed right now. Please get in touch if you have an order already under way."
+  },
+  "a11y": {
+    "loading": "Loading"
   }
 }

@@ -1,0 +1,152 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "refresh": "Refresh"
+  },
+  "theme": {
+    "label": "Change theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "label": "Language",
+    "id": "Indonesia",
+    "en": "English"
+  },
+  "table": {
+    "selectAllRows": "Select all rows",
+    "selectRow": "Select row",
+    "rowsPerPage": "Rows per page",
+    "loading": "Loading…",
+    "rowNumber": "No.",
+    "empty": "No data"
+  },
+  "filters": {
+    "search": "Search",
+    "searchPlaceholder": "Invoice no.",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "statusSuccess": "Successful",
+    "statusPending": "Pending",
+    "statusFailed": "Failed",
+    "type": "Type",
+    "allTypes": "All types",
+    "typeSale": "Sale",
+    "typeService": "Service invoice",
+    "client": "Client",
+    "dateFrom": "From date",
+    "dateTo": "To date"
+  },
+  "recap": {
+    "title": "Transaction recap",
+    "description": "Totals for the filters currently applied.",
+    "countTotal": "Transactions",
+    "countSuccess": "Successful",
+    "countPending": "Pending",
+    "countFailed": "Failed",
+    "amountTotal": "Total value",
+    "gross": "Total (gross)",
+    "adminFee": "Admin fee",
+    "gatewayFee": "Gateway fee",
+    "profit": "Our profit"
+  },
+  "confirm": {
+    "delete": "Delete",
+    "cancel": "Cancel"
+  },
+  "installation": {
+    "loading": "Loading…",
+    "notScheduled": "Installation not scheduled yet",
+    "notScheduledDescription": "Our team will schedule the setup for this service.",
+    "progress": "Installation progress"
+  },
+  "errorPage": {
+    "notFoundAlt": "Illustration of a page not found",
+    "serverErrorAlt": "Illustration of a server error",
+    "title": "Oops!",
+    "notFoundSubtitle": "Page not found",
+    "serverErrorSubtitle": "Something went wrong on our end",
+    "backHome": "Back to home page",
+    "notFoundBody": "The page you're looking for isn't found. We suggest going back to the home page.",
+    "serverErrorBody": "We're working to fix the issue. Please try again in a few minutes."
+  },
+  "pills": {
+    "success": "Successful",
+    "pending": "Pending",
+    "failed": "Failed"
+  },
+  "bankPicker": {
+    "loading": "Loading the bank list…",
+    "notFound": "No bank found",
+    "placeholder": "Search for a bank or e-wallet…"
+  },
+  "toast": {
+    "approveWithdrawalFailed": "Could not approve the withdrawal",
+    "internalWithdrawalCreated": "Internal withdrawal requested",
+    "internalWithdrawalFailed": "Could not request the internal withdrawal",
+    "withdrawalRejected": "Withdrawal rejected, the money is back",
+    "rejectWithdrawalFailed": "Could not reject the withdrawal",
+    "channelFeesSaved": "Channel fees saved",
+    "channelFeesFailed": "Could not save the channel fees",
+    "serviceCreated": "Service created",
+    "serviceCreateFailed": "Could not create the service",
+    "serviceUpdated": "Service updated",
+    "serviceUpdateFailed": "Could not update the service",
+    "serviceDeleted": "Service deleted",
+    "serviceDeleteFailed": "Could not delete the service",
+    "invoiceConfirmed": "Invoice confirmed, the subscription is live",
+    "invoiceConfirmFailed": "Could not confirm the invoice",
+    "invoiceRejected": "Invoice rejected",
+    "invoiceRejectFailed": "Could not reject the invoice",
+    "subscriptionCancelled": "Subscription cancelled",
+    "subscriptionCancelFailed": "Could not cancel the subscription",
+    "incidentCreated": "Incident created",
+    "incidentCreateFailed": "Could not create the incident",
+    "incidentUpdated": "Incident updated",
+    "incidentUpdateFailed": "Could not update the incident",
+    "incidentDeleted": "Incident deleted",
+    "incidentDeleteFailed": "Could not delete the incident",
+    "revealFailed": "Could not reveal the value",
+    "notificationMarkFailed": "Could not mark the notification",
+    "allNotificationsRead": "All notifications marked as read",
+    "withdrawalCreated": "Withdrawal requested",
+    "withdrawalCreateFailed": "Could not request the withdrawal",
+    "invoiceOpened": "Invoice created — please complete the payment",
+    "subscriptionCreateFailed": "Could not create the subscription",
+    "paymentReopened": "A new payment has been opened",
+    "paymentReopenFailed": "Could not open the payment",
+    "installScheduleSaved": "Installation schedule saved",
+    "installScheduleFailed": "Could not save the installation schedule",
+    "stepCreated": "Step added",
+    "stepCreateFailed": "Could not add the step",
+    "stepUpdated": "Step updated",
+    "stepUpdateFailed": "Could not update the step",
+    "stepStatusUpdated": "Step status updated",
+    "stepStatusFailed": "Could not update the step status",
+    "stepDeleted": "Step deleted",
+    "stepDeleteFailed": "Could not delete the step",
+    "detailCreated": "Detail added",
+    "detailCreateFailed": "Could not add the detail",
+    "detailUpdated": "Detail updated",
+    "detailUpdateFailed": "Could not update the detail",
+    "detailDeleted": "Detail deleted",
+    "detailDeleteFailed": "Could not delete the detail",
+    "exportFailed": "Could not export the data",
+    "clipboardUnavailable": "The clipboard is not available in this browser"
+  },
+  "dropzone": {
+    "prompt": "Drag & drop files here"
+  },
+  "copy": {
+    "defaultLabel": "Value",
+    "copied": "{{label}} copied",
+    "failed": "Could not copy the {{label}}",
+    "aria": "Copy {{label}}"
+  },
+  "authHero": {
+    "badge": "Internal Operations"
+  }
+}

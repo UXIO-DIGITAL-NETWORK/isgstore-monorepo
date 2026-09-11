@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
@@ -11,6 +12,7 @@ import { useFlashSaleList, useDeleteFlashSales } from "../hooks/useFlashSales";
 const DEFAULT_PAGE_SIZE = 10;
 
 export function FlashSaleListPage() {
+  const { t } = useTranslation("marketing");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -25,15 +27,15 @@ export function FlashSaleListPage() {
 
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
   const columns = useMemo(
-    () => flashSaleColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
-    [deleteRows],
+    () => flashSaleColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id), t),
+    [deleteRows, t],
   );
 
   return (
     <>
       <MarketingListShell
-        title="Flash Sale"
-        description="Time-boxed pricing on specific products. Only a running sale appears on the homepage."
+        title={t("flashSaleEntity")}
+        description={t("flashSaleSubtitle")}
         toolbar={
           <MarketingToolbar
             idPrefix="flash-sale"
@@ -57,8 +59,8 @@ export function FlashSaleListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="flash sales"
-            emptyMessage="No flash sales yet."
+            entityLabel={t("flashSalesEntity")}
+            emptyMessage={t("noFlashSales")}
             showRowNumber
             enableSelection
             onSelectionChange={handleSelectionChange}
@@ -79,7 +81,7 @@ export function FlashSaleListPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
-        description="This action cannot be undone."
+        description={t("irreversible")}
         onConfirm={() => deleteRows.mutate(selectedIds)}
       />
 

@@ -21,10 +21,12 @@ describe("StatusPage (404 / 503)", () => {
     await renderRoute("/this-does-not-exist");
 
     expect(await screen.findByRole("heading", { name: "Oops!" })).toBeInTheDocument();
-    expect(screen.getByText("Page not found")).toBeInTheDocument();
-    expect(screen.getByText(/isn't found/i)).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: /page not found/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Back to home page" })).toBeInTheDocument();
+    // Indonesian: the panel's default, and these screens used to be hardcoded
+    // English on an otherwise Indonesian app.
+    expect(screen.getByText("Halaman tidak ditemukan")).toBeInTheDocument();
+    expect(screen.getByText(/tidak ditemukan\. Sebaiknya kembali/i)).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /halaman tidak ditemukan/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Kembali ke halaman utama" })).toBeInTheDocument();
     expect(screen.queryByText("404")).not.toBeInTheDocument();
   });
 
@@ -33,12 +35,12 @@ describe("StatusPage (404 / 503)", () => {
 
     await renderRoute("/this-does-not-exist");
 
-    expect(await screen.findByRole("link", { name: "Back to home page" })).toHaveAttribute("href", "/app/dashboard");
+    expect(await screen.findByRole("link", { name: "Kembali ke halaman utama" })).toHaveAttribute("href", "/app/dashboard");
   });
 
   it("points the home link to / when no token exists", async () => {
     await renderRoute("/this-does-not-exist");
 
-    expect(await screen.findByRole("link", { name: "Back to home page" })).toHaveAttribute("href", "/");
+    expect(await screen.findByRole("link", { name: "Kembali ke halaman utama" })).toHaveAttribute("href", "/");
   });
 });

@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
@@ -23,12 +25,19 @@ const MONTH_CHOICES: { value: MonthOption; label: string }[] = MONTH_OPTIONS.map
 /** The month an operator almost always wants first is the one they are in. */
 const currentMonth = (): MonthOption => MONTH_OPTIONS[new Date().getMonth()];
 
-const chartConfig = {
-  revenue: { label: "Revenue", color: "var(--chart-1)" },
-  netIncome: { label: "Net Income", color: "var(--chart-2)" },
-} satisfies ChartConfig;
+/**
+ * Built at render, not at module scope: the series labels are shown in the
+ * legend and tooltip, so they have to follow the panel's language.
+ */
+const chartConfigFor = (t: TFunction<"dashboard">) =>
+  ({
+    revenue: { label: t("revenue"), color: "var(--chart-1)" },
+    netIncome: { label: t("netIncome"), color: "var(--chart-2)" },
+  }) satisfies ChartConfig;
 
 export function PerformanceChartCard() {
+  const { t } = useTranslation("dashboard");
+  const chartConfig = chartConfigFor(t);
   const [month, setMonth] = useState<MonthOption>(currentMonth);
   const { data, isLoading, isError, refetch } = useChartSeries(month);
 
@@ -40,7 +49,7 @@ export function PerformanceChartCard() {
   return (
     <Box
       as="section"
-      aria-label="Monthly Performance"
+      aria-label={t("monthlyPerformance")}
       className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4"
     >
       <Box className="flex items-start justify-between gap-4">
@@ -49,10 +58,8 @@ export function PerformanceChartCard() {
             level={3}
             variant="section"
             className="text-lg"
-          >
-            Monthly Performance
-          </Heading>
-          <Text variant="small">Daily revenue movement, taller areas indicate days with the best revenue.</Text>
+          >{t("monthlyPerformance")}</Heading>
+          <Text variant="small">{t("performanceHint")}</Text>
         </Box>
         <Select
           value={month}
@@ -79,14 +86,12 @@ export function PerformanceChartCard() {
 
       {isError ? (
         <Box className="flex h-[280px] w-full flex-col items-center justify-center gap-3 rounded-xl border border-border">
-          <Text variant="muted">Failed to load performance data.</Text>
+          <Text variant="muted">{t("performanceFailed")}</Text>
           <Button
             variant="outline"
             size="sm"
             onClick={() => refetch()}
-          >
-            Retry
-          </Button>
+          >{t("retry")}</Button>
         </Box>
       ) : isLoading ? (
         <Skeleton className="h-[280px] w-full" />
@@ -141,11 +146,11 @@ export function PerformanceChartCard() {
       <Box className="flex items-center gap-4 text-xs text-muted-foreground">
         <Box className="flex items-center gap-1.5">
           <Box className="size-2 rounded-full bg-chart-1" />
-          <Text as="span">Revenue</Text>
+          <Text as="span">{t("revenue")}</Text>
         </Box>
         <Box className="flex items-center gap-1.5">
           <Box className="size-2 rounded-full bg-chart-2" />
-          <Text as="span">Net Income</Text>
+          <Text as="span">{t("netIncome")}</Text>
         </Box>
       </Box>
     </Box>

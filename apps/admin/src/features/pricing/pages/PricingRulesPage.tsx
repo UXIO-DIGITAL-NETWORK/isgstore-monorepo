@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
@@ -29,6 +30,7 @@ import {
 import type { PricingRule } from "../types/pricingRule.type";
 
 export function PricingRulesPage() {
+  const { t } = useTranslation("pricing");
   const { data: rules, isLoading, isError, refetch } = usePricingRules();
   const { data: categoryOptions = [] } = useCategoryOptions();
   const { data: planOptions = [] } = usePlanOptions();
@@ -49,7 +51,7 @@ export function PricingRulesPage() {
     () => [
       {
         accessorKey: "membership_plan_id",
-        header: "Membership plan",
+        header: t("membershipPlan"),
         cell: ({ row }) => (
           <Badge
             variant="outline"
@@ -57,18 +59,18 @@ export function PricingRulesPage() {
           >
             {/* No plan means the rule is the fallback every unpriced tier
                 uses — worth naming rather than showing an empty cell. */}
-            {row.original.plan_name ?? "All plans"}
+            {row.original.plan_name ?? t("allPlans")}
           </Badge>
         ),
       },
       {
         id: "category",
-        header: "Category",
-        cell: ({ row }) => <Text as="span">{row.original.category_name ?? "All categories (global)"}</Text>,
+        header: t("category"),
+        cell: ({ row }) => <Text as="span">{row.original.category_name ?? t("allCategories")}</Text>,
       },
       {
         id: "markup_percent",
-        header: "Markup %",
+        header: t("markupPercent"),
         cell: ({ row }) => (
           <Text
             as="span"
@@ -80,7 +82,7 @@ export function PricingRulesPage() {
       },
       {
         id: "markup_flat",
-        header: "Flat",
+        header: t("colFlat"),
         cell: ({ row }) => (
           <Text
             as="span"
@@ -92,7 +94,7 @@ export function PricingRulesPage() {
       },
       {
         id: "actions",
-        header: "Action",
+        header: t("colAction"),
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -116,23 +118,19 @@ export function PricingRulesPage() {
                     setFormOpen(true);
                   }}
                 >
-                  <Pencil />
-                  Edit
-                </DropdownMenuItem>
+                  <Pencil />{t("edit")}</DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
                   onSelect={() => setDeleteRule(row.original)}
                 >
-                  <Trash2 />
-                  Delete
-                </DropdownMenuItem>
+                  <Trash2 />{t("delete")}</DropdownMenuItem>
               </Can>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const list = rules ?? [];
@@ -145,9 +143,7 @@ export function PricingRulesPage() {
             <Heading
               level={1}
               variant="section"
-            >
-              Pricing Rules
-            </Heading>
+            >{t("title")}</Heading>
             <Text variant="muted">
               Markup applied over supplier cost per membership plan (optionally per category). These drive the suggested prices
               when adding products.
@@ -158,9 +154,7 @@ export function PricingRulesPage() {
               className="rounded-xl"
               onClick={openAdd}
             >
-              <Plus />
-              Add Rule
-            </Button>
+              <Plus />{t("addRule")}</Button>
           </Can>
         </Box>
 
@@ -171,8 +165,8 @@ export function PricingRulesPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="pricing rules"
-            emptyMessage="No pricing rules yet — every plan falls back to the default markup."
+            entityLabel={t("entity")}
+            emptyMessage={t("empty")}
             showRowNumber
             enableSelection={false}
             page={1}
@@ -198,8 +192,8 @@ export function PricingRulesPage() {
       <DeleteConfirmDialog
         open={deleteRule !== null}
         onOpenChange={(open) => !open && setDeleteRule(null)}
-        title="Delete pricing rule?"
-        description="This removes the markup rule. The built-in default for that role will apply instead."
+        title={t("deleteTitle")}
+        description={t("deleteDescription")}
         onConfirm={() => deleteRule && deleteRuleMutation.mutate(deleteRule.id)}
       />
     </>

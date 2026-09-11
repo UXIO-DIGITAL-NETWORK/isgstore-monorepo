@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 
 import { Box } from "@/components/common/Box";
@@ -31,21 +32,20 @@ export function DataTable<TData>({
   onRetry,
   emptyMessage = "No data available.",
 }: DataTableProps<TData>) {
+  const { t } = useTranslation("dashboard");
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
   const columnCount = columns.length;
 
   if (isError) {
     return (
       <Box className="flex flex-col items-center gap-3 rounded-lg border border-border py-10">
-        <Text variant="muted">Something went wrong loading this table.</Text>
+        <Text variant="muted">{t("tableFailed")}</Text>
         {onRetry && (
           <Button
             variant="outline"
             size="sm"
             onClick={onRetry}
-          >
-            Retry
-          </Button>
+          >{t("retry")}</Button>
         )}
       </Box>
     );

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -20,28 +21,30 @@ export const useTestimonial = (id?: string) =>
   });
 
 export const useCreateTestimonial = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: TestimonialInput) => testimonialsService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Testimonial created");
+      toast.success(t("testimonialCreated"));
     },
-    onError: () => toast.error("Failed to create testimonial"),
+    onError: () => toast.error(t("testimonialCreateFailed")),
   });
 };
 
 export const useUpdateTestimonial = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<TestimonialInput> }) => testimonialsService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Testimonial updated");
+      toast.success(t("testimonialUpdated"));
     },
-    onError: () => toast.error("Failed to update testimonial"),
+    onError: () => toast.error(t("testimonialUpdateFailed")),
   });
 };
 

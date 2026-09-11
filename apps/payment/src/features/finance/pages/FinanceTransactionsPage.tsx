@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -37,10 +39,14 @@ const TYPE_LABEL: Record<TransactionType, string> = {
 // The whole feed: topup sales and the service bills kita issues clients. A
 // service row carries no payment channel and zero admin/gateway fee, so its
 // entire amount is kita's profit.
-const columns: Column<FinanceUnifiedTransaction>[] = [
+/**
+ * A factory rather than a module constant: column headers are rendered text, so
+ * they have to resolve when the component renders.
+ */
+const columnsFor = (t: TFunction<"finance">): Column<FinanceUnifiedTransaction>[] => [
   {
     key: "invoice",
-    header: "Invoice",
+    header: t("transactions.colInvoice"),
     cell: (r) => (
       <Box className="flex flex-col">
         <Text as="span" className="font-medium">
@@ -52,11 +58,11 @@ const columns: Column<FinanceUnifiedTransaction>[] = [
       </Box>
     ),
   },
-  { key: "merchant", header: "Client", cell: (r) => r.merchant?.name ?? "-" },
-  { key: "title", header: "Item", cell: (r) => r.title ?? "-" },
+  { key: "merchant", header: t("transactions.colClient"), cell: (r) => r.merchant?.name ?? "-" },
+  { key: "title", header: t("transactions.colItem"), cell: (r) => r.title ?? "-" },
   {
     key: "total",
-    header: "Nominal",
+    header: t("transactions.colAmount"),
     className: "text-right tabular-nums",
     cell: (r) => (
       <Box className="flex flex-col items-end">
@@ -71,19 +77,19 @@ const columns: Column<FinanceUnifiedTransaction>[] = [
   },
   {
     key: "admin_fee",
-    header: "Biaya Admin",
+    header: t("transactions.colAdminFee"),
     className: "text-right tabular-nums",
     cell: (r) => money(r.admin_fee),
   },
   {
     key: "gateway",
-    header: "Fee Gateway",
+    header: t("transactions.colGatewayFee"),
     className: "text-right tabular-nums",
     cell: (r) => money(r.gateway_fee),
   },
   {
     key: "profit",
-    header: "Profit Kita",
+    header: t("transactions.colProfit"),
     className: "text-right tabular-nums",
     cell: (r) => (
       <Text as="span" className="text-success tabular-nums">
@@ -93,17 +99,17 @@ const columns: Column<FinanceUnifiedTransaction>[] = [
   },
   {
     key: "payment_status",
-    header: "Pembayaran",
+    header: t("transactions.colPayment"),
     cell: (r) => <PaymentStatusBadge status={resolvePaymentStatus(r)} />,
   },
   {
     // Blank on a service bill — kita issued it, no supplier is involved. That is
     // an honest dash, not missing data.
     key: "provider_status",
-    header: "Provider",
+    header: t("transactions.colProvider"),
     cell: (r) => <ProviderStatusBadge status={resolveProviderStatus(r)} audience="internal" />,
   },
-  { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
+  { key: "created", header: t("transactions.colDate"), cell: (r) => formatDateTime(r.created_at) },
 ];
 
 const INITIAL_FILTERS: TransactionFilterState = {
@@ -115,6 +121,8 @@ const INITIAL_FILTERS: TransactionFilterState = {
 };
 
 export default function FinanceTransactionsPage() {
+  const { t } = useTranslation("finance");
+  const columns = columnsFor(t);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<TransactionFilterState>(INITIAL_FILTERS);
   const [merchantId, setMerchantId] = useState(""); // "" = every client
@@ -149,10 +157,10 @@ export default function FinanceTransactionsPage() {
       }}
     >
       <SelectTrigger className="w-full">
-        <SelectValue placeholder="Semua client" />
+        <SelectValue placeholder={t("transactions.allClients")} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">Semua client</SelectItem>
+        <SelectItem value="all">{t("transactions.allClients")}</SelectItem>
         {(merchants.data?.rows ?? []).map((merchant) => (
           <SelectItem key={merchant.id} value={String(merchant.id)}>
             {merchant.name}
@@ -165,7 +173,7 @@ export default function FinanceTransactionsPage() {
   return (
     <Box className="flex flex-col gap-6">
       <Box className="flex flex-wrap items-center justify-between gap-3">
-        <Heading level={1}>Transaksi</Heading>
+        <Heading level={1}>{t("transactions.title")}</Heading>
         <Box className="flex items-center gap-2">
           <RecapDialog summary={summary.data} isInternal isLoading={summary.isLoading} />
           <ExportButton onExport={() => financeService.exportTransactions(filterParams)} />
@@ -186,7 +194,7 @@ export default function FinanceTransactionsPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada transaksi"
+        emptyLabel={t("transactions.empty")}
         rowKey={(r) => `${r.type}-${r.id}`}
       />
 

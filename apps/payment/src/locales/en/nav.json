@@ -1,0 +1,17 @@
+{
+  "dashboard": "Dashboard",
+  "transactions": "Transactions",
+  "withdrawals": "Withdrawals",
+  "mutations": "Mutations",
+  "services": "Services",
+  "serviceStatus": "Service status",
+  "merchants": "Merchants",
+  "verifyWithdrawals": "Verify withdrawals",
+  "internalWithdrawals": "Internal withdrawals",
+  "channelFees": "Channel fees",
+  "productsServices": "Products / Services",
+  "invoices": "Invoices",
+  "subscriptions": "Subscriptions",
+  "incidents": "Service status",
+  "notifications": "Notifications"
+}

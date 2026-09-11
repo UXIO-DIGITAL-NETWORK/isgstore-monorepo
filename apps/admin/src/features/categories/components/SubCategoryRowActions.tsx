@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 
@@ -22,6 +23,7 @@ interface SubCategoryRowActionsProps {
  * Category" and "Delete", the only useful information in the reference frame
  * whose table still showed the shadcn demo dataset behind it. */
 export function SubCategoryRowActions({ subCategory }: SubCategoryRowActionsProps) {
+  const { t } = useTranslation("categories");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteSubCategories = useDeleteSubCategories();
@@ -45,18 +47,14 @@ export function SubCategoryRowActions({ subCategory }: SubCategoryRowActionsProp
         >
           <Can permission="categories.edit">
             <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <Pencil />
-              Edit Sub Category
-            </DropdownMenuItem>
+              <Pencil />{t("editSubCategory")}</DropdownMenuItem>
           </Can>
           <Can permission="categories.delete">
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              <Trash2 />{t("delete")}</DropdownMenuItem>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -64,8 +62,8 @@ export function SubCategoryRowActions({ subCategory }: SubCategoryRowActionsProp
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this sub category?"
-        description="This action cannot be undone. This will permanently delete this sub category and remove it from the storefront."
+        title={t("deleteSubCategoryTitle")}
+        description={t("deleteSubCategoryDescription")}
         onConfirm={() => deleteSubCategories.mutate([subCategory.id])}
       />
 

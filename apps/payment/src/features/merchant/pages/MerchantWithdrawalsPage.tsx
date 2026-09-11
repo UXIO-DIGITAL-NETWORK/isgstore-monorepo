@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,16 +24,22 @@ import { useCreateWithdrawal, useMerchantDashboard, useMerchantWithdrawals } fro
 import { withdrawalSchema, type WithdrawalFormValues } from "../schemas/withdrawal.schema";
 import type { Withdrawal } from "../types/merchant.type";
 
-const columns: Column<Withdrawal>[] = [
-  { key: "number", header: "No. Penarikan", cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
-  { key: "amount", header: "Nominal", className: "text-right tabular-nums", cell: (r) => formatCurrency(r.amount, { fractionDigits: 0 }) },
-  { key: "fee", header: "Biaya", className: "text-right tabular-nums", cell: (r) => formatCurrency(r.fee, { fractionDigits: 0 }) },
-  { key: "nett", header: "Diterima", className: "text-right tabular-nums", cell: (r) => formatCurrency(r.nett, { fractionDigits: 0 }) },
-  { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
-  { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
+/**
+ * A factory rather than a module constant: column headers are rendered text, so
+ * they have to be resolved when the component renders, not frozen at import.
+ */
+const columnsFor = (t: TFunction<"merchant">): Column<Withdrawal>[] => [
+  { key: "number", header: t("withdrawals.colNumber"), cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
+  { key: "amount", header: t("withdrawals.colAmount"), className: "text-right tabular-nums", cell: (r) => formatCurrency(r.amount, { fractionDigits: 0 }) },
+  { key: "fee", header: t("withdrawals.colFee"), className: "text-right tabular-nums", cell: (r) => formatCurrency(r.fee, { fractionDigits: 0 }) },
+  { key: "nett", header: t("withdrawals.colNett"), className: "text-right tabular-nums", cell: (r) => formatCurrency(r.nett, { fractionDigits: 0 }) },
+  { key: "status", header: t("withdrawals.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+  { key: "created", header: t("withdrawals.colDate"), cell: (r) => formatDateTime(r.created_at) },
 ];
 
 export default function MerchantWithdrawalsPage() {
+  const { t } = useTranslation("merchant");
+  const columns = columnsFor(t);
   const [page, setPage] = useState(1);
   const { data, isLoading, isError } = useMerchantWithdrawals({ page, per_page: 20 });
   const { data: dash } = useMerchantDashboard();
@@ -83,14 +91,14 @@ export default function MerchantWithdrawalsPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Penarikan</Heading>
+      <Heading level={1}>{t("withdrawals.title")}</Heading>
 
       <StatCard
         data={{
           id: "saldo",
-          label: "Saldo yang bisa ditarik",
+          label: t("withdrawals.available"),
           value: dash?.saldo_aktif ?? 0,
-          caption: "Nominal maksimal yang dapat kamu tarik saat ini",
+          caption: t("withdrawals.availableCaption"),
         }}
       />
 
@@ -101,12 +109,12 @@ export default function MerchantWithdrawalsPage() {
         className="grid grid-cols-1 gap-4 rounded-xl border border-border bg-card p-6 sm:grid-cols-2 lg:grid-cols-4"
       >
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="amount">Nominal</Label>
+          <Label htmlFor="amount">{t("withdrawals.amount")}</Label>
           <Input id="amount" type="number" {...register("amount", { valueAsNumber: true })} placeholder="100000" />
           {errors.amount && <Text variant="small" className="text-destructive">{errors.amount.message}</Text>}
         </Box>
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="bank_code">Bank / E-wallet</Label>
+          <Label htmlFor="bank_code">{t("withdrawals.bankOrEwallet")}</Label>
           {/* Registered hidden field so the value is validated + submitted; the
               combobox drives it via setValue. */}
           <input type="hidden" {...register("bank_code")} />
@@ -120,18 +128,18 @@ export default function MerchantWithdrawalsPage() {
         </Box>
         {!isEwallet && (
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="account_number">No. Rekening</Label>
+            <Label htmlFor="account_number">{t("withdrawals.accountNumber")}</Label>
             <Input id="account_number" {...register("account_number")} placeholder="1234567890" />
             {errors.account_number && <Text variant="small" className="text-destructive">{errors.account_number.message}</Text>}
           </Box>
         )}
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="account_name">Nama Pemilik</Label>
-          <Input id="account_name" {...register("account_name")} placeholder="Nama sesuai rekening" />
+          <Label htmlFor="account_name">{t("withdrawals.accountName")}</Label>
+          <Input id="account_name" {...register("account_name")} placeholder={t("withdrawals.accountNamePlaceholder")} />
           {errors.account_name && <Text variant="small" className="text-destructive">{errors.account_name.message}</Text>}
         </Box>
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="account_phone">No. HP Penerima</Label>
+          <Label htmlFor="account_phone">{t("withdrawals.accountPhone")}</Label>
           <Input id="account_phone" {...register("account_phone")} placeholder="08123456789" />
           {errors.account_phone && <Text variant="small" className="text-destructive">{errors.account_phone.message}</Text>}
         </Box>
@@ -139,15 +147,15 @@ export default function MerchantWithdrawalsPage() {
           {previewAmount > 0 && (
             <Box className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-muted/50 px-4 py-3 text-sm tabular-nums">
               <Text as="span" className="text-muted-foreground">
-                Biaya: <Text as="span" className="text-foreground">{formatCurrency(previewFee, { fractionDigits: 0 })}</Text>
+                {t("withdrawals.feeLabel")}: <Text as="span" className="text-foreground">{formatCurrency(previewFee, { fractionDigits: 0 })}</Text>
               </Text>
               <Text as="span" className="text-muted-foreground">
-                Diterima: <Text as="span" className="font-medium text-foreground">{formatCurrency(previewNett, { fractionDigits: 0 })}</Text>
+                {t("withdrawals.receivedLabel")}: <Text as="span" className="font-medium text-foreground">{formatCurrency(previewNett, { fractionDigits: 0 })}</Text>
               </Text>
             </Box>
           )}
           <Button type="submit" disabled={isPending} className="w-fit">
-            {isPending ? "Memproses…" : "Ajukan Penarikan"}
+            {isPending ? t("withdrawals.submitting") : t("withdrawals.submit")}
           </Button>
         </Box>
       </Box>
@@ -157,7 +165,7 @@ export default function MerchantWithdrawalsPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada penarikan"
+        emptyLabel={t("withdrawals.empty")}
         rowKey={(r) => r.id}
       />
       <Pager

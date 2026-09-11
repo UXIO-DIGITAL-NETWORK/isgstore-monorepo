@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -43,6 +44,7 @@ export function SubCategoryToolbar({
   selectedCount,
   onBulkDelete,
 }: SubCategoryToolbarProps) {
+  const { t } = useTranslation("categories");
   // ponytail: one page of categories is plenty for a filter dropdown against
   // mock data; swap to a searchable/paged combobox if the real list grows.
   const { data: categories } = useCategoryList({ per_page: CATEGORY_OPTIONS_PAGE_SIZE });
@@ -51,13 +53,13 @@ export function SubCategoryToolbar({
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="sub-category-search">Search</Label>
+          <Label htmlFor="sub-category-search">{t("search")}</Label>
           <Box className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="sub-category-search"
               className="w-64 rounded-xl pl-8"
-              placeholder="Search sub categories"
+              placeholder={t("searchSubCategories")}
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
             />
@@ -65,7 +67,7 @@ export function SubCategoryToolbar({
         </Box>
 
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="sub-category-parent-filter">Category</Label>
+          <Label htmlFor="sub-category-parent-filter">{t("category")}</Label>
           {/* `""` (not the clear sentinel) when unfiltered, so Radix shows the
               placeholder rather than the "All categories" item's label. */}
           <Select
@@ -76,10 +78,10 @@ export function SubCategoryToolbar({
               id="sub-category-parent-filter"
               className="w-56 rounded-xl"
             >
-              <SelectValue placeholder="Type to search category" />
+              <SelectValue placeholder={t("typeToSearchCategory")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={CLEAR_VALUE}>All categories</SelectItem>
+              <SelectItem value={CLEAR_VALUE}>{t("allCategories")}</SelectItem>
               {(categories?.data ?? []).map((category) => (
                 <SelectItem
                   key={category.id}
@@ -104,9 +106,7 @@ export function SubCategoryToolbar({
           <Text
             as="span"
             className="sr-only"
-          >
-            Refresh
-          </Text>
+          >{t("refresh")}</Text>
         </Button>
         {selectedCount > 0 && (
           <Button
@@ -127,9 +127,7 @@ export function SubCategoryToolbar({
           className="rounded-xl"
           onClick={onAdd}
         >
-          <Plus className="size-4" />
-          Add Sub Category
-        </Button>
+          <Plus className="size-4" />{t("addSubCategory")}</Button>
       </Box>
     </Box>
   );

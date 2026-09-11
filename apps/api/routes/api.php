@@ -90,6 +90,7 @@ use App\Http\Controllers\Api\Supplier\SupplierCategoryController;
 use App\Http\Controllers\Api\Supplier\SupplierController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\User\SyncTimezoneController;
+use App\Http\Controllers\Api\User\UpdateLocaleController;
 use App\Http\Controllers\Api\User\UserController;
 use App\Http\Controllers\Api\Uxiolabs\PriceChangeLogController;
 use App\Http\Controllers\Api\Uxiolabs\UxiolabsBalanceController;
@@ -308,6 +309,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api'])->group
     // Scoped to the caller inside each action — never admin-wide.
     Route::prefix('me')->group(function () {
         Route::get('/', [ProfileController::class, 'show']);
+        // The language this account reads the platform in. Stored server-side
+        // so the choice follows the person to a new device, which is the one
+        // thing each panel's localStorage cannot do.
+        Route::patch('/locale', UpdateLocaleController::class);
         Route::put('/', [ProfileController::class, 'update']);
         Route::put('/password', [ProfileController::class, 'updatePassword']);
 
@@ -540,6 +545,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
     // The Add-panel feed: SKUs whose kategori has a configured Category Provider.
     Route::get('/uxiolabs/pool-candidates', [UxiolabsPoolController::class, 'candidates']);
     Route::get('/uxiolabs/pool-summary', [UxiolabsPoolController::class, 'summary']);
+    Route::get('/uxiolabs/pool-facets', [UxiolabsPoolController::class, 'facets']);
     Route::post('/uxiolabs/pool', [UxiolabsPoolController::class, 'store']);
     Route::get('/uxiolabs/sku-preview', [UxiolabsSkuLookupController::class, 'show']);
     Route::post('/uxiolabs/products', [UxiolabsProductController::class, 'store']);

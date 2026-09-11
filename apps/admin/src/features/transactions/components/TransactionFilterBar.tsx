@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useId } from "react";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -20,7 +21,7 @@ import {
   PRODUCT_OPTIONS,
   USER_OPTIONS,
 } from "../data/select-options.data";
-import type { SelectOption, TransactionListParams } from "../types/transaction.type";
+import type { KeyedSelectOption, SelectOption, TransactionListParams } from "../types/transaction.type";
 
 export type TransactionFilters = Pick<
   TransactionListParams,
@@ -84,10 +85,11 @@ function FilterSelect({
   id: string;
   label: string;
   placeholder: string;
-  options: SelectOption[];
+  options: SelectOption[] | KeyedSelectOption[];
   value?: string;
   onChange: (value: string | undefined) => void;
 }) {
+  const { t } = useTranslation("transactions");
   return (
     <Box className="flex flex-col gap-2.5">
       <Label htmlFor={id}>{label}</Label>
@@ -108,7 +110,7 @@ function FilterSelect({
               key={option.value}
               value={option.value}
             >
-              {option.label}
+              {"labelKey" in option ? t(option.labelKey) : option.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -163,22 +165,23 @@ function FilterDate({
  * reduced list rather than forking this component.
  */
 export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FIELDS }: TransactionFilterBarProps) {
+  const { t } = useTranslation("transactions");
   const uid = useId();
   const has = (field: FilterField) => fields.includes(field);
 
   return (
     <Box
       as="section"
-      aria-label="Transaction Filters"
+      aria-label={t("filtersAria")}
       className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5"
     >
       {has("search") && (
         <Box className="flex flex-col gap-2.5">
-          <Label htmlFor={`${uid}-search`}>Search</Label>
+          <Label htmlFor={`${uid}-search`}>{t("search")}</Label>
           <Input
             id={`${uid}-search`}
             className="rounded-xl"
-            placeholder="Invoice no. or customer name"
+            placeholder={t("searchPlaceholder")}
             value={filters.search ?? ""}
             onChange={(event) => onChange({ search: event.target.value || undefined })}
           />
@@ -187,8 +190,8 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("user") && (
         <FilterSelect
           id={`${uid}-user`}
-          label="User"
-          placeholder="All users"
+          label={t("colUser")}
+          placeholder={t("allUsers")}
           options={USER_OPTIONS}
           value={filters.userId}
           onChange={(value) => onChange({ userId: value })}
@@ -197,8 +200,8 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("category") && (
         <FilterSelect
           id={`${uid}-category`}
-          label="Category"
-          placeholder="All categories"
+          label={t("category")}
+          placeholder={t("allCategories")}
           options={CATEGORY_OPTIONS}
           value={filters.categoryId}
           onChange={(value) => onChange({ categoryId: value })}
@@ -207,8 +210,8 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("product") && (
         <FilterSelect
           id={`${uid}-product`}
-          label="Product"
-          placeholder="All products"
+          label={t("product")}
+          placeholder={t("allProducts")}
           options={PRODUCT_OPTIONS}
           value={filters.productId}
           onChange={(value) => onChange({ productId: value })}
@@ -217,8 +220,8 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("invoiceStatus") && (
         <FilterSelect
           id={`${uid}-invoice-status`}
-          label="Invoice Status"
-          placeholder="All statuses"
+          label={t("invoiceStatus")}
+          placeholder={t("allStatuses")}
           options={INVOICE_STATUS_OPTIONS}
           value={filters.invoiceStatus}
           onChange={(value) => onChange({ invoiceStatus: value as TransactionFilters["invoiceStatus"] })}
@@ -227,8 +230,8 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("providerStatus") && (
         <FilterSelect
           id={`${uid}-provider-status`}
-          label="Provider Status"
-          placeholder="All statuses"
+          label={t("providerStatus")}
+          placeholder={t("allStatuses")}
           options={PROVIDER_STATUS_OPTIONS}
           value={filters.providerStatus}
           onChange={(value) => onChange({ providerStatus: value as TransactionFilters["providerStatus"] })}
@@ -237,8 +240,8 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("paymentStatus") && (
         <FilterSelect
           id={`${uid}-payment-status`}
-          label="Payment Status"
-          placeholder="All statuses"
+          label={t("paymentStatus")}
+          placeholder={t("allStatuses")}
           options={PAYMENT_STATUS_OPTIONS}
           value={filters.paymentStatus}
           onChange={(value) => onChange({ paymentStatus: value as TransactionFilters["paymentStatus"] })}
@@ -247,7 +250,7 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("startDate") && (
         <FilterDate
           id={`${uid}-start-date`}
-          label="Start Date"
+          label={t("startDate")}
           value={filters.startDate}
           onChange={(value) => onChange({ startDate: value })}
         />
@@ -255,7 +258,7 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("endDate") && (
         <FilterDate
           id={`${uid}-end-date`}
-          label="End Date"
+          label={t("endDate")}
           value={filters.endDate}
           onChange={(value) => onChange({ endDate: value })}
         />
@@ -263,8 +266,8 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("invoiceFrom") && (
         <FilterSelect
           id={`${uid}-invoice-from`}
-          label="Invoice From"
-          placeholder="All sources"
+          label={t("invoiceFrom")}
+          placeholder={t("allSources")}
           options={INVOICE_FROM_OPTIONS}
           value={filters.invoiceFrom}
           onChange={(value) => onChange({ invoiceFrom: value })}
@@ -273,8 +276,8 @@ export function TransactionFilterBar({ filters, onChange, fields = ALL_FILTER_FI
       {has("paymentMethod") && (
         <FilterSelect
           id={`${uid}-payment-method`}
-          label="Payment Method"
-          placeholder="All methods"
+          label={t("paymentMethod")}
+          placeholder={t("allMethods")}
           options={PAYMENT_METHOD_OPTIONS}
           value={filters.paymentMethod}
           onChange={(value) => onChange({ paymentMethod: value })}

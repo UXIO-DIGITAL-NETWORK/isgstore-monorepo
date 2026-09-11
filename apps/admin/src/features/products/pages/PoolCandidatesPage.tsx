@@ -1,21 +1,26 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { DataTable } from "@/components/common/DataTable";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { poolCandidateColumns } from "../components/poolCandidateColumns";
-import { usePoolCandidates, usePoolSkus } from "../hooks/useProviderPool";
-import type { PoolCandidate } from "../types/product.type";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { poolCandidateColumnsFor } from "../components/poolCandidateColumns";
+import { PoolCandidateFilters } from "../components/PoolCandidateFilters";
+import { ALL, EMPTY_POOL_FILTERS, type PoolFilterState } from "../lib/poolFilters";
+import { usePoolCandidates, usePoolFacets, usePoolSkus } from "../hooks/useProviderPool";
+import type { PoolCandidate, PoolSort } from "../types/product.type";
 
 const DEFAULT_PAGE_SIZE = 10;
-const ALL = "all";
 const POOL_PATH = "/admin/products/provider";
+
+/** `"all"` and `""` both mean "do not narrow on this" — send neither. */
+const orUndefined = (value: string) => (value === ALL || value === "" ? undefined : value);
+const asNumber = (value: string) => (value === "" ? undefined : Number(value));
 
 /**
  * "Add Product Provider" — a page of its own.
@@ -28,43 +33,63 @@ const POOL_PATH = "/admin/products/provider";
  * configuring a game is literally what makes its catalogue appear here.
  */
 export default function PoolCandidatesPage() {
+  const { t } = useTranslation("products");
   const navigate = useNavigate();
 
-  const [search, setSearch] = useState("");
-  // "All", not "New only".
-  //
-  // `is_new` means the provider published it recently, and the price checker
-  // backdates the whole catalogue on its first run so that badge means something.
-  // The side effect is that on any established install nothing is "new" — so a
-  // "New only" default opened this page onto an empty table and hid the very
-  // catalogue it exists to offer.
-  const [poolState, setPoolState] = useState(ALL);
-  const [availability, setAvailability] = useState("available");
+  const [filters, setFilters] = useState<PoolFilterState>(EMPTY_POOL_FILTERS);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const poolSkus = usePoolSkus();
+  const { data: facets } = usePoolFacets();
+
+  // Only the typed fields are debounced. A select is one deliberate event, and
+  // delaying it would just make the page feel slow.
+  const search = useDebouncedValue(filters.search);
+  const costMin = useDebouncedValue(filters.costMin);
+  const costMax = useDebouncedValue(filters.costMax);
 
   const params = useMemo(
     () => ({
       search: search || undefined,
-      pool_state: poolState,
-      availability,
+      provider_category: orUndefined(filters.providerCategory),
+      category_id: orUndefined(filters.categoryId),
+      pool_state: filters.poolState,
+      availability: filters.availability,
+      cost_min: asNumber(costMin),
+      // An inverted range is a typo mid-edit, not a query — the API 422s on it,
+      // so drop the ceiling rather than turning a keystroke into an error toast.
+      cost_max: asNumber(costMin) !== undefined && asNumber(costMax) !== undefined && Number(costMax) < Number(costMin)
+        ? undefined
+        : asNumber(costMax),
+      sort: orUndefined(filters.sort) as PoolSort | undefined,
       page,
       per_page: pageSize,
     }),
-    [search, poolState, availability, page, pageSize],
+    [search, costMin, costMax, filters, page, pageSize],
   );
 
   const { data, isLoading, isError, refetch } = usePoolCandidates(params);
+
+  /**
+   * Narrowing the list invalidates the page number, so both move together.
+   *
+   * Page 4 of a filtered set is usually past the end, which renders as "no
+   * results" for a filter that in fact matched plenty. Done here rather than in
+   * an effect watching the filters: an effect would set state during render and
+   * cascade an extra request for the page it was about to leave.
+   */
+  const changeFilters = useCallback((patch: Partial<PoolFilterState>) => {
+    setFilters((current) => ({ ...current, ...patch }));
+    setPage(1);
+  }, []);
 
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
   // An already-pooled SKU cannot be added again — DataTable renders a lock in
   // place of its checkbox and keeps it out of the selection entirely.
   const canSelectRow = useCallback((row: PoolCandidate) => !row.already_pooled, []);
 
-  const resetToFirstPage = () => setPage(1);
   const backToPool = () => navigate({ to: POOL_PATH });
 
   const handleAdd = () => {
@@ -79,89 +104,31 @@ export default function PoolCandidatesPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Add Product Provider
-        </Heading>
-        <Text variant="muted">
-          Provider services for the games you have mapped under Category Provider. Pick the ones to pull into the
-          pool — nothing is priced or sold yet.
-        </Text>
+        >{t("addProductProvider")}</Heading>
+        <Text variant="muted">{t("poolSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
-        <Box className="flex flex-wrap items-center gap-3">
-          <Input
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              resetToFirstPage();
-            }}
-            placeholder="Search service or SKU"
-            aria-label="Search provider services"
-            className="h-9 w-full rounded-xl sm:w-64"
-          />
-
-          <Select
-            value={poolState}
-            onValueChange={(value) => {
-              setPoolState(value);
-              resetToFirstPage();
-            }}
-          >
-            <SelectTrigger
-              aria-label="Filter by pool state"
-              className="h-9 w-44 rounded-xl"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="new">New only</SelectItem>
-              <SelectItem value="not_pooled">Not pooled</SelectItem>
-              <SelectItem value={ALL}>All</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={availability}
-            onValueChange={(value) => {
-              setAvailability(value);
-              resetToFirstPage();
-            }}
-          >
-            <SelectTrigger
-              aria-label="Filter by availability"
-              className="h-9 w-44 rounded-xl"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="available">Available only</SelectItem>
-              <SelectItem value="unavailable">Unavailable</SelectItem>
-              <SelectItem value={ALL}>All</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            aria-label="Refresh candidates"
-            className="rounded-xl"
-            onClick={() => refetch()}
-          >
-            <RefreshCw className="size-4" />
-          </Button>
-        </Box>
+        <PoolCandidateFilters
+          filters={filters}
+          onChange={changeFilters}
+          onReset={() => {
+            setFilters(EMPTY_POOL_FILTERS);
+            setPage(1);
+          }}
+          onRefresh={() => refetch()}
+          facets={facets}
+        />
 
         <Box className="mt-4">
           <DataTable
-            columns={poolCandidateColumns}
+            columns={poolCandidateColumnsFor(t)}
             data={data?.data ?? []}
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="provider services"
-            emptyMessage="No provider services match. Map the game under Category Provider first, or widen the filters."
+            entityLabel={t("poolEntity")}
+            emptyMessage={t("poolEmpty")}
             canSelectRow={canSelectRow}
             onSelectionChange={handleSelectionChange}
             page={page}
@@ -171,7 +138,7 @@ export default function PoolCandidatesPage() {
             onPageChange={setPage}
             onPageSizeChange={(size) => {
               setPageSize(size);
-              resetToFirstPage();
+              setPage(1);
             }}
           />
         </Box>
@@ -182,9 +149,7 @@ export default function PoolCandidatesPage() {
             variant="outline"
             className="rounded-xl"
             onClick={backToPool}
-          >
-            Cancel
-          </Button>
+          >{t("cancel")}</Button>
           <Button
             type="button"
             className="rounded-xl"

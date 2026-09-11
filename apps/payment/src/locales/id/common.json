@@ -1,0 +1,152 @@
+{
+  "actions": {
+    "cancel": "Batal",
+    "save": "Simpan",
+    "delete": "Hapus",
+    "refresh": "Muat ulang"
+  },
+  "theme": {
+    "label": "Ganti tema",
+    "light": "Terang",
+    "dark": "Gelap",
+    "system": "Ikuti sistem"
+  },
+  "language": {
+    "label": "Bahasa",
+    "id": "Indonesia",
+    "en": "English"
+  },
+  "table": {
+    "selectAllRows": "Pilih semua baris",
+    "selectRow": "Pilih baris",
+    "rowsPerPage": "Baris per halaman",
+    "loading": "Memuat…",
+    "rowNumber": "No.",
+    "empty": "Tidak ada data"
+  },
+  "filters": {
+    "search": "Cari",
+    "searchPlaceholder": "No. invoice",
+    "status": "Status",
+    "allStatuses": "Semua status",
+    "statusSuccess": "Sukses",
+    "statusPending": "Pending",
+    "statusFailed": "Gagal",
+    "type": "Tipe",
+    "allTypes": "Semua tipe",
+    "typeSale": "Penjualan",
+    "typeService": "Tagihan Layanan",
+    "client": "Client",
+    "dateFrom": "Dari Tanggal",
+    "dateTo": "Sampai Tanggal"
+  },
+  "recap": {
+    "title": "Ringkasan Transaksi",
+    "description": "Total untuk filter yang sedang aktif.",
+    "countTotal": "Jumlah Transaksi",
+    "countSuccess": "Sukses",
+    "countPending": "Pending",
+    "countFailed": "Gagal",
+    "amountTotal": "Total Nominal",
+    "gross": "Total (Gross)",
+    "adminFee": "Biaya Admin",
+    "gatewayFee": "Fee Gateway",
+    "profit": "Profit Kita"
+  },
+  "confirm": {
+    "delete": "Hapus",
+    "cancel": "Batal"
+  },
+  "installation": {
+    "loading": "Memuat…",
+    "notScheduled": "Instalasi belum dijadwalkan",
+    "notScheduledDescription": "Tim kami akan menjadwalkan pemasangan layanan ini.",
+    "progress": "Progress Instalasi"
+  },
+  "errorPage": {
+    "notFoundAlt": "Ilustrasi halaman tidak ditemukan",
+    "serverErrorAlt": "Ilustrasi kesalahan server",
+    "title": "Oops!",
+    "notFoundSubtitle": "Halaman tidak ditemukan",
+    "serverErrorSubtitle": "Ada yang bermasalah di sisi kami",
+    "backHome": "Kembali ke halaman utama",
+    "notFoundBody": "Halaman yang kamu cari tidak ditemukan. Sebaiknya kembali ke halaman utama.",
+    "serverErrorBody": "Kami sedang memperbaikinya. Silakan coba lagi dalam beberapa menit."
+  },
+  "pills": {
+    "success": "Sukses",
+    "pending": "Pending",
+    "failed": "Gagal"
+  },
+  "bankPicker": {
+    "loading": "Memuat daftar bank…",
+    "notFound": "Bank tidak ditemukan",
+    "placeholder": "Cari bank atau e-wallet…"
+  },
+  "toast": {
+    "approveWithdrawalFailed": "Gagal menyetujui penarikan",
+    "internalWithdrawalCreated": "Permintaan penarikan internal berhasil dibuat",
+    "internalWithdrawalFailed": "Gagal membuat penarikan internal",
+    "withdrawalRejected": "Penarikan ditolak, dana dikembalikan",
+    "rejectWithdrawalFailed": "Gagal menolak penarikan",
+    "channelFeesSaved": "Biaya channel berhasil disimpan",
+    "channelFeesFailed": "Gagal menyimpan biaya channel",
+    "serviceCreated": "Service berhasil dibuat",
+    "serviceCreateFailed": "Gagal membuat service",
+    "serviceUpdated": "Service berhasil diperbarui",
+    "serviceUpdateFailed": "Gagal memperbarui service",
+    "serviceDeleted": "Service berhasil dihapus",
+    "serviceDeleteFailed": "Gagal menghapus service",
+    "invoiceConfirmed": "Invoice dikonfirmasi, langganan aktif",
+    "invoiceConfirmFailed": "Gagal mengkonfirmasi invoice",
+    "invoiceRejected": "Invoice ditolak",
+    "invoiceRejectFailed": "Gagal menolak invoice",
+    "subscriptionCancelled": "Langganan dibatalkan",
+    "subscriptionCancelFailed": "Gagal membatalkan langganan",
+    "incidentCreated": "Insiden berhasil dibuat",
+    "incidentCreateFailed": "Gagal membuat insiden",
+    "incidentUpdated": "Insiden berhasil diperbarui",
+    "incidentUpdateFailed": "Gagal memperbarui insiden",
+    "incidentDeleted": "Insiden berhasil dihapus",
+    "incidentDeleteFailed": "Gagal menghapus insiden",
+    "revealFailed": "Gagal menampilkan nilai",
+    "notificationMarkFailed": "Gagal menandai notifikasi",
+    "allNotificationsRead": "Semua notifikasi ditandai dibaca",
+    "withdrawalCreated": "Permintaan penarikan berhasil dibuat",
+    "withdrawalCreateFailed": "Gagal membuat penarikan",
+    "invoiceOpened": "Invoice dibuat, silakan selesaikan pembayaran",
+    "subscriptionCreateFailed": "Gagal membuat langganan",
+    "paymentReopened": "Pembayaran baru dibuka",
+    "paymentReopenFailed": "Gagal membuka pembayaran",
+    "installScheduleSaved": "Jadwal instalasi disimpan",
+    "installScheduleFailed": "Gagal menyimpan jadwal instalasi",
+    "stepCreated": "Tahapan ditambahkan",
+    "stepCreateFailed": "Gagal menambahkan tahapan",
+    "stepUpdated": "Tahapan diperbarui",
+    "stepUpdateFailed": "Gagal memperbarui tahapan",
+    "stepStatusUpdated": "Status tahapan diperbarui",
+    "stepStatusFailed": "Gagal memperbarui status tahapan",
+    "stepDeleted": "Tahapan dihapus",
+    "stepDeleteFailed": "Gagal menghapus tahapan",
+    "detailCreated": "Detail ditambahkan",
+    "detailCreateFailed": "Gagal menambahkan detail",
+    "detailUpdated": "Detail diperbarui",
+    "detailUpdateFailed": "Gagal memperbarui detail",
+    "detailDeleted": "Detail dihapus",
+    "detailDeleteFailed": "Gagal menghapus detail",
+    "exportFailed": "Gagal mengekspor data",
+    "clipboardUnavailable": "Clipboard tidak tersedia di browser ini"
+  },
+  "dropzone": {
+    "prompt": "Tarik & lepas berkas di sini"
+  },
+  "copy": {
+    "defaultLabel": "Nilai",
+    "copied": "{{label}} disalin",
+    "failed": "Gagal menyalin {{label}}",
+    "aria": "Salin {{label}}"
+  },
+  "authHero": {
+    "badge": "Operasional Internal"
+  }
+}

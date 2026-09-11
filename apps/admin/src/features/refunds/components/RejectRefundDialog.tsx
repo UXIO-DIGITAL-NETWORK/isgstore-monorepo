@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +32,7 @@ interface RejectRefundDialogProps {
  * API enforces the same, so the form gate catches it before the mutation.
  */
 export function RejectRefundDialog({ open, onOpenChange, refundNumber, onConfirm, isPending = false }: RejectRefundDialogProps) {
+  const { t } = useTranslation("refunds");
   const {
     register,
     handleSubmit,
@@ -63,18 +65,15 @@ export function RejectRefundDialog({ open, onOpenChange, refundNumber, onConfirm
         >
           <DialogHeader>
             <DialogTitle>Reject refund {refundNumber}?</DialogTitle>
-            <DialogDescription>
-              No money moves and the sale still stands. The claim link stops working, so the customer cannot submit
-              payout details afterwards.
-            </DialogDescription>
+            <DialogDescription>{t("rejectRefundHint")}</DialogDescription>
           </DialogHeader>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="reject-reason">Reason</Label>
+            <Label htmlFor="reject-reason">{t("reason")}</Label>
             <Textarea
               id="reject-reason"
               className="rounded-xl"
-              placeholder="e.g. Duplicate claim — already refunded under RFD-…"
+              placeholder={t("rejectRefundPlaceholder")}
               {...register("reason")}
             />
             {errors.reason && (
@@ -93,9 +92,7 @@ export function RejectRefundDialog({ open, onOpenChange, refundNumber, onConfirm
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               variant="destructive"

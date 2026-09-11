@@ -1,3 +1,5 @@
+import { translateOptions } from "@/lib/i18nOptions";
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -22,8 +24,8 @@ import { formToIntro, formToSections, introToForm, sectionsToForm } from "../lib
 import { pageFormSchema, type PageFormValues } from "../schemas/contentForms.schema";
 
 const LOCALE_OPTIONS = [
-  { value: "id", label: "Indonesian" },
-  { value: "en", label: "English" },
+  { value: "id", labelKey: "indonesian" },
+  { value: "en", labelKey: "english" },
 ];
 
 interface PageFormDialogProps {
@@ -34,6 +36,7 @@ interface PageFormDialogProps {
 }
 
 export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogProps) {
+  const { t } = useTranslation("content");
   const isEdit = Boolean(pageId);
 
   const { data: existing } = usePage(open ? pageId : undefined);
@@ -103,9 +106,7 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Page" : "Add Page"}</DialogTitle>
-          <DialogDescription>
-            Static pages such as the privacy policy. The slug is the URL the storefront reads it by.
-          </DialogDescription>
+          <DialogDescription>{t("pageSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -116,7 +117,7 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
           <Box className="flex flex-col gap-4">
             <Box className="grid gap-4 sm:grid-cols-3">
               <Box className="flex flex-col gap-1.5 sm:col-span-2">
-                <Label htmlFor="page-title">Title</Label>
+                <Label htmlFor="page-title">{t("title")}</Label>
                 <Input
                   id="page-title"
                   className="rounded-xl"
@@ -138,8 +139,8 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
                 render={({ field }) => (
                   <SelectField
                     id="page-locale"
-                    label="Language"
-                    options={LOCALE_OPTIONS}
+                    label={t("language")}
+                    options={translateOptions(LOCALE_OPTIONS, t)}
                     value={field.value}
                     onChange={field.onChange}
                     error={errors.locale?.message}
@@ -149,11 +150,11 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="page-slug">Slug</Label>
+              <Label htmlFor="page-slug">{t("slug")}</Label>
               <Input
                 id="page-slug"
                 className="rounded-xl"
-                placeholder="e.g. kebijakan-privasi"
+                placeholder={t("pageSlugPlaceholder")}
                 {...register("slug")}
               />
               {errors.slug && (
@@ -167,12 +168,12 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="page-intro">Intro</Label>
+              <Label htmlFor="page-intro">{t("intro")}</Label>
               <Textarea
                 id="page-intro"
                 rows={4}
                 className="rounded-xl"
-                placeholder="Opening paragraphs, before the first heading. Separate with a blank line."
+                placeholder={t("introPlaceholder")}
                 {...register("intro")}
               />
             </Box>
@@ -198,14 +199,14 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <Label htmlFor="page-published">Published</Label>
+                  <Label htmlFor="page-published">{t("published")}</Label>
                 </Box>
               )}
             />
 
             <Box className="grid gap-4 sm:grid-cols-2">
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="page-meta-title">Meta Title</Label>
+                <Label htmlFor="page-meta-title">{t("metaTitle")}</Label>
                 <Input
                   id="page-meta-title"
                   className="rounded-xl"
@@ -213,7 +214,7 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
                 />
               </Box>
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="page-meta-robots">Meta Robots</Label>
+                <Label htmlFor="page-meta-robots">{t("metaRobots")}</Label>
                 <Input
                   id="page-meta-robots"
                   className="rounded-xl"
@@ -223,7 +224,7 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="page-meta-description">Meta Description</Label>
+              <Label htmlFor="page-meta-description">{t("metaDescription")}</Label>
               <Textarea
                 id="page-meta-description"
                 rows={3}
@@ -247,9 +248,7 @@ export function PageFormDialog({ open, onOpenChange, pageId }: PageFormDialogPro
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

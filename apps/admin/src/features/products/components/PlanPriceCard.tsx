@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -22,15 +23,14 @@ const rupiah = (value: number) => formatCurrency(value, { fractionDigits: 0 });
  * `success` for money earned and `chart-1` for the percentage.
  */
 export function PlanPriceCard({ cost, plans }: { cost: number; plans: PlanPricePreview[] }) {
+  const { t } = useTranslation("products");
   return (
     <Box className="min-w-72 divide-y divide-border overflow-hidden rounded-lg border border-border">
       <Box className="flex items-center justify-between gap-3 px-3 py-2">
         <Text
           as="span"
           variant="muted"
-        >
-          Cost
-        </Text>
+        >{t("cost")}</Text>
         <Text
           as="span"
           className="font-medium tabular-nums"
@@ -41,7 +41,7 @@ export function PlanPriceCard({ cost, plans }: { cost: number; plans: PlanPriceP
 
       {plans.length === 0 ? (
         <Box className="px-3 py-2">
-          <Text variant="muted">No priced plans yet — set a margin and save.</Text>
+          <Text variant="muted">{t("noPricedPlans")}</Text>
         </Box>
       ) : (
         plans.map((plan) => {

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { LOCALES } from "@/constants/locales";
+import { swapLocaleInPath } from "@/lib/locale";
 import type { LocaleOption } from "@/types/navbar";
 
 interface UseLocaleDropdownReturn {
@@ -18,10 +19,12 @@ interface UseLocaleDropdownReturn {
  * - Tracks open/closed state of the language dropdown
  * - Attaches a click-outside listener to auto-close the dropdown
  * - Derives the active LocaleOption from the current route params
- * - Provides a switchLocale handler that navigates to the new locale route
+ * - Provides a switchLocale handler that re-opens the CURRENT page in the new
+ *   locale, query string and hash included
  */
 export function useLocaleDropdown(): UseLocaleDropdownReturn {
   const navigate = useNavigate();
+  const location = useLocation();
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
 
   const [langOpen, setLangOpen] = useState(false);
@@ -45,7 +48,10 @@ export function useLocaleDropdown(): UseLocaleDropdownReturn {
 
   const switchLocale = (newLocale: string) => {
     setLangOpen(false);
-    navigate({ to: "/$locale", params: { locale: newLocale } });
+    // The same page in the other language, not the locale root. Navigating to
+    // `/$locale` dropped a buyer on `/en` from the middle of a checkout — see
+    // `swapLocaleInPath`.
+    navigate({ href: swapLocaleInPath(`${location.pathname}${location.search}${location.hash}`, newLocale) });
   };
 
   return { langOpen, langRef, currentLocale, toggleLangOpen, switchLocale };

@@ -7,7 +7,8 @@ import { PERFORMANCE_ROWS } from "@/features/dashboard/data/performance-rows.dat
 import { STAT_CARDS } from "@/features/dashboard/data/stat-cards.data";
 import { CHANNELS } from "@/features/integration/data/channels.data";
 import { PAYMENT_GATEWAYS } from "@/features/financial/data/payment-gateways.data";
-import { SUMMARY_CARDS } from "@/features/financial/data/summary-cards.data";
+import i18n from "@/config/i18n";
+import { summaryCardsFor } from "@/features/financial/data/summary-cards.data";
 import { SUPPLIERS } from "@/features/financial/data/suppliers.data";
 import { CATEGORIES } from "./fixtures/categories.data";
 import { CATEGORY_PROVIDERS } from "./fixtures/category-providers.data";
@@ -200,7 +201,7 @@ const CARD_KEYS = ["credit", "debit", "profit"] as const;
 const DASHBOARD_CARD_KEYS = ["credit", "debit", "todays_sales"] as const;
 
 const DOCUMENTS: Record<string, unknown> = {
-  "/v1/financial/summary": SUMMARY_CARDS.map((card, index) => ({
+  "/v1/financial/summary": summaryCardsFor(i18n.getFixedT(null, "financial")).map((card, index) => ({
     key: CARD_KEYS[index] ?? card.id,
     value: card.value,
     delta_pct: card.deltaPct ?? null,
@@ -1068,8 +1069,34 @@ const uxiolabsPoolCandidates = (params: Record<string, unknown>): Row[] => {
   const poolState = (params.pool_state as string | undefined) ?? "new";
   const availability = (params.availability as string | undefined) ?? "available";
   const search = (params.search as string | undefined)?.toLowerCase();
+  const providerCategory = params.provider_category as string | undefined;
+  const costMin = params.cost_min === undefined ? undefined : Number(params.cost_min);
+  const costMax = params.cost_max === undefined ? undefined : Number(params.cost_max);
+  const sort = params.sort as string | undefined;
 
-  return UXIOLABS_PRICE_LIST.filter((row) => configured.has(String(row.category)))
+  const sorted = (rows: Row[]): Row[] => {
+    const by = (a: Row, b: Row, key: "name" | "cost") =>
+      key === "cost"
+        ? Number(a.cost) - Number(b.cost)
+        : String(a.name).localeCompare(String(b.name), undefined, { numeric: true });
+
+    switch (sort) {
+      case "cost_asc":
+        return [...rows].sort((a, b) => by(a, b, "cost"));
+      case "cost_desc":
+        return [...rows].sort((a, b) => by(b, a, "cost"));
+      case "name_asc":
+        return [...rows].sort((a, b) => by(a, b, "name"));
+      case "name_desc":
+        return [...rows].sort((a, b) => by(b, a, "name"));
+      default:
+        // No sort leaves the provider's own feed order, same as the API.
+        return rows;
+    }
+  };
+
+  return sorted(
+    UXIOLABS_PRICE_LIST.filter((row) => configured.has(String(row.category)))
     .map((row) => ({
       buyer_sku_code: row.buyer_sku_code,
       name: row.name,
@@ -1086,12 +1113,45 @@ const uxiolabsPoolCandidates = (params: Record<string, unknown>): Row[] => {
       if (poolState === "not_pooled" && row.already_pooled) return false;
       if (availability === "available" && !row.available) return false;
       if (availability === "unavailable" && row.available) return false;
+      if (providerCategory && row.provider_category !== providerCategory) return false;
+      if (costMin !== undefined && Number(row.cost) < costMin) return false;
+      if (costMax !== undefined && Number(row.cost) > costMax) return false;
       if (search) {
         const haystack = [row.name, row.buyer_sku_code, row.provider_category].join(" ").toLowerCase();
         if (!haystack.includes(search)) return false;
       }
       return true;
-    });
+      }),
+  );
+};
+
+/** Filter options, computed over the whole configured universe like the API. */
+const uxiolabsPoolFacets = () => {
+  const all = uxiolabsPoolCandidates({ pool_state: "all", availability: "all" });
+  const byProvider = new Map<string, number>();
+
+  for (const row of all) {
+    const key = String(row.provider_category);
+    byProvider.set(key, (byProvider.get(key) ?? 0) + 1);
+  }
+
+  const costs = all.map((row) => Number(row.cost));
+
+  return {
+    provider_categories: [...byProvider.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([provider_category, count]) => ({
+        provider_category,
+        mapped_category_name: `Mapped ${provider_category}`,
+        count,
+      })),
+    categories: [...byProvider.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([name, count], index) => ({
+      id: index + 1,
+      name: `Mapped ${name}`,
+      count,
+    })),
+    cost: { min: costs.length ? Math.min(...costs) : 0, max: costs.length ? Math.max(...costs) : 0 },
+  };
 };
 
 const uxiolabsPriceList = (params: Record<string, unknown>): Row[] => {
@@ -1237,6 +1297,9 @@ export function createFakeApi() {
           pooled_count: all.filter((row) => row.already_pooled).length,
           new_count: all.filter((row) => !row.already_pooled && row.is_new).length,
         });
+      }
+      if (url === "/v1/uxiolabs/pool-facets") {
+        return envelope(uxiolabsPoolFacets());
       }
       if (url === "/v1/uxiolabs/categories") {
         const rows = uxiolabsCategories();

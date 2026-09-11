@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +35,7 @@ interface EditTransactionFormProps {
  * (the earlier modal and this page), so it stays a plain text input.
  */
 export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTransactionFormProps) {
+  const { t } = useTranslation("transactions");
   const editTransaction = useEditTransaction();
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,7 +85,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
       className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6"
     >
       <Box className="flex flex-col gap-1.5">
-        <Label htmlFor="edit-payment-status">Status Payment</Label>
+        <Label htmlFor="edit-payment-status">{t("statusPayment")}</Label>
         <Controller
           control={control}
           name="paymentStatus"
@@ -96,7 +98,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
                 id="edit-payment-status"
                 className="w-full rounded-xl"
               >
-                <SelectValue placeholder="Select status" />
+                <SelectValue placeholder={t("selectStatus")} />
               </SelectTrigger>
               <SelectContent>
                 {EDITABLE_INVOICE_STATUS_OPTIONS.map((option) => (
@@ -104,7 +106,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
                     key={option.value}
                     value={option.value}
                   >
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -122,7 +124,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
       </Box>
 
       <Box className="flex flex-col gap-1.5">
-        <Label htmlFor="edit-invoice-status">Invoice Status</Label>
+        <Label htmlFor="edit-invoice-status">{t("invoiceStatus")}</Label>
         <Controller
           control={control}
           name="invoiceStatus"
@@ -135,7 +137,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
                 id="edit-invoice-status"
                 className="w-full rounded-xl"
               >
-                <SelectValue placeholder="Select status" />
+                <SelectValue placeholder={t("selectStatus")} />
               </SelectTrigger>
               <SelectContent>
                 {EDITABLE_INVOICE_STATUS_OPTIONS.map((option) => (
@@ -143,7 +145,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
                     key={option.value}
                     value={option.value}
                   >
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -161,18 +163,18 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
       </Box>
 
       <Box className="flex flex-col gap-1.5">
-        <Label htmlFor="edit-serial-number">Serial Number</Label>
+        <Label htmlFor="edit-serial-number">{t("serialNumber")}</Label>
         <Input
           id="edit-serial-number"
           type="text"
           className="rounded-xl"
-          placeholder="e.g. SN-00123"
+          placeholder={t("serialPlaceholder")}
           {...register("serialNumber")}
         />
       </Box>
 
       <Box className="flex flex-col gap-1.5">
-        <Label htmlFor="edit-proof-file">Invoice Proof</Label>
+        <Label htmlFor="edit-proof-file">{t("invoiceProof")}</Label>
         <Box
           onDragOver={(event) => {
             event.preventDefault();
@@ -190,8 +192,8 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
           )}
         >
           <UploadCloud className="size-6 text-muted-foreground" />
-          <Text variant="small">Drag &amp; drop files here</Text>
-          <Text variant="small">JPG, JPEG, PNG up to 10mb</Text>
+          <Text variant="small">{t("dragDrop")}</Text>
+          <Text variant="small">{t("fileFormats")}</Text>
           <input
             ref={fileInputRef}
             id="edit-proof-file"
@@ -206,9 +208,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
             size="sm"
             className="rounded-xl"
             onClick={() => fileInputRef.current?.click()}
-          >
-            Browse files
-          </Button>
+          >{t("browseFiles")}</Button>
           {proofFile && <Text variant="small">{proofFile.name}</Text>}
         </Box>
         {errors.proofFile && (
@@ -227,7 +227,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
           variant="outline"
           className="rounded-xl"
         >
-          <Link href={cancelHref}>Cancel</Link>
+          <Link href={cancelHref}>{t("cancel")}</Link>
         </Button>
         <Button
           type="submit"

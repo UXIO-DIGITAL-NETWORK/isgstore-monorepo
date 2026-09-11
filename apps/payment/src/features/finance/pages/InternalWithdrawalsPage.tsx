@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +33,7 @@ import { internalWithdrawalSchema, type InternalWithdrawalFormValues } from "../
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
 export default function InternalWithdrawalsPage() {
+  const { t } = useTranslation("finance");
   const [page, setPage] = useState(1);
   const { data, isLoading, isError } = useFinanceWithdrawals({ page, per_page: 20, type: "internal" });
   const { data: balance } = usePlatformBalance();
@@ -78,16 +80,16 @@ export default function InternalWithdrawalsPage() {
     );
 
   const columns: Column<Withdrawal>[] = [
-    { key: "number", header: "No. Penarikan", cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
-    { key: "requester", header: "Diminta oleh", cell: (r) => r.requester?.name ?? "-" },
-    { key: "amount", header: "Nominal", className: "text-right tabular-nums", cell: (r) => money(r.amount) },
-    { key: "nett", header: "Diterima", className: "text-right tabular-nums", cell: (r) => money(r.nett) },
-    { key: "bank", header: "Rekening", cell: (r) => `${r.bank_code} · ${r.account_number}` },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
-    { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
+    { key: "number", header: t("internalWithdrawals.colNumber"), cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
+    { key: "requester", header: t("internalWithdrawals.colRequester"), cell: (r) => r.requester?.name ?? "-" },
+    { key: "amount", header: t("internalWithdrawals.colAmount"), className: "text-right tabular-nums", cell: (r) => money(r.amount) },
+    { key: "nett", header: t("internalWithdrawals.colNett"), className: "text-right tabular-nums", cell: (r) => money(r.nett) },
+    { key: "bank", header: t("internalWithdrawals.colAccount"), cell: (r) => `${r.bank_code} · ${r.account_number}` },
+    { key: "status", header: t("internalWithdrawals.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+    { key: "created", header: t("internalWithdrawals.colDate"), cell: (r) => formatDateTime(r.created_at) },
     {
       key: "actions",
-      header: "Aksi",
+      header: t("internalWithdrawals.colAction"),
       cell: (r) => {
         if (r.status === "PENDING") {
           return (
@@ -107,14 +109,14 @@ export default function InternalWithdrawalsPage() {
         if (r.status === "PROCESSING") {
           return (
             <Text as="span" variant="small" className="text-muted-foreground">
-              Memproses…
+              {t("internalWithdrawals.processing")}
             </Text>
           );
         }
         if (r.status === "FAILED") {
           return (
             <Text as="span" variant="small" className="text-destructive">
-              {r.failure_reason ?? "Pencairan gagal"}
+              {r.failure_reason ?? t("internalWithdrawals.payoutFailed")}
             </Text>
           );
         }
@@ -129,7 +131,7 @@ export default function InternalWithdrawalsPage() {
           return (
             <Link href={r.proof_url} target="_blank" rel="noreferrer">
               <Text as="span" variant="small" className="underline">
-                Lihat Bukti
+                {t("internalWithdrawals.viewProof")}
               </Text>
             </Link>
           );
@@ -145,14 +147,14 @@ export default function InternalWithdrawalsPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Penarikan Internal</Heading>
+      <Heading level={1}>{t("internalWithdrawals.title")}</Heading>
 
       <StatCard
         data={{
           id: "saldo-platform",
-          label: "Saldo Platform Tersedia",
+          label: t("internalWithdrawals.platformBalance"),
           value: balance?.available ?? 0,
-          caption: "Akumulasi profit biaya admin, fee penarikan, dan revenue langganan — dikurangi penarikan internal yang berjalan",
+          caption: t("internalWithdrawals.platformBalanceCaption"),
         }}
       />
 
@@ -163,12 +165,12 @@ export default function InternalWithdrawalsPage() {
         className="grid grid-cols-1 gap-4 rounded-xl border border-border bg-card p-6 sm:grid-cols-2 lg:grid-cols-4"
       >
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="amount">Nominal</Label>
+          <Label htmlFor="amount">{t("internalWithdrawals.amount")}</Label>
           <Input id="amount" type="number" {...register("amount", { valueAsNumber: true })} placeholder="100000" />
           {errors.amount && <Text variant="small" className="text-destructive">{errors.amount.message}</Text>}
         </Box>
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="bank_code">Bank / E-wallet</Label>
+          <Label htmlFor="bank_code">{t("internalWithdrawals.bankOrEwallet")}</Label>
           <input type="hidden" {...register("bank_code")} />
           <BankCombobox
             id="bank_code"
@@ -180,18 +182,18 @@ export default function InternalWithdrawalsPage() {
         </Box>
         {!isEwallet && (
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="account_number">No. Rekening</Label>
+            <Label htmlFor="account_number">{t("internalWithdrawals.accountNumber")}</Label>
             <Input id="account_number" {...register("account_number")} placeholder="1234567890" />
             {errors.account_number && <Text variant="small" className="text-destructive">{errors.account_number.message}</Text>}
           </Box>
         )}
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="account_name">Nama Pemilik</Label>
-          <Input id="account_name" {...register("account_name")} placeholder="Nama sesuai rekening" />
+          <Label htmlFor="account_name">{t("internalWithdrawals.accountName")}</Label>
+          <Input id="account_name" {...register("account_name")} placeholder={t("internalWithdrawals.accountNamePlaceholder")} />
           {errors.account_name && <Text variant="small" className="text-destructive">{errors.account_name.message}</Text>}
         </Box>
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="account_phone">No. HP Penerima</Label>
+          <Label htmlFor="account_phone">{t("internalWithdrawals.accountPhone")}</Label>
           <Input id="account_phone" {...register("account_phone")} placeholder="08123456789" />
           {errors.account_phone && <Text variant="small" className="text-destructive">{errors.account_phone.message}</Text>}
         </Box>
@@ -199,15 +201,15 @@ export default function InternalWithdrawalsPage() {
           {previewAmount > 0 && (
             <Box className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-muted/50 px-4 py-3 text-sm tabular-nums">
               <Text as="span" className="text-muted-foreground">
-                Biaya: <Text as="span" className="text-foreground">{formatCurrency(previewFee, { fractionDigits: 0 })}</Text>
+                {t("internalWithdrawals.feeLabel")}: <Text as="span" className="text-foreground">{formatCurrency(previewFee, { fractionDigits: 0 })}</Text>
               </Text>
               <Text as="span" className="text-muted-foreground">
-                Diterima: <Text as="span" className="font-medium text-foreground">{formatCurrency(previewNett, { fractionDigits: 0 })}</Text>
+                {t("internalWithdrawals.receivedLabel")}: <Text as="span" className="font-medium text-foreground">{formatCurrency(previewNett, { fractionDigits: 0 })}</Text>
               </Text>
             </Box>
           )}
           <Button type="submit" disabled={isPending} className="w-fit">
-            {isPending ? "Memproses…" : "Ajukan Penarikan Internal"}
+            {isPending ? t("internalWithdrawals.submitting") : t("internalWithdrawals.submit")}
           </Button>
         </Box>
       </Box>
@@ -217,7 +219,7 @@ export default function InternalWithdrawalsPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada penarikan internal"
+        emptyLabel={t("internalWithdrawals.empty")}
         rowKey={(r) => r.id}
       />
       <Pager page={data?.page ?? page} lastPage={data?.lastPage ?? 1} total={data?.total ?? 0} onPageChange={setPage} />

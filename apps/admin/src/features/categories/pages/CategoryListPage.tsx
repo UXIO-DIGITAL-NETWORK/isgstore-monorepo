@@ -1,9 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
-import { categoryColumns } from "../components/categoryColumns";
+import { categoryColumnsFor } from "../components/categoryColumns";
 import { DataTable } from "@/components/common/DataTable";
 import { CategoryFormDialog } from "../components/CategoryFormDialog";
 import { CategoryToolbar } from "../components/CategoryToolbar";
@@ -12,6 +13,7 @@ import { useCategoryList } from "../hooks/useCategories";
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function CategoryListPage() {
+  const { t } = useTranslation("categories");
   const [search, setSearch] = useState("");
   const [typeId, setTypeId] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
@@ -40,10 +42,8 @@ export default function CategoryListPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Category
-        </Heading>
-        <Text variant="muted">Groups games and products so they can be organized and found on the storefront.</Text>
+        >{t("category")}</Heading>
+        <Text variant="muted">{t("listSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -59,12 +59,12 @@ export default function CategoryListPage() {
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <DataTable
-          columns={categoryColumns}
+          columns={categoryColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          entityLabel="categories"
+          entityLabel={t("listEntity")}
           page={data?.meta.current_page ?? page}
           pageSize={data?.meta.per_page ?? pageSize}
           total={data?.meta.total ?? 0}

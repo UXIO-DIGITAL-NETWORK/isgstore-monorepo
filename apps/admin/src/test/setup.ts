@@ -1,4 +1,4 @@
-import { afterEach, vi } from "vitest";
+import { afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
@@ -19,6 +19,21 @@ afterEach(cleanup);
 vi.mock("@/lib/axios", async () => {
   const { createFakeApi } = await import("./fakeApi");
   return { api: createFakeApi() };
+});
+
+// The panel now defaults to Indonesian, but every screen except the navbar is
+// still hardcoded English, and ~100 test files query those English strings by
+// their accessible names. Pin the harness to `en` so a test asserts against the
+// language of the code it is testing, and so the default can change again
+// without a hundred files needing edits. Language *switching* is covered
+// explicitly in src/hooks/useLocale.test.tsx, which sets its own locale.
+import i18n from "@/config/i18n";
+
+// `beforeAll`, not a bare call: `changeLanguage` resolves on a microtask, so a
+// fire-and-forget at module load leaves the first render in the default
+// language. Awaiting it here runs once per test file, before anything mounts.
+beforeAll(async () => {
+  await i18n.changeLanguage("en");
 });
 
 // RootLayout mounts TanStackRouterDevtools unconditionally; it's dev-only

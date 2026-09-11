@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -18,6 +19,18 @@ export const usePoolCandidates = (params: PoolCandidateListParams, enabled = tru
     enabled,
   });
 
+/**
+ * Filter options. Long `staleTime` on purpose: this changes only when an admin
+ * maps a new Category Provider or the price checker moves a cost, and refetching
+ * it on every filter change would triple the requests this page makes.
+ */
+export const usePoolFacets = () =>
+  useQuery({
+    queryKey: ["uxiolabs", "pool-facets"],
+    queryFn: () => providerPoolService.facets(),
+    staleTime: 5 * 60 * 1000,
+  });
+
 export const usePoolSummary = () =>
   useQuery({
     queryKey: ["uxiolabs", "pool-summary"],
@@ -25,6 +38,7 @@ export const usePoolSummary = () =>
   });
 
 export const usePoolSkus = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -42,12 +56,13 @@ export const usePoolSkus = () => {
       toast.success(`${result.pooled} added to the pool`);
     },
     onError: () => {
-      toast.error("Failed to add SKUs to the pool");
+      toast.error(t("poolFailed"));
     },
   });
 };
 
 export const usePromoteProviderProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -63,7 +78,7 @@ export const usePromoteProviderProducts = () => {
       toast.success(`${result.promoted} promoted to draft products`);
     },
     onError: () => {
-      toast.error("Failed to promote");
+      toast.error(t("promoteFailed"));
     },
   });
 };
@@ -76,6 +91,7 @@ export const usePromoteProviderProducts = () => {
  * success count that quietly overstates what happened.
  */
 export const usePromoteAndPublishProviderProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -92,11 +108,12 @@ export const usePromoteAndPublishProviderProducts = () => {
 
       toast.success(`${result.published} promoted and published`);
     },
-    onError: () => toast.error("Failed to promote and publish"),
+    onError: () => toast.error(t("promotePublishFailed")),
   });
 };
 
 export const usePublishProviderProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -112,7 +129,7 @@ export const usePublishProviderProducts = () => {
       toast.success(`${result.published} published`);
     },
     onError: () => {
-      toast.error("Failed to publish");
+      toast.error(t("publishFailed"));
     },
   });
 };

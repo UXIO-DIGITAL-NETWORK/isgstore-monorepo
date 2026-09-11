@@ -1,0 +1,20 @@
+{
+  "title": "Ringkasan Keuangan",
+  "subtitle": "Pantau kredit payment gateway, debit pengguna, dan saldo supplier secara langsung. Klik nominal untuk menyalin.",
+  "summaryFailed": "Gagal memuat kartu ringkasan.",
+  "retry": "Coba lagi",
+  "totalCredit": "Total Kredit",
+  "totalDebit": "Total Debit",
+  "profit": "Profit",
+  "sinceLastMonth": "Dibanding bulan lalu",
+  "paymentGateway": "Payment Gateway",
+  "paymentGatewaySubtitle": "Ringkasan saldo di setiap payment gateway.",
+  "paymentGatewayFailed": "Gagal memuat saldo payment gateway.",
+  "noPaymentGateways": "Belum ada payment gateway yang dikonfigurasi.",
+  "availableBalance": "Saldo Aktif",
+  "heldBalance": "Saldo Tertahan",
+  "supplier": "Supplier",
+  "supplierSubtitle": "Ringkasan saldo yang tersedia di setiap supplier.",
+  "supplierFailed": "Gagal memuat saldo supplier.",
+  "noSuppliers": "Belum ada supplier yang dikonfigurasi."
+}

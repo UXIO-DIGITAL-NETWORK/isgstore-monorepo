@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -17,15 +18,14 @@ import type { Product } from "../types/product.type";
  * product rides in `?id=` so the page is linkable and refresh-safe.
  */
 export default function MainProductPriceLimitPage({ id }: { id: string }) {
+  const { t } = useTranslation("products");
   const { data: product } = useProduct(id || undefined);
 
   return (
     <Box className="flex flex-col gap-6">
       <Box className="rounded-2xl border border-border bg-card p-6">
-        <Heading level={1} variant="section">
-          Set Price limit
-        </Heading>
-        <Text variant="muted">A lower and upper bound for this product's selling prices.</Text>
+        <Heading level={1} variant="section">{t("setPriceLimitTitle")}</Heading>
+        <Text variant="muted">{t("setPriceLimitSubtitle")}</Text>
       </Box>
 
       {product ? (
@@ -34,7 +34,7 @@ export default function MainProductPriceLimitPage({ id }: { id: string }) {
         <PriceLimitForm key={product.id} id={id} product={product} />
       ) : (
         <Box className="rounded-2xl border border-border bg-card p-6">
-          <Text variant="muted">Loading product…</Text>
+          <Text variant="muted">{t("loadingProduct")}</Text>
         </Box>
       )}
     </Box>
@@ -42,6 +42,7 @@ export default function MainProductPriceLimitPage({ id }: { id: string }) {
 }
 
 function PriceLimitForm({ id, product }: { id: string; product: Product }) {
+  const { t } = useTranslation("products");
   const navigate = useNavigate();
   const setLimit = useSetProductPriceLimit();
   const [min, setMin] = useState(product.price_min ? String(product.price_min) : "");
@@ -79,20 +80,18 @@ function PriceLimitForm({ id, product }: { id: string; product: Product }) {
       <Box className="h-fit rounded-2xl border border-border bg-card p-6">
         <Box className="flex flex-col gap-4">
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="price-min">Lower Price Limit (Min)</Label>
+            <Label htmlFor="price-min">{t("lowerLimit")}</Label>
             <Input id="price-min" type="number" value={min} onChange={(e) => setMin(e.target.value)} placeholder="0" />
             <Text variant="small">0 = no limit</Text>
           </Box>
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="price-max">Upper Price Limit (Max)</Label>
+            <Label htmlFor="price-max">{t("upperLimit")}</Label>
             <Input id="price-max" type="number" value={max} onChange={(e) => setMax(e.target.value)} placeholder="0" />
             <Text variant="small">0 = no limit</Text>
           </Box>
         </Box>
         <Box className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={backToList}>
-            Cancel
-          </Button>
+          <Button type="button" variant="outline" onClick={backToList}>{t("cancel")}</Button>
           <Button type="button" onClick={onSubmit} disabled={setLimit.isPending || !id}>
             {setLimit.isPending ? "Saving…" : "Save"}
           </Button>

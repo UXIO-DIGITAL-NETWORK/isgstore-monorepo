@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useRef, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -25,7 +26,9 @@ type Props = {
  * exactly what the API will accept. The query is cached for the session, so the
  * two withdrawal forms mounting this share one request.
  */
-export function BankCombobox({ id, value, onChange, invalid, placeholder = "Cari bank atau e-wallet…" }: Props) {
+export function BankCombobox({ id, value, onChange, invalid, placeholder }: Props) {
+  const { t } = useTranslation("common");
+  const searchPlaceholder = placeholder ?? t("bankPicker.placeholder");
   const { data: banks = [] } = usePayoutBanks();
   const options = useMemo(() => banks.map((bank) => ({ code: bank.code, label: bankLabel(bank) })), [banks]);
 
@@ -53,7 +56,7 @@ export function BankCombobox({ id, value, onChange, invalid, placeholder = "Cari
         aria-expanded={open}
         autoComplete="off"
         value={inputValue}
-        placeholder={placeholder}
+        placeholder={searchPlaceholder}
         aria-invalid={invalid ? true : undefined}
         onFocus={() => {
           setOpen(true);
@@ -73,9 +76,9 @@ export function BankCombobox({ id, value, onChange, invalid, placeholder = "Cari
           {options.length === 0 ? (
             // No catalogue yet — say it is on the way rather than claim the
             // bank does not exist, which is what an empty filter result means.
-            <Text className="px-2 py-2 text-sm text-muted-foreground">Memuat daftar bank…</Text>
+            <Text className="px-2 py-2 text-sm text-muted-foreground">{t("bankPicker.loading")}</Text>
           ) : filtered.length === 0 ? (
-            <Text className="px-2 py-2 text-sm text-muted-foreground">Bank tidak ditemukan</Text>
+            <Text className="px-2 py-2 text-sm text-muted-foreground">{t("bankPicker.notFound")}</Text>
           ) : (
             filtered.map((o) => (
               <Button

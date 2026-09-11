@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -33,6 +34,7 @@ const errorMessage = (error: unknown, fallback: string) =>
  * already enrolled.
  */
 export function SecuritySettingsPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -73,7 +75,7 @@ export function SecuritySettingsPage() {
       setOtpauthUri(null);
       setNewCode("");
       setIsMoving(false);
-      toast.success("Authenticator moved. Your old device no longer works.");
+      toast.success(t("moved"));
     },
     onError: (error) => {
       setNewCode("");
@@ -86,7 +88,7 @@ export function SecuritySettingsPage() {
     onSuccess: () => {
       // Nothing is minted here — the account no longer satisfies the admin
       // gate, so there is no session to carry forward.
-      toast.success("Two-factor disabled. Please sign in again.");
+      toast.success(t("disabled"));
       clearAuth();
       navigate({ to: "/login" });
     },
@@ -106,45 +108,32 @@ export function SecuritySettingsPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Two-factor authentication
-        </Heading>
-        <Text variant="muted">
-          A code from your authenticator app, on top of your password. Required for admin accounts — the panel can move
-          money and read every customer&rsquo;s contact details.
-        </Text>
+        >{t("twoFactorTitle")}</Heading>
+        <Text variant="muted">{t("twoFactorSubtitle")}</Text>
       </Box>
 
       {!enabled ? (
         <Box className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-6">
-          <Text>Two-factor is not set up on this account.</Text>
+          <Text>{t("notSetUp")}</Text>
           <Button
             className="w-fit rounded-xl"
             onClick={() => navigate({ to: "/two-factor-setup" })}
           >
-            <ShieldCheck className="mr-2 size-4" />
-            Set it up
-          </Button>
+            <ShieldCheck className="mr-2 size-4" />{t("setItUp")}</Button>
         </Box>
       ) : (
         <>
           <Box className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-6">
             <Box className="flex flex-col gap-1">
-              <Text>Two-factor is active on this account.</Text>
-              <Text variant="muted">
-                Changed phone, reinstalled your authenticator, or moving to a different app? Move it across — your
-                current device keeps working until the new one is confirmed.
-              </Text>
+              <Text>{t("isActive")}</Text>
+              <Text variant="muted">{t("moveHint")}</Text>
             </Box>
 
             {unfinishedMove && (
               <Text
                 variant="small"
                 className="text-muted-foreground"
-              >
-                A move was started but never confirmed. Starting again replaces it with a fresh code to scan — your
-                current authenticator is unaffected either way.
-              </Text>
+              >{t("unfinishedMove")}</Text>
             )}
 
             {!isMoving && !secret ? (
@@ -153,13 +142,11 @@ export function SecuritySettingsPage() {
                 className="w-fit rounded-xl"
                 onClick={() => setIsMoving(true)}
               >
-                <Smartphone className="mr-2 size-4" />
-                Move to another device
-              </Button>
+                <Smartphone className="mr-2 size-4" />{t("moveToAnotherDevice")}</Button>
             ) : !secret ? (
               <Box className="flex flex-col gap-4">
                 <Box className="flex flex-col gap-1.5">
-                  <Label htmlFor="rotate-password">Your password</Label>
+                  <Label htmlFor="rotate-password">{t("yourPassword")}</Label>
                   <Input
                     id="rotate-password"
                     type="password"
@@ -169,7 +156,7 @@ export function SecuritySettingsPage() {
                   />
                 </Box>
                 <Box className="flex flex-col gap-1.5">
-                  <Label htmlFor="rotate-code">A code from your current authenticator</Label>
+                  <Label htmlFor="rotate-code">{t("currentAuthenticatorCode")}</Label>
                   <Input
                     id="rotate-code"
                     inputMode="numeric"
@@ -182,10 +169,7 @@ export function SecuritySettingsPage() {
                   <Text
                     variant="small"
                     className="text-muted-foreground"
-                  >
-                    Proving you still hold the device being replaced is what stops someone who got into this session
-                    from quietly moving it to their own.
-                  </Text>
+                  >{t("currentCodeHint")}</Text>
                 </Box>
                 <Box className="flex items-center gap-2">
                   <Button
@@ -203,9 +187,7 @@ export function SecuritySettingsPage() {
                       setPassword("");
                       setLiveCode("");
                     }}
-                  >
-                    Cancel
-                  </Button>
+                  >{t("cancel")}</Button>
                 </Box>
               </Box>
             ) : null}
@@ -220,21 +202,18 @@ export function SecuritySettingsPage() {
               onConfirm={() => confirmRotation.mutate()}
               isConfirming={confirmRotation.isPending}
               codeLabel="2. Enter the code from the NEW device"
-              confirmLabel="Confirm the move"
+              confirmLabel={t("confirmTheMove")}
               footnote="Your old authenticator keeps working until you confirm. Confirming signs out every other device."
             />
           )}
 
           <Box className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-6">
             <Box className="flex flex-col gap-1">
-              <Text>Turn two-factor off</Text>
-              <Text variant="muted">
-                Admin accounts are asked to set it up again at the next sign-in, so this is rarely what you want — to
-                change device, move it instead.
-              </Text>
+              <Text>{t("turnOff")}</Text>
+              <Text variant="muted">{t("turnOffHint")}</Text>
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="disable-password">Confirm your password</Label>
+              <Label htmlFor="disable-password">{t("confirmYourPassword")}</Label>
               <Input
                 id="disable-password"
                 type="password"

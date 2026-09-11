@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -17,10 +19,10 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePerformanceRows, useStatCards } from "../hooks/useDashboard";
 import type { PerformanceRow, PerformanceTabKey } from "../types/dashboard.type";
 
-const PERFORMANCE_TABS: { key: PerformanceTabKey; label: string; entityLabel: string }[] = [
-  { key: "category", label: "Category Performance", entityLabel: "Category" },
-  { key: "product", label: "Product Performance", entityLabel: "Product" },
-  { key: "user", label: "User Performance", entityLabel: "User" },
+const PERFORMANCE_TABS: { key: PerformanceTabKey; labelKey: string; entityLabel: string }[] = [
+  { key: "category", labelKey: "categoryPerformance", entityLabel: "Category" },
+  { key: "product", labelKey: "productPerformance", entityLabel: "Product" },
+  { key: "user", labelKey: "userPerformance", entityLabel: "User" },
 ];
 
 const getInitials = (name: string) =>
@@ -31,7 +33,7 @@ const getInitials = (name: string) =>
     .join("")
     .toUpperCase();
 
-function buildColumns(entityLabel: string): ColumnDef<PerformanceRow>[] {
+function buildColumns(entityLabel: string, t: TFunction<"dashboard">): ColumnDef<PerformanceRow>[] {
   return [
     {
       accessorKey: "name",
@@ -55,7 +57,7 @@ function buildColumns(entityLabel: string): ColumnDef<PerformanceRow>[] {
     },
     {
       accessorKey: "totalTransaction",
-      header: "Total Transaction",
+      header: t("colTotalTransaction"),
       cell: ({ getValue }) => (
         <Text
           as="span"
@@ -67,7 +69,7 @@ function buildColumns(entityLabel: string): ColumnDef<PerformanceRow>[] {
     },
     {
       accessorKey: "revenue",
-      header: "Revenue",
+      header: t("revenue"),
       cell: ({ getValue }) => (
         <Text
           as="span"
@@ -81,6 +83,7 @@ function buildColumns(entityLabel: string): ColumnDef<PerformanceRow>[] {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation("dashboard");
   const user = useAuthStore((state) => state.user);
   const { data: statCards, isLoading: statCardsLoading } = useStatCards();
   const [activeTab, setActiveTab] = useState<PerformanceTabKey>("category");
@@ -92,7 +95,7 @@ export default function DashboardPage() {
     refetch: refetchPerformance,
   } = usePerformanceRows(activeTab);
 
-  const columns = useMemo(() => buildColumns(activeTabMeta.entityLabel), [activeTabMeta.entityLabel]);
+  const columns = useMemo(() => buildColumns(activeTabMeta.entityLabel, t), [activeTabMeta.entityLabel, t]);
 
   return (
     <Box className="flex flex-col gap-6">
@@ -139,7 +142,7 @@ export default function DashboardPage() {
                       value={tab.key}
                       className="h-auto flex-none rounded-full border-transparent px-4 py-2 data-[state=active]:border-transparent data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-background"
                     >
-                      {tab.label}
+                      {t(tab.labelKey)}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -155,12 +158,12 @@ export default function DashboardPage() {
                   <SelectTrigger
                     size="sm"
                     className="w-[130px]"
-                    title="Period filtering is not available for this panel yet"
+                    title={t("periodUnavailable")}
                   >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="this-week">This Week</SelectItem>
+                    <SelectItem value="this-week">{t("thisWeek")}</SelectItem>
                   </SelectContent>
                 </Select>
               </Box>

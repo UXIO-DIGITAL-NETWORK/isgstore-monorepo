@@ -1,3 +1,5 @@
+import { translateOptions } from "@/lib/i18nOptions";
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -20,8 +22,8 @@ import { useCreatePromo, usePromo, useUpdatePromo } from "../hooks/usePromos";
 import { promoFormSchema, type PromoFormValues } from "../schemas/promoForm.schema";
 
 const TYPE_OPTIONS = [
-  { value: "percentage", label: "Percentage (%)" },
-  { value: "fixed", label: "Fixed amount (Rp)" },
+  { value: "percentage", labelKey: "percentage" },
+  { value: "fixed", labelKey: "fixedAmount" },
 ];
 
 /** `2026-08-30T09:00:00.000000Z` → `2026-08-30`, which is what a date input takes. */
@@ -34,7 +36,10 @@ interface PromoFormDialogProps {
   promoId?: string;
 }
 
+
+
 export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialogProps) {
+  const { t } = useTranslation("marketing");
   const isEdit = Boolean(promoId);
 
   const { data: existing } = usePromo(open ? promoId : undefined);
@@ -116,10 +121,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Promo" : "Add Promo"}</DialogTitle>
-          <DialogDescription>
-            Discount codes applied at checkout. A public code is advertised on the storefront; a private one still works
-            when a customer types it.
-          </DialogDescription>
+          <DialogDescription>{t("promoFormSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -129,11 +131,11 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
         >
           <Box className="grid gap-4 sm:grid-cols-2">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="promo-code">Code</Label>
+              <Label htmlFor="promo-code">{t("colCode")}</Label>
               <Input
                 id="promo-code"
                 className="rounded-xl uppercase tracking-wider"
-                placeholder="HEMAT10"
+                placeholder={t("promoCodePlaceholder")}
                 {...register("code")}
               />
               {errors.code && (
@@ -146,11 +148,11 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
               )}
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="promo-name">Name</Label>
+              <Label htmlFor="promo-name">{t("colName")}</Label>
               <Input
                 id="promo-name"
                 className="rounded-xl"
-                placeholder="Diskon 10% Semua Game"
+                placeholder={t("promoNamePlaceholder")}
                 {...register("name")}
               />
               {errors.name && (
@@ -165,7 +167,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="promo-description">Description</Label>
+            <Label htmlFor="promo-description">{t("description")}</Label>
             <Textarea
               id="promo-description"
               rows={2}
@@ -181,8 +183,8 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
               render={({ field }) => (
                 <SelectField
                   id="promo-type"
-                  label="Type"
-                  options={TYPE_OPTIONS}
+                  label={t("type")}
+                  options={translateOptions(TYPE_OPTIONS, t)}
                   value={field.value}
                   onChange={field.onChange}
                 />
@@ -208,7 +210,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
             </Box>
             {type === "percentage" && (
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="promo-max">Max Discount</Label>
+                <Label htmlFor="promo-max">{t("maxDiscount")}</Label>
                 <Input
                   id="promo-max"
                   type="number"
@@ -222,7 +224,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
 
           <Box className="grid gap-4 sm:grid-cols-3">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="promo-min">Min. Purchase</Label>
+              <Label htmlFor="promo-min">{t("colMinPurchase")}</Label>
               <Input
                 id="promo-min"
                 type="number"
@@ -232,23 +234,23 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
               />
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="promo-quota">Total Quota</Label>
+              <Label htmlFor="promo-quota">{t("totalQuota")}</Label>
               <Input
                 id="promo-quota"
                 type="number"
                 min={0}
-                placeholder="Unlimited"
+                placeholder={t("unlimited")}
                 className="rounded-xl tabular-nums"
                 {...register("quotaTotal", { valueAsNumber: true })}
               />
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="promo-quota-user">Quota Per User</Label>
+              <Label htmlFor="promo-quota-user">{t("quotaPerUser")}</Label>
               <Input
                 id="promo-quota-user"
                 type="number"
                 min={0}
-                placeholder="Unlimited"
+                placeholder={t("unlimited")}
                 className="rounded-xl tabular-nums"
                 {...register("quotaPerUser", { valueAsNumber: true })}
               />
@@ -257,7 +259,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
 
           <Box className="grid gap-4 sm:grid-cols-2">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="promo-starts">Starts</Label>
+              <Label htmlFor="promo-starts">{t("starts")}</Label>
               <Input
                 id="promo-starts"
                 type="date"
@@ -266,7 +268,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
               />
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="promo-ends">Ends</Label>
+              <Label htmlFor="promo-ends">{t("colEnds")}</Label>
               <Input
                 id="promo-ends"
                 type="date"
@@ -295,7 +297,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <Label htmlFor="promo-public">Advertise on storefront</Label>
+                  <Label htmlFor="promo-public">{t("advertise")}</Label>
                 </Box>
               )}
             />
@@ -309,7 +311,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <Label htmlFor="promo-active">Active</Label>
+                  <Label htmlFor="promo-active">{t("active")}</Label>
                 </Box>
               )}
             />
@@ -321,9 +323,7 @@ export function PromoFormDialog({ open, onOpenChange, promoId }: PromoFormDialog
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

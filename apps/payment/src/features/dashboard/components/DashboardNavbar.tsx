@@ -14,6 +14,7 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/common/Text";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { LocaleSwitcher } from "@/components/common/LocaleSwitcher";
 import { initials } from "@/utils/initials";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ROLES } from "@/constants/roles";
@@ -38,6 +39,7 @@ export function DashboardNavbar() {
       </Box>
 
       <Box className="flex items-center gap-1">
+        <LocaleSwitcher />
         <ThemeToggle />
 
         <Can permission={ROLES.INTERNAL}>

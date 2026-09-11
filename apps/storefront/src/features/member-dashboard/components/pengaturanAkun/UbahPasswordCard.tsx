@@ -121,7 +121,7 @@ export default function UbahPasswordCard({
             onChange={onChangeNewPassword}
             show={showNew}
             onToggle={onToggleNew}
-            placeholder="Password"
+            placeholder={t("pengaturanAkun.password.placeholder")}
           />
           <PasswordField
             label={t("pengaturanAkun.password.confirm")}
@@ -129,7 +129,7 @@ export default function UbahPasswordCard({
             onChange={onChangeConfirmPassword}
             show={showConfirm}
             onToggle={onToggleConfirm}
-            placeholder="Password"
+            placeholder={t("pengaturanAkun.password.placeholder")}
           />
         </Box>
 

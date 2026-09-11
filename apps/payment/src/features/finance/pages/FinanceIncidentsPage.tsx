@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -14,6 +15,7 @@ import { IncidentFormDialog } from "../components/IncidentFormDialog";
 import { useIncidents, useUpdateIncident } from "../hooks/useFinance";
 
 export default function FinanceIncidentsPage() {
+  const { t } = useTranslation("finance");
   const [page, setPage] = useState(1);
   const { data, isLoading, isError } = useIncidents({ page, per_page: 20 });
   const { mutate: update, isPending } = useUpdateIncident();
@@ -21,7 +23,7 @@ export default function FinanceIncidentsPage() {
   const columns: Column<ServiceIncident>[] = [
     {
       key: "title",
-      header: "Judul",
+      header: t("incidents.colTitle"),
       cell: (r) => (
         <Box className="flex flex-col">
           <Text
@@ -42,16 +44,16 @@ export default function FinanceIncidentsPage() {
     },
     {
       key: "target",
-      header: "Target",
+      header: t("incidents.colTarget"),
       cell: (r) => r.target.name ?? "-",
     },
-    { key: "severity", header: "Tingkat", cell: (r) => <StatusBadge status={r.severity} /> },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
-    { key: "started", header: "Mulai", cell: (r) => formatDateTime(r.started_at) },
-    { key: "estimated", header: "Estimasi Selesai", cell: (r) => formatDateTime(r.estimated_resolved_at) },
+    { key: "severity", header: t("incidents.colSeverity"), cell: (r) => <StatusBadge status={r.severity} /> },
+    { key: "status", header: t("incidents.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+    { key: "started", header: t("incidents.colStarted"), cell: (r) => formatDateTime(r.started_at) },
+    { key: "estimated", header: t("incidents.colEstimated"), cell: (r) => formatDateTime(r.estimated_resolved_at) },
     {
       key: "actions",
-      header: "Aksi",
+      header: t("incidents.colAction"),
       // Closing is the only edit worth a table button; the rest is rare enough
       // to warrant reopening the form.
       cell: (r) =>
@@ -69,7 +71,7 @@ export default function FinanceIncidentsPage() {
             disabled={isPending}
             onClick={() => update({ id: r.id, payload: { status: "RESOLVED" } })}
           >
-            Tandai Selesai
+            {t("incidents.markResolved")}
           </Button>
         ),
     },
@@ -78,7 +80,7 @@ export default function FinanceIncidentsPage() {
   return (
     <Box className="flex flex-col gap-6">
       <Box className="flex items-center justify-between">
-        <Heading level={1}>Status Layanan</Heading>
+        <Heading level={1}>{t("incidents.title")}</Heading>
         <IncidentFormDialog />
       </Box>
 
@@ -86,8 +88,7 @@ export default function FinanceIncidentsPage() {
         variant="small"
         className="text-muted-foreground"
       >
-        Insiden yang belum selesai tampil di halaman Status Layanan client. Metode pembayaran atau service yang
-        dinonaktifkan otomatis tampil sebagai &ldquo;tutup&rdquo; tanpa perlu insiden.
+        {t("incidents.note")}
       </Text>
 
       <SimpleTable
@@ -95,7 +96,7 @@ export default function FinanceIncidentsPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada insiden"
+        emptyLabel={t("incidents.empty")}
         rowKey={(r) => r.id}
       />
 

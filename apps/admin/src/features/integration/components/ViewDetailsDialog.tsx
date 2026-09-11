@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -49,6 +50,7 @@ const fieldValue = (field: IntegrationChannelField): string => {
 };
 
 export function ViewDetailsDialog({ provider, channelName, open, onOpenChange }: ViewDetailsDialogProps) {
+  const { t } = useTranslation("integration");
   const { data: details, isLoading } = useChannelDetails(open ? provider : undefined);
   const pingChannel = usePingChannel();
 
@@ -62,15 +64,15 @@ export function ViewDetailsDialog({ provider, channelName, open, onOpenChange }:
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{`${channelName} details`}</DialogTitle>
-          <DialogDescription>Connection status and (masked) credentials.</DialogDescription>
+          <DialogDescription>{t("detailsSubtitle")}</DialogDescription>
         </DialogHeader>
 
         {isLoading || !details ? (
-          <Text variant="muted">Loading…</Text>
+          <Text variant="muted">{t("loading")}</Text>
         ) : (
           <Box className="flex flex-col gap-4">
             <Box className="flex flex-col divide-y divide-border">
-              <Row label="Status">
+              <Row label={t("status")}>
                 <Badge
                   variant="outline"
                   className={
@@ -83,10 +85,10 @@ export function ViewDetailsDialog({ provider, channelName, open, onOpenChange }:
                 </Badge>
               </Row>
               {details.balance !== null ? (
-                <Row label="Balance">{formatCurrency(details.balance, { fractionDigits: 0 })}</Row>
+                <Row label={t("balance")}>{formatCurrency(details.balance, { fractionDigits: 0 })}</Row>
               ) : null}
-              <Row label="Mode">{details.mode ?? "—"}</Row>
-              <Row label="Endpoint">{details.endpoint ?? "—"}</Row>
+              <Row label={t("mode")}>{details.mode ?? "—"}</Row>
+              <Row label={t("endpoint")}>{details.endpoint ?? "—"}</Row>
             </Box>
 
             <Box className="flex flex-col gap-1">
@@ -94,9 +96,7 @@ export function ViewDetailsDialog({ provider, channelName, open, onOpenChange }:
                 as="span"
                 variant="muted"
                 className="text-xs font-medium uppercase tracking-wide"
-              >
-                Credentials
-              </Text>
+              >{t("credentials")}</Text>
               <Box className="flex flex-col divide-y divide-border">
                 {details.fields.map((field) => (
                   <Row

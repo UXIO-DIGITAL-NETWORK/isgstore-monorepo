@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,11 +23,12 @@ interface CopyButtonProps {
  * change carries no Financial regression risk.
  */
 export function CopyButton({ value, label, className }: CopyButtonProps) {
+  const { t } = useTranslation("common");
   if (!value) return null;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(value);
-    toast.success("Copied to clipboard", { description: value });
+    toast.success(t("copy.copied"), { description: value });
   };
 
   return (

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ArrowDownToLine, Bell, CalendarClock, Receipt, ShoppingBag } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -34,6 +35,7 @@ const NOTIFICATIONS_HREF = "/app/payment-internal/notifications";
  * assumes the caller is payment-internal.
  */
 export function NotificationBell() {
+  const { t } = useTranslation("finance");
   const { data: unreadCount = 0 } = useNotificationUnreadCount();
   // Only the first page — the dropdown is a preview; the page is the full list.
   const { data, isLoading } = useNotifications({ per_page: 6 });
@@ -49,7 +51,7 @@ export function NotificationBell() {
           variant="ghost"
           size="icon"
           className="relative"
-          aria-label={hasUnread ? `Notifikasi, ${unreadCount} belum dibaca` : "Notifikasi"}
+          aria-label={hasUnread ? t("notificationBell.labelUnread", { count: unreadCount }) : t("notificationBell.label")}
         >
           <Bell className="size-5" />
           {hasUnread && (
@@ -90,9 +92,9 @@ export function NotificationBell() {
 
         <ScrollArea className="max-h-80">
           {isLoading ? (
-            <Text className="px-4 py-6 text-center text-sm text-muted-foreground">Memuat…</Text>
+            <Text className="px-4 py-6 text-center text-sm text-muted-foreground">{t("notificationBell.loading")}</Text>
           ) : rows.length === 0 ? (
-            <Text className="px-4 py-6 text-center text-sm text-muted-foreground">Belum ada notifikasi</Text>
+            <Text className="px-4 py-6 text-center text-sm text-muted-foreground">{t("notificationBell.empty")}</Text>
           ) : (
             rows.map((notification) => (
               <NotificationRow

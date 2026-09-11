@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -29,6 +30,7 @@ import type { AuthApiError } from "../types/auth.type";
  * doors.
  */
 export function TwoFactorEnrolmentPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
@@ -43,7 +45,7 @@ export function TwoFactorEnrolmentPage() {
       setSecret(response.data.secret);
       setOtpauthUri(response.data.otpauth_uri);
     },
-    onError: (error) => toast.error((error as unknown as AuthApiError)?.response?.data?.message ?? "Could not start setup"),
+    onError: (error) => toast.error((error as unknown as AuthApiError)?.response?.data?.message ?? t("setupFailed")),
   });
 
   const confirm = useMutation({
@@ -55,12 +57,12 @@ export function TwoFactorEnrolmentPage() {
       // remember choice is carried over from login so a 30-day session is not
       // quietly demoted to a session-only one by enrolling.
       setAuth(response.data, readRememberChoice());
-      toast.success("Two-factor is on. Welcome in.");
+      toast.success(t("enabled"));
       navigate({ to: "/admin/dashboard" });
     },
     onError: (error) => {
       setCode("");
-      toast.error((error as unknown as AuthApiError)?.response?.data?.message ?? "That code did not match");
+      toast.error((error as unknown as AuthApiError)?.response?.data?.message ?? t("codeMismatch"));
     },
   });
 
@@ -70,20 +72,13 @@ export function TwoFactorEnrolmentPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          One more step
-        </Heading>
-        <Text variant="muted">
-          Admin accounts need a code from an authenticator app on top of a password — the panel can move money and read
-          every customer&rsquo;s contact details. Set it up once and you are done.
-        </Text>
+        >{t("oneMoreStep")}</Heading>
+        <Text variant="muted">{t("enrolSubtitle")}</Text>
       </Box>
 
       {!secret ? (
         <Box className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-6">
-          <Text variant="muted">
-            You will need an authenticator app — Google Authenticator, 1Password, Authy or similar.
-          </Text>
+          <Text variant="muted">{t("needAnApp")}</Text>
           <Button
             className="w-fit rounded-xl"
             disabled={setup.isPending}
@@ -112,9 +107,7 @@ export function TwoFactorEnrolmentPage() {
           clearAuth();
           navigate({ to: "/login" });
         }}
-      >
-        Sign out
-      </Button>
+      >{t("signOut")}</Button>
     </Box>
   );
 }

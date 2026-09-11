@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -7,8 +8,8 @@ import type { TransactionStatus } from "../types/transaction.type";
 
 const PILLS: {
   status: TransactionStatus;
-  label: string;
-  tooltip: string;
+  labelKey: string;
+  tooltipKey: string;
   countKey: "pending" | "processing" | "failed";
   borderClass: string;
   bgClass: string;
@@ -17,8 +18,8 @@ const PILLS: {
 }[] = [
   {
     status: "pending",
-    label: "Pending",
-    tooltip: "Invoice paid but not yet processed by supplier",
+    labelKey: "pillPending",
+    tooltipKey: "tipPending",
     countKey: "pending",
     borderClass: "border-warning",
     bgClass: "bg-warning/10",
@@ -27,8 +28,8 @@ const PILLS: {
   },
   {
     status: "processing",
-    label: "Processing",
-    tooltip: "Paid and handed to the supplier, awaiting fulfilment",
+    labelKey: "pillProcessing",
+    tooltipKey: "tipProcessing",
     countKey: "processing",
     borderClass: "border-chart-1",
     bgClass: "bg-chart-1/10",
@@ -37,8 +38,8 @@ const PILLS: {
   },
   {
     status: "failed",
-    label: "Failed",
-    tooltip: "Customer paid but the supplier could not fulfil the order",
+    labelKey: "pillFailed",
+    tooltipKey: "tipFailed",
     countKey: "failed",
     borderClass: "border-destructive",
     bgClass: "bg-destructive/10",
@@ -60,6 +61,7 @@ interface StatusPillsProps {
  * (design_system.md §3, 2026-07-10 revision).
  */
 export function StatusPills({ active, onToggle }: StatusPillsProps) {
+  const { t } = useTranslation("transactions");
   const { data: counts } = useStatusCounts();
 
   return (
@@ -84,7 +86,7 @@ export function StatusPills({ active, onToggle }: StatusPillsProps) {
                   variant="small"
                   className="font-medium text-foreground"
                 >
-                  {pill.label}
+                  {t(pill.labelKey)}
                 </Text>
                 <Text
                   as="span"
@@ -94,7 +96,7 @@ export function StatusPills({ active, onToggle }: StatusPillsProps) {
                 </Text>
               </Box>
             </TooltipTrigger>
-            <TooltipContent>{pill.tooltip}</TooltipContent>
+            <TooltipContent>{t(pill.tooltipKey)}</TooltipContent>
           </Tooltip>
         );
       })}

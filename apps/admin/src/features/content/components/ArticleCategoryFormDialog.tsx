@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -25,6 +26,7 @@ interface ArticleCategoryFormDialogProps {
 }
 
 export function ArticleCategoryFormDialog({ open, onOpenChange, articleCategoryId }: ArticleCategoryFormDialogProps) {
+  const { t } = useTranslation("content");
   const isEdit = Boolean(articleCategoryId);
 
   const { data: existing } = useArticleCategory(open ? articleCategoryId : undefined);
@@ -64,9 +66,7 @@ export function ArticleCategoryFormDialog({ open, onOpenChange, articleCategoryI
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Category" : "Add Category"}</DialogTitle>
-          <DialogDescription>
-            Categories are the filter pills on the storefront's news page. The key is what the URL and pill match on.
-          </DialogDescription>
+          <DialogDescription>{t("articleCategorySubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -76,11 +76,11 @@ export function ArticleCategoryFormDialog({ open, onOpenChange, articleCategoryI
         >
           <Box className="grid gap-4 sm:grid-cols-2">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="article-category-name">Name</Label>
+              <Label htmlFor="article-category-name">{t("name")}</Label>
               <Input
                 id="article-category-name"
                 className="rounded-xl"
-                placeholder="e.g. Mobile Legend"
+                placeholder={t("articleCategoryNamePlaceholder")}
                 {...register("name")}
               />
               {errors.name && (
@@ -94,11 +94,11 @@ export function ArticleCategoryFormDialog({ open, onOpenChange, articleCategoryI
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="article-category-key">Key</Label>
+              <Label htmlFor="article-category-key">{t("colKey")}</Label>
               <Input
                 id="article-category-key"
                 className="rounded-xl"
-                placeholder="e.g. mobile-legend"
+                placeholder={t("keyPlaceholder")}
                 {...register("key")}
               />
               {errors.key ? (
@@ -109,16 +109,14 @@ export function ArticleCategoryFormDialog({ open, onOpenChange, articleCategoryI
                   {errors.key.message}
                 </Text>
               ) : (
-                <Text variant="muted">
-                  Changing this on an existing category breaks any link already pointing at it.
-                </Text>
+                <Text variant="muted">{t("keyHint")}</Text>
               )}
             </Box>
           </Box>
 
           <Box className="grid gap-4 sm:grid-cols-2">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="article-category-order">Order</Label>
+              <Label htmlFor="article-category-order">{t("order")}</Label>
               <Input
                 id="article-category-order"
                 type="number"
@@ -138,7 +136,7 @@ export function ArticleCategoryFormDialog({ open, onOpenChange, articleCategoryI
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <Label htmlFor="article-category-status">Active</Label>
+                  <Label htmlFor="article-category-status">{t("active")}</Label>
                 </Box>
               )}
             />
@@ -150,9 +148,7 @@ export function ArticleCategoryFormDialog({ open, onOpenChange, articleCategoryI
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

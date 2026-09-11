@@ -51,7 +51,28 @@ Precedence when they conflict:
   which are meant to carry colour. **Style by token _name_** so a future retune stays a
   one-file change.
 - **Only role = `super-admin`** (all permissions = `["*"]`), but build the `<Can>` / `useCan` / `requirePermission` scaffold now.
-- Admin is **English-only** (no i18n).
+- **Admin is bilingual (ID/EN), default Indonesian, and fully extracted.** Every user-facing
+  string lives in `src/locales/{id,en}/` — one namespace per feature slice plus `common` and
+  `navbar`. `src/config/i18n.ts` registers them; adding one is three edits there (imports, both
+  `resources` maps, the `ns` array) and the third is the one people forget.
+- **`src/hooks/useLocale.ts` is the ONE place the language changes.** It writes i18next (what is
+  on screen), `localStorage` (what the next cold load starts in) and `users.locale` via
+  `PATCH /v1/me/locale` (what follows an admin to another device, and what the API's `SetLocale`
+  middleware reads). Deliberately **no locale segment in the URL**, unlike the storefront.
+- **Anything rendered from a module constant carries a key, not a sentence.** Column arrays become
+  `xColumnsFor(t)`; option and tab lists carry `labelKey` and resolve through `translateOptions`
+  (`src/lib/i18nOptions.ts`). A `label: "Foo"` at module scope freezes whichever language was
+  loaded at import and never updates — that is the trap this convention exists for. **A
+  `useMemo`/`useCallback` that calls `t` must list `t` in its deps**, or React Compiler flags a
+  stale memo; it did, 32 times, during the extraction.
+- **HTML entities do not survive `t()`.** JSX renders `&quot;` as a quote; a catalogue string does
+  not — write the real character in the JSON.
+- **`src/test/setup.ts` pins the harness to `en`**, and `makeUser`'s `locale` must match it:
+  `useLocale` adopts the account's language on mount, so a mismatched fixture flips every rendered
+  screen out from under the assertions.
+- Left untranslated on purpose: brand and vendor names (Uxiolabs, Moonton API), fixture data under
+  `features/*/data/` and `src/test/`, status sentinels (`?? "PENDING"`), numeric placeholder
+  examples, and zod schema messages — a schema is built at module scope with no `t` in reach.
 - **Every feature is built TDD-first:** test cases → failing tests → implementation to green (`system_architecture.md §4.11`). No exceptions, not a per-feature decision.
 
 ## Workflow (non-negotiable)

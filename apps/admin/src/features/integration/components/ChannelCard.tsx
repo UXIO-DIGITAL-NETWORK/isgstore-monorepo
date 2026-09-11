@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Eye, MoreVertical, Pencil, RefreshCw, Wifi, WifiOff } from "lucide-react";
 
@@ -25,6 +26,7 @@ interface ChannelCardProps {
 }
 
 export function ChannelCard({ channel }: ChannelCardProps) {
+  const { t } = useTranslation("integration");
   const isConnected = channel.connection_status === "connected";
   const provider = channel.provider ?? channel.id;
 
@@ -105,16 +107,13 @@ export function ChannelCard({ channel }: ChannelCardProps) {
               disabled={pingChannel.isPending}
               onClick={() => pingChannel.mutate(provider)}
             >
-              <RefreshCw /> Ping / refresh now
-            </DropdownMenuItem>
+              <RefreshCw />{t("pingNow")}</DropdownMenuItem>
             <Can permission="integration.manage">
               <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                <Pencil /> Edit connection
-              </DropdownMenuItem>
+                <Pencil />{t("editConnection")}</DropdownMenuItem>
             </Can>
             <DropdownMenuItem onClick={() => setDetailsOpen(true)}>
-              <Eye /> View details
-            </DropdownMenuItem>
+              <Eye />{t("viewDetails")}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </Box>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Ban, MoreVertical, RotateCcw, Trash2, UserX, Wallet } from "lucide-react";
 
@@ -19,6 +20,7 @@ import { AdjustBalanceDialog } from "./AdjustBalanceDialog";
 type PendingStatus = Extract<UserStatus, "suspended" | "banned">;
 
 export function UserRowActions({ user }: { user: AdminUser }) {
+  const { t } = useTranslation("administration");
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<PendingStatus | null>(null);
@@ -46,30 +48,22 @@ export function UserRowActions({ user }: { user: AdminUser }) {
         >
           <Can permission="users.adjust-balance">
             <DropdownMenuItem onSelect={() => setAdjustOpen(true)}>
-              <Wallet />
-              Adjust Balance
-            </DropdownMenuItem>
+              <Wallet />{t("adjustBalance")}</DropdownMenuItem>
           </Can>
           <Can permission="users.suspend">
             {user.status === "active" ? (
               <>
                 <DropdownMenuItem onSelect={() => setPendingStatus("suspended")}>
-                  <UserX />
-                  Suspend
-                </DropdownMenuItem>
+                  <UserX />{t("suspend")}</DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
                   onSelect={() => setPendingStatus("banned")}
                 >
-                  <Ban />
-                  Ban
-                </DropdownMenuItem>
+                  <Ban />{t("ban")}</DropdownMenuItem>
               </>
             ) : (
               <DropdownMenuItem onSelect={() => setStatus.mutate({ id: user.id, status: "active" })}>
-                <RotateCcw />
-                Reactivate
-              </DropdownMenuItem>
+                <RotateCcw />{t("reactivate")}</DropdownMenuItem>
             )}
           </Can>
           <Can permission="users.delete">
@@ -78,9 +72,7 @@ export function UserRowActions({ user }: { user: AdminUser }) {
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              <Trash2 />{t("delete")}</DropdownMenuItem>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -111,7 +103,7 @@ export function UserRowActions({ user }: { user: AdminUser }) {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title={`Delete ${user.name}?`}
-        description="This permanently removes the customer account. This action cannot be undone."
+        description={t("deleteUserDescription")}
         onConfirm={() => deleteUsers.mutate([user.id])}
       />
     </>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -6,7 +7,7 @@ import { Text } from "@/components/common/Text";
 import { DataTable } from "@/components/common/DataTable";
 import { CategoryTypeFormDialog } from "../components/CategoryTypeFormDialog";
 import { CategoryTypeToolbar } from "../components/CategoryTypeToolbar";
-import { categoryTypeColumns } from "../components/categoryTypeColumns";
+import { categoryTypeColumnsFor } from "../components/categoryTypeColumns";
 import { useCategoryTypeList } from "../hooks/useCategoryTypes";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -20,6 +21,7 @@ const DEFAULT_PAGE_SIZE = 10;
  * changes happen one row at a time through the action menu.
  */
 export default function CategoryTypePage() {
+  const { t } = useTranslation("categories");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -39,12 +41,8 @@ export default function CategoryTypePage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Category Type
-        </Heading>
-        <Text variant="muted">
-          How categories are classified on the storefront, and which of them sell vouchers or digital codes.
-        </Text>
+        >{t("colCategoryType")}</Heading>
+        <Text variant="muted">{t("typeSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -58,13 +56,13 @@ export default function CategoryTypePage() {
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <DataTable
-          columns={categoryTypeColumns}
+          columns={categoryTypeColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          emptyMessage="No category types found."
-          entityLabel="category types"
+          emptyMessage={t("typeEmpty")}
+          entityLabel={t("typeEntity")}
           showRowNumber
           enableSelection={false}
           page={data?.meta.current_page ?? page}

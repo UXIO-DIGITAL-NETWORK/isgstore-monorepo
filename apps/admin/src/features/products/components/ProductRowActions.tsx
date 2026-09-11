@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -63,6 +64,7 @@ interface ProductRowActionsProps {
  * so the menu collapses to Restore.
  */
 export function ProductRowActions({ product }: ProductRowActionsProps) {
+  const { t } = useTranslation("products");
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
@@ -105,16 +107,12 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
           {isArchived ? (
             <Can permission="products.edit">
               <DropdownMenuItem onSelect={() => restoreProduct.mutate(product.id)}>
-                <ArchiveRestore />
-                Restore
-              </DropdownMenuItem>
+                <ArchiveRestore />{t("restore")}</DropdownMenuItem>
             </Can>
           ) : (
             <Can permission="products.edit">
               <DropdownMenuItem onSelect={() => setUxiolabsOpen(true)}>
-                <RefreshCcw />
-                Uxiolabs Update
-              </DropdownMenuItem>
+                <RefreshCcw />{t("uxiolabsUpdate")}</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setShowOpen(true)}>
                 {nextHidden ? <EyeOff /> : <Eye />}
                 {nextHidden ? "Hide Price" : "Show Price"}
@@ -126,9 +124,7 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
               <DropdownMenuItem
                 onSelect={() => navigate({ to: "/admin/products/main/set-price-limit", search: { id: product.id } })}
               >
-                <SlidersHorizontal />
-                Set Price Limit
-              </DropdownMenuItem>
+                <SlidersHorizontal />{t("setPriceLimit")}</DropdownMenuItem>
               {/* Disabled rather than hidden, with the server's own reason inside
                 the item: a disabled DropdownMenuItem swallows pointer events, so
                 a tooltip on it would never fire. Same pattern as the pool's
@@ -152,9 +148,7 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
                 </Box>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-                <Pencil />
-                Edit Product
-              </DropdownMenuItem>
+                <Pencil />{t("editProduct")}</DropdownMenuItem>
             </Can>
           )}
           {!isArchived && (
@@ -164,9 +158,7 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
                 variant="destructive"
                 onSelect={() => setDeleteOpen(true)}
               >
-                <Archive />
-                Archive
-              </DropdownMenuItem>
+                <Archive />{t("archive")}</DropdownMenuItem>
             </Can>
           )}
         </DropdownMenuContent>
@@ -176,9 +168,9 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
         open={uxiolabsOpen}
         onOpenChange={setUxiolabsOpen}
         icon={<RefreshCcw />}
-        confirmLabel="Update"
-        title="Update this product?"
-        description="Re-pull this product's selling prices from its supplier cost. A locked price is left unchanged."
+        confirmLabel={t("update")}
+        title={t("updateProductTitle")}
+        description={t("updateProductDescription")}
         onConfirm={() => uxiolabsUpdate.mutate([product.id])}
       />
 
@@ -218,9 +210,9 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         icon={<Archive />}
-        confirmLabel="Archive"
-        title="Archive this product?"
-        description="It leaves the storefront and the catalogue, and its provider SKU returns to the pool. Past orders keep their details, and you can restore it from the Archived filter."
+        confirmLabel={t("archive")}
+        title={t("archiveProductTitle")}
+        description={t("archiveProductDescription")}
         onConfirm={() => deleteProducts.mutate([product.id])}
       />
 

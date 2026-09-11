@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import {
   flexRender,
@@ -99,6 +100,7 @@ export function DataTable<TData extends { id: string }>({
   onPageChange,
   onPageSizeChange,
 }: DataTableProps<TData>) {
+  const { t } = useTranslation("common");
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // Keyed on the row ids, not the array identity: callers pass
@@ -121,18 +123,18 @@ export function DataTable<TData extends { id: string }>({
         <Checkbox
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() ? "indeterminate" : false)}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all rows"
+          aria-label={t("table.selectAllRows")}
         />
       ),
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
+          aria-label={t("table.selectRow")}
         />
       ),
     }),
-    [],
+    [t],
   );
   // Absolute (not page-relative) numbering: `row.index` is the index within
   // the current page's rows, since manual pagination only ever hands us one
@@ -140,7 +142,7 @@ export function DataTable<TData extends { id: string }>({
   const rowNumberColumn = useMemo<ColumnDef<TData>>(
     () => ({
       id: "__row_number",
-      header: "No.",
+      header: t("table.rowNumber"),
       cell: ({ row }) => (
         <Text
           as="span"
@@ -241,14 +243,14 @@ export function DataTable<TData extends { id: string }>({
 
       <Box className="flex flex-col items-center justify-between gap-3 sm:flex-row">
         <Box className="flex items-center gap-2">
-          <Text variant="small">Rows per page</Text>
+          <Text variant="small">{t("table.rowsPerPage")}</Text>
           <Select
             value={String(pageSize)}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
             <SelectTrigger
               className={formatPageSizeLabel ? "w-28" : "w-20"}
-              aria-label="Rows per page"
+              aria-label={t("table.rowsPerPage")}
             >
               {/* A child overrides Radix's own value rendering, which is how
                   the Product reference gets "10 Row" in the trigger while the
