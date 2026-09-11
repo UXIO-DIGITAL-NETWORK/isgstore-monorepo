@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Plus, RefreshCw, Search } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -25,6 +26,7 @@ interface CategoryToolbarProps {
  * Add Category modal owned by the list page.
  */
 export function CategoryToolbar({ search, onSearchChange, type, onTypeChange, onRefresh, onAdd }: CategoryToolbarProps) {
+  const { t } = useTranslation("categories");
   // The API filters on `type_id`, so the options have to be the real rows —
   // a hardcoded list of names could never match, and a type created on the
   // Category Type tab would never show up here.
@@ -34,13 +36,13 @@ export function CategoryToolbar({ search, onSearchChange, type, onTypeChange, on
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="category-search">Search</Label>
+          <Label htmlFor="category-search">{t("search")}</Label>
           <Box className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="category-search"
               className="w-64 rounded-xl pl-8"
-              placeholder="Search categories"
+              placeholder={t("searchCategories")}
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
             />
@@ -48,7 +50,7 @@ export function CategoryToolbar({ search, onSearchChange, type, onTypeChange, on
         </Box>
 
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="category-type-filter">Type Category</Label>
+          <Label htmlFor="category-type-filter">{t("typeCategory")}</Label>
           <Select
             value={type ?? CLEAR_VALUE}
             onValueChange={(next) => onTypeChange(next === CLEAR_VALUE ? undefined : next)}
@@ -57,10 +59,10 @@ export function CategoryToolbar({ search, onSearchChange, type, onTypeChange, on
               id="category-type-filter"
               className="w-44 rounded-xl"
             >
-              <SelectValue placeholder="Type Category" />
+              <SelectValue placeholder={t("typeCategory")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={CLEAR_VALUE}>All types</SelectItem>
+              <SelectItem value={CLEAR_VALUE}>{t("allTypes")}</SelectItem>
               {options.map((option) => (
                 <SelectItem
                   key={option.value}
@@ -85,17 +87,13 @@ export function CategoryToolbar({ search, onSearchChange, type, onTypeChange, on
           <Text
             as="span"
             className="sr-only"
-          >
-            Refresh
-          </Text>
+          >{t("refresh")}</Text>
         </Button>
         <Button
           className="rounded-xl"
           onClick={onAdd}
         >
-          <Plus className="size-4" />
-          Add Category
-        </Button>
+          <Plus className="size-4" />{t("addCategory")}</Button>
       </Box>
     </Box>
   );

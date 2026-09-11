@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -15,16 +16,17 @@ import type { ServiceSubscription } from "@/types/service.type";
 import { useCancelSubscription, useServiceSubscriptions } from "../hooks/useFinance";
 
 export default function FinanceSubscriptionsPage() {
+  const { t } = useTranslation("finance");
   const [page, setPage] = useState(1);
   const [pendingCancel, setPendingCancel] = useState<ServiceSubscription | null>(null);
   const { data, isLoading, isError } = useServiceSubscriptions({ page, per_page: 20 });
   const { mutate: cancel } = useCancelSubscription();
 
   const columns: Column<ServiceSubscription>[] = [
-    { key: "merchant", header: "Client", cell: (r) => r.merchant?.name ?? "-" },
+    { key: "merchant", header: t("subscriptions.colClient"), cell: (r) => r.merchant?.name ?? "-" },
     {
       key: "service",
-      header: "Service",
+      header: t("subscriptions.colService"),
       cell: (r) => (
         <Text
           as="span"
@@ -36,20 +38,20 @@ export default function FinanceSubscriptionsPage() {
     },
     {
       key: "period",
-      header: "Periode",
+      header: t("subscriptions.colPeriod"),
       cell: (r) => `${formatDate(r.starts_at)} – ${formatDate(r.ends_at)}`,
     },
     {
       key: "remaining",
-      header: "Sisa",
+      header: t("subscriptions.colRemaining"),
       className: "text-right tabular-nums",
       cell: (r) => `${r.days_remaining} hari`,
     },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
-    { key: "invoice", header: "Invoice", cell: (r) => r.invoice_number ?? "—" },
+    { key: "status", header: t("subscriptions.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+    { key: "invoice", header: t("subscriptions.colInvoice"), cell: (r) => r.invoice_number ?? "—" },
     {
       key: "actions",
-      header: "Aksi",
+      header: t("subscriptions.colAction"),
       cell: (r) => (
         <Box className="flex gap-2">
           <Button
@@ -57,7 +59,7 @@ export default function FinanceSubscriptionsPage() {
             size="sm"
             variant="outline"
           >
-            <Link href={`/app/payment-internal/subscriptions/${r.id}`}>Kelola</Link>
+            <Link href={`/app/payment-internal/subscriptions/${r.id}`}>{t("subscriptions.manage")}</Link>
           </Button>
           {r.status === "ACTIVE" && (
             <Button
@@ -75,14 +77,14 @@ export default function FinanceSubscriptionsPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Subscription</Heading>
+      <Heading level={1}>{t("subscriptions.title")}</Heading>
 
       <SimpleTable
         columns={columns}
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada langganan"
+        emptyLabel={t("subscriptions.empty")}
         rowKey={(r) => r.id}
       />
 
@@ -98,13 +100,17 @@ export default function FinanceSubscriptionsPage() {
         onOpenChange={(next) => {
           if (!next) setPendingCancel(null);
         }}
-        title="Batalkan langganan ini?"
+        title={t("subscriptions.cancelTitle")}
         description={
           pendingCancel
-            ? `${pendingCancel.merchant?.name ?? "Client"} akan kehilangan akses ke ${pendingCancel.service?.name ?? "service ini"} sebelum ${formatDate(pendingCancel.ends_at)}. Pengembalian dana diselesaikan di luar sistem.`
+            ? t("subscriptions.cancelDescription", {
+                client: pendingCancel.merchant?.name ?? t("subscriptions.fallbackClient"),
+                service: pendingCancel.service?.name ?? t("subscriptions.fallbackService"),
+                date: formatDate(pendingCancel.ends_at),
+              })
             : ""
         }
-        confirmLabel="Batalkan"
+        confirmLabel={t("subscriptions.cancelConfirm")}
         onConfirm={() => {
           if (pendingCancel) cancel(pendingCancel.id);
           setPendingCancel(null);

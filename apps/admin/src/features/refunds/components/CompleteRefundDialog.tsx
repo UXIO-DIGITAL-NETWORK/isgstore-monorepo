@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +38,7 @@ interface CompleteRefundDialogProps {
  * upload in this app does.
  */
 export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, isPending = false }: CompleteRefundDialogProps) {
+  const { t } = useTranslation("refunds");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [proof, setProof] = useState<File | null>(null);
 
@@ -84,9 +86,7 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, is
         >
           <DialogHeader>
             <DialogTitle>Mark {refund.refund_number} as transferred?</DialogTitle>
-            <DialogDescription>
-              Confirm only after the money has actually left. This closes the refund and marks the order as refunded.
-            </DialogDescription>
+            <DialogDescription>{t("completeHint")}</DialogDescription>
           </DialogHeader>
 
           <Box className="border-border flex flex-col gap-1 rounded-xl border p-3">
@@ -105,7 +105,7 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, is
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="refund-proof">Transfer receipt (optional)</Label>
+            <Label htmlFor="refund-proof">{t("transferReceiptOptional")}</Label>
             <input
               ref={fileInputRef}
               id="refund-proof"
@@ -121,9 +121,7 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, is
                 size="sm"
                 className="rounded-xl"
                 onClick={() => fileInputRef.current?.click()}
-              >
-                Browse files
-              </Button>
+              >{t("browseFiles")}</Button>
               <Text
                 variant="muted"
                 as="span"
@@ -134,11 +132,11 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, is
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="refund-note">Note (optional)</Label>
+            <Label htmlFor="refund-note">{t("noteOptional")}</Label>
             <Input
               id="refund-note"
               className="rounded-xl"
-              placeholder="e.g. Transferred from BCA at 10:15"
+              placeholder={t("completePlaceholder")}
               {...register("note")}
             />
             {errors.note && (
@@ -157,9 +155,7 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, is
               variant="outline"
               className="rounded-xl"
               onClick={() => handleOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

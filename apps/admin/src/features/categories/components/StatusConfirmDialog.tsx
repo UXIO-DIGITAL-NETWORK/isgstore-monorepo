@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Power } from "lucide-react";
 
 import {
@@ -19,16 +20,18 @@ interface StatusConfirmDialogProps {
   onConfirm: () => void;
 }
 
+// Keys, not sentences: a module constant would freeze whichever language was
+// loaded at import.
 const COPY = {
   deactivate: {
-    title: "Deactivate this category type?",
-    description: "This will hide it from being selectable. You can reactivate it anytime.",
-    confirm: "Deactivate",
+    titleKey: "deactivateTypeTitle",
+    descriptionKey: "deactivateTypeDescription",
+    confirmKey: "deactivate",
   },
   activate: {
-    title: "Activate this category type?",
-    description: "This makes it selectable again wherever category types are chosen.",
-    confirm: "Activate",
+    titleKey: "activateTypeTitle",
+    descriptionKey: "activateTypeDescription",
+    confirmKey: "activate",
   },
 } as const;
 
@@ -45,6 +48,7 @@ const COPY = {
  * red, and nothing claims permanence.
  */
 export function StatusConfirmDialog({ open, onOpenChange, action, onConfirm }: StatusConfirmDialogProps) {
+  const { t } = useTranslation("categories");
   const copy = COPY[action];
 
   return (
@@ -57,18 +61,18 @@ export function StatusConfirmDialog({ open, onOpenChange, action, onConfirm }: S
           <AlertDialogMedia className="rounded-xl bg-muted text-muted-foreground">
             <Power />
           </AlertDialogMedia>
-          <AlertDialogTitle>{copy.title}</AlertDialogTitle>
-          <AlertDialogDescription>{copy.description}</AlertDialogDescription>
+          <AlertDialogTitle>{t(copy.titleKey)}</AlertDialogTitle>
+          <AlertDialogDescription>{t(copy.descriptionKey)}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="-mx-6 -mb-6 mt-2 rounded-b-2xl border-t border-border bg-muted/40 px-6 py-4">
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
               onConfirm();
               onOpenChange(false);
             }}
           >
-            {copy.confirm}
+            {t(copy.confirmKey)}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

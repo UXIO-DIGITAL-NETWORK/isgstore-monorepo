@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -17,32 +18,35 @@ export const usePromo = (id?: string) =>
   });
 
 export const useCreatePromo = () => {
+  const { t } = useTranslation("marketing");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: PromoInput) => promosService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Promo created");
+      toast.success(t("promoCreated"));
     },
-    onError: () => toast.error("Failed to create promo"),
+    onError: () => toast.error(t("promoCreateFailed")),
   });
 };
 
 export const useUpdatePromo = () => {
+  const { t } = useTranslation("marketing");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<PromoInput> }) => promosService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Promo updated");
+      toast.success(t("promoUpdated"));
     },
-    onError: () => toast.error("Failed to update promo"),
+    onError: () => toast.error(t("promoUpdateFailed")),
   });
 };
 
 export const useDeletePromos = () => {
+  const { t } = useTranslation("marketing");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -51,6 +55,6 @@ export const useDeletePromos = () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
       toast.success(ids.length === 1 ? "Promo deleted" : `${ids.length} promos deleted`);
     },
-    onError: () => toast.error("Failed to delete promos"),
+    onError: () => toast.error(t("promoDeleteFailed")),
   });
 };

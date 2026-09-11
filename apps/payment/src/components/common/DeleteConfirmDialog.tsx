@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 
@@ -19,7 +20,7 @@ interface DeleteConfirmDialogProps {
   title: string;
   description: string;
   onConfirm: () => void;
-  /** Names the action on the confirm button. Defaults to "Delete". */
+  /** Names the action on the confirm button. Defaults to the delete verb. */
   confirmLabel?: string;
   /** Header glyph. Defaults to the trash icon. */
   icon?: ReactNode;
@@ -52,9 +53,11 @@ export function DeleteConfirmDialog({
   title,
   description,
   onConfirm,
-  confirmLabel = "Delete",
+  confirmLabel,
   icon = <Trash2 />,
 }: DeleteConfirmDialogProps) {
+  const { t } = useTranslation("common");
+
   return (
     <AlertDialog
       open={open}
@@ -72,7 +75,7 @@ export function DeleteConfirmDialog({
         {/* Full-bleed action bar: negative margins cancel the content's p-6 so
             the tinted strip reaches the card edges and rounds with it. */}
         <AlertDialogFooter className="-mx-6 -mb-6 mt-2 rounded-b-2xl border-t border-border bg-muted/40 px-6 py-4">
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("confirm.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             className="dark:bg-destructive"
@@ -81,7 +84,7 @@ export function DeleteConfirmDialog({
               onOpenChange(false);
             }}
           >
-            {confirmLabel}
+            {confirmLabel ?? t("confirm.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

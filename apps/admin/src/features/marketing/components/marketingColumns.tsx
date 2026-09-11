@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -21,10 +22,11 @@ const dateCell = (value?: string) => (
 export const promoColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"marketing">,
 ): ColumnDef<Promo>[] => [
   {
     accessorKey: "code",
-    header: "Code",
+    header: t("colCode"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -44,7 +46,7 @@ export const promoColumns = (
   },
   {
     id: "discount",
-    header: "Discount",
+    header: t("colDiscount"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -58,7 +60,7 @@ export const promoColumns = (
   },
   {
     id: "min_purchase",
-    header: "Min. Purchase",
+    header: t("colMinPurchase"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -70,7 +72,7 @@ export const promoColumns = (
   },
   {
     id: "usage",
-    header: "Used",
+    header: t("colUsed"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -81,10 +83,10 @@ export const promoColumns = (
       </Text>
     ),
   },
-  { id: "ends_at", header: "Ends", cell: ({ row }) => dateCell(row.original.ends_at) },
+  { id: "ends_at", header: t("colEnds"), cell: ({ row }) => dateCell(row.original.ends_at) },
   {
     id: "visibility",
-    header: "Visibility",
+    header: t("colVisibility"),
     cell: ({ row }) => (
       // A private code still works when typed — it is simply not advertised.
       <Badge
@@ -97,7 +99,7 @@ export const promoColumns = (
   },
   {
     id: "status",
-    header: "Status",
+    header: t("colStatus"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -113,7 +115,7 @@ export const promoColumns = (
       <MarketingRowActions
         id={row.original.id}
         label={row.original.code}
-        entityLabel="Promo"
+        entityLabel={t("promoEntity")}
         onDelete={onDelete}
         onEdit={onEdit}
       />
@@ -124,10 +126,11 @@ export const promoColumns = (
 export const flashSaleColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"marketing">,
 ): ColumnDef<FlashSale>[] => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: t("colName"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -139,7 +142,7 @@ export const flashSaleColumns = (
   },
   {
     id: "window",
-    header: "Window",
+    header: t("colWindow"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -151,7 +154,7 @@ export const flashSaleColumns = (
   },
   {
     id: "items",
-    header: "Products",
+    header: t("colProducts"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -163,7 +166,7 @@ export const flashSaleColumns = (
   },
   {
     id: "stock",
-    header: "Stock Sold",
+    header: t("colStockSold"),
     cell: ({ row }) => {
       const sold = row.original.items.reduce((total, item) => total + item.stock_sold, 0);
       const stock = row.original.items.reduce((total, item) => total + item.stock_total, 0);
@@ -179,7 +182,7 @@ export const flashSaleColumns = (
   },
   {
     id: "status",
-    header: "Status",
+    header: t("colStatus"),
     cell: ({ row }) => {
       // Three states, not two: an active sale can still be scheduled or over.
       const label = row.original.is_running ? "Running" : row.original.is_active ? "Scheduled" : "Inactive";
@@ -199,7 +202,7 @@ export const flashSaleColumns = (
       <MarketingRowActions
         id={row.original.id}
         label={row.original.name}
-        entityLabel="Flash Sale"
+        entityLabel={t("flashSaleEntity")}
         onDelete={onDelete}
         onEdit={onEdit}
       />

@@ -141,6 +141,32 @@ still how this repo is written:
 - **TDD, always:** test cases → failing tests → implementation to green. Vitest + React Testing Library. Feature tests live in `features/<f>/tests/`; tests for shared code (`components/common`, `lib`, `utils`, `hooks`) sit next to the file. Never loosen/delete a test to pass it.
 - TS strict, no `any`. Green (`tsc` + `lint` + `test`) before commit. Never `Read`/commit `.env*`.
 
+## Language (ID/EN)
+
+This panel is **bilingual, default Indonesian**. It used to be accidentally bilingual instead —
+"Simpan" beside an English button on the same screen — which is the state the extraction fixed.
+
+- `src/config/i18n.ts` initialises i18next; namespaces live in `src/locales/{id,en}/`:
+  `common` (tables, filters, confirm dialogs, error pages), `nav` (sidebar), `merchant` (client
+  screens), `finance` (kita screens). **A new namespace needs three edits** — both `resources`
+  maps and the `ns` array; the third is the one people forget.
+- `src/hooks/useLocale.ts` is the ONE place the language changes. It writes i18next (what is on
+  screen), `localStorage` (what the next cold load starts in) and `users.locale` via
+  `PATCH /v1/me/locale` (what follows the client to another device, and what the API's `SetLocale`
+  middleware reads to pick the language of every message). A switcher that wrote only one of the
+  three would be wrong in a different way each time.
+- **No locale segment in the URL**, unlike the storefront: these screens are not linked in a given
+  language, and the account setting carries the choice further than a prefix could.
+- **Column headers and select options are factories, not module constants.** `columnsFor(t)` and
+  `translated(OPTIONS, t)` resolve at render; a module constant freezes whichever language was
+  loaded at import and never updates.
+- **`src/test/setup.ts` pins the harness to `id`** — deliberately, and unlike the admin panel's.
+  This app's screens were written in Indonesian and its tests query them by those accessible
+  names, so extracting a string leaves the assertions passing unchanged. A fixture user's `locale`
+  must match the pin, or `useLocale` flips the rendered language out from under the assertions.
+- Numeric placeholders (`100000`, `08123456789`, `you@company.com`) are format examples, not prose,
+  and are left alone.
+
 ## Service billing
 
 A client pays a service bill through **Monetapay**, in the app — there is no

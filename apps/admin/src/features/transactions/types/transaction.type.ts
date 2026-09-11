@@ -214,6 +214,16 @@ export interface SelectOption {
   label: string;
 }
 
+/**
+ * The same option before its label is resolved. Option lists are module
+ * constants, so they carry a key rather than a sentence — a constant would
+ * otherwise freeze whichever language was loaded at import.
+ */
+export interface KeyedSelectOption {
+  value: string;
+  labelKey: string;
+}
+
 /** Recap report granularity (product_requirements.md §4.3). */
 export type RecapPeriod = "daily" | "monthly";
 

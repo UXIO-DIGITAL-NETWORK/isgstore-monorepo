@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Gem } from "lucide-react";
 import { Link } from "@/components/common/Link";
 import { Box } from "@/components/common/Box";
@@ -6,6 +7,7 @@ import { Heading } from "@/components/common/Heading";
 import { useBranding } from "@/hooks/useBranding";
 
 export function AuthSideHero() {
+  const { t } = useTranslation("common");
   const { siteName } = useBranding();
 
   return (
@@ -26,7 +28,7 @@ export function AuthSideHero() {
       <Box className="relative z-10 w-full max-w-2xl mt-8">
         <Box className="inline-flex items-center space-x-2 bg-white/5 backdrop-blur-md rounded-full px-4 py-1.5 mb-8 border border-white/10 shadow-sm">
           <Box className="w-2.5 h-2.5 rounded-full bg-white"></Box>
-          <Text className="text-xs font-semibold tracking-wide text-slate-300">Internal Operations</Text>
+          <Text className="text-xs font-semibold tracking-wide text-slate-300">{t("authHero.badge")}</Text>
         </Box>
 
         <Heading

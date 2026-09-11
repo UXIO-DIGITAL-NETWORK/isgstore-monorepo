@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
 import { endOfDay, startOfDay } from "date-fns";
@@ -5,7 +6,7 @@ import { endOfDay, startOfDay } from "date-fns";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
-import { automaticColumns } from "../components/automaticColumns";
+import { automaticColumnsFor } from "../components/automaticColumns";
 import { ExportButton } from "../components/ExportButton";
 import { RecapButton } from "../components/RecapButton";
 import { StatusPills } from "../components/StatusPills";
@@ -18,6 +19,7 @@ import type { TransactionStatus } from "../types/transaction.type";
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function AutomaticTransactionsPage() {
+  const { t } = useTranslation("transactions");
   const [filters, setFilters] = useState<TransactionFilters>(() => {
     // Day boundaries, not `new Date().toISOString()` twice — the service
     // compares created_at against these as raw ISO strings, so an identical
@@ -59,12 +61,8 @@ export default function AutomaticTransactionsPage() {
           <Heading
             level={1}
             variant="section"
-          >
-            Automatic Transaction History
-          </Heading>
-          <Text variant="muted">
-            Monitor all automated transactions that have been processed along with their status and details.
-          </Text>
+          >{t("automaticTitle")}</Heading>
+          <Text variant="muted">{t("automaticSubtitle")}</Text>
         </Box>
         <Box className="flex shrink-0 gap-3">
           <RecapButton />
@@ -83,7 +81,7 @@ export default function AutomaticTransactionsPage() {
           onChange={handleFilterChange}
         />
         <TransactionsTable
-          columns={automaticColumns}
+          columns={automaticColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}

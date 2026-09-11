@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,6 +75,7 @@ function CompareRow({ label, order, account }: { label: string; order: string | 
  * `balance_mutations`, not in a screenshot of a banking app.
  */
 export function VerifyCreditDialog({ open, onOpenChange, refund, onConfirm, isPending = false }: VerifyCreditDialogProps) {
+  const { t } = useTranslation("refunds");
   const {
     register,
     handleSubmit,
@@ -108,9 +110,7 @@ export function VerifyCreditDialog({ open, onOpenChange, refund, onConfirm, isPe
         >
           <DialogHeader>
             <DialogTitle>Credit {formatCurrency(refund.amount, { fractionDigits: 0 })} to this account?</DialogTitle>
-            <DialogDescription>
-              The balance is credited immediately and the order is marked refunded. This cannot be undone from here.
-            </DialogDescription>
+            <DialogDescription>{t("verifyHint")}</DialogDescription>
           </DialogHeader>
 
           <Box className="border-border flex flex-col gap-2 rounded-xl border p-3">
@@ -122,25 +122,21 @@ export function VerifyCreditDialog({ open, onOpenChange, refund, onConfirm, isPe
                 variant="small"
                 as="span"
                 className="text-muted-foreground font-medium"
-              >
-                On the order
-              </Text>
+              >{t("onTheOrder")}</Text>
               <Text
                 variant="small"
                 as="span"
                 className="text-muted-foreground font-medium"
-              >
-                Claiming account
-              </Text>
+              >{t("claimingAccount")}</Text>
             </Box>
 
             <CompareRow
-              label="Email"
+              label={t("email")}
               order={refund.customer.email}
               account={claimed?.email ?? null}
             />
             <CompareRow
-              label="Phone"
+              label={t("phone")}
               order={refund.customer.phone}
               account={claimed?.phone ?? null}
             />
@@ -149,8 +145,7 @@ export function VerifyCreditDialog({ open, onOpenChange, refund, onConfirm, isPe
               <Text
                 variant="small"
                 className="text-muted-foreground"
-              >
-                Matched on <strong>{claimed.contact_match}</strong> at claim time: {claimed.contact_value ?? "—"}
+              >{t("matchedOn")}<strong>{claimed.contact_match}</strong> at claim time: {claimed.contact_value ?? "—"}
               </Text>
             )}
           </Box>
@@ -184,11 +179,11 @@ export function VerifyCreditDialog({ open, onOpenChange, refund, onConfirm, isPe
           )}
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="verify-note">Note (optional)</Label>
+            <Label htmlFor="verify-note">{t("noteOptional")}</Label>
             <Input
               id="verify-note"
               className="rounded-xl"
-              placeholder="e.g. Contact matched, order history consistent"
+              placeholder={t("verifyPlaceholder")}
               {...register("note")}
             />
             {errors.note && (
@@ -207,9 +202,7 @@ export function VerifyCreditDialog({ open, onOpenChange, refund, onConfirm, isPe
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

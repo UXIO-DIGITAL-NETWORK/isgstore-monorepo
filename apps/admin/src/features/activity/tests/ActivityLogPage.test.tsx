@@ -17,7 +17,7 @@ describe("ActivityLogPage", () => {
   });
 
   it("renders the header and the activity table columns", async () => {
-    renderRoute("/admin/activity");
+    await renderRoute("/admin/activity");
 
     expect(await screen.findByRole("heading", { name: /activity/i })).toBeInTheDocument();
 
@@ -28,7 +28,7 @@ describe("ActivityLogPage", () => {
   });
 
   it("shows a fixture row's actor and message", async () => {
-    renderRoute("/admin/activity");
+    await renderRoute("/admin/activity");
 
     expect((await screen.findAllByText("Randy Galang")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Stock Update").length).toBeGreaterThan(0);
@@ -36,7 +36,7 @@ describe("ActivityLogPage", () => {
 
   it("passes the typed search term to the service", async () => {
     const listSpy = vi.spyOn(activityService, "list");
-    renderRoute("/admin/activity");
+    await renderRoute("/admin/activity");
 
     await screen.findByRole("table");
     const search = screen.getByPlaceholderText(/search/i);

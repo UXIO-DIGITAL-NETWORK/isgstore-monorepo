@@ -89,5 +89,9 @@
       "topUpAgain": "Top Up lagi",
       "backToHome": "Kembali ke Beranda"
     }
+  },
+  "a11y": {
+    "copyInvoiceNumber": "Salin nomor invoice",
+    "copyVirtualAccount": "Salin nomor virtual account"
   }
 }

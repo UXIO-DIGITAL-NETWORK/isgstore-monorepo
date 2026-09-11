@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -18,6 +19,7 @@ type RowDraft = Partial<
 >;
 
 export default function ChannelFeePage() {
+  const { t } = useTranslation("finance");
   const { data, isLoading, isError } = useChannelFees();
   const { data: meta } = useChannelMeta();
   const { mutate: save, isPending } = useUpdateChannelFee();
@@ -45,11 +47,11 @@ export default function ChannelFeePage() {
   });
 
   const columns: Column<ChannelFee>[] = [
-    { key: "name", header: "Metode", cell: (r) => <Text as="span" className="font-medium">{r.name}</Text> },
-    { key: "type", header: "Tipe", cell: (r) => r.payment_type },
+    { key: "name", header: t("channelFees.colMethod"), cell: (r) => <Text as="span" className="font-medium">{r.name}</Text> },
+    { key: "type", header: t("channelFees.colType"), cell: (r) => r.payment_type },
     {
       key: "fee_flat",
-      header: "Biaya Flat (Rp)",
+      header: t("channelFees.colFeeFlat"),
       className: "w-40",
       cell: (r) => (
         <Input
@@ -62,7 +64,7 @@ export default function ChannelFeePage() {
     },
     {
       key: "fee_percent",
-      header: "Biaya Persen (%)",
+      header: t("channelFees.colFeePercent"),
       className: "w-40",
       cell: (r) => (
         <Input
@@ -76,7 +78,7 @@ export default function ChannelFeePage() {
     },
     {
       key: "gateway_fee_flat",
-      header: "Fee Gateway (Rp)",
+      header: t("channelFees.colGatewayFlat"),
       className: "w-40",
       cell: (r) => (
         <Box className="flex flex-col gap-1">
@@ -101,7 +103,7 @@ export default function ChannelFeePage() {
     },
     {
       key: "gateway_fee_percent",
-      header: "Fee Gateway (%)",
+      header: t("channelFees.colGatewayPercent"),
       className: "w-40",
       cell: (r) => (
         <Input
@@ -115,7 +117,7 @@ export default function ChannelFeePage() {
     },
     {
       key: "tax_percent",
-      header: "Pajak (%)",
+      header: t("channelFees.colTax"),
       className: "w-40",
       cell: (r) => (
         <Input
@@ -130,7 +132,7 @@ export default function ChannelFeePage() {
     },
     {
       key: "is_active",
-      header: "Status",
+      header: t("channelFees.colStatus"),
       cell: (r) => {
         const active = merged(r).is_active;
         // Toggle the draft; persists together with the row's other edits on Simpan.
@@ -152,14 +154,14 @@ export default function ChannelFeePage() {
     },
     {
       key: "actions",
-      header: "Aksi",
+      header: t("channelFees.colAction"),
       cell: (r) => (
         <Button
           size="sm"
           disabled={isPending || lockedFor(r)}
           onClick={() => save({ id: r.id, payload: merged(r) })}
         >
-          Simpan
+          {t("channelFees.save")}
         </Button>
       ),
     },
@@ -167,11 +169,9 @@ export default function ChannelFeePage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Biaya per Metode Pembayaran</Heading>
+      <Heading level={1}>{t("channelFees.title")}</Heading>
       <Text variant="small">
-        Atur biaya flat/persen, fee gateway, dan pajak (PPN) tiap metode pembayaran, serta
-        aktif/nonaktifkan channel. Pajak dikenakan atas fee channel dan mengurangi keuntungan kita
-        (tidak menambah tagihan customer). Klik Simpan untuk menerapkan.
+        {t("channelFees.description")}
       </Text>
 
       {meta?.hub_managed && (
@@ -181,8 +181,7 @@ export default function ChannelFeePage() {
             variant="small"
             className="text-muted-foreground"
           >
-            {meta.managed_note ??
-              "Channel dikelola di Hub. Ubah biaya, status aktif, dan minimum dari panel Hub — perubahan lokal akan tertimpa sinkronisasi."}
+            {meta.managed_note ?? t("channelFees.hubManagedNote")}
           </Text>
         </Box>
       )}
@@ -192,7 +191,7 @@ export default function ChannelFeePage() {
         rows={data ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada channel"
+        emptyLabel={t("channelFees.empty")}
         rowKey={(r) => r.id}
       />
     </Box>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 
 import { Box } from "@/components/common/Box";
@@ -34,6 +35,7 @@ const toDefaults = (fields: IntegrationChannelField[]): FormValues =>
   );
 
 export function EditConnectionDialog({ provider, channelName, open, onOpenChange }: EditConnectionDialogProps) {
+  const { t } = useTranslation("integration");
   const { data: details } = useChannelDetails(open ? provider : undefined);
   const updateChannel = useUpdateChannel();
 
@@ -77,9 +79,7 @@ export function EditConnectionDialog({ provider, channelName, open, onOpenChange
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{`Edit ${channelName} connection`}</DialogTitle>
-          <DialogDescription>
-            Secrets are write-only — leave a field blank to keep the current value.
-          </DialogDescription>
+          <DialogDescription>{t("secretsWriteOnly")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -134,9 +134,7 @@ export function EditConnectionDialog({ provider, channelName, open, onOpenChange
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               disabled={updateChannel.isPending || !details}

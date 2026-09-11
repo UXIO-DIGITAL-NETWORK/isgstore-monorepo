@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -16,6 +17,7 @@ const getInitials = (name: string) =>
     .toUpperCase();
 
 export function ActivityFeedCard() {
+  const { t } = useTranslation("dashboard");
   const { data, isLoading, isError, refetch } = useActivityLog();
 
   return (
@@ -25,29 +27,23 @@ export function ActivityFeedCard() {
           level={3}
           variant="section"
           className="text-lg"
-        >
-          Recent Log Activity
-        </Heading>
+        >{t("recentActivity")}</Heading>
         <Button
           variant="link"
           size="sm"
           className="h-auto p-0 text-muted-foreground"
-        >
-          Show More
-        </Button>
+        >{t("showMore")}</Button>
       </Box>
 
       <Box className="flex flex-col gap-4">
         {isError ? (
           <Box className="flex flex-col items-start gap-2">
-            <Text variant="muted">Failed to load recent activity.</Text>
+            <Text variant="muted">{t("activityFailed")}</Text>
             <Button
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-            >
-              Retry
-            </Button>
+            >{t("retry")}</Button>
           </Box>
         ) : isLoading || !data ? (
           Array.from({ length: 4 }).map((_, index) => (

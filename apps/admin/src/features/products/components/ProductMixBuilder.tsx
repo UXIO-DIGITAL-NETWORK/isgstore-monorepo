@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
 import { Controller, useFieldArray, type Control, type FieldErrors, type UseFormRegister } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
@@ -29,6 +30,7 @@ interface ProductMixBuilderProps {
  * so every row an admin built referenced a product that did not exist.
  */
 export function ProductMixBuilder({ control, register, errors, currentProductId }: ProductMixBuilderProps) {
+  const { t } = useTranslation("products");
   const { fields, append, remove } = useFieldArray({ control, name: "productMix" });
   // One page is plenty for a picker; the list is searchable in its own screen.
   const { data, isLoading } = useProductList({ per_page: 100 });
@@ -54,13 +56,11 @@ export function ProductMixBuilder({ control, register, errors, currentProductId 
         className="w-fit self-end rounded-xl"
         onClick={() => append({ mainProduct: "", quantity: "" })}
       >
-        <Plus className="size-4" />
-        Add Mix
-      </Button>
+        <Plus className="size-4" />{t("addMix")}</Button>
 
       {fields.length === 0 ? (
         <Box className="rounded-xl border border-border bg-card p-10 text-center">
-          <Text variant="muted">No product mix yet.</Text>
+          <Text variant="muted">{t("noProductMix")}</Text>
         </Box>
       ) : (
         <Box className="flex flex-col gap-3">
@@ -75,7 +75,7 @@ export function ProductMixBuilder({ control, register, errors, currentProductId 
                 render={({ field: select }) => (
                   <SelectField
                     id={`product-mix-product-${index}`}
-                    label="Main Product"
+                    label={t("mainProduct")}
                     options={options}
                     disabled={isLoading}
                     emptyLabel={isLoading ? "Loading products..." : "No products available"}
@@ -87,7 +87,7 @@ export function ProductMixBuilder({ control, register, errors, currentProductId 
               />
 
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor={`product-mix-quantity-${index}`}>Quantity</Label>
+                <Label htmlFor={`product-mix-quantity-${index}`}>{t("quantity")}</Label>
                 <Input
                   id={`product-mix-quantity-${index}`}
                   className="rounded-xl"

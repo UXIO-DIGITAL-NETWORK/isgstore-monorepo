@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEchoConnected } from "@/hooks/useEchoConnected";
@@ -48,6 +49,7 @@ export const useFinanceWithdrawals = (params: ListParams) => {
 };
 
 export const useApproveWithdrawal = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, method, proof }: { id: number; method?: "manual" | "monetapay"; proof?: File }) =>
@@ -57,7 +59,7 @@ export const useApproveWithdrawal = () => {
       toast.success(method === "manual" ? "Penarikan disetujui" : "Penarikan diproses ke Monetapay");
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menyetujui penarikan");
+      toast.error(error.response?.data?.message ?? t("toast.approveWithdrawalFailed"));
     },
   });
 };
@@ -67,30 +69,32 @@ export const usePlatformBalance = () =>
   useQuery({ queryKey: ["finance", "platform-balance"], queryFn: financeService.platformBalance });
 
 export const useCreateInternalWithdrawal = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateInternalWithdrawalPayload) => financeService.createInternalWithdrawal(payload),
     onSuccess: () => {
       // Refreshes both the internal withdrawals list and the platform-balance figure.
       queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success("Permintaan penarikan internal berhasil dibuat");
+      toast.success(t("toast.internalWithdrawalCreated"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal membuat penarikan internal");
+      toast.error(error.response?.data?.message ?? t("toast.internalWithdrawalFailed"));
     },
   });
 };
 
 export const useRejectWithdrawal = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: number; reason?: string }) => financeService.reject(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success("Penarikan ditolak, dana dikembalikan");
+      toast.success(t("toast.withdrawalRejected"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menolak penarikan");
+      toast.error(error.response?.data?.message ?? t("toast.rejectWithdrawalFailed"));
     },
   });
 };
@@ -105,6 +109,7 @@ export const useChannelMeta = () =>
   useQuery({ queryKey: ["finance", "channels", "meta"], queryFn: financeService.channelMeta });
 
 export const useUpdateChannelFee = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -123,10 +128,10 @@ export const useUpdateChannelFee = () => {
     }) => financeService.updateChannel(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "channels"] });
-      toast.success("Biaya channel berhasil disimpan");
+      toast.success(t("toast.channelFeesSaved"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menyimpan biaya channel");
+      toast.error(error.response?.data?.message ?? t("toast.channelFeesFailed"));
     },
   });
 };
@@ -141,44 +146,47 @@ export const useServicesMeta = () =>
   useQuery({ queryKey: ["finance", "services", "meta"], queryFn: financeService.servicesMeta });
 
 export const useCreateService = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ServicePayload) => financeService.createService(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "services"] });
-      toast.success("Service berhasil dibuat");
+      toast.success(t("toast.serviceCreated"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal membuat service");
+      toast.error(error.response?.data?.message ?? t("toast.serviceCreateFailed"));
     },
   });
 };
 
 export const useUpdateService = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<ServicePayload> }) =>
       financeService.updateService(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "services"] });
-      toast.success("Service berhasil diperbarui");
+      toast.success(t("toast.serviceUpdated"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal memperbarui service");
+      toast.error(error.response?.data?.message ?? t("toast.serviceUpdateFailed"));
     },
   });
 };
 
 export const useDeleteService = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => financeService.deleteService(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "services"] });
-      toast.success("Service berhasil dihapus");
+      toast.success(t("toast.serviceDeleted"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menghapus service");
+      toast.error(error.response?.data?.message ?? t("toast.serviceDeleteFailed"));
     },
   });
 };
@@ -190,31 +198,33 @@ export const useServiceInvoices = (params: ListParams) =>
   });
 
 export const useConfirmServiceInvoice = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => financeService.confirmServiceInvoice(id),
     onSuccess: () => {
       // Confirming also creates a subscription, so the whole namespace refreshes.
       queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success("Invoice dikonfirmasi, langganan aktif");
+      toast.success(t("toast.invoiceConfirmed"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal mengkonfirmasi invoice");
+      toast.error(error.response?.data?.message ?? t("toast.invoiceConfirmFailed"));
     },
   });
 };
 
 export const useRejectServiceInvoice = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
       financeService.rejectServiceInvoice(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "service-invoices"] });
-      toast.success("Invoice ditolak");
+      toast.success(t("toast.invoiceRejected"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menolak invoice");
+      toast.error(error.response?.data?.message ?? t("toast.invoiceRejectFailed"));
     },
   });
 };
@@ -226,15 +236,16 @@ export const useServiceSubscriptions = (params: ListParams) =>
   });
 
 export const useCancelSubscription = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => financeService.cancelSubscription(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "service-subscriptions"] });
-      toast.success("Langganan dibatalkan");
+      toast.success(t("toast.subscriptionCancelled"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal membatalkan langganan");
+      toast.error(error.response?.data?.message ?? t("toast.subscriptionCancelFailed"));
     },
   });
 };
@@ -243,44 +254,47 @@ export const useIncidents = (params: ListParams) =>
   useQuery({ queryKey: ["finance", "incidents", params], queryFn: () => financeService.incidents(params) });
 
 export const useCreateIncident = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: IncidentPayload) => financeService.createIncident(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "incidents"] });
-      toast.success("Insiden berhasil dibuat");
+      toast.success(t("toast.incidentCreated"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal membuat insiden");
+      toast.error(error.response?.data?.message ?? t("toast.incidentCreateFailed"));
     },
   });
 };
 
 export const useUpdateIncident = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<IncidentPayload> }) =>
       financeService.updateIncident(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "incidents"] });
-      toast.success("Insiden berhasil diperbarui");
+      toast.success(t("toast.incidentUpdated"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal memperbarui insiden");
+      toast.error(error.response?.data?.message ?? t("toast.incidentUpdateFailed"));
     },
   });
 };
 
 export const useDeleteIncident = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => financeService.deleteIncident(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "incidents"] });
-      toast.success("Insiden berhasil dihapus");
+      toast.success(t("toast.incidentDeleted"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menghapus insiden");
+      toast.error(error.response?.data?.message ?? t("toast.incidentDeleteFailed"));
     },
   });
 };
@@ -310,20 +324,25 @@ export const useFinanceInstallation = (scope: InstallationScope) =>
  * invoice page must refresh the subscription page's copy and vice versa —
  * TanStack matches by prefix, so both entries refresh with no bookkeeping.
  */
+/**
+ * Keys rather than sentences: the toast is written when it fires, not when the
+ * module loads, so it follows the panel's language.
+ */
 const useInstallationMutation = <TVars,>(
   mutationFn: (vars: TVars) => Promise<unknown>,
-  successMessage: string,
-  errorMessage: string,
+  successKey: string,
+  errorKey: string,
 ) => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "installation"] });
-      toast.success(successMessage);
+      toast.success(t(successKey));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? errorMessage);
+      toast.error(error.response?.data?.message ?? t(errorKey));
     },
   });
 };
@@ -332,69 +351,72 @@ const useInstallationMutation = <TVars,>(
 export const useUpsertInstallation = (scope: InstallationScope) =>
   useInstallationMutation(
     (payload: InstallationPayload) => financeService.upsertInstallation(scope, payload),
-    "Jadwal instalasi disimpan",
-    "Gagal menyimpan jadwal instalasi",
+    "toast.installScheduleSaved",
+    "toast.installScheduleFailed",
   );
 
 export const useCreateStep = (installationId: number | undefined) =>
   useInstallationMutation(
     (payload: InstallationStepPayload) => financeService.createStep(installationId as number, payload),
-    "Tahapan ditambahkan",
-    "Gagal menambahkan tahapan",
+    "toast.stepCreated",
+    "toast.stepCreateFailed",
   );
 
 export const useUpdateStep = () =>
   useInstallationMutation(
     ({ id, payload }: { id: number; payload: Partial<InstallationStepPayload> }) =>
       financeService.updateStep(id, payload),
-    "Tahapan diperbarui",
-    "Gagal memperbarui tahapan",
+    "toast.stepUpdated",
+    "toast.stepUpdateFailed",
   );
 
 export const useSetStepCompletion = () =>
   useInstallationMutation(
     ({ id, completed }: { id: number; completed: boolean }) => financeService.setStepCompletion(id, completed),
-    "Status tahapan diperbarui",
-    "Gagal memperbarui status tahapan",
+    "toast.stepStatusUpdated",
+    "toast.stepStatusFailed",
   );
 
 export const useDeleteStep = () =>
   useInstallationMutation(
     (id: number) => financeService.deleteStep(id),
-    "Tahapan dihapus",
-    "Gagal menghapus tahapan",
+    "toast.stepDeleted",
+    "toast.stepDeleteFailed",
   );
 
 export const useCreateDetailItem = (installationId: number | undefined) =>
   useInstallationMutation(
     (payload: InstallationDetailPayload) => financeService.createDetailItem(installationId as number, payload),
-    "Detail ditambahkan",
-    "Gagal menambahkan detail",
+    "toast.detailCreated",
+    "toast.detailCreateFailed",
   );
 
 export const useUpdateDetailItem = () =>
   useInstallationMutation(
     ({ id, payload }: { id: number; payload: Partial<InstallationDetailPayload> }) =>
       financeService.updateDetailItem(id, payload),
-    "Detail diperbarui",
-    "Gagal memperbarui detail",
+    "toast.detailUpdated",
+    "toast.detailUpdateFailed",
   );
 
 export const useDeleteDetailItem = () =>
   useInstallationMutation(
     (id: number) => financeService.deleteDetailItem(id),
-    "Detail dihapus",
-    "Gagal menghapus detail",
+    "toast.detailDeleted",
+    "toast.detailDeleteFailed",
   );
 
 /** A mutation, never a query — see the merchant twin for why. */
-export const useRevealFinanceDetail = () =>
-  useMutation({
+export const useRevealFinanceDetail = () => {
+  const { t } = useTranslation("common");
+
+  return useMutation({
     mutationFn: (id: number) => financeService.revealDetail(id),
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menampilkan nilai");
+      toast.error(error.response?.data?.message ?? t("toast.revealFailed"));
     },
   });
+};
 
 // ── Notifications ───────────────────────────────────────────────────────────
 
@@ -420,26 +442,28 @@ export const useNotificationUnreadCount = () => {
 };
 
 export const useMarkNotificationRead = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => financeService.markNotificationRead(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["finance", "notifications"] }),
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menandai notifikasi");
+      toast.error(error.response?.data?.message ?? t("toast.notificationMarkFailed"));
     },
   });
 };
 
 export const useMarkAllNotificationsRead = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => financeService.markAllNotificationsRead(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["finance", "notifications"] });
-      toast.success("Semua notifikasi ditandai dibaca");
+      toast.success(t("toast.allNotificationsRead"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menandai notifikasi");
+      toast.error(error.response?.data?.message ?? t("toast.notificationMarkFailed"));
     },
   });
 };

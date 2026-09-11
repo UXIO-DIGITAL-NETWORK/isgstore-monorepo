@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
@@ -30,6 +31,7 @@ import type { MembershipPlan } from "../types/membership.type";
 const DEFAULT_PAGE_SIZE = 10;
 
 export function MembershipListPage() {
+  const { t } = useTranslation("membership");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [deletePlan, setDeletePlan] = useState<MembershipPlan | null>(null);
@@ -55,7 +57,7 @@ export function MembershipListPage() {
     () => [
       {
         accessorKey: "name",
-        header: "Plan",
+        header: t("colPlan"),
         cell: ({ row }) => (
           <Box className="flex flex-col">
             <Text
@@ -75,7 +77,7 @@ export function MembershipListPage() {
       },
       {
         id: "price",
-        header: "Price",
+        header: t("price"),
         cell: ({ row }) => (
           <Text
             as="span"
@@ -87,7 +89,7 @@ export function MembershipListPage() {
       },
       {
         id: "duration",
-        header: "Duration",
+        header: t("colDuration"),
         // A null duration is a plan that never expires — printing "null days"
         // (or the 0 the API used to coerce it to) reads as a broken row.
         cell: ({ row }) => (
@@ -101,7 +103,7 @@ export function MembershipListPage() {
       },
       {
         id: "status",
-        header: "Status",
+        header: t("colStatus"),
         cell: ({ row }) => (
           <Badge
             variant="outline"
@@ -113,7 +115,7 @@ export function MembershipListPage() {
       },
       {
         id: "actions",
-        header: "Action",
+        header: t("colAction"),
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -132,25 +134,21 @@ export function MembershipListPage() {
             >
               <Can permission="memberships.edit">
                 <DropdownMenuItem onSelect={() => openEdit(row.original)}>
-                  <Pencil />
-                  Edit
-                </DropdownMenuItem>
+                  <Pencil />{t("edit")}</DropdownMenuItem>
               </Can>
               <Can permission="memberships.delete">
                 <DropdownMenuItem
                   variant="destructive"
                   onSelect={() => setDeletePlan(row.original)}
                 >
-                  <Trash2 />
-                  Delete
-                </DropdownMenuItem>
+                  <Trash2 />{t("delete")}</DropdownMenuItem>
               </Can>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
       },
     ],
-    [],
+    [t],
   );
 
   return (
@@ -161,19 +159,15 @@ export function MembershipListPage() {
             <Heading
               level={1}
               variant="section"
-            >
-              Membership
-            </Heading>
-            <Text variant="muted">Loyalty plans sold to members: their price, duration and availability.</Text>
+            >{t("title")}</Heading>
+            <Text variant="muted">{t("subtitle")}</Text>
           </Box>
           <Can permission="memberships.create">
             <Button
               className="rounded-xl"
               onClick={openAdd}
             >
-              <Plus />
-              Add Plan
-            </Button>
+              <Plus />{t("addPlan")}</Button>
           </Can>
         </Box>
 
@@ -184,8 +178,8 @@ export function MembershipListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="plans"
-            emptyMessage="No membership plans yet."
+            entityLabel={t("entity")}
+            emptyMessage={t("empty")}
             showRowNumber
             enableSelection={false}
             page={page}
@@ -215,7 +209,7 @@ export function MembershipListPage() {
         open={deletePlan !== null}
         onOpenChange={(open) => !open && setDeletePlan(null)}
         title={`Delete ${deletePlan?.name ?? "plan"}?`}
-        description="This permanently removes the membership plan. This action cannot be undone."
+        description={t("deleteDescription")}
         onConfirm={() => deletePlan && deletePlanMutation.mutate(deletePlan.id)}
       />
     </>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Controller, useFieldArray, type Control, type FieldErrors, type UseFormRegister } from "react-hook-form";
 import { Info, Plus, Trash2 } from "lucide-react";
 
@@ -23,16 +24,17 @@ interface CategoryFormFieldsBuilderProps {
  * Hook Form; no precedent for it elsewhere in the codebase, introduced here.
  */
 export function CategoryFormFieldsBuilder({ control, register, errors }: CategoryFormFieldsBuilderProps) {
+  const { t } = useTranslation("categories");
   const { fields, append, remove } = useFieldArray({ control, name: "orderFormFields" });
 
   return (
     <Box className="flex flex-col gap-4">
       <Alert className="border-warning/40 bg-card text-warning [&>svg]:text-current *:data-[slot=alert-description]:text-warning/90">
         <Info />
-        <AlertTitle>Field key guide</AlertTitle>
+        <AlertTitle>{t("fieldKeyGuide")}</AlertTitle>
         <AlertDescription>
-          <Text as="p">Do not use whatsapp or email keys — buyer contact is taken from their account.</Text>
-          <Text as="p">Suggested keys: user_id, server_id.</Text>
+          <Text as="p">{t("noWhatsappEmail")}</Text>
+          <Text as="p">{t("suggestedKeys")}</Text>
         </AlertDescription>
       </Alert>
 
@@ -42,13 +44,11 @@ export function CategoryFormFieldsBuilder({ control, register, errors }: Categor
         className="w-fit self-end rounded-xl"
         onClick={() => append({ key: "", label: "", required: false })}
       >
-        <Plus className="size-4" />
-        Add Form
-      </Button>
+        <Plus className="size-4" />{t("addForm")}</Button>
 
       {fields.length === 0 ? (
         <Box className="rounded-xl border border-border bg-card p-10 text-center">
-          <Text variant="muted">No forms yet. Click &quot;Add Form&quot; to add one.</Text>
+          <Text variant="muted">{t("noForms")}</Text>
         </Box>
       ) : (
         <Box className="flex flex-col gap-3">
@@ -58,7 +58,7 @@ export function CategoryFormFieldsBuilder({ control, register, errors }: Categor
               className="grid grid-cols-1 items-end gap-3 rounded-xl border border-border p-3 sm:grid-cols-[1fr_1fr_auto_auto]"
             >
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor={`order-form-field-key-${index}`}>Key</Label>
+                <Label htmlFor={`order-form-field-key-${index}`}>{t("key")}</Label>
                 <Input
                   id={`order-form-field-key-${index}`}
                   placeholder="user_id"
@@ -75,16 +75,16 @@ export function CategoryFormFieldsBuilder({ control, register, errors }: Categor
               </Box>
 
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor={`order-form-field-label-${index}`}>Label</Label>
+                <Label htmlFor={`order-form-field-label-${index}`}>{t("label")}</Label>
                 <Input
                   id={`order-form-field-label-${index}`}
-                  placeholder="User ID"
+                  placeholder={t("userIdPlaceholder")}
                   {...register(`orderFormFields.${index}.label`)}
                 />
               </Box>
 
               <Box className="flex flex-col items-start gap-1.5">
-                <Label htmlFor={`order-form-field-required-${index}`}>Required</Label>
+                <Label htmlFor={`order-form-field-required-${index}`}>{t("required")}</Label>
                 <Controller
                   control={control}
                   name={`orderFormFields.${index}.required`}

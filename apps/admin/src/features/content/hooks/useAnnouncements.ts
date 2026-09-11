@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -17,33 +18,36 @@ export const useAnnouncement = (id?: string) =>
   });
 
 export const useCreateAnnouncement = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: AnnouncementInput) => announcementsService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Announcement created");
+      toast.success(t("announcementCreated"));
     },
-    onError: () => toast.error("Failed to create announcement"),
+    onError: () => toast.error(t("announcementCreateFailed")),
   });
 };
 
 export const useUpdateAnnouncement = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<AnnouncementInput> }) => announcementsService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Announcement updated");
+      toast.success(t("announcementUpdated"));
     },
-    onError: () => toast.error("Failed to update announcement"),
+    onError: () => toast.error(t("announcementUpdateFailed")),
   });
 };
 
 /** One mutation for both delete paths — row menu and bulk toolbar. */
 export const useDeleteAnnouncements = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -52,6 +56,6 @@ export const useDeleteAnnouncements = () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
       toast.success(ids.length === 1 ? "Announcement deleted" : `${ids.length} announcements deleted`);
     },
-    onError: () => toast.error("Failed to delete announcements"),
+    onError: () => toast.error(t("announcementDeleteFailed")),
   });
 };

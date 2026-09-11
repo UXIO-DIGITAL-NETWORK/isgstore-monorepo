@@ -26,7 +26,7 @@ export default function FaqPage(): React.JSX.Element {
           <Box className="flex justify-center">
             <Image
               src={imgFaq}
-              alt="FAQ Illustration"
+              alt=""
               priority="eager"
               objectFit="contain"
               className="w-full max-w-[460px]"

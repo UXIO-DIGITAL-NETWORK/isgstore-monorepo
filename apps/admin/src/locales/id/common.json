@@ -1,0 +1,45 @@
+{
+  "actions": {
+    "cancel": "Batal",
+    "save": "Simpan",
+    "delete": "Hapus",
+    "refresh": "Muat ulang",
+    "reset": "Atur ulang",
+    "search": "Cari"
+  },
+  "theme": {
+    "label": "Ganti tema",
+    "light": "Terang",
+    "dark": "Gelap",
+    "system": "Ikuti sistem"
+  },
+  "language": {
+    "label": "Bahasa",
+    "id": "Indonesia",
+    "en": "English"
+  },
+  "table": {
+    "selectAllRows": "Pilih semua baris",
+    "selectRow": "Pilih baris",
+    "lockedRow": "Baris terkunci",
+    "rowsPerPage": "Baris per halaman",
+    "empty": "Tidak ada {{entity}}.",
+    "range": "{{from}}-{{to}} dari {{total}} {{entity}}",
+    "rowNumber": "No."
+  },
+  "dropzone": {
+    "prompt": "Tarik & lepas berkas di sini",
+    "optimising": "Mengoptimalkan gambar…",
+    "formats": "JPG, JPEG, PNG, WEBP — dioptimalkan otomatis"
+  },
+  "confirm": {
+    "delete": "Hapus",
+    "cancel": "Batal"
+  },
+  "copy": {
+    "copied": "Disalin ke clipboard"
+  },
+  "field": {
+    "moreInformation": "Informasi lebih lanjut"
+  }
+}

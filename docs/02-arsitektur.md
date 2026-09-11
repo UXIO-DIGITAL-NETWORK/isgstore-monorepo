@@ -106,7 +106,7 @@ src/
 | | admin | storefront | payment |
 |---|---|---|---|
 | Test | jsdom + Testing Library | **`environment: "node"`**, hanya `.ts` | jsdom + Testing Library |
-| i18n | tidak ada | i18next, URL berawalan locale | tidak ada |
+| i18n | i18next, **selesai** &mdash; pilihan di `users.locale` | i18next, URL berawalan locale | i18next, **selesai** &mdash; pilihan di `users.locale` |
 | UI tambahan | — | HeroUI | — |
 | Zona waktu test | — | — | **dipatok `Asia/Jakarta`** |
 

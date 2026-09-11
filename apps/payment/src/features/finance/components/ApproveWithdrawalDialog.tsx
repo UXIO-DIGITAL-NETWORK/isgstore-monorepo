@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -41,6 +42,7 @@ interface ApproveWithdrawalDialogProps {
  * attached, for a transfer kita already made out-of-band.
  */
 export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: ApproveWithdrawalDialogProps) {
+  const { t } = useTranslation("finance");
   const [open, setOpen] = useState(false);
   const [method, setMethod] = useState<"manual" | "monetapay">("monetapay");
   const [proof, setProof] = useState<File | undefined>(undefined);
@@ -49,7 +51,7 @@ export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: App
 
   const onConfirm = () => {
     if (allowManual && method === "manual" && !proof) {
-      setProofError("Bukti transfer wajib diunggah");
+      setProofError(t("approveWithdrawal.proofRequired"));
       return;
     }
 
@@ -69,15 +71,15 @@ export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: App
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">Setujui</Button>
+        <Button size="sm">{t("approveWithdrawal.trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{method === "manual" ? "Tandai Selesai (Transfer Manual)" : "Cairkan via Monetapay"}</DialogTitle>
+          <DialogTitle>{method === "manual" ? t("approveWithdrawal.titleManual") : t("approveWithdrawal.titleMonetapay")}</DialogTitle>
           <DialogDescription>
             {method === "manual"
-              ? "Gunakan ini jika dana sudah ditransfer secara manual di luar Monetapay. Lampirkan bukti transfer."
-              : "Dana akan langsung ditransfer ke rekening penerima melalui Monetapay. Aksi ini tidak dapat dibatalkan."}
+              ? t("approveWithdrawal.descriptionManual")
+              : t("approveWithdrawal.descriptionMonetapay")}
           </DialogDescription>
         </DialogHeader>
 
@@ -89,11 +91,11 @@ export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: App
           >
             <Box className="flex items-center gap-2">
               <RadioGroupItem value="monetapay" id="method-monetapay" />
-              <Label htmlFor="method-monetapay">Monetapay</Label>
+              <Label htmlFor="method-monetapay">{t("approveWithdrawal.methodMonetapay")}</Label>
             </Box>
             <Box className="flex items-center gap-2">
               <RadioGroupItem value="manual" id="method-manual" />
-              <Label htmlFor="method-manual">Transfer manual</Label>
+              <Label htmlFor="method-manual">{t("approveWithdrawal.methodManual")}</Label>
             </Box>
           </RadioGroup>
         )}
@@ -101,24 +103,24 @@ export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: App
         <Box className="flex flex-col gap-2 rounded-lg bg-muted/50 px-4 py-3 text-sm">
           <Box className="flex justify-between gap-4">
             <Text as="span" className="text-muted-foreground">
-              {withdrawal.merchant ? "Merchant" : "Diminta oleh"}
+              {withdrawal.merchant ? t("approveWithdrawal.merchant") : t("approveWithdrawal.requester")}
             </Text>
             <Text as="span" className="font-medium">
               {withdrawal.merchant?.name ?? withdrawal.requester?.name ?? "-"}
             </Text>
           </Box>
           <Box className="flex justify-between gap-4">
-            <Text as="span" className="text-muted-foreground">Diterima</Text>
+            <Text as="span" className="text-muted-foreground">{t("approveWithdrawal.received")}</Text>
             <Text as="span" className="font-medium tabular-nums">{money(withdrawal.nett)}</Text>
           </Box>
           <Box className="flex justify-between gap-4">
-            <Text as="span" className="text-muted-foreground">Rekening</Text>
+            <Text as="span" className="text-muted-foreground">{t("approveWithdrawal.account")}</Text>
             <Text as="span" className="font-medium tabular-nums">
               {withdrawal.bank_code} · {withdrawal.account_number}
             </Text>
           </Box>
           <Box className="flex justify-between gap-4">
-            <Text as="span" className="text-muted-foreground">Nama Pemilik</Text>
+            <Text as="span" className="text-muted-foreground">{t("approveWithdrawal.accountName")}</Text>
             <Text as="span" className="font-medium">{withdrawal.account_name}</Text>
           </Box>
         </Box>
@@ -126,8 +128,8 @@ export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: App
         {allowManual && method === "manual" && (
           <ImageDropzone
             id="proof"
-            label="Bukti Transfer"
-            caption="Unggah bukti transfer manual (JPG, JPEG, PNG)"
+            label={t("approveWithdrawal.proofLabel")}
+            caption={t("approveWithdrawal.proofCaption")}
             value={proof}
             onChange={(file) => {
               setProof(file);
@@ -139,10 +141,14 @@ export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: App
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-            Batal
+            {t("approveWithdrawal.cancel")}
           </Button>
           <Button type="button" onClick={onConfirm} disabled={isPending}>
-            {isPending ? "Memproses…" : method === "manual" ? "Setujui & Tandai Selesai" : "Setujui & Cairkan via Monetapay"}
+            {isPending
+              ? t("approveWithdrawal.submitting")
+              : method === "manual"
+                ? t("approveWithdrawal.submitManual")
+                : t("approveWithdrawal.submitMonetapay")}
           </Button>
         </DialogFooter>
       </DialogContent>

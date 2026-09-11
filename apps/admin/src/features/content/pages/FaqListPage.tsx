@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
@@ -11,6 +12,7 @@ import { useFaqList, useDeleteFaqs } from "../hooks/useFaqs";
 const DEFAULT_PAGE_SIZE = 10;
 
 export function FaqListPage() {
+  const { t } = useTranslation("content");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -31,15 +33,15 @@ export function FaqListPage() {
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
   const columns = useMemo(
-    () => faqColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
-    [deleteRows],
+    () => faqColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id), t),
+    [deleteRows, t],
   );
 
   return (
     <>
       <ContentListShell
-        title="FAQ"
-        description="Questions and answers shown on the storefront's help page, per language."
+        title={t("entityFaq")}
+        description={t("faqPageSubtitle")}
         toolbar={
           <ContentToolbar
             idPrefix="faq"
@@ -63,8 +65,8 @@ export function FaqListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="FAQs"
-            emptyMessage="No FAQs yet."
+            entityLabel={t("faqEntity")}
+            emptyMessage={t("faqEmpty")}
             showRowNumber
             enableSelection
             onSelectionChange={handleSelectionChange}
@@ -85,7 +87,7 @@ export function FaqListPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
-        description="This action cannot be undone. The selected rows will be removed from the storefront."
+        description={t("irreversible")}
         onConfirm={() => deleteRows.mutate(selectedIds)}
       />
 

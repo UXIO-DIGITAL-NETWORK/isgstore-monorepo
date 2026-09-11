@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -16,6 +17,7 @@ import type { PaymentChannel } from "../types/administration.type";
 const DEFAULT_PAGE_SIZE = 10;
 
 export function PaymentChannelListPage() {
+  const { t } = useTranslation("administration");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -27,7 +29,7 @@ export function PaymentChannelListPage() {
     () => [
       {
         accessorKey: "name",
-        header: "Channel",
+        header: t("colChannel"),
         cell: ({ row }) => (
           <Box className="flex flex-col">
             <Text
@@ -47,7 +49,7 @@ export function PaymentChannelListPage() {
       },
       {
         accessorKey: "payment_type",
-        header: "Type",
+        header: t("colType"),
         cell: ({ row }) => (
           <Badge
             variant="outline"
@@ -59,7 +61,7 @@ export function PaymentChannelListPage() {
       },
       {
         id: "fee",
-        header: "Fee",
+        header: t("colFee"),
         cell: ({ row }) => (
           <Text
             as="span"
@@ -72,7 +74,7 @@ export function PaymentChannelListPage() {
       },
       {
         id: "min_amount",
-        header: "Minimum",
+        header: t("colMinimum"),
         cell: ({ row }) => (
           <Text
             as="span"
@@ -84,7 +86,7 @@ export function PaymentChannelListPage() {
       },
       {
         id: "status",
-        header: "Status",
+        header: t("colStatus"),
         cell: ({ row }) => (
           <Badge
             variant="outline"
@@ -95,7 +97,7 @@ export function PaymentChannelListPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   return (
@@ -104,19 +106,17 @@ export function PaymentChannelListPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Payment
-        </Heading>
-        <Text variant="muted">Channels offered at checkout, shown here for reference.</Text>
+        >{t("paymentTitle")}</Heading>
+        <Text variant="muted">{t("paymentSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="channel-search">Search</Label>
+          <Label htmlFor="channel-search">{t("search")}</Label>
           <Input
             id="channel-search"
             className="w-64 rounded-xl"
-            placeholder="Search channels"
+            placeholder={t("searchChannels")}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -133,8 +133,8 @@ export function PaymentChannelListPage() {
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          entityLabel="payment channels"
-          emptyMessage="No payment channels yet."
+          entityLabel={t("channelEntity")}
+          emptyMessage={t("noChannels")}
           showRowNumber
           enableSelection={false}
           page={page}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Plus, RefreshCw, Search } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -22,16 +23,17 @@ interface CategoryTypeToolbarProps {
  * The add button opens the Add Category Type modal owned by the list page.
  */
 export function CategoryTypeToolbar({ search, onSearchChange, onRefresh, onAdd }: CategoryTypeToolbarProps) {
+  const { t } = useTranslation("categories");
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-col gap-1.5">
-        <Label htmlFor="category-type-search">Search</Label>
+        <Label htmlFor="category-type-search">{t("search")}</Label>
         <Box className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="category-type-search"
             className="w-64 rounded-xl pl-8"
-            placeholder="Search category type"
+            placeholder={t("searchCategoryType")}
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
           />
@@ -49,17 +51,13 @@ export function CategoryTypeToolbar({ search, onSearchChange, onRefresh, onAdd }
           <Text
             as="span"
             className="sr-only"
-          >
-            Refresh
-          </Text>
+          >{t("refresh")}</Text>
         </Button>
         <Button
           className="rounded-xl"
           onClick={onAdd}
         >
-          <Plus className="size-4" />
-          Add Category Type
-        </Button>
+          <Plus className="size-4" />{t("addCategoryType")}</Button>
       </Box>
     </Box>
   );

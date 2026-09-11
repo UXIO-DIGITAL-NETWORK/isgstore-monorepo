@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { MoreVertical, Trash2 } from "lucide-react";
 
@@ -27,6 +28,7 @@ interface FeedbackRowActionsProps {
  * all rather than a menu that turns out to be empty.
  */
 export function FeedbackRowActions({ id, label, onDelete }: FeedbackRowActionsProps) {
+  const { t } = useTranslation("feedback");
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
@@ -50,16 +52,14 @@ export function FeedbackRowActions({ id, label, onDelete }: FeedbackRowActionsPr
             variant="destructive"
             onSelect={() => setDeleteOpen(true)}
           >
-            <Trash2 />
-            Delete
-          </DropdownMenuItem>
+            <Trash2 />{t("delete")}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this review?"
+        title={t("deleteTitle")}
         description={`This action cannot be undone. The review by ${label} will be permanently removed from the storefront.`}
         onConfirm={() => onDelete(id)}
       />

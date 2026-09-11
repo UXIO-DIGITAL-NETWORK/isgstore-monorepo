@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -48,6 +49,7 @@ export function CategoryProviderToolbar({
   selectedCount,
   onBulkDelete,
 }: CategoryProviderToolbarProps) {
+  const { t } = useTranslation("categories");
   // Real suppliers, id-valued: the API filters on `supplier_id`, and a
   // provider added later must appear here without a code change.
   const { options } = useSupplierOptions();
@@ -56,13 +58,13 @@ export function CategoryProviderToolbar({
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="category-provider-search">Search</Label>
+          <Label htmlFor="category-provider-search">{t("search")}</Label>
           <Box className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="category-provider-search"
               className="w-64 rounded-xl pl-8"
-              placeholder="Search category provider"
+              placeholder={t("searchCategoryProvider")}
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
             />
@@ -70,7 +72,7 @@ export function CategoryProviderToolbar({
         </Box>
 
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="category-provider-filter">Provider</Label>
+          <Label htmlFor="category-provider-filter">{t("provider")}</Label>
           {/* `""` (not the clear sentinel) when unfiltered, so Radix shows the
               placeholder rather than the "All providers" item's label. */}
           <Select
@@ -81,10 +83,10 @@ export function CategoryProviderToolbar({
               id="category-provider-filter"
               className="w-56 rounded-xl"
             >
-              <SelectValue placeholder="Type to search provider" />
+              <SelectValue placeholder={t("typeToSearchProvider")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={CLEAR_VALUE}>All providers</SelectItem>
+              <SelectItem value={CLEAR_VALUE}>{t("allProviders")}</SelectItem>
               {options.map((option) => (
                 <SelectItem
                   key={option.value}
@@ -109,9 +111,7 @@ export function CategoryProviderToolbar({
           <Text
             as="span"
             className="sr-only"
-          >
-            Refresh
-          </Text>
+          >{t("refresh")}</Text>
         </Button>
         {selectedCount > 0 && (
           <Button
@@ -130,9 +130,7 @@ export function CategoryProviderToolbar({
           className="rounded-xl"
           onClick={onAdd}
         >
-          <Plus className="size-4" />
-          Add Category Provider
-        </Button>
+          <Plus className="size-4" />{t("addCategoryProvider")}</Button>
       </Box>
     </Box>
   );

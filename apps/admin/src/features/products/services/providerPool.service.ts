@@ -5,6 +5,7 @@ import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type {
   PoolCandidate,
   PoolCandidateListParams,
+  PoolFacets,
   PoolResult,
   PoolSummary,
   PromotePublishResult,
@@ -52,6 +53,12 @@ export const providerPoolService = {
 
   summary: async (): Promise<PoolSummary> => {
     const response: ApiResponse<PoolSummary> = await api.get(`${UXIOLABS}/pool-summary`);
+    return response.data;
+  },
+
+  /** The filter bar's options — provider categories, ours, and the cost range. */
+  facets: async (): Promise<PoolFacets> => {
+    const response: ApiResponse<PoolFacets> = await api.get(`${UXIOLABS}/pool-facets`);
     return response.data;
   },
 

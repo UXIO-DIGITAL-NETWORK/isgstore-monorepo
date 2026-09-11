@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
 import { UploadCloud } from "lucide-react";
 
@@ -38,6 +39,7 @@ export function ImageDropzone({
   accept = DEFAULT_ACCEPT,
   formatsLabel = DEFAULT_FORMATS_LABEL,
 }: ImageDropzoneProps) {
+  const { t } = useTranslation("common");
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +71,7 @@ export function ImageDropzone({
         )}
       >
         <UploadCloud className="size-6 text-muted-foreground" />
-        <Text variant="small">Drag & drop files here</Text>
+        <Text variant="small">{t("dropzone.prompt")}</Text>
         <Text variant="small">{formatsLabel}</Text>
         <input
           ref={fileInputRef}

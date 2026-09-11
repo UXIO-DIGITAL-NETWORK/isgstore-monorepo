@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -35,9 +36,11 @@ export function SimpleTable<T>({
   rows,
   isLoading = false,
   isError = false,
-  emptyLabel = "Tidak ada data",
+  emptyLabel,
   rowKey,
 }: SimpleTableProps<T>) {
+  const { t } = useTranslation("common");
+
   return (
     <Box className="overflow-hidden rounded-xl border border-border bg-card">
       <Table>
@@ -60,7 +63,7 @@ export function SimpleTable<T>({
                 colSpan={columns.length}
                 className="py-10 text-center"
               >
-                <Text variant="small">Memuat…</Text>
+                <Text variant="small">{t("table.loading")}</Text>
               </TableCell>
             </TableRow>
           ) : isError ? (
@@ -83,7 +86,7 @@ export function SimpleTable<T>({
                 colSpan={columns.length}
                 className="py-10 text-center"
               >
-                <Text variant="small">{emptyLabel}</Text>
+                <Text variant="small">{emptyLabel ?? t("table.empty")}</Text>
               </TableCell>
             </TableRow>
           ) : (

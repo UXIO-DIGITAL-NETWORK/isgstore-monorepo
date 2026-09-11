@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +34,7 @@ interface RefundDialogProps {
  * `transactionsService.refund`, which also rejects an empty string.
  */
 export function RefundDialog({ open, onOpenChange, invoiceNo, onConfirm, isPending = false }: RefundDialogProps) {
+  const { t } = useTranslation("transactions");
   const {
     register,
     handleSubmit,
@@ -68,18 +70,15 @@ export function RefundDialog({ open, onOpenChange, invoiceNo, onConfirm, isPendi
         >
           <DialogHeader>
             <DialogTitle>Refund transaction {invoiceNo}?</DialogTitle>
-            <DialogDescription>
-              A registered member is credited to their balance immediately. A guest is queued on the Refunds page for a
-              manual transfer. Provide a reason for the audit trail.
-            </DialogDescription>
+            <DialogDescription>{t("refundHint")}</DialogDescription>
           </DialogHeader>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="refund-reason">Reason</Label>
+            <Label htmlFor="refund-reason">{t("reason")}</Label>
             <Textarea
               id="refund-reason"
               className="rounded-xl"
-              placeholder="e.g. Item out of stock at supplier"
+              placeholder={t("refundReasonPlaceholder")}
               {...register("reason")}
             />
             {errors.reason && (
@@ -98,9 +97,7 @@ export function RefundDialog({ open, onOpenChange, invoiceNo, onConfirm, isPendi
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               variant="destructive"

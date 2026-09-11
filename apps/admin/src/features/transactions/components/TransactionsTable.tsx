@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import {
   flexRender,
@@ -86,6 +87,7 @@ export function TransactionsTable<TData extends { id: string }>({
   sorting,
   onSortingChange,
 }: TransactionsTableProps<TData>) {
+  const { t } = useTranslation("transactions");
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // Reset selection whenever the incoming page changes (new page/filter/sort
@@ -106,18 +108,18 @@ export function TransactionsTable<TData extends { id: string }>({
         <Checkbox
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() ? "indeterminate" : false)}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all rows"
+          aria-label={t("selectAllRows")}
         />
       ),
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
+          aria-label={t("selectRow")}
         />
       ),
     }),
-    [],
+    [t],
   );
   const fullColumns = useMemo<ColumnDef<TData>[]>(() => [selectColumn, ...columns], [selectColumn, columns]);
 
@@ -149,15 +151,13 @@ export function TransactionsTable<TData extends { id: string }>({
   if (isError) {
     return (
       <Box className="flex flex-col items-center gap-3 rounded-lg border border-border py-10">
-        <Text variant="muted">Something went wrong loading transactions.</Text>
+        <Text variant="muted">{t("tableFailed")}</Text>
         {onRetry && (
           <Button
             variant="outline"
             size="sm"
             onClick={onRetry}
-          >
-            Retry
-          </Button>
+          >{t("retry")}</Button>
         )}
       </Box>
     );
@@ -251,14 +251,14 @@ export function TransactionsTable<TData extends { id: string }>({
 
       <Box className="flex flex-col items-center justify-between gap-3 sm:flex-row">
         <Box className="flex items-center gap-2">
-          <Text variant="small">Rows per page</Text>
+          <Text variant="small">{t("rowsPerPage")}</Text>
           <Select
             value={String(pageSize)}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
             <SelectTrigger
               className="w-20"
-              aria-label="Rows per page"
+              aria-label={t("rowsPerPage")}
             >
               <SelectValue />
             </SelectTrigger>

@@ -22,8 +22,8 @@ export default function TopUpGame(): React.JSX.Element {
   // Tabs come from the categories present in the catalog, so selecting one can
   // never land on an empty grid.
   const tabs = useMemo(
-    () => [{ key: "semua" as GameCategory, label: "Semua" }, ...deriveCategoryTabs(allGames)],
-    [allGames],
+    () => [{ key: "semua" as GameCategory, label: t("topUpGame.categories.semua") }, ...deriveCategoryTabs(allGames)],
+    [allGames, t],
   );
 
   const visibleGames =

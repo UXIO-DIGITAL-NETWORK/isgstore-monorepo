@@ -1,4 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -13,36 +15,17 @@ import type { ComponentStatus, ServiceStatusComponent } from "../types/merchant.
 
 import { useServiceStatus } from "../hooks/useMerchant";
 
-const OVERALL_COPY: Record<ComponentStatus, { title: string; description: string; tone: string }> = {
-  operational: {
-    title: "Semua layanan normal",
-    description: "Tidak ada gangguan yang sedang berlangsung.",
-    tone: "text-success",
-  },
-  degraded: {
-    title: "Ada layanan yang terganggu",
-    description: "Sebagian metode pembayaran atau layanan sedang bermasalah atau ditutup sementara.",
-    tone: "text-warning",
-  },
-  down: {
-    title: "Ada layanan yang tidak dapat digunakan",
-    description: "Sedang kami tangani. Rincian gangguan ada di bawah.",
-    tone: "text-destructive",
-  },
+/**
+ * Tone per overall status. The words themselves live in `merchant.json` —
+ * only the colour is a code decision.
+ */
+const OVERALL_TONE: Record<ComponentStatus, string> = {
+  operational: "text-success",
+  degraded: "text-warning",
+  down: "text-destructive",
   // A single component can be `closed`, but the overall roll-up reports that as
   // `degraded`; this entry exists only so the map is total.
-  closed: {
-    title: "Ada layanan yang ditutup",
-    description: "Sebagian layanan sedang dinonaktifkan.",
-    tone: "text-warning",
-  },
-};
-
-const STATUS_LABEL: Record<ComponentStatus, string> = {
-  operational: "Normal",
-  degraded: "Terganggu",
-  down: "Tidak Tersedia",
-  closed: "Ditutup",
+  closed: "text-warning",
 };
 
 const STATUS_TONE: Record<ComponentStatus, string> = {
@@ -52,10 +35,14 @@ const STATUS_TONE: Record<ComponentStatus, string> = {
   closed: "text-muted-foreground",
 };
 
-const columns: Column<ServiceStatusComponent>[] = [
+/**
+ * A factory rather than a module constant: column headers and cell labels are
+ * rendered text, so they have to resolve when the component renders.
+ */
+const columnsFor = (t: TFunction<"merchant">): Column<ServiceStatusComponent>[] => [
   {
     key: "name",
-    header: "Komponen",
+    header: t("serviceStatus.colComponent"),
     cell: (r) => (
       <Text
         as="span"
@@ -67,40 +54,42 @@ const columns: Column<ServiceStatusComponent>[] = [
   },
   {
     key: "type",
-    header: "Tipe",
-    cell: (r) => (r.type === "payment_channel" ? "Metode Pembayaran" : "Service"),
+    header: t("serviceStatus.colType"),
+    cell: (r) => (r.type === "payment_channel" ? t("serviceStatus.typePaymentChannel") : t("serviceStatus.typeService")),
   },
   {
     key: "status",
-    header: "Status",
+    header: t("serviceStatus.colStatus"),
     cell: (r) => (
       <Text
         as="span"
         className={cn("font-medium", STATUS_TONE[r.status])}
       >
-        {STATUS_LABEL[r.status]}
+        {t(`serviceStatus.status.${r.status}`)}
       </Text>
     ),
   },
 ];
 
 export default function MerchantServiceStatusPage() {
+  const { t } = useTranslation("merchant");
+  const columns = columnsFor(t);
   const { data, isLoading, isError } = useServiceStatus();
 
   const overall = data?.overall ?? "operational";
-  const copy = OVERALL_COPY[overall];
+  const tone = OVERALL_TONE[overall];
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Status Layanan</Heading>
+      <Heading level={1}>{t("serviceStatus.title")}</Heading>
 
       <Alert>
-        <AlertTitle className={copy.tone}>{copy.title}</AlertTitle>
-        <AlertDescription>{copy.description}</AlertDescription>
+        <AlertTitle className={tone}>{t(`serviceStatus.overall.${overall}.title`)}</AlertTitle>
+        <AlertDescription>{t(`serviceStatus.overall.${overall}.description`)}</AlertDescription>
       </Alert>
 
       <Box className="flex flex-col gap-3">
-        <Heading level={2}>Gangguan Berlangsung</Heading>
+        <Heading level={2}>{t("serviceStatus.ongoingIncidents")}</Heading>
 
         {(data?.incidents.length ?? 0) === 0 ? (
           <Empty className="border border-dashed border-border">
@@ -108,7 +97,7 @@ export default function MerchantServiceStatusPage() {
               <EmptyMedia variant="icon">
                 <CheckCircle2 />
               </EmptyMedia>
-              <EmptyTitle>Semua layanan berjalan normal</EmptyTitle>
+              <EmptyTitle>{t("serviceStatus.allOperational")}</EmptyTitle>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -131,7 +120,8 @@ export default function MerchantServiceStatusPage() {
                   variant="small"
                   className="text-muted-foreground"
                 >
-                  {incident.target.name ?? "Layanan"} · Mulai {formatDateTime(incident.started_at)}
+                  {incident.target.name ?? t("serviceStatus.fallbackTargetName")} · {t("serviceStatus.incidentStarted")}{" "}
+                  {formatDateTime(incident.started_at)}
                   {incident.estimated_resolved_at
                     ? ` · Estimasi selesai ${formatDateTime(incident.estimated_resolved_at)}`
                     : ""}
@@ -143,13 +133,13 @@ export default function MerchantServiceStatusPage() {
       </Box>
 
       <Box className="flex flex-col gap-3">
-        <Heading level={2}>Semua Komponen</Heading>
+        <Heading level={2}>{t("serviceStatus.allComponents")}</Heading>
         <SimpleTable
           columns={columns}
           rows={data?.components ?? []}
           isLoading={isLoading}
           isError={isError}
-          emptyLabel="Belum ada komponen"
+          emptyLabel={t("serviceStatus.empty")}
           rowKey={(r) => `${r.type}-${r.id}`}
         />
       </Box>

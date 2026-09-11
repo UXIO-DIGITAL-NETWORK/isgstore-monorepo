@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -22,6 +23,7 @@ interface ArticleListPageProps {
 }
 
 export function ArticleListPage({ type }: ArticleListPageProps) {
+  const { t } = useTranslation("content");
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string>(ALL);
   const [page, setPage] = useState(1);
@@ -52,8 +54,8 @@ export function ArticleListPage({ type }: ArticleListPageProps) {
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
   const columns = useMemo(
-    () => articleColumns((ids) => deleteArticles.mutate(ids), (id) => setEditId(id)),
-    [deleteArticles],
+    () => articleColumns((ids) => deleteArticles.mutate(ids), (id) => setEditId(id), t),
+    [deleteArticles, t],
   );
 
   const isNews = type === "news";
@@ -85,8 +87,8 @@ export function ArticleListPage({ type }: ArticleListPageProps) {
               <Box className="w-56">
                 <SelectField
                   id={`${type}-category-filter`}
-                  label="Category"
-                  options={[{ value: ALL, label: "All categories" }, ...categoryOptions]}
+                  label={t("category")}
+                  options={[{ value: ALL, label: t("allCategories") }, ...categoryOptions]}
                   value={categoryId}
                   onChange={(value) => {
                     setCategoryId(value);
@@ -126,7 +128,7 @@ export function ArticleListPage({ type }: ArticleListPageProps) {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
-        description="This action cannot be undone. The selected content will be removed from the storefront."
+        description={t("articleIrreversible")}
         onConfirm={() => deleteArticles.mutate(selectedIds)}
       />
 

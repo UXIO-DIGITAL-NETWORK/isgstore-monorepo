@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { StatCard } from "@/components/common/StatCard";
@@ -5,27 +7,28 @@ import { WebsiteServicesCard } from "../components/WebsiteServicesCard";
 import { useMerchantDashboard } from "../hooks/useMerchant";
 
 export default function MerchantDashboardPage() {
+  const { t } = useTranslation("merchant");
   const { data } = useMerchantDashboard();
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Dashboard</Heading>
+      <Heading level={1}>{t("dashboard.title")}</Heading>
 
       <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           data={{
             id: "saldo",
-            label: "Saldo Aktif",
+            label: t("dashboard.balanceActive"),
             value: data?.saldo_aktif ?? 0,
-            caption: "Saldo yang dapat ditarik",
+            caption: t("dashboard.balanceActiveCaption"),
           }}
         />
         <StatCard
           data={{
             id: "pending",
-            label: "Saldo Pending",
+            label: t("dashboard.balancePending"),
             value: data?.saldo_pending ?? 0,
-            caption: "Menunggu persetujuan penarikan",
+            caption: t("dashboard.balancePendingCaption"),
           }}
         />
         {/* Earned but still inside the per-channel holding period — without
@@ -33,34 +36,34 @@ export default function MerchantDashboardPage() {
         <StatCard
           data={{
             id: "tertahan",
-            label: "Saldo Tertahan",
+            label: t("dashboard.balanceHeld"),
             value: data?.saldo_tertahan ?? 0,
-            caption: "Menunggu settlement channel + masa tahan",
+            caption: t("dashboard.balanceHeldCaption"),
           }}
         />
         <StatCard
           data={{
             id: "penjualan",
-            label: "Total Penjualan",
+            label: t("dashboard.totalSales"),
             value: data?.total_penjualan ?? 0,
-            caption: "Penjualan bersih (net)",
+            caption: t("dashboard.totalSalesCaption"),
           }}
         />
         <StatCard
           data={{
             id: "penarikan",
-            label: "Total Penarikan",
+            label: t("dashboard.totalWithdrawals"),
             value: data?.total_penarikan ?? 0,
-            caption: "Penarikan yang telah cair",
+            caption: t("dashboard.totalWithdrawalsCaption"),
           }}
         />
         <StatCard
           data={{
             id: "transaksi",
-            label: "Total Transaksi",
+            label: t("dashboard.totalTransactions"),
             value: data?.total_transaksi ?? 0,
             format: "count",
-            caption: "Jumlah transaksi",
+            caption: t("dashboard.totalTransactionsCaption"),
           }}
         />
       </Box>

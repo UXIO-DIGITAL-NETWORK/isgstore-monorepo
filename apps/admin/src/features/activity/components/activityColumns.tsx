@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Box } from "@/components/common/Box";
@@ -22,10 +23,14 @@ const TYPE_LABEL: Record<ActivityType, string> = {
  * `DataTable` (`showRowNumber`). The feed is read-only, so there is no action
  * column.
  */
-export const activityColumns: ColumnDef<ActivityLog>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const activityColumnsFor = (t: TFunction<"activity">): ColumnDef<ActivityLog>[] => [
   {
     id: "actor",
-    header: "Actor",
+    header: t("colActor"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -47,7 +52,7 @@ export const activityColumns: ColumnDef<ActivityLog>[] = [
   },
   {
     id: "type",
-    header: "Type",
+    header: t("colType"),
     cell: ({ row }) => {
       const { type } = row.original;
       return type ? (
@@ -64,12 +69,12 @@ export const activityColumns: ColumnDef<ActivityLog>[] = [
   },
   {
     id: "message",
-    header: "Message",
+    header: t("colMessage"),
     cell: ({ row }) => <Text as="span">{row.original.message}</Text>,
   },
   {
     id: "ip",
-    header: "IP Address",
+    header: t("colIp"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -82,7 +87,7 @@ export const activityColumns: ColumnDef<ActivityLog>[] = [
   },
   {
     id: "time",
-    header: "Time",
+    header: t("colTime"),
     cell: ({ row }) => (
       <Text
         as="span"

@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -37,10 +38,11 @@ const publishedBadge = (published: boolean) => (
 export const articleColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"content">,
 ): ColumnDef<Article>[] => [
   {
     accessorKey: "title",
-    header: "Title",
+    header: t("title"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -60,7 +62,7 @@ export const articleColumns = (
   },
   {
     id: "category",
-    header: "Category",
+    header: t("category"),
     cell: ({ row }) => (
       // The badge label can differ from the category it files under — a PUBG
       // article sits in "Lainnya" but badges as PUBG Mobile.
@@ -69,7 +71,7 @@ export const articleColumns = (
   },
   {
     accessorKey: "type",
-    header: "Type",
+    header: t("colType"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -79,9 +81,9 @@ export const articleColumns = (
       </Badge>
     ),
   },
-  { accessorKey: "author_name", header: "Author", cell: ({ row }) => <Text as="span">{row.original.author_name}</Text> },
-  { id: "published_at", header: "Published", cell: ({ row }) => dateCell(row.original.published_at) },
-  { id: "status", header: "Status", cell: ({ row }) => publishedBadge(row.original.is_published) },
+  { accessorKey: "author_name", header: t("colAuthor"), cell: ({ row }) => <Text as="span">{row.original.author_name}</Text> },
+  { id: "published_at", header: t("published"), cell: ({ row }) => dateCell(row.original.published_at) },
+  { id: "status", header: t("colStatus"), cell: ({ row }) => publishedBadge(row.original.is_published) },
   {
     id: "actions",
     cell: ({ row }) => (
@@ -99,10 +101,11 @@ export const articleColumns = (
 export const articleCategoryColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"content">,
 ): ColumnDef<ArticleCategory>[] => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: t("name"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -114,7 +117,7 @@ export const articleCategoryColumns = (
   },
   {
     accessorKey: "key",
-    header: "Key",
+    header: t("colKey"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -124,10 +127,10 @@ export const articleCategoryColumns = (
       </Text>
     ),
   },
-  { accessorKey: "sort_order", header: "Order", cell: ({ row }) => <Text as="span">{row.original.sort_order}</Text> },
+  { accessorKey: "sort_order", header: t("order"), cell: ({ row }) => <Text as="span">{row.original.sort_order}</Text> },
   {
     id: "status",
-    header: "Status",
+    header: t("colStatus"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -143,7 +146,7 @@ export const articleCategoryColumns = (
       <ContentRowActions
         id={row.original.id}
         label={row.original.name}
-        entityLabel="Category"
+        entityLabel={t("category")}
         onDelete={onDelete}
       onEdit={onEdit}
       />
@@ -154,10 +157,11 @@ export const articleCategoryColumns = (
 export const faqColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"content">,
 ): ColumnDef<Faq>[] => [
   {
     accessorKey: "question",
-    header: "Question",
+    header: t("colQuestion"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -169,7 +173,7 @@ export const faqColumns = (
   },
   {
     accessorKey: "locale",
-    header: "Locale",
+    header: t("colLocale"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -179,10 +183,10 @@ export const faqColumns = (
       </Badge>
     ),
   },
-  { accessorKey: "sort_order", header: "Order", cell: ({ row }) => <Text as="span">{row.original.sort_order}</Text> },
+  { accessorKey: "sort_order", header: t("order"), cell: ({ row }) => <Text as="span">{row.original.sort_order}</Text> },
   {
     id: "status",
-    header: "Status",
+    header: t("colStatus"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -198,7 +202,7 @@ export const faqColumns = (
       <ContentRowActions
         id={row.original.id}
         label={row.original.question}
-        entityLabel="FAQ"
+        entityLabel={t("entityFaq")}
         onDelete={onDelete}
       onEdit={onEdit}
       />
@@ -209,10 +213,11 @@ export const faqColumns = (
 export const pageColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"content">,
 ): ColumnDef<ContentPage>[] => [
   {
     accessorKey: "title",
-    header: "Title",
+    header: t("title"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -232,7 +237,7 @@ export const pageColumns = (
   },
   {
     accessorKey: "locale",
-    header: "Locale",
+    header: t("colLocale"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -244,7 +249,7 @@ export const pageColumns = (
   },
   {
     id: "sections",
-    header: "Sections",
+    header: t("colSections"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -254,15 +259,15 @@ export const pageColumns = (
       </Text>
     ),
   },
-  { id: "status", header: "Status", cell: ({ row }) => publishedBadge(row.original.is_published) },
-  { id: "updated_at", header: "Updated", cell: ({ row }) => dateCell(row.original.updated_at) },
+  { id: "status", header: t("colStatus"), cell: ({ row }) => publishedBadge(row.original.is_published) },
+  { id: "updated_at", header: t("colUpdated"), cell: ({ row }) => dateCell(row.original.updated_at) },
   {
     id: "actions",
     cell: ({ row }) => (
       <ContentRowActions
         id={row.original.id}
         label={row.original.title}
-        entityLabel="Page"
+        entityLabel={t("entityPage")}
         onDelete={onDelete}
       onEdit={onEdit}
       />
@@ -273,10 +278,11 @@ export const pageColumns = (
 export const testimonialColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"content">,
 ): ColumnDef<Testimonial>[] => [
   {
     accessorKey: "author_name",
-    header: "Author",
+    header: t("colAuthor"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -296,12 +302,12 @@ export const testimonialColumns = (
   },
   {
     accessorKey: "game_name",
-    header: "Game",
+    header: t("game"),
     cell: ({ row }) => <Text as="span">{row.original.game_name ?? "—"}</Text>,
   },
   {
     accessorKey: "rating",
-    header: "Rating",
+    header: t("colRating"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -313,7 +319,7 @@ export const testimonialColumns = (
   },
   {
     id: "featured",
-    header: "Featured",
+    header: t("featured"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -325,7 +331,7 @@ export const testimonialColumns = (
   },
   {
     id: "status",
-    header: "Status",
+    header: t("colStatus"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -341,7 +347,7 @@ export const testimonialColumns = (
       <ContentRowActions
         id={row.original.id}
         label={row.original.author_name}
-        entityLabel="Testimonial"
+        entityLabel={t("testimonial")}
         onDelete={onDelete}
       onEdit={onEdit}
       />
@@ -361,10 +367,11 @@ const scopeBadge = (scope: "global" | "targeted") => (
 export const bannerColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"content">,
 ): ColumnDef<Banner>[] => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: t("name"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -376,7 +383,7 @@ export const bannerColumns = (
   },
   {
     id: "link",
-    header: "Link",
+    header: t("link"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -390,7 +397,7 @@ export const bannerColumns = (
   // the admin needs to see that state rather than an empty cell.
   {
     id: "image",
-    header: "Image",
+    header: t("colImage"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -400,15 +407,15 @@ export const bannerColumns = (
       </Text>
     ),
   },
-  { id: "scope", header: "Scope", cell: ({ row }) => scopeBadge(row.original.scope) },
-  { id: "created_at", header: "Created", cell: ({ row }) => dateCell(row.original.created_at) },
+  { id: "scope", header: t("scope"), cell: ({ row }) => scopeBadge(row.original.scope) },
+  { id: "created_at", header: t("colCreated"), cell: ({ row }) => dateCell(row.original.created_at) },
   {
     id: "actions",
     cell: ({ row }) => (
       <ContentRowActions
         id={row.original.id}
         label={row.original.name}
-        entityLabel="Banner"
+        entityLabel={t("entityBanner")}
         onDelete={onDelete}
       onEdit={onEdit}
       />
@@ -419,10 +426,11 @@ export const bannerColumns = (
 export const announcementColumns = (
   onDelete: (ids: string[]) => void,
   onEdit: (id: string) => void,
+  t: TFunction<"content">,
 ): ColumnDef<Announcement>[] => [
   {
     accessorKey: "content",
-    header: "Content",
+    header: t("content"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -432,10 +440,10 @@ export const announcementColumns = (
       </Text>
     ),
   },
-  { id: "scope", header: "Scope", cell: ({ row }) => scopeBadge(row.original.scope) },
+  { id: "scope", header: t("scope"), cell: ({ row }) => scopeBadge(row.original.scope) },
   {
     id: "status",
-    header: "Status",
+    header: t("colStatus"),
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -445,7 +453,7 @@ export const announcementColumns = (
       </Badge>
     ),
   },
-  { id: "created_at", header: "Created", cell: ({ row }) => dateCell(row.original.created_at) },
+  { id: "created_at", header: t("colCreated"), cell: ({ row }) => dateCell(row.original.created_at) },
   {
     id: "actions",
     cell: ({ row }) => (
@@ -453,7 +461,7 @@ export const announcementColumns = (
         id={row.original.id}
         // Announcements have no name — the copy itself identifies the row.
         label={row.original.content.slice(0, 40)}
-        entityLabel="Announcement"
+        entityLabel={t("entityAnnouncement")}
         onDelete={onDelete}
       onEdit={onEdit}
       />

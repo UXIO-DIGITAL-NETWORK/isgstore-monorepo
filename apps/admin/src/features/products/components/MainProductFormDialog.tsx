@@ -1,3 +1,5 @@
+import { translateOptions } from "@/lib/i18nOptions";
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,6 +67,7 @@ const toNumber = (raw: string | undefined): number | null => {
  * bundled list of invented SKUs.
  */
 export function MainProductFormDialog({ open, onOpenChange, productId }: MainProductFormDialogProps) {
+  const { t } = useTranslation("products");
   const isEdit = Boolean(productId);
   const { data: existing } = useProduct(open ? productId : undefined);
   const { data: plans = [] } = useMarginPlanOptions();
@@ -241,9 +244,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Main Product" : "Add Main Products"}</DialogTitle>
-          <DialogDescription>
-            Create a nominal buyers can purchase, and file it under the game it belongs to.
-          </DialogDescription>
+          <DialogDescription>{t("formSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -259,9 +260,9 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
             onValueChange={(value) => setActiveTab(value as ProductTab)}
           >
             <TabsList className="w-full">
-              <TabsTrigger value="product">Product</TabsTrigger>
-              <TabsTrigger value="pricing">Pricing &amp; Margin</TabsTrigger>
-              <TabsTrigger value="mix">Product Mix</TabsTrigger>
+              <TabsTrigger value="product">{t("product")}</TabsTrigger>
+              <TabsTrigger value="pricing">{t("tabPricingMargin")}</TabsTrigger>
+              <TabsTrigger value="mix">{t("tabProductMix")}</TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -274,20 +275,16 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <Heading
                     as="h2"
                     level={5}
-                  >
-                    Basic information
-                  </Heading>
-                  <Text variant="muted">Product name, code, access, and tags.</Text>
+                  >{t("basicInformation")}</Heading>
+                  <Text variant="muted">{t("basicInformationHint")}</Text>
                 </Box>
 
                 <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="product-name"
-                      tooltip="The denomination buyers see, e.g. “86 Diamonds”."
-                    >
-                      Product Name
-                    </FieldLabel>
+                      tooltip={t("tipProductName")}
+                    >{t("productName")}</FieldLabel>
                     <Input
                       id="product-name"
                       className="rounded-xl"
@@ -308,8 +305,8 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     render={({ field }) => (
                       <SelectField
                         id="product-nickname-validation"
-                        label="Nickname Validation"
-                        tooltip="Optional per-product override for the account-name lookup. The username check is normally configured on the game/category (its “Cek Username” field), not here."
+                        label={t("nicknameValidation")}
+                        tooltip={t("tipNickname")}
                         options={NICKNAME_VALIDATION_OPTIONS}
                         value={field.value ?? ""}
                         onChange={field.onChange}
@@ -322,10 +319,8 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="product-sub-name"
-                      tooltip="Optional secondary label shown under the product name."
-                    >
-                      Sub Name
-                    </FieldLabel>
+                      tooltip={t("tipSubName")}
+                    >{t("subName")}</FieldLabel>
                     <Input
                       id="product-sub-name"
                       className="rounded-xl"
@@ -335,10 +330,8 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="product-code"
-                      tooltip="A unique internal SKU for this product (e.g. mlbb-86). Must not clash with another product."
-                    >
-                      Product Code
-                    </FieldLabel>
+                      tooltip={t("tipProductCode")}
+                    >{t("productCode")}</FieldLabel>
                     <Input
                       id="product-code"
                       className="rounded-xl"
@@ -359,9 +352,9 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     render={({ field }) => (
                       <SelectField
                         id="product-access"
-                        label="Product Access"
-                        tooltip="Who may buy this product — e.g. everyone (public) or a specific member tier."
-                        options={PRODUCT_ACCESS_OPTIONS}
+                        label={t("productAccess")}
+                        tooltip={t("tipAccess")}
+                        options={translateOptions(PRODUCT_ACCESS_OPTIONS, t)}
                         value={field.value ?? ""}
                         onChange={field.onChange}
                       />
@@ -376,9 +369,9 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     render={({ field }) => (
                       <SelectField
                         id="product-tag"
-                        label="Product Tag"
-                        tooltip="An optional marketing badge shown on the product (e.g. Hot, Promo)."
-                        options={PRODUCT_TAG_OPTIONS}
+                        label={t("productTag")}
+                        tooltip={t("tipTag")}
+                        options={translateOptions(PRODUCT_TAG_OPTIONS, t)}
                         value={field.value ?? ""}
                         onChange={field.onChange}
                       />
@@ -390,8 +383,8 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     render={({ field }) => (
                       <SelectField
                         id="product-category"
-                        label="Category"
-                        tooltip="The game this product belongs to."
+                        label={t("category")}
+                        tooltip={t("tipCategory")}
                         options={categoryOptions}
                         disabled={categoriesLoading}
                         emptyLabel={categoriesLoading ? "Loading categories..." : "No categories available"}
@@ -410,12 +403,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     render={({ field }) => (
                       <SelectField
                         id="product-sub-category"
-                        label="Sub Category"
-                        tooltip="An optional grouping within the game (e.g. a denomination group). Pick a category first."
+                        label={t("subCategory")}
+                        tooltip={t("tipSubCategory")}
                         options={subCategoryOptions}
                         value={field.value ?? ""}
                         onChange={field.onChange}
-                        emptyLabel="Choose a category first"
+                        emptyLabel={t("chooseCategoryFirst")}
                       />
                     )}
                   />
@@ -427,10 +420,8 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <Heading
                     as="h2"
                     level={5}
-                  >
-                    Media & description
-                  </Heading>
-                  <Text variant="muted">Product logo and description shown on the storefront.</Text>
+                  >{t("mediaDescription")}</Heading>
+                  <Text variant="muted">{t("mediaDescriptionHint")}</Text>
                 </Box>
 
                 <Controller
@@ -439,10 +430,10 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   render={({ field }) => (
                     <ImageDropzone
                       id="product-logo"
-                      label="Product Logo"
+                      label={t("productLogo")}
                       accept="image/jpeg,image/jpg,image/png,image/webp"
                       formatsLabel="JPG, JPEG, PNG, WEBP up to 10mb"
-                      caption="1:1 ratio recommended · max display 512×512 px"
+                      caption={t("logoCaption")}
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.logo?.message}
@@ -451,7 +442,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                 />
 
                 <Box className="flex flex-col gap-1.5">
-                  <Label htmlFor="product-description">Description</Label>
+                  <Label htmlFor="product-description">{t("description")}</Label>
                   <Textarea
                     id="product-description"
                     className="rounded-xl"
@@ -486,17 +477,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <Heading
                     as="h2"
                     level={5}
-                  >
-                    Pricing &amp; Margin
-                  </Heading>
-                  <Text variant="muted">
-                    Margin per membership plan over the supplier&rsquo;s cost. Leave one empty to fall back to the
-                    pricing rules.
-                  </Text>
+                  >{t("tabPricingMargin")}</Heading>
+                  <Text variant="muted">{t("marginHint")}</Text>
                 </Box>
 
                 <Box className="flex items-center justify-between rounded-xl border border-border px-4 py-3">
-                  <Text variant="muted">Cost Price</Text>
+                  <Text variant="muted">{t("costPrice")}</Text>
                   <Text
                     as="span"
                     className="font-medium tabular-nums"
@@ -506,7 +492,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                 </Box>
 
                 {plans.length === 0 ? (
-                  <Text variant="muted">No membership plans yet — create one before pricing a product.</Text>
+                  <Text variant="muted">{t("noPlans")}</Text>
                 ) : (
                   <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {plans.map((plan) => (
@@ -523,7 +509,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                           id={`product-margin-${plan.value}`}
                           className="rounded-xl tabular-nums"
                           inputMode="decimal"
-                          placeholder="Pricing rules"
+                          placeholder={t("pricingRules")}
                           {...register(`margins.${plan.value}`)}
                         />
                         {errors.margins?.[plan.value] && (
@@ -541,7 +527,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
 
                 {cost > 0 && plans.length > 0 && (
                   <Box className="flex flex-col gap-1.5">
-                    <Text variant="muted">Resulting price</Text>
+                    <Text variant="muted">{t("resultingPrice")}</Text>
                     <PlanPriceCard
                       cost={cost}
                       plans={previewPrices}
@@ -551,12 +537,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
 
                 <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Box className="flex flex-col gap-1.5">
-                    <Label htmlFor="product-price-min">Lower Price Limit (Min)</Label>
+                    <Label htmlFor="product-price-min">{t("lowerLimit")}</Label>
                     <Input
                       id="product-price-min"
                       className="rounded-xl tabular-nums"
                       inputMode="numeric"
-                      placeholder="Rp 0"
+                      placeholder={t("rpZero")}
                       {...register("priceMin")}
                     />
                     <Text
@@ -567,12 +553,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     </Text>
                   </Box>
                   <Box className="flex flex-col gap-1.5">
-                    <Label htmlFor="product-price-max">Upper Price Limit (Max)</Label>
+                    <Label htmlFor="product-price-max">{t("upperLimit")}</Label>
                     <Input
                       id="product-price-max"
                       className="rounded-xl tabular-nums"
                       inputMode="numeric"
-                      placeholder="Rp 0"
+                      placeholder={t("rpZero")}
                       {...register("priceMax")}
                     />
                     <Text
@@ -588,15 +574,13 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="product-points"
-                      tooltip="Loyalty points this product earns, as a percentage of the sale. Leave empty to use the global points setting; enter 0 for a product that earns nothing."
-                    >
-                      Points
-                    </FieldLabel>
+                      tooltip={t("tipPoints")}
+                    >{t("points")}</FieldLabel>
                     <InputGroup className="rounded-xl">
                       <InputGroupInput
                         id="product-points"
                         inputMode="numeric"
-                        placeholder="Global default"
+                        placeholder={t("globalDefault")}
                         {...register("points")}
                       />
                       <InputGroupAddon align="inline-end">
@@ -616,15 +600,13 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="product-points-flat"
-                      tooltip="Flat bonus points added on top of the percentage — what makes a cheap denomination worth anything at all. Leave empty to use the global setting."
-                    >
-                      Bonus Points
-                    </FieldLabel>
+                      tooltip={t("tipBonusPoints")}
+                    >{t("bonusPoints")}</FieldLabel>
                     <InputGroup className="rounded-xl">
                       <InputGroupInput
                         id="product-points-flat"
                         inputMode="numeric"
-                        placeholder="Global default"
+                        placeholder={t("globalDefault")}
                         {...register("pointsFlat")}
                       />
                       <InputGroupAddon align="inline-end">
@@ -654,10 +636,8 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   <Heading
                     as="h2"
                     level={5}
-                  >
-                    Product Mix
-                  </Heading>
-                  <Text variant="muted">Combine main products into one bundled price.</Text>
+                  >{t("tabProductMix")}</Heading>
+                  <Text variant="muted">{t("mixHint")}</Text>
                 </Box>
 
                 <ProductMixBuilder
@@ -676,9 +656,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Can permission="products.create">
               <Button
                 type="submit"

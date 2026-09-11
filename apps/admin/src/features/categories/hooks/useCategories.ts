@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categoriesService, type CategoryQuickCreateInput } from "../services/categories.service";
@@ -25,13 +26,14 @@ export const useCategory = (id?: string) =>
  * repopulates.
  */
 export const useQuickCreateCategory = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: CategoryQuickCreateInput) => categoriesService.quickCreate(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      toast.success("Category created");
+      toast.success(t("created"));
     },
     // No onError toast: the dialog renders the failure inline, next to the fields
     // that caused it — a duplicate code has to be fixable where it was typed.
@@ -39,21 +41,23 @@ export const useQuickCreateCategory = () => {
 };
 
 export const useCreateCategory = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: Omit<Category, "id" | "created_at" | "updated_at">) => categoriesService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      toast.success("Category created");
+      toast.success(t("created"));
     },
     onError: () => {
-      toast.error("Failed to create category");
+      toast.error(t("createFailed"));
     },
   });
 };
 
 export const useUpdateCategory = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -61,15 +65,16 @@ export const useUpdateCategory = () => {
       categoriesService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      toast.success("Category updated");
+      toast.success(t("updated"));
     },
     onError: () => {
-      toast.error("Failed to update category");
+      toast.error(t("updateFailed"));
     },
   });
 };
 
 export const useSetCategoryStatus = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -77,25 +82,26 @@ export const useSetCategoryStatus = () => {
       categoriesService.setStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      toast.success("Category status updated");
+      toast.success(t("statusUpdated"));
     },
     onError: () => {
-      toast.error("Failed to update category status");
+      toast.error(t("statusUpdateFailed"));
     },
   });
 };
 
 export const useDeleteCategory = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => categoriesService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      toast.success("Category deleted");
+      toast.success(t("deleted"));
     },
     onError: () => {
-      toast.error("Failed to delete category");
+      toast.error(t("deleteFailed"));
     },
   });
 };

@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureTwoFactorSatisfied;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentAdmin;
 use App\Http\Middleware\EnsureUserIsPaymentInternal;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -38,6 +39,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // than silently escaping the kill switch — see EnsureSiteIsServing for
         // the exception list and the test that walks the whole route table.
         $middleware->appendToGroup('api', EnsureSiteIsServing::class);
+        // Global for the same reason: the language of a response must not
+        // depend on which endpoint was hit, which is precisely what having no
+        // such middleware produced — English and Indonesian messages sitting
+        // in the same controller.
+        $middleware->appendToGroup('api', SetLocale::class);
         $middleware->alias([
             // Sanctum ships this but registers no alias. Without it
             // `auth:sanctum` accepts any unexpired token no matter what it was

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 
@@ -22,6 +23,7 @@ interface CategoryServerRowActionsProps {
  * only. No deactivate/activate: this entity has no status concept, unlike
  * Category Type. Delete reuses the feature's shared confirmation. */
 export function CategoryServerRowActions({ categoryServer }: CategoryServerRowActionsProps) {
+  const { t } = useTranslation("categories");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteCategoryServer = useDeleteCategoryServer();
@@ -45,18 +47,14 @@ export function CategoryServerRowActions({ categoryServer }: CategoryServerRowAc
         >
           <Can permission="categories.edit">
             <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <Pencil />
-              Edit Category Server
-            </DropdownMenuItem>
+              <Pencil />{t("editCategoryServer")}</DropdownMenuItem>
           </Can>
           <Can permission="categories.delete">
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              <Trash2 />{t("delete")}</DropdownMenuItem>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -64,8 +62,8 @@ export function CategoryServerRowActions({ categoryServer }: CategoryServerRowAc
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this category server?"
-        description="This action cannot be undone. This will permanently delete this category server and its options."
+        title={t("deleteServerTitle")}
+        description={t("deleteServerDescription")}
         onConfirm={() => deleteCategoryServer.mutate(categoryServer.id)}
       />
 

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -32,6 +33,7 @@ interface CategoryTypeFormDialogProps {
  * reference and are used verbatim.
  */
 export function CategoryTypeFormDialog({ open, onOpenChange, categoryTypeId }: CategoryTypeFormDialogProps) {
+  const { t } = useTranslation("categories");
   const isEdit = Boolean(categoryTypeId);
 
   const { data: existing } = useCategoryType(open ? categoryTypeId : undefined);
@@ -89,11 +91,11 @@ export function CategoryTypeFormDialog({ open, onOpenChange, categoryTypeId }: C
           className="flex flex-col gap-4"
         >
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="category-type-name">Category Type Name</Label>
+            <Label htmlFor="category-type-name">{t("typeNameLabel")}</Label>
             <Input
               id="category-type-name"
               className="rounded-xl"
-              placeholder="e.g. Voucher, Direct Top Up"
+              placeholder={t("typeNamePlaceholder")}
               {...register("name")}
             />
             {errors.name && (
@@ -117,14 +119,12 @@ export function CategoryTypeFormDialog({ open, onOpenChange, categoryTypeId }: C
                     checked={field.value}
                     onCheckedChange={(checked) => field.onChange(checked === true)}
                   />
-                  <Label htmlFor="category-type-is-voucher">This category type is for vouchers</Label>
+                  <Label htmlFor="category-type-is-voucher">{t("isVoucher")}</Label>
                 </Box>
                 <Text
                   variant="small"
                   className="text-muted-foreground"
-                >
-                  Enable if this category type is used for selling vouchers or digital codes.
-                </Text>
+                >{t("isVoucherHint")}</Text>
               </Box>
             )}
           />
@@ -135,9 +135,7 @@ export function CategoryTypeFormDialog({ open, onOpenChange, categoryTypeId }: C
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -16,14 +17,15 @@ export const useFeedback = (params: FeedbackListParams) =>
 /** Moderation: removes a review outright. There is no edit counterpart — see
  *  the note on `feedbackService`. */
 export const useDeleteFeedback = () => {
+  const { t } = useTranslation("feedback");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => feedbackService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Review deleted");
+      toast.success(t("deleted"));
     },
-    onError: () => toast.error("Failed to delete review"),
+    onError: () => toast.error(t("deleteFailed")),
   });
 };

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ interface Props {
 
 /** "Recap" button + dialog: the totals behind the currently-filtered table. */
 export function RecapDialog({ summary, isInternal, isLoading }: Props) {
+  const { t } = useTranslation("common");
   const finance = isInternal ? (summary as FinanceTransactionSummary | undefined) : undefined;
 
   return (
@@ -47,8 +49,8 @@ export function RecapDialog({ summary, isInternal, isLoading }: Props) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ringkasan Transaksi</DialogTitle>
-          <DialogDescription>Total untuk filter yang sedang aktif.</DialogDescription>
+          <DialogTitle>{t("recap.title")}</DialogTitle>
+          <DialogDescription>{t("recap.description")}</DialogDescription>
         </DialogHeader>
 
         {isLoading || !summary ? (
@@ -57,18 +59,18 @@ export function RecapDialog({ summary, isInternal, isLoading }: Props) {
           </Text>
         ) : (
           <Box className="flex flex-col">
-            <Row label="Jumlah Transaksi" value={summary.count_total.toLocaleString("id-ID")} />
-            <Row label="Sukses" value={summary.count_success.toLocaleString("id-ID")} tone="text-success" />
-            <Row label="Pending" value={summary.count_pending.toLocaleString("id-ID")} tone="text-warning" />
-            <Row label="Gagal" value={summary.count_failed.toLocaleString("id-ID")} tone="text-destructive" />
-            <Row label="Total Nominal" value={money(summary.amount_total)} />
+            <Row label={t("recap.countTotal")} value={summary.count_total.toLocaleString("id-ID")} />
+            <Row label={t("recap.countSuccess")} value={summary.count_success.toLocaleString("id-ID")} tone="text-success" />
+            <Row label={t("recap.countPending")} value={summary.count_pending.toLocaleString("id-ID")} tone="text-warning" />
+            <Row label={t("recap.countFailed")} value={summary.count_failed.toLocaleString("id-ID")} tone="text-destructive" />
+            <Row label={t("recap.amountTotal")} value={money(summary.amount_total)} />
 
             {finance ? (
               <>
-                <Row label="Total (Gross)" value={money(finance.gross_total)} />
-                <Row label="Biaya Admin" value={money(finance.admin_fee_total)} />
-                <Row label="Fee Gateway" value={money(finance.gateway_fee_total)} />
-                <Row label="Profit Kita" value={money(finance.platform_profit_total)} tone="text-success" />
+                <Row label={t("recap.gross")} value={money(finance.gross_total)} />
+                <Row label={t("recap.adminFee")} value={money(finance.admin_fee_total)} />
+                <Row label={t("recap.gatewayFee")} value={money(finance.gateway_fee_total)} />
+                <Row label={t("recap.profit")} value={money(finance.platform_profit_total)} tone="text-success" />
               </>
             ) : null}
           </Box>

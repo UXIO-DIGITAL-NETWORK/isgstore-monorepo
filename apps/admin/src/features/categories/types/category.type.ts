@@ -60,3 +60,15 @@ export interface SelectOption {
   value: string;
   label: string;
 }
+
+/**
+ * The same option before its label is resolved.
+ *
+ * Option lists are module constants, so they carry a key rather than a
+ * sentence — a constant would otherwise freeze whichever language happened to
+ * be loaded at import and never update.
+ */
+export interface SelectOptionKey {
+  value: string;
+  labelKey: string;
+}

@@ -33,11 +33,11 @@ class ListUxiolabsPoolCandidatesAction
     ) {}
 
     /**
-     * @param  array{search?:string,provider_category?:string,category_id?:int,pool_state?:string,availability?:string,only_configured?:bool}  $filters
+     * @param  array{search?:string,provider_category?:string,category_id?:int,pool_state?:string,availability?:string,only_configured?:bool,cost_min?:int,cost_max?:int,sort?:string}  $filters
      */
     public function execute(array $filters, int $perPage, int $page): LengthAwarePaginator
     {
-        $rows = collect($this->rows($filters));
+        $rows = $this->sort(collect($this->rows($filters)), $filters['sort'] ?? null);
 
         $total = $rows->count();
         $slice = $rows->slice(($page - 1) * $perPage, $perPage)->values()->all();
@@ -73,6 +73,63 @@ class ListUxiolabsPoolCandidatesAction
             'total_candidates' => count($all),
             'pooled_count' => $pooled,
             'new_count' => $new,
+        ];
+    }
+
+    /**
+     * What there is to filter on: the provider categories in play, our own
+     * categories behind them, and the cost range the provider is charging.
+     *
+     * The page cannot derive any of it. Which provider categories exist depends
+     * on what an admin has mapped under Category Provider, and the cost bounds
+     * move every time the price checker runs.
+     *
+     * **Computed over the whole configured universe, never the active filters.**
+     * Recomputing against them makes options vanish as they are used — a filter
+     * bar that narrows itself into a dead end is worse than no facets at all.
+     *
+     * @return array{provider_categories:array<int,array<string,mixed>>,categories:array<int,array<string,mixed>>,cost:array{min:int,max:int}}
+     */
+    public function facets(): array
+    {
+        $all = $this->rows(['only_configured' => true, 'pool_state' => 'all', 'availability' => 'all']);
+
+        $providerCategories = [];
+        $categories = [];
+        $costs = [];
+
+        foreach ($all as $row) {
+            $provider = (string) $row['provider_category'];
+
+            $providerCategories[$provider] ??= [
+                'provider_category' => $provider,
+                'mapped_category_name' => $row['mapped_category_name'],
+                'count' => 0,
+            ];
+            $providerCategories[$provider]['count']++;
+
+            if ($row['mapped_category_id'] !== null) {
+                $id = (int) $row['mapped_category_id'];
+                $categories[$id] ??= ['id' => $id, 'name' => $row['mapped_category_name'], 'count' => 0];
+                $categories[$id]['count']++;
+            }
+
+            $costs[] = (int) $row['cost'];
+        }
+
+        // Alphabetical, not by count: an admin scans this list for a game they
+        // have in mind, and a list that reorders itself as the catalogue grows
+        // cannot be scanned by muscle memory.
+        ksort($providerCategories, SORT_NATURAL | SORT_FLAG_CASE);
+        uasort($categories, fn (array $a, array $b) => strnatcasecmp((string) $a['name'], (string) $b['name']));
+
+        return [
+            'provider_categories' => array_values($providerCategories),
+            'categories' => array_values($categories),
+            'cost' => [
+                'min' => $costs === [] ? 0 : min($costs),
+                'max' => $costs === [] ? 0 : max($costs),
+            ],
         ];
     }
 
@@ -203,10 +260,44 @@ class ListUxiolabsPoolCandidatesAction
             return false;
         }
 
+        // `isset`, not `empty`: a floor of 0 is a legitimate bound, and `empty`
+        // would silently drop it.
+        if (isset($filters['cost_min']) && (int) $row['cost'] < (int) $filters['cost_min']) {
+            return false;
+        }
+
+        if (isset($filters['cost_max']) && (int) $row['cost'] > (int) $filters['cost_max']) {
+            return false;
+        }
+
         if (! empty($filters['search']) && ! PriceListRow::matchesSearch($row, (string) $filters['search'])) {
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Ordering, applied after filtering and before the page slice.
+     *
+     * No sort leaves the provider's own feed order, which is what this page has
+     * always shown. Sorting is opt-in rather than a silent new default: the feed
+     * order groups a game's denominations together, which is often what an
+     * admin adding a catalogue actually wants.
+     *
+     * @param  Collection<int,array<string,mixed>>  $rows
+     * @return Collection<int,array<string,mixed>>
+     */
+    private function sort(Collection $rows, ?string $sort): Collection
+    {
+        return match ($sort) {
+            'cost_asc' => $rows->sortBy(fn (array $row) => (int) $row['cost'])->values(),
+            'cost_desc' => $rows->sortByDesc(fn (array $row) => (int) $row['cost'])->values(),
+            // Natural order, so "50" sorts before "500" instead of between "5"
+            // and "500" — every denomination name on this page is a number.
+            'name_asc' => $rows->sort(fn (array $a, array $b) => strnatcasecmp((string) $a['name'], (string) $b['name']))->values(),
+            'name_desc' => $rows->sort(fn (array $a, array $b) => strnatcasecmp((string) $b['name'], (string) $a['name']))->values(),
+            default => $rows,
+        };
     }
 }

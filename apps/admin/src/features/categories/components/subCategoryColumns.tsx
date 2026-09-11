@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -14,10 +15,14 @@ import type { SubCategory } from "../types/subCategory.type";
  * the Header/Section Type/Reviewer columns behind the open row menu in one
  * frame are the shadcn demo dataset, not this table.
  */
-export const subCategoryColumns: ColumnDef<SubCategory>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const subCategoryColumnsFor = (t: TFunction<"categories">): ColumnDef<SubCategory>[] => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: t("name"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -29,12 +34,12 @@ export const subCategoryColumns: ColumnDef<SubCategory>[] = [
   },
   {
     accessorKey: "currency_name",
-    header: "Currency Name",
+    header: t("colCurrencyName"),
     cell: ({ row }) => <Text as="span">{row.original.currency_name}</Text>,
   },
   {
     accessorKey: "created_at",
-    header: "Created At",
+    header: t("colCreatedAt"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -46,7 +51,7 @@ export const subCategoryColumns: ColumnDef<SubCategory>[] = [
   },
   {
     id: "status",
-    header: "Status",
+    header: t("status"),
     cell: ({ row }) => {
       const isActive = row.original.status === "active";
       return (
@@ -61,7 +66,7 @@ export const subCategoryColumns: ColumnDef<SubCategory>[] = [
   },
   {
     id: "actions",
-    header: "Action",
+    header: t("action"),
     cell: ({ row }) => <SubCategoryRowActions subCategory={row.original} />,
   },
 ];

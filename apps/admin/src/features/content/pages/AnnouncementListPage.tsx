@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
@@ -11,6 +12,7 @@ import { useAnnouncementList, useDeleteAnnouncements } from "../hooks/useAnnounc
 const DEFAULT_PAGE_SIZE = 10;
 
 export function AnnouncementListPage() {
+  const { t } = useTranslation("content");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -25,15 +27,15 @@ export function AnnouncementListPage() {
 
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
   const columns = useMemo(
-    () => announcementColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
-    [deleteRows],
+    () => announcementColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id), t),
+    [deleteRows, t],
   );
 
   return (
     <>
       <ContentListShell
-        title="Announcements"
-        description="Notices shown across the storefront. Only active announcements are published."
+        title={t("tabAnnouncements")}
+        description={t("announcementSubtitle")}
         toolbar={
           <ContentToolbar
             idPrefix="announcement"
@@ -57,8 +59,8 @@ export function AnnouncementListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="announcements"
-            emptyMessage="No announcements yet."
+            entityLabel={t("announcementsEntity")}
+            emptyMessage={t("announcementsEmpty")}
             showRowNumber
             enableSelection
             onSelectionChange={handleSelectionChange}
@@ -79,7 +81,7 @@ export function AnnouncementListPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
-        description="This action cannot be undone. The selected rows will be removed from the storefront."
+        description={t("irreversible")}
         onConfirm={() => deleteRows.mutate(selectedIds)}
       />
 

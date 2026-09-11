@@ -1,0 +1,15 @@
+{
+  "title": "Feedback",
+  "subtitle": "Ratings and reviews customers left after their purchases — from members and guests alike, newest first.",
+  "entity": "feedback",
+  "colReviewer": "Reviewer",
+  "colRating": "Rating",
+  "colComment": "Comment",
+  "colProduct": "Product",
+  "colTime": "Time",
+  "guest": "Guest",
+  "delete": "Delete",
+  "deleteTitle": "Delete this review?",
+  "deleted": "Review deleted",
+  "deleteFailed": "Failed to delete review"
+}

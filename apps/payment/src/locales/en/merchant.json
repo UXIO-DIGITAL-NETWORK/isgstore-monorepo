@@ -1,0 +1,184 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "balanceActive": "Available balance",
+    "balanceActiveCaption": "Ready to withdraw",
+    "balancePending": "Pending balance",
+    "balancePendingCaption": "Awaiting withdrawal approval",
+    "balanceHeld": "Held balance",
+    "balanceHeldCaption": "Awaiting channel settlement plus the holding period",
+    "totalSales": "Total sales",
+    "totalSalesCaption": "Net of fees",
+    "totalWithdrawals": "Total withdrawn",
+    "totalWithdrawalsCaption": "Payouts already settled",
+    "totalTransactions": "Total transactions",
+    "totalTransactionsCaption": "Number of transactions"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "empty": "No transactions yet",
+    "typeSale": "Sale",
+    "typeService": "Service invoice",
+    "colInvoice": "Invoice",
+    "colItem": "Item",
+    "colMethod": "Method",
+    "colAmount": "Amount",
+    "colPayment": "Payment",
+    "colProvider": "Provider",
+    "colDate": "Date"
+  },
+  "mutations": {
+    "title": "Mutations",
+    "colDate": "Date",
+    "colType": "Type",
+    "colReference": "Reference",
+    "colAmount": "Amount",
+    "colBalanceAfter": "Balance after",
+    "colDescription": "Description"
+  },
+  "withdrawals": {
+    "title": "Withdrawals",
+    "available": "Available to withdraw",
+    "availableCaption": "The most you can withdraw right now",
+    "amount": "Amount",
+    "bankOrEwallet": "Bank / e-wallet",
+    "accountNumber": "Account number",
+    "accountName": "Account holder",
+    "accountNamePlaceholder": "Name as it appears on the account",
+    "accountPhone": "Recipient phone number",
+    "feeLabel": "Fee",
+    "receivedLabel": "You receive",
+    "submit": "Request withdrawal",
+    "submitting": "Processing…",
+    "empty": "No withdrawals yet",
+    "colNumber": "Withdrawal no.",
+    "colAmount": "Amount",
+    "colFee": "Fee",
+    "colNett": "Received",
+    "colStatus": "Status",
+    "colDate": "Date"
+  },
+  "services": {
+    "title": "Services",
+    "fallbackServiceName": "Service",
+    "daysRemaining": "{{count}} days left",
+    "includedWithWebsite": "Included with your website subscription",
+    "perDays": "/ {{count}} days",
+    "subscribe": "Subscribe",
+    "tabSubscriptions": "My subscriptions",
+    "tabCatalog": "Catalogue",
+    "tabInvoices": "Purchase history",
+    "loading": "Loading…",
+    "noActiveSubscriptions": "No active services yet. Open the Catalogue tab to subscribe.",
+    "noServicesAvailable": "No services available yet.",
+    "noPurchases": "No purchases yet",
+    "colInvoice": "Invoice no.",
+    "colService": "Service",
+    "colAmount": "Amount",
+    "colStatus": "Status",
+    "colDue": "Due",
+    "colAction": "Action",
+    "pay": "Pay",
+    "detail": "Details"
+  },
+  "serviceStatus": {
+    "title": "Service status",
+    "overall": {
+      "operational": {
+        "title": "All services operational",
+        "description": "No incidents are currently under way."
+      },
+      "degraded": {
+        "title": "Some services are degraded",
+        "description": "Some payment methods or services are having trouble, or are temporarily closed."
+      },
+      "down": {
+        "title": "Some services are unavailable",
+        "description": "We are working on it. Details are below."
+      },
+      "closed": {
+        "title": "Some services are closed",
+        "description": "Some services are switched off."
+      }
+    },
+    "status": {
+      "operational": "Operational",
+      "degraded": "Degraded",
+      "down": "Unavailable",
+      "closed": "Closed"
+    },
+    "ongoingIncidents": "Ongoing incidents",
+    "allOperational": "All services are running normally",
+    "allComponents": "All components",
+    "fallbackTargetName": "Service",
+    "incidentStarted": "Started",
+    "colComponent": "Component",
+    "colType": "Type",
+    "colStatus": "Status",
+    "typePaymentChannel": "Payment method",
+    "typeService": "Service",
+    "empty": "No components yet"
+  },
+  "websiteCard": {
+    "title": "Website Services",
+    "description": "Access and manage all your services and payment gateway balance from this dashboard.",
+    "activeUntil": "• Active until {{date}}",
+    "cta": "Go check"
+  },
+  "paymentPicker": {
+    "loading": "Loading payment methods…",
+    "none": "No payment methods are active yet. Please get in touch with us.",
+    "noAdminFee": "No admin fee"
+  },
+  "payment": {
+    "title": "Payment",
+    "lapsed": "The previous payment has expired. Pick a method to open a new one.",
+    "notOpened": "No payment has been opened yet. Pick a method to continue.",
+    "method": "Payment method",
+    "adminFee": "Admin fee",
+    "total": "Total",
+    "create": "Open payment",
+    "creating": "Processing…",
+    "qrAlt": "QRIS code for this payment",
+    "qrHint": "Scan with any payment app that supports QRIS.",
+    "vaNumber": "VA number",
+    "continueToApp": "Continue to the payment app",
+    "amount": "Amount",
+    "totalDue": "Total due",
+    "payBefore": "Pay before",
+    "autoRefresh": "This page updates itself as soon as the payment arrives.",
+    "expired": "Expired"
+  },
+  "checkout": {
+    "title": "Confirm subscription",
+    "price": "Price",
+    "duration": "Term",
+    "durationValue": "{{count}} days",
+    "period": "Covers",
+    "carryOver": "Your current subscription ends {{date}}. The new term starts after that, so the days you have already paid for are not lost.",
+    "method": "Payment method",
+    "adminFee": "Admin fee",
+    "total": "Total",
+    "notes": "Notes (optional)",
+    "notesPlaceholder": "For example, anything special we should know during setup",
+    "openInvoice": "There is still an unfinished invoice for this service.",
+    "viewInvoice": "View invoice",
+    "pay": "Pay now",
+    "paying": "Processing…",
+    "loading": "Loading…",
+    "notFound": "Service not found",
+    "notFoundDescription": "This service may no longer be available."
+  },
+  "invoiceDetail": {
+    "loading": "Loading…",
+    "notFound": "Invoice not found",
+    "backToServices": "Back to Services",
+    "backToServicesArrow": "← Back to Services",
+    "amountForDays": "{{amount}} for {{count}} days",
+    "dueAt": "Due {{date}}",
+    "rejected": "Rejected: {{notes}}",
+    "serviceDetails": "Service details",
+    "colLabel": "Label",
+    "colValue": "Value"
+  }
+}

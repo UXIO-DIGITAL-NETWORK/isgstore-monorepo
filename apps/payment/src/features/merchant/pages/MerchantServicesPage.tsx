@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -22,10 +23,12 @@ const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 const CARD = "flex flex-col gap-3 rounded-xl border border-border bg-card p-5";
 
 function SubscriptionCard({ subscription }: { subscription: ServiceSubscription }) {
+  const { t } = useTranslation("merchant");
+
   return (
     <Box className={CARD}>
       <Box className="flex items-start justify-between gap-2">
-        <Heading level={3}>{subscription.service?.name ?? "Service"}</Heading>
+        <Heading level={3}>{subscription.service?.name ?? t("services.fallbackServiceName")}</Heading>
         <StatusBadge status={subscription.status} />
       </Box>
       <Text variant="small">
@@ -40,7 +43,7 @@ function SubscriptionCard({ subscription }: { subscription: ServiceSubscription 
             : "text-success tabular-nums"
         }
       >
-        {subscription.days_remaining} hari tersisa
+        {t("services.daysRemaining", { count: subscription.days_remaining })}
       </Text>
       {/* No invoice means the term was granted rather than bought here — the
           website licence the Hub keeps in step. Saying so beats a blank line
@@ -51,7 +54,7 @@ function SubscriptionCard({ subscription }: { subscription: ServiceSubscription 
           variant="small"
           className="text-muted-foreground"
         >
-          Termasuk langganan website
+          {t("services.includedWithWebsite")}
         </Text>
       )}
     </Box>
@@ -59,6 +62,8 @@ function SubscriptionCard({ subscription }: { subscription: ServiceSubscription 
 }
 
 function CatalogCard({ service }: { service: Service }) {
+  const { t } = useTranslation("merchant");
+
   return (
     <Box className={CARD}>
       <Box className="flex items-start justify-between gap-2">
@@ -100,7 +105,7 @@ function CatalogCard({ service }: { service: Service }) {
           variant="small"
           className="text-muted-foreground"
         >
-          / {service.duration_days} hari
+          {t("services.perDays", { count: service.duration_days })}
         </Text>
       </Text>
 
@@ -108,7 +113,7 @@ function CatalogCard({ service }: { service: Service }) {
         asChild
         className="w-full"
       >
-        <Link href={`/app/payment-admin/services/${service.id}/checkout`}>Berlangganan</Link>
+        <Link href={`/app/payment-admin/services/${service.id}/checkout`}>{t("services.subscribe")}</Link>
       </Button>
     </Box>
   );
@@ -121,6 +126,7 @@ interface MerchantServicesPageProps {
 }
 
 export default function MerchantServicesPage({ tab, onTabChange }: MerchantServicesPageProps = {}) {
+  const { t } = useTranslation("merchant");
   const [internalTab, setInternalTab] = useState<ServicesTab>(tab ?? "subscriptions");
   const [invoicePage, setInvoicePage] = useState(1);
 
@@ -149,7 +155,7 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
   const invoiceColumns: Column<ServiceInvoice>[] = [
     {
       key: "invoice",
-      header: "No. Invoice",
+      header: t("services.colInvoice"),
       cell: (r) => (
         <Link
           href={`/app/payment-admin/service-invoices/${r.id}`}
@@ -159,13 +165,13 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
         </Link>
       ),
     },
-    { key: "service", header: "Service", cell: (r) => r.service_name },
-    { key: "amount", header: "Nominal", className: "text-right tabular-nums", cell: (r) => money(r.amount) },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
-    { key: "due", header: "Jatuh Tempo", cell: (r) => formatDateTime(r.due_at) },
+    { key: "service", header: t("services.colService"), cell: (r) => r.service_name },
+    { key: "amount", header: t("services.colAmount"), className: "text-right tabular-nums", cell: (r) => money(r.amount) },
+    { key: "status", header: t("services.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+    { key: "due", header: t("services.colDue"), cell: (r) => formatDateTime(r.due_at) },
     {
       key: "actions",
-      header: "Aksi",
+      header: t("services.colAction"),
       // An unpaid bill is settled on its own page, where the QR or VA lives —
       // there is nothing to do from a table row any more.
       cell: (r) => (
@@ -175,7 +181,7 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
           variant={r.status === "UNPAID" ? "default" : "outline"}
         >
           <Link href={`/app/payment-admin/service-invoices/${r.id}`}>
-            {r.status === "UNPAID" ? "Bayar" : "Detail"}
+            {r.status === "UNPAID" ? t("services.pay") : t("services.detail")}
           </Link>
         </Button>
       ),
@@ -184,16 +190,16 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Services</Heading>
+      <Heading level={1}>{t("services.title")}</Heading>
 
       <Tabs
         value={activeTab}
         onValueChange={goToTab}
       >
         <TabsList>
-          <TabsTrigger value="subscriptions">Langganan Saya</TabsTrigger>
-          <TabsTrigger value="catalog">Katalog</TabsTrigger>
-          <TabsTrigger value="invoices">Riwayat Pembelian</TabsTrigger>
+          <TabsTrigger value="subscriptions">{t("services.tabSubscriptions")}</TabsTrigger>
+          <TabsTrigger value="catalog">{t("services.tabCatalog")}</TabsTrigger>
+          <TabsTrigger value="invoices">{t("services.tabInvoices")}</TabsTrigger>
         </TabsList>
 
         <TabsContent
@@ -201,9 +207,9 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
           className="mt-6"
         >
           {loadingSubs ? (
-            <Text variant="small">Memuat…</Text>
+            <Text variant="small">{t("services.loading")}</Text>
           ) : (subscriptions?.rows.length ?? 0) === 0 ? (
-            <Text variant="small">Belum ada layanan yang aktif. Lihat tab Katalog untuk berlangganan.</Text>
+            <Text variant="small">{t("services.noActiveSubscriptions")}</Text>
           ) : (
             <Box className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {subscriptions?.rows.map((subscription) => (
@@ -221,9 +227,9 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
           className="mt-6"
         >
           {loadingCatalog ? (
-            <Text variant="small">Memuat…</Text>
+            <Text variant="small">{t("services.loading")}</Text>
           ) : (catalog?.rows.length ?? 0) === 0 ? (
-            <Text variant="small">Belum ada service yang tersedia.</Text>
+            <Text variant="small">{t("services.noServicesAvailable")}</Text>
           ) : (
             <Box className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {catalog?.rows.map((service) => (
@@ -245,7 +251,7 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
             rows={invoices?.rows ?? []}
             isLoading={loadingInvoices}
             isError={invoicesError}
-            emptyLabel="Belum ada pembelian"
+            emptyLabel={t("services.noPurchases")}
             rowKey={(r) => r.id}
           />
           <Pager

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 
 import { Box } from "@/components/common/Box";
@@ -22,6 +23,7 @@ import { useTransaction } from "../hooks/useTransactions";
  * the unauthenticated preview.
  */
 export default function EditTransactionPage() {
+  const { t } = useTranslation("transactions");
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { invoiceNo } = useParams({ strict: false });
@@ -35,12 +37,8 @@ export default function EditTransactionPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Edit Transaction
-        </Heading>
-        <Text variant="muted">
-          Update the payment and invoice status for this transaction, or attach proof of settlement.
-        </Text>
+        >{t("editTitle")}</Heading>
+        <Text variant="muted">{t("editSubtitle")}</Text>
       </Box>
 
       {isPending ? (
@@ -58,9 +56,7 @@ export default function EditTransactionPage() {
           <Link
             href={listHref}
             className="text-sm font-medium underline underline-offset-4"
-          >
-            Back to transactions
-          </Link>
+          >{t("backToTransactions")}</Link>
         </Box>
       ) : (
         <EditTransactionForm

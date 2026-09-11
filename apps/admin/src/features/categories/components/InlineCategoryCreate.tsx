@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -35,6 +36,7 @@ const EMPTY = { typeId: "", name: "", code: "" };
  * the full Category form, which is where an admin will finish the record.
  */
 export function InlineCategoryCreate({ onCreated, onCancel }: InlineCategoryCreateProps) {
+  const { t } = useTranslation("categories");
   const [values, setValues] = useState(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof typeof EMPTY, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -84,12 +86,10 @@ export function InlineCategoryCreate({ onCreated, onCancel }: InlineCategoryCrea
       <Text
         variant="small"
         className="text-muted-foreground"
-      >
-        New category — the rest of its details can be filled in later under Category.
-      </Text>
+      >{t("inlineCreateHint")}</Text>
 
       <Box className="flex flex-col gap-1.5">
-        <Label htmlFor="inline-category-type">Category Type</Label>
+        <Label htmlFor="inline-category-type">{t("colCategoryType")}</Label>
         <Select
           value={values.typeId}
           onValueChange={(value) => set("typeId", value)}
@@ -122,12 +122,12 @@ export function InlineCategoryCreate({ onCreated, onCancel }: InlineCategoryCrea
       </Box>
 
       <Box className="flex flex-col gap-1.5">
-        <Label htmlFor="inline-category-name">Category Name</Label>
+        <Label htmlFor="inline-category-name">{t("colCategoryName")}</Label>
         <Input
           id="inline-category-name"
           value={values.name}
           onChange={(event) => set("name", event.target.value)}
-          placeholder="e.g. Blood Strike"
+          placeholder={t("nameExample")}
           className="rounded-xl"
         />
         {errors.name && (
@@ -141,21 +141,18 @@ export function InlineCategoryCreate({ onCreated, onCancel }: InlineCategoryCrea
       </Box>
 
       <Box className="flex flex-col gap-1.5">
-        <Label htmlFor="inline-category-code">Category Code</Label>
+        <Label htmlFor="inline-category-code">{t("categoryCode")}</Label>
         <Input
           id="inline-category-code"
           value={values.code}
           onChange={(event) => set("code", event.target.value)}
-          placeholder="e.g. blood-strike"
+          placeholder={t("codeExample")}
           className="rounded-xl"
         />
         <Text
           variant="small"
           className="text-muted-foreground"
-        >
-          A unique, stable internal identifier. It is used in URLs and integrations, so it is
-          deliberately yours to choose rather than guessed from the name.
-        </Text>
+        >{t("categoryCodeHint")}</Text>
         {errors.code && (
           <Text
             variant="small"
@@ -182,9 +179,7 @@ export function InlineCategoryCreate({ onCreated, onCancel }: InlineCategoryCrea
           size="sm"
           className="rounded-xl"
           onClick={onCancel}
-        >
-          Cancel
-        </Button>
+        >{t("cancel")}</Button>
         <Button
           type="button"
           size="sm"

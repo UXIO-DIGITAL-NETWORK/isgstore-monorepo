@@ -1,6 +1,18 @@
-import { afterEach, vi } from "vitest";
+import { afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import i18n from "@/config/i18n";
+
+// Pinned to `id`, unlike the admin panel's harness.
+//
+// This app's screens were written in Indonesian and its tests query them by
+// those accessible names, so extracting a string into `locales/id` leaves the
+// assertions passing unchanged — which is what makes the extraction reviewable
+// one file at a time. Strings not yet extracted are hardcoded and unaffected by
+// the locale either way.
+beforeAll(async () => {
+  await i18n.changeLanguage("id");
+});
 
 // No `globals: true` in vitest.config.ts, so @testing-library/react's
 // automatic afterEach-cleanup (which only registers when it finds a global

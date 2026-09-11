@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState, type ComponentType } from "react";
 import { CreditCard, Globe, Mail, MessageCircle, Plug, Truck, Unplug } from "lucide-react";
 
@@ -13,15 +14,18 @@ import type { ChannelType } from "../types/integration.type";
 
 type CategoryFilter = "all" | ChannelType;
 
-const CATEGORIES: { value: CategoryFilter; label: string; icon: ComponentType<{ className?: string }> }[] = [
-  { value: "all", label: "All", icon: Globe },
-  { value: "supplier", label: "Supplier", icon: Truck },
-  { value: "payment_gateway", label: "Payment Gateway", icon: CreditCard },
-  { value: "whatsapp_gateway", label: "Whatsapp Gateway", icon: MessageCircle },
-  { value: "email_gateway", label: "Email Gateway", icon: Mail },
+// `labelKey`, not `label`: a module constant would freeze whichever language
+// was loaded at import.
+const CATEGORIES: { value: CategoryFilter; labelKey: string; icon: ComponentType<{ className?: string }> }[] = [
+  { value: "all", labelKey: "all", icon: Globe },
+  { value: "supplier", labelKey: "supplier", icon: Truck },
+  { value: "payment_gateway", labelKey: "paymentGateway", icon: CreditCard },
+  { value: "whatsapp_gateway", labelKey: "whatsappGateway", icon: MessageCircle },
+  { value: "email_gateway", labelKey: "emailGateway", icon: Mail },
 ];
 
 export default function IntegrationPage() {
+  const { t } = useTranslation("integration");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const { data: channels, isLoading, isError, refetch } = useChannels();
 
@@ -37,7 +41,7 @@ export default function IntegrationPage() {
     return [
       {
         id: "total-channels",
-        label: "Total Channels",
+        label: t("totalChannels"),
         value: channels.length,
         format: "count",
         icon: Plug,
@@ -45,24 +49,24 @@ export default function IntegrationPage() {
       },
       {
         id: "active-channels",
-        label: "Active",
+        label: t("active"),
         value: active,
         format: "count",
         icon: Plug,
         iconClassName: "size-4 text-success",
-        caption: "Channels with an active connection (status ping).",
+        caption: t("activeCaption"),
       },
       {
         id: "disconnected-channels",
-        label: "Disconnected",
+        label: t("disconnected"),
         value: disconnected,
         format: "count",
         icon: Unplug,
         iconClassName: "size-4 text-destructive",
-        caption: "Registered channels with a lost connection.",
+        caption: t("disconnectedCaption"),
       },
     ];
-  }, [channels]);
+  }, [channels, t]);
 
   const filteredChannels = useMemo(() => {
     if (!channels) return [];
@@ -75,9 +79,7 @@ export default function IntegrationPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Integration
-        </Heading>
+        >{t("title")}</Heading>
         <Text variant="muted">
           Manage digital supplier connections, payment gateways, and WhatsApp gateways. Ping status and balances update
           per channel.
@@ -87,14 +89,12 @@ export default function IntegrationPage() {
       <Box className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {isError ? (
           <Box className="flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-4 md:col-span-3">
-            <Text variant="muted">Failed to load channel overview.</Text>
+            <Text variant="muted">{t("overviewFailed")}</Text>
             <Button
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-            >
-              Retry
-            </Button>
+            >{t("retry")}</Button>
           </Box>
         ) : isLoading || !channels ? (
           Array.from({ length: 3 }).map((_, index) => (
@@ -121,14 +121,14 @@ export default function IntegrationPage() {
           variant="line"
           className="w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
         >
-          {CATEGORIES.map(({ value, label, icon: Icon }) => (
+          {CATEGORIES.map(({ value, labelKey, icon: Icon }) => (
             <TabsTrigger
               key={value}
               value={value}
               className="flex-none gap-1.5"
             >
               <Icon className="size-4" />
-              {label}
+              {t(labelKey)}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -137,14 +137,12 @@ export default function IntegrationPage() {
           <Box className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2 xl:grid-cols-3">
             {isError ? (
               <Box className="flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-4 md:col-span-2 xl:col-span-3">
-                <Text variant="muted">Failed to load channels.</Text>
+                <Text variant="muted">{t("channelsFailed")}</Text>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => refetch()}
-                >
-                  Retry
-                </Button>
+                >{t("retry")}</Button>
               </Box>
             ) : isLoading || !channels ? (
               Array.from({ length: 3 }).map((_, index) => (
@@ -157,9 +155,7 @@ export default function IntegrationPage() {
               <Text
                 variant="muted"
                 className="md:col-span-2 xl:col-span-3"
-              >
-                No channels registered for this category yet.
-              </Text>
+              >{t("noChannels")}</Text>
             ) : (
               filteredChannels.map((channel) => (
                 <ChannelCard

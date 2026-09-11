@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,10 +34,12 @@ interface PricingRuleFormDialogProps {
 // uses a sentinel that maps back to `null` on submit. Both selects need one:
 // a null category means every category, a null plan means every plan.
 const GLOBAL_VALUE = "__global__";
-const GLOBAL = { value: GLOBAL_VALUE, label: "All categories (global)" };
-const ALL_PLANS = { value: GLOBAL_VALUE, label: "All plans (fallback)" };
 
 export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOptions, planOptions, onSubmit, isPending = false }: PricingRuleFormDialogProps) {
+  const { t } = useTranslation("pricing");
+  // Built here, not at module scope: the labels are rendered text.
+  const GLOBAL = { value: GLOBAL_VALUE, label: t("allCategories") };
+  const ALL_PLANS = { value: GLOBAL_VALUE, label: t("allPlansFallback") };
   const {
     control,
     register,
@@ -97,7 +100,7 @@ export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOption
             render={({ field }) => (
               <SelectField
                 id="rule-plan"
-                label="Membership plan"
+                label={t("membershipPlan")}
                 options={[ALL_PLANS, ...planOptions.map(({ value, label }) => ({ value, label }))]}
                 value={field.value}
                 onChange={field.onChange}
@@ -112,24 +115,24 @@ export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOption
             render={({ field }) => (
               <SelectField
                 id="rule-category"
-                label="Category"
+                label={t("category")}
                 options={[GLOBAL, ...categoryOptions]}
                 value={field.value}
                 onChange={field.onChange}
-                placeholder="All categories (global)"
+                placeholder={t("allCategories")}
               />
             )}
           />
 
           <Box className="grid grid-cols-2 gap-3">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="rule-percent">Markup %</Label>
+              <Label htmlFor="rule-percent">{t("markupPercent")}</Label>
               <Input
                 id="rule-percent"
                 type="number"
                 step="any"
                 className="rounded-xl"
-                placeholder="e.g. 20"
+                placeholder={t("markupPlaceholder")}
                 {...register("markup_percent", { valueAsNumber: true })}
               />
               {errors.markup_percent && (
@@ -142,12 +145,12 @@ export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOption
               )}
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="rule-flat">Flat markup</Label>
+              <Label htmlFor="rule-flat">{t("flatMarkup")}</Label>
               <Input
                 id="rule-flat"
                 type="number"
                 className="rounded-xl"
-                placeholder="e.g. 500"
+                placeholder={t("flatPlaceholder")}
                 {...register("markup_flat", { valueAsNumber: true })}
               />
               {errors.markup_flat && (
@@ -167,9 +170,7 @@ export function PricingRuleFormDialog({ open, onOpenChange, rule, categoryOption
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"
