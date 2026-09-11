@@ -52,6 +52,17 @@ class DisbursementCallbackController extends Controller
                 throw new Exception('Signature verification failed.');
             }
 
+            // Logged, not rejected — same reasoning as the pay-in callback: the
+            // payout is matched by our own mch_order_no, so a merchant mismatch is
+            // a config alarm, not grounds for dropping a settlement result.
+            if ($this->monetapayService->callbackTargetsAnotherMerchant($decrypted)) {
+                Log::channel('monetapay')->warning('Disbursement callback names a different sub-merchant', [
+                    'mch_order_no' => $decrypted['mch_order_no'] ?? null,
+                    'callback_sub_mch_id' => $decrypted['sub_mch_id'] ?? null,
+                    'configured_sub_mch_id' => $this->monetapayService->subMchId(),
+                ]);
+            }
+
             Log::channel('monetapay')->info('Monetapay Disbursement Decrypted Payload', $decrypted);
 
             $this->action->execute(new DisbursementCallbackDTO(

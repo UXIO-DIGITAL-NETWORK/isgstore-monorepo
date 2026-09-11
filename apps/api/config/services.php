@@ -24,6 +24,10 @@ return [
 
     'monetapay' => [
         'mch_id' => env('MONETAPAY_MCH_ID'),
+        // The whole site trades as ONE Monetapay sub-merchant under `mch_id`.
+        // Left blank, every call behaves exactly as it did before sub-merchants
+        // existed (the field is dropped from the signed TreeMap when empty).
+        'sub_mch_id' => env('MONETAPAY_SUB_MCH_ID'),
         'collection_app_id' => env('MONETAPAY_COLLECTION_APP_ID'),
         'disbursement_app_id' => env('MONETAPAY_DISBURSEMENT_APP_ID', env('MONETAPAY_MCH_ID')),
         'partner_key' => env('MONETAPAY_PARTNER_KEY'),
