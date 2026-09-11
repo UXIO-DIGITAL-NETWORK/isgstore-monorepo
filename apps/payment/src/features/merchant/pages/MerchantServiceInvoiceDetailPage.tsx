@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { InstallationProgress } from "@/components/common/InstallationProgress";
@@ -35,6 +36,7 @@ interface MerchantServiceInvoiceDetailPageProps {
  */
 export default function MerchantServiceInvoiceDetailPage({ invoiceId }: MerchantServiceInvoiceDetailPageProps) {
   const { data: invoice, isLoading, isError } = useMerchantServiceInvoice(invoiceId);
+  const { t } = useTranslation("merchant");
   const subscriptionId = invoice?.subscription?.id;
   const { data: installation, isLoading: loadingInstallation } = useMerchantInstallation(subscriptionId);
   const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
@@ -42,28 +44,28 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
   const { mutateAsync: reveal } = useRevealDetail();
 
   if (isLoading) {
-    return <Text variant="small">Memuat…</Text>;
+    return <Text variant="small">{t("invoiceDetail.loading")}</Text>;
   }
 
   if (isError || !invoice) {
     return (
       <Box className="flex flex-col gap-4">
-        <Heading level={1}>Invoice tidak ditemukan</Heading>
+        <Heading level={1}>{t("invoiceDetail.notFound")}</Heading>
         <Link
           href="/app/payment-admin/services"
           className="underline"
         >
-          Kembali ke Services
+          {t("invoiceDetail.backToServices")}
         </Link>
       </Box>
     );
   }
 
   const detailColumns: Column<ServiceInstallationDetail>[] = [
-    { key: "label", header: "Label", cell: (r) => r.label },
+    { key: "label", header: t("invoiceDetail.colLabel"), cell: (r) => r.label },
     {
       key: "value",
-      header: "Nilai",
+      header: t("invoiceDetail.colValue"),
       cell: (r) => (
         <SecretValue
           detail={r}
@@ -85,7 +87,7 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
           href="/app/payment-admin/services"
           className="text-sm text-muted-foreground underline"
         >
-          ← Kembali ke Services
+          {t("invoiceDetail.backToServicesArrow")}
         </Link>
         <Heading level={1}>{invoice.invoice_number}</Heading>
       </Box>
@@ -96,14 +98,14 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
           <StatusBadge status={invoice.status} />
         </Box>
         <Text variant="small">
-          {money(invoice.amount)} untuk {invoice.duration_days} hari
+          {t("invoiceDetail.amountForDays", { amount: money(invoice.amount), count: invoice.duration_days })}
         </Text>
         {invoice.due_at && !isPaid && (
           <Text
             variant="small"
             className="text-muted-foreground"
           >
-            Jatuh tempo {formatDateTime(invoice.due_at)}
+            {t("invoiceDetail.dueAt", { date: formatDateTime(invoice.due_at) })}
           </Text>
         )}
         {invoice.status === "REJECTED" && invoice.notes && (
@@ -111,7 +113,7 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
             variant="small"
             className="text-destructive"
           >
-            Ditolak: {invoice.notes}
+            {t("invoiceDetail.rejected", { notes: invoice.notes })}
           </Text>
         )}
       </Box>
@@ -137,7 +139,7 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
           />
 
           <Box className="flex flex-col gap-3">
-            <Heading level={3}>Detail Layanan</Heading>
+            <Heading level={3}>{t("invoiceDetail.serviceDetails")}</Heading>
             {(installation?.details.length ?? 0) === 0 ? (
               <Text
                 variant="small"

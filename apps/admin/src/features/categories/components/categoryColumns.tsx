@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Box } from "@/components/common/Box";
@@ -9,10 +10,14 @@ import type { Category } from "../types/category.type";
 /** Real columns for the Category list — the reference's Header/Section
  * Type/Status/Target/Limit/Reviewer columns are the unrelated shadcn demo
  * dataset and are not reproduced (product_requirements.md §4.5). */
-export const categoryColumns: ColumnDef<Category>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const categoryColumnsFor = (t: TFunction<"categories">): ColumnDef<Category>[] => [
   {
     accessorKey: "name",
-    header: "Category Name",
+    header: t("colCategoryName"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -27,12 +32,12 @@ export const categoryColumns: ColumnDef<Category>[] = [
   },
   {
     accessorKey: "type",
-    header: "Category Type",
+    header: t("colCategoryType"),
     cell: ({ row }) => <Text as="span">{row.original.type}</Text>,
   },
   {
     id: "code_slug",
-    header: "Code / Slug",
+    header: t("colCodeSlug"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -47,12 +52,12 @@ export const categoryColumns: ColumnDef<Category>[] = [
   },
   {
     id: "status",
-    header: "Status",
+    header: t("status"),
     cell: ({ row }) => <CategoryStatusToggle category={row.original} />,
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t("actions"),
     cell: ({ row }) => <CategoryRowActions category={row.original} />,
   },
 ];

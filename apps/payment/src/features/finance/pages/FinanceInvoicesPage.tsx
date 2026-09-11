@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -19,17 +21,21 @@ const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
 /** "" = all; the rest map straight onto ListParams.status. */
 const FILTERS = [
-  { value: "", label: "Semua" },
-  { value: "WAITING_CONFIRMATION", label: "Menunggu Konfirmasi" },
-  { value: "UNPAID", label: "Belum Bayar" },
-  { value: "PAID", label: "Lunas" },
-  { value: "REJECTED", label: "Ditolak" },
+  { value: "", labelKey: "invoices.filterAll" },
+  { value: "WAITING_CONFIRMATION", labelKey: "invoices.filterWaiting" },
+  { value: "UNPAID", labelKey: "invoices.filterUnpaid" },
+  { value: "PAID", labelKey: "invoices.filterPaid" },
+  { value: "REJECTED", labelKey: "invoices.filterRejected" },
 ];
 
-const columns: Column<ServiceInvoice>[] = [
+/**
+ * A factory rather than a module constant: column headers are rendered text, so
+ * they have to resolve when the component renders.
+ */
+const columnsFor = (t: TFunction<"finance">): Column<ServiceInvoice>[] => [
   {
     key: "invoice",
-    header: "No. Invoice",
+    header: t("invoices.colInvoice"),
     cell: (r) => (
       <Text
         as="span"
@@ -39,13 +45,13 @@ const columns: Column<ServiceInvoice>[] = [
       </Text>
     ),
   },
-  { key: "merchant", header: "Client", cell: (r) => r.merchant?.name ?? "-" },
-  { key: "service", header: "Service", cell: (r) => r.service_name },
-  { key: "amount", header: "Nominal", className: "text-right tabular-nums", cell: (r) => money(r.amount) },
-  { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
+  { key: "merchant", header: t("invoices.colClient"), cell: (r) => r.merchant?.name ?? "-" },
+  { key: "service", header: t("invoices.colService"), cell: (r) => r.service_name },
+  { key: "amount", header: t("invoices.colAmount"), className: "text-right tabular-nums", cell: (r) => money(r.amount) },
+  { key: "status", header: t("invoices.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
   {
     key: "method",
-    header: "Metode",
+    header: t("invoices.colMethod"),
     cell: (r) =>
       r.payment?.channel ?? (
         <Text
@@ -56,10 +62,10 @@ const columns: Column<ServiceInvoice>[] = [
         </Text>
       ),
   },
-  { key: "due", header: "Jatuh Tempo", cell: (r) => formatDateTime(r.due_at) },
+  { key: "due", header: t("invoices.colDue"), cell: (r) => formatDateTime(r.due_at) },
   {
     key: "actions",
-    header: "Aksi",
+    header: t("invoices.colAction"),
     // Every row is inspectable now: preparation, confirmation and rejection all
     // live on the detail page, so even a settled invoice is worth opening.
     cell: (r) => (
@@ -68,13 +74,15 @@ const columns: Column<ServiceInvoice>[] = [
         size="sm"
         variant="outline"
       >
-        <Link href={`/app/payment-internal/invoices/${r.id}`}>Detail</Link>
+        <Link href={`/app/payment-internal/invoices/${r.id}`}>{t("invoices.detail")}</Link>
       </Button>
     ),
   },
 ];
 
 export default function FinanceInvoicesPage() {
+  const { t } = useTranslation("finance");
+  const columns = columnsFor(t);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const { data, isLoading, isError } = useServiceInvoices({
@@ -85,7 +93,7 @@ export default function FinanceInvoicesPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Invoice</Heading>
+      <Heading level={1}>{t("invoices.title")}</Heading>
 
       <Tabs
         value={status}
@@ -102,7 +110,7 @@ export default function FinanceInvoicesPage() {
               key={filter.value || "all"}
               value={filter.value}
             >
-              {filter.label}
+              {t(filter.labelKey)}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -113,7 +121,7 @@ export default function FinanceInvoicesPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada invoice"
+        emptyLabel={t("invoices.empty")}
         rowKey={(r) => r.id}
       />
 

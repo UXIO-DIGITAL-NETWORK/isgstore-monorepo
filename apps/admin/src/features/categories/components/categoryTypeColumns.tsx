@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Check } from "lucide-react";
 
@@ -16,10 +17,14 @@ import type { CategoryType } from "../types/categoryType.type";
  * and "In Process" is the shadcn demo dataset's review-workflow vocabulary,
  * not a taxonomy state.
  */
-export const categoryTypeColumns: ColumnDef<CategoryType>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const categoryTypeColumnsFor = (t: TFunction<"categories">): ColumnDef<CategoryType>[] => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: t("name"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -31,7 +36,7 @@ export const categoryTypeColumns: ColumnDef<CategoryType>[] = [
   },
   {
     accessorKey: "is_voucher",
-    header: "Voucher",
+    header: t("colVoucher"),
     // The mark is decorative; the cell's accessible name comes from the
     // sr-only text, so the column isn't icon-only for screen readers
     // (.claude/rules/accessibility.md).
@@ -62,7 +67,7 @@ export const categoryTypeColumns: ColumnDef<CategoryType>[] = [
   },
   {
     id: "status",
-    header: "Status",
+    header: t("status"),
     cell: ({ row }) => {
       const isActive = row.original.status === "active";
       return (
@@ -77,7 +82,7 @@ export const categoryTypeColumns: ColumnDef<CategoryType>[] = [
   },
   {
     id: "actions",
-    header: "Action",
+    header: t("action"),
     cell: ({ row }) => <CategoryTypeRowActions categoryType={row.original} />,
   },
 ];

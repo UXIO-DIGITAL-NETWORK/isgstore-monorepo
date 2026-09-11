@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { Archive, ChevronDown, Eye, ImageIcon, Lock, Plus, RefreshCcw, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -72,6 +73,7 @@ export function MainProductToolbar({
   onBulkUnpublish,
   onBulkDelete,
 }: MainProductToolbarProps) {
+  const { t } = useTranslation("products");
   // The same source the product form, bulk-add and provider pool already read,
   // so every category select in this feature agrees on what exists.
   const { categoryOptions } = useProductSelectOptions();
@@ -86,13 +88,13 @@ export function MainProductToolbar({
       <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="product-search">Search</Label>
+            <Label htmlFor="product-search">{t("search")}</Label>
             <Box className="relative">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="product-search"
                 className="w-64 rounded-xl pl-8"
-                placeholder="Search product name"
+                placeholder={t("searchProductName")}
                 value={search}
                 onChange={(event) => onSearchChange(event.target.value)}
               />
@@ -100,7 +102,7 @@ export function MainProductToolbar({
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="product-category-filter">Category</Label>
+            <Label htmlFor="product-category-filter">{t("category")}</Label>
             {/* `""` (not the clear sentinel) when unfiltered, so Radix renders
                 the placeholder rather than the "All categories" item's label. */}
             <Select
@@ -111,10 +113,10 @@ export function MainProductToolbar({
                 id="product-category-filter"
                 className="w-56 rounded-xl"
               >
-                <SelectValue placeholder="Type to search category" />
+                <SelectValue placeholder={t("typeToSearchCategory")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CLEAR_VALUE}>All categories</SelectItem>
+                <SelectItem value={CLEAR_VALUE}>{t("allCategories")}</SelectItem>
                 {categoryOptions.map((option) => (
                   <SelectItem
                     key={option.value}
@@ -128,7 +130,7 @@ export function MainProductToolbar({
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="product-state-filter">Status</Label>
+            <Label htmlFor="product-state-filter">{t("status")}</Label>
             {/* Archived products are excluded by default — the row is kept only
                 so its order history keeps resolving, not to clutter the
                 catalogue. This select is the one way back to them. */}
@@ -140,10 +142,10 @@ export function MainProductToolbar({
                 id="product-state-filter"
                 className="w-44 rounded-xl"
               >
-                <SelectValue placeholder="All statuses" />
+                <SelectValue placeholder={t("allStatuses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CLEAR_VALUE}>All statuses</SelectItem>
+                <SelectItem value={CLEAR_VALUE}>{t("allStatuses")}</SelectItem>
                 {PUBLISH_STATES.map((state) => (
                   <SelectItem
                     key={state}
@@ -157,7 +159,7 @@ export function MainProductToolbar({
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="product-price-filter">Price</Label>
+            <Label htmlFor="product-price-filter">{t("price")}</Label>
             {/* Ranges are inferred: the reference only ever shows this select's
                 "All Price" trigger, never its open list (§4.6). */}
             <Select
@@ -168,16 +170,16 @@ export function MainProductToolbar({
                 id="product-price-filter"
                 className="w-48 rounded-xl"
               >
-                <SelectValue placeholder="All Price" />
+                <SelectValue placeholder={t("allPrice")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CLEAR_VALUE}>All Price</SelectItem>
+                <SelectItem value={CLEAR_VALUE}>{t("allPrice")}</SelectItem>
                 {PRICE_RANGE_OPTIONS.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}
                   >
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -196,9 +198,7 @@ export function MainProductToolbar({
             <Text
               as="span"
               className="sr-only"
-            >
-              Refresh
-            </Text>
+            >{t("refresh")}</Text>
           </Button>
           {/* Two ways in, per the reference: one product at a time, or a bulk
               import. The reference's menu reads "Menual" — a misspelling, not
@@ -207,19 +207,15 @@ export function MainProductToolbar({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="rounded-xl">
-                <Plus className="size-4" />
-                Add Main Products
-                <ChevronDown className="size-4" />
+                <Plus className="size-4" />{t("addMainProducts")}<ChevronDown className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
               className="rounded-2xl"
             >
-              <DropdownMenuItem onSelect={onAdd}>Manual</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => navigate({ to: "/admin/products/main/add-bulk" })}>
-                Bulk
-              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onAdd}>{t("manual")}</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigate({ to: "/admin/products/main/add-bulk" })}>{t("bulk")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </Box>
@@ -234,15 +230,15 @@ export function MainProductToolbar({
             count={selectedCount}
             actions={[
               {
-                label: "Edit Logo",
+                label: t("editLogo"),
                 icon: <ImageIcon className="size-4" />,
                 onSelect: announceDeferred("Bulk logo upload lands with the product image endpoint"),
               },
-              { label: "Uxiolabs Update", icon: <RefreshCcw className="size-4" />, onSelect: onBulkUxiolabs },
-              { label: "Show Price", icon: <Eye className="size-4" />, onSelect: onBulkShowPrice },
-              { label: "Lock Price", icon: <Lock className="size-4" />, onSelect: onBulkLock },
-              { label: "Unpublish", icon: <Archive className="size-4" />, onSelect: onBulkUnpublish },
-              { label: "Archive", icon: <Archive className="size-4" />, destructive: true, onSelect: onBulkDelete },
+              { label: t("uxiolabsUpdate"), icon: <RefreshCcw className="size-4" />, onSelect: onBulkUxiolabs },
+              { label: t("showPrice"), icon: <Eye className="size-4" />, onSelect: onBulkShowPrice },
+              { label: t("lockPrice"), icon: <Lock className="size-4" />, onSelect: onBulkLock },
+              { label: t("unpublish"), icon: <Archive className="size-4" />, onSelect: onBulkUnpublish },
+              { label: t("archive"), icon: <Archive className="size-4" />, destructive: true, onSelect: onBulkDelete },
             ]}
           />
         </Box>

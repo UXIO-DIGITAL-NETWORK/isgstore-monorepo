@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +31,7 @@ interface BannerFormDialogProps {
 }
 
 export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDialogProps) {
+  const { t } = useTranslation("content");
   const isEdit = Boolean(bannerId);
   const [image, setImage] = useState<File | null>(null);
 
@@ -78,9 +80,7 @@ export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDia
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Banner" : "Add Banner"}</DialogTitle>
-          <DialogDescription>
-            Hero slides on the storefront homepage. A banner whose image is missing is hidden rather than shown broken.
-          </DialogDescription>
+          <DialogDescription>{t("bannerSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -89,11 +89,11 @@ export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDia
           className="flex flex-col gap-4"
         >
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="banner-name">Name</Label>
+            <Label htmlFor="banner-name">{t("name")}</Label>
             <Input
               id="banner-name"
               className="rounded-xl"
-              placeholder="e.g. Promo Ramadan 2026"
+              placeholder={t("bannerNamePlaceholder")}
               {...register("name")}
             />
             {errors.name && (
@@ -108,11 +108,11 @@ export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDia
 
           <Box className="grid gap-4 sm:grid-cols-2">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="banner-link">Link</Label>
+              <Label htmlFor="banner-link">{t("link")}</Label>
               <Input
                 id="banner-link"
                 className="rounded-xl"
-                placeholder="https://..."
+                placeholder={t("linkPlaceholder")}
                 {...register("link")}
               />
             </Box>
@@ -123,8 +123,8 @@ export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDia
               render={({ field }) => (
                 <SelectField
                   id="banner-category"
-                  label="Scope"
-                  options={[{ value: GLOBAL, label: "Global (all games)" }, ...categoryOptions]}
+                  label={t("scope")}
+                  options={[{ value: GLOBAL, label: t("globalAllGames") }, ...categoryOptions]}
                   value={field.value ?? GLOBAL}
                   onChange={field.onChange}
                 />
@@ -134,7 +134,7 @@ export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDia
 
           <ImageDropzone
             id="banner-image"
-            label="Banner Image"
+            label={t("bannerImage")}
             caption={isEdit ? "Upload to replace the current image." : "Required — the storefront hides a banner with no image."}
             value={image ?? undefined}
             onChange={setImage}
@@ -148,9 +148,7 @@ export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDia
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

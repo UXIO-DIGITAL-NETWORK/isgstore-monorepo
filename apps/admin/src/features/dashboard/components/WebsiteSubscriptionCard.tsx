@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { CalendarClock, ExternalLink } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -20,6 +21,7 @@ import { useWebsiteSubscription } from "../hooks/useWebsiteSubscription";
  * rest of this file works.
  */
 export function WebsiteSubscriptionCard() {
+  const { t } = useTranslation("dashboard");
   const { data } = useWebsiteSubscription();
 
   // Nothing configured, or still loading: render nothing rather than a card
@@ -34,7 +36,7 @@ export function WebsiteSubscriptionCard() {
     // customers, and "300 hari tersisa" here would be the one screen that
     // should explain the outage denying it instead.
     data.status === "suspended"
-      ? (data.suspend_reason ?? "Situs dinonaktifkan")
+      ? (data.suspend_reason ?? t("siteDisabled"))
       : data.status === "expired"
         ? "Langganan berakhir"
         : data.status === "none"
@@ -46,7 +48,7 @@ export function WebsiteSubscriptionCard() {
       <SidebarMenuItem>
         <SidebarMenuButton
           asChild
-          tooltip={`${data.service?.name ?? "Langganan"} — ${summary}`}
+          tooltip={`${data.service?.name ?? t("subscription")} — ${summary}`}
           className={cn(
             "h-auto items-start gap-2 rounded-xl border p-3",
             urgent ? "border-warning text-warning" : "border-border",
@@ -65,7 +67,7 @@ export function WebsiteSubscriptionCard() {
                 as="span"
                 className="truncate text-xs font-medium"
               >
-                {data.service?.name ?? "Langganan website"}
+                {data.service?.name ?? t("websiteSubscription")}
               </Text>
               <Text
                 as="span"
@@ -78,9 +80,7 @@ export function WebsiteSubscriptionCard() {
                 as="span"
                 variant="small"
                 className="mt-1 inline-flex items-center gap-1 truncate font-medium"
-              >
-                Perpanjang langganan
-                <ExternalLink className="size-3 shrink-0" />
+              >{t("renewSubscription")}<ExternalLink className="size-3 shrink-0" />
               </Text>
             </Box>
           </a>

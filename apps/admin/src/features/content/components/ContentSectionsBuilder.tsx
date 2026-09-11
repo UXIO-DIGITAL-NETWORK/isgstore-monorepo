@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useFieldArray, type Control, type FieldErrors, type UseFormRegister } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -32,14 +33,15 @@ interface ContentSectionsBuilderProps {
  * submitted — the same convention writers already expect.
  */
 export function ContentSectionsBuilder({ control, register, errors, requireOne = true }: ContentSectionsBuilderProps) {
+  const { t } = useTranslation("content");
   const { fields, append, remove } = useFieldArray({ control, name: "sections" as never });
 
   return (
     <Box className="flex flex-col gap-4">
       <Box className="flex items-center justify-between">
         <Box className="flex flex-col gap-0.5">
-          <Label>Body Sections</Label>
-          <Text variant="muted">Separate paragraphs with a blank line. A heading is optional per section.</Text>
+          <Label>{t("bodySections")}</Label>
+          <Text variant="muted">{t("bodySectionsHint")}</Text>
         </Box>
         <Button
           type="button"
@@ -47,9 +49,7 @@ export function ContentSectionsBuilder({ control, register, errors, requireOne =
           className="rounded-xl"
           onClick={() => append({ heading: "", body: "" } as never)}
         >
-          <Plus className="size-4" />
-          Add Section
-        </Button>
+          <Plus className="size-4" />{t("addSection")}</Button>
       </Box>
 
       {fields.length === 0 ? (
@@ -66,11 +66,11 @@ export function ContentSectionsBuilder({ control, register, errors, requireOne =
           >
             <Box className="flex items-end justify-between gap-3">
               <Box className="flex flex-1 flex-col gap-1.5">
-                <Label htmlFor={`section-heading-${index}`}>Heading</Label>
+                <Label htmlFor={`section-heading-${index}`}>{t("heading")}</Label>
                 <Input
                   id={`section-heading-${index}`}
                   className="rounded-xl"
-                  placeholder="Optional — leave blank for an intro paragraph"
+                  placeholder={t("headingPlaceholder")}
                   {...register(`sections.${index}.heading` as never)}
                 />
               </Box>
@@ -86,12 +86,12 @@ export function ContentSectionsBuilder({ control, register, errors, requireOne =
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor={`section-body-${index}`}>Content</Label>
+              <Label htmlFor={`section-body-${index}`}>{t("content")}</Label>
               <Textarea
                 id={`section-body-${index}`}
                 rows={5}
                 className="rounded-xl"
-                placeholder="Write the section here. Leave a blank line between paragraphs."
+                placeholder={t("sectionPlaceholder")}
                 {...register(`sections.${index}.body` as never)}
               />
               {errors.sections?.[index]?.body && (

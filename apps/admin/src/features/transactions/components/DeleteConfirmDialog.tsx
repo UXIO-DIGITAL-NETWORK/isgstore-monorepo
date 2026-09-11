@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,7 @@ interface DeleteConfirmDialogProps {
  * explicit confirmation, never on open.
  */
 export function DeleteConfirmDialog({ open, onOpenChange, invoiceNo, onConfirm }: DeleteConfirmDialogProps) {
+  const { t } = useTranslation("transactions");
   return (
     <AlertDialog
       open={open}
@@ -31,12 +33,10 @@ export function DeleteConfirmDialog({ open, onOpenChange, invoiceNo, onConfirm }
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete transaction {invoiceNo}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This permanently removes the transaction record. This action cannot be undone.
-          </AlertDialogDescription>
+          <AlertDialogDescription>{t("deleteDescription")}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           {/* `variant` + an explicit dark override, matching the categories
               delete dialogs — the bare `bg-destructive` className this used
               to carry never won, so this button rendered as the default
@@ -48,9 +48,7 @@ export function DeleteConfirmDialog({ open, onOpenChange, invoiceNo, onConfirm }
               onConfirm();
               onOpenChange(false);
             }}
-          >
-            Delete
-          </AlertDialogAction>
+          >{t("delete")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

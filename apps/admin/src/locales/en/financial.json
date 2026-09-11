@@ -1,0 +1,20 @@
+{
+  "title": "Financial Summary",
+  "subtitle": "Monitor payment gateway credit, user debit, and supplier balances in real time. Click an amount to copy.",
+  "summaryFailed": "Failed to load summary cards.",
+  "retry": "Retry",
+  "totalCredit": "Total Credit",
+  "totalDebit": "Total Debit",
+  "profit": "Profit",
+  "sinceLastMonth": "Since last month",
+  "paymentGateway": "Payment Gateway",
+  "paymentGatewaySubtitle": "Summary of balances on each payment gateway.",
+  "paymentGatewayFailed": "Failed to load payment gateway balances.",
+  "noPaymentGateways": "No payment gateways configured yet.",
+  "availableBalance": "Saldo Aktif",
+  "heldBalance": "Saldo Tertahan",
+  "supplier": "Supplier",
+  "supplierSubtitle": "Summary of the balances available with each supplier.",
+  "supplierFailed": "Failed to load supplier balances.",
+  "noSuppliers": "No suppliers configured yet."
+}

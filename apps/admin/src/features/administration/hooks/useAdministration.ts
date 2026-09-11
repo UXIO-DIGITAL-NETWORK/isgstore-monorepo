@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -20,6 +21,7 @@ export const usePaymentChannel = (id?: string) =>
   });
 
 export const useUpdatePaymentChannel = () => {
+  const { t } = useTranslation("administration");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -27,24 +29,25 @@ export const useUpdatePaymentChannel = () => {
       paymentChannelsService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-channels"] });
-      toast.success("Payment channel updated");
+      toast.success(t("channelUpdated"));
     },
-    onError: () => toast.error("Failed to update payment channel"),
+    onError: () => toast.error(t("channelUpdateFailed")),
   });
 };
 
 export const useDeletePaymentChannels = () => {
+  const { t } = useTranslation("administration");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (ids: string[]) => Promise.all(ids.map((id) => paymentChannelsService.remove(id))),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-channels"] });
-      toast.success("Payment channel deleted");
+      toast.success(t("channelDeleted"));
     },
     // The API refuses to delete a channel that has transactions, since that
     // would orphan historical orders — say so rather than a generic failure.
-    onError: () => toast.error("Channels with transactions cannot be deleted. Deactivate instead."),
+    onError: () => toast.error(t("channelDeleteBlocked")),
   });
 };
 
@@ -52,6 +55,7 @@ export const useUserList = (params: AdministrationListParams) =>
   useQuery({ queryKey: ["users", "list", params], queryFn: () => usersService.list(params) });
 
 export const useAdjustBalance = () => {
+  const { t } = useTranslation("administration");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -59,13 +63,14 @@ export const useAdjustBalance = () => {
       usersService.adjustBalance(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Balance adjusted");
+      toast.success(t("balanceAdjusted"));
     },
-    onError: () => toast.error("Failed to adjust balance"),
+    onError: () => toast.error(t("balanceAdjustFailed")),
   });
 };
 
 export const useSetUserStatus = () => {
+  const { t } = useTranslation("administration");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -74,11 +79,12 @@ export const useSetUserStatus = () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success(status === "active" ? "User reactivated" : `User ${status}`);
     },
-    onError: () => toast.error("Failed to update user status"),
+    onError: () => toast.error(t("statusUpdateFailed")),
   });
 };
 
 export const useDeleteUsers = () => {
+  const { t } = useTranslation("administration");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -87,7 +93,7 @@ export const useDeleteUsers = () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success(ids.length === 1 ? "User deleted" : `${ids.length} users deleted`);
     },
-    onError: () => toast.error("Failed to delete users"),
+    onError: () => toast.error(t("deleteUsersFailed")),
   });
 };
 
@@ -95,15 +101,16 @@ export const useSettings = (group?: string) =>
   useQuery({ queryKey: ["settings", group], queryFn: () => settingsService.list(group) });
 
 export const useUpdateSettings = () => {
+  const { t } = useTranslation("administration");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (values: Record<string, string | number | boolean>) => settingsService.update(values),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
-      toast.success("Settings saved");
+      toast.success(t("settingsSaved"));
     },
-    onError: () => toast.error("Failed to save settings"),
+    onError: () => toast.error(t("settingsSaveFailed")),
   });
 };
 
@@ -112,14 +119,15 @@ export const useUpdateSettings = () => {
  * see `settingsService.upload`.
  */
 export const useUploadSetting = () => {
+  const { t } = useTranslation("administration");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ key, file }: { key: string; file: File }) => settingsService.upload(key, file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
-      toast.success("Image uploaded");
+      toast.success(t("imageUploaded"));
     },
-    onError: () => toast.error("Failed to upload image"),
+    onError: () => toast.error(t("imageUploadFailed")),
   });
 };

@@ -20,6 +20,9 @@ export function makeUser(overrides: Partial<User> = {}): User {
     phone: "6281234567890",
     balance: 9999999,
     point: 9999,
+    // Matches the locale `test/setup.ts` pins the panel to. `useLocale` adopts
+    // the account's language on mount, so a fixture that disagreed with the
+    // harness would flip every rendered screen out from under the assertions.
     locale: "id",
     timezone: "Asia/Jakarta",
     email_verified_at: "2026-07-10T13:39:19.000000Z",

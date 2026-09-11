@@ -1,0 +1,12 @@
+{
+  "title": "Activity",
+  "subtitle": "Every logged action across the platform — sign-ins, transactions, and admin changes — newest first.",
+  "search": "Search",
+  "searchPlaceholder": "Search message",
+  "entity": "activity",
+  "colActor": "Actor",
+  "colType": "Type",
+  "colMessage": "Message",
+  "colIp": "IP Address",
+  "colTime": "Time"
+}

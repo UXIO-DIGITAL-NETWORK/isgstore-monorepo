@@ -1,0 +1,17 @@
+{
+  "dashboard": "Dashboard",
+  "transactions": "Transaksi",
+  "withdrawals": "Penarikan",
+  "mutations": "Mutasi",
+  "services": "Layanan",
+  "serviceStatus": "Status Layanan",
+  "merchants": "Merchant",
+  "verifyWithdrawals": "Verifikasi Penarikan",
+  "internalWithdrawals": "Penarikan Internal",
+  "channelFees": "Biaya Channel",
+  "productsServices": "Produk / Layanan",
+  "invoices": "Invoice",
+  "subscriptions": "Langganan",
+  "incidents": "Status Layanan",
+  "notifications": "Notifikasi"
+}

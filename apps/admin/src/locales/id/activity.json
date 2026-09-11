@@ -1,0 +1,12 @@
+{
+  "title": "Aktivitas",
+  "subtitle": "Setiap tindakan yang tercatat di platform — login, transaksi, dan perubahan admin — terbaru lebih dulu.",
+  "search": "Cari",
+  "searchPlaceholder": "Cari pesan",
+  "entity": "aktivitas",
+  "colActor": "Pelaku",
+  "colType": "Tipe",
+  "colMessage": "Pesan",
+  "colIp": "Alamat IP",
+  "colTime": "Waktu"
+}

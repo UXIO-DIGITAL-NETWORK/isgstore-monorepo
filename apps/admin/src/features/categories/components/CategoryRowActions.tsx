@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 
@@ -24,6 +25,7 @@ interface CategoryRowActionsProps {
  * other way to reach the edit form, and opens it as a modal.
  */
 export function CategoryRowActions({ category }: CategoryRowActionsProps) {
+  const { t } = useTranslation("categories");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteCategory = useDeleteCategory();
@@ -47,18 +49,14 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
         >
           <Can permission="categories.edit">
             <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <Pencil />
-              Edit
-            </DropdownMenuItem>
+              <Pencil />{t("edit")}</DropdownMenuItem>
           </Can>
           <Can permission="categories.delete">
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              <Trash2 />{t("delete")}</DropdownMenuItem>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -69,7 +67,7 @@ export function CategoryRowActions({ category }: CategoryRowActionsProps) {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title={`Delete ${category.name}?`}
-        description="This permanently removes the category and its order-form field definitions. This action cannot be undone."
+        description={t("deleteCategoryDescription")}
         onConfirm={() => deleteCategory.mutate(category.id)}
       />
 

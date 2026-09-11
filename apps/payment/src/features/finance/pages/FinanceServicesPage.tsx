@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -17,6 +18,7 @@ import { useDeleteService, useFinanceServices, useServicesMeta } from "../hooks/
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
 export default function FinanceServicesPage() {
+  const { t } = useTranslation("finance");
   const [page, setPage] = useState(1);
   const [pendingDelete, setPendingDelete] = useState<Service | null>(null);
   const { data, isLoading, isError } = useFinanceServices({ page, per_page: 20 });
@@ -32,7 +34,7 @@ export default function FinanceServicesPage() {
   const columns: Column<Service>[] = [
     {
       key: "name",
-      header: "Service",
+      header: t("services.colService"),
       cell: (r) => (
         <Box className="flex flex-col">
           <Text
@@ -53,7 +55,7 @@ export default function FinanceServicesPage() {
     },
     {
       key: "category",
-      header: "Kategori",
+      header: t("services.colCategory"),
       // A category is not a status, so it gets a plain badge rather than the
       // tone-mapped StatusBadge.
       cell: (r) => <Badge variant="secondary">{r.category_label}</Badge>,
@@ -63,14 +65,14 @@ export default function FinanceServicesPage() {
       : ([
           {
             key: "cost_price",
-            header: "Cost Price",
+            header: t("services.colCostPrice"),
             className: "text-right tabular-nums",
             cell: (r) => money(r.cost_price ?? 0),
           },
         ] as Column<Service>[])),
     {
       key: "selling_price",
-      header: "Selling Price",
+      header: t("services.colSellingPrice"),
       className: "text-right tabular-nums",
       cell: (r) => money(r.selling_price),
     },
@@ -79,7 +81,7 @@ export default function FinanceServicesPage() {
       : ([
           {
             key: "margin",
-            header: "Margin",
+            header: t("services.colMargin"),
             className: "text-right tabular-nums",
             // Gross margin: against the selling price, which is what the operator
             // compares across services. Derived here rather than stored, so it can
@@ -110,13 +112,13 @@ export default function FinanceServicesPage() {
         ] as Column<Service>[])),
     {
       key: "duration",
-      header: "Masa Aktif",
+      header: t("services.colDuration"),
       className: "text-right tabular-nums",
       cell: (r) => `${r.duration_days} hari`,
     },
     {
       key: "status",
-      header: "Status",
+      header: t("services.colStatus"),
       cell: (r) => <Badge variant={r.is_active ? "default" : "outline"}>{r.is_active ? "Aktif" : "Nonaktif"}</Badge>,
     },
     ...(hubManaged
@@ -124,7 +126,7 @@ export default function FinanceServicesPage() {
       : ([
           {
             key: "actions",
-            header: "Aksi",
+            header: t("services.colAction"),
             cell: (r) => (
               <Box className="flex gap-2">
                 <ServiceFormDialog service={r} />
@@ -144,7 +146,7 @@ export default function FinanceServicesPage() {
   return (
     <Box className="flex flex-col gap-6">
       <Box className="flex items-center justify-between">
-        <Heading level={1}>Product / Services</Heading>
+        <Heading level={1}>{t("services.title")}</Heading>
         {!hubManaged && <ServiceFormDialog />}
       </Box>
 
@@ -155,8 +157,7 @@ export default function FinanceServicesPage() {
             variant="small"
             className="text-muted-foreground"
           >
-            {meta?.managed_note ??
-              "Katalog service dikelola di Hub. Ubah harga, kategori, dan masa aktif dari panel Hub — perubahan lokal akan tertimpa sinkronisasi."}
+            {meta?.managed_note ?? t("services.hubManagedNote")}
           </Text>
         </Box>
       )}
@@ -166,7 +167,7 @@ export default function FinanceServicesPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada service"
+        emptyLabel={t("services.empty")}
         rowKey={(r) => r.id}
       />
 
@@ -182,13 +183,13 @@ export default function FinanceServicesPage() {
         onOpenChange={(next) => {
           if (!next) setPendingDelete(null);
         }}
-        title="Hapus service ini?"
+        title={t("services.deleteTitle")}
         description={
           pendingDelete
-            ? `${pendingDelete.name} akan dihapus dari katalog. Service yang sudah punya invoice atau langganan tidak dapat dihapus — nonaktifkan saja.`
+            ? t("services.deleteDescription", { name: pendingDelete.name })
             : ""
         }
-        confirmLabel="Hapus"
+        confirmLabel={t("services.deleteConfirm")}
         onConfirm={() => {
           if (pendingDelete) remove(pendingDelete.id);
           setPendingDelete(null);

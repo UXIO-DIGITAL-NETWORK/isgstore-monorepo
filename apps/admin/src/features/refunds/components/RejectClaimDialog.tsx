@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +35,7 @@ interface RejectClaimDialogProps {
  * the account being refused. Use "Reject refund" only when nothing is owed.
  */
 export function RejectClaimDialog({ open, onOpenChange, refundNumber, onConfirm, isPending = false }: RejectClaimDialogProps) {
+  const { t } = useTranslation("refunds");
   const {
     register,
     handleSubmit,
@@ -66,18 +68,15 @@ export function RejectClaimDialog({ open, onOpenChange, refundNumber, onConfirm,
         >
           <DialogHeader>
             <DialogTitle>Reject the account claiming {refundNumber}?</DialogTitle>
-            <DialogDescription>
-              The refund stays owed. The account is detached and a new claim link is sent to the email and WhatsApp on
-              the original order, so the real buyer can still claim it.
-            </DialogDescription>
+            <DialogDescription>{t("rejectClaimHint")}</DialogDescription>
           </DialogHeader>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="reject-claim-reason">Reason</Label>
+            <Label htmlFor="reject-claim-reason">{t("reason")}</Label>
             <Textarea
               id="reject-claim-reason"
               className="rounded-xl"
-              placeholder="e.g. Account contact does not match the order"
+              placeholder={t("rejectClaimPlaceholder")}
               {...register("reason")}
             />
             {errors.reason && (
@@ -96,9 +95,7 @@ export function RejectClaimDialog({ open, onOpenChange, refundNumber, onConfirm,
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               variant="destructive"

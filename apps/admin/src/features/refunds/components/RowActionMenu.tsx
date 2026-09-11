@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Ban, Check, CreditCard, Eye, HandCoins, MoreVertical, UserX, Wallet } from "lucide-react";
 
@@ -42,6 +43,7 @@ import { VerifyCreditDialog } from "./VerifyCreditDialog";
  * refund permanently.
  */
 export function RowActionMenu({ refund }: { refund: Refund }) {
+  const { t } = useTranslation("refunds");
   const [detailOpen, setDetailOpen] = useState(false);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
@@ -88,9 +90,7 @@ export function RowActionMenu({ refund }: { refund: Refund }) {
           className="rounded-2xl"
         >
           <DropdownMenuItem onSelect={() => setDetailOpen(true)}>
-            <Eye />
-            View details
-          </DropdownMenuItem>
+            <Eye />{t("viewDetails")}</DropdownMenuItem>
 
           <Can permission="refunds.manage">
             {canEditPayout && (
@@ -102,30 +102,22 @@ export function RowActionMenu({ refund }: { refund: Refund }) {
 
             {canClaim && (
               <DropdownMenuItem onSelect={() => process.mutate(refund.id)}>
-                <HandCoins />
-                Claim for transfer
-              </DropdownMenuItem>
+                <HandCoins />{t("claimForTransfer")}</DropdownMenuItem>
             )}
 
             {canComplete && (
               <DropdownMenuItem onSelect={() => setCompleteOpen(true)}>
-                <Check />
-                Mark as transferred
-              </DropdownMenuItem>
+                <Check />{t("markTransferred")}</DropdownMenuItem>
             )}
 
             {canTakeForVerification && (
               <DropdownMenuItem onSelect={() => process.mutate(refund.id)}>
-                <HandCoins />
-                Claim for verification
-              </DropdownMenuItem>
+                <HandCoins />{t("claimForVerification")}</DropdownMenuItem>
             )}
 
             {canCredit && (
               <DropdownMenuItem onSelect={() => setVerifyOpen(true)}>
-                <Wallet />
-                Verify &amp; credit balance
-              </DropdownMenuItem>
+                <Wallet />{t("verifyAndCredit")}</DropdownMenuItem>
             )}
 
             {isClaimed && isOpen && (
@@ -133,9 +125,7 @@ export function RowActionMenu({ refund }: { refund: Refund }) {
                 variant="destructive"
                 onSelect={() => setRejectClaimOpen(true)}
               >
-                <UserX />
-                Reject claim (still owed)
-              </DropdownMenuItem>
+                <UserX />{t("rejectClaim")}</DropdownMenuItem>
             )}
 
             {isOpen && (
@@ -145,9 +135,7 @@ export function RowActionMenu({ refund }: { refund: Refund }) {
                   variant="destructive"
                   onSelect={() => setRejectOpen(true)}
                 >
-                  <Ban />
-                  Reject refund
-                </DropdownMenuItem>
+                  <Ban />{t("rejectRefund")}</DropdownMenuItem>
               </>
             )}
           </Can>

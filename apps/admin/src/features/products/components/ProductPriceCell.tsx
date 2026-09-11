@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -30,15 +31,14 @@ const rupiah = (value: number) => formatCurrency(value, { fractionDigits: 0 });
  * carry the structure.
  */
 function VariantPriceCard({ variant }: { variant: ProductVariant }) {
+  const { t } = useTranslation("products");
   return (
     <Box className="min-w-72 divide-y divide-border overflow-hidden rounded-lg border border-border">
       <Box className="flex items-center justify-between gap-3 px-3 py-2">
         <Text
           as="span"
           variant="muted"
-        >
-          Cost
-        </Text>
+        >{t("cost")}</Text>
         <Text
           as="span"
           className="font-medium tabular-nums"

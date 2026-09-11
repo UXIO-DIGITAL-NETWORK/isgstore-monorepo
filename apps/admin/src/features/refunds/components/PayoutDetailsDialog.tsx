@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +39,7 @@ interface PayoutDetailsDialogProps {
  * than both being shown.
  */
 export function PayoutDetailsDialog({ open, onOpenChange, refund, onConfirm, isPending = false }: PayoutDetailsDialogProps) {
+  const { t } = useTranslation("refunds");
   const { data: banks = [] } = usePayoutBanks();
 
   const {
@@ -100,14 +102,11 @@ export function PayoutDetailsDialog({ open, onOpenChange, refund, onConfirm, isP
         >
           <DialogHeader>
             <DialogTitle>Payout details for {refund.refund_number}</DialogTitle>
-            <DialogDescription>
-              Enter the account the customer gave you. This is recorded as supplied by an admin, not confirmed by the
-              customer.
-            </DialogDescription>
+            <DialogDescription>{t("payoutSubtitle")}</DialogDescription>
           </DialogHeader>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="payout-bank">Bank or e-wallet</Label>
+            <Label htmlFor="payout-bank">{t("bankOrEwalletField")}</Label>
             <Controller
               control={control}
               name="bank_code"
@@ -120,7 +119,7 @@ export function PayoutDetailsDialog({ open, onOpenChange, refund, onConfirm, isP
                     id="payout-bank"
                     className="w-full rounded-xl"
                   >
-                    <SelectValue placeholder="Select a destination" />
+                    <SelectValue placeholder={t("selectDestination")} />
                   </SelectTrigger>
                   <SelectContent>
                     {banks.map((bank) => (
@@ -147,7 +146,7 @@ export function PayoutDetailsDialog({ open, onOpenChange, refund, onConfirm, isP
 
           {isEwallet ? (
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="payout-phone">E-wallet phone number</Label>
+              <Label htmlFor="payout-phone">{t("ewalletPhone")}</Label>
               <Input
                 id="payout-phone"
                 className="rounded-xl tabular-nums"
@@ -157,7 +156,7 @@ export function PayoutDetailsDialog({ open, onOpenChange, refund, onConfirm, isP
             </Box>
           ) : (
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="payout-account">Account number</Label>
+              <Label htmlFor="payout-account">{t("accountNumber")}</Label>
               <Input
                 id="payout-account"
                 className="rounded-xl tabular-nums"
@@ -176,11 +175,11 @@ export function PayoutDetailsDialog({ open, onOpenChange, refund, onConfirm, isP
           )}
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="payout-name">Account holder name</Label>
+            <Label htmlFor="payout-name">{t("accountHolderName")}</Label>
             <Input
               id="payout-name"
               className="rounded-xl"
-              placeholder="As printed on the account"
+              placeholder={t("asPrintedOnAccount")}
               {...register("account_name")}
             />
             {errors.account_name && (
@@ -199,9 +198,7 @@ export function PayoutDetailsDialog({ open, onOpenChange, refund, onConfirm, isP
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

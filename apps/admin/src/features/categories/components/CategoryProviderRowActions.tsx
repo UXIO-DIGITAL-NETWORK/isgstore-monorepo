@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 
@@ -24,6 +25,7 @@ interface CategoryProviderRowActionsProps {
  * the feature's shared confirmation and the same mutation as the toolbar's
  * bulk "Delete (N)", passing a single id. */
 export function CategoryProviderRowActions({ categoryProvider }: CategoryProviderRowActionsProps) {
+  const { t } = useTranslation("categories");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteCategoryProviders = useDeleteCategoryProviders();
@@ -47,18 +49,14 @@ export function CategoryProviderRowActions({ categoryProvider }: CategoryProvide
         >
           <Can permission="categories.edit">
             <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <Pencil />
-              Edit Category Provider
-            </DropdownMenuItem>
+              <Pencil />{t("editCategoryProvider")}</DropdownMenuItem>
           </Can>
           <Can permission="categories.delete">
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              <Trash2 />{t("delete")}</DropdownMenuItem>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -66,8 +64,8 @@ export function CategoryProviderRowActions({ categoryProvider }: CategoryProvide
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this category provider?"
-        description="This action cannot be undone. This will permanently delete this category provider and unlink the supplier from this category."
+        title={t("deleteProviderTitle")}
+        description={t("deleteProviderDescription")}
         onConfirm={() => deleteCategoryProviders.mutate([categoryProvider.id])}
       />
 

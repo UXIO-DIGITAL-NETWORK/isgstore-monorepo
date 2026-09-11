@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -34,6 +35,7 @@ interface MerchantServiceCheckoutPageProps {
  * its figure is the one charged.
  */
 export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServiceCheckoutPageProps) {
+  const { t } = useTranslation("merchant");
   const [notes, setNotes] = useState("");
   const [channel, setChannel] = useState<ServicePaymentChannel | null>(null);
   const navigate = useNavigate();
@@ -42,14 +44,14 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
   const { mutate: subscribe, isPending } = useSubscribeService();
 
   if (isLoading) {
-    return <Text variant="small">Memuat…</Text>;
+    return <Text variant="small">{t("checkout.loading")}</Text>;
   }
 
   if (isError || !service) {
     return (
       <Box className="flex flex-col gap-4">
-        <Heading level={1}>Service tidak ditemukan</Heading>
-        <Text variant="small">Layanan ini mungkin sudah tidak tersedia.</Text>
+        <Heading level={1}>{t("checkout.notFound")}</Heading>
+        <Text variant="small">{t("checkout.notFoundDescription")}</Text>
         <Link
           href="/app/payment-admin/services"
           className="underline"
@@ -87,7 +89,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
         >
           ← Kembali ke katalog
         </Link>
-        <Heading level={1}>Konfirmasi Langganan</Heading>
+        <Heading level={1}>{t("checkout.title")}</Heading>
       </Box>
 
       <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
@@ -122,15 +124,15 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
 
         <Box className="flex flex-col gap-2 border-t border-border pt-4">
           <Row
-            label="Harga"
+            label={t("checkout.price")}
             value={money(service.selling_price)}
           />
           <Row
-            label="Masa aktif"
-            value={`${service.duration_days} hari`}
+            label={t("checkout.duration")}
+            value={t("checkout.durationValue", { count: service.duration_days })}
           />
           <Row
-            label="Periode berlaku"
+            label={t("checkout.period")}
             value={`${formatDate(service.projected_starts_at)} – ${formatDate(service.projected_ends_at)}`}
           />
         </Box>
@@ -140,14 +142,13 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
             variant="small"
             className="text-muted-foreground"
           >
-            Langganan aktif Anda berakhir {formatDate(service.current_period_ends_at)}. Periode baru dimulai setelahnya,
-            jadi sisa hari yang sudah dibayar tidak hangus.
+            {t("checkout.carryOver", { date: formatDate(service.current_period_ends_at) })}
           </Text>
         )}
 
         {!service.has_open_invoice && (
           <Box className="flex flex-col gap-3 border-t border-border pt-4">
-            <Label>Metode Pembayaran</Label>
+            <Label>{t("checkout.method")}</Label>
             <PaymentChannelPicker
               channels={channels ?? []}
               selectedId={channel?.id ?? null}
@@ -156,11 +157,11 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
             />
             <Box className="flex flex-col gap-2 border-t border-border pt-4">
               <Row
-                label="Biaya Admin"
+                label={t("checkout.adminFee")}
                 value={money(adminFee)}
               />
               <Row
-                label="Total"
+                label={t("checkout.total")}
                 value={money(total)}
               />
             </Box>
@@ -168,13 +169,13 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
         )}
 
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="checkout-notes">Catatan (opsional)</Label>
+          <Label htmlFor="checkout-notes">{t("checkout.notes")}</Label>
           <Textarea
             id="checkout-notes"
             rows={2}
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            placeholder="Misalnya kebutuhan khusus saat instalasi"
+            placeholder={t("checkout.notesPlaceholder")}
           />
         </Box>
 
@@ -184,14 +185,14 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
               variant="small"
               className="text-destructive"
             >
-              Masih ada invoice yang belum selesai untuk layanan ini.
+              {t("checkout.openInvoice")}
             </Text>
             <Link href={`/app/payment-admin/service-invoices/${service.open_invoice_id}`}>
               <Button
                 variant="secondary"
                 className="w-full"
               >
-                Lihat Invoice
+                {t("checkout.viewInvoice")}
               </Button>
             </Link>
           </Box>
@@ -201,7 +202,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
             disabled={isPending || !channel}
             onClick={pay}
           >
-            {isPending ? "Memproses…" : "Bayar Sekarang"}
+            {isPending ? t("checkout.paying") : t("checkout.pay")}
           </Button>
         )}
       </Box>

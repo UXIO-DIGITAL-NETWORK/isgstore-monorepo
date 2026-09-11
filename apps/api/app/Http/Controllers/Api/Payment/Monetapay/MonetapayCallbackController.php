@@ -46,7 +46,19 @@ class MonetapayCallbackController extends Controller
                 throw new Exception('Signature verification failed.');
             }
 
-            // Step 3: Map to DTO and run business logic
+            // Step 3: Flag a callback booked to a different merchant. It is logged,
+            // not rejected: the order is still matched by our own mch_order_no, and
+            // refusing on a field we have never seen in a live payload would drop
+            // real payments. A hit here means the sub-merchant config is wrong.
+            if ($this->monetapayService->callbackTargetsAnotherMerchant($decrypted)) {
+                Log::channel('monetapay')->warning('Monetapay callback names a different sub-merchant', [
+                    'mch_order_no' => $decrypted['mch_order_no'] ?? null,
+                    'callback_sub_mch_id' => $decrypted['sub_mch_id'] ?? null,
+                    'configured_sub_mch_id' => $this->monetapayService->subMchId(),
+                ]);
+            }
+
+            // Step 4: Map to DTO and run business logic
             $dto = new MonetapayCallbackDTO(
                 outNo: $decrypted['mch_order_no'],
                 amount: (int) $decrypted['amount'],

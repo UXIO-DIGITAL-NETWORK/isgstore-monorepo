@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import React from "react";
 import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
@@ -17,6 +18,8 @@ type Props = {
 };
 
 function CardInner({ game, tintVariant }: { game: PopularGame; tintVariant: TintVariant }) {
+  const { t } = useTranslation("home");
+
   return (
     <Box className="relative h-76 rounded-[10px] overflow-hidden bg-[#0C0C16]">
       {/* Game image — full bleed */}
@@ -47,7 +50,7 @@ function CardInner({ game, tintVariant }: { game: PopularGame; tintVariant: Tint
           as="span"
           className="font-outfit font-bold text-[10px] uppercase tracking-[0.5px] text-white leading-none"
         >
-          {game.badge.label}
+          {t(game.badge.labelKey)}
         </Text>
       </Box>
 

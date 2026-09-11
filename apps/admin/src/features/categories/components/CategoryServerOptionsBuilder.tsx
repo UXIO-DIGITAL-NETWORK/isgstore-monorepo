@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useFieldArray, type Control, type FieldErrors, type UseFormRegister } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
@@ -29,6 +30,7 @@ interface CategoryServerOptionsBuilderProps {
  * here. Inferred, not pictured.
  */
 export function CategoryServerOptionsBuilder({ control, register, errors }: CategoryServerOptionsBuilderProps) {
+  const { t } = useTranslation("categories");
   const { fields, append, remove } = useFieldArray({ control, name: "options" });
 
   // Scratch state, deliberately outside the form: the pasted text is an input
@@ -67,23 +69,19 @@ export function CategoryServerOptionsBuilder({ control, register, errors }: Cate
           className="w-fit rounded-xl"
           onClick={() => append({ name: "", value: "" })}
         >
-          <Plus className="size-4" />
-          Add Option
-        </Button>
+          <Plus className="size-4" />{t("addOption")}</Button>
         <Button
           type="button"
           variant="outline"
           className="w-fit rounded-xl"
           onClick={() => setBulkOpen((open) => !open)}
         >
-          <Plus className="size-4" />
-          Add Bulk
-        </Button>
+          <Plus className="size-4" />{t("addBulk")}</Button>
       </Box>
 
       {fields.length === 0 ? (
         <Box className="rounded-xl border border-border bg-card p-10 text-center">
-          <Text variant="muted">No options yet. Click &quot;Add Option&quot; to add one.</Text>
+          <Text variant="muted">{t("noOptions")}</Text>
         </Box>
       ) : (
         <Box className="flex flex-col gap-3">
@@ -93,11 +91,11 @@ export function CategoryServerOptionsBuilder({ control, register, errors }: Cate
               className="grid grid-cols-1 items-end gap-3 rounded-xl border border-border p-3 sm:grid-cols-[1fr_1fr_auto]"
             >
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor={`category-server-option-name-${index}`}>Name</Label>
+                <Label htmlFor={`category-server-option-name-${index}`}>{t("name")}</Label>
                 <Input
                   id={`category-server-option-name-${index}`}
                   className="rounded-xl"
-                  placeholder="Asia"
+                  placeholder={t("asiaPlaceholder")}
                   {...register(`options.${index}.name`)}
                 />
                 {errors.options?.[index]?.name && (
@@ -111,7 +109,7 @@ export function CategoryServerOptionsBuilder({ control, register, errors }: Cate
               </Box>
 
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor={`category-server-option-value-${index}`}>Value</Label>
+                <Label htmlFor={`category-server-option-value-${index}`}>{t("value")}</Label>
                 <Input
                   id={`category-server-option-value-${index}`}
                   className="rounded-xl"
@@ -148,7 +146,7 @@ export function CategoryServerOptionsBuilder({ control, register, errors }: Cate
         <Box className="flex flex-col gap-1.5">
           <Box className="flex flex-col gap-3 rounded-xl border border-border p-3">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="category-server-bulk">Bulk</Label>
+              <Label htmlFor="category-server-bulk">{t("bulk")}</Label>
               <Textarea
                 id="category-server-bulk"
                 className="rounded-xl"
@@ -165,9 +163,7 @@ export function CategoryServerOptionsBuilder({ control, register, errors }: Cate
               variant="outline"
               className="w-fit self-end rounded-xl"
               onClick={handleBulkSubmit}
-            >
-              Submit
-            </Button>
+            >{t("submit")}</Button>
           </Box>
           <Text
             variant="small"

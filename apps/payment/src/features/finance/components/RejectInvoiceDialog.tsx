@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -23,6 +24,7 @@ interface RejectInvoiceDialogProps {
 
 /** Refuses the bukti transfer. The client may correct it and upload again. */
 export function RejectInvoiceDialog({ invoice }: RejectInvoiceDialogProps) {
+  const { t } = useTranslation("finance");
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const { mutate: reject, isPending } = useRejectServiceInvoice();
@@ -36,13 +38,13 @@ export function RejectInvoiceDialog({ invoice }: RejectInvoiceDialogProps) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline">Tolak</Button>
+        <Button variant="outline">{t("rejectInvoice.trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Tolak Pembayaran</DialogTitle>
+          <DialogTitle>{t("rejectInvoice.title")}</DialogTitle>
           <DialogDescription>
-            Client bisa memperbaiki dan mengunggah ulang. Instalasi yang sudah disiapkan tetap disimpan.
+            {t("rejectInvoice.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -53,10 +55,10 @@ export function RejectInvoiceDialog({ invoice }: RejectInvoiceDialogProps) {
               variant="small"
               className="text-muted-foreground"
             >
-              Alasan penolakan (opsional, dikirim ke client)
+              {t("rejectInvoice.reasonLabel")}
             </Text>
             <Textarea
-              aria-label="Alasan penolakan"
+              aria-label={t("rejectInvoice.reasonAria")}
               rows={2}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
@@ -69,7 +71,7 @@ export function RejectInvoiceDialog({ invoice }: RejectInvoiceDialogProps) {
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Batal
+              {t("rejectInvoice.cancel")}
             </Button>
             <Button
               type="button"
@@ -86,7 +88,7 @@ export function RejectInvoiceDialog({ invoice }: RejectInvoiceDialogProps) {
                 )
               }
             >
-              {isPending ? "Menyimpan…" : "Tolak"}
+              {isPending ? t("rejectInvoice.submitting") : t("rejectInvoice.submit")}
             </Button>
           </DialogFooter>
         </Box>

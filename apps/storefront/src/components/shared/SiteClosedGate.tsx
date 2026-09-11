@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CalendarX } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -23,6 +24,7 @@ import { getSiteClosure, subscribeSiteClosure, type SiteClosure } from "@/lib/si
  * message in their panel, which is still reachable.
  */
 export function SiteClosedGate({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const { t } = useTranslation("common");
   const { text } = useSiteSettings();
   const [closure, setClosure] = useState<SiteClosure | null>(getSiteClosure);
 
@@ -43,15 +45,14 @@ export function SiteClosedGate({ children }: { children: React.ReactNode }): Rea
         level={1}
         className="text-2xl font-bold text-white font-outfit"
       >
-        {text("site_name") ?? "Situs"} sedang tidak aktif
+        {t("siteClosed.title", { site: text("site_name") || t("siteClosed.fallbackSiteName") })}
       </Heading>
 
       <Text
         as="p"
         className="max-w-md text-sm leading-relaxed text-white/55 font-inter"
       >
-        Layanan sedang dihentikan sementara dan pesanan baru belum bisa diproses. Silakan
-        hubungi kami bila Anda punya transaksi yang sedang berjalan.
+        {t("siteClosed.description")}
       </Text>
 
       <Box className="flex items-center gap-4">

@@ -250,11 +250,18 @@ class HubReportController extends Controller
         // never trigger a fresh inquiry here. The cache is warmed by callers that
         // can afford the wait (finance dashboard, monetapay:reconcile-fees).
         try {
-            $cached = Cache::get(MonetapayService::balanceCacheKey(
-                config('services.monetapay.collection_app_id') ?: null,
-            ));
+            // Key it exactly as the writer does — no argument, so the helper
+            // resolves the site's configured sub-merchant. Passing
+            // `collection_app_id` here (an app id, not a merchant id) named an
+            // entry nothing ever wrote, so this always fell through to the
+            // snapshot. `current_balance` is the real Monetapay 5.1 field;
+            // `balance` is kept only for older cached shapes.
+            $cached = Cache::get(MonetapayService::balanceCacheKey());
 
-            $balance = $cached['data']['balance'] ?? $cached['balance'] ?? null;
+            $balance = $cached['data']['current_balance']
+                ?? $cached['data']['balance']
+                ?? $cached['balance']
+                ?? null;
 
             if (is_numeric($balance)) {
                 return (int) round((float) $balance);

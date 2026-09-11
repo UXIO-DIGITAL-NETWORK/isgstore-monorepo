@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
@@ -11,6 +12,7 @@ import { useBannerList, useDeleteBanners } from "../hooks/useBanners";
 const DEFAULT_PAGE_SIZE = 10;
 
 export function BannerListPage() {
+  const { t } = useTranslation("content");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -25,15 +27,15 @@ export function BannerListPage() {
 
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
   const columns = useMemo(
-    () => bannerColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
-    [deleteRows],
+    () => bannerColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id), t),
+    [deleteRows, t],
   );
 
   return (
     <>
       <ContentListShell
-        title="Banners"
-        description="Hero slides shown on the storefront homepage. A banner with no image is hidden automatically."
+        title={t("tabBanners")}
+        description={t("bannersSubtitle")}
         toolbar={
           <ContentToolbar
             idPrefix="banner"
@@ -57,8 +59,8 @@ export function BannerListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="banners"
-            emptyMessage="No banners yet."
+            entityLabel={t("bannersEntity")}
+            emptyMessage={t("bannersEmpty")}
             showRowNumber
             enableSelection
             onSelectionChange={handleSelectionChange}
@@ -79,7 +81,7 @@ export function BannerListPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
-        description="This action cannot be undone. The selected rows will be removed from the storefront."
+        description={t("irreversible")}
         onConfirm={() => deleteRows.mutate(selectedIds)}
       />
 

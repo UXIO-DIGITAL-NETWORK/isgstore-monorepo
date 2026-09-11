@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
@@ -24,8 +26,10 @@ interface PaymentChannelPickerProps {
  * one thing that differs between two otherwise identical-looking options.
  */
 export function PaymentChannelPicker({ channels, selectedId, onSelect, isLoading }: PaymentChannelPickerProps) {
+  const { t } = useTranslation("merchant");
+
   if (isLoading) {
-    return <Text variant="small">Memuat metode pembayaran…</Text>;
+    return <Text variant="small">{t("paymentPicker.loading")}</Text>;
   }
 
   if (channels.length === 0) {
@@ -34,7 +38,7 @@ export function PaymentChannelPicker({ channels, selectedId, onSelect, isLoading
         variant="small"
         className="text-destructive"
       >
-        Belum ada metode pembayaran yang aktif. Hubungi tim kami.
+        {t("paymentPicker.none")}
       </Text>
     );
   }
@@ -84,7 +88,7 @@ export function PaymentChannelPicker({ channels, selectedId, onSelect, isLoading
                   variant="small"
                   className="text-muted-foreground tabular-nums"
                 >
-                  {feeLabel(channel)}
+                  {feeLabel(channel, t)}
                 </Text>
               </Box>
             ))}
@@ -96,11 +100,11 @@ export function PaymentChannelPicker({ channels, selectedId, onSelect, isLoading
 }
 
 /** What this method adds to the bill, in the terms the client will be charged. */
-function feeLabel(channel: ServicePaymentChannel): string {
+function feeLabel(channel: ServicePaymentChannel, t: TFunction<"merchant">): string {
   const parts: string[] = [];
 
   if (channel.fee_flat > 0) parts.push(formatCurrency(channel.fee_flat, { fractionDigits: 0 }));
   if (channel.fee_percent > 0) parts.push(`${channel.fee_percent}%`);
 
-  return parts.length === 0 ? "Tanpa biaya admin" : `+ ${parts.join(" + ")}`;
+  return parts.length === 0 ? t("paymentPicker.noAdminFee") : `+ ${parts.join(" + ")}`;
 }

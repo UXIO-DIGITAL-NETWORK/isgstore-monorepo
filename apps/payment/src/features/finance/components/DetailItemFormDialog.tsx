@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -33,6 +34,7 @@ interface DetailItemFormDialogProps {
  * browser to be re-submitted.
  */
 export function DetailItemFormDialog({ installationId, detail }: DetailItemFormDialogProps) {
+  const { t } = useTranslation("finance");
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState(detail?.label ?? "");
   const [value, setValue] = useState("");
@@ -98,12 +100,12 @@ export function DetailItemFormDialog({ installationId, detail }: DetailItemFormD
           variant={isEdit ? "outline" : "default"}
           disabled={!installationId}
         >
-          {isEdit ? "Edit" : "Tambah Detail"}
+          {isEdit ? t("detailForm.triggerEdit") : t("detailForm.triggerCreate")}
         </Button>
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Detail" : "Tambah Detail"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("detailForm.titleEdit") : t("detailForm.titleCreate")}</DialogTitle>
           <DialogDescription>
             Nilai disimpan terenkripsi. Yang ditandai rahasia hanya tampil tersamar ke client.
           </DialogDescription>
@@ -111,17 +113,17 @@ export function DetailItemFormDialog({ installationId, detail }: DetailItemFormD
 
         <Box className="flex flex-col gap-4">
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="detail-label">Label</Label>
+            <Label htmlFor="detail-label">{t("detailForm.label")}</Label>
             <Input
               id="detail-label"
               value={label}
               onChange={(event) => setLabel(event.target.value)}
-              placeholder="API Key"
+              placeholder={t("detailForm.labelPlaceholder")}
             />
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="detail-value">Nilai</Label>
+            <Label htmlFor="detail-value">{t("detailForm.value")}</Label>
             <Textarea
               id="detail-value"
               rows={2}
@@ -139,7 +141,7 @@ export function DetailItemFormDialog({ installationId, detail }: DetailItemFormD
           </Box>
 
           <Box className="flex items-center justify-between gap-4">
-            <Label htmlFor="detail-secret">Rahasia</Label>
+            <Label htmlFor="detail-secret">{t("detailForm.secret")}</Label>
             <Switch
               id="detail-secret"
               checked={isSecret}
@@ -155,14 +157,14 @@ export function DetailItemFormDialog({ installationId, detail }: DetailItemFormD
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Batal
+              {t("detailForm.cancel")}
             </Button>
             <Button
               type="button"
               disabled={isPending}
               onClick={submit}
             >
-              {isPending ? "Menyimpan…" : "Simpan"}
+              {isPending ? t("detailForm.saving") : t("detailForm.save")}
             </Button>
           </DialogFooter>
         </Box>

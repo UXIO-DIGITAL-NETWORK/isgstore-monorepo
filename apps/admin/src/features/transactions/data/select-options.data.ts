@@ -1,4 +1,4 @@
-import type { SelectOption } from "../types/transaction.type";
+import type { KeyedSelectOption, SelectOption } from "../types/transaction.type";
 
 /** Small typed fixed lists for the filter-bar selects (product_requirements.md §4.3). */
 export const USER_OPTIONS: SelectOption[] = [
@@ -21,13 +21,13 @@ export const PRODUCT_OPTIONS: SelectOption[] = [
   { value: "prod-genesis-crystal", label: "980 Genesis Crystal" },
 ];
 
-export const INVOICE_STATUS_OPTIONS: SelectOption[] = [
-  { value: "pending", label: "Pending" },
-  { value: "processing", label: "Processing" },
-  { value: "success", label: "Success" },
-  { value: "failed", label: "Failed" },
-  { value: "refunded", label: "Refunded" },
-  { value: "partial_success", label: "Partial Success" },
+export const INVOICE_STATUS_OPTIONS: KeyedSelectOption[] = [
+  { value: "pending", labelKey: "pillPending" },
+  { value: "processing", labelKey: "pillProcessing" },
+  { value: "success", labelKey: "optSuccess" },
+  { value: "failed", labelKey: "pillFailed" },
+  { value: "refunded", labelKey: "optRefunded" },
+  { value: "partial_success", labelKey: "optPartialSuccess" },
 ];
 
 /**
@@ -39,24 +39,24 @@ export const INVOICE_STATUS_OPTIONS: SelectOption[] = [
  * gateway at all, which is the whole population of the Manual tab and is
  * otherwise unreachable.
  */
-export const PAYMENT_STATUS_OPTIONS: SelectOption[] = [
-  { value: "pending", label: "Unpaid" },
-  { value: "success", label: "Paid" },
-  { value: "expired", label: "Expired" },
-  { value: "refunded", label: "Refunded" },
-  { value: "none", label: "No Gateway" },
+export const PAYMENT_STATUS_OPTIONS: KeyedSelectOption[] = [
+  { value: "pending", labelKey: "optUnpaid" },
+  { value: "success", labelKey: "optPaid" },
+  { value: "expired", labelKey: "badgeExpired" },
+  { value: "refunded", labelKey: "optRefunded" },
+  { value: "none", labelKey: "optNoGateway" },
 ];
 
 /** The supplier's own vocabulary. Mirrors the Provider column exactly. */
-export const PROVIDER_STATUS_OPTIONS: SelectOption[] = [
-  { value: "not_ordered", label: "Not Ordered" },
-  { value: "queued", label: "Queued" },
-  { value: "sending", label: "Sending" },
-  { value: "ordered", label: "In Progress" },
-  { value: "unconfirmed", label: "Unconfirmed" },
-  { value: "delivered", label: "Delivered" },
-  { value: "rejected", label: "Rejected" },
-  { value: "undelivered", label: "No Response" },
+export const PROVIDER_STATUS_OPTIONS: KeyedSelectOption[] = [
+  { value: "not_ordered", labelKey: "optNotOrdered" },
+  { value: "queued", labelKey: "optQueued" },
+  { value: "sending", labelKey: "optSending" },
+  { value: "ordered", labelKey: "optInProgress" },
+  { value: "unconfirmed", labelKey: "optUnconfirmed" },
+  { value: "delivered", labelKey: "badgeDelivered" },
+  { value: "rejected", labelKey: "optRejected" },
+  { value: "undelivered", labelKey: "optNoResponse" },
 ];
 
 /**
@@ -67,19 +67,19 @@ export const PROVIDER_STATUS_OPTIONS: SelectOption[] = [
  * customer. Refunds are created by the refund flow and completed on the Refunds
  * page — a dropdown must not be able to claim one that never happened.
  */
-export const EDITABLE_INVOICE_STATUS_OPTIONS: SelectOption[] = INVOICE_STATUS_OPTIONS.filter(
+export const EDITABLE_INVOICE_STATUS_OPTIONS: KeyedSelectOption[] = INVOICE_STATUS_OPTIONS.filter(
   (option) => option.value !== "refunded",
 );
 
-export const INVOICE_FROM_OPTIONS: SelectOption[] = [
-  { value: "website", label: "Website" },
-  { value: "mobile-app", label: "Mobile App" },
-  { value: "admin", label: "Admin (Manual)" },
+export const INVOICE_FROM_OPTIONS: KeyedSelectOption[] = [
+  { value: "website", labelKey: "optWebsite" },
+  { value: "mobile-app", labelKey: "optMobileApp" },
+  { value: "admin", labelKey: "optAdminManual" },
 ];
 
-export const PAYMENT_METHOD_OPTIONS: SelectOption[] = [
-  { value: "Credits", label: "Credits" },
-  { value: "QRIS", label: "QRIS" },
-  { value: "Virtual Account", label: "Virtual Account" },
-  { value: "E-Wallet", label: "E-Wallet" },
+export const PAYMENT_METHOD_OPTIONS: KeyedSelectOption[] = [
+  { value: "Credits", labelKey: "optCredits" },
+  { value: "QRIS", labelKey: "optQris" },
+  { value: "Virtual Account", labelKey: "optVirtualAccount" },
+  { value: "E-Wallet", labelKey: "optEwallet" },
 ];

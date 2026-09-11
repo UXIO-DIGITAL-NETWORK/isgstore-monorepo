@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "@tanstack/react-router";
 
 import { Box } from "@/components/common/Box";
@@ -5,9 +6,9 @@ import { Link } from "@/components/common/Link";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TAB_SEGMENTS = [
-  { value: "main", label: "Main Products", segment: "main" },
-  { value: "provider", label: "Product Provider", segment: "provider" },
-  { value: "price-log", label: "Price Change Log", segment: "price-log" },
+  { value: "main", labelKey: "tabMainProducts", segment: "main" },
+  { value: "provider", labelKey: "colProductProvider", segment: "provider" },
+  { value: "price-log", labelKey: "tabPriceChangeLog", segment: "price-log" },
 ];
 
 const PREVIEW_BASE = "/admin/products-preview";
@@ -24,6 +25,7 @@ const REAL_BASE = "/admin/products";
  * nouns rather than qualifiers of the feature name.
  */
 export function ProductTabsLayout() {
+  const { t } = useTranslation("products");
   // `/admin/products-preview` also starts with `/admin/products`, so the
   // preview base must be tested first.
   const { pathname } = useLocation();
@@ -50,7 +52,7 @@ export function ProductTabsLayout() {
                 value={tab.value}
                 asChild
               >
-                <Link href={`${base}/${tab.segment}`}>{tab.label}</Link>
+                <Link href={`${base}/${tab.segment}`}>{t(tab.labelKey)}</Link>
               </TabsTrigger>
             ))}
           </TabsList>

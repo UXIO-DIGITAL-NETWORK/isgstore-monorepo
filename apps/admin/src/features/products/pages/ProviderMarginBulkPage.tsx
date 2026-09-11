@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -41,6 +42,7 @@ function sharedValue(rows: ProviderProduct[], read: (row: ProviderProduct) => nu
  * typed margins, pressed Save and never saw a single number change.
  */
 export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
+  const { t } = useTranslation("products");
   const navigate = useNavigate();
   const bulkMargin = useBulkSetProviderMargin();
   const { data: plans = [] } = useMarginPlanOptions();
@@ -125,9 +127,7 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
   return (
     <Box className="flex flex-col gap-6">
       <Box className="rounded-2xl border border-border bg-card p-6">
-        <Heading level={1} variant="section">
-          Set Profit Margin
-        </Heading>
+        <Heading level={1} variant="section">{t("setProfitMargin")}</Heading>
         <Text variant="muted">
           Set the selling price for {ids.length} provider product{ids.length === 1 ? "" : "s"}. Leave a margin empty to
           use the pricing rules. Saving here is what unlocks Promote — a SKU cannot reach the catalogue unpriced.
@@ -148,7 +148,7 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
             ))
           ) : selected.length === 0 ? (
             <Box className="rounded-2xl border border-border bg-card p-6">
-              <Text variant="muted">No selected products to show.</Text>
+              <Text variant="muted">{t("noSelectedProducts")}</Text>
             </Box>
           ) : (
             selected.map((row) => (
@@ -179,7 +179,7 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
         <Box className="h-fit rounded-2xl border border-border bg-card p-6">
           <Box className="grid grid-cols-1 gap-4">
             {plans.length === 0 ? (
-              <Text variant="muted">No membership plans yet — create one before pricing a SKU.</Text>
+              <Text variant="muted">{t("noPlansSku")}</Text>
             ) : (
               plans.map((plan) => (
                 <Box key={plan.value} className="flex flex-col gap-1.5">
@@ -202,28 +202,28 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
           </Box>
           <Box className="mt-4 grid grid-cols-1 gap-4 border-t border-border pt-4">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="price-min">Lower Price Limit (Min)</Label>
+              <Label htmlFor="price-min">{t("lowerLimit")}</Label>
               <Input
                 id="price-min"
                 type="number"
                 min="0"
                 value={draft.price_min ?? ""}
                 onChange={(e) => setValue("price_min", e.target.value)}
-                placeholder="Rp 0"
+                placeholder={t("rpZero")}
               />
               <Text variant="small" className="text-muted-foreground">
                 0 = no limit
               </Text>
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="price-max">Upper Price Limit (Max)</Label>
+              <Label htmlFor="price-max">{t("upperLimit")}</Label>
               <Input
                 id="price-max"
                 type="number"
                 min="0"
                 value={draft.price_max ?? ""}
                 onChange={(e) => setValue("price_max", e.target.value)}
-                placeholder="Rp 0"
+                placeholder={t("rpZero")}
               />
               <Text variant="small" className="text-muted-foreground">
                 0 = no limit
@@ -236,7 +236,7 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
               Promote copies them across, as it does the price window above. */}
           <Box className="mt-4 grid grid-cols-1 gap-4 border-t border-border pt-4">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="point-percent">Points (%)</Label>
+              <Label htmlFor="point-percent">{t("pointsPercent")}</Label>
               <Input
                 id="point-percent"
                 type="number"
@@ -245,21 +245,21 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
                 max="100"
                 value={draft.point_percent ?? ""}
                 onChange={(e) => setValue("point_percent", e.target.value)}
-                placeholder="Global default"
+                placeholder={t("globalDefault")}
               />
               <Text variant="small" className="text-muted-foreground">
                 Empty = use the global points setting · 0 = this SKU earns nothing
               </Text>
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="point-flat">Bonus Points</Label>
+              <Label htmlFor="point-flat">{t("bonusPoints")}</Label>
               <Input
                 id="point-flat"
                 type="number"
                 min="0"
                 value={draft.point_flat ?? ""}
                 onChange={(e) => setValue("point_flat", e.target.value)}
-                placeholder="Global default"
+                placeholder={t("globalDefault")}
               />
               <Text variant="small" className="text-muted-foreground">
                 Flat points added on top of the percentage

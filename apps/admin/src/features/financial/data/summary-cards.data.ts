@@ -1,28 +1,34 @@
+import type { TFunction } from "i18next";
+
 import type { StatCardData } from "@/components/common/StatCard";
 
-export const SUMMARY_CARDS: StatCardData[] = [
+/**
+ * A factory, not a module constant: these labels are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const summaryCardsFor = (t: TFunction<"financial">): StatCardData[] => [
   {
     id: "total-credit",
-    label: "Total Credit",
+    label: t("totalCredit"),
     value: 15231.89,
     deltaPct: 12.5,
     direction: "up",
-    caption: "Since last month",
+    caption: t("sinceLastMonth"),
   },
   {
     id: "total-debit",
-    label: "Total Debit",
+    label: t("totalDebit"),
     value: 15231.89,
     deltaPct: 20,
     direction: "down",
-    caption: "Since last month",
+    caption: t("sinceLastMonth"),
   },
   {
     id: "profit",
-    label: "Profit",
+    label: t("profit"),
     value: 15231.89,
     deltaPct: 12.5,
     direction: "up",
-    caption: "Since last month",
+    caption: t("sinceLastMonth"),
   },
 ];

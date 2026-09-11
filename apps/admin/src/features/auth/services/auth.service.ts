@@ -59,6 +59,17 @@ export const authService = {
   },
 
   /**
+   * Store the language this admin reads the panel in.
+   *
+   * Server-side because `users.locale` is what `SetLocale` reads to decide the
+   * language of every API message, and what carries the choice to a device
+   * whose localStorage is empty.
+   */
+  updateLocale: async (locale: string): Promise<ApiResponse<{ locale: string }>> => {
+    return await api.patch(`${API_VERSION}/me/locale`, { locale });
+  },
+
+  /**
    * Tell the API which zone the admin is actually in. `users.timezone` is the
    * single source of truth for both the navbar clock and every report window,
    * so keeping it fresh is what stops the clock and the figures disagreeing.

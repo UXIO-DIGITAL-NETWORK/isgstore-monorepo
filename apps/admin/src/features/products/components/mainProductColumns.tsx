@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -20,10 +21,14 @@ import { ProductRowActions } from "./ProductRowActions";
  * `Price` holds the per-variant cost/tier breakdown (`ProductPriceCell`) —
  * the game name it used to show is still searchable but no longer a column.
  */
-export const mainProductColumns: ColumnDef<Product>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const mainProductColumnsFor = (t: TFunction<"products">): ColumnDef<Product>[] => [
   {
     id: "product",
-    header: "Product",
+    header: t("product"),
     cell: ({ row }) => {
       const product = row.original;
       return (
@@ -66,7 +71,7 @@ export const mainProductColumns: ColumnDef<Product>[] = [
   },
   {
     id: "variant",
-    header: "Variant",
+    header: t("colVariant"),
     cell: ({ row }) => (
       <Box className="flex flex-col gap-1">
         {row.original.variants.map((variant) => (
@@ -93,7 +98,7 @@ export const mainProductColumns: ColumnDef<Product>[] = [
   },
   {
     id: "price",
-    header: "Price",
+    header: t("price"),
     // Priced per membership plan, which is how pricing actually works now; a
     // product with no plan rows yet (priced before that cutover) still renders
     // the four legacy tiers rather than an empty cell.
@@ -109,7 +114,7 @@ export const mainProductColumns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: "created_at",
-    header: "Created At",
+    header: t("createdAt"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -121,7 +126,7 @@ export const mainProductColumns: ColumnDef<Product>[] = [
   },
   {
     id: "status",
-    header: "Status",
+    header: t("status"),
     cell: ({ row }) => (
       <Box className="flex flex-col items-start gap-1">
         <ProductStatusBadge state={row.original.publish_state} />
@@ -131,7 +136,7 @@ export const mainProductColumns: ColumnDef<Product>[] = [
   },
   {
     id: "action",
-    header: "Action",
+    header: t("action"),
     cell: ({ row }) => <ProductRowActions product={row.original} />,
   },
 ];

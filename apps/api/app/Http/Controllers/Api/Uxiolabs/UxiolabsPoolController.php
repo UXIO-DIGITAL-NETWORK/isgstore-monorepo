@@ -52,6 +52,23 @@ class UxiolabsPoolController extends Controller
         return $this->successResponse($summary, 'Ringkasan pool provider');
     }
 
+    /**
+     * What the filter bar can offer: provider categories, our categories behind
+     * them, and the cost range. Its own endpoint for the same reason as
+     * `summary` — `paginatedResponse` rebuilds the payload and drops anything
+     * attached to the collection.
+     */
+    public function facets(ListUxiolabsPoolCandidatesAction $action)
+    {
+        try {
+            $facets = $action->facets();
+        } catch (Throwable $e) {
+            return $this->errorResponse('Gagal mengambil opsi filter pool: '.$e->getMessage(), 502);
+        }
+
+        return $this->successResponse($facets, 'Opsi filter kandidat pool');
+    }
+
     public function store(PoolUxiolabsSkusRequest $request, PoolUxiolabsSkusAction $action)
     {
         try {

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { subCategoriesService } from "../services/subCategories.service";
@@ -17,21 +18,23 @@ export const useSubCategory = (id?: string) =>
   });
 
 export const useCreateSubCategory = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: Omit<SubCategory, "id" | "created_at" | "updated_at">) => subCategoriesService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sub-categories"] });
-      toast.success("Sub category created");
+      toast.success(t("subCreated"));
     },
     onError: () => {
-      toast.error("Failed to create sub category");
+      toast.error(t("subCreateFailed"));
     },
   });
 };
 
 export const useUpdateSubCategory = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -44,10 +47,10 @@ export const useUpdateSubCategory = () => {
     }) => subCategoriesService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sub-categories"] });
-      toast.success("Sub category updated");
+      toast.success(t("subUpdated"));
     },
     onError: () => {
-      toast.error("Failed to update sub category");
+      toast.error(t("subUpdateFailed"));
     },
   });
 };

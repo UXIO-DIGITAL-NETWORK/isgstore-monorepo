@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -16,6 +17,7 @@ import type { AdminUser } from "../types/administration.type";
 const DEFAULT_PAGE_SIZE = 10;
 
 export function UserListPage() {
+  const { t } = useTranslation("administration");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -30,7 +32,7 @@ export function UserListPage() {
     () => [
       {
         accessorKey: "name",
-        header: "User",
+        header: t("colUser"),
         cell: ({ row }) => (
           <Box className="flex flex-col">
             <Text
@@ -48,10 +50,10 @@ export function UserListPage() {
           </Box>
         ),
       },
-      { accessorKey: "phone", header: "Phone", cell: ({ row }) => <Text as="span">{row.original.phone}</Text> },
+      { accessorKey: "phone", header: t("colPhone"), cell: ({ row }) => <Text as="span">{row.original.phone}</Text> },
       {
         id: "role",
-        header: "Role",
+        header: t("colRole"),
         cell: ({ row }) => (
           <Badge
             variant="outline"
@@ -63,7 +65,7 @@ export function UserListPage() {
       },
       {
         id: "balance",
-        header: "Balance",
+        header: t("colBalance"),
         cell: ({ row }) => (
           <Text
             as="span"
@@ -75,7 +77,7 @@ export function UserListPage() {
       },
       {
         id: "point",
-        header: "Points",
+        header: t("colPoints"),
         cell: ({ row }) => (
           <Text
             as="span"
@@ -87,7 +89,7 @@ export function UserListPage() {
       },
       {
         id: "verified",
-        header: "Verified",
+        header: t("colVerified"),
         cell: ({ row }) => (
           <Text
             as="span"
@@ -99,7 +101,7 @@ export function UserListPage() {
       },
       {
         id: "status",
-        header: "Status",
+        header: t("colStatus"),
         cell: ({ row }) => (
           <Badge
             variant={row.original.status === "active" ? "outline" : "destructive"}
@@ -111,11 +113,11 @@ export function UserListPage() {
       },
       {
         id: "actions",
-        header: "Action",
+        header: t("colAction"),
         cell: ({ row }) => <UserRowActions user={row.original} />,
       },
     ],
-    [],
+    [t],
   );
 
   return (
@@ -124,22 +126,17 @@ export function UserListPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Users
-        </Heading>
-        <Text variant="muted">
-          Admin accounts for this dashboard, their wallet balance and account standing. Balance adjustments are audited
-          and require a reason; suspend or ban blocks an account from transacting.
-        </Text>
+        >{t("usersTitle")}</Heading>
+        <Text variant="muted">{t("usersSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="user-search">Search</Label>
+          <Label htmlFor="user-search">{t("search")}</Label>
           <Input
             id="user-search"
             className="w-64 rounded-xl"
-            placeholder="Search name or email"
+            placeholder={t("searchUsers")}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -156,8 +153,8 @@ export function UserListPage() {
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          entityLabel="users"
-          emptyMessage="No users yet."
+          entityLabel={t("userEntity")}
+          emptyMessage={t("noUsers")}
           showRowNumber
           enableSelection={false}
           page={page}

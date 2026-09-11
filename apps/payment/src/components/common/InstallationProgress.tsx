@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { CalendarClock, Check, Circle } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -21,8 +22,10 @@ interface InstallationProgressProps {
  * shown together so the number is always accountable to the steps behind it.
  */
 export function InstallationProgress({ installation, isLoading = false }: InstallationProgressProps) {
+  const { t } = useTranslation("common");
+
   if (isLoading) {
-    return <Text variant="small">Memuat…</Text>;
+    return <Text variant="small">{t("installation.loading")}</Text>;
   }
 
   if (!installation) {
@@ -32,8 +35,8 @@ export function InstallationProgress({ installation, isLoading = false }: Instal
           <EmptyMedia variant="icon">
             <CalendarClock />
           </EmptyMedia>
-          <EmptyTitle>Instalasi belum dijadwalkan</EmptyTitle>
-          <EmptyDescription>Tim kami akan menjadwalkan pemasangan layanan ini.</EmptyDescription>
+          <EmptyTitle>{t("installation.notScheduled")}</EmptyTitle>
+          <EmptyDescription>{t("installation.notScheduledDescription")}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -44,7 +47,7 @@ export function InstallationProgress({ installation, isLoading = false }: Instal
   return (
     <Box className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
       <Box className="flex flex-wrap items-baseline justify-between gap-2">
-        <Heading level={3}>Progress Instalasi</Heading>
+        <Heading level={3}>{t("installation.progress")}</Heading>
         <Text
           as="span"
           variant="small"

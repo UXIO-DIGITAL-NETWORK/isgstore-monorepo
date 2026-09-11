@@ -63,5 +63,18 @@
       "privacyPolicy": "Kebijakan Privasi",
       "termsConditions": "Syarat & Ketentuan"
     }
+  },
+  "notFound": {
+    "title": "Halaman ini tidak ditemukan",
+    "description": "Halaman yang kamu tuju mungkin sudah dipindahkan, dihapus, atau tautannya salah ketik.",
+    "backHome": "Kembali ke beranda"
+  },
+  "siteClosed": {
+    "title": "{{site}} sedang tidak aktif",
+    "fallbackSiteName": "Situs",
+    "description": "Layanan sedang dihentikan sementara dan pesanan baru belum bisa diproses. Silakan hubungi kami bila kamu punya transaksi yang sedang berjalan."
+  },
+  "a11y": {
+    "loading": "Memuat"
   }
 }

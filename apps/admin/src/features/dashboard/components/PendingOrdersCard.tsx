@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
@@ -6,14 +7,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePendingOrders } from "../hooks/useDashboard";
 import type { PendingOrders } from "../types/dashboard.type";
 
-const ROWS: { key: keyof PendingOrders; label: string }[] = [
-  { key: "manualOrders", label: "Manual Orders" },
-  { key: "pendingPayment", label: "Pending Payment" },
-  { key: "processing", label: "Processing" },
-  { key: "failedTransaction", label: "Failed Transaction" },
+// `labelKey`, not `label`: a module constant would freeze whichever language
+// was loaded at import.
+const ROWS: { key: keyof PendingOrders; labelKey: string }[] = [
+  { key: "manualOrders", labelKey: "manualOrders" },
+  { key: "pendingPayment", labelKey: "pendingPayment" },
+  { key: "processing", labelKey: "processing" },
+  { key: "failedTransaction", labelKey: "failedTransaction" },
 ];
 
 export function PendingOrdersCard() {
+  const { t } = useTranslation("dashboard");
   const { data, isLoading, isError, refetch } = usePendingOrders();
 
   return (
@@ -23,29 +27,23 @@ export function PendingOrdersCard() {
           level={3}
           variant="section"
           className="text-lg"
-        >
-          Pending Orders
-        </Heading>
+        >{t("pendingOrders")}</Heading>
         <Button
           variant="link"
           size="sm"
           className="h-auto p-0 text-muted-foreground"
-        >
-          Show More
-        </Button>
+        >{t("showMore")}</Button>
       </Box>
 
       <Box className="flex flex-col gap-3">
         {isError ? (
           <Box className="flex flex-col items-start gap-2">
-            <Text variant="muted">Failed to load pending orders.</Text>
+            <Text variant="muted">{t("pendingOrdersFailed")}</Text>
             <Button
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-            >
-              Retry
-            </Button>
+            >{t("retry")}</Button>
           </Box>
         ) : (
           ROWS.map((row) => (
@@ -53,7 +51,7 @@ export function PendingOrdersCard() {
               key={row.key}
               className="flex items-center justify-between"
             >
-              <Text variant="small">{row.label}</Text>
+              <Text variant="small">{t(row.labelKey)}</Text>
               {isLoading || !data ? (
                 <Skeleton className="h-4 w-8" />
               ) : (

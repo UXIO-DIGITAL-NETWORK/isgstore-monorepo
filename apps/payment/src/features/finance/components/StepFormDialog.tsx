@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -24,6 +25,7 @@ interface StepFormDialogProps {
 }
 
 export function StepFormDialog({ installationId, step }: StepFormDialogProps) {
+  const { t } = useTranslation("finance");
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(step?.title ?? "");
   const [description, setDescription] = useState(step?.description ?? "");
@@ -78,28 +80,28 @@ export function StepFormDialog({ installationId, step }: StepFormDialogProps) {
           // until it exists.
           disabled={!installationId}
         >
-          {isEdit ? "Edit" : "Tambah Tahapan"}
+          {isEdit ? t("stepForm.triggerEdit") : t("stepForm.triggerCreate")}
         </Button>
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Tahapan" : "Tambah Tahapan"}</DialogTitle>
-          <DialogDescription>Tahapan baru masuk ke urutan terakhir.</DialogDescription>
+          <DialogTitle>{isEdit ? t("stepForm.titleEdit") : t("stepForm.titleCreate")}</DialogTitle>
+          <DialogDescription>{t("stepForm.description")}</DialogDescription>
         </DialogHeader>
 
         <Box className="flex flex-col gap-4">
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="step-title">Judul</Label>
+            <Label htmlFor="step-title">{t("stepForm.title")}</Label>
             <Input
               id="step-title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="Pembuatan API key"
+              placeholder={t("stepForm.titlePlaceholder")}
             />
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="step-description">Keterangan</Label>
+            <Label htmlFor="step-description">{t("stepForm.notes")}</Label>
             <Input
               id="step-description"
               value={description}
@@ -115,14 +117,14 @@ export function StepFormDialog({ installationId, step }: StepFormDialogProps) {
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Batal
+              {t("stepForm.cancel")}
             </Button>
             <Button
               type="button"
               disabled={isPending}
               onClick={submit}
             >
-              {isPending ? "Menyimpan…" : "Simpan"}
+              {isPending ? t("stepForm.saving") : t("stepForm.save")}
             </Button>
           </DialogFooter>
         </Box>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { MoreVertical, Pencil, Power, Trash2 } from "lucide-react";
 
@@ -28,6 +29,7 @@ interface CategoryTypeRowActionsProps {
  * label and the target status are both derived from the row.
  */
 export function CategoryTypeRowActions({ categoryType }: CategoryTypeRowActionsProps) {
+  const { t } = useTranslation("categories");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -65,18 +67,14 @@ export function CategoryTypeRowActions({ categoryType }: CategoryTypeRowActionsP
           </Can>
           <Can permission="categories.edit">
             <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <Pencil />
-              Edit Category Type
-            </DropdownMenuItem>
+              <Pencil />{t("editCategoryType")}</DropdownMenuItem>
           </Can>
           <Can permission="categories.delete">
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              <Trash2 />{t("delete")}</DropdownMenuItem>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -91,8 +89,8 @@ export function CategoryTypeRowActions({ categoryType }: CategoryTypeRowActionsP
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this category type?"
-        description="This action cannot be undone. This will permanently delete this category type."
+        title={t("deleteTypeTitle")}
+        description={t("deleteTypeDescription")}
         onConfirm={() => deleteCategoryType.mutate(categoryType.id)}
       />
 

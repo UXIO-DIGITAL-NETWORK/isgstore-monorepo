@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -83,6 +84,7 @@ export function CategoryProviderFormDialog({
   onOpenChange,
   categoryProviderId,
 }: CategoryProviderFormDialogProps) {
+  const { t } = useTranslation("categories");
   const isEdit = Boolean(categoryProviderId);
 
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -209,10 +211,7 @@ export function CategoryProviderFormDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Category Provider" : "Add Category Provider"}</DialogTitle>
-          <DialogDescription>
-            Point one of our categories at the supplier that fulfils it, and at the supplier&apos;s own category
-            its SKUs come from. That mapping is what makes those SKUs available to pool.
-          </DialogDescription>
+          <DialogDescription>{t("providerFormHint")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -225,7 +224,7 @@ export function CategoryProviderFormDialog({
             name="supplierId"
             render={({ field }) => (
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="category-provider-provider">Provider</Label>
+                <Label htmlFor="category-provider-provider">{t("provider")}</Label>
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
@@ -234,7 +233,7 @@ export function CategoryProviderFormDialog({
                     id="category-provider-provider"
                     className="w-full rounded-xl"
                   >
-                    <SelectValue placeholder="Select a provider" />
+                    <SelectValue placeholder={t("selectProvider")} />
                   </SelectTrigger>
                   <SelectContent>
                     {providerOptions.map((option) => (
@@ -270,7 +269,7 @@ export function CategoryProviderFormDialog({
                 {/* The button sits beside the Label, never inside it — putting it
                     within would change the select's accessible name. */}
                 <Box className="flex items-center justify-between gap-2">
-                  <Label htmlFor="category-provider-category">Category</Label>
+                  <Label htmlFor="category-provider-category">{t("category")}</Label>
                   {!creatingCategory && (
                     <Button
                       type="button"
@@ -291,7 +290,7 @@ export function CategoryProviderFormDialog({
                     id="category-provider-category"
                     className="w-full rounded-xl"
                   >
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder={t("selectCategory")} />
                   </SelectTrigger>
                   <SelectContent>
                     {(categories?.data ?? []).map((category) => (
@@ -327,7 +326,7 @@ export function CategoryProviderFormDialog({
             name="providerCategory"
             render={({ field }) => (
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="category-provider-provider-category">Provider Category</Label>
+                <Label htmlFor="category-provider-provider-category">{t("colProviderCategory")}</Label>
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
@@ -352,7 +351,7 @@ export function CategoryProviderFormDialog({
                   <SelectContent>
                     {available.length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Available</SelectLabel>
+                        <SelectLabel>{t("available")}</SelectLabel>
                         {available.map((option) => (
                           <SelectItem
                             key={option.value}
@@ -373,7 +372,7 @@ export function CategoryProviderFormDialog({
 
                     {alreadyAdded.length > 0 && (
                       <SelectGroup>
-                        <SelectLabel>Already added</SelectLabel>
+                        <SelectLabel>{t("alreadyAdded")}</SelectLabel>
                         {alreadyAdded.map((option) => (
                           <SelectItem
                             key={option.value}
@@ -398,9 +397,7 @@ export function CategoryProviderFormDialog({
                         <Text
                           variant="small"
                           className="text-muted-foreground"
-                        >
-                          The provider is not publishing any categories right now.
-                        </Text>
+                        >{t("noProviderCategories")}</Text>
                       </Box>
                     )}
                   </SelectContent>
@@ -420,9 +417,7 @@ export function CategoryProviderFormDialog({
                   <Text
                     variant="small"
                     className="text-muted-foreground"
-                  >
-                    Only Uxiolabs exposes a catalogue today, so there is nothing to map for this provider yet.
-                  </Text>
+                  >{t("onlyUxiolabs")}</Text>
                 )}
 
                 {isIntegratedProvider && alreadyAdded.length > 0 && (
@@ -451,9 +446,7 @@ export function CategoryProviderFormDialog({
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ interface Props {
 
 /** Downloads whatever blob `onExport` resolves to, with an in-flight spinner. */
 export function ExportButton({ onExport, fileName = "transaksi.csv", disabled }: Props) {
+  const { t } = useTranslation("common");
   const [loading, setLoading] = useState(false);
 
   const handleExport = async () => {
@@ -29,7 +31,7 @@ export function ExportButton({ onExport, fileName = "transaksi.csv", disabled }:
       anchor.remove();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error("Gagal mengekspor data");
+      toast.error(t("toast.exportFailed"));
     } finally {
       setLoading(false);
     }

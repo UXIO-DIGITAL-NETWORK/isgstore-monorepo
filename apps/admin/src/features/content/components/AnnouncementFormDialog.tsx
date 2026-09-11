@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +32,7 @@ interface AnnouncementFormDialogProps {
 }
 
 export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: AnnouncementFormDialogProps) {
+  const { t } = useTranslation("content");
   const isEdit = Boolean(announcementId);
   const [image, setImage] = useState<File | null>(null);
 
@@ -77,9 +79,7 @@ export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: A
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Announcement" : "Add Announcement"}</DialogTitle>
-          <DialogDescription>
-            Notices shown across the storefront. Only active announcements are published.
-          </DialogDescription>
+          <DialogDescription>{t("announcementSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -88,12 +88,12 @@ export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: A
           className="flex flex-col gap-4"
         >
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="announcement-content">Content</Label>
+            <Label htmlFor="announcement-content">{t("content")}</Label>
             <Textarea
               id="announcement-content"
               rows={4}
               className="rounded-xl"
-              placeholder="e.g. Server maintenance terjadwal pada hari Minggu..."
+              placeholder={t("announcementPlaceholder")}
               {...register("content")}
             />
             {errors.content && (
@@ -112,8 +112,8 @@ export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: A
             render={({ field }) => (
               <SelectField
                 id="announcement-category"
-                label="Scope"
-                options={[{ value: GLOBAL, label: "Global (all games)" }, ...categoryOptions]}
+                label={t("scope")}
+                options={[{ value: GLOBAL, label: t("globalAllGames") }, ...categoryOptions]}
                 value={field.value ?? GLOBAL}
                 onChange={field.onChange}
               />
@@ -122,8 +122,8 @@ export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: A
 
           <ImageDropzone
             id="announcement-image"
-            label="Image"
-            caption="Optional."
+            label={t("colImage")}
+            caption={t("optional")}
             value={image ?? undefined}
             onChange={setImage}
             accept="image/jpeg,image/png,image/webp"
@@ -140,7 +140,7 @@ export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: A
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />
-                <Label htmlFor="announcement-active">Active</Label>
+                <Label htmlFor="announcement-active">{t("active")}</Label>
               </Box>
             )}
           />
@@ -151,9 +151,7 @@ export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: A
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

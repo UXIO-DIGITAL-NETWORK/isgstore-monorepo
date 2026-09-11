@@ -23,6 +23,9 @@ const orderFormFieldSchema = z.object({
     .string()
     .min(1, "Key is required")
     .refine((key) => !RESERVED_KEYS.includes(key.trim().toLowerCase()), {
+      // Left untranslated on purpose: a zod schema is built at module scope, far
+      // from any React tree, so there is no `t` to call. Field-level validation
+      // copy is its own piece of work.
       message: "Reserved key — buyer contact is taken from their account.",
     }),
   label: z.string().optional(),

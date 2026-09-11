@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -29,6 +30,7 @@ interface FinanceInvoiceDetailPageProps {
  * belum dijadwalkan" has been sold something that looks unstarted.
  */
 export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDetailPageProps) {
+  const { t } = useTranslation("finance");
   const [warning, setWarning] = useState(false);
 
   const { data: invoice, isLoading, isError } = useFinanceInvoice(invoiceId);
@@ -38,18 +40,18 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
   const { mutate: confirm, isPending: confirming } = useConfirmServiceInvoice();
 
   if (isLoading) {
-    return <Text variant="small">Memuat…</Text>;
+    return <Text variant="small">{t("invoiceDetail.loading")}</Text>;
   }
 
   if (isError || !invoice) {
     return (
       <Box className="flex flex-col gap-4">
-        <Heading level={1}>Invoice tidak ditemukan</Heading>
+        <Heading level={1}>{t("invoiceDetail.notFound")}</Heading>
         <Link
           href="/app/payment-internal/invoices"
           className="underline"
         >
-          Kembali ke Invoice
+          {t("invoiceDetail.back")}
         </Link>
       </Box>
     );
@@ -82,25 +84,29 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
           href="/app/payment-internal/invoices"
           className="text-sm text-muted-foreground underline"
         >
-          ← Kembali ke Invoice
+          {t("invoiceDetail.backArrow")}
         </Link>
         <Heading level={1}>{invoice.invoice_number}</Heading>
       </Box>
 
       <Box className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6">
         <Box className="flex flex-wrap items-center justify-between gap-2">
-          <Heading level={2}>{invoice.merchant?.name ?? "Client"}</Heading>
+          <Heading level={2}>{invoice.merchant?.name ?? t("invoiceDetail.fallbackClient")}</Heading>
           <StatusBadge status={invoice.status} />
         </Box>
         <Text variant="small">
-          {invoice.service_name} · {money(invoice.amount)} untuk {invoice.duration_days} hari
+          {t("invoiceDetail.summary", {
+            service: invoice.service_name,
+            amount: money(invoice.amount),
+            count: invoice.duration_days,
+          })}
         </Text>
         {invoice.due_at && !isPaid && (
           <Text
             variant="small"
             className="text-muted-foreground"
           >
-            Jatuh tempo {formatDateTime(invoice.due_at)}
+            {t("invoiceDetail.dueAt", { date: formatDateTime(invoice.due_at) })}
           </Text>
         )}
         {invoice.status === "REJECTED" && invoice.notes && (
@@ -108,38 +114,38 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
             variant="small"
             className="text-destructive"
           >
-            Ditolak: {invoice.notes}
+            {t("invoiceDetail.rejected", { notes: invoice.notes })}
           </Text>
         )}
       </Box>
 
       <Box className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6">
-        <Heading level={2}>Pembayaran</Heading>
+        <Heading level={2}>{t("invoiceDetail.payment")}</Heading>
         {payment ? (
           <>
             <PaymentRow
-              label="Metode"
+              label={t("invoiceDetail.method")}
               value={payment.channel ?? "—"}
             />
             <PaymentRow
-              label="Nominal"
+              label={t("invoiceDetail.amount")}
               value={money(payment.amount)}
             />
             <PaymentRow
-              label="Biaya Admin"
+              label={t("invoiceDetail.adminFee")}
               value={money(payment.admin_fee)}
             />
             <PaymentRow
-              label="Total"
+              label={t("invoiceDetail.total")}
               value={money(payment.total)}
             />
             <PaymentRow
-              label="Status"
+              label={t("invoiceDetail.status")}
               value={payment.status}
             />
             {payment.instructions?.order_no && (
               <PaymentRow
-                label="Ref Gateway"
+                label={t("invoiceDetail.gatewayRef")}
                 value={payment.instructions.order_no}
               />
             )}
@@ -149,7 +155,7 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
             variant="small"
             className="text-muted-foreground"
           >
-            Belum ada pembayaran dibuka untuk invoice ini.
+            {t("invoiceDetail.noPayment")}
           </Text>
         )}
       </Box>
@@ -162,7 +168,7 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
           variant="secondary"
           className="w-fit"
         >
-          Instalasi sudah disiapkan · belum aktif untuk client
+          {t("invoiceDetail.installPrepared")}
         </Badge>
       )}
 
@@ -175,7 +181,7 @@ export default function FinanceInvoiceDetailPage({ invoiceId }: FinanceInvoiceDe
             disabled={confirming}
             onClick={onConfirm}
           >
-            {confirming ? "Menyimpan…" : "Konfirmasi"}
+            {confirming ? t("invoiceDetail.confirming") : t("invoiceDetail.confirm")}
           </Button>
         </Box>
       )}

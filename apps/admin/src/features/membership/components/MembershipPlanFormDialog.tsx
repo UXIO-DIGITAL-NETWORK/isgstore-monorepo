@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,6 +41,7 @@ const EMPTY: MembershipPlanFormValues = {
 };
 
 export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, isPending = false }: MembershipPlanFormDialogProps) {
+  const { t } = useTranslation("membership");
   const {
     control,
     register,
@@ -89,15 +91,15 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
         >
           <DialogHeader>
             <DialogTitle>{plan ? "Edit Plan" : "Add Plan"}</DialogTitle>
-            <DialogDescription>Loyalty plan sold to members: its price and how long it lasts.</DialogDescription>
+            <DialogDescription>{t("formSubtitle")}</DialogDescription>
           </DialogHeader>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="plan-code">Code</Label>
+            <Label htmlFor="plan-code">{t("code")}</Label>
             <Input
               id="plan-code"
               className="rounded-xl"
-              placeholder="e.g. gold"
+              placeholder={t("codePlaceholder")}
               {...register("code")}
             />
             {errors.code && (
@@ -111,11 +113,11 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="plan-name">Name</Label>
+            <Label htmlFor="plan-name">{t("name")}</Label>
             <Input
               id="plan-name"
               className="rounded-xl"
-              placeholder="e.g. Gold"
+              placeholder={t("namePlaceholder")}
               {...register("name")}
             />
             {errors.name && (
@@ -130,12 +132,12 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
 
           <Box className="grid grid-cols-2 gap-3">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="plan-price">Price</Label>
+              <Label htmlFor="plan-price">{t("price")}</Label>
               <Input
                 id="plan-price"
                 type="number"
                 className="rounded-xl"
-                placeholder="e.g. 50000"
+                placeholder={t("pricePlaceholder")}
                 {...register("price", { valueAsNumber: true })}
               />
               {errors.price && (
@@ -148,12 +150,12 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
               )}
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="plan-duration">Duration (days)</Label>
+              <Label htmlFor="plan-duration">{t("duration")}</Label>
               <Input
                 id="plan-duration"
                 type="number"
                 className="rounded-xl"
-                placeholder="e.g. 30"
+                placeholder={t("durationPlaceholder")}
                 disabled={isLifetime}
                 {...register("duration_days", {
                   // A cleared or disabled number input reads back NaN, which is
@@ -184,13 +186,11 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
                   onCheckedChange={field.onChange}
                 />
                 <Box className="flex flex-col">
-                  <Label htmlFor="plan-lifetime">Lifetime</Label>
+                  <Label htmlFor="plan-lifetime">{t("lifetime")}</Label>
                   <Text
                     variant="small"
                     className="text-muted-foreground"
-                  >
-                    Bought once and never expires — the duration above is ignored.
-                  </Text>
+                  >{t("lifetimeHint")}</Text>
                 </Box>
               </Box>
             )}
@@ -206,7 +206,7 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />
-                <Label htmlFor="plan-active">Active</Label>
+                <Label htmlFor="plan-active">{t("active")}</Label>
               </Box>
             )}
           />
@@ -217,9 +217,7 @@ export function MembershipPlanFormDialog({ open, onOpenChange, plan, onSubmit, i
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

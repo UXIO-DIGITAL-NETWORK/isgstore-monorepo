@@ -1,10 +1,28 @@
 <!doctype html>
-<html
-  lang="en"
-  class="dark"
->
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      The theme, applied before first paint.
+
+      `class="dark"` used to be hardcoded on <html>, while the React provider
+      applies the real choice in an effect that runs after paint — so a session
+      that had chosen light flashed dark on every cold load. This reads the same
+      localStorage key the provider does; the two must stay in step.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("vite-ui-theme");
+          var dark =
+            stored === "dark" ||
+            ((!stored || stored === "system") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.add(dark ? "dark" : "light");
+        } catch (e) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
     <link
       rel="icon"
       type="image/svg+xml"

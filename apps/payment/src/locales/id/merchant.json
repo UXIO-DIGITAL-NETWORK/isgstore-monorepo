@@ -1,0 +1,184 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "balanceActive": "Saldo Aktif",
+    "balanceActiveCaption": "Saldo yang dapat ditarik",
+    "balancePending": "Saldo Pending",
+    "balancePendingCaption": "Menunggu persetujuan penarikan",
+    "balanceHeld": "Saldo Tertahan",
+    "balanceHeldCaption": "Menunggu settlement channel + masa tahan",
+    "totalSales": "Total Penjualan",
+    "totalSalesCaption": "Penjualan bersih (net)",
+    "totalWithdrawals": "Total Penarikan",
+    "totalWithdrawalsCaption": "Penarikan yang telah cair",
+    "totalTransactions": "Total Transaksi",
+    "totalTransactionsCaption": "Jumlah transaksi"
+  },
+  "transactions": {
+    "title": "Transaksi",
+    "empty": "Belum ada transaksi",
+    "typeSale": "Penjualan",
+    "typeService": "Tagihan Layanan",
+    "colInvoice": "Invoice",
+    "colItem": "Item",
+    "colMethod": "Metode",
+    "colAmount": "Jumlah",
+    "colPayment": "Pembayaran",
+    "colProvider": "Provider",
+    "colDate": "Tanggal"
+  },
+  "mutations": {
+    "title": "Mutasi",
+    "colDate": "Tanggal",
+    "colType": "Tipe",
+    "colReference": "Referensi",
+    "colAmount": "Jumlah",
+    "colBalanceAfter": "Saldo Akhir",
+    "colDescription": "Keterangan"
+  },
+  "withdrawals": {
+    "title": "Penarikan",
+    "available": "Saldo yang bisa ditarik",
+    "availableCaption": "Nominal maksimal yang dapat kamu tarik saat ini",
+    "amount": "Nominal",
+    "bankOrEwallet": "Bank / E-wallet",
+    "accountNumber": "No. Rekening",
+    "accountName": "Nama Pemilik",
+    "accountNamePlaceholder": "Nama sesuai rekening",
+    "accountPhone": "No. HP Penerima",
+    "feeLabel": "Biaya",
+    "receivedLabel": "Diterima",
+    "submit": "Ajukan Penarikan",
+    "submitting": "Memproses…",
+    "empty": "Belum ada penarikan",
+    "colNumber": "No. Penarikan",
+    "colAmount": "Nominal",
+    "colFee": "Biaya",
+    "colNett": "Diterima",
+    "colStatus": "Status",
+    "colDate": "Tanggal"
+  },
+  "services": {
+    "title": "Services",
+    "fallbackServiceName": "Service",
+    "daysRemaining": "{{count}} hari tersisa",
+    "includedWithWebsite": "Termasuk langganan website",
+    "perDays": "/ {{count}} hari",
+    "subscribe": "Berlangganan",
+    "tabSubscriptions": "Langganan Saya",
+    "tabCatalog": "Katalog",
+    "tabInvoices": "Riwayat Pembelian",
+    "loading": "Memuat…",
+    "noActiveSubscriptions": "Belum ada layanan yang aktif. Lihat tab Katalog untuk berlangganan.",
+    "noServicesAvailable": "Belum ada service yang tersedia.",
+    "noPurchases": "Belum ada pembelian",
+    "colInvoice": "No. Invoice",
+    "colService": "Service",
+    "colAmount": "Nominal",
+    "colStatus": "Status",
+    "colDue": "Jatuh Tempo",
+    "colAction": "Aksi",
+    "pay": "Bayar",
+    "detail": "Detail"
+  },
+  "serviceStatus": {
+    "title": "Status Layanan",
+    "overall": {
+      "operational": {
+        "title": "Semua layanan normal",
+        "description": "Tidak ada gangguan yang sedang berlangsung."
+      },
+      "degraded": {
+        "title": "Ada layanan yang terganggu",
+        "description": "Sebagian metode pembayaran atau layanan sedang bermasalah atau ditutup sementara."
+      },
+      "down": {
+        "title": "Ada layanan yang tidak dapat digunakan",
+        "description": "Sedang kami tangani. Rincian gangguan ada di bawah."
+      },
+      "closed": {
+        "title": "Ada layanan yang ditutup",
+        "description": "Sebagian layanan sedang dinonaktifkan."
+      }
+    },
+    "status": {
+      "operational": "Normal",
+      "degraded": "Terganggu",
+      "down": "Tidak Tersedia",
+      "closed": "Ditutup"
+    },
+    "ongoingIncidents": "Gangguan Berlangsung",
+    "allOperational": "Semua layanan berjalan normal",
+    "allComponents": "Semua Komponen",
+    "fallbackTargetName": "Layanan",
+    "incidentStarted": "Mulai",
+    "colComponent": "Komponen",
+    "colType": "Tipe",
+    "colStatus": "Status",
+    "typePaymentChannel": "Metode Pembayaran",
+    "typeService": "Service",
+    "empty": "Belum ada komponen"
+  },
+  "websiteCard": {
+    "title": "Website Services",
+    "description": "Akses dan kelola semua layananmu serta saldo payment gateway lewat dashboard ini.",
+    "activeUntil": "• Aktif sampai {{date}}",
+    "cta": "Lihat"
+  },
+  "paymentPicker": {
+    "loading": "Memuat metode pembayaran…",
+    "none": "Belum ada metode pembayaran yang aktif. Hubungi tim kami.",
+    "noAdminFee": "Tanpa biaya admin"
+  },
+  "payment": {
+    "title": "Pembayaran",
+    "lapsed": "Pembayaran sebelumnya sudah kedaluwarsa. Pilih metode untuk membuat pembayaran baru.",
+    "notOpened": "Belum ada pembayaran yang dibuka. Pilih metode untuk melanjutkan.",
+    "method": "Metode Pembayaran",
+    "adminFee": "Biaya Admin",
+    "total": "Total",
+    "create": "Buat Pembayaran",
+    "creating": "Memproses…",
+    "qrAlt": "Kode QRIS untuk pembayaran",
+    "qrHint": "Pindai dengan aplikasi pembayaran apa pun yang mendukung QRIS.",
+    "vaNumber": "Nomor VA",
+    "continueToApp": "Lanjutkan ke Aplikasi Pembayaran",
+    "amount": "Nominal",
+    "totalDue": "Total Bayar",
+    "payBefore": "Bayar sebelum",
+    "autoRefresh": "Halaman ini memperbarui sendiri begitu pembayaran diterima.",
+    "expired": "Kedaluwarsa"
+  },
+  "checkout": {
+    "title": "Konfirmasi Langganan",
+    "price": "Harga",
+    "duration": "Masa aktif",
+    "durationValue": "{{count}} hari",
+    "period": "Periode berlaku",
+    "carryOver": "Langganan aktif Anda berakhir {{date}}. Periode baru dimulai setelahnya, jadi sisa hari yang sudah dibayar tidak hangus.",
+    "method": "Metode Pembayaran",
+    "adminFee": "Biaya Admin",
+    "total": "Total",
+    "notes": "Catatan (opsional)",
+    "notesPlaceholder": "Misalnya kebutuhan khusus saat instalasi",
+    "openInvoice": "Masih ada invoice yang belum selesai untuk layanan ini.",
+    "viewInvoice": "Lihat Invoice",
+    "pay": "Bayar Sekarang",
+    "paying": "Memproses…",
+    "loading": "Memuat…",
+    "notFound": "Service tidak ditemukan",
+    "notFoundDescription": "Layanan ini mungkin sudah tidak tersedia."
+  },
+  "invoiceDetail": {
+    "loading": "Memuat…",
+    "notFound": "Invoice tidak ditemukan",
+    "backToServices": "Kembali ke Services",
+    "backToServicesArrow": "← Kembali ke Services",
+    "amountForDays": "{{amount}} untuk {{count}} hari",
+    "dueAt": "Jatuh tempo {{date}}",
+    "rejected": "Ditolak: {{notes}}",
+    "serviceDetails": "Detail Layanan",
+    "colLabel": "Label",
+    "colValue": "Nilai"
+  }
+}

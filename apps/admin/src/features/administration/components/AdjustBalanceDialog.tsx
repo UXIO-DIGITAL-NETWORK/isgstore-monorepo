@@ -1,3 +1,5 @@
+import { translateOptions } from "@/lib/i18nOptions";
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,16 +33,21 @@ interface AdjustBalanceDialogProps {
   isPending?: boolean;
 }
 
+// `labelKey`, not `label`: a module constant would freeze whichever language
+// was loaded at import.
 const DIRECTION_OPTIONS = [
-  { value: "credit", label: "Credit (add funds)" },
-  { value: "debit", label: "Debit (remove funds)" },
+  { value: "credit", labelKey: "credit" },
+  { value: "debit", labelKey: "debit" },
 ];
 
 /**
  * Audited manual wallet adjustment (PRD §5). A reason is mandatory and the
  * amount must be positive — the direction, not a sign, decides credit vs debit.
  */
+
+
 export function AdjustBalanceDialog({ open, onOpenChange, userName, onConfirm, isPending = false }: AdjustBalanceDialogProps) {
+  const { t } = useTranslation("administration");
   const {
     control,
     register,
@@ -74,9 +81,7 @@ export function AdjustBalanceDialog({ open, onOpenChange, userName, onConfirm, i
         >
           <DialogHeader>
             <DialogTitle>Adjust balance — {userName}</DialogTitle>
-            <DialogDescription>
-              This moves money in the customer's wallet. The reason is recorded in the audit trail.
-            </DialogDescription>
+            <DialogDescription>{t("adjustSubtitle")}</DialogDescription>
           </DialogHeader>
 
           <Controller
@@ -85,8 +90,8 @@ export function AdjustBalanceDialog({ open, onOpenChange, userName, onConfirm, i
             render={({ field }) => (
               <SelectField
                 id="adjust-direction"
-                label="Direction"
-                options={DIRECTION_OPTIONS}
+                label={t("direction")}
+                options={translateOptions(DIRECTION_OPTIONS, t)}
                 value={field.value}
                 onChange={field.onChange}
                 error={errors.direction?.message}
@@ -95,7 +100,7 @@ export function AdjustBalanceDialog({ open, onOpenChange, userName, onConfirm, i
           />
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="adjust-amount">Amount</Label>
+            <Label htmlFor="adjust-amount">{t("amount")}</Label>
             {/* No native `min` — a browser constraint would block the whole
                 form submit before Zod ever runs, so the "must be > 0" message
                 would never render. The schema owns that rule instead. */}
@@ -103,7 +108,7 @@ export function AdjustBalanceDialog({ open, onOpenChange, userName, onConfirm, i
               id="adjust-amount"
               type="number"
               className="rounded-xl"
-              placeholder="e.g. 50000"
+              placeholder={t("amountPlaceholder")}
               {...register("amount", { valueAsNumber: true })}
             />
             {errors.amount && (
@@ -117,11 +122,11 @@ export function AdjustBalanceDialog({ open, onOpenChange, userName, onConfirm, i
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="adjust-reason">Reason</Label>
+            <Label htmlFor="adjust-reason">{t("reason")}</Label>
             <Textarea
               id="adjust-reason"
               className="rounded-xl"
-              placeholder="e.g. Compensation for failed order INV-001"
+              placeholder={t("reasonPlaceholder")}
               {...register("reason")}
             />
             {errors.reason && (
@@ -140,9 +145,7 @@ export function AdjustBalanceDialog({ open, onOpenChange, userName, onConfirm, i
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

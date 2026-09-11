@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categoryProvidersService, type CategoryProviderInput } from "../services/categoryProviders.service";
@@ -17,6 +18,7 @@ export const useCategoryProvider = (id?: string) =>
   });
 
 export const useCreateCategoryProvider = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -24,15 +26,16 @@ export const useCreateCategoryProvider = () => {
       categoryProvidersService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-providers"] });
-      toast.success("Category provider created");
+      toast.success(t("providerCreated"));
     },
     onError: () => {
-      toast.error("Failed to create category provider");
+      toast.error(t("providerCreateFailed"));
     },
   });
 };
 
 export const useUpdateCategoryProvider = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -45,10 +48,10 @@ export const useUpdateCategoryProvider = () => {
     }) => categoryProvidersService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-providers"] });
-      toast.success("Category provider updated");
+      toast.success(t("providerUpdated"));
     },
     onError: () => {
-      toast.error("Failed to update category provider");
+      toast.error(t("providerUpdateFailed"));
     },
   });
 };

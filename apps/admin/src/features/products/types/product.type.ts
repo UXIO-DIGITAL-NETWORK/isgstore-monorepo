@@ -140,6 +140,18 @@ export interface SelectOption {
   label: string;
 }
 
+/**
+ * The same option before its label is resolved.
+ *
+ * Option lists are module constants, so they carry a key rather than a
+ * sentence — a constant would otherwise freeze whichever language happened to
+ * be loaded at import and never update.
+ */
+export interface KeyedSelectOption {
+  value: string;
+  labelKey: string;
+}
+
 /** A category the toolbar filters by and the Add form assigns. It carries the
  * game so a product created from the form still gets the denormalized
  * `game_id`/`game_name` the entity needs — the real API will join instead. */
@@ -149,7 +161,7 @@ export interface CategoryOption extends SelectOption {
 }
 
 /** A price bucket. `max` is exclusive; omitting it means "and above". */
-export interface PriceRangeOption extends SelectOption {
+export interface PriceRangeOption extends KeyedSelectOption {
   min: number;
   max?: number;
 }
@@ -390,6 +402,8 @@ export interface PoolCandidate {
   is_new: boolean;
 }
 
+export type PoolSort = "name_asc" | "name_desc" | "cost_asc" | "cost_desc";
+
 export interface PoolCandidateListParams {
   search?: string;
   provider_category?: string;
@@ -398,8 +412,32 @@ export interface PoolCandidateListParams {
   pool_state?: string;
   /** "available" (default) | "unavailable" | "all". */
   availability?: string;
+  /** Supplier cost bounds in whole rupiah, both inclusive. */
+  cost_min?: number;
+  cost_max?: number;
+  /** Omitted leaves the provider's own feed order. */
+  sort?: PoolSort;
   page?: number;
   per_page?: number;
+}
+
+/**
+ * What there is to filter on, from the API.
+ *
+ * The page cannot derive any of it: which provider categories exist depends on
+ * what has been mapped under Category Provider, and the cost bounds move every
+ * time the price checker runs. Counts and bounds describe the whole candidate
+ * universe, not the current filters — options that vanish as they are used turn
+ * a filter bar into a maze.
+ */
+export interface PoolFacets {
+  provider_categories: {
+    provider_category: string;
+    mapped_category_name: string | null;
+    count: number;
+  }[];
+  categories: { id: number; name: string | null; count: number }[];
+  cost: { min: number; max: number };
 }
 
 export interface PoolSummary {

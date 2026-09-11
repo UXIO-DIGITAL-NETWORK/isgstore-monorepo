@@ -337,6 +337,39 @@ Things that are load-bearing and easy to undo:
 
 **Deployment consequence, pinned by `GameCatalogSeedTest`:** every pre-existing admin is refused the panel until they enrol. The way out is always open because `/2fa/setup` and `/2fa/confirm` live outside the admin group.
 
+### Language (ID/EN)
+
+**`App\Support\Locale\SupportedLocale` is the one definition of which languages exist.** The set
+used to be implied in three places that disagreed: `config('app.locale')` said `en`, the
+`users.locale` column default said `id`, and `GenerateInvoicePdfAction` carried its own whitelist.
+The visible consequence was that every Google sign-up was stored as an English speaker while
+password sign-ups were Indonesian. **The platform default is now `id`** — the market is Indonesia,
+prices are in rupiah, and a bare phone number is assumed to be `62`.
+
+**`SetLocale` is appended to the `api` group**, alongside `EnsureSiteIsServing`, and global for the
+same reason: the language of a response must not depend on which endpoint was hit. Resolution runs
+`users.locale` → `Accept-Language` → `config('app.locale')`, and an unsupported value at any rung is
+skipped rather than rejected — a browser set to Japanese is not a bad request, and a `users.locale`
+written before the column was constrained should degrade, not break the account. It reads
+`$request->user('sanctum')`, not `user()`: it runs on unauthenticated routes too, where the default
+guard is `web` and cannot see a bearer token.
+
+**`lang/id/validation.php` and `APP_LOCALE=id` are one change, not two.** Flipping the locale without
+the file leaves every message falling back to English, which is worse than where it started. Before
+this, twelve FormRequests overrode `messages()` in Indonesian while ~150 fell through to Laravel's
+English defaults — so the language of an error depended on the endpoint. English still works with no
+`lang/en/validation.php` because the framework ships its own.
+
+**`PATCH /v1/me/locale` is its own endpoint, not a field on `sync-timezone`.** That route's name
+promises one thing, and the two are different kinds of fact: a timezone is detected from the browser
+and synced silently, a language is chosen by a person.
+
+**Still outstanding:** `ApiResponse` and the ~4,000 literals across `app/Http/Controllers` and
+`app/Actions` are untouched, so most `message` fields remain hardcoded and mixed
+("Login successful" next to "Autentikasi dua faktor aktif." in the same controller). That needs
+triage into the few hundred a user actually reads, not a sweep. `lang/{en,id}` already holds
+`receipt`, `refund`, `whatsapp` and `locale`.
+
 ### Money formatting
 
 `App\Support\Money::rupiah(int)` is the one customer-facing format. It exists because most of `app/` called bare `number_format($n)`, which uses **US separators** — an error message read "Rp 1,500,000" for the very transaction whose invoice PDF said "Rp 1.500.000". Three Blade views each defined the identical closure. Console output (`$this->table()`, dry-run listings) deliberately does not use it: alignment and greppability matter more there.
@@ -366,10 +399,41 @@ Key points:
 - Outbound signature: `md5(md5(TOKEN + "*|*" + sortedParams + "@!@" + timestamp))`.
 - Inbound callback: same Double MD5 algorithm, verified via `verifyCallbackSignature()` using `hash_equals()`.
 - Endpoint selection is driven by `payment_type` on `PaymentChannel`: `'qris'` → `/v1.0.0/qris`, anything else → `/v1.0.0/virtual_account`.
-- Config keys: `services.monetapay.{mch_id, collection_app_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
-- Three distinct identifiers — do not conflate them: `mch_id` is the merchant identity (only sent where the gateway expects a real `mch_id`/`parent_app_id`, e.g. `merchant_permission`, `sub_merchant`); `collection_app_id` is the pay-in `app_id` (checkout/`createTransaction`, refund, and all collection inquiries); `disbursement_app_id` is the payout `app_id`.
+- Config keys: `services.monetapay.{mch_id, sub_mch_id, collection_app_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
+- Four distinct identifiers — do not conflate them: `mch_id` is the merchant identity (only sent where the gateway expects a real `mch_id`/`parent_app_id`, e.g. `merchant_permission`, `sub_merchant`); `sub_mch_id` is the sub-merchant the site trades AS (see below); `collection_app_id` is the pay-in `app_id` (checkout/`createTransaction`, refund, and all collection inquiries); `disbursement_app_id` is the payout `app_id`.
 - `collection_app_id` has **no fallback** — set `MONETAPAY_COLLECTION_APP_ID` explicitly per environment or collection calls sign with a blank `app_id`.
 - `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement, plus the account-validation pre-payout check); defaults to `mch_id` if unset.
+
+#### Sub-merchant (`sub_mch_id`)
+
+The site trades as **one** Monetapay sub-merchant under the parent `mch_id`, on the
+parent's credentials — `sub_mch_id` is the only field that tells the gateway whose
+books a call belongs to. It is set once (`MONETAPAY_SUB_MCH_ID`, or the admin's
+"Sub-Merchant ID" field) and injected in exactly two places:
+
+- **`postSigned()`** — covers every signed endpoint (inquiries, cancel, refund,
+  subscriptions, bills, payouts) in one stroke instead of ~30 call sites. An
+  explicit `sub_mch_id` from the caller still wins, so the operator tools can
+  inspect a different sub-merchant.
+- **`createTransaction()`** — added **before** `ksort()`, so it is part of the
+  signed TreeMap. A field appended after signing travels but never verifies.
+
+Two rules follow from how Monetapay re-signs a request:
+
+- **Blank must be absent, not empty.** Monetapay drops blank fields from the
+  TreeMap it recomputes the signature over, so `sub_mch_id=` would break the sign.
+  The `array_filter` in `postSigned` and the `!== ''` guard in `createTransaction`
+  keep an unset value out entirely — which is also why leaving it blank reproduces
+  pre-sub-merchant behaviour exactly.
+- **`inquirySubMerchant()` opts out** (`withSubMch: false`). 6.7.4 asks the PARENT
+  about a registration; stamping our own `sub_mch_id` on it answers a different
+  question.
+
+`balanceCacheKey(null)` resolves through the *same* default, so the finance panel's
+read and a ping's cache-bust land on one entry rather than two that drift apart.
+Inbound callbacks naming a different `sub_mch_id` are **logged, not rejected** —
+the order is matched by our own `mch_order_no`, and refusing on a field never seen
+in a live payload would drop real payments. A warning there means the config is wrong.
 
 ### Withdrawal / Payout (Monetapay disbursement)
 
@@ -698,7 +762,9 @@ default) schedules nothing, calls nowhere, exposes nothing.
 - BCA VA is deactivated (not in the Monetapay contract; row kept for history).
 - Monetapay balance cache is keyed per `(sub_mch_id, currency)` —
   `MonetapayService::balanceCacheKey()` is the shared key helper for
-  cache-busting callers.
+  cache-busting callers, and with no argument it resolves the configured
+  sub-merchant. Never key it off an **app id**: that names an entry nothing
+  writes, and the read silently falls through to the snapshot.
 
 ### The Hub owns this site's licence (and can switch it off)
 

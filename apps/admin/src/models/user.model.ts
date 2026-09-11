@@ -10,6 +10,7 @@ export interface User {
   phone: string;
   balance: number;
   point: number;
+  /** The language this account reads the platform in — "id" or "en". */
   locale: string;
   timezone: string;
   email_verified_at: string | null;

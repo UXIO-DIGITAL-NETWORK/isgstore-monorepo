@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -24,10 +25,14 @@ const STATUS_VARIANT: Record<PriceChangeStatus, "secondary" | "outline" | "destr
  * the whole point — an admin scans it for `deactivated` / `negative_margin` rows
  * that need handling, versus routine `applied` reprices.
  */
-export const priceChangeLogColumns: ColumnDef<PriceChangeLog>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const priceChangeLogColumnsFor = (t: TFunction<"products">): ColumnDef<PriceChangeLog>[] => [
   {
     accessorKey: "product_name",
-    header: "Product",
+    header: t("product"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text as="span" className="font-medium">
@@ -41,35 +46,33 @@ export const priceChangeLogColumns: ColumnDef<PriceChangeLog>[] = [
   },
   {
     id: "cost",
-    header: "Cost (modal)",
+    header: t("colCostModal"),
     cell: ({ row }) => <PriceChangePairCell oldValue={row.original.old_cost} newValue={row.original.new_cost} />,
   },
   {
     id: "member_price",
-    header: "Member price",
+    header: t("colMemberPrice"),
     cell: ({ row }) => (
       <PriceChangePairCell oldValue={row.original.prices.member.old} newValue={row.original.prices.member.new} />
     ),
   },
   {
     id: "status",
-    header: "Status",
+    header: t("status"),
     cell: ({ row }) => (
       <Box className="flex flex-col gap-1">
         <Badge variant={STATUS_VARIANT[row.original.status]}>
           {PRICE_CHANGE_STATUS_LABELS[row.original.status]}
         </Badge>
         {row.original.needs_attention && (
-          <Text as="span" variant="small" className="text-destructive">
-            Needs attention
-          </Text>
+          <Text as="span" variant="small" className="text-destructive">{t("needsAttention")}</Text>
         )}
       </Box>
     ),
   },
   {
     accessorKey: "created_at",
-    header: "Changed At",
+    header: t("colChangedAt"),
     cell: ({ row }) => (
       <Text as="span" className="tabular-nums">
         {format(new Date(row.original.created_at), "d MMM yyyy, HH.mm")}

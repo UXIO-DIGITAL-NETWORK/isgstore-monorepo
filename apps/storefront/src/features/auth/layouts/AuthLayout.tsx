@@ -11,7 +11,7 @@ export function AuthLayout() {
           <Box
             as="img"
             src={authBanner}
-            alt="Auth banner"
+            alt=""
             className="h-full w-full object-cover"
           />
         </Box>

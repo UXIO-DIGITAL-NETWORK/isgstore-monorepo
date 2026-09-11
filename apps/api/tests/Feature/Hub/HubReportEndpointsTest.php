@@ -48,9 +48,12 @@ class HubReportEndpointsTest extends TestCase
     /** gateway_balance is read from the warm balance cache (never a live call). */
     private function warmGatewayBalance(int $balance): void
     {
+        // Key and payload shape must be the ones the service really writes —
+        // warming a shape of our own here would let a reader/writer mismatch
+        // pass this test while the Hub reads nothing in production.
         Cache::put(
-            MonetapayService::balanceCacheKey(config('services.monetapay.collection_app_id') ?: null),
-            ['data' => ['balance' => $balance]],
+            MonetapayService::balanceCacheKey(),
+            ['code' => 0, 'data' => ['current_balance' => (string) $balance]],
             300,
         );
     }

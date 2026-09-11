@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { ArrowUpCircle, Lock, MoreVertical, Rocket, SlidersHorizontal, Trash2, Unlock } from "lucide-react";
 
@@ -40,6 +41,7 @@ interface ProviderRowActionsProps {
  * priced category does not need a trip through the other list.
  */
 export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
+  const { t } = useTranslation("products");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [lockOpen, setLockOpen] = useState(false);
   const lockPrice = useLockProviderPrice();
@@ -81,9 +83,7 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
                 })
               }
             >
-              <SlidersHorizontal />
-              Set Profit Margin
-            </DropdownMenuItem>
+              <SlidersHorizontal />{t("setProfitMargin")}</DropdownMenuItem>
             {isPooled && (
               <DropdownMenuItem
                 disabled={!provider.can_promote}
@@ -109,9 +109,7 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
                 disabled={!provider.can_promote}
                 onSelect={() => promoteAndPublish.mutate([provider.id])}
               >
-                <Rocket />
-                Promote &amp; Publish
-              </DropdownMenuItem>
+                <Rocket />{t("promoteAndPublish")}</DropdownMenuItem>
             )}
           </Can>
           {!provider.is_system && (
@@ -121,9 +119,7 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
                 variant="destructive"
                 onSelect={() => setDeleteOpen(true)}
               >
-                <Trash2 />
-                Delete
-              </DropdownMenuItem>
+                <Trash2 />{t("delete")}</DropdownMenuItem>
             </Can>
           )}
         </DropdownMenuContent>
@@ -146,8 +142,8 @@ export function ProviderRowActions({ provider }: ProviderRowActionsProps) {
       <DeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete this provider product?"
-        description="This action cannot be undone. It permanently removes this provider mapping."
+        title={t("deleteProviderTitle")}
+        description={t("deleteProviderDescription")}
         onConfirm={() => deleteProviders.mutate([provider.id])}
       />
     </>

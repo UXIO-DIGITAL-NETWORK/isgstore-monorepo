@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
@@ -10,7 +11,8 @@ export interface SummaryCounts {
 
 interface PillConfig {
   key: "success" | "pending" | "failed";
-  label: string;
+  /** A key, not a label, so the pill moves with the panel's language. */
+  labelKey: string;
   countKey: keyof SummaryCounts;
   tone: string;
   border: string;
@@ -19,9 +21,9 @@ interface PillConfig {
 }
 
 const PILLS: PillConfig[] = [
-  { key: "success", label: "Sukses", countKey: "count_success", tone: "text-success", border: "border-success/30", bg: "bg-success/5", ring: "ring-success/40" },
-  { key: "pending", label: "Pending", countKey: "count_pending", tone: "text-warning", border: "border-warning/30", bg: "bg-warning/5", ring: "ring-warning/40" },
-  { key: "failed", label: "Gagal", countKey: "count_failed", tone: "text-destructive", border: "border-destructive/30", bg: "bg-destructive/5", ring: "ring-destructive/40" },
+  { key: "success", labelKey: "pills.success", countKey: "count_success", tone: "text-success", border: "border-success/30", bg: "bg-success/5", ring: "ring-success/40" },
+  { key: "pending", labelKey: "pills.pending", countKey: "count_pending", tone: "text-warning", border: "border-warning/30", bg: "bg-warning/5", ring: "ring-warning/40" },
+  { key: "failed", labelKey: "pills.failed", countKey: "count_failed", tone: "text-destructive", border: "border-destructive/30", bg: "bg-destructive/5", ring: "ring-destructive/40" },
 ];
 
 interface Props {
@@ -38,6 +40,7 @@ interface Props {
  * because the summary endpoint ignores the status filter on purpose.
  */
 export function TransactionSummaryPills({ counts, active, onToggle, isLoading }: Props) {
+  const { t } = useTranslation("common");
   return (
     <Box className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {PILLS.map((pill) => {
@@ -57,7 +60,7 @@ export function TransactionSummaryPills({ counts, active, onToggle, isLoading }:
             )}
           >
             <Text as="span" variant="small" className="font-medium text-muted-foreground">
-              {pill.label}
+              {t(pill.labelKey)}
             </Text>
             <Text as="span" className={cn("text-2xl font-semibold tabular-nums", pill.tone)}>
               {isLoading || !counts ? "–" : counts[pill.countKey].toLocaleString("id-ID")}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Download } from "lucide-react";
 
@@ -31,6 +32,7 @@ interface RecapDialogProps {
  * only runs while the dialog is open and re-runs when the period flips.
  */
 export function RecapDialog({ open, onOpenChange }: RecapDialogProps) {
+  const { t } = useTranslation("transactions");
   const [period, setPeriod] = useState<RecapPeriod>("daily");
   const { data, isLoading, isError, refetch } = useRecap(period, open);
 
@@ -41,10 +43,8 @@ export function RecapDialog({ open, onOpenChange }: RecapDialogProps) {
     >
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Transaction Recap</DialogTitle>
-          <DialogDescription>
-            Daily and monthly summaries with a breakdown per product and payment channel.
-          </DialogDescription>
+          <DialogTitle>{t("recapTitle")}</DialogTitle>
+          <DialogDescription>{t("recapSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -52,43 +52,37 @@ export function RecapDialog({ open, onOpenChange }: RecapDialogProps) {
           onValueChange={(value) => setPeriod(value as RecapPeriod)}
         >
           <TabsList>
-            <TabsTrigger value="daily">Daily</TabsTrigger>
-            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+            <TabsTrigger value="daily">{t("daily")}</TabsTrigger>
+            <TabsTrigger value="monthly">{t("monthly")}</TabsTrigger>
           </TabsList>
         </Tabs>
 
         {isError ? (
           <Box className="flex flex-col items-center gap-3 py-8">
-            <Text variant="muted">Couldn't load the recap.</Text>
+            <Text variant="muted">{t("recapFailed")}</Text>
             <Button
               variant="outline"
               className="rounded-xl"
               onClick={() => refetch()}
-            >
-              Retry
-            </Button>
+            >{t("retry")}</Button>
           </Box>
         ) : isLoading || !data ? (
           <Text
             variant="muted"
             className="py-8 text-center"
-          >
-            Loading recap…
-          </Text>
+          >{t("recapLoading")}</Text>
         ) : data.rows.length === 0 ? (
           <Text
             variant="muted"
             className="py-8 text-center"
-          >
-            No transactions in this period.
-          </Text>
+          >{t("recapEmpty")}</Text>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Breakdown</TableHead>
-                <TableHead className="text-right">Count</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
+                <TableHead>{t("breakdown")}</TableHead>
+                <TableHead className="text-right">{t("count")}</TableHead>
+                <TableHead className="text-right">{t("revenue")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -102,7 +96,7 @@ export function RecapDialog({ open, onOpenChange }: RecapDialogProps) {
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell>Total</TableCell>
+                <TableCell>{t("total")}</TableCell>
                 <TableCell className="text-right tabular-nums">{data.totals.count}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatCurrency(data.totals.revenue)}</TableCell>
               </TableRow>
@@ -118,9 +112,7 @@ export function RecapDialog({ open, onOpenChange }: RecapDialogProps) {
             disabled={!data || data.rows.length === 0}
             onClick={() => data && downloadBlob(new Blob([recapToCsv(data)], { type: "text/csv" }), `recap-${period}.csv`)}
           >
-            <Download />
-            Download CSV
-          </Button>
+            <Download />{t("downloadCsv")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

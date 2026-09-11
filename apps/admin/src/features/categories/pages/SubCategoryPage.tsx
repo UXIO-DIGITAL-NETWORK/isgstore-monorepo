@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -7,7 +8,7 @@ import { DataTable } from "@/components/common/DataTable";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { SubCategoryFormDialog } from "../components/SubCategoryFormDialog";
 import { SubCategoryToolbar } from "../components/SubCategoryToolbar";
-import { subCategoryColumns } from "../components/subCategoryColumns";
+import { subCategoryColumnsFor } from "../components/subCategoryColumns";
 import { useDeleteSubCategories, useSubCategoryList } from "../hooks/useSubCategories";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -18,6 +19,7 @@ const DEFAULT_PAGE_SIZE = 10;
  * placeholder as the Category tab — real copy is written here instead.
  */
 export default function SubCategoryPage() {
+  const { t } = useTranslation("categories");
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
@@ -53,12 +55,8 @@ export default function SubCategoryPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Sub Category
-        </Heading>
-        <Text variant="muted">
-          Currency and item groupings nested under a parent category, as buyers see them on the storefront.
-        </Text>
+        >{t("tabSubCategory")}</Heading>
+        <Text variant="muted">{t("subSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -76,13 +74,13 @@ export default function SubCategoryPage() {
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <DataTable
-          columns={subCategoryColumns}
+          columns={subCategoryColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          emptyMessage="No sub categories found."
-          entityLabel="sub categories"
+          emptyMessage={t("subEmpty")}
+          entityLabel={t("subEntity")}
           showRowNumber
           onSelectionChange={handleSelectionChange}
           page={data?.meta.current_page ?? page}

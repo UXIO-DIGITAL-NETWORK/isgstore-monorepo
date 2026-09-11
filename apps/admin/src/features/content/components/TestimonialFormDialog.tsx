@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +29,7 @@ interface TestimonialFormDialogProps {
 }
 
 export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: TestimonialFormDialogProps) {
+  const { t } = useTranslation("content");
   const isEdit = Boolean(testimonialId);
   const [avatar, setAvatar] = useState<File | null>(null);
 
@@ -96,9 +98,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Testimonial" : "Add Testimonial"}</DialogTitle>
-          <DialogDescription>
-            Curated quotes for marketing surfaces. These are editorial — real purchase reviews live under Transactions.
-          </DialogDescription>
+          <DialogDescription>{t("testimonialSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -108,7 +108,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
         >
           <Box className="grid gap-4 sm:grid-cols-2">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="testimonial-author">Author Name</Label>
+              <Label htmlFor="testimonial-author">{t("authorName")}</Label>
               <Input
                 id="testimonial-author"
                 className="rounded-xl"
@@ -124,18 +124,18 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
               )}
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="testimonial-title">Author Title</Label>
+              <Label htmlFor="testimonial-title">{t("authorTitle")}</Label>
               <Input
                 id="testimonial-title"
                 className="rounded-xl"
-                placeholder="e.g. Mobile Legends Player"
+                placeholder={t("authorTitlePlaceholder")}
                 {...register("authorTitle")}
               />
             </Box>
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="testimonial-content">Testimonial</Label>
+            <Label htmlFor="testimonial-content">{t("testimonial")}</Label>
             <Textarea
               id="testimonial-content"
               rows={4}
@@ -154,7 +154,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
 
           <Box className="grid gap-4 sm:grid-cols-3">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="testimonial-game">Game</Label>
+              <Label htmlFor="testimonial-game">{t("game")}</Label>
               <Input
                 id="testimonial-game"
                 className="rounded-xl"
@@ -162,7 +162,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
               />
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="testimonial-rating">Rating (1-5)</Label>
+              <Label htmlFor="testimonial-rating">{t("rating")}</Label>
               <Input
                 id="testimonial-rating"
                 type="number"
@@ -181,7 +181,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
               )}
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="testimonial-sort">Order</Label>
+              <Label htmlFor="testimonial-sort">{t("order")}</Label>
               <Input
                 id="testimonial-sort"
                 type="number"
@@ -194,8 +194,8 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
 
           <ImageDropzone
             id="testimonial-avatar"
-            label="Avatar"
-            caption="Optional. Shown beside the quote on the storefront."
+            label={t("avatar")}
+            caption={t("avatarCaption")}
             value={avatar ?? undefined}
             onChange={setAvatar}
             accept="image/jpeg,image/png,image/webp"
@@ -213,7 +213,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <Label htmlFor="testimonial-featured">Featured</Label>
+                  <Label htmlFor="testimonial-featured">{t("featured")}</Label>
                 </Box>
               )}
             />
@@ -227,7 +227,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <Label htmlFor="testimonial-active">Active</Label>
+                  <Label htmlFor="testimonial-active">{t("active")}</Label>
                 </Box>
               )}
             />
@@ -239,9 +239,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"
