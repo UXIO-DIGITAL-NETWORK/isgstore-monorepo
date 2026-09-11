@@ -99,7 +99,10 @@ class ChannelFeeController extends Controller
                 'gateway_fee_percent' => (float) $paymentChannel->gateway_fee_percent,
                 'contract_expected' => $expected,
             ]);
-            $this->discord->sendAlert(
+            // Keyed on the channel: saving the same one repeatedly while
+            // tuning a fee is one divergence, not one per keystroke.
+            $this->discord->sendAlertOnce(
+                "channel-fee:{$paymentChannel->channel_code}",
                 "Fee gateway '{$paymentChannel->name}' menyimpang dari kontrak Monetapay: {$detail}. "
                 .'Pastikan ini disengaja (mengikuti perubahan tarif) — kalau tidak, profit akan salah hitung.'
             );

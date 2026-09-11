@@ -59,7 +59,7 @@ class SendRefundClaimNotificationAction
             // and reporting it per row is what buried the message that actually
             // needed a human.
             Log::error($message, ['refund_id' => $refund->id, 'configured' => config('services.storefront.url')]);
-            app(DiscordWebhookService::class)->sendAlert($message);
+            app(DiscordWebhookService::class)->sendAlertOnce('storefront-url-unreachable', $message);
 
             return false;
         }

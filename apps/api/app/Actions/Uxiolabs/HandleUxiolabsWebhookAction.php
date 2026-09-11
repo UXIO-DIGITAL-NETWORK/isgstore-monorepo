@@ -134,7 +134,18 @@ class HandleUxiolabsWebhookAction
                 app(GrantTransactionPointsAction::class)->execute($transaction);
             }
 
-            $this->sendToDiscord($transaction, $oldStatus, $newStatus);
+            // Announced only when the status actually moved. uxiolabs
+            // re-delivers `processing` while an order is in flight, and each one
+            // used to post a `PROCESSING ➔ PROCESSING` embed — half the volume
+            // in the operational channel, carrying nothing an operator could
+            // act on.
+            //
+            // Deliberately gated here and not on `$notification` itself: that
+            // variable also drives the refund and the receipt, both of which
+            // must keep running on a redelivery.
+            if ($oldStatus !== $newStatus) {
+                $this->sendToDiscord($transaction, $oldStatus, $newStatus);
+            }
         }
     }
 

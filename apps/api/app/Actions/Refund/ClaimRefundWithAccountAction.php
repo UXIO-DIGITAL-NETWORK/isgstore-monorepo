@@ -128,9 +128,14 @@ class ClaimRefundWithAccountAction
                 dedupeKey: "refund-claim:{$refund->refund_number}",
             );
 
-            $this->discord->sendAlert(
+            // A notice, not an alarm. Eleven of these wearing the 🚨 badge is
+            // what pushed a real one — a merchant balance that could not be
+            // debited — off the screen. The in-app notification above is the
+            // one that actually queues work for an admin.
+            $this->discord->sendNotice(
                 "Klaim pengembalian dana: {$refund->refund_number} — {$invoice} — {$amount}. "
-                .'Jatuh tempo verifikasi: '.($refund->verify_due_at?->toDateTimeString() ?? '-')
+                .'Jatuh tempo verifikasi: '.($refund->verify_due_at?->toDateTimeString() ?? '-'),
+                '💸 Klaim Pengembalian Dana'
             );
         } catch (\Throwable $e) {
             // A claim that succeeded must never be reported as failed because
