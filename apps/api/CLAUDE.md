@@ -370,6 +370,64 @@ and synced silently, a language is chosen by a person.
 triage into the few hundred a user actually reads, not a sweep. `lang/{en,id}` already holds
 `receipt`, `refund`, `whatsapp` and `locale`.
 
+### Discord notifications
+
+`DiscordWebhookService` is the only sender, and three rules keep the channel worth
+reading. They were written after a run put **29 messages into it in one minute** — five
+supplier webhooks reporting `PROCESSING ➔ PROCESSING`, eleven routine refund claims
+dressed as 🚨 alerts, four copies of one misconfiguration — burying the single message
+that needed a human: a merchant balance that could not be debited.
+
+- **Non-production is silent.** The flood was factory data (`fake()->words(2, true)`
+  channel names, `RFD-` + 12 random chars, every refund exactly Rp 12.000) from a seeder
+  on a box whose webhook pointed at the live channel. Set
+  `DISCORD_SEND_OUTSIDE_PRODUCTION=true` where a staging feed is wanted; it arrives
+  prefixed `[STAGING]`. `testing` passes through unlabelled — a test that configures a
+  webhook is exercising the path deliberately, and labelling it would force the prefix
+  into every title assertion in the suite.
+- **Pick the severity.** `sendAlert` is the alarm and means "someone must act now".
+  `sendNotice` is for routine business events — a refund claim is workflow, not an alarm.
+- **A system-level problem is reported once.** `sendAlertOnce($key, $message)` guards with
+  `Cache::add` for an hour. A missing `STOREFRONT_URL` is one problem however many refunds
+  hit it; reported per row it produced one message per refund. The window expires rather
+  than latching, because silence is a reminder suppressed, not a problem closed.
+  Two older call sites roll their own guard with different windows and stay as they are:
+  `PollUxiolabsStatusJob` (24h per transaction) and `SyncChannelSettingsFromHubAction`
+  (once per channel per day — the scheduler runs it 96 times a day).
+
+**`HandleUxiolabsWebhookAction` announces only a real status change.** uxiolabs
+re-delivers `processing` while an order is in flight. The gate is on the Discord call
+alone, never on `$notification` — that variable also drives the refund and the receipt,
+both of which must keep running on a redelivery.
+
+### Links that leave the building
+
+**Every customer-facing base URL goes through `App\Support\PublicUrl`, and none of
+them has a fallback in `config/`.** A refund claim link once went out over WhatsApp
+reading `http://localhost:5173/id/refund?token=…`: the message sent, `claim_notified_at`
+was stamped, the refund row looked handled, and the person owed the money had no way to
+claim it. The cause was a config default — `STOREFRONT_URL` fell back to a dev server, so
+a deployment that never set the variable shipped that address to real buyers instead of
+failing. `MONETAPAY_SUCCESS_REDIRECT_URL` had the same shape with `https://example.com`,
+handed to a live payment gateway.
+
+- **Unreachable is judged from the customer's network, not ours:** loopback, RFC 1918
+  private ranges, the `.local`/`.test`/`.internal` dev TLDs, and IANA's `example.*`
+  domains. Plain `http` on a real domain is **not** refused — a site behind a proxy that
+  terminates TLS elsewhere is a real deployment.
+- **What a caller does with a null differs by how much the link is worth.** The refund
+  claim link IS the message, so an unreachable base **stops the send** and leaves
+  `claim_notified_at` null, which the refunds page already renders as "never notified —
+  contact manually" — a state an operator can act on. It never throws:
+  `InitiateRefundAction` calls it post-commit, where nothing may fail the refund. The
+  receipt's "track order" CTA and the admin's renew-subscription link are worth less than
+  the page around them, so those are **omitted** and the rest still ships.
+- **`urls:verify` is what stops this being found by a customer.** It exits non-zero and
+  gates the deploy, alongside `pricing:verify` — same contract, same reasoning: turn a
+  silent misconfiguration into a failed deploy.
+- `phpunit.xml` supplies real-looking domains so the suite does not exercise the degraded
+  path everywhere; `PublicUrlTest` overrides them per case.
+
 ### Money formatting
 
 `App\Support\Money::rupiah(int)` is the one customer-facing format. It exists because most of `app/` called bare `number_format($n)`, which uses **US separators** — an error message read "Rp 1,500,000" for the very transaction whose invoice PDF said "Rp 1.500.000". Three Blade views each defined the identical closure. Console output (`$this->table()`, dry-run listings) deliberately does not use it: alignment and greppability matter more there.

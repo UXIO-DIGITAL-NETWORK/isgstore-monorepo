@@ -208,6 +208,14 @@ jobs:
             php artisan pricing:backfill-plan-prices
             php artisan pricing:verify || { echo "::error::Harga per plan menyimpang setelah backfill."; exit 1; }
 
+            # 5c. Setiap tautan yang bisa kita kirim ke pelanggan harus mengarah
+            #     ke domain yang benar-benar bisa mereka buka. Tanpa cek ini,
+            #     `STOREFRONT_URL` yang tidak diset dulu jatuh ke dev server dan
+            #     mengirim `http://localhost:5173/...` sebagai tautan klaim
+            #     pengembalian dana — terkirim "sukses", tak bisa diklaim siapa pun,
+            #     dan tak ada satu pun yang mencatat ada yang salah.
+            php artisan urls:verify || { echo "::error::URL publik menunjuk ke alamat yang tidak bisa dibuka pelanggan."; exit 1; }
+
             # 6. Cache konfigurasi & rute
             php artisan optimize:clear
             php artisan config:cache

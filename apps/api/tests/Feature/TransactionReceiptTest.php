@@ -96,6 +96,10 @@ class TransactionReceiptTest extends TestCase
             'contact_email' => 'g@example.com',
         ]);
 
+        // A real domain, because that is the production condition — the track
+        // CTA is deliberately dropped when the storefront base is unreachable.
+        config(['services.storefront.url' => 'https://isgstore.id']);
+
         app()->setLocale('id');
         $idHtml = (new TransactionReceiptMail($transaction, 'id'))->render();
         $this->assertStringContainsString('Bukti Pembelian', $idHtml);
@@ -107,6 +111,26 @@ class TransactionReceiptTest extends TestCase
         $enHtml = (new TransactionReceiptMail($transaction, 'en'))->render();
         $this->assertStringContainsString('Purchase Receipt', $enHtml);
         $this->assertStringContainsString('Total Paid', $enHtml);
+    }
+
+    public function test_the_receipt_drops_the_track_cta_rather_than_linking_to_a_dev_box(): void
+    {
+        // Unlike the refund claim link, a receipt is still worth sending
+        // without its CTA — so this omits the button rather than stopping the
+        // send. What it must never do is render a localhost URL to a customer.
+        config(['services.storefront.url' => 'http://localhost:5173']);
+
+        $transaction = Transaction::factory()->create([
+            'invoice_number' => 'INV-NO-CTA',
+            'contact_email' => 'g@example.com',
+        ]);
+
+        $html = (new TransactionReceiptMail($transaction, 'id'))->render();
+
+        $this->assertStringNotContainsString('localhost', $html);
+        $this->assertStringNotContainsString('cek-pesanan', $html);
+        // The receipt itself still arrives intact.
+        $this->assertStringContainsString('INV-NO-CTA', $html);
     }
 
     public function test_receipt_subject_is_localised(): void
