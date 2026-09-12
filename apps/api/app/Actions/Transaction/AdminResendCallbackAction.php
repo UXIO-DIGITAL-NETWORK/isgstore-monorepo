@@ -4,6 +4,7 @@ namespace App\Actions\Transaction;
 
 use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Uxiolabs\CheckUxiolabsTransactionStatusAction;
+use App\Actions\Uxiolabs\SendUxiolabsStatusNotificationAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
@@ -29,7 +30,10 @@ class AdminResendCallbackAction
             throw new InvalidArgumentException('Only PROCESSING transactions can be re-checked with the supplier.');
         }
 
-        $updated = $this->checkStatusAction->execute($transaction->invoice_number);
+        $updated = $this->checkStatusAction->execute(
+            $transaction->invoice_number,
+            SendUxiolabsStatusNotificationAction::SOURCE_MANUAL,
+        );
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
             userId: Auth::id(),

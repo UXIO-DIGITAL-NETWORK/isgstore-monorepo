@@ -400,6 +400,32 @@ re-delivers `processing` while an order is in flight. The gate is on the Discord
 alone, never on `$notification` — that variable also drives the refund and the receipt,
 both of which must keep running on a redelivery.
 
+**Supplier outcomes go through `SendUxiolabsStatusNotificationAction`, from every path.**
+Monetapay announced every payment it took while fulfilment announced nothing unless the
+callback fired — so the channel read "💳 Pembayaran Diterima" and then went silent,
+whether the customer got their diamonds or the order died upstream. The callback is the
+*unreliable* path (`PollUxiolabsStatusJob` exists because of it), so the one path that
+reported was the one least likely to run. Five call sites now report:
+`ProcessUxiolabsTransactionAction` (`handoff()`, plus a terminal order response),
+`CheckUxiolabsTransactionStatusAction` (poll and admin resend, labelled by `$source`),
+`HandleUxiolabsWebhookAction`, and `ProcessUxiolabsTopup::failed()`.
+
+- **Deduped per transaction per outcome** (`Cache::add`, 24h). Poll and callback race the
+  same transition *by design* — either may be the one that survives — so the guard sits
+  below both rather than in a choice of which to keep. Announcing per writer would double
+  every fulfilment in the channel.
+- **`handoff()` is the only place `supplier_trx_id` reaches the channel**, and it is the
+  key that opens the order on the supplier's dashboard. Its absence behind a payment is
+  itself the signal: an order that never left.
+- Add a new supplier-status call site here, not with a fresh `sendEmbed` — a second embed
+  shape drifts from the Monetapay one, and the two halves of an order's life land in the
+  same channel minutes apart.
+
+**The suite must never inherit a real webhook.** `phpunit.xml` pins
+`DISCORD_WEBHOOK_LOG_URL` empty alongside the other outbound gateways. A developer's
+`.env` holds the live channel URL and the service deliberately lets `testing` through, so
+without that pin every fulfilment test is a would-be post to the channel operators watch.
+
 ### Links that leave the building
 
 **Every customer-facing base URL goes through `App\Support\PublicUrl`, and none of
