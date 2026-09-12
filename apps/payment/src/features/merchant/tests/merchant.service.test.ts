@@ -140,6 +140,35 @@ describe("merchantService — services bought from kita", () => {
     expect(channels.some((c) => c.channel_code === "balance")).toBe(false);
   });
 
+  it("reads the plan, including periods nobody has paid for yet", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope([]) as never);
+
+    await merchantService.servicePlan();
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/service-plan");
+  });
+
+  it("pays several bills in one attempt", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(
+      envelope({ reference_id: "SRV-20260912-ABCD", invoice_count: 3 }) as never,
+    );
+
+    await merchantService.payInvoiceBatch([9, 10, 11], 2);
+
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/service-invoices/pay-batch", {
+      invoice_ids: [9, 10, 11],
+      payment_channel_id: 2,
+    });
+  });
+
+  it("reads one attempt and the bills it covers", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope({ reference_id: "SRV-1", invoices: [] }) as never);
+
+    await merchantService.servicePayment("SRV-1");
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/service-payments/SRV-1");
+  });
+
   it("reads the service status page", async () => {
     vi.mocked(api.get).mockResolvedValueOnce(
       envelope({ overall: "degraded", incidents: [], components: [] }) as never,

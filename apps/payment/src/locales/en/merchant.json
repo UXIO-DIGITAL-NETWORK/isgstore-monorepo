@@ -79,7 +79,8 @@
     "colDue": "Due",
     "colAction": "Action",
     "pay": "Pay",
-    "detail": "Details"
+    "detail": "Details",
+    "tabBills": "Bills"
   },
   "serviceStatus": {
     "title": "Service status",
@@ -180,5 +181,28 @@
     "serviceDetails": "Service details",
     "colLabel": "Label",
     "colValue": "Value"
+  },
+  "bills": {
+    "nothingDue": "Nothing to pay. Every service is settled for the current period.",
+    "noDueDate": "No due date",
+    "dueOn": "Due {{date}}",
+    "selectGroup": "Select all due this day",
+    "selectedCount": "{{count}} bills selected",
+    "feeOnce": "Admin fee (charged once for the whole selection)",
+    "total": "Total to pay",
+    "paySelected": "Pay selected"
+  },
+  "plan": {
+    "title": "Services in your plan",
+    "days": "days",
+    "governsSite": "governs the site's licence",
+    "activeUntil": "Active until {{date}}",
+    "notYetPaid": "Never paid",
+    "outstanding": "Outstanding {{amount}}"
+  },
+  "batchPayment": {
+    "title": "Combined payment",
+    "covers": "Covers {{count}} bills",
+    "billsCovered": "Bills covered"
   }
 }

@@ -13,10 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/utils/currency";
 import { formatDate, formatDateTime } from "@/utils/date";
-import type { Service, ServiceInvoice, ServiceSubscription } from "@/types/service.type";
+import type { Service, ServiceInvoice, ServicePlanLine, ServiceSubscription } from "@/types/service.type";
 import { SERVICES_TABS, type ServicesTab } from "../types/merchant.type";
 
-import { useMerchantServiceInvoices, useMerchantServices, useMerchantSubscriptions } from "../hooks/useMerchant";
+import { OutstandingBillsPanel } from "../components/OutstandingBillsPanel";
+import {
+  useMerchantServiceInvoices,
+  useMerchantServices,
+  useMerchantSubscriptions,
+  useServicePlan,
+} from "../hooks/useMerchant";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
@@ -125,6 +131,52 @@ interface MerchantServicesPageProps {
   onTabChange?: (tab: ServicesTab) => void;
 }
 
+/**
+ * Every service in the site's plan, paid or not.
+ *
+ * The subscription cards below only exist once a period has been PAID for — so
+ * a service the client has been sold and has not settled yet is invisible there,
+ * which is precisely the row they need to see.
+ */
+function ServicePlanSummary({ lines, isLoading }: { lines: ServicePlanLine[]; isLoading?: boolean }) {
+  const { t } = useTranslation("merchant");
+
+  if (isLoading) return <Text variant="small">{t("services.loading")}</Text>;
+  if (lines.length === 0) return null;
+
+  return (
+    <Box className="flex flex-col gap-2 rounded-xl border border-border p-4">
+      <Heading level={3}>{t("plan.title")}</Heading>
+      {lines.map((line) => (
+        <Box
+          key={line.service_code}
+          className="flex flex-wrap items-baseline justify-between gap-2 border-t border-border pt-2"
+        >
+          <Box className="flex min-w-0 flex-col">
+            <Text as="span" className="font-medium">{line.service_name}</Text>
+            <Text as="span" variant="small" className="text-muted-foreground">
+              {money(line.amount)} / {line.duration_days} {t("plan.days")}
+              {line.governs_licence && ` · ${t("plan.governsSite")}`}
+            </Text>
+          </Box>
+          <Box className="flex flex-col items-end">
+            <Text as="span" variant="small">
+              {line.active_until
+                ? t("plan.activeUntil", { date: formatDate(line.active_until) })
+                : t("plan.notYetPaid")}
+            </Text>
+            {line.outstanding_total > 0 && (
+              <Text as="span" variant="small" className="text-warning tabular-nums">
+                {t("plan.outstanding", { amount: money(line.outstanding_total) })}
+              </Text>
+            )}
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
 export default function MerchantServicesPage({ tab, onTabChange }: MerchantServicesPageProps = {}) {
   const { t } = useTranslation("merchant");
   const [internalTab, setInternalTab] = useState<ServicesTab>(tab ?? "subscriptions");
@@ -145,6 +197,7 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
   };
 
   const { data: subscriptions, isLoading: loadingSubs } = useMerchantSubscriptions({ page: 1, per_page: 50 });
+  const { data: plan, isLoading: loadingPlan } = useServicePlan();
   const { data: catalog, isLoading: loadingCatalog } = useMerchantServices({ page: 1, per_page: 50 });
   const {
     data: invoices,
@@ -198,14 +251,22 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
       >
         <TabsList>
           <TabsTrigger value="subscriptions">{t("services.tabSubscriptions")}</TabsTrigger>
+          <TabsTrigger value="bills">{t("services.tabBills")}</TabsTrigger>
           <TabsTrigger value="catalog">{t("services.tabCatalog")}</TabsTrigger>
           <TabsTrigger value="invoices">{t("services.tabInvoices")}</TabsTrigger>
         </TabsList>
 
         <TabsContent
           value="subscriptions"
-          className="mt-6"
+          className="mt-6 flex flex-col gap-6"
         >
+          {/*
+            Every planned service, paid or not. The cards below only exist once
+            a period has been paid for, so on their own they cannot answer the
+            question a client opens this page with.
+          */}
+          <ServicePlanSummary lines={plan ?? []} isLoading={loadingPlan} />
+
           {loadingSubs ? (
             <Text variant="small">{t("services.loading")}</Text>
           ) : (subscriptions?.rows.length ?? 0) === 0 ? (
@@ -219,6 +280,17 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
                 />
               ))}
             </Box>
+          )}
+        </TabsContent>
+
+        <TabsContent
+          value="bills"
+          className="mt-6"
+        >
+          {loadingPlan ? (
+            <Text variant="small">{t("services.loading")}</Text>
+          ) : (
+            <OutstandingBillsPanel lines={plan ?? []} />
           )}
         </TabsContent>
 
