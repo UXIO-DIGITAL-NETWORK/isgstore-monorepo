@@ -220,8 +220,15 @@ class SiteAvailabilityTest extends TestCase
             'GET api/broadcasting/auth',
             'GET api/v1/health',
             'GET api/v1/hub/channels',
+            // A live sub-merchant balance reading. Read-only and key-gated like
+            // its neighbours; it asserts nothing the Hub cannot already see, and
+            // a switched-off site's balance is exactly what an operator needs
+            // while deciding whether to switch it back on.
+            'GET api/v1/hub/gateway-balance',
             'GET api/v1/hub/profit',
             'GET api/v1/hub/service-orders',
+            // What this site's owner holds, per service. Same standing.
+            'GET api/v1/hub/subscriptions',
             'GET api/v1/hub/summary',
             'GET api/v1/hub/withdrawal-context',
             'GET api/v1/hub/withdrawals',

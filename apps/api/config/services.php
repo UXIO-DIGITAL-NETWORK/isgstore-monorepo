@@ -185,6 +185,14 @@ return [
         // defaults to on whenever the Hub is enabled; set HUB_PUSH_ORDERS=false
         // to fall back to pull-only without disabling the rest of the Hub.
         'push_orders' => (bool) env('HUB_PUSH_ORDERS', (bool) env('HUB_ENABLED', false)),
+        // The Hub's per-site service plan: which services this site's owner is
+        // subscribed to, at which negotiated price, and which periods are due.
+        // This site turns those into its OWN service_invoices, so the flag is
+        // off by default and switched on one site at a time — the cutover that
+        // actually issues bills, and the one to be able to stop instantly.
+        // Rollback: set false. Nothing new is pulled, nothing new is issued,
+        // and every invoice already issued keeps working exactly as it is.
+        'managed_plan' => (bool) env('HUB_MANAGED_PLAN', false),
         // Money-path WRITE channel (approve/reject withdrawals + confirm/reject
         // service invoices FROM the Hub). Off by default and gated by a SEPARATE
         // key from the read key above — a leaked read key must never move money.

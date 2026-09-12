@@ -226,8 +226,14 @@ final class UnifiedTransactionQuery
                 // What the client was actually charged: the bill plus whatever
                 // the payment channel took on top. Falls back to the bill for
                 // rows settled by hand, which have no gateway attempt.
-                DB::raw('COALESCE(sip.total, si.amount) as amount_total'),
-                DB::raw('COALESCE(sip.admin_fee, 0) as admin_fee'),
+                //
+                // Read from the PIVOT, never from the attempt. One attempt may
+                // settle several bills, so `sip.total` and `sip.admin_fee` are
+                // the BATCH's figures: joined per invoice they would report the
+                // whole batch against each of its bills, in a screen the client
+                // reads, and the statement would not sum to what they paid.
+                DB::raw('COALESCE(sipi.amount + sipi.admin_fee, si.amount) as amount_total'),
+                DB::raw('COALESCE(sipi.admin_fee, 0) as admin_fee'),
                 // Not read from the callback anywhere yet — same open item as
                 // `payments.gateway_fee`.
                 DB::raw('0 as gateway_fee'),
@@ -239,12 +245,23 @@ final class UnifiedTransactionQuery
 
         $query = DB::table('service_invoices as si')
             ->leftJoin('users as m', 'm.id', '=', 'si.merchant_id')
-            // The attempt that settled the bill, if any. `PAID` rather than the
-            // latest row: an expired attempt charged nobody anything.
-            ->leftJoin('service_invoice_payments as sip', function ($join) {
-                $join->on('sip.service_invoice_id', '=', 'si.id')
-                    ->where('sip.status', '=', 'PAID');
-            })
+            // What the settling attempt charged FOR THIS BILL, reached through
+            // the pivot: a batch attempt has no `service_invoice_id`, so joining
+            // the FK would make it invisible on every bill it actually paid.
+            //
+            // Grouped rather than joined directly. A bill can carry several
+            // attempts (an expired QR, then a fresh one), and a plain join would
+            // emit the invoice once per attempt — the same bill repeated in the
+            // client's feed. `PAID` only: an expired attempt charged nobody
+            // anything.
+            ->leftJoin(DB::raw(
+                '(select pi.service_invoice_id, '
+                .'min(pi.amount) as amount, min(pi.admin_fee) as admin_fee '
+                .'from service_invoice_payment_items pi '
+                .'inner join service_invoice_payments p '
+                ."on p.id = pi.service_invoice_payment_id and p.status = 'PAID' "
+                .'group by pi.service_invoice_id) as sipi'
+            ), 'sipi.service_invoice_id', '=', 'si.id')
             ->select($columns);
 
         if ($this->merchantId !== null) {

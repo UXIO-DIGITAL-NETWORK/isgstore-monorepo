@@ -927,6 +927,107 @@ Rules that are load-bearing:
 - **Rollback is `HUB_MANAGED_LICENCE=false`**: the gate goes inert, the sync
   stops writing, and the local subscription rows keep working as before.
 
+### The Hub's service plan (this site issues the bills)
+
+`hub:sync-plan` (every 15 minutes, behind **`HUB_MANAGED_PLAN`**, off by default)
+pulls `GET /api/v1/sites/plan` and `ApplyHubPlanAction` turns each published
+period into one of this site's own `service_invoices`. The Hub decides WHAT is
+owed and WHEN it becomes payable; this site issues the bill, collects through its
+own Monetapay sub-merchant, and reports back the way it always did.
+
+- **`service_invoices.hub_item_key` is unique, and that is the whole guarantee.**
+  It names one period of one plan line (`<plan ulid>:<period index>`). Not a date
+  comparison, not a status check — an index, which is why a sync running every
+  fifteen minutes forever issues exactly one invoice per period, and so does a
+  sync racing itself. NULL on every locally raised bill, and both MySQL and
+  SQLite treat NULLs as distinct, so the "Langganan" flow is untouched.
+- **Bill the Hub's `amount`, never `services.selling_price`.** The plan carries
+  the per-site NEGOTIATED price; billing from the local catalog would silently
+  charge every client who negotiated a price the list price instead, on every
+  renewal, forever. `HubPlanSyncTest` seeds the two differently on purpose.
+- **`services:expire` skips `source = 'hub_plan'`.** A bill a client abandoned
+  should close; one kita issued on a schedule must not, because against a unique
+  key that is a one-way door — the period could never be re-issued and the client
+  would have no way to pay for a service they still hold.
+  `ApplyHubPlanAction::reopenIfStranded()` heals rows closed before that
+  exclusion shipped, and reopens **EXPIRED only**: CANCELLED and REJECTED were
+  decisions somebody made.
+- **A prepaid period NEVER touches a ledger.** `ServiceRevenueLedger` writes
+  `platform_ledger`, which drives `PlatformBalance::available()` — money kita can
+  *withdraw*, and the figure the Hub's reconciliation page compares against the
+  real Monetapay balance. Prepaid money never entered the sub-merchant. It is
+  still counted where that is honest: `summary.paid_service_invoices_this_month`
+  sums PAID `service_invoices.amount`, so the invoice alone is enough.
+- **A prepaid period must not go through `ActivateServiceSubscriptionAction`.**
+  That dispatches `PushLicenceRenewalJob`, which for the website service would
+  ask the Hub to extend the term a SECOND time on top of the one it granted from
+  that very prepaid line at registration — a free year. It would also stack on
+  `MAX(ends_at)` instead of honouring the operator's start date.
+- **`ApplyHubLicenceAction` still owns the `source='hub'` row for the website
+  service, alone.** Its `updateOrCreate` key is scoped by `service_id`, so the
+  plan's rows cannot collide with it — but the plan deliberately writes no
+  subscription for that one code. Two writers would double-count against the
+  `MAX(ends_at)` every reader uses. There is now more than one `source='hub'`
+  row on a site (one per prepaid service); the index was never unique.
+- The poke still arrives as target **`licence`**, not a new `plan` target:
+  `HubSyncTriggerController` validates `targets.*` with an `in:` rule, so an
+  unknown target 422s the WHOLE poke on any site a release behind. `plan` is
+  accepted here already; the Hub may start sending it once every site is past
+  this release.
+- Rollback is `HUB_MANAGED_PLAN=false`: nothing new is pulled, nothing new is
+  issued, and every invoice already issued keeps working.
+- `hub_plan_items` caches what the Hub said. It is what lets the payment page
+  show "what you must renew" with no live Hub call, and what keeps billing
+  working through a Hub outage — which would otherwise quietly mean nobody gets
+  billed while the Hub is down.
+
+### One payment, several bills
+
+`service_invoice_payments` may now cover N invoices. The bills stay
+one-per-service — each buys its own period — and the PAYMENT is what spans them
+(`POST /v1/payment-admin/service-invoices/pay-batch`).
+
+- **`service_invoice_payment_items` is the authority**, not
+  `service_invoice_payments.service_invoice_id`, which is nullable and populated
+  only for a single-invoice attempt. Every reader goes through the pivot. The
+  alternative — keeping the FK and letting one invoice be an "anchor" — is a
+  schema that lies: `amount`/`admin_fee`/`total` on the attempt are the BATCH's,
+  and the first query joined on the FK (as `UnifiedTransactionQuery` was) reports
+  the whole batch total against one bill in a screen the client reads.
+- **The channel fee is charged ONCE on the sum.** `fee_flat` per invoice would be
+  a plain overcharge on every batch. Each item's share is apportioned and
+  **stored** when the attempt opens, with the rounding remainder pushed onto the
+  first row, and the action throws if the shares do not sum to the fee exactly.
+  Never recompute a share at read time.
+- **Opening any attempt expires every PENDING attempt that overlaps ANY of its
+  bills.** Two live payables for one bill means the client can pay twice, and
+  there is no refund path for a service invoice anywhere in this app.
+- The callback and `service-payments:sync-expired` both loop the pivot in
+  ascending invoice id, so two concurrent batches sharing a bill queue rather
+  than deadlock.
+- **`ServiceRevenueLedger` is credited ONCE per attempt, for the sum of the
+  BILLS.** One reference keeps it idempotent; N would risk a partial credit
+  behind a crash. The amount changed with this release: the webhook used to
+  credit `attempt->total`, which includes the channel fee — money that buys the
+  gateway's cut and is not withdrawable income — while the manual confirm has
+  always credited `invoice->amount`. The two now agree. Historical rows are not
+  backfilled.
+
+### `GET /v1/hub/gateway-balance` — a live reading, deliberately apart
+
+`HubReportController::gatewayBalance()` (feeding `/summary`) is cache-only and
+must stay that way: Monetapay's inquiry timeout is 15s, the same as the Hub's
+pull timeout, so a live call there hangs every mirror in the fleet.
+`liveGatewayBalance()` is the separate door, with its own `throttle:hub-balance`
+limiter. It uses `inquiryBalanceCached`, so a Hub balance pull WARMS the figure
+`/summary` reads instead of leaving a staler one beside it, and `?force=1` busts
+that entry. It answers **200 with `ok: false`** on failure, never a 5xx — the
+same reasoning as the poke's `applied: false`.
+
+`GET /v1/hub/subscriptions` reports what this site's owner holds per service,
+collapsed to `MAX(ends_at)`. Both routes are in `SiteAvailabilityTest`'s exact
+exempt list.
+
 ### The site's own name, not the Hub's
 
 `hub:sync-catalog` rewrites `services.name` every 15 minutes, so the website

@@ -702,6 +702,17 @@ Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'abilities:access
     // The methods a client may settle a bill with. Separate from the admin
     // CRUD at /v1/payment-channels, which is payment-internal only.
     Route::get('/payment-channels', [MerchantServiceInvoiceController::class, 'paymentChannels']);
+    // Everything the client is subscribed to under the Hub's plan, with the
+    // next renewal date and what is outstanding — the "apa yang harus saya
+    // perpanjang" surface.
+    Route::get('/service-plan', [MerchantServiceController::class, 'plan']);
+
+    // Several bills, one Monetapay attempt. The fee is charged once on the sum.
+    Route::post('/service-invoices/pay-batch', [MerchantServiceInvoiceController::class, 'payBatch'])
+        ->middleware('throttle:checkout');
+    // A batch's QR lives on its own page, not on one of the bills it covers.
+    Route::get('/service-payments/{reference}', [MerchantServiceInvoiceController::class, 'showPayment']);
+
     Route::get('/service-invoices', [MerchantServiceInvoiceController::class, 'index']);
     Route::post('/service-invoices', [MerchantServiceInvoiceController::class, 'store'])->middleware('throttle:checkout');
     Route::get('/service-invoices/{serviceInvoice}', [MerchantServiceInvoiceController::class, 'show']);
@@ -826,6 +837,15 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
     // form. Read-only, so the read key alone is the right gate — a site with the
     // write channel off can still be looked at.
     Route::get('/withdrawal-context', [HubReportController::class, 'withdrawalContext']);
+    // What this site's owner actually holds, per service — so the Hub can answer
+    // "which sites subscribe to X" from real state, not only from what it sold.
+    Route::get('/subscriptions', [HubReportController::class, 'subscriptions']);
+    // A LIVE sub-merchant balance inquiry, with its own limiter: every call
+    // reaches a real gateway. Deliberately NOT part of /summary — that endpoint
+    // refuses to make a live call because Monetapay's 15s timeout equals the
+    // Hub's pull timeout and would hang every mirror.
+    Route::get('/gateway-balance', [HubReportController::class, 'liveGatewayBalance'])
+        ->middleware('throttle:hub-balance');
 });
 
 // ── Hub money-path WRITE channel ─────────────────────────────────────────────

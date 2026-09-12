@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Hub;
 
 use App\Actions\Hub\ApplyHubLicenceAction;
+use App\Actions\Hub\ApplyHubPlanAction;
 use App\Actions\Hub\SyncCatalogFromHubAction;
 use App\Actions\Hub\SyncChannelSettingsFromHubAction;
 use App\Http\Controllers\Controller;
@@ -42,10 +43,16 @@ class HubSyncTriggerController extends Controller
         SyncChannelSettingsFromHubAction $channels,
         SyncCatalogFromHubAction $catalog,
         ApplyHubLicenceAction $licence,
+        ApplyHubPlanAction $plan,
     ) {
         $validated = $request->validate([
             'targets' => ['sometimes', 'array'],
-            'targets.*' => ['string', 'in:channels,catalog,licence'],
+            // `plan` is accepted but the Hub does not send it yet: an unknown
+            // target 422s this whole request, so every site must be able to
+            // ACCEPT it before any Hub starts sending it. Until then the plan
+            // sync rides along with `licence`, which is the target the Hub
+            // already pokes on exactly the events that change a plan.
+            'targets.*' => ['string', 'in:channels,catalog,licence,plan'],
         ]);
 
         $targets = array_values(array_unique($validated['targets'] ?? ['channels', 'catalog', 'licence']));
@@ -66,6 +73,14 @@ class HubSyncTriggerController extends Controller
             // rather than at the next five-minute tick.
             if (in_array('licence', $targets, true)) {
                 $results['licence'] = $licence->execute();
+            }
+
+            // Rides along with `licence` until every site accepts a `plan`
+            // target of its own — a plan change IS a licence-adjacent event, and
+            // the alternative was a poke that 422s on any site a release behind.
+            if (config('services.hub.managed_plan')
+                && (in_array('plan', $targets, true) || in_array('licence', $targets, true))) {
+                $results['plan'] = $plan->execute();
             }
         } catch (Throwable $e) {
             Log::error('Hub sync (poked) failed', ['targets' => $targets, 'error' => $e->getMessage()]);
