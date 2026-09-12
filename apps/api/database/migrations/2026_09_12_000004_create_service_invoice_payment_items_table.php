@@ -27,18 +27,30 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Every index and constraint here is named EXPLICITLY. Laravel's generated
+        // names are built from the table plus every column, and this table's name
+        // is long enough that the composite unique came out at 82 characters —
+        // past MySQL's 64-character identifier limit, so the migration failed on
+        // a server while passing on SQLite, which has no such limit. The
+        // payment-id foreign key landed at exactly 64: legal, but one rename away
+        // from the same failure. Short names cost nothing and remove the cliff.
         Schema::create('service_invoice_payment_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('service_invoice_payment_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('service_invoice_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('service_invoice_payment_id');
+            $table->foreignId('service_invoice_id');
             // This bill's own amount — exact, never apportioned.
             $table->unsignedBigInteger('amount');
             // This bill's share of the one channel fee. Sums to the attempt's.
             $table->unsignedBigInteger('admin_fee')->default(0);
             $table->timestamps();
 
-            $table->unique(['service_invoice_payment_id', 'service_invoice_id']);
-            $table->index('service_invoice_id');
+            $table->foreign('service_invoice_payment_id', 'sipi_payment_foreign')
+                ->references('id')->on('service_invoice_payments')->cascadeOnDelete();
+            $table->foreign('service_invoice_id', 'sipi_invoice_foreign')
+                ->references('id')->on('service_invoices')->cascadeOnDelete();
+
+            $table->unique(['service_invoice_payment_id', 'service_invoice_id'], 'sipi_payment_invoice_unique');
+            $table->index('service_invoice_id', 'sipi_invoice_index');
         });
 
         DB::table('service_invoice_payments')
