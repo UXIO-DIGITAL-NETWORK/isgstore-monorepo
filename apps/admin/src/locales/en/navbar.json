@@ -1,0 +1,10 @@
+{
+  "openUserMenu": "Open user menu",
+  "logout": "Log out",
+  "loggingOut": "Signing out…",
+  "loggedOut": "You have been signed out.",
+  "help": "Help",
+  "quickActions": "Quick actions",
+  "notifications": "Notifications",
+  "toggleSidebar": "Toggle sidebar"
+}

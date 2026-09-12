@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -34,6 +35,7 @@ interface CategoryServerFormDialogProps {
  * to "Category Server Name" here.
  */
 export function CategoryServerFormDialog({ open, onOpenChange, categoryServerId }: CategoryServerFormDialogProps) {
+  const { t } = useTranslation("categories");
   const isEdit = Boolean(categoryServerId);
 
   const { data: existing } = useCategoryServer(open ? categoryServerId : undefined);
@@ -94,7 +96,7 @@ export function CategoryServerFormDialog({ open, onOpenChange, categoryServerId 
             render={({ field }) => (
               <SelectField
                 id="category-server-category"
-                label="Category"
+                label={t("category")}
                 options={categoryOptions}
                 value={field.value}
                 onChange={field.onChange}
@@ -106,11 +108,11 @@ export function CategoryServerFormDialog({ open, onOpenChange, categoryServerId 
           />
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="category-server-name">Category Server Name</Label>
+            <Label htmlFor="category-server-name">{t("serverNameLabel")}</Label>
             <Input
               id="category-server-name"
               className="rounded-xl"
-              placeholder="e.g. Genshin Impact"
+              placeholder={t("serverNamePlaceholder")}
               {...register("name")}
             />
             {errors.name && (
@@ -135,9 +137,7 @@ export function CategoryServerFormDialog({ open, onOpenChange, categoryServerId 
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

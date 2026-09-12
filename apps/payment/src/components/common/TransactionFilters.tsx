@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
@@ -30,16 +31,16 @@ interface Props {
 }
 
 const STATUS_OPTIONS = [
-  { value: "all", label: "Semua status" },
-  { value: "success", label: "Sukses" },
-  { value: "pending", label: "Pending" },
-  { value: "failed", label: "Gagal" },
+  { value: "all", labelKey: "filters.allStatuses" },
+  { value: "success", labelKey: "filters.statusSuccess" },
+  { value: "pending", labelKey: "filters.statusPending" },
+  { value: "failed", labelKey: "filters.statusFailed" },
 ];
 
 const TYPE_OPTIONS = [
-  { value: "all", label: "Semua tipe" },
-  { value: "sale", label: "Penjualan" },
-  { value: "service", label: "Tagihan Layanan" },
+  { value: "all", labelKey: "filters.allTypes" },
+  { value: "sale", labelKey: "filters.typeSale" },
+  { value: "service", labelKey: "filters.typeService" },
 ];
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -55,53 +56,55 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 /** Search + status + type + date-range bar. A change resets the caller's page. */
 export function TransactionFilters({ value, onChange, extra }: Props) {
+  const { t } = useTranslation("common");
+
   return (
     <Box className="flex flex-wrap items-end gap-3">
-      <Field label="Cari">
+      <Field label={t("filters.search")}>
         <Input
           type="search"
           value={value.search}
           onChange={(e) => onChange({ search: e.target.value })}
-          placeholder="No. invoice"
+          placeholder={t("filters.searchPlaceholder")}
         />
       </Field>
 
-      <Field label="Status">
+      <Field label={t("filters.status")}>
         <Select
           value={value.statusGroup || "all"}
           onValueChange={(next) => onChange({ statusGroup: next === "all" ? "" : next })}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Semua status" />
+            <SelectValue placeholder={t("filters.allStatuses")} />
           </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                {t(option.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </Field>
 
-      <Field label="Tipe">
+      <Field label={t("filters.type")}>
         <Select value={value.type} onValueChange={(next) => onChange({ type: next })}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Semua tipe" />
+            <SelectValue placeholder={t("filters.allTypes")} />
           </SelectTrigger>
           <SelectContent>
             {TYPE_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                {t(option.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </Field>
 
-      {extra ? <Field label="Client">{extra}</Field> : null}
+      {extra ? <Field label={t("filters.client")}>{extra}</Field> : null}
 
-      <Field label="Dari Tanggal">
+      <Field label={t("filters.dateFrom")}>
         <Input
           type="date"
           value={value.startDate}
@@ -110,7 +113,7 @@ export function TransactionFilters({ value, onChange, extra }: Props) {
         />
       </Field>
 
-      <Field label="Sampai Tanggal">
+      <Field label={t("filters.dateTo")}>
         <Input
           type="date"
           value={value.endDate}

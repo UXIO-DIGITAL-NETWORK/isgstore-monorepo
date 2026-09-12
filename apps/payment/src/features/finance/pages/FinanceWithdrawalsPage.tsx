@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -16,21 +17,22 @@ import { useFinanceWithdrawals, useRejectWithdrawal } from "../hooks/useFinance"
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
 export default function FinanceWithdrawalsPage() {
+  const { t } = useTranslation("finance");
   const [page, setPage] = useState(1);
   const { data, isLoading, isError } = useFinanceWithdrawals({ page, per_page: 20 });
   const { mutate: reject, isPending: rejecting } = useRejectWithdrawal();
 
   const columns: Column<Withdrawal>[] = [
-    { key: "number", header: "No. Penarikan", cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
-    { key: "merchant", header: "Merchant", cell: (r) => r.merchant?.name ?? "-" },
-    { key: "amount", header: "Nominal", className: "text-right tabular-nums", cell: (r) => money(r.amount) },
-    { key: "nett", header: "Diterima", className: "text-right tabular-nums", cell: (r) => money(r.nett) },
-    { key: "bank", header: "Rekening", cell: (r) => `${r.bank_code} · ${r.account_number}` },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
-    { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
+    { key: "number", header: t("withdrawals.colNumber"), cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
+    { key: "merchant", header: t("withdrawals.colMerchant"), cell: (r) => r.merchant?.name ?? "-" },
+    { key: "amount", header: t("withdrawals.colAmount"), className: "text-right tabular-nums", cell: (r) => money(r.amount) },
+    { key: "nett", header: t("withdrawals.colNett"), className: "text-right tabular-nums", cell: (r) => money(r.nett) },
+    { key: "bank", header: t("withdrawals.colAccount"), cell: (r) => `${r.bank_code} · ${r.account_number}` },
+    { key: "status", header: t("withdrawals.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+    { key: "created", header: t("withdrawals.colDate"), cell: (r) => formatDateTime(r.created_at) },
     {
       key: "actions",
-      header: "Aksi",
+      header: t("withdrawals.colAction"),
       cell: (r) => {
         if (r.status === "PENDING") {
           return (
@@ -40,9 +42,9 @@ export default function FinanceWithdrawalsPage() {
                 size="sm"
                 variant="outline"
                 disabled={rejecting}
-                onClick={() => reject({ id: r.id, reason: "Ditolak oleh admin" })}
+                onClick={() => reject({ id: r.id, reason: t("withdrawals.rejectReason") })}
               >
-                Tolak
+                {t("withdrawals.reject")}
               </Button>
             </Box>
           );
@@ -50,14 +52,14 @@ export default function FinanceWithdrawalsPage() {
         if (r.status === "PROCESSING") {
           return (
             <Text as="span" variant="small" className="text-muted-foreground">
-              Memproses…
+              {t("withdrawals.processing")}
             </Text>
           );
         }
         if (r.status === "FAILED") {
           return (
             <Text as="span" variant="small" className="text-destructive">
-              {r.failure_reason ?? "Pencairan gagal"}
+              {r.failure_reason ?? t("withdrawals.payoutFailed")}
             </Text>
           );
         }
@@ -74,7 +76,7 @@ export default function FinanceWithdrawalsPage() {
           return (
             <Link href={r.proof_url} target="_blank" rel="noreferrer">
               <Text as="span" variant="small" className="underline">
-                Lihat Bukti
+                {t("withdrawals.viewProof")}
               </Text>
             </Link>
           );
@@ -90,13 +92,13 @@ export default function FinanceWithdrawalsPage() {
 
   return (
     <Box className="flex flex-col gap-6">
-      <Heading level={1}>Penarikan</Heading>
+      <Heading level={1}>{t("withdrawals.title")}</Heading>
       <SimpleTable
         columns={columns}
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada permintaan penarikan"
+        emptyLabel={t("withdrawals.empty")}
         rowKey={(r) => r.id}
       />
       <Pager page={data?.page ?? page} lastPage={data?.lastPage ?? 1} total={data?.total ?? 0} onPageChange={setPage} />

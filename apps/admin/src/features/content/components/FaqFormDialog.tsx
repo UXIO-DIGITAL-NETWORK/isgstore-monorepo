@@ -1,3 +1,5 @@
+import { translateOptions } from "@/lib/i18nOptions";
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -20,8 +22,8 @@ import { useCreateFaq, useFaq, useUpdateFaq } from "../hooks/useFaqs";
 import { faqFormSchema, type FaqFormValues } from "../schemas/contentForms.schema";
 
 const LOCALE_OPTIONS = [
-  { value: "id", label: "Indonesian" },
-  { value: "en", label: "English" },
+  { value: "id", labelKey: "indonesian" },
+  { value: "en", labelKey: "english" },
 ];
 
 interface FaqFormDialogProps {
@@ -32,6 +34,7 @@ interface FaqFormDialogProps {
 }
 
 export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps) {
+  const { t } = useTranslation("content");
   const isEdit = Boolean(faqId);
 
   const { data: existing } = useFaq(open ? faqId : undefined);
@@ -85,9 +88,7 @@ export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps)
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit FAQ" : "Add FAQ"}</DialogTitle>
-          <DialogDescription>
-            Questions appear on the storefront's help page in the order set below, filtered by language.
-          </DialogDescription>
+          <DialogDescription>{t("faqSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -96,11 +97,11 @@ export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps)
           className="flex flex-col gap-4"
         >
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="faq-question">Question</Label>
+            <Label htmlFor="faq-question">{t("colQuestion")}</Label>
             <Input
               id="faq-question"
               className="rounded-xl"
-              placeholder="e.g. Berapa lama proses top up berlangsung?"
+              placeholder={t("questionPlaceholder")}
               {...register("question")}
             />
             {errors.question && (
@@ -114,7 +115,7 @@ export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps)
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="faq-answer">Answer</Label>
+            <Label htmlFor="faq-answer">{t("answer")}</Label>
             <Textarea
               id="faq-answer"
               rows={5}
@@ -138,8 +139,8 @@ export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps)
               render={({ field }) => (
                 <SelectField
                   id="faq-locale"
-                  label="Language"
-                  options={LOCALE_OPTIONS}
+                  label={t("language")}
+                  options={translateOptions(LOCALE_OPTIONS, t)}
                   value={field.value}
                   onChange={field.onChange}
                   error={errors.locale?.message}
@@ -147,16 +148,16 @@ export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps)
               )}
             />
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="faq-group">Group</Label>
+              <Label htmlFor="faq-group">{t("group")}</Label>
               <Input
                 id="faq-group"
                 className="rounded-xl"
-                placeholder="Optional"
+                placeholder={t("groupPlaceholder")}
                 {...register("group")}
               />
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="faq-sort">Order</Label>
+              <Label htmlFor="faq-sort">{t("order")}</Label>
               <Input
                 id="faq-sort"
                 type="number"
@@ -177,7 +178,7 @@ export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps)
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />
-                <Label htmlFor="faq-active">Active</Label>
+                <Label htmlFor="faq-active">{t("active")}</Label>
               </Box>
             )}
           />
@@ -188,9 +189,7 @@ export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps)
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

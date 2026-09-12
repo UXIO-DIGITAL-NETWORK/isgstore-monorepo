@@ -21,7 +21,11 @@ export function makeUser(overrides: Partial<User> = {}): User {
     phone: "6281234567890",
     balance: 9999999,
     point: 9999,
-    locale: "id",
+    // Matches the locale `test/setup.ts` pins the panel to. `useLocale` adopts
+    // the account's language on mount, so a fixture that disagrees with the
+    // harness would flip every rendered screen back to Indonesian while the
+    // assertions still read English.
+    locale: "en",
     // The host zone, not a literal: useTimezoneSync fires whenever the stored
     // zone differs from the browser's, so a hardcoded value would make every
     // protected-route test issue an unmocked PATCH on any CI box outside WIB.

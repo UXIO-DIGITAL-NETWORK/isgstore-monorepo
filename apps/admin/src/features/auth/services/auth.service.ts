@@ -23,13 +23,50 @@ export const authService = {
     return await api.post(`${API_VERSION}/auth/2fa/setup`);
   },
 
-  /** Prove the authenticator works. Succeeding revokes every existing session. */
-  confirmTwoFactor: async (code: string): Promise<ApiResponse<null>> => {
+  /**
+   * Prove the authenticator works.
+   *
+   * Succeeding revokes every existing session and then hands back a fresh one,
+   * so the caller must `setAuth` with the response — the token it was holding a
+   * moment ago is already dead.
+   */
+  confirmTwoFactor: async (code: string): Promise<VerifyTwoFactorApiResponse> => {
     return await api.post(`${API_VERSION}/auth/2fa/confirm`, { code });
+  },
+
+  /**
+   * Begin moving the authenticator to another device.
+   *
+   * Costs the password and a code from the device being replaced. Returns a new
+   * secret to scan; nothing is switched over until `confirmTwoFactorRotation`
+   * accepts a code from the new one, so the old authenticator keeps working if
+   * this is abandoned.
+   */
+  rotateTwoFactor: async (
+    password: string,
+    code: string,
+  ): Promise<ApiResponse<{ secret: string; otpauth_uri: string }>> => {
+    return await api.post(`${API_VERSION}/auth/2fa/rotate`, { password, code });
+  },
+
+  /** Finish the move. Like `confirmTwoFactor`, this returns a fresh session. */
+  confirmTwoFactorRotation: async (code: string): Promise<VerifyTwoFactorApiResponse> => {
+    return await api.post(`${API_VERSION}/auth/2fa/rotate/confirm`, { code });
   },
 
   disableTwoFactor: async (password: string): Promise<ApiResponse<null>> => {
     return await api.post(`${API_VERSION}/auth/2fa/disable`, { password });
+  },
+
+  /**
+   * Store the language this admin reads the panel in.
+   *
+   * Server-side because `users.locale` is what `SetLocale` reads to decide the
+   * language of every API message, and what carries the choice to a device
+   * whose localStorage is empty.
+   */
+  updateLocale: async (locale: string): Promise<ApiResponse<{ locale: string }>> => {
+    return await api.patch(`${API_VERSION}/me/locale`, { locale });
   },
 
   /**

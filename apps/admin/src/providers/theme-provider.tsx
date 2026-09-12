@@ -1,6 +1,6 @@
 import * as React from "react";
 
-type Theme = "dark" | "light" | "system";
+export type Theme = "dark" | "light" | "system";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -26,27 +26,49 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = React.useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) || defaultTheme);
+  // Must agree with the pre-paint script in index.html, which reads the same
+  // key to set the initial class. If the two disagree the panel flashes the
+  // wrong theme on every cold load.
+  const [theme, setTheme] = React.useState<Theme>(() => {
+    try {
+      return (localStorage.getItem(storageKey) as Theme | null) ?? defaultTheme;
+    } catch {
+      // A browser with site data blocked. Not a reason to fail to render.
+      return defaultTheme;
+    }
+  });
 
   React.useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove("light", "dark");
+    const apply = () => {
+      root.classList.remove("light", "dark");
+      root.classList.add(
+        theme === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : theme,
+      );
+    };
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    apply();
 
-      root.classList.add(systemTheme);
-      return;
-    }
+    // "System" has to keep meaning it. Without this, an OS that switches to
+    // dark at sunset leaves a panel that chose to follow the system sitting in
+    // light until the next reload.
+    if (theme !== "system") return;
 
-    root.classList.add(theme);
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    query.addEventListener?.("change", apply);
+
+    return () => query.removeEventListener?.("change", apply);
   }, [theme]);
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
+      try {
+        localStorage.setItem(storageKey, theme);
+      } catch {
+        // The choice still applies for this session; it just will not persist.
+      }
       setTheme(theme);
     },
   };

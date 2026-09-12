@@ -10,6 +10,7 @@ interface AuthState {
   permissions: string[];
   setAuth: (data: { user: User; access_token: string; refresh_token: string }, remember?: boolean) => void;
   setToken: (accessToken: string, refreshToken?: string) => void;
+  patchUser: (patch: Partial<User>) => void;
   clearAuth: () => void;
 }
 
@@ -79,6 +80,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       refreshToken: refreshToken ?? state.refreshToken,
     }));
   },
+
+  /**
+   * Merge a partial update into the signed-in user.
+   *
+   * The cookie write is not optional: `user` is rehydrated from `auth_user` on
+   * every full page load, so skipping it would revert the change on refresh.
+   */
+  patchUser: (patch) =>
+    set((state) => {
+      if (!state.user) return state;
+      const user = { ...state.user, ...patch };
+      Cookies.set("auth_user", JSON.stringify(user), cookieOptions(readRememberCookie()));
+      return { user, permissions: permissionsForRole(user.role) };
+    }),
 
   clearAuth: () => {
     Cookies.remove("access_token");

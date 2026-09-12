@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 
 import { fireEvent, renderRoute, screen } from "@/test/test-utils";
 import { formatCurrency } from "@/utils/currency";
-import { SUMMARY_CARDS } from "../data/summary-cards.data";
+import i18n from "@/config/i18n";
+import { summaryCardsFor } from "../data/summary-cards.data";
 import { PAYMENT_GATEWAYS } from "../data/payment-gateways.data";
 import { SUPPLIERS } from "../data/suppliers.data";
 
@@ -33,6 +34,8 @@ describe("FinancialPage", () => {
 
   it("shows the 3 stat cards with their labels and formatted values", async () => {
     await renderRoute("/admin/finance-preview");
+
+    const SUMMARY_CARDS = summaryCardsFor(i18n.getFixedT(null, "financial"));
 
     for (const card of SUMMARY_CARDS) {
       expect(await screen.findByText(card.label)).toBeInTheDocument();

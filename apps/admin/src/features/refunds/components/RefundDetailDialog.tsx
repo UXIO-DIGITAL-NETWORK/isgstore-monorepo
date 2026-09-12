@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { AlertTriangle } from "lucide-react";
 
@@ -39,6 +40,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
  * mount.
  */
 export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetailDialogProps) {
+  const { t } = useTranslation("refunds");
   const { data: refund, isLoading, isError } = useRefundDetail(refundId, open);
 
   return (
@@ -48,25 +50,25 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
     >
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{refund?.refund_number ?? "Refund"}</DialogTitle>
+          <DialogTitle>{refund?.refund_number ?? t("refundFallback")}</DialogTitle>
         </DialogHeader>
 
-        {isLoading && <Text variant="muted">Loading…</Text>}
-        {isError && <Text className="text-destructive">Could not load this refund.</Text>}
+        {isLoading && <Text variant="muted">{t("loading")}</Text>}
+        {isError && <Text className="text-destructive">{t("loadFailed")}</Text>}
 
         {refund && (
           <Box className="divide-border flex flex-col divide-y">
             <Box className="pb-2">
               <Row
-                label="Status"
+                label={t("status")}
                 value={<RefundStatusBadge status={refund.status} />}
               />
               <Row
-                label="Method"
+                label={t("method")}
                 value={<RefundMethodBadge method={refund.method} />}
               />
               <Row
-                label="Amount"
+                label={t("amount")}
                 value={
                   <Text
                     as="span"
@@ -80,7 +82,7 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
 
             <Box className="py-2">
               <Row
-                label="Invoice"
+                label={t("invoice")}
                 value={
                   <Text
                     as="span"
@@ -91,39 +93,37 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
                 }
               />
               <Row
-                label="Product"
+                label={t("product")}
                 value={refund.transaction.product ?? "—"}
               />
               <Row
-                label="Opened"
+                label={t("opened")}
                 value={formatDate(refund.created_at)}
               />
             </Box>
 
             <Box className="py-2">
               <Row
-                label="Customer"
+                label={t("customer")}
                 value={refund.customer.name ?? (refund.customer.is_guest ? "Guest" : "—")}
               />
               <Row
-                label="Email"
+                label={t("email")}
                 value={refund.customer.email ?? "—"}
               />
               <Row
-                label="Phone"
+                label={t("phone")}
                 value={refund.customer.phone ?? "—"}
               />
               <Row
-                label="Claim link sent"
+                label={t("claimLinkSent")}
                 value={
                   (refund.method === "manual_transfer" || refund.method === "balance_claim") &&
                   !refund.claim_notified_at ? (
                     <Text
                       as="span"
                       className="text-destructive"
-                    >
-                      Never — contact manually
-                    </Text>
+                    >{t("neverContactManually")}</Text>
                   ) : (
                     formatDate(refund.claim_notified_at)
                   )
@@ -137,19 +137,19 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
             {refund.claimed_account && (
               <Box className="py-2">
                 <Row
-                  label="Claimed by"
+                  label={t("claimedBy")}
                   value={refund.claimed_account.name ?? "—"}
                 />
                 <Row
-                  label="Account email"
+                  label={t("accountEmail")}
                   value={refund.claimed_account.email ?? "—"}
                 />
                 <Row
-                  label="Account phone"
+                  label={t("accountPhone")}
                   value={refund.claimed_account.phone ?? "—"}
                 />
                 <Row
-                  label="Matched on"
+                  label={t("matchedOn")}
                   value={
                     refund.claimed_account.contact_match
                       ? `${refund.claimed_account.contact_match} — ${refund.claimed_account.contact_value ?? "—"}`
@@ -157,11 +157,11 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
                   }
                 />
                 <Row
-                  label="Claimed at"
+                  label={t("claimedAt")}
                   value={formatDate(refund.claimed_account.claimed_at)}
                 />
                 <Row
-                  label="Account status"
+                  label={t("accountStatus")}
                   value={
                     refund.claimed_account.account_status === "active" ? (
                       "Active"
@@ -176,7 +176,7 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
                   }
                 />
                 <Row
-                  label="Other claims"
+                  label={t("otherClaims")}
                   value={
                     refund.claimed_account.sibling_claims > 0 ? (
                       <Text
@@ -191,7 +191,7 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
                   }
                 />
                 <Row
-                  label="Verify by"
+                  label={t("verifyBy")}
                   value={
                     refund.is_overdue ? (
                       <Text
@@ -207,7 +207,7 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
                 />
                 {refund.claim_rejected_count > 0 && (
                   <Row
-                    label="Claims rejected"
+                    label={t("claimsRejected")}
                     value={
                       <Text
                         as="span"
@@ -224,11 +224,11 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
             {refund.payout && (
               <Box className="py-2">
                 <Row
-                  label="Bank / e-wallet"
+                  label={t("bankOrEwallet")}
                   value={refund.payout.bank_name ?? refund.payout.bank_code}
                 />
                 <Row
-                  label="Account"
+                  label={t("account")}
                   value={
                     <Text
                       as="span"
@@ -239,11 +239,11 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
                   }
                 />
                 <Row
-                  label="Account name"
+                  label={t("accountName")}
                   value={refund.payout.account_name ?? "—"}
                 />
                 <Row
-                  label="Supplied by"
+                  label={t("suppliedBy")}
                   value={refund.payout.submitted_by === "admin" ? "An admin (not confirmed by the customer)" : "The customer"}
                 />
               </Box>
@@ -251,35 +251,33 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
 
             <Box className="py-2">
               <Row
-                label="Handled by"
+                label={t("handledBy")}
                 value={refund.processed_by ?? "—"}
               />
               <Row
-                label="Refunded at"
+                label={t("refundedAt")}
                 value={formatDate(refund.refunded_at)}
               />
               {refund.admin_note && (
                 <Row
-                  label="Note"
+                  label={t("note")}
                   value={refund.admin_note}
                 />
               )}
               {refund.reject_reason && (
                 <Row
-                  label="Rejected because"
+                  label={t("rejectedBecause")}
                   value={refund.reject_reason}
                 />
               )}
               {refund.proof_url && (
                 <Row
-                  label="Transfer receipt"
+                  label={t("transferReceipt")}
                   value={
                     <Link
                       href={refund.proof_url}
                       target="_blank"
-                    >
-                      Open
-                    </Link>
+                    >{t("open")}</Link>
                   }
                 />
               )}
@@ -291,10 +289,7 @@ export function RefundDetailDialog({ open, onOpenChange, refundId }: RefundDetai
                 <Text
                   variant="small"
                   className="text-destructive"
-                >
-                  The merchant settlement for this sale was not reversed — usually because they had already withdrawn
-                  the money. The customer was refunded regardless; chase the shortfall with the merchant.
-                </Text>
+                >{t("settlementNotReversed")}</Text>
               </Box>
             )}
           </Box>

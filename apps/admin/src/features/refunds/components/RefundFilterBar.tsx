@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -19,14 +20,15 @@ const STATUSES = Object.keys(REFUND_STATUS_LABELS) as RefundStatus[];
 const METHODS = Object.keys(REFUND_METHOD_LABELS) as RefundMethod[];
 
 export function RefundFilterBar({ filters, onChange }: RefundFilterBarProps) {
+  const { t } = useTranslation("refunds");
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <Box className="relative flex-1">
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
-          aria-label="Search refunds"
+          aria-label={t("searchRefunds")}
           className="rounded-xl pl-9"
-          placeholder="Refund no., invoice no., email or phone"
+          placeholder={t("searchPlaceholder")}
           value={filters.search ?? ""}
           onChange={(event) => onChange({ ...filters, search: event.target.value || undefined })}
         />
@@ -37,13 +39,13 @@ export function RefundFilterBar({ filters, onChange }: RefundFilterBarProps) {
         onValueChange={(value) => onChange({ ...filters, status: value === ALL ? undefined : (value as RefundStatus) })}
       >
         <SelectTrigger
-          aria-label="Filter by status"
+          aria-label={t("filterByStatus")}
           className="w-full rounded-xl sm:w-52"
         >
-          <SelectValue placeholder="All statuses" />
+          <SelectValue placeholder={t("allStatuses")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL}>All statuses</SelectItem>
+          <SelectItem value={ALL}>{t("allStatuses")}</SelectItem>
           {STATUSES.map((status) => (
             <SelectItem
               key={status}
@@ -60,13 +62,13 @@ export function RefundFilterBar({ filters, onChange }: RefundFilterBarProps) {
         onValueChange={(value) => onChange({ ...filters, method: value === ALL ? undefined : (value as RefundMethod) })}
       >
         <SelectTrigger
-          aria-label="Filter by method"
+          aria-label={t("filterByMethod")}
           className="w-full rounded-xl sm:w-52"
         >
-          <SelectValue placeholder="All methods" />
+          <SelectValue placeholder={t("allMethods")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL}>All methods</SelectItem>
+          <SelectItem value={ALL}>{t("allMethods")}</SelectItem>
           {METHODS.map((method) => (
             <SelectItem
               key={method}
@@ -87,9 +89,7 @@ export function RefundFilterBar({ filters, onChange }: RefundFilterBarProps) {
         className="rounded-xl"
         aria-pressed={Boolean(filters.overdue)}
         onClick={() => onChange({ ...filters, overdue: filters.overdue ? undefined : true })}
-      >
-        Overdue
-      </Button>
+      >{t("overdue")}</Button>
 
       <Button
         type="button"
@@ -97,9 +97,7 @@ export function RefundFilterBar({ filters, onChange }: RefundFilterBarProps) {
         className="rounded-xl"
         aria-pressed={Boolean(filters.unclaimed)}
         onClick={() => onChange({ ...filters, unclaimed: filters.unclaimed ? undefined : true })}
-      >
-        Unclaimed
-      </Button>
+      >{t("unclaimed")}</Button>
     </Box>
   );
 }

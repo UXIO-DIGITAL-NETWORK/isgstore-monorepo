@@ -26,18 +26,49 @@ final class WebsiteService
 
     public static function code(): string
     {
-        $configured = Setting::query()
-            ->where('group', 'payment')
-            ->where('key', 'website_service_code')
-            ->first()?->typedValue();
-
-        $code = is_string($configured) ? trim($configured) : '';
-
-        return $code !== '' ? $code : self::DEFAULT_CODE;
+        return self::setting('payment', 'website_service_code') ?? self::DEFAULT_CODE;
     }
 
     public static function get(): ?Service
     {
         return Service::query()->where('code', self::code())->first();
+    }
+
+    /**
+     * What to CALL this site's own subscription on this site's own screens.
+     *
+     * Not `services.name`. That row belongs to the Hub — it is "Uxiolabs" there,
+     * because that is what kita sells — and `hub:sync-catalog` rewrites it every
+     * fifteen minutes, so renaming it locally lasts until the next tick. But the
+     * client's admin panel and payment page are the client's own product, and a
+     * card in their sidebar reading someone else's brand is confusing at best.
+     *
+     * So the label is resolved from this site's own identity instead, with an
+     * explicit override first for the deployment that wants to say something
+     * else entirely.
+     */
+    public static function label(): string
+    {
+        $override = self::setting('payment', 'website_service_label');
+
+        if ($override !== null) {
+            return $override;
+        }
+
+        return self::setting('general', 'site_name')
+            ?? (string) config('services.storefront.brand', 'Langganan website');
+    }
+
+    /** A non-blank string setting, or null. */
+    private static function setting(string $group, string $key): ?string
+    {
+        $value = Setting::query()
+            ->where('group', $group)
+            ->where('key', $key)
+            ->first()?->typedValue();
+
+        $value = is_string($value) ? trim($value) : '';
+
+        return $value !== '' ? $value : null;
     }
 }

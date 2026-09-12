@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -26,6 +27,7 @@ export const useUxiolabsSkuPreview = (sku?: string, categoryId?: string) =>
 
 /** Single "Add to products" — the Main Products list is invalidated too. */
 export const useAddUxiolabsProduct = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -33,10 +35,10 @@ export const useAddUxiolabsProduct = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["uxiolabs", "price-list"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product added to your catalog");
+      toast.success(t("addedToCatalog"));
     },
     onError: () => {
-      toast.error("Failed to add product");
+      toast.error(t("addProductFailed"));
     },
   });
 };
@@ -54,6 +56,7 @@ export const useProviderProductList = (params: ProviderProductListParams) =>
 
 /** Toggle the price lock; a locked mapping is skipped by the daily sync. */
 export const useLockProviderPrice = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -63,13 +66,14 @@ export const useLockProviderPrice = () => {
       toast.success(locked ? "Price locked" : "Price unlocked");
     },
     onError: () => {
-      toast.error("Failed to update price lock");
+      toast.error(t("priceLockFailed"));
     },
   });
 };
 
 /** Set per-tier profit margins; the backend recomputes selling prices. */
 export const useSetProviderMargin = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -77,10 +81,10 @@ export const useSetProviderMargin = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["supplier-products"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Profit margin updated");
+      toast.success(t("marginUpdated"));
     },
     onError: () => {
-      toast.error("Failed to update profit margin");
+      toast.error(t("marginFailed"));
     },
   });
 };
@@ -105,6 +109,7 @@ export const useDeleteProviderProducts = () => {
 
 /** Bulk lock/unlock across the current selection. */
 export const useBulkLockProviderPrice = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -114,13 +119,14 @@ export const useBulkLockProviderPrice = () => {
       toast.success(`${ids.length} ${locked ? "prices locked" : "prices unlocked"}`);
     },
     onError: () => {
-      toast.error("Failed to update price locks");
+      toast.error(t("priceLocksFailed"));
     },
   });
 };
 
 /** Bulk profit margin — the backend recomputes selling prices per product. */
 export const useBulkSetProviderMargin = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -132,13 +138,14 @@ export const useBulkSetProviderMargin = () => {
       toast.success(`${ids.length} profit margins updated`);
     },
     onError: () => {
-      toast.error("Failed to update profit margins");
+      toast.error(t("marginsFailed"));
     },
   });
 };
 
 /** Bulk delete — System rows are skipped server-side; the toast reflects it. */
 export const useBulkDeleteProviderProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -152,13 +159,14 @@ export const useBulkDeleteProviderProducts = () => {
       );
     },
     onError: () => {
-      toast.error("Failed to delete provider products");
+      toast.error(t("deleteProviderFailed"));
     },
   });
 };
 
 /** Bulk add — the toast reports how many were created vs skipped. */
 export const useBulkAddUxiolabsProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -173,7 +181,7 @@ export const useBulkAddUxiolabsProducts = () => {
       );
     },
     onError: () => {
-      toast.error("Failed to add products");
+      toast.error(t("addProductsFailed"));
     },
   });
 };

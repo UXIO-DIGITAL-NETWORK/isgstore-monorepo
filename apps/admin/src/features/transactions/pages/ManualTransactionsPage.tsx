@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
 import { endOfDay, startOfDay } from "date-fns";
@@ -6,7 +7,7 @@ import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { ExportButton } from "../components/ExportButton";
-import { manualColumns } from "../components/manualColumns";
+import { manualColumnsFor } from "../components/manualColumns";
 import { TransactionFilterBar, type TransactionFilters, type FilterField } from "../components/TransactionFilterBar";
 import { TransactionsTable } from "../components/TransactionsTable";
 import { useTransactionList } from "../hooks/useTransactions";
@@ -27,6 +28,7 @@ const MANUAL_FILTER_FIELDS: FilterField[] = [
 
 /** Provisional pending a real Manual design — reuses the Automatic table/filter pattern with fewer columns/fields. */
 export default function ManualTransactionsPage() {
+  const { t } = useTranslation("transactions");
   const [filters, setFilters] = useState<TransactionFilters>(() => {
     // Day boundaries — see AutomaticTransactionsPage: an identical start/end
     // instant is a zero-width window the service can never match.
@@ -63,10 +65,8 @@ export default function ManualTransactionsPage() {
           <Heading
             level={1}
             variant="section"
-          >
-            Manual Transaction History
-          </Heading>
-          <Text variant="muted">Review transactions entered or overridden manually by an operator.</Text>
+          >{t("manualTitle")}</Heading>
+          <Text variant="muted">{t("manualSubtitle")}</Text>
         </Box>
         <ExportButton params={params} />
       </Box>
@@ -78,7 +78,7 @@ export default function ManualTransactionsPage() {
           fields={MANUAL_FILTER_FIELDS}
         />
         <TransactionsTable
-          columns={manualColumns}
+          columns={manualColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}

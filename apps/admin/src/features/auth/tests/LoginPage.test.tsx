@@ -83,7 +83,7 @@ describe("LoginPage", () => {
   it("renders the hero panel alongside the form", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText("UDN Admin")).toBeInTheDocument();
+    expect(screen.getByText("TopupGame Admin")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
   });
 
@@ -94,17 +94,17 @@ describe("LoginPage", () => {
     expect(screen.getByText("Enter your credentials to access the admin dashboard.")).toBeInTheDocument();
   });
 
-  it("shows the UDN Admin wordmark and UXIOLABS subtitle in the hero", async () => {
+  it("shows the TopupGame Admin wordmark and UXIOLABS subtitle in the hero", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText("UDN Admin")).toBeInTheDocument();
+    expect(screen.getByText("TopupGame Admin")).toBeInTheDocument();
     expect(screen.getByText("UXIOLABS")).toBeInTheDocument();
   });
 
-  it("shows a hero headline and subcopy about the UDN top-up platform", async () => {
+  it("shows a hero headline and subcopy about the TopupGame top-up platform", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText(/udn top-up platform/i)).toBeInTheDocument();
+    expect(screen.getByText(/topupgame by uxiolabs top-up platform/i)).toBeInTheDocument();
     expect(screen.getByText(/top-up operations/i)).toBeInTheDocument();
   });
 

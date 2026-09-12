@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { ArrowDownToLine, Bell, CalendarClock, Receipt, ShoppingBag } from "lucide-react";
 import type { ComponentType } from "react";
@@ -29,6 +30,7 @@ type Filter = "all" | "unread";
  * badge in one call. The filter mirrors the API's `?filter=unread`.
  */
 export default function NotificationsPage() {
+  const { t } = useTranslation("finance");
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<Filter>("all");
   const { data, isLoading, isError } = useNotifications({
@@ -49,7 +51,7 @@ export default function NotificationsPage() {
   return (
     <Box className="flex flex-col gap-6">
       <Box className="flex flex-wrap items-center justify-between gap-3">
-        <Heading level={1}>Notifikasi</Heading>
+        <Heading level={1}>{t("notifications.title")}</Heading>
         <Button
           variant="outline"
           size="sm"
@@ -78,16 +80,16 @@ export default function NotificationsPage() {
       </Box>
 
       {isError ? (
-        <Text className="text-sm text-destructive">Gagal memuat notifikasi.</Text>
+        <Text className="text-sm text-destructive">{t("notifications.loadFailed")}</Text>
       ) : isLoading ? (
-        <Text className="text-sm text-muted-foreground">Memuat…</Text>
+        <Text className="text-sm text-muted-foreground">{t("notifications.loading")}</Text>
       ) : rows.length === 0 ? (
         <Empty className="border border-dashed border-border">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <Bell />
             </EmptyMedia>
-            <EmptyTitle>Belum ada notifikasi</EmptyTitle>
+            <EmptyTitle>{t("notifications.empty")}</EmptyTitle>
             <EmptyDescription>
               Notifikasi transaksi client, pembayaran layanan, permintaan penarikan, dan paket yang akan berakhir akan
               muncul di sini.
@@ -125,6 +127,7 @@ function NotificationCard({
   notification: FinanceNotification;
   onMarkRead: () => void;
 }) {
+  const { t } = useTranslation("finance");
   const Icon = ICONS[notification.type] ?? Bell;
 
   return (
@@ -151,7 +154,7 @@ function NotificationCard({
           {!notification.is_read && (
             <Box
               as="span"
-              aria-label="Belum dibaca"
+              aria-label={t("notifications.unread")}
               className="size-2 shrink-0 rounded-full bg-destructive"
             />
           )}

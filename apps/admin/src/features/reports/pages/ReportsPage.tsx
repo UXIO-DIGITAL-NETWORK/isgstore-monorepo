@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -12,11 +13,13 @@ import { formatCurrency } from "@/utils/currency";
 import { useReportSummary } from "../hooks/useReports";
 import type { ReportBreakdownRow, ReportPeriod, ReportSummaryParams } from "../types/report.type";
 
-const PERIOD_TABS: { value: ReportPeriod; label: string }[] = [
-  { value: "daily", label: "Daily" },
-  { value: "monthly", label: "Monthly" },
-  { value: "yearly", label: "Yearly" },
-  { value: "custom", label: "Range" },
+// `labelKey`, not `label`: a module constant would freeze whichever language
+// was loaded at import.
+const PERIOD_TABS: { value: ReportPeriod; labelKey: string }[] = [
+  { value: "daily", labelKey: "daily" },
+  { value: "monthly", labelKey: "monthly" },
+  { value: "yearly", labelKey: "yearly" },
+  { value: "custom", labelKey: "range" },
 ];
 
 /** Fallback caption while the API's server-resolved label is in flight. */
@@ -28,6 +31,7 @@ const FALLBACK_CAPTION: Record<ReportPeriod, string> = {
 };
 
 function BreakdownTable({ title, rows, emptyLabel }: { title: string; rows: ReportBreakdownRow[]; emptyLabel: string }) {
+  const { t } = useTranslation("reports");
   return (
     <Box className="rounded-2xl border border-border bg-card p-4">
       {rows.length === 0 ? (
@@ -42,9 +46,9 @@ function BreakdownTable({ title, rows, emptyLabel }: { title: string; rows: Repo
           <TableHeader>
             <TableRow>
               <TableHead>{title}</TableHead>
-              <TableHead className="text-right">Count</TableHead>
-              <TableHead className="text-right">Revenue</TableHead>
-              <TableHead className="text-right">Profit</TableHead>
+              <TableHead className="text-right">{t("count")}</TableHead>
+              <TableHead className="text-right">{t("revenue")}</TableHead>
+              <TableHead className="text-right">{t("profit")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -66,6 +70,7 @@ function BreakdownTable({ title, rows, emptyLabel }: { title: string; rows: Repo
 }
 
 export function ReportsPage() {
+  const { t } = useTranslation("reports");
   const [period, setPeriod] = useState<ReportPeriod>("daily");
   const [dateFrom, setDateFrom] = useState<string | undefined>(undefined);
   const [dateTo, setDateTo] = useState<string | undefined>(undefined);
@@ -82,9 +87,7 @@ export function ReportsPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Reports
-        </Heading>
+        >{t("title")}</Heading>
         <Text variant="muted">
           Consolidated revenue, transaction volume and profit, with a breakdown per product and payment channel.
           {data?.timezone ? ` All figures follow your timezone (${data.timezone}).` : ""}
@@ -102,7 +105,7 @@ export function ReportsPage() {
                 key={tab.value}
                 value={tab.value}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -112,13 +115,13 @@ export function ReportsPage() {
           <Box className="grid gap-4 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2 lg:max-w-xl">
             <DateField
               id="report-date-from"
-              label="First date"
+              label={t("firstDate")}
               value={dateFrom}
               onChange={setDateFrom}
             />
             <DateField
               id="report-date-to"
-              label="Last date"
+              label={t("lastDate")}
               value={dateTo}
               onChange={setDateTo}
             />
@@ -130,9 +133,7 @@ export function ReportsPage() {
         <Text
           variant="muted"
           className="rounded-2xl border border-border bg-card p-8 text-center"
-        >
-          Pick a first and last date to run the report.
-        </Text>
+        >{t("pickDates")}</Text>
       ) : isError ? (
         <Box className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-8">
           {/* Surface the API's own message: a 422 here is usually an inverted
@@ -142,24 +143,20 @@ export function ReportsPage() {
             type="button"
             className="rounded-xl border border-border px-3 py-1.5 text-sm"
             onClick={() => refetch()}
-          >
-            Retry
-          </button>
+          >{t("retry")}</button>
         </Box>
       ) : isLoading || !data ? (
         <Text
           variant="muted"
           className="rounded-2xl border border-border bg-card p-8 text-center"
-        >
-          Loading report…
-        </Text>
+        >{t("loading")}</Text>
       ) : (
         <>
           <Box className="grid gap-4 sm:grid-cols-3">
             <StatCard
               data={{
                 id: "revenue",
-                label: "Total Revenue",
+                label: t("totalRevenue"),
                 value: data.totals.revenue,
                 caption,
               }}
@@ -167,31 +164,31 @@ export function ReportsPage() {
             <StatCard
               data={{
                 id: "transactions",
-                label: "Transactions",
+                label: t("transactions"),
                 value: data.totals.transactions,
                 format: "count",
-                caption: "Completed transactions",
+                caption: t("completedTransactions"),
               }}
             />
             <StatCard
               data={{
                 id: "profit",
-                label: "Net Profit",
+                label: t("netProfit"),
                 value: data.totals.profit,
-                caption: "Margin after costs",
+                caption: t("marginAfterCosts"),
               }}
             />
           </Box>
 
           <BreakdownTable
-            title="Product"
+            title={t("product")}
             rows={data.breakdown}
-            emptyLabel="No transactions in this period."
+            emptyLabel={t("noTransactionsInPeriod")}
           />
           <BreakdownTable
-            title="Payment Channel"
+            title={t("paymentChannel")}
             rows={data.channels ?? []}
-            emptyLabel="No payments in this period."
+            emptyLabel={t("noPaymentsInPeriod")}
           />
         </>
       )}

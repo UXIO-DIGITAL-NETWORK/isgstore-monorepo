@@ -18,10 +18,13 @@ afterEach(() => {
 });
 
 describe("WebsiteSubscriptionCard", () => {
-  it("shows the remaining days and links out to Uxiolabs Pay", async () => {
+  it("shows the remaining days and links out to the payment panel", async () => {
     await renderRoute("/admin/dashboard");
 
-    const link = await screen.findByRole("link", { name: /Perpanjang di Uxiolabs Pay/ });
+    // The CTA names the action, not kita's brand: this card sits in the
+    // client's own panel, and the service label beside it already carries the
+    // site's name.
+    const link = await screen.findByRole("link", { name: /Perpanjang langganan/ });
 
     expect(link).toHaveAttribute("href", "https://pay.example.test/app/payment-admin/services/1/checkout");
     // The route is behind a login over there, so it must open in a new tab
@@ -61,5 +64,25 @@ describe("WebsiteSubscriptionCard", () => {
 
     await screen.findByRole("heading", { level: 1 });
     expect(screen.queryByRole("link", { name: /Perpanjang/ })).not.toBeInTheDocument();
+  });
+
+  it("says the site is switched off rather than counting down to a date", async () => {
+    // A suspended site is already refusing customers. Rendering "300 hari
+    // tersisa" here would make the one screen that should explain the outage
+    // deny it instead.
+    vi.spyOn(websiteSubscriptionService, "get").mockResolvedValue({
+      status: "suspended",
+      service: { id: 1, code: "uxiolabs", name: "TopupGame by Uxiolabs" },
+      ends_at: "2027-01-01T00:00:00+08:00",
+      days_remaining: 300,
+      checkout_url: "https://pay.example.test/app/payment-admin/services/1/checkout",
+      is_serving: false,
+      suspend_reason: "Belum bayar",
+    });
+
+    await renderRoute("/admin/dashboard");
+
+    expect(await screen.findByText("Belum bayar")).toBeInTheDocument();
+    expect(screen.queryByText("300 hari tersisa")).not.toBeInTheDocument();
   });
 });

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -48,6 +49,7 @@ function FieldError({ message }: { message?: string }) {
  * the description counter's percentage is derived from the actual length.
  */
 export function SubCategoryFormDialog({ open, onOpenChange, subCategoryId }: SubCategoryFormDialogProps) {
+  const { t } = useTranslation("categories");
   const isEdit = Boolean(subCategoryId);
 
   const { data: categories } = useCategoryList({ per_page: CATEGORY_OPTIONS_PAGE_SIZE });
@@ -126,7 +128,7 @@ export function SubCategoryFormDialog({ open, onOpenChange, subCategoryId }: Sub
             name="categoryId"
             render={({ field }) => (
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="sub-category-parent">Category</Label>
+                <Label htmlFor="sub-category-parent">{t("category")}</Label>
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
@@ -135,7 +137,7 @@ export function SubCategoryFormDialog({ open, onOpenChange, subCategoryId }: Sub
                     id="sub-category-parent"
                     className="w-full rounded-xl"
                   >
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder={t("selectCategory")} />
                   </SelectTrigger>
                   <SelectContent>
                     {(categories?.data ?? []).map((category) => (
@@ -154,22 +156,22 @@ export function SubCategoryFormDialog({ open, onOpenChange, subCategoryId }: Sub
           />
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="sub-category-name">Sub Category Name</Label>
+            <Label htmlFor="sub-category-name">{t("subCategoryName")}</Label>
             <Input
               id="sub-category-name"
               className="rounded-xl"
-              placeholder="e.g. Mobile Legends: Global"
+              placeholder={t("subCategoryNamePlaceholder")}
               {...register("name")}
             />
             <FieldError message={errors.name?.message} />
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="sub-category-currency-name">Currency Name</Label>
+            <Label htmlFor="sub-category-currency-name">{t("colCurrencyName")}</Label>
             <Input
               id="sub-category-currency-name"
               className="rounded-xl"
-              placeholder="e.g. Diamonds"
+              placeholder={t("currencyPlaceholder")}
               {...register("currencyName")}
             />
             <FieldError message={errors.currencyName?.message} />
@@ -181,10 +183,10 @@ export function SubCategoryFormDialog({ open, onOpenChange, subCategoryId }: Sub
             render={({ field }) => (
               <ImageDropzone
                 id="sub-category-logo"
-                label="Logo"
+                label={t("logo")}
                 accept="image/jpeg,image/jpg,image/png,image/webp"
                 formatsLabel="JPG, JPEG, PNG, WEBP up to 10mb"
-                caption="3:4 ratio recommended · max display 800×600 px"
+                caption={t("logoCaption")}
                 value={field.value}
                 onChange={field.onChange}
                 error={errors.logo?.message}
@@ -193,11 +195,11 @@ export function SubCategoryFormDialog({ open, onOpenChange, subCategoryId }: Sub
           />
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="sub-category-description">Description</Label>
+            <Label htmlFor="sub-category-description">{t("description")}</Label>
             <Textarea
               id="sub-category-description"
               className="rounded-xl"
-              placeholder="Short summary shown with this sub category on the storefront"
+              placeholder={t("subCategoryDescriptionPlaceholder")}
               maxLength={DESCRIPTION_MAX}
               {...register("description")}
             />
@@ -215,9 +217,7 @@ export function SubCategoryFormDialog({ open, onOpenChange, subCategoryId }: Sub
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

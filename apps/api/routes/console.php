@@ -148,6 +148,15 @@ if (config('services.hub.enabled')) {
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-catalog'));
 
+    // Five minutes, not fifteen: this one decides whether the site serves the
+    // public, and a suspension that takes a quarter of an hour to bite is a
+    // suggestion rather than a lever.
+    Schedule::command('hub:sync-licence')
+        ->everyFiveMinutes()
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->onFailure($alertFailure('hub:sync-licence'));
+
     Schedule::command('hub:sync-channels')
         ->everyFifteenMinutes()
         ->withoutOverlapping(30)

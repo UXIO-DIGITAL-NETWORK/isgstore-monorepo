@@ -24,6 +24,10 @@ return [
 
     'monetapay' => [
         'mch_id' => env('MONETAPAY_MCH_ID'),
+        // The whole site trades as ONE Monetapay sub-merchant under `mch_id`.
+        // Left blank, every call behaves exactly as it did before sub-merchants
+        // existed (the field is dropped from the signed TreeMap when empty).
+        'sub_mch_id' => env('MONETAPAY_SUB_MCH_ID'),
         'collection_app_id' => env('MONETAPAY_COLLECTION_APP_ID'),
         'disbursement_app_id' => env('MONETAPAY_DISBURSEMENT_APP_ID', env('MONETAPAY_MCH_ID')),
         'partner_key' => env('MONETAPAY_PARTNER_KEY'),
@@ -37,7 +41,10 @@ return [
         'disbursement_aes_key' => env('MONETAPAY_DISBURSEMENT_AES_KEY', env('MONETAPAY_AES_KEY')),
         'disbursement_aes_iv' => env('MONETAPAY_DISBURSEMENT_AES_IV', env('MONETAPAY_AES_IV')),
         'is_production' => env('MONETAPAY_IS_PRODUCTION', false),
-        'success_redirect_url' => env('MONETAPAY_SUCCESS_REDIRECT_URL', 'https://example.com'),
+        // No `https://example.com` default: this one is handed to a live
+        // payment gateway, which then bounces a paying customer to a domain
+        // IANA reserved for documentation.
+        'success_redirect_url' => env('MONETAPAY_SUCCESS_REDIRECT_URL'),
         'failed_redirect_url' => env('MONETAPAY_FAILED_REDIRECT_URL', ''),
     ],
 
@@ -54,21 +61,28 @@ return [
         ],
     ],
     'uxiolabs' => [
-        'api_key' => env('UXIOLABS_API_KEY'),
-        'base_url' => env('UXIOLABS_BASE_URL', 'https://api.uxiotopup.id'),
+        'api_key' => env('UXIOTOPUP_API_KEY'),
+        'base_url' => env('UXIOTOPUP_BASE_URL', 'https://api.uxiotopup.id'),
         // Sent as the `callback` field on every /order so uxiolabs knows where
         // to POST status updates (should point at /api/v1/uxiolabs/callback).
-        'callback_url' => env('UXIOLABS_CALLBACK_URL'),
+        'callback_url' => env('UXIOTOPUP_CALLBACK_URL'),
         // Which price tier from /service is booked as our supplier cost:
         // harga | harga_gold | harga_silver | harga_pro.
-        'price_tier' => env('UXIOLABS_PRICE_TIER', 'harga'),
+        'price_tier' => env('UXIOTOPUP_PRICE_TIER', 'harga'),
         // The webhook carries no signature — the only authentication is the
         // source IP. Comma-separated to allow extra IPs without a deploy.
-        'callback_ips' => env('UXIOLABS_CALLBACK_IP', '103.146.202.50'),
+        'callback_ips' => env('UXIOTOPUP_CALLBACK_IP', '103.146.202.50'),
     ],
 
     'discord' => [
         'webhook_log_url' => env('DISCORD_WEBHOOK_LOG_URL'),
+
+        // Off outside production on purpose. A seeder run on a box whose
+        // webhook pointed at the live channel once put twenty-nine messages
+        // there in a minute — all factory data — and buried the one that
+        // needed a human. Turn this on where a staging feed is genuinely
+        // wanted; it arrives prefixed with the environment name.
+        'send_outside_production' => env('DISCORD_SEND_OUTSIDE_PRODUCTION', false),
     ],
 
     'google' => [
@@ -91,8 +105,14 @@ return [
     'storefront' => [
         // Consumer storefront base URL, used to build the "Track Order" link in
         // the receipt email. The tracker lives at /{locale}/cek-pesanan.
-        'url' => env('STOREFRONT_URL', 'http://localhost:5173'),
-        'brand' => env('STOREFRONT_BRAND', 'TOPUP GAME'),
+        // **No default.** It used to fall back to a dev server, which meant a
+        // deployment that never set the variable sent real buyers a
+        // `http://localhost:5173/...` refund claim link — and reported the send
+        // as successful. Absent is now absent; `App\Support\PublicUrl` stops
+        // the send rather than building a dead link. `.env.example` carries the
+        // local value, which is what that file is for.
+        'url' => env('STOREFRONT_URL'),
+        'brand' => env('STOREFRONT_BRAND', 'TopupGame by Uxiolabs'),
 
         // Applied by `App\Support\Phone` only to a number that carries no
         // country code of its own — a customer who types "+65…" is always taken
@@ -106,7 +126,8 @@ return [
         // website. The admin panel builds a deep link to the checkout page from
         // this; every route there is behind a login, so the client signs in
         // with their own payment-admin account on arrival.
-        'url' => env('PAYMENT_PAGE_URL', 'http://localhost:5174'),
+        // No default, same reasoning as `storefront.url` above.
+        'url' => env('PAYMENT_PAGE_URL'),
     ],
 
     'service_invoice' => [
@@ -153,6 +174,12 @@ return [
         // Hub owns: the service catalog and the channel fee schedule.
         'managed_catalog' => (bool) env('HUB_MANAGED_CATALOG', true),
         'managed_channels' => (bool) env('HUB_MANAGED_CHANNELS', true),
+        // The Hub also owns this site's own licence term, and enforcing it is
+        // what makes a lapsed or suspended site stop serving the public. This
+        // is the rollback switch for that whole mechanism: set it false and the
+        // gate goes inert, the sync stops writing, and the site bills itself as
+        // it always did.
+        'managed_licence' => (bool) env('HUB_MANAGED_LICENCE', true),
         // Real-time push of a merchant's service order to the Hub (the one
         // site→Hub write, on top of the Hub's own 5-min pull). Kill-switch that
         // defaults to on whenever the Hub is enabled; set HUB_PUSH_ORDERS=false

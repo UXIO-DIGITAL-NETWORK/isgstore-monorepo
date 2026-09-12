@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
@@ -33,6 +34,7 @@ interface FlashSaleFormDialogProps {
 }
 
 export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSaleFormDialogProps) {
+  const { t } = useTranslation("marketing");
   const isEdit = Boolean(flashSaleId);
 
   const { data: existing } = useFlashSale(open ? flashSaleId : undefined);
@@ -98,10 +100,7 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Flash Sale" : "Add Flash Sale"}</DialogTitle>
-          <DialogDescription>
-            Time-boxed pricing on specific products. Only a sale that is active and inside its window appears on the
-            storefront.
-          </DialogDescription>
+          <DialogDescription>{t("flashSaleFormSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -111,11 +110,11 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
         >
           <Box className="flex flex-col gap-4">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="flash-sale-name">Name</Label>
+              <Label htmlFor="flash-sale-name">{t("colName")}</Label>
               <Input
                 id="flash-sale-name"
                 className="rounded-xl"
-                placeholder="e.g. Flash Sale Mingguan"
+                placeholder={t("flashSaleNamePlaceholder")}
                 {...register("name")}
               />
               {errors.name && (
@@ -130,7 +129,7 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
 
             <Box className="grid gap-4 sm:grid-cols-2">
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="flash-sale-starts">Starts</Label>
+                <Label htmlFor="flash-sale-starts">{t("starts")}</Label>
                 <Input
                   id="flash-sale-starts"
                   type="datetime-local"
@@ -147,7 +146,7 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
                 )}
               </Box>
               <Box className="flex flex-col gap-1.5">
-                <Label htmlFor="flash-sale-ends">Ends</Label>
+                <Label htmlFor="flash-sale-ends">{t("colEnds")}</Label>
                 <Input
                   id="flash-sale-ends"
                   type="datetime-local"
@@ -175,7 +174,7 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <Label htmlFor="flash-sale-active">Active</Label>
+                  <Label htmlFor="flash-sale-active">{t("active")}</Label>
                 </Box>
               )}
             />
@@ -187,13 +186,8 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
                 <Heading
                   level={2}
                   variant="subtitle"
-                >
-                  Products
-                </Heading>
-                <Text variant="muted">
-                  The discount shown to customers is derived from each product's current price, so a repriced product
-                  never leaves a stale strikethrough.
-                </Text>
+                >{t("colProducts")}</Heading>
+                <Text variant="muted">{t("discountDerivedHint")}</Text>
               </Box>
               <Button
                 type="button"
@@ -201,14 +195,12 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
                 className="rounded-xl"
                 onClick={() => append({ productId: "", salePrice: 0, stockTotal: 0 })}
               >
-                <Plus className="size-4" />
-                Add Product
-              </Button>
+                <Plus className="size-4" />{t("addProduct")}</Button>
             </Box>
 
             {fields.length === 0 ? (
               <Box className="rounded-xl border border-dashed border-border p-6">
-                <Text variant="muted">No products yet. A sale with no products does not render on the storefront.</Text>
+                <Text variant="muted">{t("noProducts")}</Text>
               </Box>
             ) : (
               fields.map((field, index) => {
@@ -231,7 +223,7 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
                         render={({ field: productField }) => (
                           <SelectField
                             id={`flash-sale-product-${index}`}
-                            label="Product"
+                            label={t("product")}
                             options={productOptions}
                             value={productField.value}
                             onChange={productField.onChange}
@@ -243,7 +235,7 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
                       />
 
                       <Box className="flex flex-col gap-1.5">
-                        <Label htmlFor={`flash-sale-price-${index}`}>Sale Price</Label>
+                        <Label htmlFor={`flash-sale-price-${index}`}>{t("salePrice")}</Label>
                         <Input
                           id={`flash-sale-price-${index}`}
                           type="number"
@@ -254,7 +246,7 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
                       </Box>
 
                       <Box className="flex flex-col gap-1.5">
-                        <Label htmlFor={`flash-sale-stock-${index}`}>Stock</Label>
+                        <Label htmlFor={`flash-sale-stock-${index}`}>{t("stock")}</Label>
                         <Input
                           id={`flash-sale-stock-${index}`}
                           type="number"
@@ -293,9 +285,7 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

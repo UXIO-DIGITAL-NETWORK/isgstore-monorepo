@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Image } from "@/components/common/Image";
@@ -9,6 +10,7 @@ import { CopyableAmount } from "../components/CopyableAmount";
 import { usePaymentGateways, useSummaryCards, useSuppliers } from "../hooks/useFinancial";
 
 export default function FinancialPage() {
+  const { t } = useTranslation("financial");
   const {
     data: summaryCards,
     isLoading: summaryLoading,
@@ -34,25 +36,19 @@ export default function FinancialPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Financial Summary
-        </Heading>
-        <Text variant="muted">
-          Monitor payment gateway credit, user debit, and supplier balances in real time. Click an amount to copy.
-        </Text>
+        >{t("title")}</Heading>
+        <Text variant="muted">{t("subtitle")}</Text>
       </Box>
 
       <Box className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {summaryError ? (
           <Box className="flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-4 md:col-span-3">
-            <Text variant="muted">Failed to load summary cards.</Text>
+            <Text variant="muted">{t("summaryFailed")}</Text>
             <Button
               variant="outline"
               size="sm"
               onClick={() => refetchSummary()}
-            >
-              Retry
-            </Button>
+            >{t("retry")}</Button>
           </Box>
         ) : summaryLoading || !summaryCards ? (
           Array.from({ length: 3 }).map((_, index) => (
@@ -77,23 +73,19 @@ export default function FinancialPage() {
             level={2}
             variant="section"
             className="text-lg"
-          >
-            Payment Gateway
-          </Heading>
-          <Text variant="muted">Summary of balances on each payment gateway.</Text>
+          >{t("paymentGateway")}</Heading>
+          <Text variant="muted">{t("paymentGatewaySubtitle")}</Text>
         </Box>
 
         <Box className="flex flex-col gap-3">
           {gatewaysError ? (
             <Box className="flex flex-col items-start gap-2">
-              <Text variant="muted">Failed to load payment gateway balances.</Text>
+              <Text variant="muted">{t("paymentGatewayFailed")}</Text>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => refetchGateways()}
-              >
-                Retry
-              </Button>
+              >{t("retry")}</Button>
             </Box>
           ) : gatewaysLoading || !gateways ? (
             Array.from({ length: 1 }).map((_, index) => (
@@ -103,7 +95,7 @@ export default function FinancialPage() {
               />
             ))
           ) : gateways.length === 0 ? (
-            <Text variant="muted">No payment gateways configured yet.</Text>
+            <Text variant="muted">{t("noPaymentGateways")}</Text>
           ) : (
             gateways.map((gateway) => (
               <Box
@@ -128,11 +120,11 @@ export default function FinancialPage() {
 
                 <Box className="flex flex-col gap-3 sm:flex-row sm:gap-3">
                   <Box className="flex items-center justify-between gap-6 rounded-xl bg-muted px-4 py-2">
-                    <Text variant="small">Saldo Aktif</Text>
+                    <Text variant="small">{t("availableBalance")}</Text>
                     <CopyableAmount value={gateway.activeBalance} />
                   </Box>
                   <Box className="flex items-center justify-between gap-6 rounded-xl bg-muted px-4 py-2">
-                    <Text variant="small">Saldo Tertahan</Text>
+                    <Text variant="small">{t("heldBalance")}</Text>
                     <CopyableAmount value={gateway.heldBalance} />
                   </Box>
                 </Box>
@@ -148,23 +140,19 @@ export default function FinancialPage() {
             level={2}
             variant="section"
             className="text-lg"
-          >
-            Supplier
-          </Heading>
-          <Text variant="muted">Summary of the balances available with each supplier.</Text>
+          >{t("supplier")}</Heading>
+          <Text variant="muted">{t("supplierSubtitle")}</Text>
         </Box>
 
         <Box className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {suppliersError ? (
             <Box className="flex flex-col items-start gap-2">
-              <Text variant="muted">Failed to load supplier balances.</Text>
+              <Text variant="muted">{t("supplierFailed")}</Text>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => refetchSuppliers()}
-              >
-                Retry
-              </Button>
+              >{t("retry")}</Button>
             </Box>
           ) : suppliersLoading || !suppliers ? (
             Array.from({ length: 5 }).map((_, index) => (
@@ -174,7 +162,7 @@ export default function FinancialPage() {
               />
             ))
           ) : suppliers.length === 0 ? (
-            <Text variant="muted">No suppliers configured yet.</Text>
+            <Text variant="muted">{t("noSuppliers")}</Text>
           ) : (
             suppliers.map((supplier) => (
               <Box

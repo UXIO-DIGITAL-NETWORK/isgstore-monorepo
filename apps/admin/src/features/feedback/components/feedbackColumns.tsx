@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Star } from "lucide-react";
 
@@ -14,10 +15,13 @@ import type { Feedback } from "../types/feedback.type";
  * shared `DataTable` (`showRowNumber`). The only row action is delete —
  * reviews are customer-authored and are never edited here.
  */
-export const feedbackColumns = (onDelete: (id: string) => void): ColumnDef<Feedback>[] => [
+export const feedbackColumns = (
+  onDelete: (id: string) => void,
+  t: TFunction<"feedback">,
+): ColumnDef<Feedback>[] => [
   {
     id: "reviewer",
-    header: "Reviewer",
+    header: t("colReviewer"),
     cell: ({ row }) => (
       <Box className="flex items-center gap-2">
         <Text
@@ -26,13 +30,13 @@ export const feedbackColumns = (onDelete: (id: string) => void): ColumnDef<Feedb
         >
           {row.original.reviewer}
         </Text>
-        {row.original.isGuest && <Badge variant="outline">Guest</Badge>}
+        {row.original.isGuest && <Badge variant="outline">{t("guest")}</Badge>}
       </Box>
     ),
   },
   {
     id: "rating",
-    header: "Rating",
+    header: t("colRating"),
     // Five stars, filled up to the score, plus the numeric value.
     cell: ({ row }) => (
       <Box className="flex items-center gap-1">
@@ -59,7 +63,7 @@ export const feedbackColumns = (onDelete: (id: string) => void): ColumnDef<Feedb
   },
   {
     id: "comment",
-    header: "Comment",
+    header: t("colComment"),
     cell: ({ row }) =>
       row.original.comment ? (
         <Text as="span">{row.original.comment}</Text>
@@ -74,7 +78,7 @@ export const feedbackColumns = (onDelete: (id: string) => void): ColumnDef<Feedb
   },
   {
     id: "product",
-    header: "Product",
+    header: t("colProduct"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -86,7 +90,7 @@ export const feedbackColumns = (onDelete: (id: string) => void): ColumnDef<Feedb
   },
   {
     id: "time",
-    header: "Time",
+    header: t("colTime"),
     cell: ({ row }) => (
       <Text
         as="span"

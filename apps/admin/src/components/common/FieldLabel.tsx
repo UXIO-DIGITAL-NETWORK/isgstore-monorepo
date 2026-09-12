@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import { Info } from "lucide-react";
 
@@ -12,11 +13,12 @@ import { cn } from "@/lib/utils";
  * does without cluttering the layout with helper text.
  */
 export function InfoTooltip({ content, className }: { content: ReactNode; className?: string }) {
+  const { t } = useTranslation("common");
   return (
     <Tooltip>
       <TooltipTrigger
         type="button"
-        aria-label="More information"
+        aria-label={t("field.moreInformation")}
         className={cn(
           "text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-4 items-center justify-center rounded-full outline-none focus-visible:ring-2",
           className,

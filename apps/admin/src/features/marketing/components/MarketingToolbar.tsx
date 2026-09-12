@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -39,11 +40,12 @@ export function MarketingToolbar({
   filters,
   idPrefix,
 }: MarketingToolbarProps) {
+  const { t } = useTranslation("marketing");
   return (
     <Box className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <Box className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
         <Box className="flex flex-col gap-1.5">
-          <Label htmlFor={`${idPrefix}-search`}>Search</Label>
+          <Label htmlFor={`${idPrefix}-search`}>{t("search")}</Label>
           <Box className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -75,7 +77,7 @@ export function MarketingToolbar({
           variant="outline"
           size="icon"
           className="rounded-xl"
-          aria-label="Refresh"
+          aria-label={t("refresh")}
           onClick={onRefresh}
         >
           <RefreshCw className="size-4" />

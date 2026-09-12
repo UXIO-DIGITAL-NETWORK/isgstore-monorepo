@@ -89,5 +89,9 @@
       "topUpAgain": "Top Up Again",
       "backToHome": "Back to Home"
     }
+  },
+  "a11y": {
+    "copyInvoiceNumber": "Copy invoice number",
+    "copyVirtualAccount": "Copy virtual account number"
   }
 }

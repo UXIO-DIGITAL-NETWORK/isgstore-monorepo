@@ -229,6 +229,10 @@ On a `401` outside `/v1/auth/*` it attempts **one** token refresh, replays the o
 
 A guest whose request happens to 401 is **not** bounced to `/login` — only someone who actually had a session.
 
+On a **503 carrying a `data.licence` block** the site has been switched off from the Uxio Hub (suspended, or its licence lapsed). The interceptor records that in `src/lib/siteClosed.ts` and `SiteClosedGate` renders a notice over the whole app; the next successful response clears it, so the site comes back without a reload. A 503 **without** that block is an ordinary outage — a restarting container, a proxy with nothing behind it — and must not be reported to a customer as a billing problem.
+
+**`SiteClosedGate` and `MaintenanceGate` are different things and must not be merged.** Maintenance is the operator's own flag: it fails open, any signed-in session passes through, and it says "back shortly". The closed gate reflects the *server* refusing every public request, so no session gets past it — because the server is not letting anyone past either. Its copy also stays vague about the reason: a customer has no stake in the shop's billing arrangement, and the site's own admin sees the real message in their panel, which stays reachable.
+
 ## API Contract (as-built)
 
 Base URL is `VITE_API_BASE_URL` (stops at `/api`); services add the `/v1` prefix from `API_VERSION` in `src/config/env.ts`. See `.agents/context/system_architecture.md` for the full endpoint table.

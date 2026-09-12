@@ -1,3 +1,5 @@
+import { translateOptions } from "@/lib/i18nOptions";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryFormFieldsBuilder } from "./CategoryFormFieldsBuilder";
 import { NicknameCheckField } from "./NicknameCheckField";
+
 import { META_ROBOTS_OPTIONS, REGION_OPTIONS } from "../data/select-options.data";
 import { useCategory, useCreateCategory, useUpdateCategory } from "../hooks/useCategories";
 import { useCategoryTypeOptions } from "../hooks/useCategoryTypeOptions";
@@ -55,7 +58,9 @@ const DETAIL_FIELDS = [
  * tabs — "Detail" (identity + the order form) and "Media & SEO" — so each is
  * focused. Both tabs stay mounted (`forceMount`) so form state survives a switch.
  */
+
 export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryFormDialogProps) {
+  const { t } = useTranslation("categories");
   const isEdit = Boolean(categoryId);
   const { data: existing } = useCategory(open ? categoryId : undefined);
   const [activeTab, setActiveTab] = useState<"detail" | "media">("detail");
@@ -183,9 +188,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Category" : "Add Category"}</DialogTitle>
-          <DialogDescription>
-            Define a new taxonomy entry games and products can be grouped under.
-          </DialogDescription>
+          <DialogDescription>{t("categoryFormSubtitle")}</DialogDescription>
         </DialogHeader>
 
         <Box
@@ -198,8 +201,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
             onValueChange={(value) => setActiveTab(value as "detail" | "media")}
           >
             <TabsList className="w-full">
-              <TabsTrigger value="detail">Detail</TabsTrigger>
-              <TabsTrigger value="media">Media & SEO</TabsTrigger>
+              <TabsTrigger value="detail">{t("detail")}</TabsTrigger>
+              <TabsTrigger value="media">{t("mediaSeo")}</TabsTrigger>
             </TabsList>
 
             {/* ── Tab 1: Detail ── */}
@@ -213,10 +216,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   <Heading
                     as="h2"
                     level={5}
-                  >
-                    Basic information
-                  </Heading>
-                  <Text variant="muted">Type, username check, and category identity on the storefront.</Text>
+                  >{t("basicInformation")}</Heading>
+                  <Text variant="muted">{t("basicInformationHint")}</Text>
                 </Box>
 
                 <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -226,8 +227,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     render={({ field }) => (
                       <SelectField
                         id="category-type"
-                        label="Category Type"
-                        tooltip="The kind of catalogue entry (e.g. Mobile Game, PC Game, Voucher). Used to group and filter games on the storefront."
+                        label={t("colCategoryType")}
+                        tooltip={t("tipCategoryType")}
                         options={categoryTypeOptions}
                         disabled={typesLoading}
                         emptyLabel={typesLoading ? "Loading types..." : "No category types available"}
@@ -259,9 +260,9 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     render={({ field }) => (
                       <SelectField
                         id="category-region"
-                        label="Region"
-                        tooltip="A regional label shown on the storefront (e.g. Southeast Asia, Global). Display only — it does not restrict who can buy."
-                        options={REGION_OPTIONS}
+                        label={t("region")}
+                        tooltip={t("tipRegion")}
+                        options={translateOptions(REGION_OPTIONS, t)}
                         value={field.value ?? ""}
                         onChange={field.onChange}
                       />
@@ -271,10 +272,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="category-name"
-                      tooltip="The game/category name buyers see, e.g. “Mobile Legends”."
-                    >
-                      Category Name
-                    </FieldLabel>
+                      tooltip={t("tipCategoryName")}
+                    >{t("colCategoryName")}</FieldLabel>
                     <Input
                       id="category-name"
                       className="rounded-xl"
@@ -293,10 +292,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="category-code"
-                      tooltip="A unique, stable internal identifier (e.g. mlbb). Used in code and URLs; it cannot clash with another category."
-                    >
-                      Category Code
-                    </FieldLabel>
+                      tooltip={t("tipCategoryCode")}
+                    >{t("categoryCode")}</FieldLabel>
                     <Input
                       id="category-code"
                       className="rounded-xl"
@@ -315,10 +312,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="category-sub-name"
-                      tooltip="Optional secondary label (e.g. the publisher “Moonton”). Shown next to the name and included in search."
-                    >
-                      Category Sub Name
-                    </FieldLabel>
+                      tooltip={t("tipSubName")}
+                    >{t("categorySubName")}</FieldLabel>
                     <Input
                       id="category-sub-name"
                       className="rounded-xl"
@@ -329,10 +324,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="category-slug"
-                      tooltip="The URL-friendly name used in the storefront address (e.g. mobile-legends). Auto-filled from the name; must be unique."
-                    >
-                      Category Slug
-                    </FieldLabel>
+                      tooltip={t("tipSlug")}
+                    >{t("categorySlug")}</FieldLabel>
                     <Input
                       id="category-slug"
                       className="rounded-xl"
@@ -356,12 +349,10 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     <Heading
                       as="h2"
                       level={5}
-                    >
-                      Category form
-                    </Heading>
+                    >{t("categoryForm")}</Heading>
                     <InfoTooltip content="The inputs buyers fill in when ordering (e.g. User ID, Server). Field #1 becomes the account id and field #2 the server; these compose the id sent to the supplier." />
                   </Box>
-                  <Text variant="muted">Input fields shown to buyers when ordering.</Text>
+                  <Text variant="muted">{t("categoryFormHint")}</Text>
                 </Box>
 
                 <CategoryFormFieldsBuilder
@@ -383,10 +374,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   <Heading
                     as="h2"
                     level={5}
-                  >
-                    Media & description
-                  </Heading>
-                  <Text variant="muted">Category logo and description content for the product page.</Text>
+                  >{t("mediaDescription")}</Heading>
+                  <Text variant="muted">{t("mediaDescriptionHint")}</Text>
                 </Box>
 
                 <Controller
@@ -395,8 +384,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <ImageDropzone
                       id="category-logo"
-                      label="Category Logo"
-                      caption="Small logo shown over the card · 3:4 ratio recommended"
+                      label={t("categoryLogo")}
+                      caption={t("categoryLogoCaption")}
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.logo?.message}
@@ -410,8 +399,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <ImageDropzone
                       id="category-thumbnail"
-                      label="Card Background"
-                      caption="Fills the whole storefront card · portrait 3:4 (e.g. 600×800 px)"
+                      label={t("cardBackground")}
+                      caption={t("cardBackgroundCaption")}
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.thumbnail?.message}
@@ -425,8 +414,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <ImageDropzone
                       id="category-banner"
-                      label="Checkout Banner"
-                      caption="Wide header on the checkout page · ~16:5 (e.g. 1600×500 px)"
+                      label={t("checkoutBanner")}
+                      caption={t("checkoutBannerCaption")}
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.banner?.message}
@@ -437,10 +426,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                 <Box className="flex flex-col gap-1.5">
                   <FieldLabel
                     htmlFor="category-description"
-                    tooltip="Long-form copy shown on the game's product page on the storefront."
-                  >
-                    Description
-                  </FieldLabel>
+                    tooltip={t("tipDescription")}
+                  >{t("description")}</FieldLabel>
                   <Textarea
                     id="category-description"
                     className="rounded-xl"
@@ -454,23 +441,19 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   <Heading
                     as="h2"
                     level={5}
-                  >
-                    SEO
-                  </Heading>
-                  <Text variant="muted">Meta tags for the category page on search engines.</Text>
+                  >{t("seo")}</Heading>
+                  <Text variant="muted">{t("seoHint")}</Text>
                 </Box>
 
                 <Box className="flex flex-col gap-1.5">
                   <FieldLabel
                     htmlFor="meta-title"
-                    tooltip="The title shown in search-engine results and the browser tab. Aim for ~60 characters."
-                  >
-                    Meta Title
-                  </FieldLabel>
+                    tooltip={t("tipMetaTitle")}
+                  >{t("metaTitle")}</FieldLabel>
                   <Input
                     id="meta-title"
                     className="rounded-xl"
-                    placeholder="Title for search results & the browser tab"
+                    placeholder={t("metaTitlePlaceholder")}
                     {...register("metaTitle")}
                   />
                 </Box>
@@ -478,14 +461,12 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                 <Box className="flex flex-col gap-1.5">
                   <FieldLabel
                     htmlFor="meta-description"
-                    tooltip="The short summary search engines show under the title. Kept under 280 characters."
-                  >
-                    Meta Description
-                  </FieldLabel>
+                    tooltip={t("tipMetaDescription")}
+                  >{t("metaDescription")}</FieldLabel>
                   <Textarea
                     id="meta-description"
                     className="rounded-xl"
-                    placeholder="Short summary for search results"
+                    placeholder={t("metaDescriptionPlaceholder")}
                     maxLength={META_DESCRIPTION_MAX}
                     {...register("metaDescription")}
                   />
@@ -503,8 +484,8 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <ImageDropzone
                       id="og-image"
-                      label="OG Image"
-                      caption="1.91:1 ratio recommended · max display 1200×630 px"
+                      label={t("ogImage")}
+                      caption={t("ogImageCaption")}
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.ogImage?.message}
@@ -515,14 +496,12 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                 <Box className="flex flex-col gap-1.5">
                   <FieldLabel
                     htmlFor="meta-keyword"
-                    tooltip="Comma-separated keywords for search engines, e.g. top up ml, diamond ml."
-                  >
-                    Meta Keyword
-                  </FieldLabel>
+                    tooltip={t("tipMetaKeyword")}
+                  >{t("metaKeyword")}</FieldLabel>
                   <Input
                     id="meta-keyword"
                     className="rounded-xl"
-                    placeholder="Separate with commas, e.g. top up ml, diamond ml"
+                    placeholder={t("metaKeywordPlaceholder")}
                     {...register("metaKeywords")}
                   />
                 </Box>
@@ -533,10 +512,10 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <SelectField
                       id="meta-robot"
-                      label="Meta Robot"
-                      tooltip="Tells search engines whether to index this page and follow its links (e.g. “Index, Follow”)."
-                      placeholder="Select"
-                      options={META_ROBOTS_OPTIONS}
+                      label={t("metaRobot")}
+                      tooltip={t("tipMetaRobot")}
+                      placeholder={t("select")}
+                      options={translateOptions(META_ROBOTS_OPTIONS, t)}
                       value={field.value ?? ""}
                       onChange={field.onChange}
                     />
@@ -552,9 +531,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
               variant="outline"
               className="rounded-xl"
               onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
+            >{t("cancel")}</Button>
             <Button
               type="submit"
               className="rounded-xl"

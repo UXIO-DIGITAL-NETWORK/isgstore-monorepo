@@ -52,6 +52,10 @@ class WebsiteSubscriptionTest extends TestCase
 
     public function test_it_reports_an_active_subscription_with_a_checkout_link(): void
     {
+        // A real domain: the link is withheld when the payment page base is not
+        // publicly reachable, so the production condition is what to test.
+        config(['services.payment_page.url' => 'https://pay.topupgame.id']);
+
         $this->actingAsAdmin();
         $service = $this->websiteService();
         $this->subscription($this->merchant(), $service, now()->addDays(60)->toDateTimeString());
@@ -106,6 +110,8 @@ class WebsiteSubscriptionTest extends TestCase
 
     public function test_never_subscribed_still_returns_the_checkout_link(): void
     {
+        config(['services.payment_page.url' => 'https://pay.topupgame.id']);
+
         // The moment the CTA matters most.
         $this->actingAsAdmin();
         $this->merchant();
@@ -128,6 +134,22 @@ class WebsiteSubscriptionTest extends TestCase
         $this->getJson('/api/v1/website-subscription')
             ->assertOk()
             ->assertJsonPath('data.status', 'unconfigured')
+            ->assertJsonPath('data.checkout_url', null);
+    }
+
+    public function test_the_checkout_link_is_withheld_rather_than_pointing_at_a_dev_box(): void
+    {
+        // The client would otherwise be handed a link to whoever deployed this.
+        // The card already renders a null here as "no button".
+        config(['services.payment_page.url' => 'http://localhost:5174']);
+
+        $this->actingAsAdmin();
+        $merchant = $this->merchant();
+        $service = $this->websiteService();
+        $this->subscription($merchant, $service, now()->addDays(30)->toDateTimeString());
+
+        $this->getJson('/api/v1/website-subscription')
+            ->assertOk()
             ->assertJsonPath('data.checkout_url', null);
     }
 

@@ -48,9 +48,12 @@ class HubReportEndpointsTest extends TestCase
     /** gateway_balance is read from the warm balance cache (never a live call). */
     private function warmGatewayBalance(int $balance): void
     {
+        // Key and payload shape must be the ones the service really writes —
+        // warming a shape of our own here would let a reader/writer mismatch
+        // pass this test while the Hub reads nothing in production.
         Cache::put(
-            MonetapayService::balanceCacheKey(config('services.monetapay.collection_app_id') ?: null),
-            ['data' => ['balance' => $balance]],
+            MonetapayService::balanceCacheKey(),
+            ['code' => 0, 'data' => ['current_balance' => (string) $balance]],
             300,
         );
     }
@@ -105,7 +108,21 @@ class HubReportEndpointsTest extends TestCase
                 'total_admin_fee', 'total_gateway_fee', 'total_tax',
                 'total_settled_to_merchants', 'total_transactions_count',
                 'total_transactions_amount',
+                // This site's OWN yearly licence, so the Hub can chase the
+                // renewal before the deployment lapses.
+                'website_subscription' => ['status', 'ends_at', 'days_remaining', 'checkout_url'],
             ]]);
+    }
+
+    public function test_summary_reports_the_sites_own_licence_without_billing_configured(): void
+    {
+        // No default merchant and no website service in this test's fixtures —
+        // the pull must still answer 200. A summary that throws because billing
+        // is unwired takes the Hub's whole view of the site down with it.
+        $this->pull('/api/v1/hub/summary')
+            ->assertOk()
+            ->assertJsonPath('data.website_subscription.status', 'unconfigured')
+            ->assertJsonPath('data.website_subscription.ends_at', null);
     }
 
     public function test_summary_never_makes_a_live_gateway_call(): void

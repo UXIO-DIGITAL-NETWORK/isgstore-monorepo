@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -65,8 +66,25 @@ class UserFactory extends Factory
     {
         return $this->state(fn () => [
             'two_factor_secret' => null,
+            'two_factor_pending_secret' => null,
+            'two_factor_pending_created_at' => null,
             'two_factor_confirmed_at' => null,
             'two_factor_last_used_timestep' => null,
+        ]);
+    }
+
+    /**
+     * An enrolled account midway through moving its authenticator.
+     *
+     * Both secrets are live at once by design: the old one still authenticates
+     * until a code from the new one is accepted.
+     */
+    public function withPendingTwoFactorRotation(string $pendingSecret, ?Carbon $startedAt = null): static
+    {
+        return $this->state(fn () => [
+            'two_factor_confirmed_at' => now(),
+            'two_factor_pending_secret' => $pendingSecret,
+            'two_factor_pending_created_at' => $startedAt ?? now(),
         ]);
     }
 }

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { FieldLabel } from "@/components/common/FieldLabel";
 import { Text } from "@/components/common/Text";
@@ -27,15 +28,14 @@ interface NicknameCheckFieldProps {
  * clears the URL, so a game can be flipped back on without re-entering it.
  */
 export function NicknameCheckField({ enabled, onEnabledChange, value, onChange }: NicknameCheckFieldProps) {
+  const { t } = useTranslation("categories");
   return (
     <Box className="flex flex-col gap-2">
       <Box className="flex items-center justify-between gap-4">
         <FieldLabel
           htmlFor="cek-username-enabled"
           tooltip={ENABLE_TOOLTIP}
-        >
-          Cek Username
-        </FieldLabel>
+        >{t("checkUsername")}</FieldLabel>
         <Switch
           id="cek-username-enabled"
           checked={enabled}
@@ -49,9 +49,7 @@ export function NicknameCheckField({ enabled, onEnabledChange, value, onChange }
             <FieldLabel
               htmlFor="cek-username-url"
               tooltip="A third-party lookup endpoint. Use {user_id}, {server_id} or {customer_no} placeholders, e.g. https://api.example.com/check?id={user_id}."
-            >
-              Lookup URL
-            </FieldLabel>
+            >{t("lookupUrl")}</FieldLabel>
             <Input
               id="cek-username-url"
               className="rounded-xl"
@@ -65,9 +63,7 @@ export function NicknameCheckField({ enabled, onEnabledChange, value, onChange }
             <Text
               variant="small"
               className="text-muted-foreground"
-            >
-              Pilih provider agar pengecekan berjalan.
-            </Text>
+            >{t("pickProviderFirst")}</Text>
           )}
         </>
       )}

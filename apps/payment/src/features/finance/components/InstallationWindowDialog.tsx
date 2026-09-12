@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -29,6 +30,7 @@ interface InstallationWindowDialogProps {
 /** Sets or moves the agreed installation window. Upserts, so the first save on
  *  a comped subscription creates the record. */
 export function InstallationWindowDialog({ scope, installation }: InstallationWindowDialogProps) {
+  const { t } = useTranslation("finance");
   const [open, setOpen] = useState(false);
   const [startsAt, setStartsAt] = useState(toDateInput(installation?.starts_at));
   const [endsAt, setEndsAt] = useState(toDateInput(installation?.ends_at));
@@ -46,7 +48,7 @@ export function InstallationWindowDialog({ scope, installation }: InstallationWi
 
   const submit = () => {
     if (startsAt && endsAt && endsAt < startsAt) {
-      setError("Tanggal selesai tidak boleh sebelum tanggal mulai.");
+      setError(t("installWindow.endBeforeStart"));
       return;
     }
 
@@ -79,19 +81,19 @@ export function InstallationWindowDialog({ scope, installation }: InstallationWi
     >
       <DialogTrigger asChild>
         <Button variant={installation ? "outline" : "default"}>
-          {installation?.starts_at ? "Ubah Jadwal" : "Jadwalkan Instalasi"}
+          {installation?.starts_at ? t("installWindow.triggerEdit") : t("installWindow.triggerCreate")}
         </Button>
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Jadwal Instalasi</DialogTitle>
-          <DialogDescription>Rentang ini tampil di halaman invoice client.</DialogDescription>
+          <DialogTitle>{t("installWindow.title")}</DialogTitle>
+          <DialogDescription>{t("installWindow.description")}</DialogDescription>
         </DialogHeader>
 
         <Box className="flex flex-col gap-4">
           <Box className="grid gap-4 sm:grid-cols-2">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="install-start">Mulai</Label>
+              <Label htmlFor="install-start">{t("installWindow.start")}</Label>
               <Input
                 id="install-start"
                 type="date"
@@ -100,7 +102,7 @@ export function InstallationWindowDialog({ scope, installation }: InstallationWi
               />
             </Box>
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="install-end">Selesai</Label>
+              <Label htmlFor="install-end">{t("installWindow.end")}</Label>
               <Input
                 id="install-end"
                 type="date"
@@ -111,7 +113,7 @@ export function InstallationWindowDialog({ scope, installation }: InstallationWi
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="install-notes">Catatan</Label>
+            <Label htmlFor="install-notes">{t("installWindow.notes")}</Label>
             <Textarea
               id="install-notes"
               rows={2}
@@ -130,14 +132,14 @@ export function InstallationWindowDialog({ scope, installation }: InstallationWi
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Batal
+              {t("installWindow.cancel")}
             </Button>
             <Button
               type="button"
               disabled={isPending}
               onClick={submit}
             >
-              {isPending ? "Menyimpan…" : "Simpan"}
+              {isPending ? t("installWindow.saving") : t("installWindow.save")}
             </Button>
           </DialogFooter>
         </Box>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -28,6 +29,7 @@ const GROUP_LABELS: Record<string, string> = {
  * value is edited together and written in one request.
  */
 export function SettingsPage() {
+  const { t } = useTranslation("administration");
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
   const uploadSetting = useUploadSetting();
@@ -61,18 +63,13 @@ export function SettingsPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Settings
-        </Heading>
-        <Text variant="muted">
-          Site-wide configuration. Values marked Public are returned by the storefront's settings endpoint; everything
-          else stays admin-only.
-        </Text>
+        >{t("settingsTitle")}</Heading>
+        <Text variant="muted">{t("settingsSubtitle")}</Text>
       </Box>
 
       {isLoading && (
         <Box className="rounded-2xl border border-border bg-card p-6">
-          <Text variant="muted">Loading settings…</Text>
+          <Text variant="muted">{t("loadingSettings")}</Text>
         </Box>
       )}
 
@@ -103,9 +100,7 @@ export function SettingsPage() {
                   <Badge
                     variant="outline"
                     className="text-success"
-                  >
-                    Public
-                  </Badge>
+                  >{t("public")}</Badge>
                 )}
               </Box>
 

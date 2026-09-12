@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -24,10 +25,11 @@ const INTEGRATED_PROVIDER = "uxiolabs";
 export const categoryProviderColumns = (
   categoryNameById: Map<string, string>,
   providerCategoryMeta: Map<string, ProviderCategoryOption> = new Map(),
+  t: TFunction<"categories">,
 ): ColumnDef<CategoryProvider>[] => [
   {
     accessorKey: "provider_name",
-    header: "Provider",
+    header: t("provider"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -39,7 +41,7 @@ export const categoryProviderColumns = (
   },
   {
     accessorKey: "category_id",
-    header: "Category",
+    header: t("category"),
     // Falls back to the raw id rather than rendering blank, so a provider
     // pointing at a deleted category stays visible and diagnosable.
     cell: ({ row }) => (
@@ -48,7 +50,7 @@ export const categoryProviderColumns = (
   },
   {
     accessorKey: "provider_category",
-    header: "Provider Category",
+    header: t("colProviderCategory"),
     cell: ({ row }) => {
       const meta = providerCategoryMeta.get(row.original.provider_category);
       // Only reconcile rows whose provider actually has a catalogue; anything
@@ -74,9 +76,7 @@ export const categoryProviderColumns = (
             <Badge
               variant="destructive"
               className="w-fit"
-            >
-              Unmatched
-            </Badge>
+            >{t("unmatched")}</Badge>
           )}
         </Box>
       );
@@ -84,7 +84,7 @@ export const categoryProviderColumns = (
   },
   {
     accessorKey: "created_at",
-    header: "Created At",
+    header: t("colCreatedAt"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -96,7 +96,7 @@ export const categoryProviderColumns = (
   },
   {
     id: "actions",
-    header: "Action",
+    header: t("action"),
     cell: ({ row }) => <CategoryProviderRowActions categoryProvider={row.original} />,
   },
 ];

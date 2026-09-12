@@ -22,6 +22,28 @@ const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
+/**
+ * The collapsed/expanded choice from the last visit.
+ *
+ * `setOpen` has always written this cookie, but nothing ever read it back —
+ * upstream shadcn is a Next.js pattern where a server component reads it and
+ * passes `defaultOpen`, and the Vite port kept only the write. The sidebar
+ * therefore sprang open again on every reload while the cookie quietly
+ * accumulated a value nobody used.
+ *
+ * Returns `undefined` when there is no cookie so the caller's own default
+ * stands, and is defensive about `document` for any non-browser render.
+ */
+function readStoredSidebarState(): boolean | undefined {
+  if (typeof document === "undefined") return undefined;
+
+  const match = document.cookie.split("; ").find((entry) => entry.startsWith(`${SIDEBAR_COOKIE_NAME}=`));
+
+  if (!match) return undefined;
+
+  return match.slice(SIDEBAR_COOKIE_NAME.length + 1) === "true";
+}
+
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -40,7 +62,9 @@ function SidebarProvider({
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen);
+  // Read once, at mount: the stored choice wins over the prop default, and a
+  // lazy initialiser keeps it out of every later render.
+  const [_open, _setOpen] = React.useState(() => readStoredSidebarState() ?? defaultOpen);
   const open = openProp ?? _open;
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {

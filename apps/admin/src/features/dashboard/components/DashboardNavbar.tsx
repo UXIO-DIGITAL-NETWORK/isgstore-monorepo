@@ -1,6 +1,8 @@
+import type { TFunction } from "i18next";
 import { Fragment } from "react";
-import { Bell, ChevronDown, HelpCircle, LogOut, Zap } from "lucide-react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { Bell, ChevronDown, HelpCircle, LogOut } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Box } from "@/components/common/Box";
@@ -22,22 +24,25 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Text } from "@/components/common/Text";
 import { NavbarClock } from "@/features/dashboard/components/NavbarClock";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { LocaleSwitcher } from "@/components/common/LocaleSwitcher";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLogout } from "@/features/auth/hooks/useLogout";
+import { findNavLabelKey } from "../data/nav-groups.data";
 
 // Tab segment -> breadcrumb label, mirrors CategoryTabsLayout's TABS
 // (features/categories/layouts/CategoryTabsLayout.tsx). Category is the only
 // section with real nested routes deep enough to need a multi-segment trail
 // ("Category › Sub Category", "Category › Sub Category › Add Sub Category")
 // — every other route keeps the single-title lookup below.
-const CATEGORY_TAB_LABELS: Record<string, string> = {
-  category: "Category",
-  "sub-category": "Sub Category",
-  "category-type": "Category Type",
-  "category-server": "Category Server",
-  "category-provider": "Category Provider",
+const CATEGORY_TAB_KEYS: Record<string, string> = {
+  category: "tabCategoryList",
+  "sub-category": "tabSubCategory",
+  "category-type": "tabCategoryType",
+  "category-server": "tabCategoryServer",
+  "category-provider": "tabCategoryProvider",
 };
 
-function getCategoryBreadcrumb(pathname: string): string[] | null {
+function getCategoryBreadcrumb(pathname: string, t: TFunction<"dashboard">): string[] | null {
   // "/admin/categories-preview" also starts with the substring
   // "/admin/categories", so the preview base must be checked first or every
   // preview path would resolve to the (wrong, one-segment-short) real base.
@@ -49,26 +54,26 @@ function getCategoryBreadcrumb(pathname: string): string[] | null {
   if (!base) return null;
 
   const segments = pathname.slice(base.length).split("/").filter(Boolean);
-  const tabLabel = CATEGORY_TAB_LABELS[segments[0] ?? "category"] ?? "Category";
-  const trail = ["Category", tabLabel];
+  const tabLabel = t(CATEGORY_TAB_KEYS[segments[0] ?? "category"] ?? "navCategory");
+  const trail = [t("navCategory"), tabLabel];
   // The leaf is derived from the active tab, not hardcoded: the reference
   // showed "Add Category" on every tab's add page, which is wrong anywhere
   // but the Category tab (product_requirements.md §4.5).
   const leaf = segments[segments.length - 1];
-  if (leaf === "add") trail.push(`Add ${tabLabel}`);
-  else if (leaf === "edit") trail.push(`Edit ${tabLabel}`);
+  if (leaf === "add") trail.push(t("bcAdd", { tab: tabLabel }));
+  else if (leaf === "edit") trail.push(t("bcEdit", { tab: tabLabel }));
   return trail;
 }
 
 // Tab segment -> breadcrumb label, mirrors TransactionsLayout's TABS. The
 // preview seam is flat (no tab segment), and only ever renders the Automatic
 // table, so an unrecognised first segment falls back to "Automatic".
-const TRANSACTION_TAB_LABELS: Record<string, string> = {
-  automatic: "Automatic",
-  manual: "Manual",
+const TRANSACTION_TAB_KEYS: Record<string, string> = {
+  automatic: "tabAutomatic",
+  manual: "tabManual",
 };
 
-function getTransactionBreadcrumb(pathname: string): string[] | null {
+function getTransactionBreadcrumb(pathname: string, t: TFunction<"dashboard">): string[] | null {
   // Same preview-first ordering caveat as getCategoryBreadcrumb, for the same
   // reason: distinct prefixes here, but keeping one shape avoids a trap later.
   const base = pathname.startsWith("/admin/transaction-preview")
@@ -79,19 +84,19 @@ function getTransactionBreadcrumb(pathname: string): string[] | null {
   if (!base) return null;
 
   const segments = pathname.slice(base.length).split("/").filter(Boolean);
-  const trail = ["Transaction", TRANSACTION_TAB_LABELS[segments[0] ?? "automatic"] ?? "Automatic"];
-  if (segments[segments.length - 1] === "edit") trail.push("Edit Transaction");
+  const trail = [t("navTransaction"), t(TRANSACTION_TAB_KEYS[segments[0] ?? "automatic"] ?? "tabAutomatic")];
+  if (segments[segments.length - 1] === "edit") trail.push(t("editTransaction"));
   return trail;
 }
 
 // Tab segment -> breadcrumb label, mirrors ProductTabsLayout's TAB_SEGMENTS.
-const PRODUCT_TAB_LABELS: Record<string, string> = {
-  main: "Main Products",
-  provider: "Product Provider",
-  "price-log": "Price Change Log",
+const PRODUCT_TAB_KEYS: Record<string, string> = {
+  main: "tabMainProducts",
+  provider: "tabProductProvider",
+  "price-log": "tabPriceChangeLog",
 };
 
-function getProductBreadcrumb(pathname: string): string[] | null {
+function getProductBreadcrumb(pathname: string, t: TFunction<"dashboard">): string[] | null {
   // "/admin/products-preview" also starts with "/admin/products", so the
   // preview base must be tested first — the same trap as getCategoryBreadcrumb.
   const base = pathname.startsWith("/admin/products-preview")
@@ -102,11 +107,11 @@ function getProductBreadcrumb(pathname: string): string[] | null {
   if (!base) return null;
 
   const segments = pathname.slice(base.length).split("/").filter(Boolean);
-  const tabLabel = PRODUCT_TAB_LABELS[segments[0] ?? "main"] ?? "Main Products";
-  const trail = ["Product", tabLabel];
+  const tabLabel = t(PRODUCT_TAB_KEYS[segments[0] ?? "main"] ?? "navProduct");
+  const trail = [t("navProduct"), tabLabel];
   const leaf = segments[segments.length - 1];
-  if (leaf === "add") trail.push(`Add ${tabLabel}`);
-  else if (leaf === "edit") trail.push(`Edit ${tabLabel}`);
+  if (leaf === "add") trail.push(t("bcAdd", { tab: tabLabel }));
+  else if (leaf === "edit") trail.push(t("bcEdit", { tab: tabLabel }));
   return trail;
 }
 
@@ -118,30 +123,40 @@ const getInitials = (name: string) =>
     .join("")
     .toUpperCase();
 
-// Pathname -> topbar breadcrumb title. No route-meta plumbing exists yet
-// (see src/routes/), so this mirrors the sidebar's own useLocation-driven
-// active-nav lookup rather than introducing a new mechanism.
-const PAGE_TITLES: Record<string, string> = {
-  "/admin/financial": "Financial",
-  "/admin/integration": "Integration",
-};
+/**
+ * The title for a route, taken from the sidebar's own navigation list.
+ *
+ * This used to be a hand-written map of two paths with everything else falling
+ * through to the literal "Dashboard" — so `/admin/users`, `/admin/refunds` and
+ * every other screen announced itself as the dashboard, in the breadcrumb and
+ * to screen readers alike. `NAV_GROUPS` already names every route the menu can
+ * reach, so reading it is what keeps the two from drifting apart again.
+ *
+ * "Dashboard" survives as the fallback for a path the menu does not list at
+ * all, which is better than an empty bar.
+ */
+function getPageTitle(pathname: string, t: TFunction<"dashboard">) {
+  const key = findNavLabelKey(pathname);
 
-function getPageTitle(pathname: string) {
-  const match = Object.keys(PAGE_TITLES).find((path) => pathname === path || pathname.startsWith(`${path}/`));
-  return match ? PAGE_TITLES[match] : "Dashboard";
+  return key ? t(key) : t("navDashboard");
 }
 
 export function DashboardNavbar() {
+  const { t } = useTranslation("navbar");
+  // The breadcrumb names routes, and those labels live with the menu that
+  // defines them (`nav-groups.data.ts`) rather than with the navbar's own
+  // chrome — so it needs both namespaces.
+  const { t: tNav } = useTranslation("dashboard");
   const user = useAuthStore((state) => state.user);
-  const navigate = useNavigate();
   const { pathname } = useLocation();
+  // `useLogout` revokes the token server-side before clearing the cookies. The
+  // navbar used to do only the second half by hand, which left a 30-day refresh
+  // token alive on a panel that keeps it in a JavaScript-readable cookie.
+  const logout = useLogout();
 
-  const handleLogout = () => {
-    useAuthStore.getState().clearAuth();
-    navigate({ to: "/login" });
-  };
-
-  const trail = getCategoryBreadcrumb(pathname) ?? getTransactionBreadcrumb(pathname) ?? getProductBreadcrumb(pathname);
+  const trail = getCategoryBreadcrumb(pathname, tNav) ??
+    getTransactionBreadcrumb(pathname, tNav) ??
+    getProductBreadcrumb(pathname, tNav) ?? [getPageTitle(pathname, tNav)];
 
   return (
     <Box
@@ -150,31 +165,26 @@ export function DashboardNavbar() {
     >
       <Box className="flex flex-1 items-center gap-2">
         <SidebarTrigger className="-ml-1" />
-        {trail ? (
-          <Breadcrumb>
-            <BreadcrumbList className="flex-nowrap text-sm">
-              {trail.map((label, index) => (
-                <Fragment key={`${label}-${index}`}>
-                  <BreadcrumbItem>
-                    {index === trail.length - 1 ? (
-                      <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
-                    ) : (
-                      label
-                    )}
-                  </BreadcrumbItem>
-                  {index < trail.length - 1 && <BreadcrumbSeparator />}
-                </Fragment>
-              ))}
-            </BreadcrumbList>
-          </Breadcrumb>
-        ) : (
-          <Text
-            as="span"
-            className="text-sm font-medium text-foreground"
-          >
-            {getPageTitle(pathname)}
-          </Text>
-        )}
+        {/* One code path for both shapes: a plain page title is a trail of
+            one. Rendering it as a bare span instead meant the deepest crumb and
+            the ordinary title announced themselves differently to screen
+            readers, and were queried differently in tests. */}
+        <Breadcrumb>
+          <BreadcrumbList className="flex-nowrap text-sm">
+            {trail.map((label, index) => (
+              <Fragment key={`${label}-${index}`}>
+                <BreadcrumbItem>
+                  {index === trail.length - 1 ? (
+                    <BreadcrumbPage className="font-medium">{label}</BreadcrumbPage>
+                  ) : (
+                    label
+                  )}
+                </BreadcrumbItem>
+                {index < trail.length - 1 && <BreadcrumbSeparator />}
+              </Fragment>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
       </Box>
 
       <Box className="flex items-center gap-1">
@@ -189,22 +199,13 @@ export function DashboardNavbar() {
             as="span"
             className="sr-only"
           >
-            Help
+            {t("help")}
           </Text>
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-9 rounded-md text-muted-foreground"
-        >
-          <Zap className="size-4" />
-          <Text
-            as="span"
-            className="sr-only"
-          >
-            Quick actions
-          </Text>
-        </Button>
+        {/* The slot product_requirements.md §78 reserved for a
+            "language/utility action". It shipped as a lightning icon with no
+            handler; this fills it with the purpose it was specced for. */}
+        <LocaleSwitcher />
         <ThemeToggle />
         <Button
           variant="ghost"
@@ -216,7 +217,7 @@ export function DashboardNavbar() {
             as="span"
             className="sr-only"
           >
-            Notifications
+            {t("notifications")}
           </Text>
         </Button>
 
@@ -224,6 +225,7 @@ export function DashboardNavbar() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
+              aria-label={t("openUserMenu")}
               className="ml-1 h-auto items-center gap-2 rounded-md px-2 py-1.5"
             >
               <Avatar size="sm">
@@ -248,10 +250,12 @@ export function DashboardNavbar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={handleLogout}
+              disabled={logout.isPending}
+              onClick={() => logout.mutate()}
               variant="destructive"
             >
-              <LogOut className="mr-2 size-4" /> Log out
+              <LogOut className="mr-2 size-4" />
+              {logout.isPending ? t("loggingOut") : t("logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

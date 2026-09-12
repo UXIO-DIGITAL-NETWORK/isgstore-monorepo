@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Eye, History, MoreVertical, Pencil, Receipt, RotateCcw, RotateCw, Send, Trash2, Upload } from "lucide-react";
@@ -42,6 +43,7 @@ interface RowActionMenuProps {
  * built rather than inventing a second shape.
  */
 export function RowActionMenu({ transaction, showCallbackActions = true }: RowActionMenuProps) {
+  const { t } = useTranslation("transactions");
   const [activityOpen, setActivityOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -77,19 +79,13 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
           className="rounded-2xl"
         >
           <DropdownMenuItem onSelect={() => setActivityOpen(true)}>
-            <History />
-            Activity Log
-          </DropdownMenuItem>
+            <History />{t("activityLog")}</DropdownMenuItem>
           {showCallbackActions && (
             <>
               <DropdownMenuItem onSelect={() => resendCallback.mutate(transaction.id)}>
-                <Upload />
-                Resend Callback
-              </DropdownMenuItem>
+                <Upload />{t("resendCallback")}</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => retryInvoice.mutate(transaction.id)}>
-                <RotateCw />
-                Retry Invoice
-              </DropdownMenuItem>
+                <RotateCw />{t("retryInvoice")}</DropdownMenuItem>
             </>
           )}
           <DropdownMenuItem
@@ -102,38 +98,26 @@ export function RowActionMenu({ transaction, showCallbackActions = true }: RowAc
               )
             }
           >
-            <Receipt />
-            View Invoice
-          </DropdownMenuItem>
+            <Receipt />{t("viewInvoice")}</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => resendReceipt.mutate(transaction.id)}>
-            <Send />
-            Resend Receipt
-          </DropdownMenuItem>
+            <Send />{t("resendReceipt")}</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setDetailOpen(true)}>
-            <Eye />
-            Transaction Detail
-          </DropdownMenuItem>
+            <Eye />{t("transactionDetail")}</DropdownMenuItem>
           <Can permission="transactions.edit">
             <DropdownMenuItem onSelect={() => navigate({ to: editHref as unknown as string })}>
-              <Pencil />
-              Edit Invoice
-            </DropdownMenuItem>
+              <Pencil />{t("editInvoice")}</DropdownMenuItem>
           </Can>
           <DropdownMenuSeparator />
           <Can permission="transactions.refund">
             <DropdownMenuItem onSelect={() => setRefundOpen(true)}>
-              <RotateCcw />
-              Refund
-            </DropdownMenuItem>
+              <RotateCcw />{t("refund")}</DropdownMenuItem>
           </Can>
           <Can permission="transactions.delete">
             <DropdownMenuItem
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              <Trash2 />{t("delete")}</DropdownMenuItem>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>

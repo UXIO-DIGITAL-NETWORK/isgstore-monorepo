@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -22,34 +24,38 @@ import { useMerchantTransactions, useMerchantTransactionSummary } from "../hooks
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
-const TYPE_LABEL: Record<TransactionType, string> = {
-  sale: "Penjualan",
-  service: "Tagihan Layanan",
+const TYPE_LABEL_KEY: Record<TransactionType, string> = {
+  sale: "transactions.typeSale",
+  service: "transactions.typeService",
 };
 
 // Both topup sales (money in) and the service bills kita issues the client
 // (money out). Direction drives the sign/colour; a service bill has no payment
 // channel, so "Metode" falls back to a dash.
-const columns: Column<UnifiedTransaction>[] = [
+/**
+ * A factory rather than a module constant: column headers are rendered text, so
+ * they have to be resolved when the component renders, not frozen at import.
+ */
+const columnsFor = (t: TFunction<"merchant">): Column<UnifiedTransaction>[] => [
   {
     key: "invoice",
-    header: "Invoice",
+    header: t("transactions.colInvoice"),
     cell: (r) => (
       <Box className="flex flex-col">
         <Text as="span" className="font-medium">
           {r.invoice_number}
         </Text>
         <Text as="span" variant="small" className="text-muted-foreground">
-          {TYPE_LABEL[r.type]}
+          {t(TYPE_LABEL_KEY[r.type])}
         </Text>
       </Box>
     ),
   },
-  { key: "title", header: "Item", cell: (r) => r.title ?? "-" },
-  { key: "channel", header: "Metode", cell: (r) => r.payment_channel ?? "—" },
+  { key: "title", header: t("transactions.colItem"), cell: (r) => r.title ?? "-" },
+  { key: "channel", header: t("transactions.colMethod"), cell: (r) => r.payment_channel ?? "—" },
   {
     key: "amount",
-    header: "Jumlah",
+    header: t("transactions.colAmount"),
     className: "text-right tabular-nums",
     cell: (r) => (
       <Text
@@ -63,17 +69,17 @@ const columns: Column<UnifiedTransaction>[] = [
   },
   {
     key: "payment_status",
-    header: "Pembayaran",
+    header: t("transactions.colPayment"),
     cell: (r) => <PaymentStatusBadge status={resolvePaymentStatus(r)} />,
   },
   {
     // Blank on a service bill — kita issued it, no supplier is involved. That is
     // an honest dash, not missing data.
     key: "provider_status",
-    header: "Provider",
+    header: t("transactions.colProvider"),
     cell: (r) => <ProviderStatusBadge status={resolveProviderStatus(r)} audience="merchant" />,
   },
-  { key: "created", header: "Tanggal", cell: (r) => formatDateTime(r.created_at) },
+  { key: "created", header: t("transactions.colDate"), cell: (r) => formatDateTime(r.created_at) },
 ];
 
 const INITIAL_FILTERS: TransactionFilterState = {
@@ -85,6 +91,8 @@ const INITIAL_FILTERS: TransactionFilterState = {
 };
 
 export default function MerchantTransactionsPage() {
+  const { t } = useTranslation("merchant");
+  const columns = columnsFor(t);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<TransactionFilterState>(INITIAL_FILTERS);
   const debouncedSearch = useDebouncedValue(filters.search, 300);
@@ -112,7 +120,7 @@ export default function MerchantTransactionsPage() {
   return (
     <Box className="flex flex-col gap-6">
       <Box className="flex flex-wrap items-center justify-between gap-3">
-        <Heading level={1}>Transaksi</Heading>
+        <Heading level={1}>{t("transactions.title")}</Heading>
         <Box className="flex items-center gap-2">
           <RecapDialog summary={summary.data} isLoading={summary.isLoading} />
           <ExportButton onExport={() => merchantService.exportTransactions(filterParams)} />
@@ -133,7 +141,7 @@ export default function MerchantTransactionsPage() {
         rows={data?.rows ?? []}
         isLoading={isLoading}
         isError={isError}
-        emptyLabel="Belum ada transaksi"
+        emptyLabel={t("transactions.empty")}
         rowKey={(r) => `${r.type}-${r.id}`}
       />
 

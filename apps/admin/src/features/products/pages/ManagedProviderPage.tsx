@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowUpCircle, Lock, Plus, RefreshCw, Rocket, SlidersHorizontal, Trash2 } from "lucide-react";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { managedProviderColumns } from "../components/managedProviderColumns";
+import { managedProviderColumnsFor } from "../components/managedProviderColumns";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
 import {
   usePoolSummary,
@@ -37,6 +38,7 @@ const ALL = "all";
  * "Add Product Provider". System rows are protected: not selectable, no delete.
  */
 export default function ManagedProviderPage() {
+  const { t } = useTranslation("products");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(ALL);
   const [mode, setMode] = useState(ALL);
@@ -78,20 +80,15 @@ export default function ManagedProviderPage() {
   return (
     <Box className="flex flex-col gap-6">
       <Box className="rounded-2xl border border-border bg-card p-6">
-        <Heading level={1} variant="section">
-          Product Provider
-        </Heading>
-        <Text variant="muted">
-          The provider products mapped into your catalog. Lock a price to hold it against the supplier sync, tune its
-          profit margin, or remove a mapping. System products are managed by the platform.
-        </Text>
+        <Heading level={1} variant="section">{t("colProductProvider")}</Heading>
+        <Text variant="muted">{t("providerSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <Box className="flex flex-wrap items-center gap-3">
           <Input
             className="w-64 rounded-xl"
-            placeholder="Search provider product"
+            placeholder={t("searchProviderProduct")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -105,13 +102,13 @@ export default function ManagedProviderPage() {
               resetToFirstPage();
             }}
           >
-            <SelectTrigger className="w-36 rounded-xl" aria-label="Status">
+            <SelectTrigger className="w-36 rounded-xl" aria-label={t("status")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value={ALL}>{t("allStatus")}</SelectItem>
+              <SelectItem value="active">{t("active")}</SelectItem>
+              <SelectItem value="inactive">{t("inactive")}</SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -121,13 +118,13 @@ export default function ManagedProviderPage() {
               resetToFirstPage();
             }}
           >
-            <SelectTrigger className="w-36 rounded-xl" aria-label="Price mode">
+            <SelectTrigger className="w-36 rounded-xl" aria-label={t("priceMode")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All prices</SelectItem>
-              <SelectItem value="auto">Auto</SelectItem>
-              <SelectItem value="manual">Manual</SelectItem>
+              <SelectItem value={ALL}>{t("allPrices")}</SelectItem>
+              <SelectItem value="auto">{t("auto")}</SelectItem>
+              <SelectItem value="manual">{t("manual")}</SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -137,13 +134,13 @@ export default function ManagedProviderPage() {
               resetToFirstPage();
             }}
           >
-            <SelectTrigger className="w-40 rounded-xl" aria-label="Pipeline stage">
+            <SelectTrigger className="w-40 rounded-xl" aria-label={t("pipelineStage")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All stages</SelectItem>
-              <SelectItem value="needs_margin">Needs margin</SelectItem>
-              <SelectItem value="ready">Ready</SelectItem>
+              <SelectItem value={ALL}>{t("allStages")}</SelectItem>
+              <SelectItem value="needs_margin">{t("needsMargin")}</SelectItem>
+              <SelectItem value="ready">{t("ready")}</SelectItem>
               {/* No Draft or Published here: both describe a SKU that has been
                   promoted, and a promoted SKU has left the pool. It lives on the
                   Main Products list, whose Status filter covers those states. */}
@@ -156,11 +153,11 @@ export default function ManagedProviderPage() {
               resetToFirstPage();
             }}
           >
-            <SelectTrigger className="w-44 rounded-xl" aria-label="Category">
+            <SelectTrigger className="w-44 rounded-xl" aria-label={t("category")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All categories</SelectItem>
+              <SelectItem value={ALL}>{t("allCategories")}</SelectItem>
               {categoryOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -175,16 +172,16 @@ export default function ManagedProviderPage() {
               resetToFirstPage();
             }}
           >
-            <SelectTrigger className="w-44 rounded-xl" aria-label="Provider availability">
+            <SelectTrigger className="w-44 rounded-xl" aria-label={t("providerAvailability")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>Any availability</SelectItem>
-              <SelectItem value="available">Available upstream</SelectItem>
-              <SelectItem value="unavailable">Unavailable upstream</SelectItem>
+              <SelectItem value={ALL}>{t("anyAvailability")}</SelectItem>
+              <SelectItem value="available">{t("availableUpstream")}</SelectItem>
+              <SelectItem value="unavailable">{t("unavailableUpstream")}</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" className="rounded-xl" aria-label="Refresh" onClick={() => refetch()}>
+          <Button variant="outline" size="icon" className="rounded-xl" aria-label={t("refresh")} onClick={() => refetch()}>
             <RefreshCw className="size-4" />
           </Button>
           <Box className="ml-auto">
@@ -212,9 +209,9 @@ export default function ManagedProviderPage() {
           <BulkActionsMenu
             count={selectedIds.length}
             actions={[
-              { label: "Lock Price", icon: <Lock className="size-4" />, onSelect: () => setBulkLockOpen(true) },
+              { label: t("lockPrice"), icon: <Lock className="size-4" />, onSelect: () => setBulkLockOpen(true) },
               {
-                label: "Edit Profit Margin",
+                label: t("editProfitMargin"),
                 icon: <SlidersHorizontal className="size-4" />,
                 onSelect: () =>
                   navigate({
@@ -223,17 +220,17 @@ export default function ManagedProviderPage() {
                   }),
               },
               {
-                label: "Promote to Main Product",
+                label: t("promoteToMain"),
                 icon: <ArrowUpCircle className="size-4" />,
                 onSelect: () => promote.mutate(selectedIds),
               },
               {
-                label: "Promote & Publish",
+                label: t("promotePublish"),
                 icon: <Rocket className="size-4" />,
                 onSelect: () => promoteAndPublish.mutate(selectedIds),
               },
               {
-                label: "Delete",
+                label: t("delete"),
                 icon: <Trash2 className="size-4" />,
                 destructive: true,
                 onSelect: () => setBulkDeleteOpen(true),
@@ -245,12 +242,12 @@ export default function ManagedProviderPage() {
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <DataTable
-          columns={managedProviderColumns}
+          columns={managedProviderColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          entityLabel="products"
+          entityLabel={t("productsEntity")}
           showRowNumber
           enableSelection
           canSelectRow={canSelectRow}
@@ -269,9 +266,9 @@ export default function ManagedProviderPage() {
         open={bulkLockOpen}
         onOpenChange={setBulkLockOpen}
         icon={<Lock />}
-        confirmLabel="Lock"
+        confirmLabel={t("lock")}
         title={selectedIds.length <= 1 ? "Lock this price?" : `Lock ${selectedIds.length} prices?`}
-        description="The daily supplier sync will stop overwriting these products' prices until they are unlocked."
+        description={t("bulkLockProviderDescription")}
         onConfirm={() => bulkLock.mutate({ ids: selectedIds, locked: true })}
       />
 
@@ -279,7 +276,7 @@ export default function ManagedProviderPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={selectedIds.length <= 1 ? "Delete this provider product?" : `Delete ${selectedIds.length} provider products?`}
-        description="This action cannot be undone. System provider products in the selection are skipped."
+        description={t("bulkDeleteProviderDescription")}
         onConfirm={() => bulkDelete.mutate(selectedIds)}
       />
     </Box>

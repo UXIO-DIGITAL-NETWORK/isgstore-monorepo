@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,11 +26,11 @@ import { useCreateService, useUpdateService } from "../hooks/useFinance";
 import { serviceSchema, toFeatureList, type ServiceFormValues } from "../schemas/service.schema";
 
 const CATEGORY_OPTIONS = [
-  { value: "payment-gateway", label: "Payment Gateway" },
-  { value: "supplier", label: "Supplier" },
-  { value: "communication", label: "Komunikasi" },
-  { value: "infrastructure", label: "Infrastruktur" },
-  { value: "other", label: "Lainnya" },
+  { value: "payment-gateway", labelKey: "serviceForm.categoryPaymentGateway" },
+  { value: "supplier", labelKey: "serviceForm.categorySupplier" },
+  { value: "communication", labelKey: "serviceForm.categoryCommunication" },
+  { value: "infrastructure", labelKey: "serviceForm.categoryInfrastructure" },
+  { value: "other", labelKey: "serviceForm.categoryOther" },
 ];
 
 interface ServiceFormDialogProps {
@@ -52,7 +54,18 @@ const defaults = (service?: Service): ServiceFormValues => ({
  * Create or edit a catalogue entry. One dialog for both, because the fields
  * are identical and a separate edit form would drift from the create one.
  */
+
+/**
+ * Options carry a key, not a label, so they move with the panel's language —
+ * a module constant would freeze whichever language was loaded at import.
+ */
+const translated = (
+  options: ReadonlyArray<{ value: string; labelKey: string }>,
+  t: TFunction<"finance">,
+) => options.map((option) => ({ value: option.value, label: t(option.labelKey) }));
+
 export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
+  const { t } = useTranslation("finance");
   const [open, setOpen] = useState(false);
   const { mutate: create, isPending: creating } = useCreateService();
   const { mutate: update, isPending: updating } = useUpdateService();
@@ -107,14 +120,14 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
           size={isEdit ? "sm" : "default"}
           variant={isEdit ? "outline" : "default"}
         >
-          {isEdit ? "Edit" : "Tambah Service"}
+          {isEdit ? t("serviceForm.triggerEdit") : t("serviceForm.triggerCreate")}
         </Button>
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Service" : "Tambah Service"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("serviceForm.titleEdit") : t("serviceForm.titleCreate")}</DialogTitle>
           <DialogDescription>
-            Atur harga modal, harga jual, dan masa aktif satu periode langganan untuk service ini.
+            {t("serviceForm.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -125,10 +138,10 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
         >
           <Box className="grid gap-4 sm:grid-cols-2">
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="service-code">Kode</Label>
+              <Label htmlFor="service-code">{t("serviceForm.code")}</Label>
               <Input
                 id="service-code"
-                placeholder="whatsapp-api"
+                placeholder={t("serviceForm.codePlaceholder")}
                 {...register("code")}
               />
               {errors.code && (
@@ -142,10 +155,10 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="service-name">Nama</Label>
+              <Label htmlFor="service-name">{t("serviceForm.name")}</Label>
               <Input
                 id="service-name"
-                placeholder="WhatsApp API"
+                placeholder={t("serviceForm.namePlaceholder")}
                 {...register("name")}
               />
               {errors.name && (
@@ -164,18 +177,18 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
               render={({ field }) => (
                 <SelectField
                   id="service-category"
-                  label="Kategori"
-                  options={CATEGORY_OPTIONS}
+                  label={t("serviceForm.category")}
+                  options={translated(CATEGORY_OPTIONS, t)}
                   value={field.value}
                   onChange={field.onChange}
                   error={errors.category?.message}
-                  placeholder="Pilih kategori"
+                  placeholder={t("serviceForm.categoryPlaceholder")}
                 />
               )}
             />
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="service-duration">Masa Aktif (hari)</Label>
+              <Label htmlFor="service-duration">{t("serviceForm.duration")}</Label>
               <Input
                 id="service-duration"
                 type="number"
@@ -193,7 +206,7 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="service-cost-price">Cost Price (Rp)</Label>
+              <Label htmlFor="service-cost-price">{t("serviceForm.costPrice")}</Label>
               <Input
                 id="service-cost-price"
                 type="number"
@@ -211,7 +224,7 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="service-selling-price">Selling Price (Rp)</Label>
+              <Label htmlFor="service-selling-price">{t("serviceForm.sellingPrice")}</Label>
               <Input
                 id="service-selling-price"
                 type="number"
@@ -234,10 +247,10 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
               render={({ field }) => (
                 <SelectField
                   id="service-status"
-                  label="Status"
+                  label={t("serviceForm.status")}
                   options={[
-                    { value: "true", label: "Aktif" },
-                    { value: "false", label: "Nonaktif" },
+                    { value: "true", label: t("serviceForm.statusActive") },
+                    { value: "false", label: t("serviceForm.statusInactive") },
                   ]}
                   value={String(field.value)}
                   onChange={(value) => field.onChange(value === "true")}
@@ -247,7 +260,7 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="service-description">Deskripsi</Label>
+            <Label htmlFor="service-description">{t("serviceForm.descriptionField")}</Label>
             <Textarea
               id="service-description"
               rows={2}
@@ -256,11 +269,11 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="service-features">Fitur</Label>
+            <Label htmlFor="service-features">{t("serviceForm.features")}</Label>
             <Textarea
               id="service-features"
               rows={3}
-              placeholder={"Satu fitur per baris"}
+              placeholder={t("serviceForm.featuresPlaceholder")}
               {...register("features")}
             />
             <Text
@@ -277,13 +290,13 @@ export function ServiceFormDialog({ service }: ServiceFormDialogProps) {
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Batal
+              {t("serviceForm.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isPending}
             >
-              {isPending ? "Menyimpan…" : "Simpan"}
+              {isPending ? t("serviceForm.saving") : t("serviceForm.save")}
             </Button>
           </DialogFooter>
         </Box>

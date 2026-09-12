@@ -1,4 +1,4 @@
-import type { PriceRangeOption, SelectOption } from "../types/product.type";
+import type { KeyedSelectOption, PriceRangeOption, SelectOption } from "../types/product.type";
 
 /**
  * Sub Category options per category — the Add form's Sub Category select lists
@@ -40,22 +40,24 @@ export const SUB_CATEGORY_OPTIONS: Record<string, SelectOption[]> = {
  * Access mirrors `PRICE_TIERS` — the same four customer tiers the price card
  * is broken down by, which is the only tier vocabulary this domain has.
  */
-export const PRODUCT_ACCESS_OPTIONS: SelectOption[] = [
-  { value: "public", label: "Public" },
-  { value: "vip", label: "VIP" },
-  { value: "reseller", label: "Reseller" },
-  { value: "agent", label: "Agent" },
+export const PRODUCT_ACCESS_OPTIONS: KeyedSelectOption[] = [
+  { value: "public", labelKey: "optPublic" },
+  { value: "vip", labelKey: "optVip" },
+  { value: "reseller", labelKey: "optReseller" },
+  { value: "agent", labelKey: "optAgent" },
 ];
 
-export const PRODUCT_TAG_OPTIONS: SelectOption[] = [
-  { value: "popular", label: "Popular" },
-  { value: "new", label: "New" },
-  { value: "promo", label: "Promo" },
-  { value: "best-seller", label: "Best Seller" },
+export const PRODUCT_TAG_OPTIONS: KeyedSelectOption[] = [
+  { value: "popular", labelKey: "optPopular" },
+  { value: "new", labelKey: "newBadge" },
+  { value: "promo", labelKey: "optPromo" },
+  { value: "best-seller", labelKey: "optBestSeller" },
 ];
 
 /** Same upstream validators the Category form offers (§4.5) — one product's
  * nickname check is the same integration its category uses. */
+// Vendor names, so these carry labels rather than keys — including "None",
+// which reads as one more choice in a list of integrations.
 export const NICKNAME_VALIDATION_OPTIONS: SelectOption[] = [
   { value: "Moonton API", label: "Moonton API" },
   { value: "Garena API", label: "Garena API" },
@@ -73,6 +75,7 @@ export const NICKNAME_VALIDATION_OPTIONS: SelectOption[] = [
  * still a placeholder. Labelled `supplier — SKU` so a row reads on its own.
  * Replace wholesale once a Product Provider service lands.
  */
+// Supplier SKU placeholders, not UI copy.
 export const SUPPLIER_PRODUCT_OPTIONS: SelectOption[] = [
   { value: "uxiolabs-ml-86", label: "Uxiolabs — ML 86 Diamond" },
   { value: "uxiolabs-ml-172", label: "Uxiolabs — ML 172 Diamond" },
@@ -91,8 +94,8 @@ export const SUPPLIER_PRODUCT_OPTIONS: SelectOption[] = [
  * Revise when a reference or the API shows what this actually filters.
  */
 export const PRICE_RANGE_OPTIONS: PriceRangeOption[] = [
-  { value: "under-10k", label: "Under Rp 10.000", min: 0, max: 10_000 },
-  { value: "10k-50k", label: "Rp 10.000 - Rp 50.000", min: 10_000, max: 50_000 },
-  { value: "50k-100k", label: "Rp 50.000 - Rp 100.000", min: 50_000, max: 100_000 },
-  { value: "over-100k", label: "Over Rp 100.000", min: 100_000 },
+  { value: "under-10k", labelKey: "optUnder10k", min: 0, max: 10_000 },
+  { value: "10k-50k", labelKey: "opt10kTo50k", min: 10_000, max: 50_000 },
+  { value: "50k-100k", labelKey: "opt50kTo100k", min: 50_000, max: 100_000 },
+  { value: "over-100k", labelKey: "optOver100k", min: 100_000 },
 ];

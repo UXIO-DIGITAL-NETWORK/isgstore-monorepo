@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, type ReactNode } from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 
@@ -30,6 +31,7 @@ interface ContentRowActionsProps {
  * owned by the list page — the same rule the categories feature follows.
  */
 export function ContentRowActions({ id, label, entityLabel, onDelete, onEdit, extraItems }: ContentRowActionsProps) {
+  const { t } = useTranslation("content");
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
@@ -61,9 +63,7 @@ export function ContentRowActions({ id, label, entityLabel, onDelete, onEdit, ex
               variant="destructive"
               onSelect={() => setDeleteOpen(true)}
             >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              <Trash2 />{t("delete")}</DropdownMenuItem>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>

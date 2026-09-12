@@ -320,13 +320,113 @@ Things that are load-bearing and easy to undo:
 - **The failure path must not be inside a transaction.** Throwing out of one rolls the attempt counter back with everything else, leaving the challenge brute-forceable for its whole five-minute life. Five wrong codes destroy it — that, not the rate limiter, is the primary control, and it cannot be spread across IPs because a fresh challenge costs a correct password.
 - **`users.two_factor_last_used_timestep` stops replay.** The ±1 drift window otherwise leaves one code valid ~90 seconds, and the realistic attack on TOTP is a phishing proxy relaying a code the victim just typed.
 - **The login response, when a factor is owed, carries the challenge and nothing else** — no user, no email, no role. Returning the account would be a free enumeration and role-disclosure oracle for anyone with a leaked password list.
-- **Any change to the second factor revokes every token.** Someone enabling 2FA because they suspect a compromise would otherwise leave the attacker's 30-day refresh token alive.
+- **Any change to the second factor revokes every token, and then mints one fresh pair.** Someone enabling 2FA because they suspect a compromise would otherwise leave the attacker's 30-day refresh token alive. The mint happens *after* the sweep and inside the same transaction, so the rule is intact — every token an attacker held is gone — and the admin who just proved a code is not made to sign in a second time in the middle of a step the panel forced on them. `confirm` and `rotate/confirm` therefore answer with the same `{user, access_token, refresh_token}` shape as `verify`; a client that ignores it is left holding a token the API already destroyed.
 - **`POST /2fa/setup` 409s when 2FA is already on.** Rotating a live secret needs the password, or a hijacked session could silently re-enrol its own authenticator.
 - `two_factor_secret` uses the `encrypted` cast, so **rotating `APP_KEY` bricks every enrolled authenticator**.
+
+**Moving the authenticator is its own verb, and it never lowers the guard.** `POST /2fa/rotate` (password **and** a code from the device being replaced) writes `users.two_factor_pending_secret`; `POST /2fa/rotate/confirm` promotes it on a code from the *new* device. Both sit beside setup/confirm, outside the `admin` group, and carry `throttle:two-factor`.
+
+- **The pending secret is a separate column for one reason.** `two_factor_secret` and `two_factor_confirmed_at` are untouched until the promotion, so a rotation abandoned halfway — a tab closed, a QR scanned onto the wrong phone — leaves the old authenticator working. Overwriting the live secret instead would lock an admin out of their own panel, discovered at the worst possible moment. Before this existed the only route was `disable` then `setup`, which signs the admin out mid-act and leaves the account with **no** second factor in between.
+- **`rotate` passes `two_factor_last_used_timestep`; `rotate/confirm` passes `null`.** The first is the replay guard aimed at the one action that hands over the account — without it the code just spent logging in would move the authenticator, which is exactly what a phishing proxy relays. The second is `null` because timesteps are wall-clock and the stored one belongs to the *old* secret: passing it would reject a perfectly good code from the new device for landing in the same thirty seconds. The new secret has authenticated nothing anywhere and every token dies a line later, so there is nothing to replay.
+- **`two_factor_confirmed_at` is never rewritten by a rotation.** It records that the account has had a factor since a date, not which phone holds it.
+- An unconfirmed rotation expires after `TwoFactorAction::PENDING_TTL_MINUTES` (10) and is cleared by `disable` and by `two-factor:disable`. `UserResource` emits `two_factor_pending` so the panel can say a move is outstanding.
+
+**Enrolment is a step inside signing in, not a page in the panel.** The admin panel routes an un-enrolled admin to `/two-factor-setup` on a bare layout before the dashboard mounts; the 403 `two_factor_setup_required` branch in its axios interceptor is now the safety net for sessions predating that guard, not the main road.
 
 **No recovery codes in this release, deliberately.** The admins are a small in-house team with shell access, and `php artisan two-factor:disable {email}` is a complete answer that removes a whole surface. That stops being true the day 2FA is extended to `payment-admin` — clients with no shell — so ship recovery codes in *that* release.
 
 **Deployment consequence, pinned by `GameCatalogSeedTest`:** every pre-existing admin is refused the panel until they enrol. The way out is always open because `/2fa/setup` and `/2fa/confirm` live outside the admin group.
+
+### Language (ID/EN)
+
+**`App\Support\Locale\SupportedLocale` is the one definition of which languages exist.** The set
+used to be implied in three places that disagreed: `config('app.locale')` said `en`, the
+`users.locale` column default said `id`, and `GenerateInvoicePdfAction` carried its own whitelist.
+The visible consequence was that every Google sign-up was stored as an English speaker while
+password sign-ups were Indonesian. **The platform default is now `id`** — the market is Indonesia,
+prices are in rupiah, and a bare phone number is assumed to be `62`.
+
+**`SetLocale` is appended to the `api` group**, alongside `EnsureSiteIsServing`, and global for the
+same reason: the language of a response must not depend on which endpoint was hit. Resolution runs
+`users.locale` → `Accept-Language` → `config('app.locale')`, and an unsupported value at any rung is
+skipped rather than rejected — a browser set to Japanese is not a bad request, and a `users.locale`
+written before the column was constrained should degrade, not break the account. It reads
+`$request->user('sanctum')`, not `user()`: it runs on unauthenticated routes too, where the default
+guard is `web` and cannot see a bearer token.
+
+**`lang/id/validation.php` and `APP_LOCALE=id` are one change, not two.** Flipping the locale without
+the file leaves every message falling back to English, which is worse than where it started. Before
+this, twelve FormRequests overrode `messages()` in Indonesian while ~150 fell through to Laravel's
+English defaults — so the language of an error depended on the endpoint. English still works with no
+`lang/en/validation.php` because the framework ships its own.
+
+**`PATCH /v1/me/locale` is its own endpoint, not a field on `sync-timezone`.** That route's name
+promises one thing, and the two are different kinds of fact: a timezone is detected from the browser
+and synced silently, a language is chosen by a person.
+
+**Still outstanding:** `ApiResponse` and the ~4,000 literals across `app/Http/Controllers` and
+`app/Actions` are untouched, so most `message` fields remain hardcoded and mixed
+("Login successful" next to "Autentikasi dua faktor aktif." in the same controller). That needs
+triage into the few hundred a user actually reads, not a sweep. `lang/{en,id}` already holds
+`receipt`, `refund`, `whatsapp` and `locale`.
+
+### Discord notifications
+
+`DiscordWebhookService` is the only sender, and three rules keep the channel worth
+reading. They were written after a run put **29 messages into it in one minute** — five
+supplier webhooks reporting `PROCESSING ➔ PROCESSING`, eleven routine refund claims
+dressed as 🚨 alerts, four copies of one misconfiguration — burying the single message
+that needed a human: a merchant balance that could not be debited.
+
+- **Non-production is silent.** The flood was factory data (`fake()->words(2, true)`
+  channel names, `RFD-` + 12 random chars, every refund exactly Rp 12.000) from a seeder
+  on a box whose webhook pointed at the live channel. Set
+  `DISCORD_SEND_OUTSIDE_PRODUCTION=true` where a staging feed is wanted; it arrives
+  prefixed `[STAGING]`. `testing` passes through unlabelled — a test that configures a
+  webhook is exercising the path deliberately, and labelling it would force the prefix
+  into every title assertion in the suite.
+- **Pick the severity.** `sendAlert` is the alarm and means "someone must act now".
+  `sendNotice` is for routine business events — a refund claim is workflow, not an alarm.
+- **A system-level problem is reported once.** `sendAlertOnce($key, $message)` guards with
+  `Cache::add` for an hour. A missing `STOREFRONT_URL` is one problem however many refunds
+  hit it; reported per row it produced one message per refund. The window expires rather
+  than latching, because silence is a reminder suppressed, not a problem closed.
+  Two older call sites roll their own guard with different windows and stay as they are:
+  `PollUxiolabsStatusJob` (24h per transaction) and `SyncChannelSettingsFromHubAction`
+  (once per channel per day — the scheduler runs it 96 times a day).
+
+**`HandleUxiolabsWebhookAction` announces only a real status change.** uxiolabs
+re-delivers `processing` while an order is in flight. The gate is on the Discord call
+alone, never on `$notification` — that variable also drives the refund and the receipt,
+both of which must keep running on a redelivery.
+
+### Links that leave the building
+
+**Every customer-facing base URL goes through `App\Support\PublicUrl`, and none of
+them has a fallback in `config/`.** A refund claim link once went out over WhatsApp
+reading `http://localhost:5173/id/refund?token=…`: the message sent, `claim_notified_at`
+was stamped, the refund row looked handled, and the person owed the money had no way to
+claim it. The cause was a config default — `STOREFRONT_URL` fell back to a dev server, so
+a deployment that never set the variable shipped that address to real buyers instead of
+failing. `MONETAPAY_SUCCESS_REDIRECT_URL` had the same shape with `https://example.com`,
+handed to a live payment gateway.
+
+- **Unreachable is judged from the customer's network, not ours:** loopback, RFC 1918
+  private ranges, the `.local`/`.test`/`.internal` dev TLDs, and IANA's `example.*`
+  domains. Plain `http` on a real domain is **not** refused — a site behind a proxy that
+  terminates TLS elsewhere is a real deployment.
+- **What a caller does with a null differs by how much the link is worth.** The refund
+  claim link IS the message, so an unreachable base **stops the send** and leaves
+  `claim_notified_at` null, which the refunds page already renders as "never notified —
+  contact manually" — a state an operator can act on. It never throws:
+  `InitiateRefundAction` calls it post-commit, where nothing may fail the refund. The
+  receipt's "track order" CTA and the admin's renew-subscription link are worth less than
+  the page around them, so those are **omitted** and the rest still ships.
+- **`urls:verify` is what stops this being found by a customer.** It exits non-zero and
+  gates the deploy, alongside `pricing:verify` — same contract, same reasoning: turn a
+  silent misconfiguration into a failed deploy.
+- `phpunit.xml` supplies real-looking domains so the suite does not exercise the degraded
+  path everywhere; `PublicUrlTest` overrides them per case.
 
 ### Money formatting
 
@@ -357,10 +457,41 @@ Key points:
 - Outbound signature: `md5(md5(TOKEN + "*|*" + sortedParams + "@!@" + timestamp))`.
 - Inbound callback: same Double MD5 algorithm, verified via `verifyCallbackSignature()` using `hash_equals()`.
 - Endpoint selection is driven by `payment_type` on `PaymentChannel`: `'qris'` → `/v1.0.0/qris`, anything else → `/v1.0.0/virtual_account`.
-- Config keys: `services.monetapay.{mch_id, collection_app_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
-- Three distinct identifiers — do not conflate them: `mch_id` is the merchant identity (only sent where the gateway expects a real `mch_id`/`parent_app_id`, e.g. `merchant_permission`, `sub_merchant`); `collection_app_id` is the pay-in `app_id` (checkout/`createTransaction`, refund, and all collection inquiries); `disbursement_app_id` is the payout `app_id`.
+- Config keys: `services.monetapay.{mch_id, sub_mch_id, collection_app_id, disbursement_app_id, partner_key, token, aes_key, aes_iv, is_production}`.
+- Four distinct identifiers — do not conflate them: `mch_id` is the merchant identity (only sent where the gateway expects a real `mch_id`/`parent_app_id`, e.g. `merchant_permission`, `sub_merchant`); `sub_mch_id` is the sub-merchant the site trades AS (see below); `collection_app_id` is the pay-in `app_id` (checkout/`createTransaction`, refund, and all collection inquiries); `disbursement_app_id` is the payout `app_id`.
 - `collection_app_id` has **no fallback** — set `MONETAPAY_COLLECTION_APP_ID` explicitly per environment or collection calls sign with a blank `app_id`.
 - `disbursement_app_id` is used exclusively by payout methods (7.x: createDisbursement, createLargePayout, createEwalletPayout, inquiryDisbursement, plus the account-validation pre-payout check); defaults to `mch_id` if unset.
+
+#### Sub-merchant (`sub_mch_id`)
+
+The site trades as **one** Monetapay sub-merchant under the parent `mch_id`, on the
+parent's credentials — `sub_mch_id` is the only field that tells the gateway whose
+books a call belongs to. It is set once (`MONETAPAY_SUB_MCH_ID`, or the admin's
+"Sub-Merchant ID" field) and injected in exactly two places:
+
+- **`postSigned()`** — covers every signed endpoint (inquiries, cancel, refund,
+  subscriptions, bills, payouts) in one stroke instead of ~30 call sites. An
+  explicit `sub_mch_id` from the caller still wins, so the operator tools can
+  inspect a different sub-merchant.
+- **`createTransaction()`** — added **before** `ksort()`, so it is part of the
+  signed TreeMap. A field appended after signing travels but never verifies.
+
+Two rules follow from how Monetapay re-signs a request:
+
+- **Blank must be absent, not empty.** Monetapay drops blank fields from the
+  TreeMap it recomputes the signature over, so `sub_mch_id=` would break the sign.
+  The `array_filter` in `postSigned` and the `!== ''` guard in `createTransaction`
+  keep an unset value out entirely — which is also why leaving it blank reproduces
+  pre-sub-merchant behaviour exactly.
+- **`inquirySubMerchant()` opts out** (`withSubMch: false`). 6.7.4 asks the PARENT
+  about a registration; stamping our own `sub_mch_id` on it answers a different
+  question.
+
+`balanceCacheKey(null)` resolves through the *same* default, so the finance panel's
+read and a ping's cache-bust land on one entry rather than two that drift apart.
+Inbound callbacks naming a different `sub_mch_id` are **logged, not rejected** —
+the order is matched by our own `mch_order_no`, and refusing on a field never seen
+in a live payload would drop real payments. A warning there means the config is wrong.
 
 ### Withdrawal / Payout (Monetapay disbursement)
 
@@ -387,15 +518,15 @@ at request time and freezes `fee`/`nett`.
 
 ### uxiolabs (Product Supplier)
 
-- Auth: a single `api_key` sent in every JSON request body (no signing, no dev/prod key split). The caller's server IP must additionally be whitelisted in the uxiolabs dashboard, or every call fails.
-- Endpoints (all POST JSON to `UXIOLABS_BASE_URL`, default `https://api.uxiotopup.id`): `/service` (price list), `/order`, `/status`, `/saldo`. Errors come back as HTTP 200 with `{status:false, msg}` — `UxiolabsService` rejects those envelopes rather than passing them through.
+- Auth: a single `api_key` sent in every JSON request body (no signing, no dev/prod key split). The caller's server IP must additionally be whitelisted in the uxiolabs dashboard, or every call fails. **The allowlist is keyed on the IPv4 address, so `client()` pins `CURLOPT_IPRESOLVE` to v4** — left to itself curl prefers the AAAA record, the call goes out from an unlisted IPv6 address, and Cloudflare answers a "you have been blocked" HTML page that surfaces as a 502 on every price-list-backed endpoint.
+- Endpoints (all POST JSON to `UXIOTOPUP_BASE_URL`, default `https://api.uxiotopup.id`): `/service` (price list), `/order`, `/status`, `/saldo`. Errors come back as HTTP 200 with `{status:false, msg}` — `UxiolabsService` rejects those envelopes rather than passing them through.
 - `target` sent to uxiolabs = pipe-joined `target_uid|target_server` (just the uid when there is no server) — composed by `CustomerNumberFormatter` from `categories.order_form_fields` templates like `{user_id}|{zone_id}`.
 - `invoice_number` is used as the uxiolabs `idtrx`. The order response's `data.id` is uxiolabs's OWN invoice and is persisted to `transactions.supplier_trx_id` — it is the only key `/status` accepts (there is no lookup by idtrx). `keterangan` carries the SN.
 - `kontak` (phone) is required on `/order`: member phone → `guest_contact` → `'0000000000'` fallback.
 - Duplicate `idtrx` ("idtrx sudah ada") means a previous attempt already placed the order — `UxiolabsDuplicateOrderException` is caught in `ProcessUxiolabsTransactionAction`, which settles the row to PROCESSING and waits for the callback instead of re-ordering or refunding.
-- Supplier cost = the configured tier column from `/service` (`UXIOLABS_PRICE_TIER`: harga | harga_gold | harga_silver | harga_pro, default `harga`).
+- Supplier cost = the configured tier column from `/service` (`UXIOTOPUP_PRICE_TIER`: harga | harga_gold | harga_silver | harga_pro, default `harga`).
 - Config keys: `services.uxiolabs.{api_key, base_url, callback_url, price_tier, callback_ips}`.
-- Inbound webhook (`POST /v1/uxiolabs/callback`) carries **no signature** — authenticated only by source IP against `UXIOLABS_CALLBACK_IP` (comma-separated; default `103.146.202.50`). TrustProxies must be correct behind a LB or `$request->ip()` rejects every callback. Payload is flat: `{id, idtrx, keterangan, status, url_cb}`; statuses `pending|processing|paid` → PROCESSING, `success` → COMPLETED, `cancel|refund` → FAILED_PROVIDER (+refund).
+- Inbound webhook (`POST /v1/uxiolabs/callback`) carries **no signature** — authenticated only by source IP against `UXIOTOPUP_CALLBACK_IP` (comma-separated; default `103.146.202.50`). TrustProxies must be correct behind a LB or `$request->ip()` rejects every callback. Payload is flat: `{id, idtrx, keterangan, status, url_cb}`; statuses `pending|processing|paid` → PROCESSING, `success` → COMPLETED, `cancel|refund` → FAILED_PROVIDER (+refund).
 
 ### Discord (Operational Notifications)
 
@@ -689,7 +820,63 @@ default) schedules nothing, calls nowhere, exposes nothing.
 - BCA VA is deactivated (not in the Monetapay contract; row kept for history).
 - Monetapay balance cache is keyed per `(sub_mch_id, currency)` —
   `MonetapayService::balanceCacheKey()` is the shared key helper for
-  cache-busting callers.
+  cache-busting callers, and with no argument it resolves the configured
+  sub-merchant. Never key it off an **app id**: that names an entry nothing
+  writes, and the read silently falls through to the snapshot.
+
+### The Hub owns this site's licence (and can switch it off)
+
+`hub:sync-licence` (every **5** minutes, tighter than the 15-minute catalog sync
+because this one decides whether the site serves) pulls `GET /api/v1/sites/licence`
+and `ApplyHubLicenceAction` lands it in two places:
+
+- **The gate** — private `Setting`s in group `licence`, read through
+  `App\Support\SiteLicenceState` (cached 60s) by `EnsureSiteIsServing`.
+- **The term** — ONE `ServiceSubscription` row for `DefaultMerchant` +
+  `WebsiteService`, `service_invoice_id = null`, `source = 'hub'`, updated in
+  place. That is what makes the admin sidebar card and the client's "Langganan
+  Saya" tab show it **with no new read path**; renewals stack at the Hub, and
+  stacking the mirror too would double-count against the `MAX(ends_at)` every
+  reader uses.
+
+Rules that are load-bearing:
+
+- **`EnsureSiteIsServing` is the only globally appended middleware in this app,
+  and it is global on purpose.** Per-group would mean a public route added later
+  silently escapes the gate, and a kill switch with a hole in it is not a lever.
+  The exceptions are listed in the class, and
+  `tests/Feature/Hub/SiteAvailabilityTest` pins the **exact** unauthenticated
+  exempt set — never widen that list to make a test pass.
+- **What must never be gated:** `v1/hub/*` (the Hub could not switch the site
+  back on), `v1/auth/*` and the admin / payment-admin / payment-internal groups
+  (the client has to reach the panel where they pay), the gateway callbacks
+  (money in flight, and the path a renewal arrives on), and
+  `v1/storefront/settings` (the down-page renders the client's own branding).
+- **An unreachable Hub changes nothing.** The last synced answer stands, so a
+  Hub outage cannot darken five storefronts, and a site that never synced
+  serves. There is deliberately **no amnesty** after N hours of silence — that
+  would teach a delinquent client that blocking the Hub revives their site.
+- **`services:expire` will flip the hub row to EXPIRED overnight** once the term
+  lapses. The sync resets `status` to ACTIVE on renewal; without that a paid-up
+  site stays dark, because the sidebar card counts only ACTIVE rows.
+- **A client renewing here reports it up.** `ActivateServiceSubscriptionAction`
+  dispatches `PushLicenceRenewalJob` when the service bought is this site's own;
+  the Hub is idempotent on the invoice number. There is no pull-based backstop
+  for this one, so a permanent failure alerts Discord — an operator extending
+  the term by hand is the fallback.
+- **Rollback is `HUB_MANAGED_LICENCE=false`**: the gate goes inert, the sync
+  stops writing, and the local subscription rows keep working as before.
+
+### The site's own name, not the Hub's
+
+`hub:sync-catalog` rewrites `services.name` every 15 minutes, so the website
+service cannot be renamed locally — it is "Uxiolabs" at the Hub because that is
+what kita sells. But the client's panels are the client's own product.
+`WebsiteService::label()` resolves the display name from
+`payment.website_service_label` → `general.site_name` →
+`services.storefront.brand`, and `WebsiteSubscriptionStatus` +
+`ServiceSubscriptionResource` use it **for that one service code only**. The
+rest of the catalog keeps the Hub's names.
 
 ## Required `.env` Keys Beyond Laravel Defaults
 
@@ -715,16 +902,18 @@ HUB_BASE_URL=                     # the Hub API root, e.g. https://hub.uxiotopup
 HUB_ALLOWED_IPS=                  # optional source-IP allowlist for the Hub's pulls
 HUB_MANAGED_CATALOG=true          # local catalog writes 422 while the Hub owns the catalog
 HUB_MANAGED_CHANNELS=true         # local edits 422 for Hub-synced channels (fees + is_active + min_amount)
+HUB_MANAGED_LICENCE=true          # the Hub owns this site's licence AND can switch the public side off.
+                                  # Set false to roll the whole kill switch back — the gate goes inert.
 HUB_PUSH_ORDERS=                  # real-time service-order push to the Hub; defaults to HUB_ENABLED.
                                   # Leave UNSET — an empty value reads as false and silently disables it.
 HUB_WRITE_ENABLED=false           # money-path write channel (Hub approving/raising withdrawals, confirming invoices)
 HUB_WRITE_API_KEY=                # the SECOND key that channel needs; minted per site in the Hub panel
 
-UXIOLABS_API_KEY=
-UXIOLABS_BASE_URL=https://api.uxiotopup.id
-UXIOLABS_CALLBACK_URL=        # points at {app}/api/v1/uxiolabs/callback; sent on every /order
-UXIOLABS_PRICE_TIER=harga     # harga | harga_gold | harga_silver | harga_pro
-UXIOLABS_CALLBACK_IP=103.146.202.50   # webhook source-IP allowlist (comma-separated)
+UXIOTOPUP_API_KEY=
+UXIOTOPUP_BASE_URL=https://api.uxiotopup.id
+UXIOTOPUP_CALLBACK_URL=        # points at {app}/api/v1/uxiolabs/callback; sent on every /order
+UXIOTOPUP_PRICE_TIER=harga     # harga | harga_gold | harga_silver | harga_pro
+UXIOTOPUP_CALLBACK_IP=103.146.202.50   # webhook source-IP allowlist (comma-separated)
 
 DISCORD_WEBHOOK_LOG_URL=   # optional
 ```

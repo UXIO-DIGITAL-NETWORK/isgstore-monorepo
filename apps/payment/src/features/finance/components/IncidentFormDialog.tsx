@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -20,16 +22,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { useChannelFees, useCreateIncident, useFinanceServices } from "../hooks/useFinance";
 
 const SEVERITY_OPTIONS = [
-  { value: "MINOR", label: "Ringan" },
-  { value: "MAJOR", label: "Berat" },
-  { value: "CRITICAL", label: "Kritis" },
+  { value: "MINOR", labelKey: "incidentForm.severityMinor" },
+  { value: "MAJOR", labelKey: "incidentForm.severityMajor" },
+  { value: "CRITICAL", labelKey: "incidentForm.severityCritical" },
 ];
 
 const STATUS_OPTIONS = [
-  { value: "INVESTIGATING", label: "Sedang Diperiksa" },
-  { value: "IDENTIFIED", label: "Penyebab Diketahui" },
-  { value: "MONITORING", label: "Dipantau" },
-  { value: "RESOLVED", label: "Selesai" },
+  { value: "INVESTIGATING", labelKey: "incidentForm.statusInvestigating" },
+  { value: "IDENTIFIED", labelKey: "incidentForm.statusIdentified" },
+  { value: "MONITORING", labelKey: "incidentForm.statusMonitoring" },
+  { value: "RESOLVED", labelKey: "incidentForm.statusResolved" },
 ];
 
 /** `datetime-local` wants "YYYY-MM-DDTHH:mm" in local time, not an ISO string. */
@@ -43,7 +45,18 @@ const toLocalInput = (date: Date): string => {
  * channel or a service — and the API rejects both or neither, so the form
  * picks the kind first and only then offers the matching list.
  */
+
+/**
+ * Options carry a key, not a label, so they move with the panel's language —
+ * a module constant would freeze whichever language was loaded at import.
+ */
+const translated = (
+  options: ReadonlyArray<{ value: string; labelKey: string }>,
+  t: TFunction<"finance">,
+) => options.map((option) => ({ value: option.value, label: t(option.labelKey) }));
+
 export function IncidentFormDialog() {
+  const { t } = useTranslation("finance");
   const [open, setOpen] = useState(false);
   const [targetType, setTargetType] = useState<"payment_channel" | "service">("payment_channel");
   const [targetId, setTargetId] = useState("");
@@ -112,11 +125,11 @@ export function IncidentFormDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>Tambah Insiden</Button>
+        <Button>{t("incidentForm.trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Tambah Insiden</DialogTitle>
+          <DialogTitle>{t("incidentForm.title")}</DialogTitle>
           <DialogDescription>
             Insiden ini langsung tampil di halaman Status Layanan milik semua client.
           </DialogDescription>
@@ -124,22 +137,22 @@ export function IncidentFormDialog() {
 
         <Box className="flex flex-col gap-4">
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="incident-title">Judul</Label>
+            <Label htmlFor="incident-title">{t("incidentForm.titleField")}</Label>
             <Input
               id="incident-title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="QRIS lambat"
+              placeholder={t("incidentForm.titlePlaceholder")}
             />
           </Box>
 
           <Box className="grid gap-4 sm:grid-cols-2">
             <SelectField
               id="incident-target-type"
-              label="Jenis Target"
+              label={t("incidentForm.targetKind")}
               options={[
-                { value: "payment_channel", label: "Metode Pembayaran" },
-                { value: "service", label: "Service" },
+                { value: "payment_channel", label: t("incidentForm.targetPaymentChannel") },
+                { value: "service", label: t("incidentForm.targetService") },
               ]}
               value={targetType}
               onChange={(value) => {
@@ -151,32 +164,32 @@ export function IncidentFormDialog() {
 
             <SelectField
               id="incident-target"
-              label="Target"
+              label={t("incidentForm.target")}
               options={targetOptions}
               value={targetId}
               onChange={setTargetId}
-              placeholder="Pilih target"
-              emptyLabel="Tidak ada pilihan"
+              placeholder={t("incidentForm.targetPlaceholder")}
+              emptyLabel={t("noOptions")}
             />
 
             <SelectField
               id="incident-severity"
-              label="Tingkat"
-              options={SEVERITY_OPTIONS}
+              label={t("incidentForm.severity")}
+              options={translated(SEVERITY_OPTIONS, t)}
               value={severity}
               onChange={setSeverity}
             />
 
             <SelectField
               id="incident-status"
-              label="Status"
-              options={STATUS_OPTIONS}
+              label={t("incidentForm.status")}
+              options={translated(STATUS_OPTIONS, t)}
               value={status}
               onChange={setStatus}
             />
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="incident-started">Mulai</Label>
+              <Label htmlFor="incident-started">{t("incidentForm.started")}</Label>
               <Input
                 id="incident-started"
                 type="datetime-local"
@@ -186,7 +199,7 @@ export function IncidentFormDialog() {
             </Box>
 
             <Box className="flex flex-col gap-1.5">
-              <Label htmlFor="incident-estimated">Estimasi Selesai</Label>
+              <Label htmlFor="incident-estimated">{t("incidentForm.estimated")}</Label>
               <Input
                 id="incident-estimated"
                 type="datetime-local"
@@ -197,13 +210,13 @@ export function IncidentFormDialog() {
           </Box>
 
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="incident-message">Pesan</Label>
+            <Label htmlFor="incident-message">{t("incidentForm.message")}</Label>
             <Textarea
               id="incident-message"
               rows={3}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Settlement tertunda dari sisi provider."
+              placeholder={t("incidentForm.messagePlaceholder")}
             />
           </Box>
 
@@ -222,14 +235,14 @@ export function IncidentFormDialog() {
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Batal
+              {t("incidentForm.cancel")}
             </Button>
             <Button
               type="button"
               disabled={isPending}
               onClick={submit}
             >
-              {isPending ? "Menyimpan…" : "Simpan"}
+              {isPending ? t("incidentForm.saving") : t("incidentForm.save")}
             </Button>
           </DialogFooter>
         </Box>

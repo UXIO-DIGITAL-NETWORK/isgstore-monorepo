@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -14,10 +15,14 @@ import { ProviderRowActions } from "./ProviderRowActions";
  * `DataTable`. The price cell reuses `ProductPriceCell` off the mapped variant,
  * so the provider list and the Main Products list read identically.
  */
-export const managedProviderColumns: ColumnDef<ProviderProduct>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const managedProviderColumnsFor = (t: TFunction<"products">): ColumnDef<ProviderProduct>[] => [
   {
     id: "provider",
-    header: "Product Provider",
+    header: t("colProductProvider"),
     cell: ({ row }) => {
       const p = row.original;
       return (
@@ -37,21 +42,19 @@ export const managedProviderColumns: ColumnDef<ProviderProduct>[] = [
   },
   {
     id: "price",
-    header: "Price",
+    header: t("price"),
     cell: ({ row }) => (
       <Box className="flex flex-col gap-1">
         <ProductPriceCell variants={[row.original.variant]} />
         {row.original.is_price_preview && (
-          <Text as="span" variant="small" className="text-muted-foreground">
-            Projected from the margin — nothing is stored until this SKU is promoted.
-          </Text>
+          <Text as="span" variant="small" className="text-muted-foreground">{t("projectedFromMargin")}</Text>
         )}
       </Box>
     ),
   },
   {
     accessorKey: "created_at",
-    header: "Created At",
+    header: t("createdAt"),
     cell: ({ row }) => (
       <Text as="span" className="tabular-nums">
         {format(new Date(row.original.created_at), "d MMM yyyy, HH.mm")}
@@ -60,7 +63,7 @@ export const managedProviderColumns: ColumnDef<ProviderProduct>[] = [
   },
   {
     id: "status",
-    header: "Status",
+    header: t("status"),
     cell: ({ row }) => {
       const p = row.original;
       // The pipeline stage replaces the bare active/inactive pill: "Inactive"
@@ -79,18 +82,16 @@ export const managedProviderColumns: ColumnDef<ProviderProduct>[] = [
             {POOL_STATE_LABELS[p.pool_state]}
           </Badge>
           {p.is_price_locked && (
-            <Badge variant="outline" className="text-muted-foreground">
-              Locked
-            </Badge>
+            <Badge variant="outline" className="text-muted-foreground">{t("locked")}</Badge>
           )}
-          {!p.is_available && <Badge variant="destructive">Unavailable</Badge>}
+          {!p.is_available && <Badge variant="destructive">{t("unavailable")}</Badge>}
         </Box>
       );
     },
   },
   {
     id: "action",
-    header: "Action",
+    header: t("action"),
     cell: ({ row }) => <ProviderRowActions provider={row.original} />,
   },
 ];

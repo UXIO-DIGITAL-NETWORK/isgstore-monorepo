@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -48,6 +49,7 @@ interface InstallationWorkbenchProps {
  * dedupes it to one request rather than needing a callback prop.
  */
 export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
+  const { t } = useTranslation("finance");
   const [pendingStep, setPendingStep] = useState<ServiceInstallationStep | null>(null);
   const [pendingDetail, setPendingDetail] = useState<ServiceInstallationDetail | null>(null);
 
@@ -62,7 +64,7 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
   const stepColumns: Column<ServiceInstallationStep>[] = [
     {
       key: "done",
-      header: "Selesai",
+      header: t("workbench.colDone"),
       cell: (r) => (
         <Checkbox
           checked={r.is_completed}
@@ -72,10 +74,10 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
         />
       ),
     },
-    { key: "order", header: "Urutan", className: "tabular-nums", cell: (r) => r.sort_order },
+    { key: "order", header: t("workbench.colOrder"), className: "tabular-nums", cell: (r) => r.sort_order },
     {
       key: "title",
-      header: "Tahapan",
+      header: t("workbench.colStep"),
       cell: (r) => (
         <Box className="flex flex-col">
           <Text
@@ -96,10 +98,10 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
         </Box>
       ),
     },
-    { key: "completed_at", header: "Selesai Pada", cell: (r) => formatDateTime(r.completed_at) },
+    { key: "completed_at", header: t("workbench.colCompletedAt"), cell: (r) => formatDateTime(r.completed_at) },
     {
       key: "actions",
-      header: "Aksi",
+      header: t("workbench.colAction"),
       cell: (r) => (
         <Box className="flex gap-2">
           <StepFormDialog
@@ -111,7 +113,7 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
             variant="outline"
             onClick={() => setPendingStep(r)}
           >
-            Hapus
+            {t("workbench.delete")}
           </Button>
         </Box>
       ),
@@ -119,10 +121,10 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
   ];
 
   const detailColumns: Column<ServiceInstallationDetail>[] = [
-    { key: "label", header: "Label", cell: (r) => r.label },
+    { key: "label", header: t("workbench.colLabel"), cell: (r) => r.label },
     {
       key: "value",
-      header: "Nilai",
+      header: t("workbench.colValue"),
       cell: (r) => (
         <SecretValue
           detail={r}
@@ -132,12 +134,12 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
     },
     {
       key: "secret",
-      header: "Rahasia",
-      cell: (r) => (r.is_secret ? <Badge variant="secondary">Ya</Badge> : <Badge variant="outline">Tidak</Badge>),
+      header: t("workbench.colSecret"),
+      cell: (r) => (r.is_secret ? <Badge variant="secondary">{t("workbench.yes")}</Badge> : <Badge variant="outline">{t("workbench.no")}</Badge>),
     },
     {
       key: "actions",
-      header: "Aksi",
+      header: t("workbench.colAction"),
       cell: (r) => (
         <Box className="flex gap-2">
           <DetailItemFormDialog
@@ -149,7 +151,7 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
             variant="outline"
             onClick={() => setPendingDetail(r)}
           >
-            Hapus
+            {t("workbench.delete")}
           </Button>
         </Box>
       ),
@@ -160,7 +162,7 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
     <>
       <Box className="flex flex-col gap-3">
         <Box className="flex items-center justify-between gap-2">
-          <Heading level={2}>Jadwal Instalasi</Heading>
+          <Heading level={2}>{t("workbench.schedule")}</Heading>
           <InstallationWindowDialog
             scope={scope}
             installation={installation}
@@ -174,7 +176,7 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
 
       <Box className="flex flex-col gap-3">
         <Box className="flex items-center justify-between gap-2">
-          <Heading level={2}>Tahapan</Heading>
+          <Heading level={2}>{t("workbench.steps")}</Heading>
           {/* Steps hang off the installation, so there is nothing to add to
               until the schedule has created it. */}
           <StepFormDialog installationId={installationId} />
@@ -183,21 +185,21 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
           columns={stepColumns}
           rows={installation?.steps ?? []}
           isLoading={isLoading}
-          emptyLabel="Belum ada tahapan"
+          emptyLabel={t("noSteps")}
           rowKey={(r) => r.id}
         />
       </Box>
 
       <Box className="flex flex-col gap-3">
         <Box className="flex items-center justify-between gap-2">
-          <Heading level={2}>Detail Layanan</Heading>
+          <Heading level={2}>{t("workbench.details")}</Heading>
           <DetailItemFormDialog installationId={installationId} />
         </Box>
         <SimpleTable
           columns={detailColumns}
           rows={installation?.details ?? []}
           isLoading={isLoading}
-          emptyLabel="Belum ada detail layanan"
+          emptyLabel={t("noDetails")}
           rowKey={(r) => r.id}
         />
       </Box>
@@ -207,9 +209,9 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
         onOpenChange={(next) => {
           if (!next) setPendingStep(null);
         }}
-        title="Hapus tahapan ini?"
-        description={pendingStep ? `"${pendingStep.title}" akan dihapus dan progress dihitung ulang.` : ""}
-        confirmLabel="Hapus"
+        title={t("workbench.deleteStepTitle")}
+        description={pendingStep ? t("workbench.deleteStepDescription", { title: pendingStep.title }) : ""}
+        confirmLabel={t("workbench.delete")}
         onConfirm={() => {
           if (pendingStep) deleteStep(pendingStep.id);
           setPendingStep(null);
@@ -221,11 +223,11 @@ export function InstallationWorkbench({ scope }: InstallationWorkbenchProps) {
         onOpenChange={(next) => {
           if (!next) setPendingDetail(null);
         }}
-        title="Hapus detail ini?"
+        title={t("workbench.deleteDetailTitle")}
         description={
-          pendingDetail ? `"${pendingDetail.label}" akan dihapus. Client tidak akan bisa melihatnya lagi.` : ""
+          pendingDetail ? t("workbench.deleteDetailDescription", { label: pendingDetail.label }) : ""
         }
-        confirmLabel="Hapus"
+        confirmLabel={t("workbench.delete")}
         onConfirm={() => {
           if (pendingDetail) deleteDetail(pendingDetail.id);
           setPendingDetail(null);

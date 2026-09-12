@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ interface ConfirmInvoiceDialogProps {
  * Konfirmasi needs a warning at all.
  */
 export function ConfirmInvoiceDialog({ invoice, missing, open, onOpenChange }: ConfirmInvoiceDialogProps) {
+  const { t } = useTranslation("finance");
   const { mutate: confirm, isPending } = useConfirmServiceInvoice();
 
   return (
@@ -38,9 +40,9 @@ export function ConfirmInvoiceDialog({ invoice, missing, open, onOpenChange }: C
     >
       <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Konfirmasi tanpa persiapan?</DialogTitle>
+          <DialogTitle>{t("confirmInvoice.title")}</DialogTitle>
           <DialogDescription>
-            Langganan akan langsung aktif untuk client, tapi ada yang belum disiapkan.
+            {t("confirmInvoice.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -68,7 +70,7 @@ export function ConfirmInvoiceDialog({ invoice, missing, open, onOpenChange }: C
             variant="small"
             className="text-muted-foreground"
           >
-            Persiapan instalasi tidak wajib — sebagian layanan memang tidak perlu instalasi.
+            {t("confirmInvoice.optional")}
           </Text>
 
           <DialogFooter>
@@ -77,14 +79,14 @@ export function ConfirmInvoiceDialog({ invoice, missing, open, onOpenChange }: C
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Batal
+              {t("confirmInvoice.cancel")}
             </Button>
             <Button
               type="button"
               disabled={isPending}
               onClick={() => confirm(invoice.id, { onSuccess: () => onOpenChange(false) })}
             >
-              {isPending ? "Menyimpan…" : "Konfirmasi Tetap"}
+              {isPending ? t("confirmInvoice.confirming") : t("confirmInvoice.confirm")}
             </Button>
           </DialogFooter>
         </Box>

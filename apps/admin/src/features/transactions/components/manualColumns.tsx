@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
@@ -17,10 +18,14 @@ import { ProviderStatusBadge } from "./ProviderStatusBadge";
  * actions. No reference design exists for Manual yet
  * (product_requirements.md §4.3) — this shape is provisional.
  */
-export const manualColumns: ColumnDef<Transaction>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const manualColumnsFor = (t: TFunction<"transactions">): ColumnDef<Transaction>[] => [
   {
     accessorKey: "invoice_no",
-    header: "Invoice No.",
+    header: t("invoiceNo"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -42,7 +47,7 @@ export const manualColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "user",
-    header: "User",
+    header: t("colUser"),
     cell: ({ row }) => {
       const { customer } = row.original;
       return (
@@ -78,7 +83,7 @@ export const manualColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "product",
-    header: "Product",
+    header: t("product"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text as="span">{row.original.product.name}</Text>
@@ -93,7 +98,7 @@ export const manualColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "cost",
-    header: "Cost",
+    header: t("colCost"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -105,7 +110,7 @@ export const manualColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "payment_status",
-    header: "Payment",
+    header: t("capPayment"),
     cell: ({ row }) => <PaymentStatusBadge status={row.original.payment_status} />,
   },
   {
@@ -113,16 +118,16 @@ export const manualColumns: ColumnDef<Transaction>[] = [
     // already but named neither, so a green "Success" over an amber
     // "Processing" gave an operator no way to tell which half was which.
     id: "provider_status",
-    header: "Provider",
+    header: t("colProvider"),
     cell: ({ row }) => <ProviderStatusBadge status={row.original.provider_status} />,
   },
   {
     accessorKey: "payment_method",
-    header: "Method",
+    header: t("method"),
   },
   {
     id: "time",
-    header: "Time",
+    header: t("colTime"),
     cell: ({ row }) => (
       <Text
         variant="muted"
@@ -134,7 +139,7 @@ export const manualColumns: ColumnDef<Transaction>[] = [
   },
   {
     id: "action",
-    header: "Action",
+    header: t("colAction"),
     enableSorting: false,
     cell: ({ row }) => (
       <RowActionMenu

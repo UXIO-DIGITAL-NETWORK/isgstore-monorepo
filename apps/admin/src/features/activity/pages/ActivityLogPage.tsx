@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
@@ -7,7 +8,7 @@ import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { activityColumns } from "../components/activityColumns";
+import { activityColumnsFor } from "../components/activityColumns";
 import { useActivityLogs } from "../hooks/useActivityLogs";
 
 const DEFAULT_PAGE_SIZE = 15;
@@ -18,6 +19,7 @@ const DEFAULT_PAGE_SIZE = 15;
  * so the page only browses (search + paginate); it never mutates.
  */
 export default function ActivityLogPage() {
+  const { t } = useTranslation("activity");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -39,23 +41,19 @@ export default function ActivityLogPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Activity
-        </Heading>
-        <Text variant="muted">
-          Every logged action across the platform — sign-ins, transactions, and admin changes — newest first.
-        </Text>
+        >{t("title")}</Heading>
+        <Text variant="muted">{t("subtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
         <Box className="flex flex-col gap-1.5 pb-4">
-          <Label htmlFor="activity-search">Search</Label>
+          <Label htmlFor="activity-search">{t("search")}</Label>
           <Box className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="activity-search"
               className="w-64 rounded-xl pl-8"
-              placeholder="Search message"
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(event) => handleSearchChange(event.target.value)}
             />
@@ -63,12 +61,12 @@ export default function ActivityLogPage() {
         </Box>
 
         <DataTable
-          columns={activityColumns}
+          columns={activityColumnsFor(t)}
           data={data?.data ?? []}
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          entityLabel="activity"
+          entityLabel={t("entity")}
           showRowNumber
           page={data?.meta.current_page ?? page}
           pageSize={data?.meta.per_page ?? pageSize}

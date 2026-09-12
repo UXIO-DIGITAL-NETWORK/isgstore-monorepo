@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
@@ -11,6 +12,7 @@ import { useTestimonialList, useDeleteTestimonials } from "../hooks/useTestimoni
 const DEFAULT_PAGE_SIZE = 10;
 
 export function TestimonialListPage() {
+  const { t } = useTranslation("content");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -31,15 +33,15 @@ export function TestimonialListPage() {
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
 
   const columns = useMemo(
-    () => testimonialColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
-    [deleteRows],
+    () => testimonialColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id), t),
+    [deleteRows, t],
   );
 
   return (
     <>
       <ContentListShell
-        title="Testimonials"
-        description="Curated customer quotes for marketing surfaces. Separate from real purchase reviews."
+        title={t("tabTestimonials")}
+        description={t("testimonialsSubtitle")}
         toolbar={
           <ContentToolbar
             idPrefix="testimonial"
@@ -63,8 +65,8 @@ export function TestimonialListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="testimonials"
-            emptyMessage="No testimonials yet."
+            entityLabel={t("testimonialsEntity")}
+            emptyMessage={t("testimonialsEmpty")}
             showRowNumber
             enableSelection
             onSelectionChange={handleSelectionChange}
@@ -85,7 +87,7 @@ export function TestimonialListPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
-        description="This action cannot be undone. The selected rows will be removed from the storefront."
+        description={t("irreversible")}
         onConfirm={() => deleteRows.mutate(selectedIds)}
       />
 

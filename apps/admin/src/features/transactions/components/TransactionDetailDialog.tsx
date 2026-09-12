@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 import { format } from "date-fns";
 
@@ -95,6 +96,7 @@ const timestamp = (value?: string) => (value ? format(new Date(value), "MMM d, H
  * shows `updated_at` honestly as "Last Update" instead.
  */
 export function TransactionDetailDialog({ transactionId, open, onOpenChange }: TransactionDetailDialogProps) {
+  const { t } = useTranslation("transactions");
   // `open` gates the fetch: this dialog is mounted once per table row, so
   // without it every visible row would fetch its detail on page load.
   const { data, isPending, isError, refetch } = useTransactionDetail(transactionId, open);
@@ -109,21 +111,19 @@ export function TransactionDetailDialog({ transactionId, open, onOpenChange }: T
     >
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Transaction Detail</DialogTitle>
-          <DialogDescription>A read-only summary of this order, its payment and its supplier fulfilment.</DialogDescription>
+          <DialogTitle>{t("transactionDetail")}</DialogTitle>
+          <DialogDescription>{t("detailSubtitle")}</DialogDescription>
         </DialogHeader>
 
         {isError ? (
           <Box className="flex flex-col items-start gap-3 rounded-xl border border-border p-4">
-            <Text variant="muted">This transaction could not be loaded.</Text>
+            <Text variant="muted">{t("detailFailed")}</Text>
             <Button
               variant="outline"
               size="sm"
               className="rounded-xl"
               onClick={() => refetch()}
-            >
-              Retry
-            </Button>
+            >{t("retry")}</Button>
           </Box>
         ) : isPending || !data ? (
           <Box className="flex flex-col gap-3">
@@ -137,100 +137,98 @@ export function TransactionDetailDialog({ transactionId, open, onOpenChange }: T
         ) : (
           <Box className="flex flex-col gap-4">
             <Box className="flex flex-col divide-y divide-border">
-              <Row label="Invoice No.">
+              <Row label={t("invoiceNo")}>
                 <Value>{data.invoice_no}</Value>
                 <CopyButton
                   value={data.invoice_no}
-                  label="invoice number"
+                  label={t("invoiceNumberLower")}
                 />
               </Row>
-              <Row label="Order Status">
+              <Row label={t("orderStatus")}>
                 <StatusBadge status={data.invoice_status} />
               </Row>
-              <Row label="Payment Status">
+              <Row label={t("paymentStatus")}>
                 <PaymentStatusBadge status={data.payment_status} />
               </Row>
-              <Row label="Provider Status">
+              <Row label={t("providerStatus")}>
                 <ProviderStatusBadge status={data.provider_status} />
               </Row>
-              <Row label="Source">
+              <Row label={t("source")}>
                 <Value>{data.is_manual ? "Manual" : "Automatic"}</Value>
               </Row>
             </Box>
 
-            <Section caption="Customer">
-              <Row label="Name">
+            <Section caption={t("capCustomer")}>
+              <Row label={t("name")}>
                 <Value>{data.customer.name}</Value>
               </Row>
-              <Row label="Phone">
+              <Row label={t("phone")}>
                 <Value>{data.customer.phone || EM_DASH}</Value>
               </Row>
-              <Row label="Email">
+              <Row label={t("email")}>
                 <Value>{data.customer.email ?? EM_DASH}</Value>
               </Row>
-              <Row label="Account">
+              <Row label={t("account")}>
                 <Value>{data.customer.user_id ? `#${data.customer.user_id}` : "Guest checkout"}</Value>
               </Row>
             </Section>
 
-            <Section caption="Order">
-              <Row label="Game">
+            <Section caption={t("capOrder")}>
+              <Row label={t("game")}>
                 <Value>{data.game.name || EM_DASH}</Value>
               </Row>
-              <Row label="Product">
+              <Row label={t("product")}>
                 <Value>{data.product.name || EM_DASH}</Value>
               </Row>
-              <Row label="Target ID">
+              <Row label={t("targetId")}>
                 <Value>{data.target_uid ?? EM_DASH}</Value>
               </Row>
-              <Row label="Server">
+              <Row label={t("server")}>
                 <Value>{data.target_server ?? EM_DASH}</Value>
               </Row>
-              <Row label="Nickname">
+              <Row label={t("nickname")}>
                 <Value>{data.nickname ?? EM_DASH}</Value>
               </Row>
-              <Row label="Serial Number">
+              <Row label={t("serialNumber")}>
                 <Value>{data.serial_number ?? EM_DASH}</Value>
                 <CopyButton
                   value={data.serial_number}
-                  label="serial number"
+                  label={t("serialNumberLower")}
                 />
               </Row>
               {data.proof_url ? (
-                <Row label="Payment Proof">
+                <Row label={t("paymentProof")}>
                   <Link
                     href={data.proof_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm underline"
-                  >
-                    View proof
-                  </Link>
+                  >{t("viewProof")}</Link>
                 </Row>
               ) : null}
             </Section>
 
-            <Section caption="Payment">
-              <Row label="Base Amount">
+            <Section caption={t("capPayment")}>
+              <Row label={t("baseAmount")}>
                 <Value>{money(data.amount_base)}</Value>
               </Row>
               {data.discount_amount > 0 ? (
-                <Row label="Promo Discount">
+                <Row label={t("promoDiscount")}>
                   <Value>{`${money(data.discount_amount)} (already applied)`}</Value>
                 </Row>
               ) : null}
-              <Row label="Fee">
+              <Row label={t("fee")}>
                 <Value>{money(data.amount_fee)}</Value>
               </Row>
               {showChannelFee ? (
-                <Row label="Channel Fee">
+                <Row label={t("channelFee")}>
                   <Value>{money(data.channel_fee)}</Value>
                 </Row>
               ) : null}
-              <Row label="Total">
+              <Row label={t("total")}>
                 <Value className="font-medium">{money(data.amount_total)}</Value>
               </Row>
-              <Row label="Margin">
+              <Row label={t("margin")}>
                 <Value
                   testId="detail-margin"
                   className={cn(
@@ -241,53 +239,53 @@ export function TransactionDetailDialog({ transactionId, open, onOpenChange }: T
                   {money(data.margin)}
                 </Value>
               </Row>
-              <Row label="Method">
+              <Row label={t("method")}>
                 <Value>{data.payment_method || EM_DASH}</Value>
               </Row>
-              <Row label="Gateway Reference">
+              <Row label={t("gatewayReference")}>
                 <Value>{data.payment.reference_id ?? EM_DASH}</Value>
                 <CopyButton
                   value={data.payment.reference_id}
-                  label="gateway reference"
+                  label={t("gatewayReferenceLower")}
                 />
               </Row>
-              <Row label="Gateway Trx ID">
+              <Row label={t("gatewayTrxId")}>
                 <Value>{data.payment.pg_transaction_id ?? EM_DASH}</Value>
               </Row>
               {showGatewayAmount ? (
-                <Row label="Gateway Amount">
+                <Row label={t("gatewayAmount")}>
                   <Value>{money(data.payment.gross_amount as number)}</Value>
                 </Row>
               ) : null}
-              <Row label="Paid At">
+              <Row label={t("paidAt")}>
                 <Value>{timestamp(data.payment.paid_at)}</Value>
               </Row>
             </Section>
 
-            <Section caption="Supplier">
-              <Row label="Name">
+            <Section caption={t("capSupplier")}>
+              <Row label={t("name")}>
                 <Value>{data.supplier.name ?? EM_DASH}</Value>
               </Row>
-              <Row label="Supplier Trx ID">
+              <Row label={t("supplierTrxId")}>
                 <Value>{data.supplier.trx_id ?? EM_DASH}</Value>
                 <CopyButton
                   value={data.supplier.trx_id}
-                  label="supplier transaction id"
+                  label={t("supplierTrxIdLower")}
                 />
               </Row>
               {/* uxiolabs's own wording, kept as evidence. Deliberately plain
                   text next to the normalized Provider Status above, so it reads
                   as the raw source rather than a competing verdict. */}
-              <Row label="Provider Status (raw)">
+              <Row label={t("providerStatusRaw")}>
                 <Value className="text-muted-foreground">{data.supplier.status ?? EM_DASH}</Value>
               </Row>
             </Section>
 
-            <Section caption="Timing">
-              <Row label="Created">
+            <Section caption={t("capTiming")}>
+              <Row label={t("created")}>
                 <Value>{format(new Date(data.created_at), "MMM d, HH:mm:ss")}</Value>
               </Row>
-              <Row label="Last Update">
+              <Row label={t("lastUpdate")}>
                 <Value>{format(new Date(data.updated_at), "MMM d, HH:mm:ss")}</Value>
               </Row>
             </Section>

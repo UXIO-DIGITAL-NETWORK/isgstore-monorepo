@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Actions\Auth\TwoFactorAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ConfirmTwoFactorRotationRequest;
+use App\Http\Requests\Auth\RotateTwoFactorRequest;
 use App\Http\Resources\User\UserResource;
+use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -36,14 +39,55 @@ class TwoFactorController extends Controller
         $validated = $request->validate(['code' => ['required', 'string']]);
 
         try {
-            $action->confirm($request->user(), $validated['code']);
+            $session = $action->confirm($request->user(), $validated['code']);
         } catch (RuntimeException $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }
 
-        // Enabling revokes every session, this one included — the client has to
-        // sign in again, which is the point.
-        return $this->successResponse(null, 'Autentikasi dua faktor aktif. Silakan login ulang.');
+        // Enabling revokes every session — every token an attacker might hold
+        // is gone. The pair returned here is minted after that sweep, so the
+        // admin who just proved a code carries straight on into the panel
+        // instead of signing in a second time.
+        return $this->successResponse(
+            $this->session($session),
+            'Autentikasi dua faktor aktif.'
+        );
+    }
+
+    /**
+     * Start moving the authenticator to another device.
+     *
+     * Answers with a new secret to scan while the old one is still the one in
+     * force — nothing is switched over until `confirmRotation` accepts a code
+     * from the new device.
+     */
+    public function rotate(RotateTwoFactorRequest $request, TwoFactorAction $action)
+    {
+        try {
+            $result = $action->rotate(
+                $request->user(),
+                (string) $request->validated('password'),
+                (string) $request->validated('code'),
+            );
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        return $this->successResponse($result, 'Scan kode QR baru, lalu konfirmasi dengan kodenya');
+    }
+
+    public function confirmRotation(ConfirmTwoFactorRotationRequest $request, TwoFactorAction $action)
+    {
+        try {
+            $session = $action->confirmRotation($request->user(), (string) $request->validated('code'));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        return $this->successResponse(
+            $this->session($session),
+            'Authenticator berhasil dipindahkan.'
+        );
     }
 
     public function verify(Request $request, TwoFactorAction $action)
@@ -59,11 +103,7 @@ class TwoFactorController extends Controller
             return $this->errorResponse($e->getMessage(), 422);
         }
 
-        return $this->successResponse([
-            'user' => new UserResource($session['user']),
-            'access_token' => $session['access_token'],
-            'refresh_token' => $session['refresh_token'],
-        ], 'Login successful');
+        return $this->successResponse($this->session($session), 'Login successful');
     }
 
     public function disable(Request $request, TwoFactorAction $action)
@@ -77,5 +117,20 @@ class TwoFactorController extends Controller
         }
 
         return $this->successResponse(null, 'Autentikasi dua faktor dimatikan.');
+    }
+
+    /**
+     * The one session shape. Three endpoints here hand back a token pair, and
+     * the admin panel narrows on these exact keys.
+     *
+     * @param  array{access_token: string, refresh_token: string, user: User}  $session
+     */
+    private function session(array $session): array
+    {
+        return [
+            'user' => new UserResource($session['user']),
+            'access_token' => $session['access_token'],
+            'refresh_token' => $session['refresh_token'],
+        ];
     }
 }

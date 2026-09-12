@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categoryTypesService } from "../services/categoryTypes.service";
@@ -18,21 +19,23 @@ export const useCategoryType = (id?: string) =>
   });
 
 export const useCreateCategoryType = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: Omit<CategoryType, "id" | "created_at" | "updated_at">) => categoryTypesService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-types"] });
-      toast.success("Category type created");
+      toast.success(t("typeCreated"));
     },
     onError: () => {
-      toast.error("Failed to create category type");
+      toast.error(t("typeCreateFailed"));
     },
   });
 };
 
 export const useUpdateCategoryType = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -45,10 +48,10 @@ export const useUpdateCategoryType = () => {
     }) => categoryTypesService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-types"] });
-      toast.success("Category type updated");
+      toast.success(t("typeUpdated"));
     },
     onError: () => {
-      toast.error("Failed to update category type");
+      toast.error(t("typeUpdateFailed"));
     },
   });
 };
@@ -71,16 +74,17 @@ export const useSetCategoryTypeStatus = () => {
 };
 
 export const useDeleteCategoryType = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => categoryTypesService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-types"] });
-      toast.success("Category type deleted");
+      toast.success(t("typeDeleted"));
     },
     onError: () => {
-      toast.error("Failed to delete category type");
+      toast.error(t("typeDeleteFailed"));
     },
   });
 };

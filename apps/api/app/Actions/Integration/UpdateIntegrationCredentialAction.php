@@ -59,8 +59,10 @@ class UpdateIntegrationCredentialAction
             ],
         );
 
-        // Bust the exact key each service caches under (Monetapay's is keyed
-        // per sub-merchant/currency; new credentials affect the main entry).
+        // Bust the exact key each service caches under. Monetapay's is keyed per
+        // sub-merchant/currency and resolved from the credentials just written,
+        // so an edited sub_mch_id busts the NEW entry — the one the next read
+        // will look in.
         match ($provider) {
             'monetapay' => Cache::forget(MonetapayService::balanceCacheKey()),
             'uxiolabs' => Cache::forget('uxiolabs:balance'),

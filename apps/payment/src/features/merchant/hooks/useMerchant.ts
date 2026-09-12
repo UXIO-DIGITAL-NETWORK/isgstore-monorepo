@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEchoConnected } from "@/hooks/useEchoConnected";
@@ -40,16 +41,17 @@ export const useMerchantWithdrawals = (params: ListParams) => {
 };
 
 export const useCreateWithdrawal = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (payload: CreateWithdrawalPayload) => merchantService.createWithdrawal(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["merchant"] });
-      toast.success("Permintaan penarikan berhasil dibuat");
+      toast.success(t("toast.withdrawalCreated"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal membuat penarikan");
+      toast.error(error.response?.data?.message ?? t("toast.withdrawalCreateFailed"));
     },
   });
 };
@@ -81,6 +83,7 @@ export const useServicePaymentChannels = () =>
   });
 
 export const useSubscribeService = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -88,15 +91,16 @@ export const useSubscribeService = () => {
       merchantService.subscribe(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["merchant"] });
-      toast.success("Invoice dibuat, silakan selesaikan pembayaran");
+      toast.success(t("toast.invoiceOpened"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal membuat langganan");
+      toast.error(error.response?.data?.message ?? t("toast.subscriptionCreateFailed"));
     },
   });
 };
 
 export const usePayServiceInvoice = () => {
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -104,10 +108,10 @@ export const usePayServiceInvoice = () => {
       merchantService.payInvoice(id, paymentChannelId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["merchant"] });
-      toast.success("Pembayaran baru dibuka");
+      toast.success(t("toast.paymentReopened"));
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal membuka pembayaran");
+      toast.error(error.response?.data?.message ?? t("toast.paymentReopenFailed"));
     },
   });
 };
@@ -151,10 +155,13 @@ export const useMerchantInstallation = (subscriptionId: number | undefined) =>
  * A mutation on purpose, never a query: a cached query would put the plaintext
  * credential in the TanStack Query cache, where the devtools panel renders it.
  */
-export const useRevealDetail = () =>
-  useMutation({
+export const useRevealDetail = () => {
+  const { t } = useTranslation("common");
+
+  return useMutation({
     mutationFn: (id: number) => merchantService.revealDetail(id),
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message ?? "Gagal menampilkan nilai");
+      toast.error(error.response?.data?.message ?? t("toast.revealFailed"));
     },
   });
+};

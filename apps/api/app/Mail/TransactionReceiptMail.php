@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Actions\Invoice\GenerateInvoicePdfAction;
 use App\Models\Transaction;
+use App\Support\PublicUrl;
 use App\Support\Storefront\MediaUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -35,8 +36,14 @@ class TransactionReceiptMail extends Mailable implements ShouldQueue
     {
         $t = $this->transaction->loadMissing(['product.category', 'paymentChannel']);
 
-        $storeUrl = rtrim((string) config('services.storefront.url'), '/');
-        $trackUrl = $storeUrl.'/'.$this->emailLocale.'/cek-pesanan?query='.urlencode($t->invoice_number);
+        // Null when the storefront base is not an address the customer could
+        // open — the template then drops the CTA rather than offering a button
+        // that goes nowhere. The receipt is still worth sending without it; the
+        // refund claim link is not, which is why that one stops the send.
+        $storeUrl = PublicUrl::storefront();
+        $trackUrl = $storeUrl === null
+            ? null
+            : $storeUrl.'/'.$this->emailLocale.'/cek-pesanan?query='.urlencode($t->invoice_number);
 
         $target = trim(($t->target_uid ?? '').($t->target_server ? ' ('.$t->target_server.')' : ''));
 

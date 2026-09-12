@@ -4,6 +4,7 @@ namespace App\Services\Payment;
 
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Phone;
+use App\Support\PublicUrl;
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -21,6 +22,8 @@ class MonetapayService
     private const HTTP_TIMEOUT = 15;
 
     private const HTTP_CONNECT_TIMEOUT = 5;
+
+    private string $subMchId;
 
     private string $collectionAppId;
 
@@ -49,6 +52,11 @@ class MonetapayService
         // DB-backed credentials (admin-editable) merged over config/.env defaults.
         $cfg = IntegrationConfig::for('monetapay');
 
+        // The site trades as one sub-merchant under the parent `mch_id`, sharing
+        // the parent's credentials — only this identifier distinguishes it. Blank
+        // means "main merchant", and every signed call then looks exactly as it
+        // did before sub-merchants existed.
+        $this->subMchId = (string) ($cfg['sub_mch_id'] ?? '');
         $this->collectionAppId = (string) ($cfg['collection_app_id'] ?? '');
         $this->disbursementAppId = (string) ($cfg['disbursement_app_id'] ?? '');
         $this->partnerKey = (string) ($cfg['partner_key'] ?? '');
@@ -63,6 +71,27 @@ class MonetapayService
         $this->baseUrl = filter_var($cfg['is_production'] ?? false, FILTER_VALIDATE_BOOLEAN)
             ? 'https://api.monetapay.net'
             : 'https://sandbox-api.monetapay.net';
+    }
+
+    /**
+     * The sub-merchant this site trades as, or '' when it trades as the main
+     * merchant. Exposed so inbound callbacks can be checked against it.
+     */
+    public function subMchId(): string
+    {
+        return $this->subMchId;
+    }
+
+    /**
+     * Whether an inbound callback names a merchant other than the one this site
+     * trades as. Only conclusive when the payload actually carries the field —
+     * an absent `sub_mch_id` is not evidence of anything, so it reads as a match.
+     */
+    public function callbackTargetsAnotherMerchant(array $decrypted): bool
+    {
+        $callbackSubMchId = (string) ($decrypted['sub_mch_id'] ?? '');
+
+        return $callbackSubMchId !== '' && $callbackSubMchId !== $this->subMchId;
     }
 
     /** A pending HTTP request with sane timeouts, so a stalled upstream fails fast instead of hanging the worker. */
@@ -211,6 +240,14 @@ class MonetapayService
             'currency' => 'IDR',
         ];
 
+        // Books the pay-in against the site's sub-merchant. Added only when
+        // configured: Monetapay drops blank fields from the TreeMap it re-signs,
+        // so an empty value here would make our sign disagree with its own.
+        // It joins before the ksort below, so it is part of the signed string.
+        if ($this->subMchId !== '') {
+            $requestParams['sub_mch_id'] = $this->subMchId;
+        }
+
         if ($isQris) {
             $requestParams['is_single_use'] = '1';
             $requestParams['qr_string_type'] = '2';
@@ -224,7 +261,16 @@ class MonetapayService
             $requestParams['product_type'] = 'PRODUCT';
             $requestParams['product_category'] = $customerData['product_category'] ?? 'General';
             $requestParams['account_phone'] = self::indonesianAccountPhone($customerData);
-            $requestParams['success_redirect_url'] = config('services.monetapay.success_redirect_url', 'https://example.com');
+            // The gateway bounces a paying customer here after an e-wallet
+            // charge, so it is one more link that must not point at a dev box
+            // or at IANA's documentation domain. Unset, the field is simply not
+            // sent — the gateway's own default applies, which beats sending a
+            // destination nobody can open.
+            $successRedirect = PublicUrl::base('services.monetapay.success_redirect_url');
+
+            if ($successRedirect !== null) {
+                $requestParams['success_redirect_url'] = $successRedirect;
+            }
             $requestParams['expire_seconds'] = '7200';
         } else {
             $requestParams['account_name'] = (string) ($customerData['customer_name'] ?? 'Guest');
@@ -354,11 +400,21 @@ class MonetapayService
      * @param  array<string,scalar>  $businessParams  Pure business params (no timestamp/sign). Arrays are excluded from the encrypted payload.
      * @param  array<string,mixed>  $plainBody  Extra fields merged into the outer request body (not encrypted). Use for nested arrays like order_items.
      */
-    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = [], ?string $appId = null, bool $forDisbursement = false): array
+    private function postSigned(string $endpointSuffix, array $businessParams, bool $passthrough = false, array $plainBody = [], ?string $appId = null, bool $forDisbursement = false, bool $withSubMch = true): array
     {
         // Inject the collection app id so all signed calls include app_id in the encrypted
         // TreeMap. Callers (e.g. disbursement) override via $appId where a different id applies.
         $businessParams['app_id'] = $appId ?? $this->collectionAppId;
+
+        // Every transactional call speaks for the site's sub-merchant, so the id is
+        // injected here rather than repeated at ~30 call sites. An explicit value
+        // from the caller (the operator tools accept one) still wins, and blank
+        // falls out in the array_filter below — i.e. main-merchant behaviour.
+        // $withSubMch is false only where the field is meaningless: the
+        // sub-merchant REGISTRATION query, which is addressed to the parent.
+        if ($withSubMch) {
+            $businessParams['sub_mch_id'] = $businessParams['sub_mch_id'] ?? $this->subMchId;
+        }
 
         // Monetapay omits blank fields from the signed TreeMap; mirror that so
         // our local sign matches what the gateway recomputes on its side.
@@ -474,7 +530,13 @@ class MonetapayService
      | 5. Balance
      * ===================================================================== */
 
-    /** 5.1 Balance Inquiry — POST /v1.0.0/balance */
+    /**
+     * 5.1 Balance Inquiry — POST /v1.0.0/balance
+     *
+     * A null $subMchId means "whichever merchant this site trades as": postSigned
+     * fills in the configured sub-merchant, falling back to the main merchant when
+     * none is set. Pass a value only to inspect a DIFFERENT sub-merchant.
+     */
     public function inquiryBalance(?string $subMchId = null, ?string $currency = null): array
     {
         return $this->postSigned('/v1.0.0/balance', [
@@ -510,10 +572,18 @@ class MonetapayService
      * The per-(sub-merchant, currency) cache key — public so cache-busting
      * callers (integration ping / credential update) forget the same entry
      * this class writes, instead of a stale literal.
+     *
+     * A null $subMchId resolves through the SAME default the request itself uses
+     * (configured sub-merchant, else the main merchant). Without that, an omitted
+     * argument would key the site's own balance under `main` while every caller
+     * that spelled the sub-merchant out looked somewhere else — two cache entries
+     * for one number, each able to go stale independently.
      */
     public static function balanceCacheKey(?string $subMchId = null, ?string $currency = null): string
     {
-        return self::BALANCE_CACHE_KEY.':'.($subMchId ?? 'main').':'.($currency ?? 'IDR');
+        $subMchId = $subMchId ?: (string) (IntegrationConfig::for('monetapay')['sub_mch_id'] ?? '');
+
+        return self::BALANCE_CACHE_KEY.':'.($subMchId !== '' ? $subMchId : 'main').':'.($currency ?? 'IDR');
     }
 
     /* =====================================================================
@@ -585,7 +655,7 @@ class MonetapayService
     /** 6.7.4 Sub-merchant Register Status Inquiry — POST /v1.0.0/subMch/registration/query */
     public function inquirySubMerchant(array $params): array
     {
-        return $this->postSigned('/v1.0.0/subMch/registration/query', $params);
+        return $this->postSigned('/v1.0.0/subMch/registration/query', $params, withSubMch: false);
     }
 
     /* =====================================================================

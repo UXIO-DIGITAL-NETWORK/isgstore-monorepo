@@ -25,10 +25,28 @@ use RuntimeException;
  *    half-scanned secret cannot lock anyone out at their next login.
  *  - **Any change to the second factor revokes every session.** Someone turning
  *    2FA on because they think they were compromised would otherwise leave the
- *    attacker's 30-day refresh token alive.
+ *    attacker's 30-day refresh token alive. A fresh pair is minted *afterwards*
+ *    for the caller who just proved a code — that costs the rule nothing (every
+ *    token an attacker held is already gone) and spares the admin a second
+ *    login in the middle of an act they were told to complete.
+ *
+ * **Rotation** — moving the authenticator to another phone — is the third verb,
+ * beside enrolling and disabling. It never lowers the account's protection for
+ * a moment: the new secret waits in `two_factor_pending_secret` while the old
+ * one stays in force, and only a code from the new device promotes it. See the
+ * migration `2026_09_10_000001_add_two_factor_pending_secret`.
  */
 class TwoFactorAction
 {
+    /**
+     * How long an unconfirmed rotation stays claimable.
+     *
+     * Long enough to install an authenticator app from scratch, short enough
+     * that a secret is not left lying in the database for weeks — which is
+     * material for a silent enrolment if the session that created it leaked.
+     */
+    public const PENDING_TTL_MINUTES = 10;
+
     public function __construct(
         private readonly IssueSessionAction $issueSession,
         private readonly CreateActivityLogAction $activityLogAction,
@@ -52,6 +70,8 @@ class TwoFactorAction
 
         $user->forceFill([
             'two_factor_secret' => $secret,
+            'two_factor_pending_secret' => null,
+            'two_factor_pending_created_at' => null,
             'two_factor_confirmed_at' => null,
             'two_factor_last_used_timestep' => null,
         ])->save();
@@ -61,13 +81,21 @@ class TwoFactorAction
             'otpauth_uri' => Totp::provisioningUri(
                 $secret,
                 (string) $user->email,
-                (string) config('services.storefront.brand', 'UXIOLABS'),
+                // The issuer is what the client sees in their authenticator
+                // app forever after. It used to fall back to 'UXIOLABS' — the
+                // one brand fallback in the codebase that was not the site's
+                // own, and the one place it was most visible.
+                (string) (config('services.storefront.brand') ?: 'TopupGame by Uxiolabs'),
             ),
         ];
     }
 
-    /** Prove the authenticator works, and only then switch 2FA on. */
-    public function confirm(User $user, string $code): void
+    /**
+     * Prove the authenticator works, and only then switch 2FA on.
+     *
+     * @return array{access_token: string, refresh_token: string, user: User}
+     */
+    public function confirm(User $user, string $code): array
     {
         if ($user->two_factor_confirmed_at !== null) {
             throw new RuntimeException('Autentikasi dua faktor sudah aktif.');
@@ -85,7 +113,7 @@ class TwoFactorAction
             throw new RuntimeException('Kode tidak cocok. Periksa jam perangkatmu lalu coba lagi.');
         }
 
-        DB::transaction(function () use ($user, $step) {
+        $session = DB::transaction(function () use ($user, $step) {
             $user->forceFill([
                 'two_factor_confirmed_at' => now(),
                 'two_factor_last_used_timestep' => $step,
@@ -94,9 +122,126 @@ class TwoFactorAction
             // Everything issued before the factor existed predates the
             // protection it is meant to add.
             $user->tokens()->delete();
+
+            // Minted only after the sweep above, never before: the order is
+            // what keeps "revokes every session" true while still handing the
+            // caller a usable session back.
+            return $this->issueSession->mint($user);
         });
 
         $this->log($user, 'Two-factor authentication enabled');
+
+        return $session;
+    }
+
+    /**
+     * Begin moving the authenticator to another device.
+     *
+     * Costs the current password **and** a code from the device being replaced.
+     * The password alone would let a hijacked session re-enrol quietly; the code
+     * alone would let anyone who once shouted a code over the phone do it.
+     *
+     * Nothing in force is touched — not the secret, not `two_factor_confirmed_at`,
+     * not the caller's tokens. An abandoned rotation is a no-op.
+     *
+     * @return array{secret: string, otpauth_uri: string}
+     */
+    public function rotate(User $user, string $password, string $code): array
+    {
+        if ($user->two_factor_confirmed_at === null) {
+            throw new RuntimeException('Belum ada authenticator yang bisa dipindahkan. Lakukan penyiapan terlebih dahulu.');
+        }
+
+        if (! Hash::check($password, (string) $user->password)) {
+            throw new RuntimeException('Password tidak cocok.');
+        }
+
+        // `two_factor_last_used_timestep` is passed on purpose. Without it the
+        // code the admin just spent logging in would be enough to move the
+        // authenticator — which is exactly the phishing-proxy replay the column
+        // exists to stop, aimed at the one action that hands over the account.
+        $step = Totp::verify(
+            (string) $user->two_factor_secret,
+            $code,
+            $user->two_factor_last_used_timestep,
+        );
+
+        if ($step === null) {
+            throw new RuntimeException('Kode tidak cocok. Periksa jam perangkatmu lalu coba lagi.');
+        }
+
+        $pending = Base32::randomSecret();
+
+        $user->forceFill([
+            'two_factor_pending_secret' => $pending,
+            'two_factor_pending_created_at' => now(),
+            'two_factor_last_used_timestep' => $step,
+        ])->save();
+
+        $this->log($user, 'Two-factor rotation started');
+
+        return [
+            'secret' => $pending,
+            'otpauth_uri' => Totp::provisioningUri(
+                $pending,
+                (string) $user->email,
+                (string) (config('services.storefront.brand') ?: 'TopupGame by Uxiolabs'),
+            ),
+        ];
+    }
+
+    /**
+     * Finish the move: a code from the NEW device promotes it to the live one.
+     *
+     * @return array{access_token: string, refresh_token: string, user: User}
+     */
+    public function confirmRotation(User $user, string $code): array
+    {
+        $pending = (string) $user->two_factor_pending_secret;
+
+        if ($pending === '') {
+            throw new RuntimeException('Tidak ada pemindahan yang sedang berjalan. Mulai dari awal.');
+        }
+
+        if ($user->two_factor_pending_created_at?->lt(now()->subMinutes(self::PENDING_TTL_MINUTES)) ?? true) {
+            // Cleared rather than left to linger, so the next attempt starts
+            // from a clean slate instead of failing against a dead secret.
+            $this->clearPending($user);
+
+            throw new RuntimeException('Pemindahan sudah kedaluwarsa. Mulai dari awal.');
+        }
+
+        // `null`, not the stored timestep: that step was spent against the OLD
+        // secret, and steps are wall-clock, so passing it would reject a
+        // perfectly good code from the new device for landing in the same
+        // thirty seconds. The new secret has never authenticated anything
+        // anywhere, and every token dies a line later, so there is nothing to
+        // replay.
+        $step = Totp::verify($pending, $code, null);
+
+        if ($step === null) {
+            throw new RuntimeException('Kode tidak cocok. Pastikan kamu memakai kode dari perangkat yang baru.');
+        }
+
+        $session = DB::transaction(function () use ($user, $pending, $step) {
+            $user->forceFill([
+                'two_factor_secret' => $pending,
+                'two_factor_pending_secret' => null,
+                'two_factor_pending_created_at' => null,
+                'two_factor_last_used_timestep' => $step,
+                // Deliberately NOT touched. A rotation changes which device
+                // holds the factor, not the fact that the account has had one
+                // since a given date.
+            ])->save();
+
+            $user->tokens()->delete();
+
+            return $this->issueSession->mint($user);
+        });
+
+        $this->log($user, 'Two-factor authenticator rotated');
+
+        return $session;
     }
 
     /**
@@ -174,6 +319,10 @@ class TwoFactorAction
         DB::transaction(function () use ($user) {
             $user->forceFill([
                 'two_factor_secret' => null,
+                // An unfinished rotation goes with it, or the leftover secret
+                // would attach itself to whatever enrolment happens next.
+                'two_factor_pending_secret' => null,
+                'two_factor_pending_created_at' => null,
                 'two_factor_confirmed_at' => null,
                 'two_factor_last_used_timestep' => null,
             ])->save();
@@ -182,6 +331,14 @@ class TwoFactorAction
         });
 
         $this->log($user, 'Two-factor authentication disabled');
+    }
+
+    private function clearPending(User $user): void
+    {
+        $user->forceFill([
+            'two_factor_pending_secret' => null,
+            'two_factor_pending_created_at' => null,
+        ])->save();
     }
 
     private function log(User $user, string $message): void

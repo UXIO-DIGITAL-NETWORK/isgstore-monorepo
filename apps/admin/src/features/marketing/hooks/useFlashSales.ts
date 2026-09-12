@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -17,32 +18,35 @@ export const useFlashSale = (id?: string) =>
   });
 
 export const useCreateFlashSale = () => {
+  const { t } = useTranslation("marketing");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: FlashSaleInput) => flashSalesService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Flash sale created");
+      toast.success(t("flashSaleCreated"));
     },
-    onError: () => toast.error("Failed to create flash sale"),
+    onError: () => toast.error(t("flashSaleCreateFailed")),
   });
 };
 
 export const useUpdateFlashSale = () => {
+  const { t } = useTranslation("marketing");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<FlashSaleInput> }) => flashSalesService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Flash sale updated");
+      toast.success(t("flashSaleUpdated"));
     },
-    onError: () => toast.error("Failed to update flash sale"),
+    onError: () => toast.error(t("flashSaleUpdateFailed")),
   });
 };
 
 export const useDeleteFlashSales = () => {
+  const { t } = useTranslation("marketing");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -51,6 +55,6 @@ export const useDeleteFlashSales = () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
       toast.success(ids.length === 1 ? "Flash sale deleted" : `${ids.length} flash sales deleted`);
     },
-    onError: () => toast.error("Failed to delete flash sales"),
+    onError: () => toast.error(t("flashSaleDeleteFailed")),
   });
 };

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
@@ -8,7 +9,7 @@ import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { priceChangeLogColumns } from "../components/priceChangeLogColumns";
+import { priceChangeLogColumnsFor } from "../components/priceChangeLogColumns";
 import { usePriceChangeLogList } from "../hooks/usePriceChangeLog";
 import { PRICE_CHANGE_STATUSES, PRICE_CHANGE_STATUS_LABELS } from "../types/product.type";
 
@@ -24,6 +25,7 @@ const ALL = "all";
  * off at the provider (`deactivated`) or a margin gone negative (`negative_margin`).
  */
 export default function PriceChangeLogPage() {
+  const { t } = useTranslation("products");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(ALL);
   const [page, setPage] = useState(1);
@@ -49,13 +51,8 @@ export default function PriceChangeLogPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Price Change Log
-        </Heading>
-        <Text variant="muted">
-          Every automatic price change from the supplier sync. Prices follow the margin rules unless you lock a
-          product; watch for rows that need attention — a SKU switched off at the provider, or a margin gone negative.
-        </Text>
+        >{t("tabPriceChangeLog")}</Heading>
+        <Text variant="muted">{t("priceChangeLogSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -66,8 +63,8 @@ export default function PriceChangeLogPage() {
               setSearch(event.target.value);
               resetToFirstPage();
             }}
-            placeholder="Search product or SKU"
-            aria-label="Search price changes"
+            placeholder={t("searchProductOrSku")}
+            aria-label={t("searchPriceChanges")}
             className="h-9 w-full rounded-xl sm:w-64"
           />
 
@@ -79,13 +76,13 @@ export default function PriceChangeLogPage() {
             }}
           >
             <SelectTrigger
-              aria-label="Filter by status"
+              aria-label={t("filterByStatus")}
               className="h-9 w-48 rounded-xl"
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All changes</SelectItem>
+              <SelectItem value={ALL}>{t("allChanges")}</SelectItem>
               {PRICE_CHANGE_STATUSES.map((value) => (
                 <SelectItem
                   key={value}
@@ -101,7 +98,7 @@ export default function PriceChangeLogPage() {
             type="button"
             variant="outline"
             size="icon"
-            aria-label="Refresh price changes"
+            aria-label={t("refreshPriceChanges")}
             className="rounded-xl"
             onClick={() => refetch()}
           >
@@ -111,13 +108,13 @@ export default function PriceChangeLogPage() {
 
         <Box className="mt-4">
           <DataTable
-            columns={priceChangeLogColumns}
+            columns={priceChangeLogColumnsFor(t)}
             data={data?.data ?? []}
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="price changes"
-            emptyMessage="No price changes yet. The supplier sync records one here whenever a cost moves."
+            entityLabel={t("priceChangesEntity")}
+            emptyMessage={t("priceChangesEmpty")}
             showRowNumber
             page={page}
             pageSize={pageSize}

@@ -17,6 +17,7 @@ return [
         'type' => 'payment_gateway',
         'fields' => [
             ['key' => 'mch_id', 'label' => 'Merchant ID', 'type' => 'text', 'secret' => false],
+            ['key' => 'sub_mch_id', 'label' => 'Sub-Merchant ID', 'type' => 'text', 'secret' => false],
             ['key' => 'collection_app_id', 'label' => 'Collection App ID', 'type' => 'text', 'secret' => false],
             ['key' => 'disbursement_app_id', 'label' => 'Disbursement App ID', 'type' => 'text', 'secret' => false],
             ['key' => 'partner_key', 'label' => 'Partner Key', 'type' => 'password', 'secret' => true],

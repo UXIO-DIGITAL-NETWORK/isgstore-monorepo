@@ -38,6 +38,12 @@
         <!-- Keep outbound gateways unconfigured so the sync queue never makes a
              live call from a test that doesn't Http::fake it (a real .env must
              not change the suite's outcome). -->
+        <!-- A real-looking domain, because production has one: the customer-facing
+             links are deliberately withheld when the base is localhost or unset,
+             and a suite running without them would be testing the degraded path
+             everywhere. PublicUrlTest overrides these per case. -->
+        <env name="STOREFRONT_URL" value="https://topupgame.id"/>
+        <env name="PAYMENT_PAGE_URL" value="https://pay.topupgame.id"/>
         <env name="PIWAPI_ACCOUNT" value=""/>
         <env name="PIWAPI_SECRET" value=""/>
     </php>

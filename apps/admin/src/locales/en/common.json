@@ -1,0 +1,45 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "reset": "Reset",
+    "search": "Search"
+  },
+  "theme": {
+    "label": "Change theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "label": "Language",
+    "id": "Indonesia",
+    "en": "English"
+  },
+  "table": {
+    "selectAllRows": "Select all rows",
+    "selectRow": "Select row",
+    "lockedRow": "Locked row",
+    "rowsPerPage": "Rows per page",
+    "empty": "No {{entity}} found.",
+    "range": "{{from}}-{{to}} of {{total}} {{entity}}",
+    "rowNumber": "No."
+  },
+  "dropzone": {
+    "prompt": "Drag & drop files here",
+    "optimising": "Optimising image…",
+    "formats": "JPG, JPEG, PNG, WEBP — optimised automatically"
+  },
+  "confirm": {
+    "delete": "Delete",
+    "cancel": "Cancel"
+  },
+  "copy": {
+    "copied": "Copied to clipboard"
+  },
+  "field": {
+    "moreInformation": "More information"
+  }
+}

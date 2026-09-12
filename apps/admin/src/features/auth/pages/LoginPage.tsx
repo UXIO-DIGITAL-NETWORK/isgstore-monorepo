@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,7 @@ import type { AuthApiError } from "../types/auth.type";
 import { TwoFactorStep } from "../components/TwoFactorStep";
 
 export default function LoginPage() {
+  const { t } = useTranslation("auth");
   // Held here, not in the auth store: a challenge is not a session, and
   // `requireGuest` would bounce anyone the store considers signed in.
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
@@ -58,12 +60,8 @@ export default function LoginPage() {
         <Heading
           level={2}
           className="text-[32px] font-extrabold text-slate-900 mb-4 tracking-tight"
-        >
-          Sign in
-        </Heading>
-        <Text className="text-slate-500 text-[15px] font-medium">
-          Enter your credentials to access the admin dashboard.
-        </Text>
+        >{t("signIn")}</Heading>
+        <Text className="text-slate-500 text-[15px] font-medium">{t("signInSubtitle")}</Text>
       </Box>
 
       {/* Global Error Alert */}
@@ -84,9 +82,7 @@ export default function LoginPage() {
           <Label
             htmlFor="email"
             className="block text-sm font-bold text-slate-800"
-          >
-            Email
-          </Label>
+          >{t("email")}</Label>
           <Box className="relative">
             <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <Mail className="w-5 h-5 text-slate-400" />
@@ -107,9 +103,7 @@ export default function LoginPage() {
           <Label
             htmlFor="password"
             className="block text-sm font-bold text-slate-800"
-          >
-            Password
-          </Label>
+          >{t("password")}</Label>
           <Box className="relative">
             <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <Lock className="w-5 h-5 text-slate-400" />
@@ -136,9 +130,7 @@ export default function LoginPage() {
             <Label
               htmlFor="remember"
               className="text-sm font-semibold text-slate-700 cursor-pointer"
-            >
-              Remember me
-            </Label>
+            >{t("rememberMe")}</Label>
           </Box>
         </Box>
 

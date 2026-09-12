@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -20,28 +21,30 @@ export const usePage = (id?: string) =>
   });
 
 export const useCreatePage = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: ContentPageInput) => pagesService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Page created");
+      toast.success(t("pageCreated"));
     },
-    onError: () => toast.error("Failed to create page"),
+    onError: () => toast.error(t("pageCreateFailed")),
   });
 };
 
 export const useUpdatePage = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<ContentPageInput> }) => pagesService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Page updated");
+      toast.success(t("pageUpdated"));
     },
-    onError: () => toast.error("Failed to update page"),
+    onError: () => toast.error(t("pageUpdateFailed")),
   });
 };
 

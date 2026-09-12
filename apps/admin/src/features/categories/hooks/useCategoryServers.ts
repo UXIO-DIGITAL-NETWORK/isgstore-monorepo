@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { categoryServersService } from "../services/categoryServers.service";
@@ -17,6 +18,7 @@ export const useCategoryServer = (id?: string) =>
   });
 
 export const useCreateCategoryServer = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -24,15 +26,16 @@ export const useCreateCategoryServer = () => {
       categoryServersService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-servers"] });
-      toast.success("Category server created");
+      toast.success(t("serverCreated"));
     },
     onError: () => {
-      toast.error("Failed to create category server");
+      toast.error(t("serverCreateFailed"));
     },
   });
 };
 
 export const useUpdateCategoryServer = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -45,25 +48,26 @@ export const useUpdateCategoryServer = () => {
     }) => categoryServersService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-servers"] });
-      toast.success("Category server updated");
+      toast.success(t("serverUpdated"));
     },
     onError: () => {
-      toast.error("Failed to update category server");
+      toast.error(t("serverUpdateFailed"));
     },
   });
 };
 
 export const useDeleteCategoryServer = () => {
+  const { t } = useTranslation("categories");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => categoryServersService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-servers"] });
-      toast.success("Category server deleted");
+      toast.success(t("serverDeleted"));
     },
     onError: () => {
-      toast.error("Failed to delete category server");
+      toast.error(t("serverDeleteFailed"));
     },
   });
 };

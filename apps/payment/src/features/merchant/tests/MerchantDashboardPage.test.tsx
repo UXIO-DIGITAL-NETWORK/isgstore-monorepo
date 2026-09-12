@@ -6,7 +6,7 @@ import { render, screen } from "@testing-library/react";
 import MerchantDashboardPage from "../pages/MerchantDashboardPage";
 import * as hooks from "../hooks/useMerchant";
 
-// The card's "Go Check" is an internal router Link; stub it to a plain anchor
+// The card's CTA is an internal router Link; stub it to a plain anchor
 // so this stays a unit test of the dashboard, not of routing.
 vi.mock("@/components/common/Link", () => ({
   Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
@@ -59,16 +59,18 @@ describe("MerchantDashboardPage — Website Services card", () => {
     renderPage();
 
     expect(screen.getByText("Website Services")).toBeInTheDocument();
-    expect(screen.getByText("• Active until 1 Sep 2026")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Go Check" })).toBeInTheDocument();
+    // Indonesian, because this panel's default is: the card used to be
+    // hardcoded English on an otherwise Indonesian screen.
+    expect(screen.getByText("• Aktif sampai 1 Sep 2026")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lihat" })).toBeInTheDocument();
   });
 
-  /** An invented "Active until" would be worse than showing nothing. */
+  /** An invented "Aktif sampai" would be worse than showing nothing. */
   it("omits the date line when nothing is subscribed", () => {
     mockDashboard({ service_active_until: null, active_services_count: 0 });
     renderPage();
 
     expect(screen.getByText("Website Services")).toBeInTheDocument();
-    expect(screen.queryByText(/Active until/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Aktif sampai/)).not.toBeInTheDocument();
   });
 });

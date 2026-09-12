@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -33,19 +34,21 @@ export const useArticleCategoryOptions = () => {
 };
 
 export const useCreateArticleCategory = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: ArticleCategoryInput) => articleCategoriesService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Category created");
+      toast.success(t("categoryCreated"));
     },
-    onError: () => toast.error("Failed to create category"),
+    onError: () => toast.error(t("categoryCreateFailed")),
   });
 };
 
 export const useUpdateArticleCategory = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -53,13 +56,14 @@ export const useUpdateArticleCategory = () => {
       articleCategoriesService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
-      toast.success("Category updated");
+      toast.success(t("categoryUpdated"));
     },
-    onError: () => toast.error("Failed to update category"),
+    onError: () => toast.error(t("categoryUpdateFailed")),
   });
 };
 
 export const useDeleteArticleCategories = () => {
+  const { t } = useTranslation("content");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -70,6 +74,6 @@ export const useDeleteArticleCategories = () => {
     },
     // The API refuses to delete a category that still holds articles, so the
     // failure here is usually that — say so rather than a generic error.
-    onError: () => toast.error("Failed to delete. Categories with articles cannot be removed."),
+    onError: () => toast.error(t("categoryDeleteBlocked")),
   });
 };

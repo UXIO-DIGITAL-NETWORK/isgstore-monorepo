@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
 import { UploadCloud } from "lucide-react";
 
@@ -14,7 +15,7 @@ import { cn } from "@/lib/utils";
 // ponytail: transactions still has its own inline copy — fold it in the next
 // time that form is touched, not as drive-by churn now.
 const DEFAULT_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
-const DEFAULT_FORMATS_LABEL = "JPG, JPEG, PNG, WEBP — optimised automatically";
+
 
 interface ImageDropzoneProps {
   id: string;
@@ -37,8 +38,9 @@ export function ImageDropzone({
   onChange,
   error,
   accept = DEFAULT_ACCEPT,
-  formatsLabel = DEFAULT_FORMATS_LABEL,
+  formatsLabel,
 }: ImageDropzoneProps) {
+  const { t } = useTranslation("common");
   const [dragActive, setDragActive] = useState(false);
   const [optimising, setOptimising] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,8 +84,8 @@ export function ImageDropzone({
         )}
       >
         <UploadCloud className="size-6 text-muted-foreground" />
-        <Text variant="small">Drag & drop files here</Text>
-        <Text variant="small">{formatsLabel}</Text>
+        <Text variant="small">{t("dropzone.prompt")}</Text>
+        <Text variant="small">{formatsLabel ?? t("dropzone.formats")}</Text>
         <input
           ref={fileInputRef}
           id={id}
@@ -103,7 +105,7 @@ export function ImageDropzone({
           Browse files
         </Button>
         {optimising ? (
-          <Text variant="small">Optimising image…</Text>
+          <Text variant="small">{t("dropzone.optimising")}</Text>
         ) : (
           value && <Text variant="small">{value.name}</Text>
         )}

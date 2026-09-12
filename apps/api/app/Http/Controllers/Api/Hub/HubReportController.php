@@ -16,6 +16,7 @@ use App\Models\ServiceSubscription;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
+use App\Support\Payment\WebsiteSubscriptionStatus;
 use App\Support\Payout\BankCatalog;
 use App\Support\Wallet\PlatformBalance;
 use App\Support\Withdrawal\WithdrawalFeeCalculator;
@@ -74,6 +75,13 @@ class HubReportController extends Controller
             // is unreachable — a summary pull must never fail because Monetapay
             // is slow.
             'gateway_balance' => $this->gatewayBalance(),
+            // This site's OWN yearly licence — not `active_subscriptions_count`
+            // above, which counts the merchants subscribed *on* this site. The
+            // Hub needs the site's own expiry to chase a renewal before the
+            // deployment lapses, and reads the identical answer the site's own
+            // sidebar card shows. Never throws: unconfigured billing is a
+            // status string, not a failed pull.
+            'website_subscription' => WebsiteSubscriptionStatus::resolve(),
             // Finance breakdown so the Hub can render the same headline cards the
             // site's own payment-internal dashboard shows. Additive to this
             // contract; older sites simply omit these keys.
@@ -242,11 +250,18 @@ class HubReportController extends Controller
         // never trigger a fresh inquiry here. The cache is warmed by callers that
         // can afford the wait (finance dashboard, monetapay:reconcile-fees).
         try {
-            $cached = Cache::get(MonetapayService::balanceCacheKey(
-                config('services.monetapay.collection_app_id') ?: null,
-            ));
+            // Key it exactly as the writer does — no argument, so the helper
+            // resolves the site's configured sub-merchant. Passing
+            // `collection_app_id` here (an app id, not a merchant id) named an
+            // entry nothing ever wrote, so this always fell through to the
+            // snapshot. `current_balance` is the real Monetapay 5.1 field;
+            // `balance` is kept only for older cached shapes.
+            $cached = Cache::get(MonetapayService::balanceCacheKey());
 
-            $balance = $cached['data']['balance'] ?? $cached['balance'] ?? null;
+            $balance = $cached['data']['current_balance']
+                ?? $cached['data']['balance']
+                ?? $cached['balance']
+                ?? null;
 
             if (is_numeric($balance)) {
                 return (int) round((float) $balance);

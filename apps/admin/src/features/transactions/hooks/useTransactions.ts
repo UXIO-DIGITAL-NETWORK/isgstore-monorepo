@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { transactionsService } from "../services/transactions.service";
@@ -60,36 +61,39 @@ export const useStatusCounts = () =>
   });
 
 export const useEditTransaction = () => {
+  const { t } = useTranslation("transactions");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, formData }: { id: string; formData: FormData }) => transactionsService.edit(id, formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.success("Transaction updated");
+      toast.success(t("updated"));
     },
     onError: () => {
-      toast.error("Failed to update transaction");
+      toast.error(t("updateFailed"));
     },
   });
 };
 
 export const useDeleteTransaction = () => {
+  const { t } = useTranslation("transactions");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => transactionsService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.success("Transaction deleted");
+      toast.success(t("deleted"));
     },
     onError: () => {
-      toast.error("Failed to delete transaction");
+      toast.error(t("deleteFailed"));
     },
   });
 };
 
 export const useRefund = () => {
+  const { t } = useTranslation("transactions");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -101,56 +105,61 @@ export const useRefund = () => {
       // Deliberately not "Refund initiated": nothing is left in flight. A
       // member's balance is credited immediately; a guest's refund is queued
       // on the Refunds page for a manual transfer.
-      toast.success("Refund opened — see Refunds for the payout");
+      toast.success(t("refundOpened"));
     },
     onError: () => {
       // The API 422s when there is nothing to refund (never paid, already
       // refunded), which the old flow reported as a success.
-      toast.error("Could not open a refund for this transaction");
+      toast.error(t("refundFailed"));
     },
   });
 };
 
 export const useResendCallback = () => {
+  const { t } = useTranslation("transactions");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => transactionsService.resendCallback(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.success("Callback resent");
+      toast.success(t("callbackResent"));
     },
     onError: () => {
-      toast.error("Failed to resend callback");
+      toast.error(t("callbackResendFailed"));
     },
   });
 };
 
 export const useRetryInvoice = () => {
+  const { t } = useTranslation("transactions");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => transactionsService.retryInvoice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.success("Invoice retried");
+      toast.success(t("invoiceRetried"));
     },
     onError: () => {
-      toast.error("Failed to retry invoice");
+      toast.error(t("invoiceRetryFailed"));
     },
   });
 };
 
-export const useResendReceipt = () =>
-  useMutation({
+export const useResendReceipt = () => {
+  const { t } = useTranslation("transactions");
+
+  return useMutation({
     mutationFn: (id: string) => transactionsService.resendReceipt(id),
     onSuccess: () => {
-      toast.success("Receipt resent");
+      toast.success(t("receiptResent"));
     },
     onError: () => {
-      toast.error("Failed to resend receipt");
+      toast.error(t("receiptResendFailed"));
     },
   });
+};
 
 /**
  * `enabled` is the Recap dialog's open state — the query only runs while the
@@ -163,14 +172,17 @@ export const useRecap = (period: RecapPeriod, enabled: boolean) =>
     enabled,
   });
 
-export const useExportTransactions = () =>
-  useMutation({
+export const useExportTransactions = () => {
+  const { t } = useTranslation("transactions");
+
+  return useMutation({
     mutationFn: (params: TransactionListParams) => transactionsService.exportTransactions(params),
     onSuccess: (blob) => {
       downloadBlob(blob, "transactions.csv");
-      toast.success("Export ready");
+      toast.success(t("exportReady"));
     },
     onError: () => {
-      toast.error("Failed to export transactions");
+      toast.error(t("exportFailed"));
     },
   });
+};

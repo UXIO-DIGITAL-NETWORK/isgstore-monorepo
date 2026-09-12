@@ -23,7 +23,7 @@ describe("Feedback delete flow", () => {
   it("does not delete until the confirmation is accepted", async () => {
     const removeSpy = vi.spyOn(feedbackService, "remove").mockResolvedValue(undefined);
     const user = userEvent.setup();
-    renderRoute("/admin/feedback");
+    await renderRoute("/admin/feedback");
 
     await user.click(await screen.findByRole("button", { name: /Actions for Budi Santoso/i }));
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
@@ -41,7 +41,7 @@ describe("Feedback delete flow", () => {
   it("cancelling the confirmation deletes nothing", async () => {
     const removeSpy = vi.spyOn(feedbackService, "remove").mockResolvedValue(undefined);
     const user = userEvent.setup();
-    renderRoute("/admin/feedback");
+    await renderRoute("/admin/feedback");
 
     await user.click(await screen.findByRole("button", { name: /Actions for Budi Santoso/i }));
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
@@ -55,7 +55,7 @@ describe("Feedback delete flow", () => {
   it("can delete a guest review by its generated name", async () => {
     const removeSpy = vi.spyOn(feedbackService, "remove").mockResolvedValue(undefined);
     const user = userEvent.setup();
-    renderRoute("/admin/feedback");
+    await renderRoute("/admin/feedback");
 
     await user.click(await screen.findByRole("button", { name: /Actions for Guest K48213/i }));
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
@@ -68,7 +68,7 @@ describe("Feedback delete flow", () => {
 
   it("hides the row menu without the delete permission", async () => {
     useAuthStore.setState({ token: "test-token", permissions: ["feedback.view"] });
-    renderRoute("/admin/feedback");
+    await renderRoute("/admin/feedback");
 
     await screen.findByText("Budi Santoso");
 

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 
@@ -28,6 +29,7 @@ interface Props {
  * from the top; the copy says so rather than leaving them guessing.
  */
 export function TwoFactorStep({ challengeToken, remember, onCancel }: Props) {
+  const { t } = useTranslation("auth");
   const [code, setCode] = useState("");
   const { mutate: verify, isPending, error } = useVerifyTwoFactor();
 
@@ -41,12 +43,8 @@ export function TwoFactorStep({ challengeToken, remember, onCancel }: Props) {
         <Heading
           level={2}
           className="mb-3 text-[32px] font-extrabold tracking-tight text-slate-900"
-        >
-          Two-factor code
-        </Heading>
-        <Text className="text-slate-500">
-          Open your authenticator app and enter the six-digit code for this account.
-        </Text>
+        >{t("twoFactorCode")}</Heading>
+        <Text className="text-slate-500">{t("twoFactorCodeHint")}</Text>
       </Box>
 
       <Box className="flex flex-col gap-5">
@@ -115,9 +113,7 @@ export function TwoFactorStep({ challengeToken, remember, onCancel }: Props) {
           variant="ghost"
           onClick={onCancel}
           className="w-full rounded-xl text-slate-500 hover:text-slate-900"
-        >
-          Back to sign in
-        </Button>
+        >{t("backToSignIn")}</Button>
       </Box>
     </Box>
   );

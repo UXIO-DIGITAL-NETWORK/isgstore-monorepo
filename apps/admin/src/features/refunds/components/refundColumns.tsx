@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { AlertTriangle } from "lucide-react";
@@ -11,10 +12,14 @@ import { RowActionMenu } from "./RowActionMenu";
 
 const formatDate = (value: string | null) => (value ? format(new Date(value), "dd MMM yyyy HH:mm") : "—");
 
-export const refundColumns: ColumnDef<Refund>[] = [
+/**
+ * A factory, not a module constant: headers are rendered text, so they
+ * have to resolve when the component renders.
+ */
+export const refundColumnsFor = (t: TFunction<"refunds">): ColumnDef<Refund>[] => [
   {
     accessorKey: "refund_number",
-    header: "Refund",
+    header: t("refundFallback"),
     cell: ({ row }) => (
       <Box className="flex flex-col">
         <Text
@@ -35,7 +40,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
   },
   {
     id: "customer",
-    header: "Customer",
+    header: t("customer"),
     cell: ({ row }) => {
       const { customer, claim_notified_at, method, claimed_account } = row.original;
       // A guest we could never reach has to stand out: they will never claim,
@@ -95,9 +100,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
               <Text
                 as="span"
                 className="text-destructive text-xs"
-              >
-                Never notified — contact manually
-              </Text>
+              >{t("neverNotified")}</Text>
             </Box>
           )}
         </Box>
@@ -106,12 +109,12 @@ export const refundColumns: ColumnDef<Refund>[] = [
   },
   {
     id: "method",
-    header: "Method",
+    header: t("method"),
     cell: ({ row }) => <RefundMethodBadge method={row.original.method} />,
   },
   {
     accessorKey: "amount",
-    header: "Amount",
+    header: t("amount"),
     cell: ({ row }) => (
       <Text
         as="span"
@@ -123,7 +126,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
   },
   {
     id: "payout",
-    header: "Payout to",
+    header: t("colPayoutTo"),
     cell: ({ row }) => {
       const { payout, method } = row.original;
 
@@ -132,9 +135,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
           <Text
             variant="muted"
             as="span"
-          >
-            Member balance
-          </Text>
+          >{t("memberBalance")}</Text>
         );
       }
 
@@ -154,9 +155,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
           <Text
             variant="muted"
             as="span"
-          >
-            Awaiting the customer
-          </Text>
+          >{t("awaitingCustomer")}</Text>
         );
       }
 
@@ -188,7 +187,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t("status"),
     cell: ({ row }) => (
       <Box className="flex flex-col gap-1">
         <RefundStatusBadge status={row.original.status} />
@@ -206,7 +205,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
   },
   {
     id: "verify_due_at",
-    header: "Due",
+    header: t("colDue"),
     cell: ({ row }) => {
       const { verify_due_at, is_overdue } = row.original;
 
@@ -236,9 +235,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
             <Text
               as="span"
               className="text-destructive text-xs"
-            >
-              Past the 2x24h promise
-            </Text>
+            >{t("pastPromise")}</Text>
           )}
         </Box>
       );
@@ -246,7 +243,7 @@ export const refundColumns: ColumnDef<Refund>[] = [
   },
   {
     accessorKey: "created_at",
-    header: "Opened",
+    header: t("opened"),
     cell: ({ row }) => (
       <Text
         variant="muted"

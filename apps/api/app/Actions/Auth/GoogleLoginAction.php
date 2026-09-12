@@ -12,6 +12,7 @@ use App\Enums\RoleType;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\GoogleTokenVerifier;
+use App\Support\Locale\SupportedLocale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -71,7 +72,11 @@ class GoogleLoginAction
                     'email' => $email,
                     'google_id' => $googleId,
                     'avatar' => $picture,
-                    'locale' => config('app.locale'),
+                    // `SupportedLocale::fallback()`, not the raw config: this
+                    // wrote `en` for every Google sign-up while the column
+                    // default said `id`, so the two ways of creating an account
+                    // disagreed about what language the person reads.
+                    'locale' => SupportedLocale::fallback(),
                     'timezone' => $dto->timezone ?? 'Asia/Jakarta',
                 ]);
             }

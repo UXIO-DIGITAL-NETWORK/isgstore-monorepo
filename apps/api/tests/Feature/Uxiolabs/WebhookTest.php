@@ -212,6 +212,30 @@ class WebhookTest extends TestCase
         });
     }
 
+    public function test_a_webhook_that_changes_nothing_sends_no_notification(): void
+    {
+        // uxiolabs re-delivers `processing` while an order is in flight. Each
+        // one used to post a `PROCESSING ➔ PROCESSING` embed — half the volume
+        // in the operational channel, carrying nothing an operator could act on.
+        config(['services.discord.webhook_log_url' => 'https://discord.test/hook']);
+        Http::fake();
+
+        $transaction = Transaction::factory()->create([
+            'status' => TransactionStatus::PROCESSING,
+            'supplier_trx_id' => 'UX-NOOP',
+        ]);
+
+        $this->postWebhook([
+            'id' => 'UX-NOOP',
+            'idtrx' => $transaction->invoice_number,
+            'status' => 'processing',
+        ])->assertOk();
+
+        Http::assertNothingSent();
+        // The row is still updated — only the announcement is skipped.
+        $this->assertSame(TransactionStatus::PROCESSING, $transaction->fresh()->status);
+    }
+
     public function test_discord_target_falls_back_when_the_schema_cannot_be_satisfied(): void
     {
         config(['services.discord.webhook_log_url' => 'https://discord.test/hook']);

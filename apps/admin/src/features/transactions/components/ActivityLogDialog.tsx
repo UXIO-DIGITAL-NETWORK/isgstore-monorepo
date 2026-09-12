@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Bot } from "lucide-react";
 
@@ -27,6 +28,7 @@ interface ActivityLogDialogProps {
  * operator, who keeps the table's avatar + name-over-phone shape.
  */
 function ActorCell({ actor }: { actor: ActivityLogEntry["actor"] }) {
+  const { t } = useTranslation("transactions");
   if (actor === "system") {
     return (
       <Box className="flex items-center gap-2">
@@ -38,9 +40,7 @@ function ActorCell({ actor }: { actor: ActivityLogEntry["actor"] }) {
         <Text
           as="span"
           variant="muted"
-        >
-          System
-        </Text>
+        >{t("system")}</Text>
       </Box>
     );
   }
@@ -86,6 +86,7 @@ function ActorCell({ actor }: { actor: ActivityLogEntry["actor"] }) {
  * Action is a short event label and Description that event's specific detail.
  */
 export function ActivityLogDialog({ transactionId, open, onOpenChange }: ActivityLogDialogProps) {
+  const { t } = useTranslation("transactions");
   const { data, isLoading, isError, refetch } = useTransactionActivityLog(transactionId, open);
 
   return (
@@ -99,8 +100,8 @@ export function ActivityLogDialog({ transactionId, open, onOpenChange }: Activit
         overlayClassName="bg-black/70"
       >
         <DialogHeader>
-          <DialogTitle>Activity Log</DialogTitle>
-          <DialogDescription>A record of every status change and action taken on this transaction.</DialogDescription>
+          <DialogTitle>{t("activityLog")}</DialogTitle>
+          <DialogDescription>{t("activityLogSubtitle")}</DialogDescription>
         </DialogHeader>
 
         {/* Error renders inline rather than as an early return (unlike
@@ -113,14 +114,12 @@ export function ActivityLogDialog({ transactionId, open, onOpenChange }: Activit
             widening the table into a horizontal scrollbar. */}
         {isError ? (
           <Box className="flex flex-col items-center gap-3 rounded-lg border border-border py-10">
-            <Text variant="muted">Something went wrong loading the activity log.</Text>
+            <Text variant="muted">{t("activityLogFailed")}</Text>
             <Button
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-            >
-              Retry
-            </Button>
+            >{t("retry")}</Button>
           </Box>
         ) : (
           <Table
@@ -129,11 +128,11 @@ export function ActivityLogDialog({ transactionId, open, onOpenChange }: Activit
           >
             <TableHeader>
               <TableRow>
-                <TableHead className="w-10">No.</TableHead>
-                <TableHead className="w-44">User</TableHead>
-                <TableHead className="w-36">Action</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="w-32">Time</TableHead>
+                <TableHead className="w-10">{t("colNo")}</TableHead>
+                <TableHead className="w-44">{t("colUser")}</TableHead>
+                <TableHead className="w-36">{t("colAction")}</TableHead>
+                <TableHead>{t("colDescription")}</TableHead>
+                <TableHead className="w-32">{t("colTime")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -152,9 +151,7 @@ export function ActivityLogDialog({ transactionId, open, onOpenChange }: Activit
                   <TableCell
                     colSpan={COLUMN_COUNT}
                     className="py-8 text-center text-muted-foreground"
-                  >
-                    No activity yet.
-                  </TableCell>
+                  >{t("noActivity")}</TableCell>
                 </TableRow>
               ) : (
                 data.map((entry, index) => (

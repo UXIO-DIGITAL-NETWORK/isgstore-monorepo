@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
@@ -43,6 +44,7 @@ export const useSuppliers = () =>
 
 /** Add Product (Bulk) — create many at once; the toast reports created/skipped. */
 export const useBulkCreateProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -57,38 +59,40 @@ export const useBulkCreateProducts = () => {
           : `${result.created} added, ${result.skipped.length} skipped`,
       );
     },
-    onError: () => toast.error("Failed to add products"),
+    onError: () => toast.error(t("addProductsFailed")),
   });
 };
 
 /** Add Main Products (§4.6). Same shape as `useCreateCategory`. */
 export const useCreateProduct = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (input: Omit<Product, "id" | "created_at" | "updated_at">) => productsService.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product created");
+      toast.success(t("productCreated"));
     },
     onError: () => {
-      toast.error("Failed to create product");
+      toast.error(t("productCreateFailed"));
     },
   });
 };
 
 /** The selection bar's "Deactive (N)" — same bulk shape as the delete path. */
 export const useUpdateProduct = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<ProductInput> }) => productsService.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product updated");
+      toast.success(t("productUpdated"));
     },
     onError: () => {
-      toast.error("Failed to update product");
+      toast.error(t("productUpdateFailed"));
     },
   });
 };
@@ -130,16 +134,17 @@ export const useSetProductPublished = () => {
 
 /** Bring an archived product back — it returns unpublished, never straight live. */
 export const useRestoreProduct = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => productsService.restore(id),
     onSuccess: () => {
       invalidateProductAndPool(queryClient);
-      toast.success("Product restored");
+      toast.success(t("productRestored"));
     },
     onError: (error) => {
-      toast.error(apiErrorMessage(error) ?? "Failed to restore product");
+      toast.error(apiErrorMessage(error) ?? t("restoreFailed"));
     },
   });
 };
@@ -165,6 +170,7 @@ export const useDeleteProducts = () => {
 
 /** Lock/unlock prices against the supplier sync (row `[id]` or bulk). */
 export const useLockProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -173,12 +179,13 @@ export const useLockProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(`${ids.length === 1 ? "Price" : `${ids.length} prices`} ${locked ? "locked" : "unlocked"}`);
     },
-    onError: () => toast.error("Failed to update price lock"),
+    onError: () => toast.error(t("priceLockFailed")),
   });
 };
 
 /** Show/hide the price on the storefront (row `[id]` or bulk). */
 export const useShowProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -187,12 +194,13 @@ export const useShowProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(`${ids.length === 1 ? "Price" : `${ids.length} prices`} ${hidden ? "hidden" : "shown"}`);
     },
-    onError: () => toast.error("Failed to update price visibility"),
+    onError: () => toast.error(t("priceVisibilityFailed")),
   });
 };
 
 /** Re-pull selling prices from the supplier cost (row `[id]` or bulk). */
 export const useUxiolabsUpdateProducts = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -201,12 +209,13 @@ export const useUxiolabsUpdateProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(ids.length === 1 ? "Product updated from supplier" : `${ids.length} products updated from supplier`);
     },
-    onError: () => toast.error("Failed to update from supplier"),
+    onError: () => toast.error(t("supplierUpdateFailed")),
   });
 };
 
 /** Re-price one product from the Main Products form. */
 export const useSetProductMargin = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -216,12 +225,13 @@ export const useSetProductMargin = () => {
       // The margins live on the provider mapping, so that list is stale too.
       queryClient.invalidateQueries({ queryKey: ["supplier-products"] });
     },
-    onError: (error) => toast.error(apiErrorMessage(error) ?? "Failed to update the product margin"),
+    onError: (error) => toast.error(apiErrorMessage(error) ?? t("marginUpdateFailed")),
   });
 };
 
 /** Set a single product's min/max price window. */
 export const useSetProductPriceLimit = () => {
+  const { t } = useTranslation("products");
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -229,8 +239,8 @@ export const useSetProductPriceLimit = () => {
       productsService.setPriceLimit(id, limits),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Price limit updated");
+      toast.success(t("priceLimitUpdated"));
     },
-    onError: () => toast.error("Failed to update price limit"),
+    onError: () => toast.error(t("priceLimitFailed")),
   });
 };

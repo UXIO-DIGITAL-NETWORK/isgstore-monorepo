@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { Box } from "@/components/common/Box";
@@ -29,6 +30,7 @@ const CATEGORY_OPTIONS_PAGE_SIZE = 100;
  * concept the design does not have.
  */
 export default function CategoryProviderPage() {
+  const { t } = useTranslation("categories");
   const [search, setSearch] = useState("");
   const [supplierId, setSupplierId] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
@@ -59,8 +61,9 @@ export default function CategoryProviderPage() {
       categoryProviderColumns(
         new Map((categories?.data ?? []).map((category) => [category.id, category.name])),
         new Map(providerCategories.map((option) => [option.value, option])),
+        t,
       ),
-    [categories, providerCategories],
+    [categories, providerCategories, t],
   );
 
   const handleSearchChange = (value: string) => {
@@ -83,12 +86,8 @@ export default function CategoryProviderPage() {
         <Heading
           level={1}
           variant="section"
-        >
-          Category Provider
-        </Heading>
-        <Text variant="muted">
-          Which upstream supplier fulfils each category, and the integration template used to route its orders.
-        </Text>
+        >{t("tabCategoryProvider")}</Heading>
+        <Text variant="muted">{t("providerSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -111,8 +110,8 @@ export default function CategoryProviderPage() {
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          emptyMessage="No category providers found."
-          entityLabel="category providers"
+          emptyMessage={t("providerEmpty")}
+          entityLabel={t("providerEntity")}
           showRowNumber
           onSelectionChange={handleSelectionChange}
           page={data?.meta.current_page ?? page}

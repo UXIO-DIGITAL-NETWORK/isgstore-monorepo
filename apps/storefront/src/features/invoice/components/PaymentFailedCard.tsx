@@ -78,7 +78,7 @@ export default function PaymentFailedCard({ invoiceNumber, paymentName, createdA
                 type="button"
                 onClick={handleCopy}
                 className="w-8 h-8 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center shrink-0 cursor-pointer hover:bg-white/10 transition-colors"
-                aria-label="Copy invoice number"
+                aria-label={t("a11y.copyInvoiceNumber")}
               >
                 {copied ? (
                   <Check className="w-3.5 h-3.5 text-green-400" />

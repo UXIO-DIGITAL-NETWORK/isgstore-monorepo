@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "@tanstack/react-router";
 
 import { Box } from "@/components/common/Box";
@@ -5,14 +6,14 @@ import { Link } from "@/components/common/Link";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const TAB_SEGMENTS = [
-  { value: "articles", label: "Articles", segment: "articles" },
-  { value: "news", label: "News", segment: "news" },
-  { value: "categories", label: "Categories", segment: "categories" },
-  { value: "faqs", label: "FAQ", segment: "faqs" },
-  { value: "pages", label: "Pages", segment: "pages" },
-  { value: "banners", label: "Banners", segment: "banners" },
-  { value: "announcements", label: "Announcements", segment: "announcements" },
-  { value: "testimonials", label: "Testimonials", segment: "testimonials" },
+  { value: "articles", labelKey: "tabArticles", segment: "articles" },
+  { value: "news", labelKey: "tabNews", segment: "news" },
+  { value: "categories", labelKey: "tabCategories", segment: "categories" },
+  { value: "faqs", labelKey: "entityFaq", segment: "faqs" },
+  { value: "pages", labelKey: "tabPages", segment: "pages" },
+  { value: "banners", labelKey: "tabBanners", segment: "banners" },
+  { value: "announcements", labelKey: "tabAnnouncements", segment: "announcements" },
+  { value: "testimonials", labelKey: "tabTestimonials", segment: "testimonials" },
 ];
 
 const BASE = "/admin/content";
@@ -27,6 +28,7 @@ const BASE = "/admin/content";
  * branch could never be taken.
  */
 export function ContentTabsLayout() {
+  const { t } = useTranslation("content");
   const { pathname } = useLocation();
   const base = BASE;
   const activeSegment = pathname.slice(base.length).split("/").filter(Boolean)[0];
@@ -42,7 +44,7 @@ export function ContentTabsLayout() {
               value={tab.value}
               asChild
             >
-              <Link href={`${base}/${tab.segment}`}>{tab.label}</Link>
+              <Link href={`${base}/${tab.segment}`}>{t(tab.labelKey)}</Link>
             </TabsTrigger>
           ))}
         </TabsList>

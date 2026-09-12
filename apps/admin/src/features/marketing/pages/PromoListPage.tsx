@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/common/DataTable";
@@ -11,6 +12,7 @@ import { usePromoList, useDeletePromos } from "../hooks/usePromos";
 const DEFAULT_PAGE_SIZE = 10;
 
 export function PromoListPage() {
+  const { t } = useTranslation("marketing");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -25,15 +27,15 @@ export function PromoListPage() {
 
   const handleSelectionChange = useCallback((ids: string[]) => setSelectedIds(ids), []);
   const columns = useMemo(
-    () => promoColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id)),
-    [deleteRows],
+    () => promoColumns((ids) => deleteRows.mutate(ids), (id) => setEditId(id), t),
+    [deleteRows, t],
   );
 
   return (
     <>
       <MarketingListShell
-        title="Promo"
-        description="Discount codes. Public codes appear in the storefront's voucher list; private ones still work when typed."
+        title={t("promoEntity")}
+        description={t("promoSubtitle")}
         toolbar={
           <MarketingToolbar
             idPrefix="promo"
@@ -57,8 +59,8 @@ export function PromoListPage() {
             isLoading={isLoading}
             isError={isError}
             onRetry={() => refetch()}
-            entityLabel="promos"
-            emptyMessage="No promo codes yet."
+            entityLabel={t("promosEntity")}
+            emptyMessage={t("noPromos")}
             showRowNumber
             enableSelection
             onSelectionChange={handleSelectionChange}
@@ -79,7 +81,7 @@ export function PromoListPage() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         title={`Delete ${selectedIds.length} ${selectedIds.length === 1 ? "item" : "items"}?`}
-        description="This action cannot be undone."
+        description={t("irreversible")}
         onConfirm={() => deleteRows.mutate(selectedIds)}
       />
 

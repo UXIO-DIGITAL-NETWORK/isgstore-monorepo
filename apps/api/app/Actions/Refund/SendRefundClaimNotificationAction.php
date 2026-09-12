@@ -7,7 +7,10 @@ namespace App\Actions\Refund;
 use App\Jobs\SendRefundWhatsAppJob;
 use App\Mail\RefundMail;
 use App\Models\RefundRequest;
+use App\Services\DiscordWebhookService;
 use App\Support\Phone;
+use App\Support\PublicUrl;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 /**
@@ -22,6 +25,15 @@ use Illuminate\Support\Facades\Mail;
  * SendTransactionReceiptAction. It is stamped optimistically after queueing,
  * for the same reason: a duplicate refund email is a worse failure than a
  * missed one is here, because the customer already has the link.
+ *
+ * **An unreachable storefront URL stops the send.** A claim link is delivered
+ * once, to someone owed money, and every layer here reports success whatever
+ * the link says — so a `http://localhost:5173/...` was invisible from this side
+ * and total for the customer. Refusing to send leaves `claim_notified_at` null,
+ * which the refunds page already renders as "never notified — contact
+ * manually": a state an operator can act on, unlike a stamped row holding a
+ * dead link. It never throws — `InitiateRefundAction` calls this post-commit,
+ * where nothing may fail the refund.
  */
 class SendRefundClaimNotificationAction
 {
@@ -34,6 +46,23 @@ class SendRefundClaimNotificationAction
         $refund->loadMissing('transaction');
         $locale = $this->resolveLocale($refund);
         $claimUrl = $this->claimUrl($claimToken, $locale);
+
+        if ($claimUrl === null) {
+            // Loud on both channels an operator watches, because a bad base URL
+            // is never one refund's problem — it is every refund's.
+            $message = 'STOREFRONT_URL is missing or not publicly reachable, so refund claim links are not being '
+                ."sent — most recently {$refund->refund_number}. Set it to the live storefront domain, then re-send "
+                .'the affected refunds from the refunds page.';
+
+            // The log line stays per-refund: that is the record of which ones
+            // need re-sending. The alert does not — this is one broken config,
+            // and reporting it per row is what buried the message that actually
+            // needed a human.
+            Log::error($message, ['refund_id' => $refund->id, 'configured' => config('services.storefront.url')]);
+            app(DiscordWebhookService::class)->sendAlertOnce('storefront-url-unreachable', $message);
+
+            return false;
+        }
 
         $sent = false;
 
@@ -67,10 +96,20 @@ class SendRefundClaimNotificationAction
         return $sent;
     }
 
-    /** The public claim page, on the storefront, in the buyer's language. */
-    private function claimUrl(string $claimToken, string $locale): string
+    /**
+     * The public claim page, on the storefront, in the buyer's language.
+     *
+     * Null when the storefront base is not an address the customer could open —
+     * see the class docblock for why that stops the send rather than producing
+     * a link that fails only for them.
+     */
+    private function claimUrl(string $claimToken, string $locale): ?string
     {
-        $storeUrl = rtrim((string) config('services.storefront.url'), '/');
+        $storeUrl = PublicUrl::storefront();
+
+        if ($storeUrl === null) {
+            return null;
+        }
 
         return $storeUrl.'/'.$locale.'/refund?token='.urlencode($claimToken);
     }

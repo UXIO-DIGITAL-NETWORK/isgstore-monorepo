@@ -6,6 +6,7 @@ namespace App\Actions\Service;
 
 use App\Actions\Notification\NotifyPaymentInternalAction;
 use App\Enums\SubscriptionStatus;
+use App\Jobs\PushLicenceRenewalJob;
 use App\Jobs\PushServiceOrderToHubJob;
 use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoice;
@@ -95,6 +96,11 @@ class ActivateServiceSubscriptionAction
         // webhook, manual confirm and the recovery sweep all land here — so the
         // Hub learns an order is PAID exactly once, however it settled.
         PushServiceOrderToHubJob::maybeDispatch($invoice);
+
+        // And, when the service bought was this site's OWN subscription, tell
+        // the Hub to extend the licence. A client who pays must not stay
+        // switched off; see PushLicenceRenewalJob.
+        PushLicenceRenewalJob::maybeDispatch($invoice);
 
         return $subscription;
     }

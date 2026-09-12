@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { integrationService } from "../services/integration.service";
@@ -25,6 +26,7 @@ export const useChannelDetails = (provider: string | undefined) =>
   });
 
 export const usePingChannel = () => {
+  const { t } = useTranslation("integration");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (provider: string) => integrationService.pingChannel(provider),
@@ -36,11 +38,12 @@ export const usePingChannel = () => {
           : `${channel.name} is still disconnected`,
       );
     },
-    onError: () => toast.error("Failed to refresh the channel"),
+    onError: () => toast.error(t("refreshFailed")),
   });
 };
 
 export const useUpdateChannel = () => {
+  const { t } = useTranslation("integration");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ provider, payload }: { provider: string; payload: UpdateChannelPayload }) =>
@@ -48,8 +51,8 @@ export const useUpdateChannel = () => {
     onSuccess: (details) => {
       queryClient.invalidateQueries({ queryKey: ["integration", "channels"] });
       queryClient.invalidateQueries({ queryKey: ["integration", "channel", details.provider] });
-      toast.success("Connection updated");
+      toast.success(t("connectionUpdated"));
     },
-    onError: () => toast.error("Failed to update the connection"),
+    onError: () => toast.error(t("connectionUpdateFailed")),
   });
 };
