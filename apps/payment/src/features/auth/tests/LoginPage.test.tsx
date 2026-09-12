@@ -106,10 +106,10 @@ describe("LoginPage", () => {
     expect(screen.queryByText("UXIOLABS")).not.toBeInTheDocument();
   });
 
-  it("shows a hero headline and subcopy about the UDN top-up platform", async () => {
+  it("shows a hero headline and subcopy about the TopupGame top-up platform", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText(/udn top-up platform/i)).toBeInTheDocument();
+    expect(screen.getByText(/topupgame by uxiolabs top-up platform/i)).toBeInTheDocument();
     expect(screen.getByText(/top-up operations/i)).toBeInTheDocument();
   });
 
