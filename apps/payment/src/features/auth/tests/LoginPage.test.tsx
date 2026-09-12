@@ -83,7 +83,7 @@ describe("LoginPage", () => {
   it("renders the hero panel alongside the form", async () => {
     await renderRoute("/login");
 
-    expect(screen.getAllByText("ISG Store").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("TopupGame by Uxiolabs").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
   });
 
@@ -100,8 +100,8 @@ describe("LoginPage", () => {
     // public settings have not loaded, never to a blank header.
     await renderRoute("/login");
 
-    expect(screen.getAllByText("ISG Store").length).toBeGreaterThan(0);
-    expect(screen.getByText("ISG STORE")).toBeInTheDocument();
+    expect(screen.getAllByText("TopupGame by Uxiolabs").length).toBeGreaterThan(0);
+    expect(screen.getByText("TOPUPGAME BY UXIOLABS")).toBeInTheDocument();
     expect(screen.queryByText("Uxiolabs Pay")).not.toBeInTheDocument();
     expect(screen.queryByText("UXIOLABS")).not.toBeInTheDocument();
   });

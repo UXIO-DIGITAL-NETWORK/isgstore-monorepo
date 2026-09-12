@@ -94,7 +94,7 @@ Precedence when they conflict:
 This panel belongs to the CLIENT, not to kita. `src/hooks/useBranding.ts` reads
 `site_name` from the public `/v1/storefront/settings` (unauthenticated, so the
 login screen is branded too) and the sidebar wordmark render it — never a hardcoded
-"Uxiolabs". One deployment says "ISG Store", the next says whatever it is
+"Uxiolabs". One deployment says "TopupGame by Uxiolabs", the next says whatever it is
 called. The fallback is a real name rather than a blank, because a header that
 flickers empty on every cold load looks broken.
 

@@ -47,7 +47,7 @@ class PublicUrlTest extends TestCase
             'private 192.168' => ['http://192.168.1.10:5173'],
             'private 10.x' => ['http://10.0.0.5'],
             '.local mDNS' => ['http://macbook.local:5173'],
-            '.test TLD' => ['http://isgstore.test'],
+            '.test TLD' => ['http://topupgame.test'],
             'example.com placeholder' => ['https://example.com'],
             'no host' => ['not-a-url'],
         ];
@@ -62,13 +62,13 @@ class PublicUrlTest extends TestCase
     public static function reachableProvider(): array
     {
         return [
-            'https' => ['https://isgstore.id'],
-            'with path' => ['https://isgstore.id/shop'],
-            'trailing slash' => ['https://isgstore.id/'],
-            'subdomain' => ['https://www.isgstore.id'],
+            'https' => ['https://topupgame.id'],
+            'with path' => ['https://topupgame.id/shop'],
+            'trailing slash' => ['https://topupgame.id/'],
+            'subdomain' => ['https://www.topupgame.id'],
             // Plain http is not our business to refuse: a site behind a proxy
             // that terminates TLS elsewhere is a real deployment.
-            'http on a real domain' => ['http://isgstore.id'],
+            'http on a real domain' => ['http://topupgame.id'],
         ];
     }
 
@@ -80,9 +80,9 @@ class PublicUrlTest extends TestCase
 
     public function test_base_strips_the_trailing_slash_so_callers_can_concatenate(): void
     {
-        config(['services.storefront.url' => 'https://isgstore.id/']);
+        config(['services.storefront.url' => 'https://topupgame.id/']);
 
-        $this->assertSame('https://isgstore.id', PublicUrl::base('services.storefront.url'));
+        $this->assertSame('https://topupgame.id', PublicUrl::base('services.storefront.url'));
     }
 
     public function test_base_is_null_rather_than_a_dev_address(): void
@@ -136,7 +136,7 @@ class PublicUrlTest extends TestCase
 
     public function test_a_claim_link_goes_out_on_a_real_domain(): void
     {
-        config(['services.storefront.url' => 'https://isgstore.id']);
+        config(['services.storefront.url' => 'https://topupgame.id']);
         Mail::fake();
 
         $refund = $this->refund();
@@ -147,7 +147,7 @@ class PublicUrlTest extends TestCase
         $this->assertNotNull($refund->fresh()->claim_notified_at);
 
         Mail::assertQueued(RefundMail::class, function (RefundMail $mail) {
-            return $mail->claimUrl === 'https://isgstore.id/id/refund?token=plain-token';
+            return $mail->claimUrl === 'https://topupgame.id/id/refund?token=plain-token';
         });
     }
 

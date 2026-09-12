@@ -9,7 +9,7 @@ import { API_VERSION } from "@/config/env";
  * This app used to hardcode "Uxiolabs" in its chrome, which is kita's brand,
  * not the client's — their staff open this every day to run their own business.
  * The name now comes from the same public settings row the storefront reads, so
- * one deployment says "ISG Store" and the next says whatever it is called.
+ * one deployment says "TopupGame by Uxiolabs" and the next says whatever it is called.
  *
  * Deliberately unauthenticated (`/storefront/settings` returns only rows marked
  * public) so the login screen can be branded too — which is the first place
@@ -20,7 +20,7 @@ import { API_VERSION } from "@/config/env";
  */
 type PublicSettings = Record<string, string | number | boolean | unknown[] | null>;
 
-const FALLBACK = "ISG Store";
+const FALLBACK = "TopupGame by Uxiolabs";
 
 export function useBranding(): { siteName: string } {
   const { data } = useQuery({

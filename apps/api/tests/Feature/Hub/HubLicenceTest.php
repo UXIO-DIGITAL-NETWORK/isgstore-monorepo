@@ -64,7 +64,7 @@ class HubLicenceTest extends TestCase
         ]);
 
         $role = Role::firstOrCreate(['name' => RoleType::PAYMENT_ADMIN->value]);
-        $this->merchant = User::factory()->create(['role_id' => $role->id, 'name' => 'ISG Store']);
+        $this->merchant = User::factory()->create(['role_id' => $role->id, 'name' => 'TopupGame by Uxiolabs']);
 
         SiteLicenceState::forget();
 
@@ -230,13 +230,13 @@ class HubLicenceTest extends TestCase
         // hub:sync-catalog rewrites services.name every 15 minutes, so a local
         // rename would not survive. The label comes from the site's identity.
         Setting::create([
-            'group' => 'general', 'key' => 'site_name', 'value' => 'ISG Store',
+            'group' => 'general', 'key' => 'site_name', 'value' => 'TopupGame by Uxiolabs',
             'type' => 'string', 'label' => 'Site Name', 'is_public' => true,
         ]);
         $this->fakeLicence();
         app(ApplyHubLicenceAction::class)->execute();
 
-        $this->assertSame('ISG Store', WebsiteSubscriptionStatus::resolve()['service']['name']);
+        $this->assertSame('TopupGame by Uxiolabs', WebsiteSubscriptionStatus::resolve()['service']['name']);
         // The catalog row itself is untouched — it still belongs to the Hub.
         $this->assertSame('Uxiolabs', $this->service->fresh()->name);
     }

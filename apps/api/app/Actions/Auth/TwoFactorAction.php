@@ -85,7 +85,7 @@ class TwoFactorAction
                 // app forever after. It used to fall back to 'UXIOLABS' — the
                 // one brand fallback in the codebase that was not the site's
                 // own, and the one place it was most visible.
-                (string) (config('services.storefront.brand') ?: 'ISG Store'),
+                (string) (config('services.storefront.brand') ?: 'TopupGame by Uxiolabs'),
             ),
         ];
     }
@@ -185,7 +185,7 @@ class TwoFactorAction
             'otpauth_uri' => Totp::provisioningUri(
                 $pending,
                 (string) $user->email,
-                (string) (config('services.storefront.brand') ?: 'ISG Store'),
+                (string) (config('services.storefront.brand') ?: 'TopupGame by Uxiolabs'),
             ),
         ];
     }

@@ -54,7 +54,7 @@ class WebsiteSubscriptionTest extends TestCase
     {
         // A real domain: the link is withheld when the payment page base is not
         // publicly reachable, so the production condition is what to test.
-        config(['services.payment_page.url' => 'https://pay.isgstore.id']);
+        config(['services.payment_page.url' => 'https://pay.topupgame.id']);
 
         $this->actingAsAdmin();
         $service = $this->websiteService();
@@ -110,7 +110,7 @@ class WebsiteSubscriptionTest extends TestCase
 
     public function test_never_subscribed_still_returns_the_checkout_link(): void
     {
-        config(['services.payment_page.url' => 'https://pay.isgstore.id']);
+        config(['services.payment_page.url' => 'https://pay.topupgame.id']);
 
         // The moment the CTA matters most.
         $this->actingAsAdmin();

@@ -98,7 +98,7 @@ class TransactionReceiptTest extends TestCase
 
         // A real domain, because that is the production condition — the track
         // CTA is deliberately dropped when the storefront base is unreachable.
-        config(['services.storefront.url' => 'https://isgstore.id']);
+        config(['services.storefront.url' => 'https://topupgame.id']);
 
         app()->setLocale('id');
         $idHtml = (new TransactionReceiptMail($transaction, 'id'))->render();

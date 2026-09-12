@@ -105,7 +105,7 @@ section used to invoke live in the admin repo's `.claude/commands/` and **do not
 This panel belongs to the CLIENT, not to kita. `src/hooks/useBranding.ts` reads
 `site_name` from the public `/v1/storefront/settings` (unauthenticated, so the
 login screen is branded too) and the sidebar wordmark and the login hero render it — never a hardcoded
-"Uxiolabs". One deployment says "ISG Store", the next says whatever it is
+"Uxiolabs". One deployment says "TopupGame by Uxiolabs", the next says whatever it is
 called. The fallback is a real name rather than a blank, because a header that
 flickers empty on every cold load looks broken.
 

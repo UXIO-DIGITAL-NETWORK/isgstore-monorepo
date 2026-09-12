@@ -72,7 +72,7 @@ describe("WebsiteSubscriptionCard", () => {
     // deny it instead.
     vi.spyOn(websiteSubscriptionService, "get").mockResolvedValue({
       status: "suspended",
-      service: { id: 1, code: "uxiolabs", name: "ISG Store" },
+      service: { id: 1, code: "uxiolabs", name: "TopupGame by Uxiolabs" },
       ends_at: "2027-01-01T00:00:00+08:00",
       days_remaining: 300,
       checkout_url: "https://pay.example.test/app/payment-admin/services/1/checkout",
