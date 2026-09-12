@@ -10,8 +10,10 @@ use App\Enums\ServiceInvoiceStatus;
 use App\Models\PaymentChannel;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
+use App\Models\ServiceInvoicePaymentItem;
 use App\Services\Payment\MonetapayService;
 use App\Support\Money;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -19,22 +21,30 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Opens a Monetapay payment for a service bill.
+ * Opens a Monetapay payment for one or several service bills.
  *
  * The single place that talks to the gateway on behalf of a service invoice.
- * The invoice itself is **not** marked paid here — that happens only when the
- * gateway confirms, in `HandleMonetapayCallbackAction`. Activating a
- * subscription at this point would hand out a service for an unpaid bill.
+ * No invoice is marked paid here — that happens only when the gateway confirms,
+ * in `HandleMonetapayCallbackAction`. Activating a subscription at this point
+ * would hand out a service for an unpaid bill.
  *
- * Modelled on `CreateBalanceTopupAction`, the other payable that shares the
- * checkout gateway without owning a `transactions` row. The reference carries
- * an `SRV-` prefix so the shared callback can route to a service bill without
- * a database lookup.
+ * ONE ATTEMPT MAY COVER SEVERAL BILLS. A client with four things falling due on
+ * the same day pays once. The bills stay one-per-service — that is what keeps
+ * each period's own term honest — and the payment is the thing that spans them.
+ * `service_invoice_payment_items` records which, and for how much each.
+ *
+ * The batch path and the single path are the same code on purpose: the fee
+ * arithmetic, the duplicate guard, the `createTransaction` call and the
+ * instruction filter exist exactly once, as the repo-wide rule about money
+ * numbers requires.
  */
 class OpenServiceInvoicePaymentAction
 {
     /** Callers must match this against `HandleMonetapayCallbackAction`. */
     public const REFERENCE_PREFIX = 'SRV-';
+
+    /** More than this in one attempt is a script, not a client paying bills. */
+    public const MAX_INVOICES = 20;
 
     public function __construct(
         private readonly MonetapayService $monetapayService,
@@ -43,30 +53,55 @@ class OpenServiceInvoicePaymentAction
 
     public function execute(ServiceInvoice $invoice, int $paymentChannelId): ServiceInvoicePayment
     {
-        // Same duplicate-submit guard as checkout: a double-tap must not open
-        // two payments for one bill.
-        $dedupeKey = 'service-invoice:pay:'.md5("{$invoice->id}|{$paymentChannelId}");
+        return $this->executeBatch(collect([$invoice]), $paymentChannelId);
+    }
+
+    /** @param Collection<int, ServiceInvoice> $invoices */
+    public function executeBatch(Collection $invoices, int $paymentChannelId): ServiceInvoicePayment
+    {
+        $invoices = $invoices->unique('id')->sortBy('id')->values();
+
+        if ($invoices->isEmpty()) {
+            throw new RuntimeException('Pilih minimal satu tagihan.');
+        }
+
+        if ($invoices->count() > self::MAX_INVOICES) {
+            throw new RuntimeException('Terlalu banyak tagihan dalam satu pembayaran.');
+        }
+
+        // Same duplicate-submit guard as checkout, keyed on the whole set: a
+        // double-tap must not open two payments for the same bills.
+        $dedupeKey = 'service-invoice:pay:'.md5($invoices->pluck('id')->implode(',')."|{$paymentChannelId}");
 
         if (! Cache::add($dedupeKey, 1, 15)) {
             throw new RuntimeException('Permintaan duplikat terdeteksi. Mohon tunggu beberapa detik sebelum mencoba lagi.');
         }
 
         try {
-            return $this->process($invoice, $paymentChannelId);
+            return $this->process($invoices, $paymentChannelId);
         } catch (Throwable $e) {
             Cache::forget($dedupeKey);
             throw $e;
         }
     }
 
-    private function process(ServiceInvoice $invoice, int $paymentChannelId): ServiceInvoicePayment
+    /** @param Collection<int, ServiceInvoice> $invoices */
+    private function process(Collection $invoices, int $paymentChannelId): ServiceInvoicePayment
     {
-        if ($invoice->status !== ServiceInvoiceStatus::UNPAID) {
-            throw new RuntimeException('Invoice ini tidak dapat dibayar lagi.');
+        foreach ($invoices as $invoice) {
+            if ($invoice->status !== ServiceInvoiceStatus::UNPAID) {
+                throw new RuntimeException("Invoice {$invoice->invoice_number} tidak dapat dibayar lagi.");
+            }
+
+            if ($invoice->due_at !== null && $invoice->due_at->isPast()) {
+                throw new RuntimeException("Invoice {$invoice->invoice_number} sudah melewati jatuh tempo.");
+            }
         }
 
-        if ($invoice->due_at !== null && $invoice->due_at->isPast()) {
-            throw new RuntimeException('Invoice ini sudah melewati jatuh tempo.');
+        // One payer per attempt. Without this a caller could bundle two clients'
+        // bills into one payment and settle both against one person's money.
+        if ($invoices->pluck('merchant_id')->unique()->count() > 1) {
+            throw new RuntimeException('Tagihan dari klien berbeda tidak bisa dibayar sekaligus.');
         }
 
         $channel = PaymentChannel::where('is_active', true)->find($paymentChannelId);
@@ -81,9 +116,10 @@ class OpenServiceInvoicePaymentAction
             throw new RuntimeException('Metode pembayaran ini tidak dapat dipakai untuk tagihan service.');
         }
 
-        // Same fee arithmetic as a storefront top-up, so a client is charged
-        // the way every other payer on this platform is.
-        $amount = (int) $invoice->amount;
+        // Same fee arithmetic as a storefront top-up, so a client is charged the
+        // way every other payer on this platform is — and charged ONCE. Applying
+        // `fee_flat` per invoice would be a plain overcharge on every batch.
+        $amount = (int) $invoices->sum('amount');
         $feePercent = max(0, min(100, (float) $channel->fee_percent));
         $adminFee = (int) $channel->fee_flat + (int) round($amount * ($feePercent / 100));
         $total = $amount + $adminFee;
@@ -95,17 +131,28 @@ class OpenServiceInvoicePaymentAction
             );
         }
 
+        $shares = $this->apportionFee($invoices, $amount, $adminFee);
+
         $referenceId = self::REFERENCE_PREFIX.date('Ymd').'-'.strtoupper(Str::random(8));
 
-        $attempt = DB::transaction(function () use ($invoice, $channel, $amount, $adminFee, $total, $referenceId) {
-            // At most one live attempt per invoice: an abandoned QR must not
-            // stay payable once the client has asked for a different method.
-            ServiceInvoicePayment::where('service_invoice_id', $invoice->id)
+        $attempt = DB::transaction(function () use ($invoices, $channel, $amount, $adminFee, $total, $referenceId, $shares) {
+            // At most one live attempt per bill. This must reach every attempt
+            // that covers ANY of these bills, batch or not: two live payables
+            // for one invoice means a client can pay for it twice, and there is
+            // no refund path for a service invoice anywhere in this app.
+            $liveAttemptIds = ServiceInvoicePaymentItem::query()
+                ->whereIn('service_invoice_id', $invoices->pluck('id'))
+                ->pluck('service_invoice_payment_id');
+
+            ServiceInvoicePayment::whereIn('id', $liveAttemptIds)
                 ->where('status', 'PENDING')
                 ->update(['status' => 'EXPIRED']);
 
-            return ServiceInvoicePayment::create([
-                'service_invoice_id' => $invoice->id,
+            $attempt = ServiceInvoicePayment::create([
+                // Populated only for a single-invoice attempt, as a convenience
+                // for reading history. The pivot below is the authority.
+                'service_invoice_id' => $invoices->count() === 1 ? $invoices->first()->id : null,
+                'invoice_count' => $invoices->count(),
                 'payment_channel_id' => $channel->id,
                 'reference_id' => $referenceId,
                 'amount' => $amount,
@@ -113,9 +160,23 @@ class OpenServiceInvoicePaymentAction
                 'total' => $total,
                 'status' => 'PENDING',
             ]);
+
+            foreach ($invoices as $invoice) {
+                ServiceInvoicePaymentItem::create([
+                    'service_invoice_payment_id' => $attempt->id,
+                    'service_invoice_id' => $invoice->id,
+                    'amount' => (int) $invoice->amount,
+                    'admin_fee' => $shares[$invoice->id],
+                ]);
+            }
+
+            return $attempt;
         });
 
-        $merchant = $invoice->merchant;
+        $merchant = $invoices->first()->merchant;
+        $label = $invoices->count() === 1
+            ? (string) $invoices->first()->service_name
+            : $invoices->count().' tagihan layanan';
 
         try {
             $response = $this->monetapayService->createTransaction(
@@ -129,7 +190,7 @@ class OpenServiceInvoicePaymentAction
                     'customer_phone' => $merchant?->phone,
                     'is_single_use' => $channel->is_single_use ? '1' : '0',
                     'product_id' => 'SERVICE',
-                    'product_name' => $invoice->service_name,
+                    'product_name' => $label,
                     'product_price' => (string) $amount,
                     'product_category' => 'Service',
                 ]
@@ -165,12 +226,50 @@ class OpenServiceInvoicePaymentAction
         ]);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
-            userId: $invoice->merchant_id,
+            userId: (int) $invoices->first()->merchant_id,
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Membuka pembayaran {$invoice->invoice_number} Rp {$total} via {$channel->name}",
+            message: 'Membuka pembayaran '.$invoices->pluck('invoice_number')->implode(', ')." Rp {$total} via {$channel->name}",
         ));
 
         return $attempt->fresh(['paymentChannel']);
+    }
+
+    /**
+     * Split the ONE channel fee across the bills it covers.
+     *
+     * Proportional to each bill, with the rounding remainder pushed onto the
+     * first row so the shares sum to exactly what was charged. A rupiah that
+     * exists on the attempt but on none of its items — or the reverse — is the
+     * kind of gap nobody finds until somebody balances the books, so the result
+     * is asserted rather than trusted.
+     *
+     * @param  Collection<int, ServiceInvoice>  $invoices
+     * @return array<int, int>
+     */
+    private function apportionFee(Collection $invoices, int $amount, int $adminFee): array
+    {
+        $shares = [];
+        $assigned = 0;
+
+        foreach ($invoices as $index => $invoice) {
+            if ($index === 0) {
+                $shares[$invoice->id] = 0; // filled in last, with the remainder
+
+                continue;
+            }
+
+            $share = $amount > 0 ? intdiv($adminFee * (int) $invoice->amount, $amount) : 0;
+            $shares[$invoice->id] = $share;
+            $assigned += $share;
+        }
+
+        $shares[$invoices->first()->id] = $adminFee - $assigned;
+
+        if (array_sum($shares) !== $adminFee) {
+            throw new RuntimeException('Pembagian biaya admin tidak seimbang.');
+        }
+
+        return $shares;
     }
 }

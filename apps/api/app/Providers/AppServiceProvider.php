@@ -107,5 +107,14 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('hub-sync', function (Request $request) {
             return Limit::perMinute(12)->by($request->ip());
         });
+
+        // The Hub asking for a LIVE gateway balance. Every call reaches
+        // Monetapay, whose inquiry takes up to 15 seconds, so this is sized for
+        // an hourly sweep plus an operator pressing "Perbarui" — not for
+        // anything that polls. The figure is cached here for a minute anyway, so
+        // a faster caller would only get the same number back.
+        RateLimiter::for('hub-balance', function (Request $request) {
+            return Limit::perMinute(6)->by($request->ip());
+        });
     }
 }

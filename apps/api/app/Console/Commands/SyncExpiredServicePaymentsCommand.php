@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Actions\Service\ActivateServiceSubscriptionAction;
 use App\Enums\ServiceInvoiceStatus;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
 use App\Services\Payment\MonetapayService;
 use Exception;
@@ -176,18 +177,26 @@ class SyncExpiredServicePaymentsCommand extends Command
 
             $locked->update(['status' => 'PAID', 'paid_at' => now()]);
 
-            $invoice = $locked->invoice()->lockForUpdate()->first();
+            // One attempt may have settled several bills. Ascending invoice id
+            // so this and a late callback cannot deadlock each other.
+            $invoiceIds = $locked->items()
+                ->orderBy('service_invoice_id')
+                ->pluck('service_invoice_id');
 
-            if (! $invoice || $invoice->status === ServiceInvoiceStatus::PAID) {
-                return;
+            foreach ($invoiceIds as $invoiceId) {
+                $invoice = ServiceInvoice::whereKey($invoiceId)->lockForUpdate()->first();
+
+                if (! $invoice || $invoice->status === ServiceInvoiceStatus::PAID) {
+                    continue;
+                }
+
+                $invoice->update([
+                    'status' => ServiceInvoiceStatus::PAID,
+                    'verified_at' => now(),
+                ]);
+
+                $this->activateAction->execute($invoice);
             }
-
-            $invoice->update([
-                'status' => ServiceInvoiceStatus::PAID,
-                'verified_at' => now(),
-            ]);
-
-            $this->activateAction->execute($invoice);
         });
     }
 }

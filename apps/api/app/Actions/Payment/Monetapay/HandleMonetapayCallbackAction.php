@@ -372,34 +372,69 @@ class HandleMonetapayCallbackAction
 
             $attempt->update(['status' => 'PAID', 'paid_at' => now()]);
 
-            $invoice = $attempt->invoice()->lockForUpdate()->first();
+            // One attempt may have settled SEVERAL bills. Locked in ascending
+            // invoice id so two concurrent batches sharing a bill queue rather
+            // than deadlock.
+            $invoiceIds = $attempt->items()
+                ->orderBy('service_invoice_id')
+                ->pluck('service_invoice_id');
 
-            // A payment-internal user may have marked this bill paid by hand
-            // while the callback was in flight. The money is still recorded on
-            // the attempt above; opening a second period is what must not
-            // happen.
-            if (! $invoice || $invoice->status === ServiceInvoiceStatus::PAID) {
-                $this->log($dto->outNo, 'Service payment received for an invoice already settled.');
-                $notifyData = [$attempt, $invoice, true];
+            $settled = [];
+            $billed = 0;
+
+            foreach ($invoiceIds as $invoiceId) {
+                $invoice = ServiceInvoice::whereKey($invoiceId)->lockForUpdate()->first();
+
+                // A payment-internal user may have marked this bill paid by hand
+                // while the callback was in flight. The money is still recorded
+                // on the attempt above; opening a second period is what must not
+                // happen.
+                if (! $invoice || $invoice->status === ServiceInvoiceStatus::PAID) {
+                    continue;
+                }
+
+                $invoice->update([
+                    'status' => ServiceInvoiceStatus::PAID,
+                    'verified_at' => now(),
+                ]);
+
+                // Per invoice, so each service's own period opens on its own
+                // terms — and so PushLicenceRenewalJob fires for the website
+                // bill inside the batch and for nothing else. Its gate is
+                // already per-invoice; it needs no change.
+                $this->activateSubscriptionAction->execute($invoice);
+
+                $billed += (int) $invoice->amount;
+                $settled[] = $invoice;
+            }
+
+            // ONE credit, under the attempt's reference, so a redelivered
+            // callback credits once — ServiceRevenueLedger guards on
+            // (type, reference), and N references could leave a partial credit
+            // behind a crash.
+            //
+            // The amount is the sum of the BILLS, not the attempt's `total`.
+            // `total` includes the channel fee, which buys the gateway's cut and
+            // is not kita's income — `PlatformBalance::income()` is withdrawable
+            // money, so crediting it there authorises withdrawing the cut
+            // Monetapay already kept. This also brings the webhook in line with
+            // the manual confirm, which has always credited `invoice->amount`;
+            // the two used to book different figures for the same bill.
+            ServiceRevenueLedger::credit(
+                amount: $billed,
+                reference: $attempt->reference_id,
+                description: 'Layanan '.collect($settled)->pluck('invoice_number')->implode(', ')." ({$attempt->reference_id})",
+            );
+
+            if ($settled === []) {
+                $this->log($dto->outNo, 'Service payment received for invoices already settled.');
+                $notifyData = [$attempt, $attempt->invoice, true];
 
                 return;
             }
 
-            $invoice->update([
-                'status' => ServiceInvoiceStatus::PAID,
-                'verified_at' => now(),
-            ]);
-
-            $this->activateSubscriptionAction->execute($invoice);
-
-            ServiceRevenueLedger::credit(
-                amount: (int) $attempt->total,
-                reference: $attempt->reference_id,
-                description: "Layanan {$invoice->invoice_number} ({$attempt->reference_id})",
-            );
-
-            $this->log($dto->outNo, "Service invoice {$invoice->invoice_number} paid: Rp {$attempt->total}");
-            $notifyData = [$attempt, $invoice->fresh('merchant'), true];
+            $this->log($dto->outNo, 'Service invoices '.collect($settled)->pluck('invoice_number')->implode(', ')." paid: Rp {$attempt->total}");
+            $notifyData = [$attempt, $settled[0]->fresh('merchant'), true];
         });
 
         if ($notifyData !== null) {

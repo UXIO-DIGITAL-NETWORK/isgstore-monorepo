@@ -65,8 +65,18 @@ class ExpireServiceSubscriptions extends Command
             $expiredSubscriptions++;
         }
 
+        // A bill a CLIENT raised and abandoned should close — an unpaid request
+        // left open forever is clutter, and they can always ask again.
+        //
+        // A bill KITA issued on a schedule must not. `service_invoices` has a
+        // unique `hub_item_key`, so once a plan invoice is expired that period
+        // can never be re-issued: the client would simply have no way to pay for
+        // a service they still hold, and nothing anywhere would report a
+        // problem. The plan sync reopens rows this sweep closed before the
+        // exclusion existed; see ApplyHubPlanAction::reopenIfStranded().
         $overdue = ServiceInvoice::query()
             ->where('status', ServiceInvoiceStatus::UNPAID)
+            ->where('source', '!=', 'hub_plan')
             ->whereNotNull('due_at')
             ->where('due_at', '<=', now())
             ->get();
