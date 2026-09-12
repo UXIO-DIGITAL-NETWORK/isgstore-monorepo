@@ -6,6 +6,7 @@ use App\Actions\Points\GrantTransactionPointsAction;
 use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\Actions\Uxiolabs\ProcessUxiolabsTransactionAction;
+use App\Actions\Uxiolabs\SendUxiolabsStatusNotificationAction;
 use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
@@ -80,6 +81,20 @@ class ProcessUxiolabsTopup implements ShouldQueue
         // so refund them. The action is idempotent (locks + checks payment '3'
         // + a unique refund per transaction).
         app(InitiateRefundAction::class)->execute($fresh);
+
+        // The one failure mode with no supplier verdict behind it: we gave up
+        // asking. Reported from the same place as every other outcome so the
+        // channel does not go quiet on precisely the orders that cost money.
+        // Skipped when the webhook already refunded this row — that path
+        // announced it, and REFUNDED is the truer word for what happened.
+        if ($fresh->status === TransactionStatus::FAILED_PROVIDER) {
+            app(SendUxiolabsStatusNotificationAction::class)->statusChanged(
+                $fresh,
+                TransactionStatus::PROCESSING,
+                TransactionStatus::FAILED_PROVIDER,
+                SendUxiolabsStatusNotificationAction::SOURCE_TIMEOUT,
+            );
+        }
 
         Log::channel('uxiolabs')->error('ProcessUxiolabsTopup: all retries exhausted — marked FAILED_PROVIDER & refunded', [
             'transaction_id' => $this->transaction->id,

@@ -9,7 +9,9 @@ import type {
   MerchantDashboard,
   MerchantMutation,
   Service,
+  ServiceBatchPayment,
   ServiceInvoice,
+  ServicePlanLine,
   ServiceStatusResponse,
   ServiceSubscription,
   Withdrawal,
@@ -131,6 +133,33 @@ export const merchantService = {
     const res: ApiResponse<ServiceInvoice> = await api.post(`${BASE}/service-invoices/${id}/pay`, {
       payment_channel_id: paymentChannelId,
     });
+    return res.data;
+  },
+
+  /**
+   * What the client is subscribed to and what falls due next — including
+   * periods nobody has paid for yet, which no subscription row can describe.
+   */
+  servicePlan: async (): Promise<ServicePlanLine[]> => {
+    const res: ApiResponse<ServicePlanLine[]> = await api.get(`${BASE}/service-plan`);
+    return res.data;
+  },
+
+  /**
+   * Settle several bills in ONE attempt. The channel fee is charged once on the
+   * sum, not once per bill — so this is cheaper for the client than paying each
+   * separately, and that is the whole point.
+   */
+  payInvoiceBatch: async (invoiceIds: number[], paymentChannelId: number): Promise<ServiceBatchPayment> => {
+    const res: ApiResponse<ServiceBatchPayment> = await api.post(`${BASE}/service-invoices/pay-batch`, {
+      invoice_ids: invoiceIds,
+      payment_channel_id: paymentChannelId,
+    });
+    return res.data;
+  },
+
+  servicePayment: async (reference: string): Promise<ServiceBatchPayment> => {
+    const res: ApiResponse<ServiceBatchPayment> = await api.get(`${BASE}/service-payments/${reference}`);
     return res.data;
   },
 

@@ -1,0 +1,154 @@
+import type { ReactNode } from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+import { OutstandingBillsPanel } from "../components/OutstandingBillsPanel";
+import * as hooks from "../hooks/useMerchant";
+import type { ServicePlanLine } from "@/types/service.type";
+
+vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => vi.fn(),
+}));
+
+vi.mock("@/components/common/Link", () => ({
+  Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
+}));
+
+const pay = vi.fn();
+
+const channel = {
+  id: 2,
+  name: "QRIS",
+  channel_code: "qris",
+  payment_type: "qris",
+  fee_flat: 2500,
+  fee_percent: 1,
+  min_amount: 0,
+  is_active: true,
+};
+
+const line = (over: Partial<ServicePlanLine> = {}): ServicePlanLine => ({
+  service_code: "domain",
+  service_name: "Domain",
+  billing_mode: "billed",
+  amount: 100_000,
+  duration_days: 365,
+  governs_licence: false,
+  is_active: true,
+  active_until: null,
+  next_period_starts_at: null,
+  next_due_at: "2026-10-01T00:00:00+07:00",
+  outstanding_total: 100_000,
+  outstanding: [
+    {
+      id: 1,
+      invoice_number: "SINV-A",
+      amount: 100_000,
+      due_at: "2026-10-01T00:00:00+07:00",
+      period_starts_at: null,
+      period_ends_at: null,
+    },
+  ],
+  ...over,
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+
+  vi.spyOn(hooks, "useServicePaymentChannels").mockReturnValue({
+    data: [channel],
+    isLoading: false,
+  } as unknown as ReturnType<typeof hooks.useServicePaymentChannels>);
+
+  vi.spyOn(hooks, "usePayInvoiceBatch").mockReturnValue({
+    mutate: pay,
+    isPending: false,
+  } as unknown as ReturnType<typeof hooks.usePayInvoiceBatch>);
+});
+
+describe("OutstandingBillsPanel", () => {
+  it("says so when nothing is due", () => {
+    render(<OutstandingBillsPanel lines={[line({ outstanding: [], outstanding_total: 0 })]} />);
+
+    expect(screen.getByText(/Tidak ada tagihan/)).toBeInTheDocument();
+  });
+
+  it("groups bills by the day they fall due", () => {
+    render(
+      <OutstandingBillsPanel
+        lines={[
+          line(),
+          line({
+            service_code: "email",
+            service_name: "Email",
+            outstanding: [
+              {
+                id: 2,
+                invoice_number: "SINV-B",
+                amount: 200_000,
+                due_at: "2026-11-01T00:00:00+07:00",
+                period_starts_at: null,
+                period_ends_at: null,
+              },
+            ],
+          }),
+        ]}
+      />,
+    );
+
+    // Two different due dates, two groups — bills that fall due together are
+    // what a client pays together.
+    expect(screen.getAllByRole("button", { name: "Pilih semua di tanggal ini" })).toHaveLength(2);
+  });
+
+  it("charges the admin fee ONCE on the sum, not once per bill", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <OutstandingBillsPanel
+        lines={[
+          line(),
+          line({
+            service_code: "email",
+            service_name: "Email",
+            outstanding: [
+              {
+                id: 2,
+                invoice_number: "SINV-B",
+                amount: 200_000,
+                // Same day, so one group.
+                due_at: "2026-10-01T00:00:00+07:00",
+                period_starts_at: null,
+                period_ends_at: null,
+              },
+            ],
+          }),
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Pilih semua di tanggal ini" }));
+    await user.click(screen.getByRole("button", { name: /QRIS/ }));
+
+    // 2.500 + 1% of 300.000 = 5.500. Two flat fees would be 2.500 more, charged
+    // to the client for the convenience of paying once.
+    expect(screen.getByText(/Rp\s?5\.500/)).toBeInTheDocument();
+    expect(screen.getByText(/Rp\s?305\.500/)).toBeInTheDocument();
+  });
+
+  it("sends every ticked bill in one attempt", async () => {
+    const user = userEvent.setup();
+
+    render(<OutstandingBillsPanel lines={[line()]} />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /QRIS/ }));
+    await user.click(screen.getByRole("button", { name: "Bayar yang dipilih" }));
+
+    expect(pay).toHaveBeenCalledWith(
+      { invoiceIds: [1], channelId: 2 },
+      expect.anything(),
+    );
+  });
+});

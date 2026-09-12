@@ -73,6 +73,37 @@ export const useMerchantServiceInvoices = (params: ListParams) =>
     queryFn: () => merchantService.serviceInvoices(params),
   });
 
+/**
+ * The plan, read from this site's own cache of it. No Hub call on a page load,
+ * and the page keeps working while the Hub is unreachable.
+ */
+export const useServicePlan = () =>
+  useQuery({
+    queryKey: ["merchant", "service-plan"],
+    queryFn: merchantService.servicePlan,
+  });
+
+export const usePayInvoiceBatch = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ invoiceIds, channelId }: { invoiceIds: number[]; channelId: number }) =>
+      merchantService.payInvoiceBatch(invoiceIds, channelId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["merchant"] }),
+  });
+};
+
+/**
+ * One attempt and every bill it covers. Polled while PENDING, exactly like the
+ * single-invoice page — and stopped by the SERVER's status, never by a
+ * client-side clock.
+ */
+export const useServicePayment = (reference: string) =>
+  useQuery({
+    queryKey: ["merchant", "service-payment", reference],
+    queryFn: () => merchantService.servicePayment(reference),
+    refetchInterval: (query) => (query.state.data?.status === "PENDING" ? 5_000 : false),
+  });
+
 export const useServicePaymentChannels = () =>
   useQuery({
     queryKey: ["merchant", "payment-channels"],

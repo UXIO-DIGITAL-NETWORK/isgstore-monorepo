@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Box } from "@/components/common/Box";
 import { Button } from "@/components/ui/button";
-import { Can } from "@/components/common/Can";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +16,6 @@ import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { LocaleSwitcher } from "@/components/common/LocaleSwitcher";
 import { initials } from "@/utils/initials";
 import { useAuthStore } from "@/store/useAuthStore";
-import { ROLES } from "@/constants/roles";
 import { NotificationBell } from "@/features/finance";
 
 export function DashboardNavbar() {
@@ -42,9 +40,10 @@ export function DashboardNavbar() {
         <LocaleSwitcher />
         <ThemeToggle />
 
-        <Can permission={ROLES.INTERNAL}>
-          <NotificationBell />
-        </Can>
+        {/* Ungated: the feed is scoped to the caller by the API, and a client
+            now has notifications of their own — their subscription lapsing is
+            their bill, not ours. */}
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

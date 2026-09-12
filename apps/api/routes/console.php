@@ -162,4 +162,15 @@ if (config('services.hub.enabled')) {
         ->withoutOverlapping(30)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-channels'));
+
+    // The Hub's service plan, turned into this site's own bills. Behind its own
+    // flag on top of HUB_ENABLED because this one ISSUES INVOICES: the cutover
+    // is per site and must be stoppable in one env change.
+    if (config('services.hub.managed_plan')) {
+        Schedule::command('hub:sync-plan')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping(30)
+            ->runInBackground()
+            ->onFailure($alertFailure('hub:sync-plan'));
+    }
 }

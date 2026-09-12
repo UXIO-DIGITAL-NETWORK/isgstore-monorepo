@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { isPaymentAdmin } from "@/constants/roles";
+import { useAuthStore } from "@/store/useAuthStore";
 import { formatRelativeTime } from "@/utils/date";
 
 import { useMarkAllNotificationsRead, useNotificationUnreadCount, useNotifications } from "../hooks/useFinance";
@@ -26,7 +28,9 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   subscription_expiring: CalendarClock,
 };
 
-const NOTIFICATIONS_HREF = "/app/payment-internal/notifications";
+/** Each role reads its feed on its own route; the API scopes the rows either way. */
+const notificationsHref = (isClient: boolean) =>
+  isClient ? "/app/payment-admin/notifications" : "/app/payment-internal/notifications";
 
 /**
  * Navbar bell for the internal team: an unread badge fed by a polling count,
@@ -36,6 +40,7 @@ const NOTIFICATIONS_HREF = "/app/payment-internal/notifications";
  */
 export function NotificationBell() {
   const { t } = useTranslation("finance");
+  const isClient = isPaymentAdmin(useAuthStore((state) => state.user));
   const { data: unreadCount = 0 } = useNotificationUnreadCount();
   // Only the first page — the dropdown is a preview; the page is the full list.
   const { data, isLoading } = useNotifications({ per_page: 6 });
@@ -107,7 +112,7 @@ export function NotificationBell() {
 
         <Box className="border-t border-border p-2">
           <Link
-            href={NOTIFICATIONS_HREF}
+            href={notificationsHref(isClient)}
             className="block rounded-md px-2 py-1.5 text-center text-sm text-muted-foreground hover:text-foreground"
           >
             Lihat semua

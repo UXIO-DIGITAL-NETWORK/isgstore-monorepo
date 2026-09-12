@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Service\ServiceCheckoutResource;
 use App\Http\Resources\Api\Service\ServiceResource;
 use App\Http\Resources\Api\Service\ServiceSubscriptionResource;
+use App\Models\HubPlanItem;
 use App\Models\Service;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
@@ -85,6 +86,79 @@ class MerchantServiceController extends Controller
      * the controller rather than the resource, because it is a decision about
      * the collection and a resource cannot see its siblings.
      */
+    /**
+     * "What am I subscribed to, and what must I renew — and when."
+     *
+     * One row per service in the Hub's plan for this site, whether or not it has
+     * ever been paid for. The subscriptions tab could not answer this: a period
+     * nobody has paid yet has no `service_subscriptions` row at all, so the very
+     * thing a client needs to see was the one thing missing.
+     *
+     * Read entirely from the LOCAL cache of the plan — no Hub call on a page
+     * load, and the page keeps working through a Hub outage.
+     */
+    public function plan(Request $request)
+    {
+        $merchantId = $request->user()->id;
+
+        $items = HubPlanItem::query()
+            ->orderBy('service_code')
+            ->orderBy('period_index')
+            ->get()
+            ->groupBy('service_code');
+
+        $invoices = ServiceInvoice::query()
+            ->where('merchant_id', $merchantId)
+            ->whereNotNull('hub_item_key')
+            ->get()
+            ->keyBy('hub_item_key');
+
+        $held = ServiceSubscription::query()
+            ->where('merchant_id', $merchantId)
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->with('service:id,code')
+            ->get()
+            ->groupBy(fn (ServiceSubscription $s) => $s->service?->code ?? '');
+
+        $rows = $items->map(function ($periods, string $code) use ($invoices, $held) {
+            /** @var HubPlanItem $latest */
+            $latest = $periods->sortByDesc('period_index')->first();
+
+            $outstanding = $periods
+                ->map(fn (HubPlanItem $p) => $invoices->get($p->item_key))
+                ->filter(fn (?ServiceInvoice $i) => $i !== null && $i->status === ServiceInvoiceStatus::UNPAID)
+                ->values();
+
+            // The furthest paid-for date, from the subscriptions actually held —
+            // which for the website service is the Hub's own mirrored term.
+            $activeUntil = ($held[$code] ?? collect())->max('ends_at');
+
+            return [
+                'service_code' => $code,
+                'service_name' => $latest->service_name,
+                'billing_mode' => $latest->billing_mode,
+                'amount' => (int) $latest->amount,
+                'duration_days' => (int) $latest->duration_days,
+                'governs_licence' => (bool) $latest->governs_licence,
+                'is_active' => (bool) $latest->is_active,
+                'active_until' => $activeUntil?->toIso8601String(),
+                'next_period_starts_at' => $latest->period_starts_at?->toIso8601String(),
+                'next_due_at' => $outstanding->min('due_at')?->toIso8601String(),
+                'outstanding_total' => (int) $outstanding->sum('amount'),
+                'outstanding' => $outstanding->map(fn (ServiceInvoice $i) => [
+                    'id' => $i->id,
+                    'invoice_number' => $i->invoice_number,
+                    'amount' => (int) $i->amount,
+                    'due_at' => $i->due_at?->toIso8601String(),
+                    'period_starts_at' => $i->period_starts_at?->toIso8601String(),
+                    'period_ends_at' => $i->period_ends_at?->toIso8601String(),
+                ])->values(),
+            ];
+        })->values();
+
+        return $this->successResponse($rows, 'Service plan');
+    }
+
     public function subscriptions(Request $request)
     {
         $subscriptions = ServiceSubscription::query()

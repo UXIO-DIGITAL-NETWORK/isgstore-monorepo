@@ -75,6 +75,24 @@ beforeEach(() => {
     isLoading: false,
     isError: false,
   } as unknown as ReturnType<typeof hooks.useMerchantServiceInvoices>);
+
+  // The page now also reads the Hub's plan, for the summary above the cards and
+  // for the Tagihan tab.
+  vi.spyOn(hooks, "useServicePlan").mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as unknown as ReturnType<typeof hooks.useServicePlan>);
+
+  vi.spyOn(hooks, "useServicePaymentChannels").mockReturnValue({
+    data: [],
+    isLoading: false,
+  } as unknown as ReturnType<typeof hooks.useServicePaymentChannels>);
+
+  vi.spyOn(hooks, "usePayInvoiceBatch").mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof hooks.usePayInvoiceBatch>);
 });
 
 const renderPage = () =>

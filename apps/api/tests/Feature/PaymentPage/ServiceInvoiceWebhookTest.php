@@ -104,11 +104,25 @@ class ServiceInvoiceWebhookTest extends TestCase
         ]);
     }
 
-    /** Platform income (PlatformBalance) must move when a service bill settles. */
-    public function test_a_paid_callback_books_service_revenue_once(): void
+    /**
+     * Platform income (PlatformBalance) must move when a service bill settles —
+     * by the BILL, not by what the client handed over.
+     *
+     * The difference is the channel fee, and it is not kita's income: it buys
+     * the gateway's cut, which Monetapay keeps. `PlatformBalance::income()` is
+     * withdrawable money, so booking the fee there would authorise withdrawing
+     * cash that never arrived. The manual confirm path has always credited
+     * `invoice->amount`; this is the webhook catching up to it.
+     */
+    public function test_a_paid_callback_books_the_bill_as_revenue_once_excluding_the_fee(): void
     {
-        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 250000]), $this->qrisChannel());
+        $channel = $this->qrisChannel(['fee_flat' => 2500, 'fee_percent' => 1]);
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 250000]), $channel);
         $attempt = ServiceInvoicePayment::firstOrFail();
+
+        // 250.000 + (2.500 + 1%) = 255.000 charged, 250.000 booked.
+        $this->assertSame(5000, (int) $attempt->admin_fee);
+        $this->assertSame(255000, (int) $attempt->total);
 
         $payload = $this->signedPayload($attempt->reference_id, $attempt->total);
         $this->sendCallback($payload)->assertOk();
@@ -122,7 +136,7 @@ class ServiceInvoiceWebhookTest extends TestCase
         $this->assertDatabaseHas('platform_mutations', [
             'type' => 'service_revenue',
             'reference' => $attempt->reference_id,
-            'amount' => $attempt->total,
+            'amount' => 250000,
         ]);
     }
 

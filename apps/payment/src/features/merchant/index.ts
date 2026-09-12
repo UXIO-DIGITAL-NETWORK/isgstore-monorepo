@@ -6,4 +6,5 @@ export { default as MerchantServicesPage } from "./pages/MerchantServicesPage";
 export { default as MerchantServiceStatusPage } from "./pages/MerchantServiceStatusPage";
 export { default as MerchantServiceCheckoutPage } from "./pages/MerchantServiceCheckoutPage";
 export { default as MerchantServiceInvoiceDetailPage } from "./pages/MerchantServiceInvoiceDetailPage";
+export { default as MerchantServiceBatchPaymentPage } from "./pages/MerchantServiceBatchPaymentPage";
 export { SERVICES_TABS, type ServicesTab } from "./types/merchant.type";
