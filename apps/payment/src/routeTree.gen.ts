@@ -28,6 +28,7 @@ import { Route as AppProtectedPaymentAdminWithdrawalsIndexRouteImport } from './
 import { Route as AppProtectedPaymentAdminTransactionsIndexRouteImport } from './routes/app/_protected/payment-admin/transactions/index'
 import { Route as AppProtectedPaymentAdminServicesIndexRouteImport } from './routes/app/_protected/payment-admin/services/index'
 import { Route as AppProtectedPaymentAdminServiceStatusIndexRouteImport } from './routes/app/_protected/payment-admin/service-status/index'
+import { Route as AppProtectedPaymentAdminNotificationsIndexRouteImport } from './routes/app/_protected/payment-admin/notifications/index'
 import { Route as AppProtectedPaymentAdminMutationsIndexRouteImport } from './routes/app/_protected/payment-admin/mutations/index'
 import { Route as AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRouteImport } from './routes/app/_protected/payment-internal/subscriptions/$subscriptionId/index'
 import { Route as AppProtectedPaymentInternalInvoicesInvoiceIdIndexRouteImport } from './routes/app/_protected/payment-internal/invoices/$invoiceId/index'
@@ -143,6 +144,12 @@ const AppProtectedPaymentAdminServiceStatusIndexRoute =
     path: '/payment-admin/service-status/',
     getParentRoute: () => AppProtectedRoute,
   } as any)
+const AppProtectedPaymentAdminNotificationsIndexRoute =
+  AppProtectedPaymentAdminNotificationsIndexRouteImport.update({
+    id: '/payment-admin/notifications/',
+    path: '/payment-admin/notifications/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
 const AppProtectedPaymentAdminMutationsIndexRoute =
   AppProtectedPaymentAdminMutationsIndexRouteImport.update({
     id: '/payment-admin/mutations/',
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/login/': typeof AuthLoginIndexRoute
   '/app/dashboard/': typeof AppProtectedDashboardIndexRoute
   '/app/payment-admin/mutations/': typeof AppProtectedPaymentAdminMutationsIndexRoute
+  '/app/payment-admin/notifications/': typeof AppProtectedPaymentAdminNotificationsIndexRoute
   '/app/payment-admin/service-status/': typeof AppProtectedPaymentAdminServiceStatusIndexRoute
   '/app/payment-admin/services/': typeof AppProtectedPaymentAdminServicesIndexRoute
   '/app/payment-admin/transactions/': typeof AppProtectedPaymentAdminTransactionsIndexRoute
@@ -207,6 +215,7 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginIndexRoute
   '/app/dashboard': typeof AppProtectedDashboardIndexRoute
   '/app/payment-admin/mutations': typeof AppProtectedPaymentAdminMutationsIndexRoute
+  '/app/payment-admin/notifications': typeof AppProtectedPaymentAdminNotificationsIndexRoute
   '/app/payment-admin/service-status': typeof AppProtectedPaymentAdminServiceStatusIndexRoute
   '/app/payment-admin/services': typeof AppProtectedPaymentAdminServicesIndexRoute
   '/app/payment-admin/transactions': typeof AppProtectedPaymentAdminTransactionsIndexRoute
@@ -234,6 +243,7 @@ export interface FileRoutesById {
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/app/_protected/dashboard/': typeof AppProtectedDashboardIndexRoute
   '/app/_protected/payment-admin/mutations/': typeof AppProtectedPaymentAdminMutationsIndexRoute
+  '/app/_protected/payment-admin/notifications/': typeof AppProtectedPaymentAdminNotificationsIndexRoute
   '/app/_protected/payment-admin/service-status/': typeof AppProtectedPaymentAdminServiceStatusIndexRoute
   '/app/_protected/payment-admin/services/': typeof AppProtectedPaymentAdminServicesIndexRoute
   '/app/_protected/payment-admin/transactions/': typeof AppProtectedPaymentAdminTransactionsIndexRoute
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/app/dashboard/'
     | '/app/payment-admin/mutations/'
+    | '/app/payment-admin/notifications/'
     | '/app/payment-admin/service-status/'
     | '/app/payment-admin/services/'
     | '/app/payment-admin/transactions/'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/dashboard'
     | '/app/payment-admin/mutations'
+    | '/app/payment-admin/notifications'
     | '/app/payment-admin/service-status'
     | '/app/payment-admin/services'
     | '/app/payment-admin/transactions'
@@ -312,6 +324,7 @@ export interface FileRouteTypes {
     | '/_auth/login/'
     | '/app/_protected/dashboard/'
     | '/app/_protected/payment-admin/mutations/'
+    | '/app/_protected/payment-admin/notifications/'
     | '/app/_protected/payment-admin/service-status/'
     | '/app/_protected/payment-admin/services/'
     | '/app/_protected/payment-admin/transactions/'
@@ -473,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProtectedPaymentAdminServiceStatusIndexRouteImport
       parentRoute: typeof AppProtectedRoute
     }
+    '/app/_protected/payment-admin/notifications/': {
+      id: '/app/_protected/payment-admin/notifications/'
+      path: '/payment-admin/notifications'
+      fullPath: '/app/payment-admin/notifications/'
+      preLoaderRoute: typeof AppProtectedPaymentAdminNotificationsIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
     '/app/_protected/payment-admin/mutations/': {
       id: '/app/_protected/payment-admin/mutations/'
       path: '/payment-admin/mutations'
@@ -526,6 +546,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 interface AppProtectedRouteChildren {
   AppProtectedDashboardIndexRoute: typeof AppProtectedDashboardIndexRoute
   AppProtectedPaymentAdminMutationsIndexRoute: typeof AppProtectedPaymentAdminMutationsIndexRoute
+  AppProtectedPaymentAdminNotificationsIndexRoute: typeof AppProtectedPaymentAdminNotificationsIndexRoute
   AppProtectedPaymentAdminServiceStatusIndexRoute: typeof AppProtectedPaymentAdminServiceStatusIndexRoute
   AppProtectedPaymentAdminServicesIndexRoute: typeof AppProtectedPaymentAdminServicesIndexRoute
   AppProtectedPaymentAdminTransactionsIndexRoute: typeof AppProtectedPaymentAdminTransactionsIndexRoute
@@ -550,6 +571,8 @@ const AppProtectedRouteChildren: AppProtectedRouteChildren = {
   AppProtectedDashboardIndexRoute: AppProtectedDashboardIndexRoute,
   AppProtectedPaymentAdminMutationsIndexRoute:
     AppProtectedPaymentAdminMutationsIndexRoute,
+  AppProtectedPaymentAdminNotificationsIndexRoute:
+    AppProtectedPaymentAdminNotificationsIndexRoute,
   AppProtectedPaymentAdminServiceStatusIndexRoute:
     AppProtectedPaymentAdminServiceStatusIndexRoute,
   AppProtectedPaymentAdminServicesIndexRoute:

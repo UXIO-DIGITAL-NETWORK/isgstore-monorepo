@@ -426,6 +426,40 @@ reported was the one least likely to run. Five call sites now report:
 `.env` holds the live channel URL and the service deliberately lets `testing` through, so
 without that pin every fulfilment test is a would-be post to the channel operators watch.
 
+### In-app notifications
+
+`notifications` is one row per recipient with its own `read_at`, and
+`NotificationController` scopes **every** query to `$request->user()->id`
+before any filter. That scoping is why one controller serves three route
+groups — `v1/notifications` (admin), `v1/payment-internal/notifications`,
+`v1/payment-admin/notifications`: **the group decides who may ask; it never
+decides whose rows come back.** Adding a panel is registering the same four
+routes in its group, not writing a second controller.
+
+The feed shipped internal-only, and the admin bell was a button with no
+handler — while `ClaimRefundWithAccountAction` had been raising
+`refund.claimed` rows addressed to role `admin` since it was written. The rows
+were unread because they were unreadable.
+
+- **Three fan-outs, and the choice between them is about blast radius.**
+  `NotifyPaymentInternalAction` (the kita team), `NotifyRoleAction` (everyone
+  holding a role), `NotifyUserAction` (one named person). A client's bill is
+  always the third: every merchant holds `payment-admin`, so a role fan-out
+  would tell each of them about every other client's billing.
+- **`dedupe_key` is per recipient** (`unique(user_id, dedupe_key)`), and null
+  means "repeat freely". Give the same fact raised for two audiences two
+  namespaces — `subexp:{id}:{n}` and `subexp-merchant:{id}:{n}` — or whichever
+  runs first silences the other.
+- **The expiry windows all start at `now`, so a row two days out matches H-7
+  and H-3 in one run.** The internal team gets both by design, pinned by
+  `PaymentPage\NotificationTest`; the client gets one, at the tightest mark
+  that matches, carrying the **real** day count rather than the mark's name.
+  Do not "fix" the overlap in the query — that is the internal contract.
+- `NotificationCreated` broadcasts on `user.{id}.notifications` (authorised by
+  self-ownership in `routes/channels.php`) and carries **only an id**: the
+  client refetches through the authorised endpoints rather than trusting a
+  socket frame with the contents. Both panels poll as the fallback.
+
 ### Links that leave the building
 
 **Every customer-facing base URL goes through `App\Support\PublicUrl`, and none of
