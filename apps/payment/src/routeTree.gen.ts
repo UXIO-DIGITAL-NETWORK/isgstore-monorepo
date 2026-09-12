@@ -32,6 +32,7 @@ import { Route as AppProtectedPaymentAdminNotificationsIndexRouteImport } from '
 import { Route as AppProtectedPaymentAdminMutationsIndexRouteImport } from './routes/app/_protected/payment-admin/mutations/index'
 import { Route as AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRouteImport } from './routes/app/_protected/payment-internal/subscriptions/$subscriptionId/index'
 import { Route as AppProtectedPaymentInternalInvoicesInvoiceIdIndexRouteImport } from './routes/app/_protected/payment-internal/invoices/$invoiceId/index'
+import { Route as AppProtectedPaymentAdminServicePaymentsReferenceIndexRouteImport } from './routes/app/_protected/payment-admin/service-payments/$reference/index'
 import { Route as AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRouteImport } from './routes/app/_protected/payment-admin/service-invoices/$invoiceId/index'
 import { Route as AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRouteImport } from './routes/app/_protected/payment-admin/services/$serviceId/checkout/index'
 
@@ -170,6 +171,12 @@ const AppProtectedPaymentInternalInvoicesInvoiceIdIndexRoute =
     path: '/payment-internal/invoices/$invoiceId/',
     getParentRoute: () => AppProtectedRoute,
   } as any)
+const AppProtectedPaymentAdminServicePaymentsReferenceIndexRoute =
+  AppProtectedPaymentAdminServicePaymentsReferenceIndexRouteImport.update({
+    id: '/payment-admin/service-payments/$reference/',
+    path: '/payment-admin/service-payments/$reference/',
+    getParentRoute: () => AppProtectedRoute,
+  } as any)
 const AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute =
   AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRouteImport.update({
     id: '/payment-admin/service-invoices/$invoiceId/',
@@ -205,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/app/payment-internal/transactions/': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/payment-internal/withdrawals/': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
   '/app/payment-admin/service-invoices/$invoiceId/': typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute
+  '/app/payment-admin/service-payments/$reference/': typeof AppProtectedPaymentAdminServicePaymentsReferenceIndexRoute
   '/app/payment-internal/invoices/$invoiceId/': typeof AppProtectedPaymentInternalInvoicesInvoiceIdIndexRoute
   '/app/payment-internal/subscriptions/$subscriptionId/': typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute
   '/app/payment-admin/services/$serviceId/checkout/': typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute
@@ -231,6 +239,7 @@ export interface FileRoutesByTo {
   '/app/payment-internal/transactions': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/payment-internal/withdrawals': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
   '/app/payment-admin/service-invoices/$invoiceId': typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute
+  '/app/payment-admin/service-payments/$reference': typeof AppProtectedPaymentAdminServicePaymentsReferenceIndexRoute
   '/app/payment-internal/invoices/$invoiceId': typeof AppProtectedPaymentInternalInvoicesInvoiceIdIndexRoute
   '/app/payment-internal/subscriptions/$subscriptionId': typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute
   '/app/payment-admin/services/$serviceId/checkout': typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute
@@ -259,6 +268,7 @@ export interface FileRoutesById {
   '/app/_protected/payment-internal/transactions/': typeof AppProtectedPaymentInternalTransactionsIndexRoute
   '/app/_protected/payment-internal/withdrawals/': typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
   '/app/_protected/payment-admin/service-invoices/$invoiceId/': typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute
+  '/app/_protected/payment-admin/service-payments/$reference/': typeof AppProtectedPaymentAdminServicePaymentsReferenceIndexRoute
   '/app/_protected/payment-internal/invoices/$invoiceId/': typeof AppProtectedPaymentInternalInvoicesInvoiceIdIndexRoute
   '/app/_protected/payment-internal/subscriptions/$subscriptionId/': typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute
   '/app/_protected/payment-admin/services/$serviceId/checkout/': typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/app/payment-internal/transactions/'
     | '/app/payment-internal/withdrawals/'
     | '/app/payment-admin/service-invoices/$invoiceId/'
+    | '/app/payment-admin/service-payments/$reference/'
     | '/app/payment-internal/invoices/$invoiceId/'
     | '/app/payment-internal/subscriptions/$subscriptionId/'
     | '/app/payment-admin/services/$serviceId/checkout/'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/app/payment-internal/transactions'
     | '/app/payment-internal/withdrawals'
     | '/app/payment-admin/service-invoices/$invoiceId'
+    | '/app/payment-admin/service-payments/$reference'
     | '/app/payment-internal/invoices/$invoiceId'
     | '/app/payment-internal/subscriptions/$subscriptionId'
     | '/app/payment-admin/services/$serviceId/checkout'
@@ -340,6 +352,7 @@ export interface FileRouteTypes {
     | '/app/_protected/payment-internal/transactions/'
     | '/app/_protected/payment-internal/withdrawals/'
     | '/app/_protected/payment-admin/service-invoices/$invoiceId/'
+    | '/app/_protected/payment-admin/service-payments/$reference/'
     | '/app/_protected/payment-internal/invoices/$invoiceId/'
     | '/app/_protected/payment-internal/subscriptions/$subscriptionId/'
     | '/app/_protected/payment-admin/services/$serviceId/checkout/'
@@ -514,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProtectedPaymentInternalInvoicesInvoiceIdIndexRouteImport
       parentRoute: typeof AppProtectedRoute
     }
+    '/app/_protected/payment-admin/service-payments/$reference/': {
+      id: '/app/_protected/payment-admin/service-payments/$reference/'
+      path: '/payment-admin/service-payments/$reference'
+      fullPath: '/app/payment-admin/service-payments/$reference/'
+      preLoaderRoute: typeof AppProtectedPaymentAdminServicePaymentsReferenceIndexRouteImport
+      parentRoute: typeof AppProtectedRoute
+    }
     '/app/_protected/payment-admin/service-invoices/$invoiceId/': {
       id: '/app/_protected/payment-admin/service-invoices/$invoiceId/'
       path: '/payment-admin/service-invoices/$invoiceId'
@@ -562,6 +582,7 @@ interface AppProtectedRouteChildren {
   AppProtectedPaymentInternalTransactionsIndexRoute: typeof AppProtectedPaymentInternalTransactionsIndexRoute
   AppProtectedPaymentInternalWithdrawalsIndexRoute: typeof AppProtectedPaymentInternalWithdrawalsIndexRoute
   AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute: typeof AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute
+  AppProtectedPaymentAdminServicePaymentsReferenceIndexRoute: typeof AppProtectedPaymentAdminServicePaymentsReferenceIndexRoute
   AppProtectedPaymentInternalInvoicesInvoiceIdIndexRoute: typeof AppProtectedPaymentInternalInvoicesInvoiceIdIndexRoute
   AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute: typeof AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute
   AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute: typeof AppProtectedPaymentAdminServicesServiceIdCheckoutIndexRoute
@@ -603,6 +624,8 @@ const AppProtectedRouteChildren: AppProtectedRouteChildren = {
     AppProtectedPaymentInternalWithdrawalsIndexRoute,
   AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute:
     AppProtectedPaymentAdminServiceInvoicesInvoiceIdIndexRoute,
+  AppProtectedPaymentAdminServicePaymentsReferenceIndexRoute:
+    AppProtectedPaymentAdminServicePaymentsReferenceIndexRoute,
   AppProtectedPaymentInternalInvoicesInvoiceIdIndexRoute:
     AppProtectedPaymentInternalInvoicesInvoiceIdIndexRoute,
   AppProtectedPaymentInternalSubscriptionsSubscriptionIdIndexRoute:

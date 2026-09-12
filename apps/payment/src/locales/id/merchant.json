@@ -79,7 +79,8 @@
     "colDue": "Jatuh Tempo",
     "colAction": "Aksi",
     "pay": "Bayar",
-    "detail": "Detail"
+    "detail": "Detail",
+    "tabBills": "Tagihan"
   },
   "serviceStatus": {
     "title": "Status Layanan",
@@ -180,5 +181,28 @@
     "serviceDetails": "Detail Layanan",
     "colLabel": "Label",
     "colValue": "Nilai"
+  },
+  "bills": {
+    "nothingDue": "Tidak ada tagihan yang harus dibayar. Semua layanan sudah lunas untuk periode berjalan.",
+    "noDueDate": "Tanpa jatuh tempo",
+    "dueOn": "Jatuh tempo {{date}}",
+    "selectGroup": "Pilih semua di tanggal ini",
+    "selectedCount": "{{count}} tagihan dipilih",
+    "feeOnce": "Biaya admin (sekali untuk semua yang dipilih)",
+    "total": "Total dibayar",
+    "paySelected": "Bayar yang dipilih"
+  },
+  "plan": {
+    "title": "Layanan dalam paket Anda",
+    "days": "hari",
+    "governsSite": "menentukan masa aktif situs",
+    "activeUntil": "Aktif s/d {{date}}",
+    "notYetPaid": "Belum pernah dibayar",
+    "outstanding": "Belum dibayar {{amount}}"
+  },
+  "batchPayment": {
+    "title": "Pembayaran gabungan",
+    "covers": "Mencakup {{count}} tagihan",
+    "billsCovered": "Tagihan yang dibayar"
   }
 }

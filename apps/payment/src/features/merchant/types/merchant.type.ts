@@ -31,8 +31,10 @@ export type { UnifiedTransaction, TransactionDirection, TransactionType } from "
 
 export type {
   Service,
+  ServiceBatchPayment,
   ServiceCategoryValue,
   ServiceInvoice,
+  ServicePlanLine,
   ServiceSubscription,
 } from "@/types/service.type";
 
@@ -63,10 +65,15 @@ export interface ServiceStatusResponse {
 }
 
 /**
- * The Services page's three tabs, in order. Lives here rather than in the route
+ * The Services page's tabs, in order. Lives here rather than in the route
  * because routes are registry-only and this is page vocabulary — the route just
  * validates `?tab` against it.
+ *
+ * `bills` sits SECOND, not first, deliberately: making it the landing tab would
+ * move every existing client off the screen they know, to one that is empty
+ * whenever nothing is due. The plan summary on "Langganan Saya" already shows an
+ * outstanding total, so an overdue client sees it on arrival either way.
  */
-export const SERVICES_TABS = ["subscriptions", "catalog", "invoices"] as const;
+export const SERVICES_TABS = ["subscriptions", "bills", "catalog", "invoices"] as const;
 
 export type ServicesTab = (typeof SERVICES_TABS)[number];
