@@ -364,6 +364,16 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
     // Rendered on every admin page, so it always answers 200.
     Route::get('/website-subscription', [WebsiteSubscriptionController::class, 'show']);
 
+    // In-app notifications for this admin. Same controller as the other two
+    // panels: every query is scoped to `$request->user()->id` before any
+    // filter, so the route group decides who may ask, never whose rows come
+    // back. Admins already had rows written for them (a refund claim raises
+    // one) with no route to read them.
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+
     // CRUD Users
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index']);
@@ -666,6 +676,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
 // id, so the `payment-admin` gate is defence-in-depth, not the only guard.
 Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'abilities:access-api', 'payment-admin'])->group(function () {
     Route::get('/dashboard', [MerchantDashboardController::class, 'index']);
+
+    // The client's own notifications — their subscription, their money. Scoped
+    // to the caller by the controller, which is what keeps one client from
+    // counting another's rows.
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     // Specific routes before the collection so /summary and /export are not
     // swallowed by a wildcard.
     Route::get('/transactions/summary', [MerchantTransactionController::class, 'summary']);

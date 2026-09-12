@@ -1,0 +1,21 @@
+{
+  "bell": {
+    "label": "Notifications",
+    "labelUnread": "Notifications, {{count}} unread",
+    "heading": "Notifications",
+    "markAll": "Mark all read",
+    "loading": "Loading…",
+    "empty": "No notifications yet",
+    "viewAll": "View all"
+  },
+  "page": {
+    "title": "Notifications",
+    "subtitle": "Everything waiting on you — refund claims, subscriptions about to lapse — newest first.",
+    "empty": "No notifications yet",
+    "emptyHint": "Notifications appear here when something needs your attention.",
+    "markAll": "Mark all read",
+    "markRead": "Mark read",
+    "unreadOnly": "Unread only",
+    "all": "All"
+  }
+}

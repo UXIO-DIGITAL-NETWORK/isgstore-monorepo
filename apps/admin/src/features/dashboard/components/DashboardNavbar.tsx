@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import { Fragment } from "react";
-import { Bell, ChevronDown, HelpCircle, LogOut } from "lucide-react";
+import { ChevronDown, HelpCircle, LogOut } from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { NotificationBell } from "@/components/common/NotificationBell";
 import { Text } from "@/components/common/Text";
 import { NavbarClock } from "@/features/dashboard/components/NavbarClock";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
@@ -207,19 +208,7 @@ export function DashboardNavbar() {
             handler; this fills it with the purpose it was specced for. */}
         <LocaleSwitcher />
         <ThemeToggle />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-9 rounded-md text-muted-foreground"
-        >
-          <Bell className="size-4" />
-          <Text
-            as="span"
-            className="sr-only"
-          >
-            {t("notifications")}
-          </Text>
-        </Button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

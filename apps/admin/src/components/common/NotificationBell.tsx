@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next";
-import { ArrowDownToLine, Bell, CalendarClock, Receipt, ShoppingBag } from "lucide-react";
 import type { ComponentType } from "react";
+import { useTranslation } from "react-i18next";
+import { Bell, CalendarClock, RotateCcw } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Link } from "@/components/common/Link";
@@ -13,40 +13,47 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { isPaymentAdmin } from "@/constants/roles";
-import { useAuthStore } from "@/store/useAuthStore";
 import { formatRelativeTime } from "@/utils/date";
 
-import { useMarkAllNotificationsRead, useNotificationUnreadCount, useNotifications } from "../hooks/useFinance";
-import type { FinanceNotification } from "../types/finance.type";
+import {
+  useMarkAllNotificationsRead,
+  useNotificationUnreadCount,
+  useNotifications,
+  useNotificationsRealtime,
+} from "@/hooks/useNotifications";
+import type { AdminNotification } from "@/types/notification.type";
 
-/** Per-type glyph so the feed is scannable at a glance; unknown types fall back to the bell. */
+/**
+ * Per-type glyph, so the feed is scannable without reading it. An unknown type
+ * falls back to the bell rather than being dropped — a notification this panel
+ * cannot name is still one the admin should see.
+ */
 const ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  transaction_sale: ShoppingBag,
-  service_payment: Receipt,
-  withdrawal_request: ArrowDownToLine,
+  "refund.claimed": RotateCcw,
   subscription_expiring: CalendarClock,
 };
 
-/** Each role reads its feed on its own route; the API scopes the rows either way. */
-const notificationsHref = (isClient: boolean) =>
-  isClient ? "/app/payment-admin/notifications" : "/app/payment-internal/notifications";
+export const NOTIFICATIONS_HREF = "/admin/notifications";
 
 /**
- * Navbar bell for the internal team: an unread badge fed by a polling count,
- * and a dropdown of the most recent notifications with a "mark all read" action
- * and a link to the full page. Gated by <Can> at the call site — this component
- * assumes the caller is payment-internal.
+ * The navbar bell.
+ *
+ * It was a `<Button>` with an icon and no handler — no badge, no dropdown, no
+ * request. Meanwhile `ClaimRefundWithAccountAction` had been writing rows
+ * addressed to role `admin` on every refund claim, and the routes to read them
+ * existed only under `v1/payment-internal`. The data was there; the door was
+ * not.
  */
 export function NotificationBell() {
-  const { t } = useTranslation("finance");
-  const isClient = isPaymentAdmin(useAuthStore((state) => state.user));
+  const { t } = useTranslation("notifications");
+  // Mounted in the navbar, so this is the one subscription for the whole panel.
+  useNotificationsRealtime();
   const { data: unreadCount = 0 } = useNotificationUnreadCount();
-  // Only the first page — the dropdown is a preview; the page is the full list.
+  // First page only — the dropdown is a preview, the page is the full list.
   const { data, isLoading } = useNotifications({ per_page: 6 });
   const markAll = useMarkAllNotificationsRead();
 
-  const rows = data?.rows ?? [];
+  const rows = data?.data ?? [];
   const hasUnread = unreadCount > 0;
 
   return (
@@ -55,10 +62,10 @@ export function NotificationBell() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative"
-          aria-label={hasUnread ? t("notificationBell.labelUnread", { count: unreadCount }) : t("notificationBell.label")}
+          className="relative size-9 rounded-md text-muted-foreground"
+          aria-label={hasUnread ? t("bell.labelUnread", { count: unreadCount }) : t("bell.label")}
         >
-          <Bell className="size-5" />
+          <Bell className="size-4" />
           {hasUnread && (
             <Box
               as="span"
@@ -80,7 +87,7 @@ export function NotificationBell() {
             as="span"
             className="text-sm font-medium text-foreground"
           >
-            Notifikasi
+            {t("bell.heading")}
           </Text>
           {hasUnread && (
             <Button
@@ -90,16 +97,16 @@ export function NotificationBell() {
               disabled={markAll.isPending}
               onClick={() => markAll.mutate()}
             >
-              Tandai semua dibaca
+              {t("bell.markAll")}
             </Button>
           )}
         </Box>
 
         <ScrollArea className="max-h-80">
           {isLoading ? (
-            <Text className="px-4 py-6 text-center text-sm text-muted-foreground">{t("notificationBell.loading")}</Text>
+            <Text className="px-4 py-6 text-center text-sm text-muted-foreground">{t("bell.loading")}</Text>
           ) : rows.length === 0 ? (
-            <Text className="px-4 py-6 text-center text-sm text-muted-foreground">{t("notificationBell.empty")}</Text>
+            <Text className="px-4 py-6 text-center text-sm text-muted-foreground">{t("bell.empty")}</Text>
           ) : (
             rows.map((notification) => (
               <NotificationRow
@@ -112,10 +119,10 @@ export function NotificationBell() {
 
         <Box className="border-t border-border p-2">
           <Link
-            href={notificationsHref(isClient)}
+            href={NOTIFICATIONS_HREF}
             className="block rounded-md px-2 py-1.5 text-center text-sm text-muted-foreground hover:text-foreground"
           >
-            Lihat semua
+            {t("bell.viewAll")}
           </Link>
         </Box>
       </DropdownMenuContent>
@@ -123,14 +130,14 @@ export function NotificationBell() {
   );
 }
 
-function NotificationRow({ notification }: { notification: FinanceNotification }) {
+function NotificationRow({ notification }: { notification: AdminNotification }) {
   const Icon = ICONS[notification.type] ?? Bell;
 
   return (
     <Box
       className={cn(
         "flex gap-3 border-b border-border/60 px-4 py-3 last:border-0",
-        !notification.is_read && "bg-muted/50",
+        !notification.isRead && "bg-muted/50",
       )}
     >
       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -147,12 +154,12 @@ function NotificationRow({ notification }: { notification: FinanceNotification }
         >
           {notification.message}
         </Text>
-        {notification.created_at && (
+        {notification.createdAt && (
           <Text
             as="span"
             className="text-[11px] text-muted-foreground"
           >
-            {formatRelativeTime(notification.created_at)}
+            {formatRelativeTime(notification.createdAt)}
           </Text>
         )}
       </Box>

@@ -1,0 +1,21 @@
+{
+  "bell": {
+    "label": "Notifikasi",
+    "labelUnread": "Notifikasi, {{count}} belum dibaca",
+    "heading": "Notifikasi",
+    "markAll": "Tandai semua dibaca",
+    "loading": "Memuat…",
+    "empty": "Belum ada notifikasi",
+    "viewAll": "Lihat semua"
+  },
+  "page": {
+    "title": "Notifikasi",
+    "subtitle": "Setiap hal yang menunggu tindakan Anda — klaim pengembalian dana, langganan yang akan habis — terbaru di atas.",
+    "empty": "Belum ada notifikasi",
+    "emptyHint": "Notifikasi muncul di sini saat ada yang perlu Anda tangani.",
+    "markAll": "Tandai semua dibaca",
+    "markRead": "Tandai dibaca",
+    "unreadOnly": "Belum dibaca saja",
+    "all": "Semua"
+  }
+}
