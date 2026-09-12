@@ -46,5 +46,13 @@
         <env name="PAYMENT_PAGE_URL" value="https://pay.topupgame.id"/>
         <env name="PIWAPI_ACCOUNT" value=""/>
         <env name="PIWAPI_SECRET" value=""/>
+        <!-- Discord belongs in that list too, and was the one gateway missing
+             from it. A developer's .env holds the LIVE channel webhook, and the
+             service deliberately lets `testing` through (a test that configures
+             a URL is exercising that path on purpose) — so the suite inherited a
+             real webhook and every fulfilment test became a would-be post to the
+             channel operators actually watch. Tests that want it set it
+             themselves via config(). -->
+        <env name="DISCORD_WEBHOOK_LOG_URL" value=""/>
     </php>
 </phpunit>
