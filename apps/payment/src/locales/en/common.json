@@ -138,7 +138,8 @@
     "clipboardUnavailable": "The clipboard is not available in this browser"
   },
   "dropzone": {
-    "prompt": "Drag & drop files here"
+    "prompt": "Drag & drop files here",
+    "uploading": "Uploading…"
   },
   "copy": {
     "defaultLabel": "Value",

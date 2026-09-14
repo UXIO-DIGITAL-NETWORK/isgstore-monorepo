@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { EDITABLE_INVOICE_STATUS_OPTIONS } from "../data/select-options.data";
 import { editTransactionSchema, type EditTransactionFormValues } from "../schemas/editTransaction.schema";
@@ -61,9 +62,14 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
 
   const proofFile = watch("proofFile");
 
+  // The proof travels in the same request as the fields, so the save mutation
+  // IS the upload. Without it this block sits perfectly still while a
+  // multi-megabyte receipt is on the wire.
+  const uploading = editTransaction.isPending;
+
   const handleFiles = (files: FileList | null) => {
     const file = files?.[0];
-    if (file) setValue("proofFile", file, { shouldValidate: true });
+    if (file && !uploading) setValue("proofFile", file, { shouldValidate: true });
   };
 
   const onSubmit = (values: EditTransactionFormValues) => {
@@ -176,9 +182,10 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
       <Box className="flex flex-col gap-1.5">
         <Label htmlFor="edit-proof-file">{t("invoiceProof")}</Label>
         <Box
+          aria-busy={uploading}
           onDragOver={(event) => {
             event.preventDefault();
-            setDragActive(true);
+            if (!uploading) setDragActive(true);
           }}
           onDragLeave={() => setDragActive(false)}
           onDrop={(event) => {
@@ -189,9 +196,17 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
           className={cn(
             "flex flex-col items-center gap-2 rounded-xl border border-dashed border-input p-6 text-center",
             dragActive ? "border-foreground bg-accent" : "bg-transparent dark:bg-input/30",
+            uploading && "opacity-70",
           )}
         >
-          <UploadCloud className="size-6 text-muted-foreground" />
+          {uploading ? (
+            <Spinner
+              aria-hidden="true"
+              className="size-6 text-muted-foreground"
+            />
+          ) : (
+            <UploadCloud className="size-6 text-muted-foreground" />
+          )}
           <Text variant="small">{t("dragDrop")}</Text>
           <Text variant="small">{t("fileFormats")}</Text>
           <input
@@ -200,6 +215,7 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
             type="file"
             accept="image/jpeg,image/jpg,image/png"
             className="hidden"
+            disabled={uploading}
             onChange={(event) => handleFiles(event.target.files)}
           />
           <Button
@@ -207,9 +223,17 @@ export function EditTransactionForm({ transaction, cancelHref, onSaved }: EditTr
             variant="outline"
             size="sm"
             className="rounded-xl"
+            disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
           >{t("browseFiles")}</Button>
-          {proofFile && <Text variant="small">{proofFile.name}</Text>}
+          {uploading ? (
+            <Text
+              variant="small"
+              role="status"
+            >{t("uploading")}</Text>
+          ) : (
+            proofFile && <Text variant="small">{proofFile.name}</Text>
+          )}
         </Box>
         {errors.proofFile && (
           <Text

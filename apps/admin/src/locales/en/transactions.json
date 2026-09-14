@@ -90,6 +90,7 @@
   "dragDrop": "Drag & drop files here",
   "fileFormats": "JPG, JPEG, PNG up to 10mb",
   "browseFiles": "Browse files",
+  "uploading": "Uploading…",
   "pillPending": "Pending",
   "pillProcessing": "Processing",
   "pillFailed": "Failed",

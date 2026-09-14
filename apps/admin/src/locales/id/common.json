@@ -31,7 +31,8 @@
     "prompt": "Tarik & lepas berkas di sini",
     "optimising": "Mengoptimalkan gambar…",
     "formats": "JPG, JPEG, PNG, WEBP — dioptimalkan otomatis",
-    "unsupportedType": "Tipe berkas itu tidak didukung di sini."
+    "unsupportedType": "Tipe berkas itu tidak didukung di sini.",
+    "uploading": "Mengunggah…"
   },
   "confirm": {
     "delete": "Hapus",

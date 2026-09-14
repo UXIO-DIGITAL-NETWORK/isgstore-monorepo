@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { User } from "lucide-react";
@@ -50,29 +50,41 @@ export default function InformasiPribadiCard({
 }: InformasiPribadiCardProps): React.JSX.Element {
   const { t } = useTranslation("dashboard");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isEncoding, setIsEncoding] = useState(false);
+
+  // Two phases, one wait. The browser re-encodes the photo and then the save
+  // request carries it; for a phone photo the first is the slow half, and
+  // either of them passing silently is what makes the button look dead.
+  const uploading = isEncoding || loading;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     // Reset so the same file can be re-selected later
     e.target.value = "";
-    if (!file) return;
+    if (!file || uploading) return;
 
     if (!file.type.startsWith("image/")) {
       toast.error(t("pengaturanAkun.personalInfo.photoNotAnImage"));
       return;
     }
 
-    // Re-encode to WebP first — a phone photo is several MB as shot and a few
-    // hundred KB after, so the size check below must run on what actually gets
-    // uploaded, not on what came off the camera.
-    const optimised = await compressImage(file);
+    setIsEncoding(true);
 
-    if (optimised.size > MAX_AVATAR_BYTES) {
-      toast.error(t("pengaturanAkun.personalInfo.photoTooLarge"));
-      return;
+    try {
+      // Re-encode to WebP first — a phone photo is several MB as shot and a few
+      // hundred KB after, so the size check below must run on what actually gets
+      // uploaded, not on what came off the camera.
+      const optimised = await compressImage(file);
+
+      if (optimised.size > MAX_AVATAR_BYTES) {
+        toast.error(t("pengaturanAkun.personalInfo.photoTooLarge"));
+        return;
+      }
+
+      onSelectPhoto(optimised);
+    } finally {
+      setIsEncoding(false);
     }
-
-    onSelectPhoto(optimised);
   };
 
   const sectionTitle = (
@@ -98,6 +110,7 @@ export default function InformasiPribadiCard({
           type="file"
           accept="image/png,image/jpeg,image/webp"
           ref={fileInputRef}
+          disabled={uploading}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => void handleFileChange(e)}
           className="hidden"
         />
@@ -130,9 +143,14 @@ export default function InformasiPribadiCard({
             as="button"
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-5 py-2 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[12px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer"
+            disabled={uploading}
+            aria-busy={uploading}
+            className="px-5 py-2 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[12px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {t("pengaturanAkun.personalInfo.photoUploadButton")}
+            {uploading && <Spinner className="w-4 h-4" />}
+            {uploading
+              ? t("pengaturanAkun.personalInfo.uploadingPhoto")
+              : t("pengaturanAkun.personalInfo.photoUploadButton")}
           </Box>
 
           {/* Remove button — only shown when a photo is set */}

@@ -180,6 +180,7 @@
       "sectionTitle": "PERSONAL INFORMATION",
       "photoTitle": "Profile Photo",
       "photoUploadButton": "Add Profile Photo",
+      "uploadingPhoto": "Uploading photo…",
       "photoRemoveButton": "Remove",
       "photoHint": "JPG, PNG, or WEBP — optimised automatically",
       "photoNotAnImage": "The file must be an image (JPG, PNG, or WEBP).",

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/utils/currency";
 import { completeRefundSchema, type CompleteRefundFormValues } from "../schemas/refund.schema";
 import type { Refund } from "../types/refund.type";
@@ -73,6 +74,12 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, is
     ? `${refund.payout.bank_name ?? refund.payout.bank_code} · ${refund.payout.account_number ?? refund.payout.account_phone ?? "—"} · ${refund.payout.account_name ?? ""}`
     : "No payout account on file";
 
+  // The dialog keeps its fields on screen while the proof and note are in
+  // flight. Without this the file row looks untouched for the whole request —
+  // its text only ever showed the picked filename — and the only moving part
+  // is the submit button off to the side.
+  const fileSummary = isPending ? t("uploading") : (proof?.name ?? "JPG, PNG or PDF up to 2mb");
+
   return (
     <Dialog
       open={open}
@@ -112,6 +119,7 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, is
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
               className="hidden"
+              disabled={isPending}
               onChange={(event) => setProof(event.target.files?.[0] ?? null)}
             />
             <Box className="flex items-center gap-2">
@@ -120,13 +128,21 @@ export function CompleteRefundDialog({ open, onOpenChange, refund, onConfirm, is
                 variant="outline"
                 size="sm"
                 className="rounded-xl"
+                disabled={isPending}
                 onClick={() => fileInputRef.current?.click()}
               >{t("browseFiles")}</Button>
+              {isPending && (
+                <Spinner
+                  aria-hidden="true"
+                  className="size-4"
+                />
+              )}
               <Text
                 variant="muted"
                 as="span"
+                role="status"
               >
-                {proof ? proof.name : "JPG, PNG or PDF up to 2mb"}
+                {fileSummary}
               </Text>
             </Box>
           </Box>
