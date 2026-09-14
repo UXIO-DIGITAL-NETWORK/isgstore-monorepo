@@ -260,24 +260,28 @@ jobs:
             #     lebih dulu daripada PHP. Ditulis sebagai drop-in di conf.d/,
             #     bukan disunting ke vhost: berkas vhost disusun manual per
             #     situs, dan menebak path-nya berarti deploy bisa mengubah
-            #     berkas yang salah. `client_max_body_size` sah di konteks
-            #     http, jadi satu berkas menutup keempat vhost.
+            #     berkas yang salah.
+            #
+            #     HANYA direktif konteks-http yang boleh ada di berkas ini.
+            #     conf.d/*.conf di-include dari dalam blok `http`, dan sebuah
+            #     blok `location` di sini membuat `nginx -t` gagal dengan
+            #     "location directive is not allowed here" — pernah terjadi.
+            #     Header per-lokasi (CSP untuk berkas .svg) karena itu tidak
+            #     bisa ditulis di sini; langkahnya ada di docs/04-deployment.md.
             if command -v nginx >/dev/null; then
-              # `client_max_body_size` sah di konteks http, jadi satu drop-in
-              # menutup keempat vhost. Blok location untuk SVG ada karena berkas
-              # unggahan disajikan dari origin API itu sendiri — origin tempat
-              # token panel disimpan — sementara sebuah SVG bisa membawa
-              # <script>. Policy-nya tetap membiarkan SVG tampil sebagai gambar,
-              # tapi melarangnya menjalankan apa pun.
               sudo tee /etc/nginx/conf.d/uploads.conf >/dev/null <<'NGINXCONF'
             client_max_body_size 8m;
-
-            location ~* \.svg$ {
-                add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox" always;
-                add_header X-Content-Type-Options "nosniff" always;
-            }
             NGINXCONF
-              sudo nginx -t || { echo "::error::nginx -t gagal setelah menulis client_max_body_size."; exit 1; }
+              # Kalau berkas ini tetap membuat konfigurasi tidak sah, ia dibuang
+              # sebelum keluar. nginx yang konfigurasinya tidak bisa diuji juga
+              # tidak bisa di-reload maupun di-restart, jadi berkas buruk yang
+              # ditinggal di sini akan mematikan seluruh situs pada reboot atau
+              # perpanjangan sertifikat berikutnya.
+              if ! sudo nginx -t; then
+                sudo rm -f /etc/nginx/conf.d/uploads.conf
+                echo "::error::nginx -t gagal; drop-in uploads.conf dibuang supaya nginx tetap bisa dimuat."
+                exit 1
+              fi
               sudo systemctl reload nginx
               # conf.d/ tidak selalu di-include (tergantung paket nginx).
               # Diperiksa dari konfigurasi yang benar-benar dimuat, supaya
