@@ -11,6 +11,10 @@ readonly class CheckoutDTO
         public int $paymentChannelId,
         public string $targetUid,
         public ?string $targetServer = null,
+        // Every identifier the game asked for, keyed by the category's field keys.
+        // Empty when the client used the legacy positional pair instead — the
+        // checkout action widens that into the same map.
+        public array $orderFields = [],
         // Tambahkan parameter untuk menyimpan kontak guest
         public ?string $guestContact = null,
         // Nickname yang ditampilkan saat konfirmasi order. Nullable: tidak semua

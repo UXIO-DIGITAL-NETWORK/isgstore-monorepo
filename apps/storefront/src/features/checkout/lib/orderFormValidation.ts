@@ -19,32 +19,44 @@ export interface OrderFormFieldError {
  * the order — after the buyer has paid. Games that DO have a provider get this
  * plus the live lookup (`useNicknameCheck`).
  *
- * Returns one entry per field, index-aligned with `values`; `null` means valid.
+ * Keyed by the field's own `key`, so a game declaring more identifiers than the
+ * two the old positional layout could carry is validated just as well as one
+ * declaring two.
  */
 export function getOrderFormErrors(
   fields: OrderFormField[],
-  values: string[],
-): (OrderFormFieldError | null)[] {
-  return fields.map((field, index) => {
-    const value = (values[index] ?? "").trim();
+  values: Record<string, string>,
+): Record<string, OrderFormFieldError | null> {
+  const errors: Record<string, OrderFormFieldError | null> = {};
+
+  for (const field of fields) {
+    const value = (values[field.key] ?? "").trim();
 
     if (value === "") {
-      return field.required ? { key: "accountDetail.errors.required" } : null;
+      errors[field.key] = field.required ? { key: "accountDetail.errors.required" } : null;
+
+      continue;
     }
 
     // `number` fields render as text inputs on purpose (a real number input
     // strips the leading zeros some supplier ids carry), so the digit rule is
     // enforced here rather than by the browser.
     if (field.type === "number" && !/^\d+$/.test(value)) {
-      return { key: "accountDetail.errors.numeric" };
+      errors[field.key] = { key: "accountDetail.errors.numeric" };
+
+      continue;
     }
 
     if (field.min_length !== null && value.length < field.min_length) {
-      return { key: "accountDetail.errors.minLength", values: { length: field.min_length } };
+      errors[field.key] = { key: "accountDetail.errors.minLength", values: { length: field.min_length } };
+
+      continue;
     }
 
     if (field.max_length !== null && value.length > field.max_length) {
-      return { key: "accountDetail.errors.maxLength", values: { length: field.max_length } };
+      errors[field.key] = { key: "accountDetail.errors.maxLength", values: { length: field.max_length } };
+
+      continue;
     }
 
     if (field.pattern) {
@@ -59,10 +71,14 @@ export function getOrderFormErrors(
       }
 
       if (regex && !regex.test(value)) {
-        return { key: "accountDetail.errors.pattern" };
+        errors[field.key] = { key: "accountDetail.errors.pattern" };
+
+        continue;
       }
     }
 
-    return null;
-  });
+    errors[field.key] = null;
+  }
+
+  return errors;
 }

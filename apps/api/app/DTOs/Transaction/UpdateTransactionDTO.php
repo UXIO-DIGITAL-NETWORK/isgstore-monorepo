@@ -21,5 +21,8 @@ readonly class UpdateTransactionDTO
         public ?string $sn,
         public ?string $supplierTrxId,
         public ?string $supplierStatus,
+        // See CreateTransactionDTO: the full keyed identifier set, in the
+        // category's declaration order.
+        public array $orderFields = [],
     ) {}
 }

@@ -21,6 +21,11 @@ class Transaction extends Model
         'points_spent_amount' => 'integer',
         'points_earned' => 'integer',
         'status' => TransactionStatus::class,
+        // Every identifier the game asked for, keyed by its own field keys.
+        // target_uid/target_server mirror the first two so the invoice, receipt,
+        // WhatsApp and member list keep working; this column is what a category
+        // declaring more than two identifiers needs.
+        'target_values' => 'array',
         // The supplier's half of the lifecycle, kept in lockstep with `status`
         // by TransactionObserver. Not to be confused with `supplier_status`,
         // which is uxiolabs's own raw wording, kept as evidence.

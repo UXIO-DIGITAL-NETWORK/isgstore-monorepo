@@ -66,8 +66,7 @@ export default function CheckoutPage(): React.JSX.Element {
     selectedPackageId,
     selectedPaymentId,
     activeCategory,
-    userId,
-    serverId,
+    fieldValues,
     whatsapp,
     email,
     filteredPackages,
@@ -81,6 +80,13 @@ export default function CheckoutPage(): React.JSX.Element {
     handleSelectPackage,
     handleSelectPayment,
   } = useCheckoutSelection({ packages, categories });
+
+  // The game decides how many identifiers it wants; the first two are the ones
+  // the mirrored columns and the nickname lookup know about. Derived from the
+  // declared field list rather than held separately, so they cannot fall out of
+  // step with the order the API declared them in.
+  const userId = fieldValues[orderFormFields[0]?.key ?? ""] ?? "";
+  const serverId = fieldValues[orderFormFields[1]?.key ?? ""] ?? "";
 
   // Prefill the email for a logged-in member from their account (still editable).
   const authEmail = useAuthStore((s) => s.user?.email);
@@ -110,8 +116,8 @@ export default function CheckoutPage(): React.JSX.Element {
   // game with no lookup provider this is the only thing standing between a
   // typo'd id and a paid order the supplier will reject.
   const fieldErrors = useMemo(
-    () => getOrderFormErrors(orderFormFields, [userId, serverId]),
-    [orderFormFields, userId, serverId],
+    () => getOrderFormErrors(orderFormFields, fieldValues),
+    [orderFormFields, fieldValues],
   );
   const [showFieldErrors, setShowFieldErrors] = useState(false);
 
@@ -172,7 +178,7 @@ export default function CheckoutPage(): React.JSX.Element {
    * it.
    */
   const handleRequestConfirm = async (): Promise<boolean> => {
-    if (fieldErrors.some(Boolean)) {
+    if (Object.values(fieldErrors).some(Boolean)) {
       setShowFieldErrors(true);
       toast.error(t("accountDetail.errors.fixFields"));
       return false;
@@ -196,6 +202,11 @@ export default function CheckoutPage(): React.JSX.Element {
       {
         product_id: selectedPackage.productId,
         payment_channel_id: selectedPayment.channelId,
+        // The full keyed set — how many identifiers a game needs is a data
+        // decision, not a layout one.
+        order_fields: fieldValues,
+        // The first two, mirrored for the API's named columns and kept so an API
+        // that has not been redeployed yet still reads the pair it knows.
         target_uid: userId.trim(),
         target_server: serverId.trim() || undefined,
         // Display-only echo of what validate-id returned; the API stores it so
@@ -282,7 +293,7 @@ export default function CheckoutPage(): React.JSX.Element {
           <Box className="contents lg:flex lg:flex-col lg:gap-5">
             <AccountDetailForm
               fields={orderFormFields}
-              values={[userId, serverId]}
+              values={fieldValues}
               onValueChange={setFieldValue}
               errors={fieldErrors}
               showErrors={showFieldErrors}

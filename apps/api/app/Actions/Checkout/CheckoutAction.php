@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Services\Payment\MonetapayService;
 use App\Support\Membership\MembershipResolver;
 use App\Support\Money;
+use App\Support\OrderForm\OrderFormSchema;
 use App\Support\Payment\DefaultMerchant;
 use App\Support\Points\PointLedger;
 use App\Support\Points\PointRules;
@@ -51,7 +52,12 @@ class CheckoutAction
         // Cache::add is atomic; the key is released on failure so the customer
         // can retry immediately after a rejected attempt.
         $identity = $dto->userId ?? $dto->guestContact ?? request()?->ip() ?? 'anon';
-        $dedupeKey = 'checkout:dedupe:'.md5($identity.'|'.$dto->productId.'|'.$dto->paymentChannelId.'|'.$dto->targetUid.'|'.$dto->targetServer);
+        // Every identifier takes part: two orders for the same product that differ
+        // only in the third id are not the same order.
+        $identifiers = $dto->orderFields !== []
+            ? implode('|', $dto->orderFields)
+            : $dto->targetUid.'|'.$dto->targetServer;
+        $dedupeKey = 'checkout:dedupe:'.md5($identity.'|'.$dto->productId.'|'.$dto->paymentChannelId.'|'.$identifiers);
 
         if (! Cache::add($dedupeKey, 1, 15)) {
             throw new Exception('Permintaan duplikat terdeteksi. Mohon tunggu beberapa detik sebelum mencoba lagi.');
@@ -78,6 +84,26 @@ class CheckoutAction
         if (! $product->status) {
             throw new Exception('Produk sedang tidak tersedia.');
         }
+
+        // ── The identifiers, in one shape from here on: key ⇒ value ──────────
+        // A game may declare more than the two mirrored columns; that arrives
+        // keyed. The legacy positional pair is widened into the same map, which
+        // is also why its extra fields come out empty — and why the request
+        // refuses that combination for such a game before reaching this point.
+        $schema = OrderFormSchema::forCategory($product->category);
+
+        $targetValues = $dto->orderFields !== []
+            ? ($schema?->bound($dto->orderFields) ?? $dto->orderFields)
+            : ($schema?->valuesFromPositional($dto->targetUid, $dto->targetServer) ?? []);
+
+        // The two mirrored columns still feed the invoice, the receipt, the
+        // WhatsApp message and the member list, so they hold the first two.
+        $uidKey = $schema?->keyAt(0);
+        $serverKey = $schema?->keyAt(1);
+
+        $targetUid = $uidKey !== null ? ($targetValues[$uidKey] ?? '') : $dto->targetUid;
+        $targetServer = trim($serverKey !== null ? ($targetValues[$serverKey] ?? '') : (string) $dto->targetServer);
+        $targetServer = $targetServer !== '' ? $targetServer : null;
 
         $channel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
@@ -121,7 +147,7 @@ class CheckoutAction
         $discount = 0;
 
         if ($dto->promoCode) {
-            $result = PromoResolver::resolve($dto->promoCode, $sellingPrice, $user);
+            $result = PromoResolver::resolve($dto->promoCode, $sellingPrice, $user, $product);
 
             if (! $result->valid) {
                 throw new Exception($result->message);
@@ -228,7 +254,7 @@ class CheckoutAction
         // record still carries it.
         $targetNickname = $dto->targetNickname
             ?: ($product->category
-                ? $this->validateGameIdAction->cachedNickname($product->category, (string) $dto->targetUid, $dto->targetServer)
+                ? $this->validateGameIdAction->cachedNickname($product->category, (string) $targetUid, $targetServer)
                 : null);
 
         // ── 7. External gateway call ─────────────────────────────────────────
@@ -336,7 +362,8 @@ class CheckoutAction
 
         DB::transaction(function () use (
             $dto, $user, $product, $channel, $activeSupplier, $invoiceNumber, $referenceId,
-            $targetNickname, $discount, $sellingPrice, $adminFee, $channelFee, $gatewayFee,
+            $targetNickname, $targetValues, $targetUid, $targetServer,
+            $discount, $sellingPrice, $adminFee, $channelFee, $gatewayFee,
             $taxAmount, $taxPercent, $margin, $grossAmount, $callGateway, $gatewayInsideTx,
             $pointsSpent, $pointsSpentAmount, $isExternal,
             &$paymentInstructions, &$pgTransactionId, &$transactionStatus,
@@ -351,7 +378,7 @@ class CheckoutAction
                     ->lockForUpdate()
                     ->first();
 
-                $recheck = PromoResolver::resolve($dto->promoCode, $sellingPrice + $discount, $user);
+                $recheck = PromoResolver::resolve($dto->promoCode, $sellingPrice + $discount, $user, $product);
                 if (! $recheck->valid) {
                     throw new Exception($recheck->message);
                 }
@@ -381,8 +408,11 @@ class CheckoutAction
                 'locale' => $dto->locale ?? $user?->locale ?? 'id',
                 'product_id' => $product->id,
                 'supplier_id' => $activeSupplier->supplier_id,
-                'target_uid' => $dto->targetUid,
-                'target_server' => $dto->targetServer,
+                'target_uid' => $targetUid,
+                'target_server' => $targetServer,
+                // The whole set, so a game with more identifiers than columns is
+                // composed correctly at fulfilment.
+                'target_values' => $targetValues !== [] ? $targetValues : null,
                 'target_nickname' => $targetNickname,
                 'promo_id' => $promo?->id,
                 'amount_base' => $sellingPrice,

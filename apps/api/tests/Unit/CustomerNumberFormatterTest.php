@@ -160,10 +160,13 @@ class CustomerNumberFormatterTest extends TestCase
         $this->formatter->format($this->category($this->mlbbSchema('{user_id}{server_id}')), '123456789', '2001');
     }
 
-    public function test_more_than_two_fields_are_truncated_to_the_stored_columns(): void
+    public function test_positional_input_cannot_fill_a_third_identifier_and_says_so(): void
     {
+        // Two mirrored columns, three declared fields. Composing a target with a
+        // piece missing would either be rejected by the supplier or — worse —
+        // resolve to somebody else's account, so this fails loudly instead.
         $schema = [
-            'customer_no_template' => '{a}{b}',
+            'customer_no_template' => '{a}|{b}|{c}',
             'fields' => [
                 ['key' => 'a', 'label' => 'A', 'required' => true],
                 ['key' => 'b', 'label' => 'B', 'required' => true],
@@ -171,8 +174,65 @@ class CustomerNumberFormatterTest extends TestCase
             ],
         ];
 
-        // Only two columns exist, so the third field is dropped rather than
-        // silently binding to nothing.
-        $this->assertSame('12', $this->formatter->format($this->category($schema), '1', '2'));
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('C wajib diisi');
+
+        $this->formatter->format($this->category($schema), '1', '2');
+    }
+
+    public function test_keyed_values_bind_as_many_identifiers_as_the_category_declares(): void
+    {
+        $schema = [
+            'customer_no_template' => '{a}|{b}|{c}',
+            'fields' => [
+                ['key' => 'a', 'label' => 'A', 'required' => true],
+                ['key' => 'b', 'label' => 'B', 'required' => true],
+                ['key' => 'c', 'label' => 'C', 'required' => true],
+            ],
+        ];
+
+        $this->assertSame(
+            '1|2|3',
+            $this->formatter->formatMap($this->category($schema), ['a' => '1', 'b' => '2', 'c' => '3'])
+        );
+    }
+
+    public function test_keyed_values_are_trimmed_and_undeclared_keys_dropped(): void
+    {
+        // mlbbSchema() joins without a separator, so trimming shows up as the
+        // absence of stray spaces rather than in the join itself.
+        $this->assertSame(
+            '1234567892001',
+            $this->formatter->formatMap($this->category($this->mlbbSchema()), [
+                'user_id' => ' 123456789 ',
+                'zone_id' => '2001',
+                // Not declared by the schema, so it never reaches the supplier.
+                'smurf' => '999',
+            ])
+        );
+    }
+
+    public function test_keyed_values_drop_the_separator_for_an_empty_optional_field(): void
+    {
+        $schema = [
+            'customer_no_template' => '{user_id}|{zone_id}',
+            'fields' => [
+                ['key' => 'user_id', 'label' => 'User ID', 'required' => true],
+                ['key' => 'zone_id', 'label' => 'Zone ID', 'required' => false],
+            ],
+        ];
+
+        $this->assertSame(
+            '123456789',
+            $this->formatter->formatMap($this->category($schema), ['user_id' => '123456789'])
+        );
+    }
+
+    public function test_keyed_values_still_refuse_a_missing_required_identifier(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Zone ID wajib diisi');
+
+        $this->formatter->formatMap($this->category($this->mlbbSchema()), ['user_id' => '123456789']);
     }
 }
