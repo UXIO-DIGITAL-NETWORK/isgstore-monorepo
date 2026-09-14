@@ -16,13 +16,21 @@ class UpdateTransactionAction
     public function execute(Transaction $transaction, UpdateTransactionDTO $dto): Transaction
     {
         return DB::transaction(function () use ($transaction, $dto): Transaction {
+            // Same reasoning as CreateTransactionAction: the map is in the
+            // category's declaration order, so the first two values are the
+            // mirrored columns and the whole set goes to `target_values`.
+            $values = array_values($dto->orderFields);
+            $targetUid = $values[0] ?? $dto->targetUid;
+            $targetServer = ($values[1] ?? $dto->targetServer) ?: null;
+
             $transaction->update([
                 'user_id' => $dto->userId,
                 'payment_channel_id' => $dto->paymentChannelId,
                 'supplier_id' => $dto->supplierId,
                 'guest_contact' => $dto->guestContact,
-                'target_uid' => $dto->targetUid,
-                'target_server' => $dto->targetServer,
+                'target_uid' => $targetUid,
+                'target_server' => $targetServer,
+                'target_values' => $dto->orderFields !== [] ? $dto->orderFields : null,
                 'amount_base' => $dto->amountBase,
                 'amount_fee' => $dto->amountFee,
                 'amount_total' => $dto->amountTotal,

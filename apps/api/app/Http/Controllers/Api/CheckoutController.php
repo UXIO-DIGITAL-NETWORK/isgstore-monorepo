@@ -25,6 +25,12 @@ class CheckoutController extends Controller
                 paymentChannelId: $request->integer('payment_channel_id'),
                 targetUid: trim($request->string('target_uid')->toString()),
                 targetServer: ($s = trim($request->string('target_server')->toString())) !== '' ? $s : null,
+                // The keyed identifier set, when the client sent one. Values are
+                // trimmed here; the category's schema decides which keys matter.
+                orderFields: array_map(
+                    static fn ($value) => is_scalar($value) ? trim((string) $value) : '',
+                    (array) $request->input('order_fields', []),
+                ),
                 guestContact: $request->string('guest_contact')->toString() ?: null,
                 targetNickname: ($n = trim($request->string('target_nickname')->toString())) !== '' ? $n : null,
                 promoCode: ($p = trim($request->string('promo_code')->toString())) !== '' ? $p : null,

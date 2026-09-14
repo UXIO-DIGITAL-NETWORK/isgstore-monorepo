@@ -14,17 +14,17 @@ interface Options {
 /**
  * Selection state for the checkout page.
  *
- * Order-form values are held as a positional array rather than named
- * `userId`/`serverId`: how many identity fields a game asks for, and what they
- * are called, is decided by the API's `order_form_fields`. Index 0 maps to
- * `target_uid` and index 1 to `target_server` — the only two columns checkout
- * accepts.
+ * Order-form values are held as a map keyed by the field's own `key`, because
+ * how many identity fields a game asks for — and what they are called — is
+ * decided by the API's `order_form_fields`, and it is no longer limited to the
+ * two columns the schema started with. The page derives the first two values
+ * (the mirrored columns and the nickname lookup) from the field list it renders.
  */
 export function useCheckoutSelection({ packages, categories }: Options) {
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<PackageCategory>(ALL_CATEGORY);
-  const [fieldValues, setFieldValues] = useState<string[]>([]);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [whatsapp, setWhatsapp] = useState("");
   const [email, setEmail] = useState("");
 
@@ -46,12 +46,8 @@ export function useCheckoutSelection({ packages, categories }: Options) {
 
   const totalPrice = selectedPackage?.price ?? 0;
 
-  const setFieldValue = (index: number, value: string) => {
-    setFieldValues((prev) => {
-      const next = [...prev];
-      next[index] = value;
-      return next;
-    });
+  const setFieldValue = (key: string, value: string) => {
+    setFieldValues((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSelectPackage = (id: string) => {
@@ -68,8 +64,6 @@ export function useCheckoutSelection({ packages, categories }: Options) {
     selectedPaymentId,
     activeCategory,
     fieldValues,
-    userId: fieldValues[0] ?? "",
-    serverId: fieldValues[1] ?? "",
     whatsapp,
     email,
     // derived

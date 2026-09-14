@@ -19,6 +19,14 @@ class CreateTransactionAction
         return DB::transaction(function () use ($dto): Transaction {
             $invoiceNumber = 'INV-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
+            // The request resolved the whole identifier set from the product's
+            // category, in declaration order — so the first two values are exactly
+            // the two mirrored columns, and anything beyond them can only live in
+            // `target_values`.
+            $values = array_values($dto->orderFields);
+            $targetUid = $values[0] ?? $dto->targetUid;
+            $targetServer = ($values[1] ?? $dto->targetServer) ?: null;
+
             $transaction = Transaction::create([
                 'invoice_number' => $invoiceNumber,
                 'user_id' => $dto->userId,
@@ -26,8 +34,11 @@ class CreateTransactionAction
                 'supplier_id' => $dto->supplierId,
                 'product_id' => $dto->productId,
                 'guest_contact' => $dto->guestContact,
-                'target_uid' => $dto->targetUid,
-                'target_server' => $dto->targetServer,
+                'target_uid' => $targetUid,
+                'target_server' => $targetServer,
+                // A game may declare more identifiers than the columns hold, and
+                // fulfilment composes the supplier's `target` from this map.
+                'target_values' => $dto->orderFields !== [] ? $dto->orderFields : null,
                 'amount_base' => $dto->amountBase,
                 'amount_fee' => $dto->amountFee,
                 'amount_total' => $dto->amountTotal,

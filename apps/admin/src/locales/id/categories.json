@@ -44,6 +44,7 @@
   "fieldKeyGuide": "Panduan kunci kolom",
   "noWhatsappEmail": "Jangan pakai kunci whatsapp atau email — kontak pembeli diambil dari akunnya.",
   "suggestedKeys": "Kunci yang disarankan: user_id, server_id.",
+  "fieldOrderHint": "Urutan penting: kolom #1 jadi account id dan #2 jadi server, dan semua kolom disusun menjadi satu target yang dikirim ke supplier — maksimal 5 kolom.",
   "addForm": "Tambah Kolom",
   "noForms": "Belum ada kolom. Klik \"Tambah Kolom\" untuk menambahkannya.",
   "key": "Kunci",

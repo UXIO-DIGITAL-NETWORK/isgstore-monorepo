@@ -11,9 +11,14 @@ use RuntimeException;
 /**
  * Composes the target sent to the supplier.
  *
- * This is the single place that decides how target_uid and target_server are
- * joined — do not hardcode that expression anywhere else. uxiolabs expects
- * the pipe form "dataId|zoneId" (templates like `{user_id}|{zone_id}`).
+ * This is the single place that decides how the identifiers are joined — do not
+ * hardcode that expression anywhere else. uxiolabs expects the pipe form
+ * "dataId|zoneId" (templates like `{user_id}|{zone_id}`), and a game may declare
+ * more identifiers than that; the whole set lives in `transactions.target_values`
+ * and is bound to the category's template by key.
+ *
+ * Rows written before that column existed — and anything an admin typed into the
+ * two mirrored columns — have no map, so the positional entry point stays.
  */
 class CustomerNumberFormatter
 {
@@ -23,32 +28,73 @@ class CustomerNumberFormatter
         // caller already eager-loaded it.
         $transaction->loadMissing('product.category');
 
-        return $this->format(
-            $transaction->product?->category,
-            $transaction->target_uid,
-            $transaction->target_server,
-        );
+        $category = $transaction->product?->category;
+        $stored = $transaction->target_values;
+
+        if (is_array($stored) && $stored !== []) {
+            return $this->formatMap($category, $stored);
+        }
+
+        return $this->format($category, $transaction->target_uid, $transaction->target_server);
+    }
+
+    /**
+     * The keyed form: as many identifiers as the category declares.
+     *
+     * @param  array<string,mixed>  $values
+     */
+    public function formatMap(?Category $category, array $values): string
+    {
+        $trimmed = array_map(static fn ($value) => trim((string) $value), $values);
+        $schema = OrderFormSchema::forCategory($category);
+
+        // Nothing declares the keys, so the positional shape is all there is.
+        if (! $schema) {
+            return $this->pipe($trimmed[0] ?? '', $trimmed[1] ?? '');
+        }
+
+        return $this->render($schema, $trimmed);
     }
 
     public function format(?Category $category, ?string $targetUid, ?string $targetServer): string
     {
+        $uid = trim((string) $targetUid);
+        $server = trim((string) $targetServer);
+
         $schema = OrderFormSchema::forCategory($category);
-        $values = [trim((string) $targetUid), trim((string) $targetServer)];
 
         // Unconfigured category → uxiolabs's default "dataId|zoneId" shape
         // (just dataId when there is no zone/server component).
         if (! $schema) {
-            return $values[1] === '' ? $values[0] : $values[0].'|'.$values[1];
+            return $this->pipe($uid, $server);
         }
 
+        return $this->render($schema, $schema->valuesFromPositional($uid, $server));
+    }
+
+    /** uxiolabs's default shape, for when no template describes the join. */
+    private function pipe(string $uid, string $server): string
+    {
+        return $server === '' ? $uid : $uid.'|'.$server;
+    }
+
+    /**
+     * Bind the declared fields into the category's template.
+     *
+     * @param  array<string,string>  $values  key ⇒ value, already trimmed
+     */
+    private function render(OrderFormSchema $schema, array $values): string
+    {
         $bindings = [];
 
-        foreach ($schema->fields() as $i => $field) {
+        foreach ($schema->fields() as $field) {
             /** @var OrderFormField $field */
-            $value = $values[$i] ?? '';
+            $value = $values[$field->key] ?? '';
 
             // Defence in depth: checkout validation should already have caught this,
-            // but an admin-created or imported transaction can reach here unvalidated.
+            // but an admin-created or imported transaction can reach here unvalidated
+            // — and a target missing a required identifier is either rejected by the
+            // supplier or, worse, resolves to somebody else's account.
             if ($field->required && $value === '') {
                 throw new RuntimeException("{$field->label} wajib diisi untuk produk ini.");
             }

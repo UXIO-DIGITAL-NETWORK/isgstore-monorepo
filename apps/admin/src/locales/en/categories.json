@@ -44,6 +44,7 @@
   "fieldKeyGuide": "Field key guide",
   "noWhatsappEmail": "Do not use whatsapp or email keys — buyer contact is taken from their account.",
   "suggestedKeys": "Suggested keys: user_id, server_id.",
+  "fieldOrderHint": "Order matters: field #1 becomes the account id and #2 the server, and every field is composed into the one target the supplier receives — up to 5 fields.",
   "addForm": "Add Form",
   "noForms": "No forms yet. Click \"Add Form\" to add one.",
   "key": "Key",

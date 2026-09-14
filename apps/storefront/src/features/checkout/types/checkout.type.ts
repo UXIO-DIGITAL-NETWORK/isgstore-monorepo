@@ -124,6 +124,12 @@ export interface GameReviewsResponse {
 export interface CheckoutPayload {
   product_id: number;
   payment_channel_id: number;
+  /**
+   * Every identifier the game declared, keyed by its own field keys. How many
+   * there are is a data decision — the API validates one rule per key.
+   */
+  order_fields: Record<string, string>;
+  /** The first two identifiers, mirrored for the API's named columns. */
   target_uid: string;
   target_server?: string;
   target_nickname?: string;
