@@ -161,6 +161,11 @@ export function SettingsPage() {
                         : "JPG, PNG, WEBP, SVG, ICO — max 2 MB"
                     }
                     onChange={(file) => uploadSetting.mutate({ key: setting.key, file })}
+                    // One mutation serves every image setting on this page, so
+                    // the flag has to name the key it is uploading. Passing
+                    // `isPending` alone would put all three dropzones — logo,
+                    // favicon and OG image — into the uploading state together.
+                    uploading={uploadSetting.isPending && uploadSetting.variables?.key === setting.key}
                   />
                 </Box>
               ) : (

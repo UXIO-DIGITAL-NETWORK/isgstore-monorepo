@@ -140,6 +140,7 @@ export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDia
             onChange={setImage}
             accept="image/jpeg,image/png,image/webp"
             formatsLabel="JPG, PNG or WEBP up to 2MB"
+            uploading={isPending}
           />
 
           <Box className="flex justify-end gap-3">

@@ -31,7 +31,8 @@
     "prompt": "Drag & drop files here",
     "optimising": "Optimising image…",
     "formats": "JPG, JPEG, PNG, WEBP — optimised automatically",
-    "unsupportedType": "That file type is not supported here."
+    "unsupportedType": "That file type is not supported here.",
+    "uploading": "Uploading…"
   },
   "confirm": {
     "delete": "Delete",

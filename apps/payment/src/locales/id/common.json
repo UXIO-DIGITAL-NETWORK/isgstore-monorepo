@@ -138,7 +138,8 @@
     "clipboardUnavailable": "Clipboard tidak tersedia di browser ini"
   },
   "dropzone": {
-    "prompt": "Tarik & lepas berkas di sini"
+    "prompt": "Tarik & lepas berkas di sini",
+    "uploading": "Mengunggah…"
   },
   "copy": {
     "defaultLabel": "Nilai",

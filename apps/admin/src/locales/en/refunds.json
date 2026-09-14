@@ -89,6 +89,7 @@
   "completeHint": "Confirm only after the money has actually left. This closes the refund and marks the order as refunded.",
   "transferReceiptOptional": "Transfer receipt (optional)",
   "browseFiles": "Browse files",
+  "uploading": "Uploading…",
   "completePlaceholder": "e.g. Transferred from BCA at 10:15",
   "hintWaitingAccount": "Owed, but the customer has not made an account yet",
   "hintPending": "An account is attached — waiting for someone to check it",

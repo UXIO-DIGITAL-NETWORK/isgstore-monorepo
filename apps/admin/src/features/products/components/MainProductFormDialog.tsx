@@ -437,6 +437,9 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.logo?.message}
+                      // Only create/update carry the file: `setMargin` is a
+                      // separate request on this same form and uploads nothing.
+                      uploading={createProduct.isPending || updateProduct.isPending}
                     />
                   )}
                 />

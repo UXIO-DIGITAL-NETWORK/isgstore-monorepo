@@ -136,6 +136,9 @@ export function ApproveWithdrawalDialog({ withdrawal, allowManual = false }: App
               setProofError(undefined);
             }}
             error={proofError}
+            // The proof rides along with the approval request, so the
+            // confirmation button's pending state is the upload's state too.
+            uploading={isPending}
           />
         )}
 

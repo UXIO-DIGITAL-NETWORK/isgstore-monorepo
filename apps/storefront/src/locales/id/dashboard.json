@@ -180,6 +180,7 @@
       "sectionTitle": "INFORMASI PRIBADI",
       "photoTitle": "Foto Profil",
       "photoUploadButton": "Tambahkan Foto Profil",
+      "uploadingPhoto": "Mengunggah foto…",
       "photoRemoveButton": "Hapus",
       "photoHint": "Format JPG, PNG, atau WEBP — dioptimalkan otomatis",
       "photoNotAnImage": "File harus berupa gambar (JPG, PNG, atau WEBP).",

@@ -389,6 +389,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.logo?.message}
+                      uploading={isPending}
                     />
                   )}
                 />
@@ -404,6 +405,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.thumbnail?.message}
+                      uploading={isPending}
                     />
                   )}
                 />
@@ -419,6 +421,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.banner?.message}
+                      uploading={isPending}
                     />
                   )}
                 />
@@ -489,6 +492,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.ogImage?.message}
+                      uploading={isPending}
                     />
                   )}
                 />

@@ -89,6 +89,7 @@
   "completeHint": "Konfirmasi hanya setelah uang benar-benar keluar. Ini menutup pengembalian dan menandai pesanan sebagai dikembalikan.",
   "transferReceiptOptional": "Bukti transfer (opsional)",
   "browseFiles": "Pilih berkas",
+  "uploading": "Mengunggah…",
   "completePlaceholder": "misal: Ditransfer dari BCA jam 10:15",
   "hintWaitingAccount": "Terutang, tapi pelanggan belum membuat akun",
   "hintPending": "Akun sudah terpasang — menunggu diperiksa",

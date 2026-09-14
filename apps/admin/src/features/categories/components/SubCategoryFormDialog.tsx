@@ -190,6 +190,7 @@ export function SubCategoryFormDialog({ open, onOpenChange, subCategoryId }: Sub
                 value={field.value}
                 onChange={field.onChange}
                 error={errors.logo?.message}
+                uploading={isPending}
               />
             )}
           />
