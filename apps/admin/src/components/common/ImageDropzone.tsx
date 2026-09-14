@@ -16,6 +16,27 @@ import { cn } from "@/lib/utils";
 // time that form is touched, not as drive-by churn now.
 const DEFAULT_ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
 
+/**
+ * Whether the picked file satisfies the `accept` list.
+ *
+ * `accept` filters the file dialog only. A drop — and any browser that does not
+ * implement the attribute — bypasses it entirely, so the first thing that
+ * rejected an unsupported format used to be the server, one round trip later,
+ * behind a generic toast. An empty `type` is allowed through: the browser could
+ * not identify the file, and the server is the better judge.
+ */
+const matchesAccept = (file: File, accept: string): boolean => {
+  if (!file.type) return true;
+
+  const type = file.type.toLowerCase();
+
+  return accept.split(",").some((entry) => {
+    const candidate = entry.trim().toLowerCase();
+
+    return candidate === type || (candidate.endsWith("/*") && type.startsWith(candidate.slice(0, -1)));
+  });
+};
+
 
 interface ImageDropzoneProps {
   id: string;
@@ -43,6 +64,7 @@ export function ImageDropzone({
   const { t } = useTranslation("common");
   const [dragActive, setDragActive] = useState(false);
   const [optimising, setOptimising] = useState(false);
+  const [rejection, setRejection] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Every image is re-encoded to WebP before it leaves the browser. The API
@@ -52,6 +74,12 @@ export function ImageDropzone({
     const file = files?.[0];
     if (!file) return;
 
+    if (!matchesAccept(file, accept)) {
+      setRejection(t("dropzone.unsupportedType"));
+      return;
+    }
+
+    setRejection(null);
     setOptimising(true);
 
     try {
@@ -111,12 +139,12 @@ export function ImageDropzone({
         )}
       </Box>
       <Text variant="small">{caption}</Text>
-      {error && (
+      {(error ?? rejection) && (
         <Text
           variant="small"
           className="text-destructive"
         >
-          {error}
+          {error ?? rejection}
         </Text>
       )}
     </Box>

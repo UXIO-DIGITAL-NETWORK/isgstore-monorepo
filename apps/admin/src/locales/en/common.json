@@ -30,7 +30,8 @@
   "dropzone": {
     "prompt": "Drag & drop files here",
     "optimising": "Optimising image…",
-    "formats": "JPG, JPEG, PNG, WEBP — optimised automatically"
+    "formats": "JPG, JPEG, PNG, WEBP — optimised automatically",
+    "unsupportedType": "That file type is not supported here."
   },
   "confirm": {
     "delete": "Delete",

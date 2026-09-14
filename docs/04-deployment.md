@@ -242,7 +242,9 @@ php artisan pricing:verify                   ← menggagalkan deploy bila menyim
 optimize:clear → config:cache → route:cache
 storage:link
 chown/chmod
+tulis batas unggah PHP      ← upload_max_filesize 8M, post_max_size 10M
 reload php-fpm              ← tanpa ini OPcache menyajikan bytecode lama
+tulis batas body nginx      ← client_max_body_size 8m, lalu `nginx -t`
 pasang cron schedule:run    ← deploy GAGAL bila hilang
 pasang supervisor + queue:restart
 periksa worker RUNNING      ← deploy GAGAL bila tidak
@@ -257,6 +259,15 @@ periksa worker RUNNING      ← deploy GAGAL bila tidak
 - `pricing:verify` menyimpang → harga per paket tidak sinkron.
 
 **Queue worker bukan opsional, dan kegagalannya senyap.** Delapan kelas job bergantung padanya, dan salah satunya menempatkan pesanan pelanggan yang sudah dibayar ke supplier. Supervisor menjalankan **dua** proses: satu tidak cukup, karena order supplier adalah panggilan HTTP keluar yang bisa menahan worker beberapa detik.
+
+**Batas unggah ikut diatur deploy, karena aplikasi sudah menjanjikannya.** Halaman Settings menawarkan logo GIF sampai 5 MB (`SettingController::maxKilobytes()`), dan GIF animasi memang sengaja tidak dikompresi — baik di browser maupun di `ImageOptimizer`, karena GD tidak bisa menulis animated WebP. Tapi tanpa dua langkah di atas, yang berlaku adalah default server: nginx `client_max_body_size 1m` dan PHP `upload_max_filesize 2m`. Keduanya menolak berkas sebelum Laravel sempat memeriksanya, dan yang tertolak justru berkas yang paling besar — GIF animasi. Gejalanya menyesatkan: unggahan gagal, pesannya generik, dan tidak ada satu pun log aplikasi karena permintaannya tidak pernah sampai.
+
+Keduanya ditulis sebagai drop-in (`/etc/php/<versi>/fpm/conf.d/99-uploads.ini` dan `/etc/nginx/conf.d/uploads.conf`), bukan suntingan berkas utama, supaya pembaruan paket tidak menghapusnya. Periksa sesudah deploy:
+
+```bash
+php -i | grep -E 'upload_max_filesize|post_max_size'
+sudo nginx -T | grep client_max_body_size
+```
 
 ---
 
