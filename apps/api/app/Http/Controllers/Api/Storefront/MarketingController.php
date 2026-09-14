@@ -46,6 +46,11 @@ class MarketingController extends Controller
                     'product_id' => $product?->id,
                     'name' => $product?->name,
                     'game' => $product?->category?->name,
+                    // The card links to the game's checkout, and that route takes
+                    // a slug. Without this the storefront had nothing to build the
+                    // link from and used the item's own id, which resolved to a
+                    // game that does not exist.
+                    'game_slug' => $product?->category?->slug,
                     'image_url' => MediaUrl::for($product?->logo ?: $product?->category?->thumbnail),
                     'sale_price' => (int) $item->sale_price,
                     // Derived from the product's live price, never stored: a
@@ -121,9 +126,9 @@ class MarketingController extends Controller
             'amount' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $amount = $validated['amount'] ?? $this->productPrice($validated['product_id'] ?? null);
+        $amount = $validated['amount'] ?? $this->productPrice($validated['product_id'] ?? null, $request->user('sanctum'));
 
-        $result = PromoResolver::resolve($validated['code'], $amount, $request->user('sanctum'));
+        $result = PromoResolver::resolve($validated['code'], $amount, $request->user('sanctum'), $this->productFor($validated['product_id'] ?? null));
 
         return $this->successResponse([
             'valid' => $result->valid,
@@ -133,9 +138,21 @@ class MarketingController extends Controller
         ], $result->message);
     }
 
-    private function productPrice(?int $productId): int
+    /**
+     * The price the customer will actually be charged, through the same
+     * resolver checkout uses — so a code quoted against a flash-sale price is
+     * quoted against the price on the invoice.
+     */
+    private function productPrice(?int $productId, ?\App\Models\User $user): int
     {
-        return $productId ? (int) (Product::find($productId)?->price_member ?? 0) : 0;
+        $product = $this->productFor($productId);
+
+        return $product ? \App\Support\Pricing\PlanPrice::for($product, $user) : 0;
+    }
+
+    private function productFor(?int $productId): ?Product
+    {
+        return $productId ? Product::find($productId) : null;
     }
 
     private function discountPercent(int $original, int $sale): int

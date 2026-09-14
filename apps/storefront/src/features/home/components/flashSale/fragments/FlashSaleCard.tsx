@@ -43,7 +43,8 @@ type Props = {
 export default function FlashSaleCard({ item, isActive }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation("home");
   const locale = i18n.language;
-  const stockPercent = Math.round((item.stockAvailable / item.stockTotal) * 100);
+  // A zero total would divide to NaN and render `width: NaN%`.
+  const stockPercent = item.stockTotal > 0 ? Math.round((item.stockAvailable / item.stockTotal) * 100) : 0;
   const navigate = useNavigate();
   const { locale: routeLocale = locale } = useParams({ strict: false }) as { locale?: string };
 
@@ -75,7 +76,7 @@ export default function FlashSaleCard({ item, isActive }: Props): React.JSX.Elem
         </Text>
         <Box className="rounded-[10px] px-2 py-0.5 bg-[#0EA42E] shrink-0 inline-flex justify-center items-center">
           <Text as="span" className="text-[10px] font-semibold text-white whitespace-nowrap tabular-nums font-plex">
-            - {formatCurrency(item.discount, locale)}
+            - {item.discount}%
           </Text>
         </Box>
       </Box>
@@ -100,7 +101,14 @@ export default function FlashSaleCard({ item, isActive }: Props): React.JSX.Elem
       <Box
         as="button"
         type="button"
-        onClick={() => navigate({ to: "/$locale/checkout/$gameSlug", params: { locale: routeLocale, gameSlug: item.id } })}
+        onClick={() => {
+          // The route takes the game's slug. Without one there is nothing to
+          // open, and the item's own id would resolve to a game that is not
+          // there — so the card simply does not navigate.
+          if (!item.gameSlug) return;
+
+          navigate({ to: "/$locale/checkout/$gameSlug", params: { locale: routeLocale, gameSlug: item.gameSlug } });
+        }}
         className={buttonVariants({ active: isActive })}
       >
         {t("flashSale.topUpNow")}

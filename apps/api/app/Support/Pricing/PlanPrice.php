@@ -30,6 +30,21 @@ final class PlanPrice
 
     public static function for(Product $product, ?User $user): int
     {
+        $listPrice = self::listPrice($product, $user);
+        $salePrice = FlashSalePrice::forProduct((int) $product->getKey());
+
+        // A sale only ever lowers what the customer pays. Making this the single
+        // place the sale is applied is what keeps the homepage, the price list
+        // and the invoice agreeing — they all resolve through here.
+        return $salePrice !== null && $salePrice < $listPrice ? $salePrice : $listPrice;
+    }
+
+    /**
+     * The price with no promotion applied — the plan tier, the default tier, or
+     * `price_member` as the last resort.
+     */
+    private static function listPrice(Product $product, ?User $user): int
+    {
         $planId = MembershipResolver::planIdFor($user);
 
         if ($planId !== null) {
