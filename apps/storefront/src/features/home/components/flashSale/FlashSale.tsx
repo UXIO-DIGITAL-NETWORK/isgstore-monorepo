@@ -46,6 +46,7 @@ export default function FlashSale(): React.JSX.Element {
 
   const items: FlashSaleItem[] = (sale?.items ?? []).map((item) => ({
     id: String(item.id),
+    gameSlug: item.game_slug ?? "",
     name: item.name,
     game: item.game ?? "",
     image: item.image_url ?? "",
