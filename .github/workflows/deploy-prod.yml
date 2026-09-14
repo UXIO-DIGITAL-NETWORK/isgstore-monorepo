@@ -194,6 +194,13 @@ jobs:
             # 3. Tulis .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
 
+            # 3b. Kredensial produksi — APP_KEY, kata sandi database, kunci
+            #     gateway — tidak boleh terbaca user lain di server. Umask biasa
+            #     menghasilkan 0644, dan langkah 8 hanya meng-chmod storage dan
+            #     bootstrap/cache. Lihat docs/04-deployment.md §Catatan keamanan.
+            chmod 640 .env
+            sudo chown "$(id -un):www-data" .env
+
             # 4. Dependensi produksi
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
@@ -256,7 +263,20 @@ jobs:
             #     berkas yang salah. `client_max_body_size` sah di konteks
             #     http, jadi satu berkas menutup keempat vhost.
             if command -v nginx >/dev/null; then
-              printf '%s\n' 'client_max_body_size 8m;' | sudo tee /etc/nginx/conf.d/uploads.conf >/dev/null
+              # `client_max_body_size` sah di konteks http, jadi satu drop-in
+              # menutup keempat vhost. Blok location untuk SVG ada karena berkas
+              # unggahan disajikan dari origin API itu sendiri — origin tempat
+              # token panel disimpan — sementara sebuah SVG bisa membawa
+              # <script>. Policy-nya tetap membiarkan SVG tampil sebagai gambar,
+              # tapi melarangnya menjalankan apa pun.
+              sudo tee /etc/nginx/conf.d/uploads.conf >/dev/null <<'NGINXCONF'
+            client_max_body_size 8m;
+
+            location ~* \.svg$ {
+                add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox" always;
+                add_header X-Content-Type-Options "nosniff" always;
+            }
+            NGINXCONF
               sudo nginx -t || { echo "::error::nginx -t gagal setelah menulis client_max_body_size."; exit 1; }
               sudo systemctl reload nginx
               # conf.d/ tidak selalu di-include (tergantung paket nginx).

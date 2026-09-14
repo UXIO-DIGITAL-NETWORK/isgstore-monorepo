@@ -32,8 +32,14 @@ class UpdateUserRequest extends FormRequest
             // one — and `UniquePhone` asks the question over every legacy
             // spelling the column may still hold.
             'phone' => ['sometimes', 'string', 'max:20', self::E164_RULE, new UniquePhone((int) $this->route('user')->id)],
-            'balance' => ['sometimes', 'numeric', 'min:0'],
-            'point' => ['sometimes', 'integer', 'min:0'],
+            // `balance` and `point` are deliberately NOT accepted. They are money,
+            // and every rupiah that moves has to leave a row in
+            // balance_mutations / point_ledger with the user row locked — see
+            // WalletLedger. This endpoint wrote the columns directly, so the
+            // ledger stopped reconciling and a concurrent checkout could lose an
+            // update. Operators move money through
+            // /users/{user}/balance-adjustments, which is audited and demands a
+            // reason.
             'locale' => ['sometimes', 'string', 'max:10'],
             'timezone' => ['sometimes', 'string', 'max:50'],
         ];

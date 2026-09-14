@@ -21,8 +21,8 @@ class CreateUserAction
             'email' => $dto->email,
             'phone' => $dto->phone,
             'password' => Hash::make($dto->password),
-            'balance' => $dto->balance,
-            'point' => $dto->point,
+            // The columns default to 0; an opening balance is an audited
+            // adjustment, not a create-time field.
             'locale' => $dto->locale,
             'timezone' => $dto->timezone,
         ]);

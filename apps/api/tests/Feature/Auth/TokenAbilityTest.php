@@ -67,4 +67,17 @@ class TokenAbilityTest extends TestCase
 
         $this->postJson('/api/v1/auth/logout', [], $this->bearer($token))->assertForbidden();
     }
+
+    public function test_logging_out_revokes_the_refresh_token_too(): void
+    {
+        $user = $this->admin();
+        $access = $user->createToken('access_token', ['access-api'])->plainTextToken;
+        $user->createToken('refresh_token', ['issue-access-token']);
+
+        $this->postJson('/api/v1/auth/logout', [], $this->bearer($access))->assertOk();
+
+        // A logout that keeps the 30-day credential closes the 60-minute door
+        // and leaves the month open, so the assertion is on what is left behind.
+        $this->assertSame(0, $user->tokens()->count(), 'Logout must not leave a refresh token behind.');
+    }
 }

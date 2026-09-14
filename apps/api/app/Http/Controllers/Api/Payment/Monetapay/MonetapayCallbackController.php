@@ -22,8 +22,12 @@ class MonetapayCallbackController extends Controller
 
     public function __invoke(Request $request)
     {
-        // Gatekeeper: log raw payload before any validation so failures are always traceable
-        Log::channel('monetapay')->info('Monetapay Webhook Hit', $request->all());
+        // Gatekeeper: record the hit before any validation so a failed callback
+        // is always traceable. Only the reference — the envelope also carries the
+        // partner key, and knowing we were called does not need the body.
+        Log::channel('monetapay')->info('Monetapay Webhook Hit', [
+            'mch_order_no' => $request->input('data.mch_order_no'),
+        ]);
 
         try {
             // Actual envelope: { "data": { "en_data": "...", "partner_key": "...", "mch_order_no": "..." } }
@@ -39,9 +43,11 @@ class MonetapayCallbackController extends Controller
 
             // Step 2: Verify Double MD5 signature — reject forged/replayed callbacks
             if (! $this->monetapayService->verifyCallbackSignature($decrypted)) {
+                // The keys, not the body: this payload failed verification, so it
+                // is unvetted input, and it also names the payer.
                 Log::channel('monetapay')->warning('Monetapay callback signature mismatch', [
                     'mch_order_no' => $validated['data']['mch_order_no'] ?? null,
-                    'decrypted' => $decrypted,
+                    'payload_keys' => is_array($decrypted) ? array_keys($decrypted) : [],
                 ]);
                 throw new Exception('Signature verification failed.');
             }
@@ -66,10 +72,14 @@ class MonetapayCallbackController extends Controller
                 rawPayload: $decrypted
             );
 
-            // ==========================================
-            // FIX: Tambahkan log untuk melihat isi murni dari Monetapay
-            // ==========================================
-            Log::channel('monetapay')->info('Monetapay Decrypted Payload', $decrypted);
+            // The fields we act on, not the whole body. The decrypted payload
+            // carries the payer's name and VA, and this channel is a file on disk
+            // that operators keep for weeks.
+            Log::channel('monetapay')->info('Monetapay Decrypted Payload', [
+                'mch_order_no' => $decrypted['mch_order_no'] ?? null,
+                'status' => $decrypted['status'] ?? null,
+                'amount' => $decrypted['amount'] ?? null,
+            ]);
 
             $this->action->execute($dto);
 
@@ -78,7 +88,7 @@ class MonetapayCallbackController extends Controller
         } catch (Exception $e) {
             Log::channel('monetapay')->error('Monetapay Callback Error', [
                 'error' => $e->getMessage(),
-                'payload' => $request->all(),
+                'mch_order_no' => $request->input('data.mch_order_no'),
             ]);
 
             $status = str_contains($e->getMessage(), 'AES Decryption failed')

@@ -52,6 +52,17 @@ Schedule::command('withdrawals:sync-processing')
     ->runInBackground()
     ->onFailure($alertFailure('withdrawals:sync-processing'));
 
+// Settlement-reversal recovery. The reversal runs post-commit, so a crash
+// between a refund's commit and that call leaves the books short with nothing
+// to retry it — and the action deliberately does not mark itself done when the
+// merchant's wallet cannot absorb the debit. Hourly: a shortfall is money, but
+// unlike a paid order it is not time-critical, and each pass is idempotent.
+Schedule::command('refunds:retry-settlement-reversal')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure($alertFailure('refunds:retry-settlement-reversal'));
+
 // Uxiolabs order-status recovery: the supplier callback is unreliable, so each
 // in-flight order runs a self-rescheduling PollUxiolabsStatusJob (5s → widening).
 // This is only the safety net — it re-arms chains that died and alerts orders that
