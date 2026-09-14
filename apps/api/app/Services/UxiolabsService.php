@@ -250,8 +250,15 @@ class UxiolabsService
             'callback' => (string) config('services.uxiolabs.callback_url'),
         ];
 
-        // [CHECKPOINT 1] Pre-request — exact body going to uxiolabs, minus the api_key
-        Log::channel('uxiolabs')->info('Uxiolabs createOrder Request', $payload);
+        // [CHECKPOINT 1] Pre-request — the body going to uxiolabs, minus the
+        // api_key and minus the two identifiers: `target` is the customer's game
+        // id and `kontak` their phone number, and this channel is a file on
+        // disk. Everything left is what makes a failed order diagnosable.
+        Log::channel('uxiolabs')->info('Uxiolabs createOrder Request', [
+            ...$payload,
+            'target' => substr($target, 0, 3).'…',
+            'kontak' => substr($kontak, 0, 3).'…',
+        ]);
 
         try {
             $response = $this->client()->post("{$this->baseUrl}/order", $payload + [
@@ -297,7 +304,7 @@ class UxiolabsService
             Log::channel('uxiolabs')->error('Uxiolabs createOrder Exception', [
                 'idtrx' => $idtrx,
                 'service_id' => $serviceId,
-                'target' => $target,
+                'target' => substr($target, 0, 3).'…',
                 'message' => $e->getMessage(),
             ]);
             throw $e;

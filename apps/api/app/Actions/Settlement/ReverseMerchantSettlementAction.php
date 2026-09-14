@@ -56,10 +56,16 @@ class ReverseMerchantSettlementAction
     public function __construct(private readonly DiscordWebhookService $discord) {}
 
     /**
+     * @param  bool  $alert  Whether a failed merchant leg also raises a Discord
+     *                       alert. The scheduled retry passes false: it exists to
+     *                       finish a reversal the first attempt could not, and
+     *                       without this a merchant who has permanently spent the
+     *                       money would page the channel on every run.
+     *
      * @return bool True when the books are square (reversed now, already
      *              reversed, or nothing to reverse); false when a leg failed.
      */
-    public function execute(RefundRequest $refund): bool
+    public function execute(RefundRequest $refund, bool $alert = true): bool
     {
         $refund->loadMissing(['transaction']);
         $transaction = $refund->transaction;
@@ -117,26 +123,36 @@ class ReverseMerchantSettlementAction
                     }
                 }
 
-                $refund->forceFill(['settlement_reversed_at' => now()])->save();
+                // Only claim the books are square when they are. Stamping this
+                // with the merchant leg missing made the shortfall both invisible
+                // and permanent: the marker reads "reversed", and the scheduled
+                // retry skips anything carrying one.
+                if ($walletFailure === null) {
+                    $refund->forceFill(['settlement_reversed_at' => now()])->save();
+                }
             });
         } catch (Throwable $e) {
             Log::error("Settlement reversal failed for {$reference}: {$e->getMessage()}");
 
-            $this->discord->sendAlert(
-                "**Pembalikan settlement gagal** — refund `{$refund->refund_number}` "
-                ."(invoice `{$transaction->invoice_number}`) sudah dibayarkan ke pelanggan, "
-                ."tetapi pembukuannya tidak bisa dibalik: {$e->getMessage()}"
-            );
+            if ($alert) {
+                $this->discord->sendAlert(
+                    "**Pembalikan settlement gagal** — refund `{$refund->refund_number}` "
+                    ."(invoice `{$transaction->invoice_number}`) sudah dibayarkan ke pelanggan, "
+                    ."tetapi pembukuannya tidak bisa dibalik: {$e->getMessage()}"
+                );
+            }
 
             return false;
         }
 
         if ($walletFailure !== null) {
-            $this->discord->sendAlert(
-                "**Saldo merchant tidak bisa dipotong** pada refund `{$refund->refund_number}` "
-                ."(invoice `{$transaction->invoice_number}`): {$walletFailure}\n"
-                .'Pembukuan platform sudah dibalik; tagih selisihnya ke merchant secara manual.'
-            );
+            if ($alert) {
+                $this->discord->sendAlert(
+                    "**Saldo merchant tidak bisa dipotong** pada refund `{$refund->refund_number}` "
+                    ."(invoice `{$transaction->invoice_number}`): {$walletFailure}\n"
+                    .'Pembukuan platform sudah dibalik; tagih selisihnya ke merchant secara manual.'
+                );
+            }
 
             return false;
         }
