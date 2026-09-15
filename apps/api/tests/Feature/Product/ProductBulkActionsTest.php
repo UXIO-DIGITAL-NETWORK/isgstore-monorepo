@@ -4,10 +4,12 @@ namespace Tests\Feature\Product;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductPlanPrice;
 use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\User;
+use App\Support\Membership\DefaultPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -112,6 +114,39 @@ class ProductBulkActionsTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id, 'price_agent' => 11800, 'price_member' => 12000]);
     }
 
+    /**
+     * The window binds what is charged, not just the copy of it. A plan row left
+     * outside the window is a price the storefront would still quote — and it
+     * would also leave `price_member` disagreeing with the row, which is the
+     * drift the deploy gate refuses.
+     */
+    public function test_set_price_limit_clamps_the_plan_row_too(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product();
+
+        ProductPlanPrice::create([
+            'product_id' => $product->id,
+            'membership_plan_id' => DefaultPlan::id(),
+            'price' => 9000,
+            // Manual, and still clamped: the admin is setting the window now, so
+            // a stored price below the new floor is exactly what they mean to fix.
+            'is_manual' => true,
+        ]);
+
+        $this->postJson("/api/v1/products/{$product->id}/price-limit", ['price_min' => 11800])->assertOk();
+
+        $this->assertSame(
+            11800,
+            (int) ProductPlanPrice::where('product_id', $product->id)
+                ->where('membership_plan_id', DefaultPlan::id())
+                ->value('price'),
+        );
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'price_member' => 11800]);
+
+        $this->artisan('pricing:verify')->assertSuccessful();
+    }
+
     public function test_uxiolabs_update_recomputes_from_cost_and_skips_locked(): void
     {
         $this->actingAsAdmin();
@@ -126,6 +161,10 @@ class ProductBulkActionsTest extends TestCase
         $this->postJson('/api/v1/products/bulk/uxiolabs-update', ['ids' => [$product->id]])->assertOk();
         // Recomputed member = ceil(10000 * 1.2) = 12000.
         $this->assertDatabaseHas('products', ['id' => $product->id, 'price_member' => 12000]);
+        // And it lands where the storefront bills from, not only in the copy —
+        // otherwise a cost rise would be announced and never charged.
+        $this->assertSame(12000, (int) ProductPlanPrice::where('product_id', $product->id)
+            ->where('membership_plan_id', DefaultPlan::id())->value('price'));
 
         // Lock, then raise the supplier cost: a locked product ignores the update.
         $product->update(['is_price_locked' => true]);
@@ -137,6 +176,10 @@ class ProductBulkActionsTest extends TestCase
         $product->update(['is_price_locked' => false]);
         $this->postJson('/api/v1/products/bulk/uxiolabs-update', ['ids' => [$product->id]])->assertOk();
         $this->assertDatabaseHas('products', ['id' => $product->id, 'price_member' => 24000]);
+        $this->assertSame(24000, (int) ProductPlanPrice::where('product_id', $product->id)
+            ->where('membership_plan_id', DefaultPlan::id())->value('price'));
+
+        $this->artisan('pricing:verify')->assertSuccessful();
     }
 
     public function test_bulk_endpoints_validate_ids(): void

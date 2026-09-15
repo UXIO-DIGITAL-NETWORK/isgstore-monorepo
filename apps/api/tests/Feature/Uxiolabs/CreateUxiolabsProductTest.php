@@ -4,10 +4,12 @@ namespace Tests\Feature\Uxiolabs;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductPlanPrice;
 use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\User;
+use App\Support\Membership\DefaultPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
@@ -132,6 +134,14 @@ class CreateUxiolabsProductTest extends TestCase
             'price' => 10000,
             'is_active' => true,
         ]);
+
+        // The admin's price lands on the plan that is billed, not only in the
+        // legacy column — a product created with columns alone has no plan row
+        // for `PlanPrice` to quote.
+        $this->assertSame(13000, (int) ProductPlanPrice::where('product_id', $product->id)
+            ->where('membership_plan_id', DefaultPlan::id())->value('price'));
+
+        $this->artisan('pricing:verify')->assertSuccessful();
     }
 
     public function test_store_uses_configured_price_tier_as_cost(): void

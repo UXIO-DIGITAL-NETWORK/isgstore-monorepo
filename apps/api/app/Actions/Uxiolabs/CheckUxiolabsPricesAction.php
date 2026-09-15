@@ -3,6 +3,7 @@
 namespace App\Actions\Uxiolabs;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Pricing\WriteProductPricesAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Uxiolabs\PriceCheckReportDTO;
 use App\Enums\PriceChangeLogStatus;
@@ -11,7 +12,6 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\SupplierSkuSighting;
-use App\Services\ProductRepricer;
 use App\Services\UxiolabsService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -49,7 +49,7 @@ class CheckUxiolabsPricesAction
     public function __construct(
         private readonly UxiolabsService $uxiolabsService,
         private readonly CreateActivityLogAction $logAction,
-        private readonly ProductRepricer $repricer,
+        private readonly WriteProductPricesAction $writePrices,
     ) {}
 
     public function execute(): PriceCheckReportDTO
@@ -110,7 +110,6 @@ class CheckUxiolabsPricesAction
         $negativeMarginCount = 0;
         $deactivatedLogged = 0;
         $upsertRows = [];
-        $productUpdates = [];
         $logRows = [];
 
         foreach ($items as $item) {
@@ -167,13 +166,19 @@ class CheckUxiolabsPricesAction
             // cost still updates below and its preview prices move with it.
             $product = $existing->product;
 
+            // The legacy columns as they stand *before* anything below writes. The
+            // log records what each tier was, and the reprice updates the row in
+            // place, so reading them off the model afterwards would report the new
+            // price as the old one.
+            $oldPrices = $product?->only(['price_member', 'price_vip', 'price_reseller', 'price_agent']) ?? [];
+
             if ($existing->product_id !== null && $product !== null) {
                 if (! $available && $wasActive) {
                     // Went dark at the provider this run — can't be sold until the
                     // admin handles it. Attention outranks a locked-price note, so
                     // this is the only row we write for the mapping this run.
                     $logRows[] = $this->makeLogRow(
-                        PriceChangeLogStatus::DEACTIVATED, $existing, $product,
+                        PriceChangeLogStatus::DEACTIVATED, $existing, $product, $oldPrices,
                         (int) $existing->price, $cost, null,
                         'SKU dinonaktifkan di provider — perlu perhatian admin.', $now,
                     );
@@ -182,21 +187,20 @@ class CheckUxiolabsPricesAction
                     if ($product->is_price_locked) {
                         // Frozen by the admin — record the drift, do not reprice.
                         $logRows[] = $this->makeLogRow(
-                            PriceChangeLogStatus::LOCKED, $existing, $product,
+                            PriceChangeLogStatus::LOCKED, $existing, $product, $oldPrices,
                             (int) $existing->price, $cost, null,
                             'Harga terkunci — modal berubah tapi harga jual dibekukan. Tinjau.', $now,
                         );
                         $lockedCount++;
                     } else {
-                        $newPrices = $this->repricer->compute($cost, $product, $existing);
-                        $productUpdates[$product->id] = $newPrices;
+                        $newPrices = $this->writePrices->fromCost($product, $cost, $existing);
 
                         // ceil() keeps price >= cost, so the only way member ends up
                         // below cost is price_max clamping it there.
                         $isNegative = $newPrices['price_member'] < $cost;
                         $logRows[] = $this->makeLogRow(
                             $isNegative ? PriceChangeLogStatus::NEGATIVE_MARGIN : PriceChangeLogStatus::APPLIED,
-                            $existing, $product, (int) $existing->price, $cost, $newPrices,
+                            $existing, $product, $oldPrices, (int) $existing->price, $cost, $newPrices,
                             $isNegative
                                 ? 'Setelah markup & clamp, harga member masih di bawah modal.'
                                 : 'Harga jual diperbarui otomatis dari aturan margin.',
@@ -250,13 +254,6 @@ class CheckUxiolabsPricesAction
             );
         }
 
-        // Selling prices differ per product (different tiers), so this can't ride the
-        // upsert above. The set is only the live, unlocked products whose cost moved
-        // this run — small in steady state.
-        foreach ($productUpdates as $productId => $prices) {
-            Product::whereKey($productId)->update($prices);
-        }
-
         // Append-only: plain insert, chunked. insert() bypasses casts, so the rows
         // are already raw scalars with explicit timestamps.
         foreach (array_chunk($logRows, self::UPSERT_CHUNK) as $chunk) {
@@ -283,6 +280,7 @@ class CheckUxiolabsPricesAction
      * prices are snapshotted off the product; new prices come from the freshly
      * computed set, or null for events that don't reprice (locked, deactivated).
      *
+     * @param  array<string,mixed>  $oldPrices  The legacy columns as they were before this run's write
      * @param  array{price_modal:int,price_member:int,price_vip:int,price_reseller:int,price_agent:int}|null  $newPrices
      * @return array<string,mixed>
      */
@@ -290,6 +288,7 @@ class CheckUxiolabsPricesAction
         PriceChangeLogStatus $status,
         SupplierProduct $mapping,
         Product $product,
+        array $oldPrices,
         int $oldCost,
         int $newCost,
         ?array $newPrices,
@@ -304,13 +303,13 @@ class CheckUxiolabsPricesAction
             'status' => $status->value,
             'old_cost' => $oldCost,
             'new_cost' => $newCost,
-            'old_price_member' => (int) $product->price_member,
+            'old_price_member' => (int) ($oldPrices['price_member'] ?? $product->price_member),
             'new_price_member' => $newPrices['price_member'] ?? null,
-            'old_price_vip' => (int) $product->price_vip,
+            'old_price_vip' => (int) ($oldPrices['price_vip'] ?? $product->price_vip),
             'new_price_vip' => $newPrices['price_vip'] ?? null,
-            'old_price_reseller' => (int) $product->price_reseller,
+            'old_price_reseller' => (int) ($oldPrices['price_reseller'] ?? $product->price_reseller),
             'new_price_reseller' => $newPrices['price_reseller'] ?? null,
-            'old_price_agent' => (int) $product->price_agent,
+            'old_price_agent' => (int) ($oldPrices['price_agent'] ?? $product->price_agent),
             'new_price_agent' => $newPrices['price_agent'] ?? null,
             'reason' => $reason,
             'created_at' => $now,
