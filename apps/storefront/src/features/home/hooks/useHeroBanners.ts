@@ -18,6 +18,7 @@ export function useHeroBanners(): HeroBannerItem[] {
       return response.data.map<HeroBannerItem>((banner) => ({
         src: banner.image_url,
         alt: banner.name,
+        link: banner.link,
       }));
     },
     staleTime: 5 * 60 * 1000,

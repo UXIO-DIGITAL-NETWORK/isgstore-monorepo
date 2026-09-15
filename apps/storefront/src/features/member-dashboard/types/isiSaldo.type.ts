@@ -11,8 +11,3 @@ export interface PaymentGroup {
   label: string;
   options: PaymentOption[];
 }
-
-export interface VoucherInfo {
-  code: string;
-  discountPercent: number;
-}

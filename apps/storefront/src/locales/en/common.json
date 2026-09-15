@@ -69,6 +69,9 @@
     "description": "The page you were looking for may have moved, been removed, or the link was mistyped.",
     "backHome": "Back to home"
   },
+  "staticPage": {
+    "lastUpdated": "Last updated {{date}}"
+  },
   "siteClosed": {
     "title": "{{site}} is currently unavailable",
     "fallbackSiteName": "This site",

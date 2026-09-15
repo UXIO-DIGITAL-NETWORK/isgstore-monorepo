@@ -58,6 +58,13 @@
     "subtitle": "Find the latest information, tips, and updates on game top-ups and exciting promotions",
     "viewAll": "View All Articles"
   },
+  "announcement": {
+    "title": "Announcements"
+  },
+  "testimoni": {
+    "title": "What They Say",
+    "subtitle": "Words from customers who have ordered here."
+  },
   "cta": {
     "title": "Create an Account & Enjoy More Benefits",
     "subtitle": "Get better prices, transaction history, and a faster top-up process all in one account.",

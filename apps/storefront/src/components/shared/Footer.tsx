@@ -77,7 +77,10 @@ export function Footer(): React.JSX.Element {
   const LEGAL_LINKS: { labelKey: string; href: string }[] = [
     { labelKey: "footer.legal.refundPolicy", href: `/${locale}/refund` },
     { labelKey: "footer.legal.privacyPolicy", href: `/${locale}/kebijakan-privasi` },
-    { labelKey: "footer.legal.termsConditions", href: "#" },
+    // The CMS page slug the API seeds, reached through the generic page route.
+    // It used to be "#", so the link the policy pages themselves reference went
+    // nowhere.
+    { labelKey: "footer.legal.termsConditions", href: `/${locale}/halaman/syarat-ketentuan` },
   ];
 
   return (

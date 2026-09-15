@@ -1,13 +1,63 @@
 import React from "react";
+import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Image } from "@/components/common/Image";
+import { Link } from "@/components/common/Link";
 import { GAP_PX, SIDE_VISIBLE } from "@/features/home/constants/heroBanner";
 import { useHeroCarousel } from "@/features/home/hooks/useHeroCarousel";
+import { bannerHref } from "@/features/home/lib/bannerHref";
 import BannerNavArrow from "./fragments/BannerNavArrow";
 import CarouselDots from "./fragments/CarouselDots";
 import { useHeroBanners } from "@/features/home/hooks/useHeroBanners";
 
+/**
+ * A slide's image, wrapped in a link when the banner has somewhere to go.
+ *
+ * A banner with no link stays a plain image rather than an anchor that leads
+ * nowhere — the admin panel leaves `link` empty for decorative artwork.
+ */
+function SlideImage({
+  src,
+  alt,
+  href,
+  className,
+  loading,
+}: {
+  src: string;
+  alt: string;
+  href: string | null;
+  className: string;
+  loading: "eager" | "lazy";
+}): React.JSX.Element {
+  if (!href) {
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        className={className}
+        loading={loading}
+      />
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      target={href.startsWith("http") ? "_blank" : undefined}
+      className="block w-full h-full cursor-pointer"
+    >
+      <Image
+        src={src}
+        alt={alt}
+        className={className}
+        loading={loading}
+      />
+    </Link>
+  );
+}
+
 export default function HeroBanner(): React.JSX.Element {
+  const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   const banners = useHeroBanners();
   const { current, containerWidth, trackRef, hasPeek, slideWidth, goTo } = useHeroCarousel(banners.length);
   const isMobile = containerWidth > 0 && containerWidth < 768;
@@ -52,9 +102,10 @@ export default function HeroBanner(): React.JSX.Element {
                       className="shrink-0 rounded-xl md:rounded-2xl overflow-hidden"
                       style={slideStyle}
                     >
-                      <Image
+                      <SlideImage
                         src={banner.src}
                         alt={banner.alt}
+                        href={bannerHref(banner.link, locale)}
                         className="w-full h-full object-cover"
                         loading={idx === 0 ? "eager" : "lazy"}
                       />
@@ -62,6 +113,9 @@ export default function HeroBanner(): React.JSX.Element {
                   );
                 }
 
+                // A peeked slide stays the carousel's own control: clicking it
+                // brings that banner forward. Following its link from here
+                // would take the visitor somewhere they did not choose.
                 return (
                   <Box
                     key={idx}
@@ -94,9 +148,10 @@ export default function HeroBanner(): React.JSX.Element {
                     idx === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
                   }`}
                 >
-                  <img
+                  <SlideImage
                     src={banner.src}
                     alt={banner.alt}
+                    href={bannerHref(banner.link, locale)}
                     className="w-full h-full object-cover"
                     loading={idx === 0 ? "eager" : "lazy"}
                   />
