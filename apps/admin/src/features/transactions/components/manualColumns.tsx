@@ -1,11 +1,11 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatCurrency } from "@/utils/currency";
+import { formatDateTime } from "@/utils/date";
 import { initials } from "@/utils/initials";
 import type { Transaction } from "../types/transaction.type";
 import { RowActionMenu } from "./RowActionMenu";
@@ -133,7 +133,7 @@ export const manualColumnsFor = (t: TFunction<"transactions">): ColumnDef<Transa
         variant="muted"
         as="span"
       >
-        {format(new Date(row.original.created_at), "MMM d, HH:mm")}
+        {formatDateTime(row.original.created_at)}
       </Text>
     ),
   },

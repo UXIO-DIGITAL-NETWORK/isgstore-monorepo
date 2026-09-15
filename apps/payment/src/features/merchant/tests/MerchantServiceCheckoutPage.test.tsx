@@ -95,7 +95,7 @@ describe("MerchantServiceCheckoutPage", () => {
     // Twice: the bill itself, and the total — no method picked, so no fee yet.
     expect(screen.getAllByText("Rp 250.000")).toHaveLength(2);
     expect(screen.getByText("30 hari")).toBeInTheDocument();
-    expect(screen.getByText("15 Aug 2026 – 14 Sep 2026")).toBeInTheDocument();
+    expect(screen.getByText("15 Agt 2026 – 14 Sep 2026")).toBeInTheDocument();
   });
 
   /** Paying is the whole point of the screen, so it must not start ambiguous. */

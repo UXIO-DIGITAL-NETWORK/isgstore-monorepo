@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+import { wibDay } from "./format"
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -37,23 +39,15 @@ export function toSlug(str: string): string {
  * @returns number (remaining days, or 0 if past)
  */
 export function daysLeft(targetDate: string): number {
-  const today = new Date();
-  const target = new Date(targetDate);
+  const DAY_MS = 1000 * 60 * 60 * 24;
 
-  // Normalize both dates to UTC midnight to avoid time-zone issues
-  const utcToday = Date.UTC(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
-  const utcTarget = Date.UTC(
-    target.getFullYear(),
-    target.getMonth(),
-    target.getDate()
-  );
+  // Both ends are read as WIB calendar days. A deadline is a day on the
+  // platform's clock, so the visitor's own zone must not move it — a browser
+  // west of Greenwich would otherwise report one day less all evening.
+  const target = Date.parse(`${wibDay(targetDate)}T00:00:00Z`);
+  const today = Date.parse(`${wibDay(new Date())}T00:00:00Z`);
 
-  const diff = utcTarget - utcToday;
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const days = Math.ceil((target - today) / DAY_MS);
 
   return days > 0 ? days : 0;
 }

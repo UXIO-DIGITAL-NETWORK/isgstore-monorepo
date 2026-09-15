@@ -1,16 +1,14 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 import { AlertTriangle } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { formatCurrency } from "@/utils/currency";
+import { formatDateTime } from "@/utils/date";
 import type { Refund } from "../types/refund.type";
 import { RefundMethodBadge, RefundStatusBadge } from "./RefundStatusBadge";
 import { RowActionMenu } from "./RowActionMenu";
-
-const formatDate = (value: string | null) => (value ? format(new Date(value), "dd MMM yyyy HH:mm") : "—");
 
 /**
  * A factory, not a module constant: headers are rendered text, so they
@@ -229,7 +227,7 @@ export const refundColumnsFor = (t: TFunction<"refunds">): ColumnDef<Refund>[] =
             as="span"
             className={is_overdue ? "text-destructive text-sm tabular-nums" : "text-sm tabular-nums"}
           >
-            {formatDate(verify_due_at)}
+            {formatDateTime(verify_due_at)}
           </Text>
           {is_overdue && (
             <Text
@@ -250,7 +248,7 @@ export const refundColumnsFor = (t: TFunction<"refunds">): ColumnDef<Refund>[] =
         as="span"
         className="tabular-nums"
       >
-        {formatDate(row.original.created_at)}
+        {formatDateTime(row.original.created_at)}
       </Text>
     ),
   },

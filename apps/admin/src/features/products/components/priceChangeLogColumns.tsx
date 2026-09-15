@@ -1,10 +1,10 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
+import { formatDateTime } from "@/utils/date";
 import { PriceChangePairCell } from "./PriceChangePairCell";
 import {
   PRICE_CHANGE_STATUS_LABELS,
@@ -75,7 +75,7 @@ export const priceChangeLogColumnsFor = (t: TFunction<"products">): ColumnDef<Pr
     header: t("colChangedAt"),
     cell: ({ row }) => (
       <Text as="span" className="tabular-nums">
-        {format(new Date(row.original.created_at), "d MMM yyyy, HH.mm")}
+        {formatDateTime(row.original.created_at)}
       </Text>
     ),
   },

@@ -361,8 +361,11 @@ English defaults — so the language of an error depended on the endpoint. Engli
 `lang/en/validation.php` because the framework ships its own.
 
 **`PATCH /v1/me/locale` is its own endpoint, not a field on `sync-timezone`.** That route's name
-promises one thing, and the two are different kinds of fact: a timezone is detected from the browser
-and synced silently, a language is chosen by a person.
+promises one thing, and the two are different kinds of fact: a language is chosen by a person, while
+the timezone is not a choice at all. The platform runs on one wall clock — WIB — and every panel
+renders it, so `sync-timezone` survives only as a compatibility shim that normalises a stale account
+onto `Support/DateTime/Wib::TZ`. Login, register and the Google path do the same; `users.timezone`
+is stored, never obeyed.
 
 **Still outstanding:** `ApiResponse` and the ~4,000 literals across `app/Http/Controllers` and
 `app/Actions` are untouched, so most `message` fields remain hardcoded and mixed

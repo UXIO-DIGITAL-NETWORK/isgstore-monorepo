@@ -1,10 +1,10 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/utils/date";
 import { SubCategoryRowActions } from "./SubCategoryRowActions";
 import type { SubCategory } from "../types/subCategory.type";
 
@@ -45,7 +45,7 @@ export const subCategoryColumnsFor = (t: TFunction<"categories">): ColumnDef<Sub
         as="span"
         className="tabular-nums"
       >
-        {format(new Date(row.original.created_at), "d MMM yyyy, HH.mm")}
+        {formatDateTime(row.original.created_at)}
       </Text>
     ),
   },

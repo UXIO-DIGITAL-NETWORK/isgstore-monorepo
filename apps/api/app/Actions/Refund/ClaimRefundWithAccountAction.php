@@ -11,6 +11,7 @@ use App\Enums\RoleType;
 use App\Models\RefundRequest;
 use App\Models\User;
 use App\Services\DiscordWebhookService;
+use App\Support\DateTime\Wib;
 use App\Support\Refund\RefundContactMatcher;
 use App\Support\Refund\RefundSla;
 use Illuminate\Support\Facades\DB;
@@ -134,7 +135,7 @@ class ClaimRefundWithAccountAction
             // one that actually queues work for an admin.
             $this->discord->sendNotice(
                 "Klaim pengembalian dana: {$refund->refund_number} — {$invoice} — {$amount}. "
-                .'Jatuh tempo verifikasi: '.($refund->verify_due_at?->toDateTimeString() ?? '-'),
+                .'Jatuh tempo verifikasi: '.(Wib::format($refund->verify_due_at) ?? '-'),
                 '💸 Klaim Pengembalian Dana'
             );
         } catch (\Throwable $e) {

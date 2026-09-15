@@ -6,6 +6,7 @@ use App\Actions\Notification\NotifyPaymentInternalAction;
 use App\Actions\Notification\NotifyUserAction;
 use App\Enums\SubscriptionStatus;
 use App\Models\ServiceSubscription;
+use App\Support\DateTime\Wib;
 use Illuminate\Console\Command;
 
 /**
@@ -49,7 +50,7 @@ class NotifyExpiringSubscriptions extends Command
             foreach ($due as $subscription) {
                 $merchantName = $subscription->merchant?->name ?? "Client #{$subscription->merchant_id}";
                 $serviceName = $subscription->service?->name ?? "Layanan #{$subscription->service_id}";
-                $endsAt = $subscription->ends_at?->translatedFormat('d M Y');
+                $endsAt = Wib::date($subscription->ends_at);
 
                 if ($dryRun) {
                     $this->line("  H-{$threshold} subscription #{$subscription->id} — {$serviceName} ({$merchantName}) ends {$endsAt}");

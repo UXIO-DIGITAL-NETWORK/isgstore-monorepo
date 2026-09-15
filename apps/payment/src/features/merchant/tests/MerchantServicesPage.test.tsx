@@ -106,7 +106,7 @@ describe("MerchantServicesPage", () => {
   it("shows the active period of a subscription", () => {
     renderPage();
 
-    expect(screen.getByText("15 Aug 2026 – 14 Sep 2026")).toBeInTheDocument();
+    expect(screen.getByText("15 Agt 2026 – 14 Sep 2026")).toBeInTheDocument();
     expect(screen.getByText("30 hari tersisa")).toBeInTheDocument();
   });
 

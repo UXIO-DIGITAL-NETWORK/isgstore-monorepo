@@ -8,6 +8,7 @@ use App\Actions\Log\CreateActivityLogAction;
 use App\DTOs\Auth\LoginDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\User;
+use App\Support\DateTime\Wib;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -37,9 +38,12 @@ class LoginAction
         /** @var User $user */
         $user = Auth::user();
 
-        // Piggyback Timezone Synchronization: Update jika ada perbedaan
-        if ($dto->timezone !== null && $user->timezone !== $dto->timezone) {
-            $user->update(['timezone' => $dto->timezone]);
+        // The platform runs on one wall clock (WIB); a browser-supplied zone is
+        // deliberately ignored. A stale value left by an older build is
+        // corrected on the way in, so it can never disagree with the clock the
+        // reports are bucketed in.
+        if ($user->timezone !== Wib::TZ) {
+            $user->update(['timezone' => Wib::TZ]);
         }
 
         // One door for every authentication path. When the account carries a

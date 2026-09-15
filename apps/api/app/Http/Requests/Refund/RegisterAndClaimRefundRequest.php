@@ -48,7 +48,8 @@ class RegisterAndClaimRefundRequest extends FormRequest
             // spelling the column may still hold.
             'phone' => ['required', 'string', 'max:20', self::E164_RULE, new UniquePhone],
             'password' => ['required', 'confirmed', Password::min(6)],
-            'timezone' => ['nullable', 'string', 'timezone'],
+            // No `timezone`: one platform wall clock (WIB), as on signup — see
+            // RegisterRequest.
             'locale' => ['nullable', 'string', 'max:5'],
         ];
     }
@@ -74,7 +75,6 @@ class RegisterAndClaimRefundRequest extends FormRequest
             phone: $this->validated('phone'),
             password: $this->validated('password'),
             username: $this->validated('username'),
-            timezone: $this->validated('timezone'),
             locale: $this->validated('locale'),
         );
     }

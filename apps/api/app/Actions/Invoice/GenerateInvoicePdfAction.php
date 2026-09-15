@@ -3,6 +3,7 @@
 namespace App\Actions\Invoice;
 
 use App\Models\Transaction;
+use App\Support\DateTime\Wib;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
@@ -42,7 +43,7 @@ class GenerateInvoicePdfAction
         app()->setLocale($locale);
 
         try {
-            $data['date'] = optional($t->created_at)->translatedFormat('d M Y, H:i');
+            $data['date'] = Wib::format($t->created_at);
 
             return Pdf::loadView('pdf.invoice', $data)->output();
         } finally {

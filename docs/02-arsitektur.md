@@ -61,7 +61,8 @@ Bagian ini paling layak dibaca lebih dulu, karena di sinilah aturan yang *tidak 
 | `Support/Points/PointRules.php` | Rumus poin, dipakai bersama oleh grant dan storefront |
 | `Support/Wallet/WalletLedger.php` | Satu-satunya yang menggerakkan saldo |
 | `Support/Refund/RefundSla.php` | Hitungan 2×24 jam kerja |
-| `Support/Report/PeriodResolver.php` | Batas periode laporan, dihitung di zona waktu admin |
+| `Support/Report/PeriodResolver.php` | Batas periode laporan, dihitung di zona dinding platform (WIB) |
+| `Support/DateTime/Wib.php` | Satu-satunya zona dinding platform untuk tanggal yang dirender server (PDF, email, notifikasi) |
 | `Support/Auth/{Base32,Totp}.php` | TOTP RFC 6238, ditulis sendiri, dikunci vektor uji RFC |
 | `Support/Transaction/ProviderStatusPolicy.php` | Matriks `status` ↔ `provider_status` |
 
@@ -114,6 +115,15 @@ Dua di antaranya menyimpan jebakan nyata:
 
 - **Vitest storefront memakai `include: ["src/**/*.test.ts"]`** — berkas `.tsx` **tidak pernah dijalankan**. Karena itu logika yang perlu diuji harus tinggal di `lib/*.ts`, bukan di komponen. Pola ini sudah dipakai `checkout/lib/points.ts` dan `invoice/lib/pointsRow.ts`.
 - **`apps/payment/vitest.config.ts` menyetel `process.env.TZ` di ruang lingkup modul.** Kalau ketiga suite pernah digabung jadi satu proses, setelan itu bocor dan mengubah perenderan tanggal di dua app lainnya.
+
+### Zona waktu: satu jam dinding untuk seluruh platform
+
+**WIB (Asia/Jakarta, GMT+7), dan itu bukan preferensi pengguna.** Aturannya:
+
+- **Penyimpanan tetap UTC.** `config('app.timezone')` di kedua API tidak diubah; kolom `timestamp` tetap UTC dan JSON tetap ISO-8601 UTC. Mengubah app tz akan menggeser cara tiap instant ditulis dan dibandingkan.
+- **Konversi hanya di batas tampilan.** Frontend memformat di `Asia/Jakarta` lewat modul tanggal kanonik tiap app (`utils/date.ts`, `lib/format.ts`), dan tiap tampilan yang memuat jam menyematkan label `WIB (GMT+7)`. Tanggal-saja dihitung pada hari WIB, tanpa label.
+- **`users.timezone` tidak lagi menentukan apa pun.** Nilainya dinormalkan ke `Asia/Jakarta` (login, register, Google, `sync-timezone`, dan migrasi satu kali), sehingga jam di layar dan batas hari laporan selalu sepakat.
+- **Tes tidak boleh bergantung pada zona host.** Ekspektasi ditulis sebagai waktu literal, dan suite dijalankan juga dengan `TZ` non-WIB — kalau hasilnya berubah, masih ada formatter yang membaca zona browser.
 
 ---
 

@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -7,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { toApiDate } from "@/utils/date";
+import { formatWib, toApiDate } from "@/utils/date";
 
 interface DateFieldProps {
   id: string;
@@ -39,7 +38,7 @@ export function DateField({ id, label, value, onChange, placeholder = "Pick a da
             className={cn("w-full justify-start rounded-xl font-normal", !date && "text-muted-foreground")}
           >
             <CalendarIcon className="size-4" />
-            {date ? format(date, "PPP") : placeholder}
+            {date ? formatWib(date, "PPP") : placeholder}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
