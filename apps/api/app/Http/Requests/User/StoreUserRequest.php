@@ -36,7 +36,9 @@ class StoreUserRequest extends FormRequest
             // balance is an audited adjustment like any other movement — see the
             // note in UpdateUserRequest.
             'locale' => ['nullable', 'string', 'max:10'],
-            'timezone' => ['nullable', 'string', 'max:50'],
+            // No `timezone`: the platform runs on one wall clock (WIB) — see
+            // UserDTO. Accepting a zone here would create an account whose
+            // reported times disagree with every report window.
         ];
     }
 }

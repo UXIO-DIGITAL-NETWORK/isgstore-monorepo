@@ -34,7 +34,7 @@ describe("useLogin", () => {
     useAuthStore.getState().clearAuth();
   });
 
-  it("sends the detected browser timezone alongside the form values", async () => {
+  it("sends the platform timezone rather than the browser's", async () => {
     vi.mocked(authService.login).mockResolvedValue(envelope);
 
     await fillAndSubmitLogin();
@@ -44,9 +44,9 @@ describe("useLogin", () => {
         expect.objectContaining({
           email: "admin@example.com",
           password: "secret123",
-          // Computed the same way the app detects it — jsdom returns the
-          // host timezone, so never hard-code a value here.
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          // A literal, not the host's zone: the platform renders one wall
+          // clock, so the value sent must not depend on the CI box.
+          timezone: "Asia/Jakarta",
         }),
       ),
     );

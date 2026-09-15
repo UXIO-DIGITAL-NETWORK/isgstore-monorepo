@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useId } from "react";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { formatWib } from "@/utils/date";
 import {
   CATEGORY_OPTIONS,
   INVOICE_FROM_OPTIONS,
@@ -144,7 +144,7 @@ function FilterDate({
             className={cn("w-full justify-start rounded-xl font-normal", !date && "text-muted-foreground")}
           >
             <CalendarIcon className="size-4" />
-            {date ? format(date, "PPP") : "Pick a date"}
+            {date ? formatWib(date, "PPP") : "Pick a date"}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">

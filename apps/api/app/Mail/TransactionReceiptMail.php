@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Actions\Invoice\GenerateInvoicePdfAction;
 use App\Models\Transaction;
+use App\Support\DateTime\Wib;
 use App\Support\PublicUrl;
 use App\Support\Storefront\MediaUrl;
 use Illuminate\Bus\Queueable;
@@ -52,7 +53,7 @@ class TransactionReceiptMail extends Mailable implements ShouldQueue
             with: [
                 'brand' => (string) config('services.storefront.brand', 'ISG Store'),
                 'invoice' => $t->invoice_number,
-                'date' => optional($t->created_at)->translatedFormat('d M Y, H:i'),
+                'date' => Wib::format($t->created_at),
                 'gameName' => $t->product?->category?->name,
                 'gameLogo' => MediaUrl::for($t->product?->category?->logo),
                 'productName' => $t->product?->name,

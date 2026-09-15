@@ -38,7 +38,9 @@ class RegisterRequest extends FormRequest
             // `confirmed` pairs with password_confirmation, which is what the
             // storefront's register form already sends.
             'password' => ['required', 'confirmed', Password::min(6)],
-            'timezone' => ['nullable', 'string', 'timezone'],
+            // No `timezone`: the platform runs on one wall clock (WIB) — see
+            // RegisterAction. Accepting a zone here would create an account
+            // whose reported times disagree with its own report windows.
             'locale' => ['nullable', 'string', 'max:5'],
         ];
     }
@@ -61,7 +63,6 @@ class RegisterRequest extends FormRequest
             phone: $this->validated('phone'),
             password: $this->validated('password'),
             username: $this->validated('username'),
-            timezone: $this->validated('timezone'),
             locale: $this->validated('locale'),
         );
     }

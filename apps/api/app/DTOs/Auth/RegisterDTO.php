@@ -12,7 +12,6 @@ readonly class RegisterDTO
         public string $phone,
         public string $password,
         public ?string $username = null,
-        public ?string $timezone = null,
         public ?string $locale = null,
     ) {}
 }

@@ -1,11 +1,11 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/utils/date";
 import { ContentRowActions } from "./ContentRowActions";
 import type {
   Announcement,
@@ -22,7 +22,7 @@ const dateCell = (value?: string) => (
     as="span"
     className="tabular-nums"
   >
-    {value ? format(new Date(value), "d MMM yyyy, HH.mm") : "—"}
+    {value ? formatDateTime(value) : "—"}
   </Text>
 );
 

@@ -65,14 +65,18 @@ class PeriodResolverTest extends TestCase
         $this->assertSame(23, (int) $after->start->diffInHours($after->endExclusive));
     }
 
-    public function test_invalid_timezone_falls_back_to_app_timezone_instead_of_throwing(): void
+    public function test_invalid_timezone_falls_back_to_the_platform_zone_instead_of_throwing(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-02T02:00:00Z'));
 
+        // "WIB" is a real zone name to a person but not to the tz database, and
+        // the users CRUD used to accept any string. The fallback is the
+        // platform's wall clock, not config('app.timezone') (UTC): a report
+        // window and the time printed beside it must describe the same day.
         $range = $this->resolver->resolve('daily', null, null, 'WIB');
 
-        $this->assertSame('UTC', $range->timezone);
-        $this->assertSame('2026-09-02T00:00:00Z', $range->start->toIso8601ZuluString());
+        $this->assertSame('Asia/Jakarta', $range->timezone);
+        $this->assertSame('2026-09-01T17:00:00Z', $range->start->toIso8601ZuluString());
     }
 
     public function test_custom_range_is_built_in_the_viewer_zone_and_includes_date_to(): void

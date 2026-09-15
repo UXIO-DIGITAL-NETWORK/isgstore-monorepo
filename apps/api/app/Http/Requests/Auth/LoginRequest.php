@@ -28,7 +28,9 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string'],
-            'timezone' => ['nullable', 'string', 'timezone'], // Validasi zona waktu opsional
+            // No `timezone`: the platform displays one wall clock (WIB) and
+            // every report window is bucketed on it, so a browser-supplied zone
+            // could only be ignored — see LoginAction.
         ];
     }
 
@@ -40,7 +42,6 @@ class LoginRequest extends FormRequest
         return new LoginDTO(
             email: $this->validated('email'),
             password: $this->validated('password'),
-            timezone: $this->validated('timezone'), // Petakan timezone ke DTO
         );
     }
 }

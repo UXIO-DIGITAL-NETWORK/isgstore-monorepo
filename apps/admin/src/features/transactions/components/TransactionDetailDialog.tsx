@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
-import { format } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { CopyButton } from "@/components/common/CopyButton";
@@ -11,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
+import { formatDateTimeSeconds } from "@/utils/date";
 import { useTransactionDetail } from "../hooks/useTransactions";
 import { StatusBadge } from "./StatusBadge";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
@@ -78,7 +78,7 @@ function Section({ caption, children }: { caption: string; children: ReactNode }
 
 const money = (value: number) => formatCurrency(value, { fractionDigits: 0 });
 
-const timestamp = (value?: string) => (value ? format(new Date(value), "MMM d, HH:mm:ss") : "Not paid");
+const timestamp = (value?: string) => (value ? formatDateTimeSeconds(value) : "Not paid");
 
 /**
  * Read-only summary of one order — what an operator opens to establish facts
@@ -283,10 +283,10 @@ export function TransactionDetailDialog({ transactionId, open, onOpenChange }: T
 
             <Section caption={t("capTiming")}>
               <Row label={t("created")}>
-                <Value>{format(new Date(data.created_at), "MMM d, HH:mm:ss")}</Value>
+                <Value>{formatDateTimeSeconds(data.created_at)}</Value>
               </Row>
               <Row label={t("lastUpdate")}>
-                <Value>{format(new Date(data.updated_at), "MMM d, HH:mm:ss")}</Value>
+                <Value>{formatDateTimeSeconds(data.updated_at)}</Value>
               </Row>
             </Section>
           </Box>

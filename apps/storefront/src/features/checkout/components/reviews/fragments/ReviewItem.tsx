@@ -1,6 +1,8 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
+import { formatDate } from "@/lib/format";
 import type { Review } from "@/features/checkout/types/checkout.type";
 
 interface Props {
@@ -24,11 +26,13 @@ function StarEmpty(): React.JSX.Element {
 }
 
 export default function ReviewItem({ review }: Props): React.JSX.Element {
-  const formattedDate = new Date(review.date).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const { i18n } = useTranslation();
+
+  // Through the shared formatter, so the review's date follows the page locale
+  // and the platform's WIB clock like every other date on the storefront. It
+  // used to hardcode en-GB and the visitor's own zone, which made one card in a
+  // review list disagree with the rest of the page.
+  const formattedDate = formatDate(review.date, i18n.language);
 
   return (
     <Box className="rounded-xl border border-white/8 bg-white/[0.025] p-3 flex flex-col gap-1.5">

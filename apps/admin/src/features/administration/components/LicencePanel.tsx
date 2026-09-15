@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { format } from "date-fns";
 import { ExternalLink } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -9,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useWebsiteSubscription } from "@/features/dashboard/hooks/useWebsiteSubscription";
 import { cn } from "@/lib/utils";
+import { formatWib } from "@/utils/date";
 
 /** Label on the left, read-only value on the right. */
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -65,7 +65,7 @@ export function LicencePanel() {
           </Badge>
         </Row>
 
-        {data.ends_at && <Row label={t("licenceEndsAt")}>{format(new Date(data.ends_at), "d MMMM yyyy")}</Row>}
+        {data.ends_at && <Row label={t("licenceEndsAt")}>{formatWib(data.ends_at, "d MMMM yyyy")}</Row>}
 
         {data.days_remaining !== null && data.status !== "suspended" && (
           <Row label={t("licenceDaysRemaining")}>{t("licenceDays", { days: data.days_remaining })}</Row>

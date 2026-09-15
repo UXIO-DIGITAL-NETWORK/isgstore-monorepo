@@ -41,7 +41,9 @@ class UpdateUserRequest extends FormRequest
             // /users/{user}/balance-adjustments, which is audited and demands a
             // reason.
             'locale' => ['sometimes', 'string', 'max:10'],
-            'timezone' => ['sometimes', 'string', 'max:50'],
+            // No `timezone`: the platform runs on one wall clock (WIB) — see
+            // UserDTO. Accepting a zone here would let an edit pull one
+            // account's clock away from the zone its reports are bucketed in.
         ];
     }
 }

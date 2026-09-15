@@ -70,9 +70,11 @@ export const authService = {
   },
 
   /**
-   * Tell the API which zone the admin is actually in. `users.timezone` is the
-   * single source of truth for both the navbar clock and every report window,
-   * so keeping it fresh is what stops the clock and the figures disagreeing.
+   * Tell the API to normalise the account onto the platform's wall clock.
+   *
+   * The panel renders WIB everywhere and the API buckets every report window on
+   * the same zone, so there is nothing for the client to choose — the endpoint
+   * stays as a compatibility shim and ignores the value sent with it.
    */
   syncTimezone: async (timezone: string): Promise<ApiResponse<{ timezone: string }>> => {
     return await api.patch(`${API_VERSION}/users/sync-timezone`, { timezone });
