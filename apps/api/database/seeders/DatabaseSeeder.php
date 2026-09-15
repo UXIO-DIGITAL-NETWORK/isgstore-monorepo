@@ -70,7 +70,9 @@ class DatabaseSeeder extends Seeder
             // ActivityLogSeeder::class,
 
             // === 6. CMS Content ===
-            BannerSeeder::class,
+            // No BannerSeeder: it seeded ten rows whose image files this
+            // repository never shipped, so the storefront's feed dropped every
+            // one of them. Hero artwork is the operator's to upload.
             AnnouncementSeeder::class,
 
             // § Content & marketing. FlashSaleSeeder self-disables when there
