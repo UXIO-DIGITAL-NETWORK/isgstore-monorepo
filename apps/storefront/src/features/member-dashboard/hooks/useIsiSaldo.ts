@@ -2,10 +2,8 @@ import { useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { useSettingsQuery } from "@/hooks/useSettingsQuery";
-import { useValidatePromoMutation } from "@/hooks/usePromoQuery";
 import { walletService } from "@/features/member-dashboard/services/wallet.service";
 import { usePaymentGroups } from "@/features/member-dashboard/hooks/usePaymentGroups";
-import type { VoucherInfo } from "@/features/member-dashboard/types/isiSaldo.type";
 import type { PaymentGroup } from "@/features/member-dashboard/types/upgradeMembership.type";
 
 export interface UseIsiSaldoReturn {
@@ -19,22 +17,27 @@ export interface UseIsiSaldoReturn {
   selectedNominal: number;
   customAmount: string;
   selectedPaymentId: string | null;
-  appliedVoucher: VoucherInfo | null;
+  /** The effective top-up amount: custom input overrides preset. */
   nominal: number;
-  discount: number;
-  total: number;
   selectedPaymentName: string | undefined;
   handleSelectPreset: (value: number) => void;
   handleCustomChange: (raw: string) => void;
   handleSelectPayment: (id: string) => void;
-  applyVoucher: (code: string) => void;
-  clearVoucher: () => void;
 }
 
+/**
+ * Placing a balance top-up: how much, and by which channel.
+ *
+ * There is deliberately no voucher field. Promo codes resolve through
+ * `PromoResolver` against a *product* (its scope is global/product/category),
+ * and the top-up endpoint takes only an amount and a channel — so the code
+ * this screen used to accept was validated for display and then never sent,
+ * promising a discount that could not be applied. See
+ * `CreateBalanceTopupAction`.
+ */
 export function useIsiSaldo(): UseIsiSaldoReturn {
   const { data: settings } = useSettingsQuery();
   const { groups: paymentGroups } = usePaymentGroups();
-  const validatePromo = useValidatePromoMutation();
 
   // Nominal presets are operations-configurable rather than a bundled
   // constant, so changing them does not need a front-end deploy.
@@ -48,9 +51,7 @@ export function useIsiSaldo(): UseIsiSaldoReturn {
   const [selectedNominal, setSelectedNominal] = useState<number>(10000);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
-  const [appliedVoucher, setAppliedVoucher] = useState<VoucherInfo | null>(null);
 
-  /** The effective top-up amount: custom input overrides preset. */
   const nominal = useMemo<number>(() => {
     if (customAmount.trim() !== "") {
       const digits = customAmount.replace(/\D/g, "");
@@ -59,16 +60,6 @@ export function useIsiSaldo(): UseIsiSaldoReturn {
     }
     return selectedNominal;
   }, [customAmount, selectedNominal]);
-
-  const discount = useMemo<number>(
-    () =>
-      appliedVoucher && nominal > 0
-        ? Math.round((nominal * appliedVoucher.discountPercent) / 100)
-        : 0,
-    [appliedVoucher, nominal],
-  );
-
-  const total = useMemo<number>(() => Math.max(0, nominal - discount), [nominal, discount]);
 
   const selectedPaymentName = useMemo<string | undefined>(() => {
     if (!selectedPaymentId) return undefined;
@@ -92,34 +83,6 @@ export function useIsiSaldo(): UseIsiSaldoReturn {
     setSelectedPaymentId((prev) => (prev === id ? null : id));
   };
 
-  /**
-   * Validated server-side. The API returns the resolved rupiah discount, so
-   * the percentage stored here is derived purely for display — the amount the
-   * customer is actually charged is never computed on the client.
-   */
-  const applyVoucher = (code: string) => {
-    const trimmed = code.trim().toUpperCase();
-    if (!trimmed || nominal <= 0) return;
-
-    validatePromo.mutate(
-      { code: trimmed, amount: nominal },
-      {
-        onSuccess: (response) => {
-          if (!response.data.valid) {
-            setAppliedVoucher(null);
-            setSubmitError(response.message);
-            return;
-          }
-          setSubmitError(null);
-          setAppliedVoucher({
-            code: trimmed,
-            discountPercent: Math.round((response.data.discount_amount / nominal) * 100),
-          });
-        },
-      },
-    );
-  };
-
   const createTopup = useMutation({
     mutationFn: walletService.createTopup,
     onSuccess: (response) => {
@@ -130,8 +93,6 @@ export function useIsiSaldo(): UseIsiSaldoReturn {
       setSubmitError(error.response?.data?.message ?? null),
   });
 
-  const clearVoucher = () => setAppliedVoucher(null);
-
   return {
     presets,
     paymentGroups,
@@ -140,22 +101,15 @@ export function useIsiSaldo(): UseIsiSaldoReturn {
     instructions,
     handleSubmit: () => {
       if (!selectedPaymentId || nominal <= 0) return;
-      // The gateway is charged the nominal amount; any promo discount is
-      // settled server-side, so the client never sends a computed total.
       createTopup.mutate({ amount: nominal, payment_channel_id: Number(selectedPaymentId) });
     },
     selectedNominal,
     customAmount,
     selectedPaymentId,
-    appliedVoucher,
     nominal,
-    discount,
-    total,
     selectedPaymentName,
     handleSelectPreset,
     handleCustomChange,
     handleSelectPayment,
-    applyVoucher,
-    clearVoucher,
   };
 }

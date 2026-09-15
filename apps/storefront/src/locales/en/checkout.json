@@ -128,6 +128,7 @@
     "checkingId": "Checking ID...",
     "instantProcess": "Instant processing time",
     "pointsDiscount": "Point Discount",
+    "promoDiscount": "Promo Discount",
     "pointsEarned": "Points earned",
     "pointsEarnedGuest": "Sign in to earn {{points}} points from this order"
   },

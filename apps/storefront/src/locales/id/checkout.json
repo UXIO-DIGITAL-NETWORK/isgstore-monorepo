@@ -128,6 +128,7 @@
     "checkingId": "Mengecek ID...",
     "instantProcess": "Waktu proses instan",
     "pointsDiscount": "Potongan Poin",
+    "promoDiscount": "Potongan Promo",
     "pointsEarned": "Poin didapat",
     "pointsEarnedGuest": "Login untuk dapat {{points}} poin dari transaksi ini"
   },

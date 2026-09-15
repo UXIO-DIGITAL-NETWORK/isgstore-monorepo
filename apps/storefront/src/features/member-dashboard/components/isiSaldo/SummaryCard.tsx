@@ -5,24 +5,19 @@ import { Text } from "@/components/common/Text";
 import { PriceText } from "@/components/common/PriceText";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/format";
-import type { VoucherInfo } from "@/features/member-dashboard/types/isiSaldo.type";
 
 interface Props {
   isSubmitting?: boolean;
-  /** Server-side failure (invalid promo, channel minimum), shown above the button. */
+  /** Server-side failure (channel minimum, closed storefront), shown above the button. */
   errorMessage?: string | null;
-  nominal: number;
-  discount: number;
+  /** What the customer pays — and, for a top-up, exactly what lands in the wallet. */
   total: number;
-  appliedVoucher: VoucherInfo | null;
   selectedPaymentName: string | undefined;
   onSubmit: () => void;
 }
 
 export default function SummaryCard({
-  discount,
   total,
-  appliedVoucher,
   selectedPaymentName,
   onSubmit,
   isSubmitting,
@@ -40,17 +35,6 @@ export default function SummaryCard({
           <Text as="span" className="text-[13px] font-outfit font-semibold text-white leading-none">
             {t("isiSaldo.summary.title")}
           </Text>
-
-          {appliedVoucher && (
-            <Text as="span" className="text-[12px] font-inter text-[#0EA42E] leading-none">
-              {t("isiSaldo.summary.discountLabel", {
-                percent: appliedVoucher.discountPercent,
-              })}{" "}
-              <Text as="span" className="text-[12px] font-plex text-[#0EA42E]">
-                - {formatCurrency(discount, locale)}
-              </Text>
-            </Text>
-          )}
 
           {selectedPaymentName && (
             <Text as="span" className="text-[12px] font-inter text-white/45 leading-none">

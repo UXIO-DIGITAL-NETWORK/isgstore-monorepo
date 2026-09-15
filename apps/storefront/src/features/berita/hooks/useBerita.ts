@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { useParams } from "@tanstack/react-router";
 
-import { useArticlesQuery } from "@/hooks/useArticlesQuery";
+import { useArticleCategoriesQuery, useArticlesQuery } from "@/hooks/useArticlesQuery";
 import { toBeritaArticle } from "@/lib/articles";
-import type { Article, BeritaCategoryKey } from "@/features/berita/types/article.type";
+import { ALL_CATEGORY } from "@/features/berita/types/article.type";
+import type { Article, BeritaCategoryKey, CategoryPill } from "@/features/berita/types/article.type";
 
 const PER_PAGE = 9;
 
 export interface UseBeritaReturn {
   pagedArticles: Article[];
+  categories: CategoryPill[];
   activeCategory: BeritaCategoryKey;
   setActiveCategory: (category: BeritaCategoryKey) => void;
   currentPage: number;
@@ -24,8 +26,10 @@ export interface UseBeritaReturn {
  */
 export function useBerita(): UseBeritaReturn {
   const { locale } = useParams({ strict: false }) as { locale?: string };
-  const [activeCategory, setActiveCategoryState] = useState<BeritaCategoryKey>("semua");
+  const [activeCategory, setActiveCategoryState] = useState<BeritaCategoryKey>(ALL_CATEGORY);
   const [currentPage, setCurrentPageState] = useState(1);
+
+  const { data: categoryData } = useArticleCategoriesQuery();
 
   const { data } = useArticlesQuery({
     category: activeCategory,
@@ -37,6 +41,22 @@ export function useBerita(): UseBeritaReturn {
   const pagedArticles = useMemo<Article[]>(
     () => (data?.data.data ?? []).map((model) => toBeritaArticle(model, locale ?? "id")),
     [data, locale],
+  );
+
+  /**
+   * "Semua" always leads, then whatever the API has. The pills survive a failed
+   * or pending categories request — without the leading pill the page would have
+   * no usable filter at all, and the articles themselves are unaffected.
+   */
+  const categories = useMemo<CategoryPill[]>(
+    () => [
+      { key: ALL_CATEGORY },
+      ...(categoryData?.data ?? []).map((category) => ({
+        key: category.key,
+        label: category.name,
+      })),
+    ],
+    [categoryData],
   );
 
   const totalResults = data?.data.meta.total ?? 0;
@@ -53,6 +73,7 @@ export function useBerita(): UseBeritaReturn {
 
   return {
     pagedArticles,
+    categories,
     activeCategory,
     setActiveCategory,
     // Clamped so a category switch that shrinks the result set cannot leave

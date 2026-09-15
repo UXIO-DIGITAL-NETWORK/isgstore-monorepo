@@ -7,7 +7,7 @@ import { Text } from "@/components/common/Text";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 import PrivacyPolicyHeader from "@/features/privacy-policy/components/PrivacyPolicyHeader";
-import PolicySection from "@/features/privacy-policy/components/PolicySection";
+import StaticPageSection from "@/components/common/StaticPageSection";
 import type { PolicySection as PolicySectionType } from "@/features/privacy-policy/types/privacy-policy.type";
 
 /** Matches the slug the API seeds this page under. */
@@ -49,7 +49,7 @@ export default function PrivacyPolicyPage(): React.JSX.Element {
 
         {/* Content sections */}
         {sections.map((section) => (
-          <PolicySection
+          <StaticPageSection
             key={section.heading}
             heading={section.heading}
             paragraphs={section.paragraphs}

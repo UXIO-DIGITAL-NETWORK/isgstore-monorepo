@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { coerceCategoryKey, toBeritaArticle, toHomeArticle } from "@/lib/articles";
+import { toBeritaArticle, toHomeArticle } from "@/lib/articles";
 import type { ArticleModel } from "@/types/models/article.model";
 
 /**
@@ -66,6 +66,24 @@ describe("toBeritaArticle", () => {
 
     expect(result.date).toBe("");
   });
+
+  /**
+   * The pills are the API's own category list, so a key the storefront has
+   * never seen belongs to a category an operator just added. Folding it into a
+   * catch-all would file that article under a pill it does not match and hide
+   * the new category entirely.
+   */
+  it("passes an unfamiliar category key through rather than folding it away", () => {
+    const result = toBeritaArticle(model({ category: { key: "apex-legends", name: "Apex Legends" } }), "id");
+
+    expect(result.categoryKey).toBe("apex-legends");
+  });
+
+  it("falls back to the catch-all only when the API sends no key at all", () => {
+    const result = toBeritaArticle(model({ category: { key: null, name: null } }), "id");
+
+    expect(result.categoryKey).toBe("lainnya");
+  });
 });
 
 describe("toHomeArticle", () => {
@@ -81,24 +99,5 @@ describe("toHomeArticle", () => {
     // The home type has no author or categoryKey — it must not leak them.
     expect(result).not.toHaveProperty("author");
     expect(result).not.toHaveProperty("categoryKey");
-  });
-});
-
-describe("coerceCategoryKey", () => {
-  it("passes through every key the storefront has a pill for", () => {
-    for (const key of ["promo", "mobile-legend", "free-fire", "honor-of-kings", "valorant", "lainnya"]) {
-      expect(coerceCategoryKey(key)).toBe(key);
-    }
-  });
-
-  /**
-   * The pills are a closed set with their own translated labels. An unknown
-   * key would render a pill that does not exist, so it folds into the
-   * catch-all instead.
-   */
-  it("folds an unknown key into the catch-all", () => {
-    expect(coerceCategoryKey("apex-legends")).toBe("lainnya");
-    expect(coerceCategoryKey(null)).toBe("lainnya");
-    expect(coerceCategoryKey(undefined)).toBe("lainnya");
   });
 });

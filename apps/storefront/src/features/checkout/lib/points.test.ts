@@ -1,6 +1,26 @@
 import { describe, expect, it } from "vitest";
 
-import { applyPoints, maxRedeemablePoints, pointsEarned, totalAfterPoints } from "./points";
+import { applyPoints, maxRedeemablePoints, orderTotalAfterDiscounts, pointsEarned, totalAfterPoints } from "./points";
+
+describe("orderTotalAfterDiscounts", () => {
+  it("takes the promo off before the points, and the fee on what is left", () => {
+    // 100k − 10k promo = 90k; 20k of points → 70k; the 1k fee rides on that.
+    expect(orderTotalAfterDiscounts(100000, 10000, 20000, 1000)).toBe(71000);
+  });
+
+  it("adds the fee to the undiscounted price when nothing is applied", () => {
+    expect(orderTotalAfterDiscounts(100000, 0, 0, 1000)).toBe(101000);
+  });
+
+  it("owes nothing when the discounts cover the price", () => {
+    // No payment left for a fee to sit on.
+    expect(orderTotalAfterDiscounts(100000, 40000, 60000, 1000)).toBe(0);
+  });
+
+  it("never goes negative when a promo is worth more than the price", () => {
+    expect(orderTotalAfterDiscounts(50000, 80000, 0, 0)).toBe(0);
+  });
+});
 
 describe("maxRedeemablePoints", () => {
   it("is capped by the wallet of points", () => {

@@ -69,6 +69,9 @@
     "description": "Halaman yang kamu tuju mungkin sudah dipindahkan, dihapus, atau tautannya salah ketik.",
     "backHome": "Kembali ke beranda"
   },
+  "staticPage": {
+    "lastUpdated": "Terakhir diperbarui {{date}}"
+  },
   "siteClosed": {
     "title": "{{site}} sedang tidak aktif",
     "fallbackSiteName": "Situs",
