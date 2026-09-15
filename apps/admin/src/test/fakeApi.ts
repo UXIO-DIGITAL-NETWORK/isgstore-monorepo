@@ -258,6 +258,46 @@ const DOCUMENTS: Record<string, unknown> = {
       label: "Logo",
       is_public: true,
     },
+    {
+      id: 5,
+      group: "payment",
+      key: "balance_topup_presets",
+      value: "[10000,25000,50000]",
+      type: "json",
+      label: "Top-up Nominal Presets",
+      is_public: true,
+    },
+    {
+      id: 6,
+      group: "operational",
+      key: "order_expiry_minutes",
+      value: '{"virtual_account":15,"qris":20,"ewallet":125,"payment_link":605,"convenience_store":1445}',
+      type: "json",
+      label: "Order Expiry (minutes)",
+      is_public: false,
+    },
+    // Present on purpose, though the API no longer serves either group: the
+    // panel and the API deploy separately, and an older API must not be able to
+    // put a Hub-owned licence or a per-plan markup back on screen — or into the
+    // save payload — just because it still sends the rows.
+    {
+      id: 7,
+      group: "licence",
+      key: "is_serving",
+      value: "1",
+      type: "boolean",
+      label: "Lisensi situs: is_serving",
+      is_public: false,
+    },
+    {
+      id: 8,
+      group: "pricing",
+      key: "default_markup_percent",
+      value: "20",
+      type: "number",
+      label: "Default Markup (%)",
+      is_public: false,
+    },
   ],
   // This site's own platform subscription — feeds the sidebar footer card,
   // which is mounted on every admin route.

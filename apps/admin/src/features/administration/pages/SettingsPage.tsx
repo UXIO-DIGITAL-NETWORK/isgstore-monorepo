@@ -13,20 +13,64 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { JsonNumberListField } from "../components/JsonNumberListField";
+import { JsonNumberMapField } from "../components/JsonNumberMapField";
+import { LicencePanel } from "../components/LicencePanel";
 import { useSettings, useUpdateSettings, useUploadSetting } from "../hooks/useAdministration";
+import { humanize } from "../lib/settingLabels";
 import type { Setting } from "../types/administration.type";
 
-/** "operational" → "Operational", "some_new_group" → "Some new group". */
-function humanize(group: string): string {
-  const words = group.replace(/_/g, " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
+/**
+ * Groups that belong to something else — a licence the Hub rewrites every five
+ * minutes, and a markup the Pricing Rules screen owns per plan.
+ *
+ * The API already leaves these out of the list. Repeating them here is
+ * deliberate: the panel and the API deploy separately, and an admin running
+ * against an API that still returned `licence` would render two tabs with the
+ * same value, which Radix treats as an error rather than a cosmetic clash.
+ */
+const MANAGED_ELSEWHERE_GROUPS = ["licence", "pricing"];
+
+/** The read-only licence tab. Not a settings group: it has no editable rows. */
+const LICENCE_TAB = "licence";
+
+type JsonShape = "list" | "map" | "raw";
+
+/**
+ * Which editor a JSON setting deserves, decided by the shape of its value
+ * rather than by its key: a setting added later gets the right control for
+ * free, and anything unrecognised keeps the plain textarea rather than being
+ * mangled into rows it does not fit.
+ */
+function jsonShape(value: string): JsonShape {
+  try {
+    const parsed = JSON.parse(value || "null");
+
+    if (Array.isArray(parsed) && parsed.every((entry) => typeof entry === "number")) {
+      return "list";
+    }
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed) &&
+      Object.keys(parsed).length > 0 &&
+      Object.values(parsed).every((entry) => typeof entry === "number")
+    ) {
+      return "map";
+    }
+  } catch {
+    // Not JSON at all. The textarea is the honest editor for whatever it is.
+  }
+
+  return "raw";
 }
 
 /**
  * Settings are one grouped form with a single bulk save, not a table — every
  * value is edited together and written in one request.
  *
- * The groups are tabs rather than a stack of cards: twelve sections in one
+ * The groups are tabs rather than a stack of cards: a dozen sections in one
  * column is a page nobody can see the end of, and each group is edited on its
  * own anyway.
  */
@@ -57,13 +101,18 @@ export function SettingsPage() {
     return [...groups.entries()];
   }, [settings]);
 
+  const editableGroups = useMemo(
+    () => grouped.filter(([group]) => !MANAGED_ELSEWHERE_GROUPS.includes(group)),
+    [grouped],
+  );
+
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
 
-  // A group can vanish out from under the selection — a refetch after a save,
-  // or an API that stopped serving one. Falling back to the first tab beats a
+  // A tab can vanish out from under the selection — a refetch after a save, or
+  // an API that stopped serving a group. Falling back to the first tab beats a
   // Tabs whose value matches no trigger, which renders every panel blank.
-  const firstGroup = grouped[0]?.[0];
-  const currentGroup = activeGroup && grouped.some(([group]) => group === activeGroup) ? activeGroup : firstGroup;
+  const tabValues = [...editableGroups.map(([group]) => group), LICENCE_TAB];
+  const currentGroup = activeGroup && tabValues.includes(activeGroup) ? activeGroup : tabValues[0];
 
   // Labels and help are derived from the group and the setting key rather than
   // listed here, so a setting added to the API turns up with its own copy as
@@ -92,7 +141,7 @@ export function SettingsPage() {
         </Box>
       )}
 
-      {grouped.length > 0 && (
+      {!isLoading && (
         <Box className="rounded-2xl border border-border bg-card p-6">
           <Tabs
             value={currentGroup}
@@ -100,7 +149,7 @@ export function SettingsPage() {
             className="gap-6"
           >
             <TabsList variant="line">
-              {grouped.map(([group]) => (
+              {editableGroups.map(([group]) => (
                 <TabsTrigger
                   key={group}
                   value={group}
@@ -108,9 +157,10 @@ export function SettingsPage() {
                   {groupLabel(group)}
                 </TabsTrigger>
               ))}
+              <TabsTrigger value={LICENCE_TAB}>{t("group_licence")}</TabsTrigger>
             </TabsList>
 
-            {grouped.map(([group, rows]) => {
+            {editableGroups.map(([group, rows]) => {
               // The section's own explanation. It lives here rather than beside
               // the tab label because a TabsTrigger is a <button>, and the info
               // icon is another one — nesting them is invalid, and the click
@@ -133,124 +183,170 @@ export function SettingsPage() {
                     {help ? <InfoTooltip content={help} /> : null}
                   </Box>
 
-                  {rows.map((setting) => (
-                    <Box
-                      key={setting.key}
-                      className="flex flex-col gap-1.5"
-                    >
-                      <Box className="flex items-center gap-2">
-                        {/* An image setting is labelled by its own ImageDropzone —
-                            labelling it here too would point two labels at one input. */}
-                        {setting.type !== "image" && (
-                          <FieldLabel
-                            htmlFor={`setting-${setting.key}`}
-                            tooltip={fieldHelp(setting.key)}
+                  {rows.map((setting) => {
+                    const value = draft[setting.key] ?? "";
+                    const shape = setting.type === "json" ? jsonShape(value) : "raw";
+
+                    return (
+                      <Box
+                        key={setting.key}
+                        className="flex flex-col gap-1.5"
+                      >
+                        <Box className="flex items-center gap-2">
+                          {/* An image setting is labelled by its own ImageDropzone —
+                              labelling it here too would point two labels at one input. */}
+                          {setting.type !== "image" && (
+                            <FieldLabel
+                              htmlFor={`setting-${setting.key}`}
+                              tooltip={fieldHelp(setting.key)}
+                            >
+                              {setting.label ?? setting.key}
+                            </FieldLabel>
+                          )}
+                          {setting.is_public && (
+                            <Badge
+                              variant="outline"
+                              className="text-success"
+                            >{t("public")}</Badge>
+                          )}
+                        </Box>
+
+                        {setting.type === "boolean" ? (
+                          <Switch
+                            id={`setting-${setting.key}`}
+                            checked={value === "1" || value === "true"}
+                            onCheckedChange={(checked) => setValue(setting.key, checked ? "1" : "0")}
+                          />
+                        ) : setting.type === "text" ? (
+                          <Textarea
+                            id={`setting-${setting.key}`}
+                            rows={3}
+                            className="rounded-xl"
+                            value={value}
+                            onChange={(event) => setValue(setting.key, event.target.value)}
+                          />
+                        ) : setting.type === "json" && shape === "list" ? (
+                          <JsonNumberListField
+                            id={`setting-${setting.key}`}
+                            value={value}
+                            onChange={(next) => setValue(setting.key, next)}
+                          />
+                        ) : setting.type === "json" && shape === "map" ? (
+                          <JsonNumberMapField
+                            id={`setting-${setting.key}`}
+                            value={value}
+                            onChange={(next) => setValue(setting.key, next)}
+                          />
+                        ) : setting.type === "json" ? (
+                          // A JSON value in a shape neither editor understands.
+                          // Showing it raw is worse than a purpose-built control
+                          // and better than rewriting it into one it does not fit.
+                          <Textarea
+                            id={`setting-${setting.key}`}
+                            rows={2}
+                            className="rounded-xl"
+                            value={value}
+                            onChange={(event) => setValue(setting.key, event.target.value)}
+                          />
+                        ) : setting.type === "image" ? (
+                          // Images have their own write path — the file is uploaded on
+                          // pick, not folded into the bulk save below, which carries
+                          // only `{key: value}` strings.
+                          <Box
+                            className="flex flex-col gap-3"
+                            data-testid={`setting-upload-${setting.key}`}
                           >
-                            {setting.label ?? setting.key}
-                          </FieldLabel>
-                        )}
-                        {setting.is_public && (
-                          <Badge
-                            variant="outline"
-                            className="text-success"
-                          >{t("public")}</Badge>
+                            {setting.value_url ? (
+                              <Image
+                                src={setting.value_url}
+                                alt={setting.label ?? setting.key}
+                                width={160}
+                                height={80}
+                                objectFit="contain"
+                                className="rounded-xl border border-border bg-muted p-2"
+                              />
+                            ) : null}
+                            <ImageDropzone
+                              id={`setting-${setting.key}`}
+                              label={setting.label ?? setting.key}
+                              caption={setting.value ? "Replace the current file." : "No file uploaded yet."}
+                              tooltip={fieldHelp(setting.key)}
+                              // The endpoint also accepts SVG and ICO — a favicon and a
+                              // vector logo must keep their format, and compressImage
+                              // passes both through untouched.
+                              //
+                              // GIF is offered for the logo only, matching the API: an
+                              // animated GIF reaches disk uncompressed (neither
+                              // compressImage nor ImageOptimizer will re-encode one), so
+                              // it gets the larger ceiling. No link-preview scraper
+                              // animates an OG image and a GIF favicon is unpredictable,
+                              // so the other keys stay as they were.
+                              accept={
+                                setting.key === "logo"
+                                  ? "image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon,image/gif"
+                                  : "image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon"
+                              }
+                              formatsLabel={
+                                setting.key === "logo"
+                                  ? "JPG, PNG, WEBP, SVG, ICO — max 2 MB · GIF (animated) — max 5 MB"
+                                  : "JPG, PNG, WEBP, SVG, ICO — max 2 MB"
+                              }
+                              onChange={(file) => uploadSetting.mutate({ key: setting.key, file })}
+                              // One mutation serves every image setting on this page, so
+                              // the flag has to name the key it is uploading. Passing
+                              // `isPending` alone would put all three dropzones — logo,
+                              // favicon and OG image — into the uploading state together.
+                              uploading={uploadSetting.isPending && uploadSetting.variables?.key === setting.key}
+                            />
+                          </Box>
+                        ) : (
+                          <Input
+                            id={`setting-${setting.key}`}
+                            type={setting.type === "number" ? "number" : "text"}
+                            className="rounded-xl"
+                            value={value}
+                            onChange={(event) => setValue(setting.key, event.target.value)}
+                          />
                         )}
                       </Box>
-
-                      {setting.type === "boolean" ? (
-                        <Switch
-                          id={`setting-${setting.key}`}
-                          checked={draft[setting.key] === "1" || draft[setting.key] === "true"}
-                          onCheckedChange={(checked) => setValue(setting.key, checked ? "1" : "0")}
-                        />
-                      ) : setting.type === "text" || setting.type === "json" ? (
-                        <Textarea
-                          id={`setting-${setting.key}`}
-                          rows={setting.type === "json" ? 2 : 3}
-                          className="rounded-xl"
-                          value={draft[setting.key] ?? ""}
-                          onChange={(event) => setValue(setting.key, event.target.value)}
-                        />
-                      ) : setting.type === "image" ? (
-                        // Images have their own write path — the file is uploaded on
-                        // pick, not folded into the bulk save below, which carries
-                        // only `{key: value}` strings.
-                        <Box
-                          className="flex flex-col gap-3"
-                          data-testid={`setting-upload-${setting.key}`}
-                        >
-                          {setting.value_url ? (
-                            <Image
-                              src={setting.value_url}
-                              alt={setting.label ?? setting.key}
-                              width={160}
-                              height={80}
-                              objectFit="contain"
-                              className="rounded-xl border border-border bg-muted p-2"
-                            />
-                          ) : null}
-                          <ImageDropzone
-                            id={`setting-${setting.key}`}
-                            label={setting.label ?? setting.key}
-                            caption={setting.value ? "Replace the current file." : "No file uploaded yet."}
-                            tooltip={fieldHelp(setting.key)}
-                            // The endpoint also accepts SVG and ICO — a favicon and a
-                            // vector logo must keep their format, and compressImage
-                            // passes both through untouched.
-                            //
-                            // GIF is offered for the logo only, matching the API: an
-                            // animated GIF reaches disk uncompressed (neither
-                            // compressImage nor ImageOptimizer will re-encode one), so
-                            // it gets the larger ceiling. No link-preview scraper
-                            // animates an OG image and a GIF favicon is unpredictable,
-                            // so the other keys stay as they were.
-                            accept={
-                              setting.key === "logo"
-                                ? "image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon,image/gif"
-                                : "image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,image/x-icon"
-                            }
-                            formatsLabel={
-                              setting.key === "logo"
-                                ? "JPG, PNG, WEBP, SVG, ICO — max 2 MB · GIF (animated) — max 5 MB"
-                                : "JPG, PNG, WEBP, SVG, ICO — max 2 MB"
-                            }
-                            onChange={(file) => uploadSetting.mutate({ key: setting.key, file })}
-                            // One mutation serves every image setting on this page, so
-                            // the flag has to name the key it is uploading. Passing
-                            // `isPending` alone would put all three dropzones — logo,
-                            // favicon and OG image — into the uploading state together.
-                            uploading={uploadSetting.isPending && uploadSetting.variables?.key === setting.key}
-                          />
-                        </Box>
-                      ) : (
-                        <Input
-                          id={`setting-${setting.key}`}
-                          type={setting.type === "number" ? "number" : "text"}
-                          className="rounded-xl"
-                          value={draft[setting.key] ?? ""}
-                          onChange={(event) => setValue(setting.key, event.target.value)}
-                        />
-                      )}
-                    </Box>
-                  ))}
+                    );
+                  })}
                 </TabsContent>
               );
             })}
+
+            <TabsContent
+              value={LICENCE_TAB}
+              className="flex flex-col gap-4"
+            >
+              <Box className="flex items-center gap-1.5">
+                <Heading
+                  level={2}
+                  variant="subtitle"
+                >
+                  {t("group_licence")}
+                </Heading>
+                <InfoTooltip content={t("group_licence_help")} />
+              </Box>
+              <LicencePanel />
+            </TabsContent>
           </Tabs>
         </Box>
       )}
 
-      {grouped.length > 0 && (
+      {editableGroups.length > 0 && (
         <Box className="flex justify-end">
           <Button
             type="button"
             className="rounded-xl"
             disabled={updateSettings.isPending}
             onClick={() => {
-              // Image values are not editable here, so they are excluded rather
-              // than written back as the path string they arrived as.
+              // Built from the tabs that are actually on screen, so a group this
+              // form does not own cannot travel back — image values are excluded
+              // too, rather than written back as the path string they arrived as.
               const editable = Object.fromEntries(
-                (settings ?? [])
+                editableGroups
+                  .flatMap(([, rows]) => rows)
                   .filter((setting) => setting.type !== "image")
                   .map((setting) => [setting.key, draft[setting.key] ?? ""]),
               );

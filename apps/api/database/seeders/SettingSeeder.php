@@ -77,9 +77,21 @@ class SettingSeeder extends Seeder
             // for a membership plan an admin invented this morning.
             ['pricing', 'default_markup_percent', '20', 'number', 'Default Markup (%)', false],
 
-            // Operational — never exposed publicly.
-            ['operational', 'order_auto_expire_minutes', '15', 'number', 'Order Expiry (minutes)', false],
-            ['operational', 'support_notification_email', 'ops@topupgame.id', 'string', 'Ops Notification Email', false],
+            // How long a pending payment stays payable, per payment method, in
+            // minutes. `PaymentExpiry` reads this and falls back to its own
+            // defaults for anything missing here. The methods genuinely
+            // disagree — a virtual account dies in minutes, a convenience store
+            // in a day — so one figure could never have driven them all; the
+            // numbers below are exactly what used to be hardcoded there, each
+            // the gateway's own window plus a five-minute callback grace.
+            [
+                'operational',
+                'order_expiry_minutes',
+                '{"virtual_account":15,"qris":20,"ewallet":125,"payment_link":605,"convenience_store":1445}',
+                'json',
+                'Order Expiry (minutes)',
+                false,
+            ],
         ];
 
         foreach ($settings as [$group, $key, $value, $type, $label, $isPublic]) {

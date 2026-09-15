@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Content\SettingResource;
 use App\Models\Setting;
 use App\Services\ImageOptimizer;
+use App\Support\Payment\PaymentExpiry;
+use App\Support\Settings\SettingGroups;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +26,11 @@ class SettingController extends Controller
 
     public function index(Request $request)
     {
+        // Groups that belong to something else are left out rather than flagged.
+        // The admin edits this list as one form and writes back every key it was
+        // given, so a row this page must not touch has no business being here.
         $settings = Setting::query()
+            ->whereNotIn('group', SettingGroups::MANAGED_ELSEWHERE)
             ->when($request->query('group'), fn ($q, $group) => $q->where('group', $group))
             ->orderBy('group')
             ->orderBy('key')
@@ -53,7 +59,13 @@ class SettingController extends Controller
             foreach ($validated['settings'] as $key => $value) {
                 $setting = Setting::where('key', $key)->first();
 
-                if (! $setting) {
+                // Unknown keys are ignored, and so is a key whose group this
+                // form does not own: `licence` is rewritten by the Hub every
+                // five minutes, and `pricing` is configured per plan on the
+                // Pricing Rules screen. Refusing the write is what makes
+                // `SiteLicenceState`'s "nothing else may write it" true — the
+                // row is not merely hidden from the form.
+                if (! $setting || SettingGroups::isManagedElsewhere($setting->group)) {
                     continue;
                 }
 
@@ -65,6 +77,12 @@ class SettingController extends Controller
             }
         });
 
+        // The payment expiry windows are cached; a save that moved them must not
+        // wait out the TTL before the new figure is the one that counts.
+        if (in_array(PaymentExpiry::SETTING_KEY, $updated, true)) {
+            PaymentExpiry::forget();
+        }
+
         $activityLogAction->execute(new CreateActivityLogDTO(
             userId: Auth::id(),
             ipAddress: $request->ip(),
@@ -72,7 +90,11 @@ class SettingController extends Controller
             message: 'Admin updated settings: '.(implode(', ', $updated) ?: 'none'),
         ));
 
-        $settings = Setting::orderBy('group')->orderBy('key')->get();
+        $settings = Setting::query()
+            ->whereNotIn('group', SettingGroups::MANAGED_ELSEWHERE)
+            ->orderBy('group')
+            ->orderBy('key')
+            ->get();
 
         return $this->successResponse(SettingResource::collection($settings), 'Settings updated successfully');
     }
