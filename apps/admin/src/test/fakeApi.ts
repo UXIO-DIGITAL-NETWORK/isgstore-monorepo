@@ -248,11 +248,14 @@ const DOCUMENTS: Record<string, unknown> = {
     {
       id: 4,
       group: "general",
-      key: "site_logo",
+      // `logo`, matching SettingSeeder — the page special-cases that key for the
+      // formats it accepts, and a fixture that renamed it left that branch
+      // unreachable.
+      key: "logo",
       value: null,
       value_url: null,
       type: "image",
-      label: "Site Logo",
+      label: "Logo",
       is_public: true,
     },
   ],

@@ -4,6 +4,7 @@ import { render, act } from "@testing-library/react";
 
 import { routeTree } from "@/routeTree.gen";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { User } from "@/models/user.model";
 import { getBrowserTimezone } from "@/utils/getBrowserTimezone";
 
@@ -59,7 +60,13 @@ export async function renderRoute(initialPath: string) {
   const utils = render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <RouterProvider router={router} />
+        {/* Mirrors main.tsx. Radix's Tooltip.Root throws "`Tooltip` must be used
+            within `TooltipProvider`" without it, so any screen carrying an
+            InfoTooltip — the settings page's labels, for one — would fail to
+            render here rather than in the browser. */}
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>,
   );

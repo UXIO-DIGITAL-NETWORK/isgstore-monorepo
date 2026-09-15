@@ -70,14 +70,59 @@ describe("administration routes", () => {
     expect(adjustSpy).toHaveBeenCalledWith("1", { amount: 50000, direction: "credit", reason: "compensation" });
   });
 
-  it("Settings groups values and marks the public ones", async () => {
+  it("Settings opens on the first group and marks the public values", async () => {
     await renderRoute("/admin/settings");
 
     expect(await screen.findByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    // General leads the response, so it is the tab the page opens on.
     expect(await screen.findByLabelText("Site Name")).toBeInTheDocument();
-    expect(await screen.findByLabelText("WhatsApp")).toBeInTheDocument();
     // The Public badge is what tells an admin a value reaches the storefront.
     expect((await screen.findAllByText("Public")).length).toBeGreaterThan(0);
+  });
+
+  // The sections are tabs, not a stack of cards: the page has to show one at a
+  // time, and the strip has to reach the ones further down the response.
+  it("Settings shows one section at a time", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+
+    expect(await screen.findByLabelText("Site Name")).toBeInTheDocument();
+    expect(screen.queryByLabelText("WhatsApp")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Contact" }));
+
+    expect(await screen.findByLabelText("WhatsApp")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Site Name")).not.toBeInTheDocument();
+  });
+
+  // An inactive TabsContent is unmounted, so a form that seeded its inputs from
+  // the response would drop whatever the admin had typed the moment they looked
+  // at another tab. The draft has to outlive the panel it was typed into.
+  it("Settings keeps an unsaved edit across a tab switch", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+
+    const siteName = await screen.findByLabelText("Site Name");
+    await user.clear(siteName);
+    await user.type(siteName, "ISG Store Baru");
+
+    await user.click(screen.getByRole("tab", { name: "Contact" }));
+    await screen.findByLabelText("WhatsApp");
+    await user.click(screen.getByRole("tab", { name: "General" }));
+
+    expect(await screen.findByLabelText("Site Name")).toHaveValue("ISG Store Baru");
+  });
+
+  it("Settings explains each section and its settings with info tooltips", async () => {
+    await renderRoute("/admin/settings");
+    await screen.findByLabelText("Site Name");
+
+    // Four on the General tab: one beside the section heading, plus one per
+    // setting in the fixture's general group — Site Name, Maintenance Mode, and
+    // the logo dropzone, which owns its own label and takes the hint as a prop.
+    // A setting with no `help_` key in the locale files renders no icon, which
+    // is what keeps the count tied to the copy rather than to the row count.
+    expect(screen.getAllByRole("button", { name: "More information" })).toHaveLength(4);
   });
 
   it("a boolean setting renders as a switch, not a text field", async () => {
@@ -91,21 +136,21 @@ describe("administration routes", () => {
   it("an image setting offers a real upload control", async () => {
     await renderRoute("/admin/settings");
 
-    expect(await screen.findByText("Site Logo")).toBeInTheDocument();
+    expect(await screen.findByText("Logo")).toBeInTheDocument();
     expect(screen.queryByText(/images are managed through the upload endpoint/i)).not.toBeInTheDocument();
-    expect(await screen.findByTestId("setting-upload-site_logo")).toBeInTheDocument();
+    expect(await screen.findByTestId("setting-upload-logo")).toBeInTheDocument();
   });
 
   it("uploads an image setting through its own endpoint", async () => {
     const uploadSpy = vi.spyOn(settingsService, "upload");
     await renderRoute("/admin/settings");
 
-    const dropzone = await screen.findByTestId("setting-upload-site_logo");
+    const dropzone = await screen.findByTestId("setting-upload-logo");
     const input = dropzone.querySelector("input[type=file]") as HTMLInputElement;
     const file = new File(["logo"], "logo.png", { type: "image/png" });
     fireEvent.change(input, { target: { files: [file] } });
 
-    await waitFor(() => expect(uploadSpy).toHaveBeenCalledWith("site_logo", expect.any(File)));
+    await waitFor(() => expect(uploadSpy).toHaveBeenCalledWith("logo", expect.any(File)));
   });
 });
 
