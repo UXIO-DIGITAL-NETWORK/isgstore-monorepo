@@ -148,7 +148,6 @@ describe("administration routes", () => {
     // the Hub owns those and rewrites them every five minutes.
     expect(await screen.findByText("Expiring soon")).toBeInTheDocument();
     expect(screen.getByText("9 days")).toBeInTheDocument();
-    expect(screen.getByText(/Managed from the Uxio Hub/)).toBeInTheDocument();
 
     // Nothing here is a field. An edit would be reverted by the next Hub sync,
     // and until it was, `is_serving` decides whether the storefront answers.

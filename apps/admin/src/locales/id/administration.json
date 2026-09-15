@@ -116,6 +116,5 @@
   "licenceDays": "{{days}} hari",
   "licenceSuspendReason": "Alasan",
   "licenceRenew": "Perpanjang langganan",
-  "licenceManagedFromHub": "Dikelola dari Uxio Hub. Perubahan di sini akan ditimpa pada sinkronisasi berikutnya, jadi panel ini hanya menampilkan statusnya.",
   "licenceUnconfigured": "Belum ada layanan platform yang diatur untuk situs ini, jadi belum ada yang bisa ditampilkan."
 }
