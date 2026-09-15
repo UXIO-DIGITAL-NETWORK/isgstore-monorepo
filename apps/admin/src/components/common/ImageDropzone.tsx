@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { UploadCloud } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { FieldLabel } from "@/components/common/FieldLabel";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { compressImage } from "@/lib/imageCompression";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,14 @@ interface ImageDropzoneProps {
   accept?: string;
   formatsLabel?: string;
   /**
+   * Explanation revealed by an info icon beside the label.
+   *
+   * The dropzone owns its own label, so a caller that wants to explain the
+   * field cannot also render one without pointing two labels at one input —
+   * this is the way in.
+   */
+  tooltip?: ReactNode;
+  /**
    * True while the file is on its way to the server.
    *
    * The request belongs to the parent — it owns the mutation — so the parent
@@ -72,6 +81,7 @@ export function ImageDropzone({
   error,
   accept = DEFAULT_ACCEPT,
   formatsLabel,
+  tooltip,
   uploading,
 }: ImageDropzoneProps) {
   const { t } = useTranslation("common");
@@ -110,7 +120,12 @@ export function ImageDropzone({
 
   return (
     <Box className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <FieldLabel
+        htmlFor={id}
+        tooltip={tooltip}
+      >
+        {label}
+      </FieldLabel>
       <Box
         aria-busy={busy}
         onDragOver={(event) => {
