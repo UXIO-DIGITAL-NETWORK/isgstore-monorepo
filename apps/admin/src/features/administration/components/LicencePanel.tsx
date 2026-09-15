@@ -74,8 +74,6 @@ export function LicencePanel() {
         {data.suspend_reason && <Row label={t("licenceSuspendReason")}>{data.suspend_reason}</Row>}
       </Box>
 
-      <Text variant="small">{t("licenceManagedFromHub")}</Text>
-
       {data.checkout_url && (
         <Box>
           <Button

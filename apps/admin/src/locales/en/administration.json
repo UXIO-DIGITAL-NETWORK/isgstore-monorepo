@@ -116,6 +116,5 @@
   "licenceDays": "{{days}} days",
   "licenceSuspendReason": "Reason",
   "licenceRenew": "Renew subscription",
-  "licenceManagedFromHub": "Managed from the Uxio Hub. An edit here would be overwritten on the next sync, so this panel only reports it.",
   "licenceUnconfigured": "No platform service is configured for this site, so there is nothing to report."
 }
