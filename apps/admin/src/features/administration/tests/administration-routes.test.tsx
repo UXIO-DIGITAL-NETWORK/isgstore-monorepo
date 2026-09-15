@@ -125,6 +125,86 @@ describe("administration routes", () => {
     expect(screen.getAllByRole("button", { name: "More information" })).toHaveLength(4);
   });
 
+  // The panel and the API deploy separately, so the client repeats the API's
+  // list of groups it does not own. The fixture still sends both, which is the
+  // case this guards: a stale API must not resurrect an editable licence, and a
+  // second "licence" tab would collide with the read-only one.
+  it("Settings leaves out the groups it does not own", async () => {
+    await renderRoute("/admin/settings");
+    await screen.findByLabelText("Site Name");
+
+    expect(screen.queryByRole("tab", { name: "Pricing" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("tab", { name: "Licence" })).toHaveLength(1);
+  });
+
+  it("Settings reports the licence read-only instead of editing it", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+    await screen.findByLabelText("Site Name");
+
+    await user.click(screen.getByRole("tab", { name: "Licence" }));
+
+    // The subscription answer the sidebar card gives, not the `licence` rows:
+    // the Hub owns those and rewrites them every five minutes.
+    expect(await screen.findByText("Expiring soon")).toBeInTheDocument();
+    expect(screen.getByText("9 days")).toBeInTheDocument();
+    expect(screen.getByText(/Managed from the Uxio Hub/)).toBeInTheDocument();
+
+    // Nothing here is a field. An edit would be reverted by the next Hub sync,
+    // and until it was, `is_serving` decides whether the storefront answers.
+    const panel = screen.getByRole("tabpanel");
+    expect(within(panel).queryAllByRole("textbox")).toHaveLength(0);
+    expect(within(panel).queryAllByRole("switch")).toHaveLength(0);
+  });
+
+  it("Settings edits the top-up presets as amounts rather than as raw JSON", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+    await user.click(await screen.findByRole("tab", { name: "Payment" }));
+
+    expect(await screen.findByDisplayValue("10000")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("50000")).toBeInTheDocument();
+    // The rupiah each row means, so the figures are readable at a glance.
+    expect(screen.getByText("Rp 10.000")).toBeInTheDocument();
+    // The stored `[10000,25000,50000]` is nowhere on screen and nowhere to type.
+    expect(screen.queryByDisplayValue("[10000,25000,50000]")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add amount" }));
+    expect(screen.getAllByRole("button", { name: /Remove amount/ })).toHaveLength(4);
+  });
+
+  it("Settings saves the presets back as the JSON the API stores", async () => {
+    const updateSpy = vi.spyOn(settingsService, "update").mockResolvedValue([]);
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+    await user.click(await screen.findByRole("tab", { name: "Payment" }));
+    await screen.findByDisplayValue("10000");
+
+    await user.click(screen.getByRole("button", { name: "Remove amount 3" }));
+    await user.click(screen.getByRole("button", { name: "Save Settings" }));
+
+    const payload = updateSpy.mock.calls[0][0] as Record<string, string>;
+
+    expect(payload.balance_topup_presets).toBe("[10000,25000]");
+    // Built from the tab that is on screen, so a group this form does not own
+    // cannot travel back with it.
+    expect(payload).not.toHaveProperty("is_serving");
+    expect(payload).not.toHaveProperty("default_markup_percent");
+  });
+
+  it("Settings edits the payment expiry window of each method", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+    await user.click(await screen.findByRole("tab", { name: "Operational" }));
+
+    // Per method, because they disagree by hours — a virtual account dies in
+    // minutes and a convenience store in a day, so one number cannot drive both.
+    expect(await screen.findByText("Virtual Account")).toBeInTheDocument();
+    expect(screen.getByText("Convenience store")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("15")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("1445")).toBeInTheDocument();
+  });
+
   it("a boolean setting renders as a switch, not a text field", async () => {
     await renderRoute("/admin/settings");
 
