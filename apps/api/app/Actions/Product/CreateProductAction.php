@@ -3,6 +3,7 @@
 namespace App\Actions\Product;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Pricing\WriteProductPricesAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Product\CreateProductDTO;
 use App\Models\Product;
@@ -15,6 +16,7 @@ class CreateProductAction
     public function __construct(
         private CreateActivityLogAction $activityLogAction,
         private ImageOptimizer $images,
+        private WriteProductPricesAction $writePrices,
     ) {}
 
     public function execute(CreateProductDTO $dto): Product
@@ -46,6 +48,12 @@ class CreateProductAction
             'point_percent' => $dto->pointPercent,
             'point_flat' => $dto->pointFlat,
         ]);
+
+        // The typed member price is the default plan's price, and the plan rows
+        // are what `PlanPrice` bills from. Without this the product exists with no
+        // plan row at all, which the storefront can only serve by falling back to
+        // `price_member` and warning about it.
+        $this->writePrices->forDefaultPlan($product, $dto->priceMember);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
             userId: Auth::id(),

@@ -6,9 +6,11 @@ use App\Actions\Uxiolabs\CheckUxiolabsPricesAction;
 use App\Enums\PriceChangeLogStatus;
 use App\Models\PricingRule;
 use App\Models\Product;
+use App\Models\ProductPlanPrice;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
+use App\Support\Membership\DefaultPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -130,6 +132,33 @@ class CheckUxiolabsPricesTest extends TestCase
             $product->price_min,
             $product->price_max,
         );
+    }
+
+    /**
+     * A repriced figure has to land where customers are charged from.
+     *
+     * The checker used to move `products.price_member` and leave
+     * `product_plan_prices` alone, so a cost rise was logged as applied — "Harga
+     * jual diperbarui otomatis" — while `PlanPrice` kept quoting the old price.
+     * The drift it left behind is what failed the deploy's verify gate.
+     */
+    public function test_a_cost_rise_writes_the_plan_row_customers_are_billed_from(): void
+    {
+        $mapping = $this->seedMapping(10000);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        app(CheckUxiolabsPricesAction::class)->execute();
+
+        $product = $mapping->product->fresh();
+
+        // ceil(12000 × 1.2) — the same figure the change log reports.
+        $this->assertSame(14400, (int) $product->price_member);
+        $this->assertSame(14400, (int) ProductPlanPrice::where('product_id', $product->id)
+            ->where('membership_plan_id', DefaultPlan::id())->value('price'));
+
+        // And the gate that failed in production has nothing left to complain about.
+        $this->artisan('pricing:verify')->assertSuccessful();
     }
 
     public function test_mapping_margin_override_wins_over_the_rules(): void

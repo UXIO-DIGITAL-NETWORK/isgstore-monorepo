@@ -3,6 +3,7 @@
 namespace App\Actions\Product;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Pricing\WriteProductPricesAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Product\UpdateProductDTO;
 use App\Models\Product;
@@ -16,6 +17,7 @@ class UpdateProductAction
     public function __construct(
         private CreateActivityLogAction $activityLogAction,
         private ImageOptimizer $images,
+        private WriteProductPricesAction $writePrices,
     ) {}
 
     public function execute(Product $product, UpdateProductDTO $dto): Product
@@ -53,6 +55,17 @@ class UpdateProductAction
             'point_percent' => $dto->pointPercent,
             'point_flat' => $dto->pointFlat,
         ]);
+
+        // This form is where an admin changes a member price, and the table that
+        // price is billed from is `product_plan_prices`. Editing the column alone
+        // is how a product came to show one price in the admin list while the
+        // storefront charged another.
+        //
+        // Only the default plan is written: `price_vip`/`price_reseller`/
+        // `price_agent` on this form are frozen columns nothing reads, so deriving
+        // other plans from them would invent prices nobody asked for. Those tiers
+        // are priced on the per-plan margin screen.
+        $this->writePrices->forDefaultPlan($product, $dto->priceMember);
 
         $this->activityLogAction->execute(new CreateActivityLogDTO(
             userId: Auth::id(),
