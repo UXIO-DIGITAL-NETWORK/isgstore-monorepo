@@ -8,6 +8,13 @@ enum PriceChangeLogStatus: string
     case APPLIED = 'applied';
 
     /**
+     * The cost moved but no selling price did — the margin rule, a price window
+     * or a preserved manual row produced the same number, so nobody is charged
+     * differently. `applied` would have claimed an update that never happened.
+     */
+    case UNCHANGED = 'unchanged';
+
+    /**
      * Cost moved while the product's price was frozen by the admin.
      *
      * No longer written — nothing freezes a selling price any more — but the

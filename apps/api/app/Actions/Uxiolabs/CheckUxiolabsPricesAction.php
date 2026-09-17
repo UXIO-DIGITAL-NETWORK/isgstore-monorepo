@@ -7,6 +7,7 @@ use App\Actions\Pricing\WriteProductPricesAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Uxiolabs\PriceCheckReportDTO;
 use App\Enums\PriceChangeLogStatus;
+use App\Models\FlashSale;
 use App\Models\PriceChangeLog;
 use App\Models\Product;
 use App\Models\SupplierProduct;
@@ -16,6 +17,8 @@ use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Compare the uxiolabs price list against existing supplier_products.
@@ -27,9 +30,14 @@ use Illuminate\Support\Facades\DB;
  *    configured margin/pricing rules (via ProductRepricer) whenever cost moves.
  *    Nothing freezes a selling price: a stale one is what makes checkout refuse
  *    an order ("harga modal supplier sedang naik"), so the margin rule wins.
- *  - Every relevant event writes a row to price_change_logs (applied /
+ *  - Every relevant event writes a row to price_change_logs (applied / unchanged /
  *    negative_margin / deactivated) — the admin's audit trail, which replaces the
- *    old manual price-alert acknowledge flow.
+ *    old manual price-alert acknowledge flow. A row's status and numbers are read
+ *    back off what was actually written, so the log never claims a price nobody
+ *    is charged.
+ *  - One run at a time (a cache lock), one product at a time: a single row that
+ *    cannot be repriced costs that row only, and is reported as failed rather
+ *    than rolling the whole catalogue back onto its old cost.
  *  - Unknown service ids are NEVER auto-created — products are added manually
  *    via the admin site (single add or Excel import). They are only counted
  *    in the report.
@@ -46,6 +54,23 @@ class CheckUxiolabsPricesAction
 
     private const UNKNOWN_SAMPLE_LIMIT = 50;
 
+    /** First N SKUs whose reprice failed, for the report — enough to start with, not a log dump. */
+    private const FAILED_SAMPLE_LIMIT = 20;
+
+    /**
+     * One run at a time, whatever started it.
+     *
+     * The scheduled command carries `withoutOverlapping`, but the manual console
+     * command and the HTTP endpoint do not. Two overlapping runs read the same
+     * snapshot, both see the cost move, and each writes a log row for one real
+     * change — doubling every count in the report and the audit trail with it.
+     * A lock here is the one choke point all three go through.
+     */
+    private const RUN_LOCK_KEY = 'uxiolabs:price-check';
+
+    /** Past the worst case (an upstream fetch plus thousands of rows); a crashed run must not wedge the schedule. */
+    private const RUN_LOCK_SECONDS = 300;
+
     public function __construct(
         private readonly UxiolabsService $uxiolabsService,
         private readonly CreateActivityLogAction $logAction,
@@ -53,6 +78,21 @@ class CheckUxiolabsPricesAction
     ) {}
 
     public function execute(): PriceCheckReportDTO
+    {
+        $lock = Cache::lock(self::RUN_LOCK_KEY, self::RUN_LOCK_SECONDS);
+
+        if (! $lock->get()) {
+            return PriceCheckReportDTO::skipped('Sinkronisasi harga lain sedang berjalan.');
+        }
+
+        try {
+            return $this->run();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function run(): PriceCheckReportDTO
     {
         // HTTP fetch happens before any DB transaction is opened; warm the
         // shared cache so service preview / manual add / import reuse this list.
@@ -74,7 +114,8 @@ class CheckUxiolabsPricesAction
                 ipAddress: request()?->ip() ?? '127.0.0.1',
                 userAgent: request()?->userAgent() ?? 'System/Scheduler',
                 message: "Cek harga Uxiotopup: {$report->priceChangedCount} modal berubah — "
-                    ."{$report->repricedCount} di-reprice, "
+                    ."{$report->repricedCount} di-reprice, {$report->unchangedCount} tetap, "
+                    ."{$report->failedCount} gagal, "
                     ."{$report->negativeMarginCount} margin negatif, "
                     ."{$report->deactivatedLoggedCount} nonaktif (perlu perhatian).",
                 isSystem: true,
@@ -106,6 +147,9 @@ class CheckUxiolabsPricesAction
         $unknownSample = [];
         $priceChanged = 0;
         $repriced = 0;
+        $unchangedCount = 0;
+        $failedCount = 0;
+        $failedSample = [];
         $negativeMarginCount = 0;
         $deactivatedLogged = 0;
         $upsertRows = [];
@@ -183,24 +227,69 @@ class CheckUxiolabsPricesAction
                     );
                     $deactivatedLogged++;
                 } elseif ($costChanged && $isActive && $available) {
-                    // Always reprice. A selling price left behind at an old cost
-                    // is the one thing that makes checkout refuse a paying
-                    // customer, so the margin rule is never second-guessed here.
-                    $newPrices = $this->writePrices->fromCost($product, $cost, $existing);
+                    try {
+                        // Always reprice. A selling price left behind at an old
+                        // cost is the one thing that makes checkout refuse a
+                        // paying customer, so the margin rule is never
+                        // second-guessed here.
+                        //
+                        // Its own transaction (a savepoint inside this run's), so
+                        // one row that cannot be repriced — a duplicate plan row,
+                        // a lock wait — costs that row only. Without it the
+                        // exception rolled back every other product's price and
+                        // left the whole catalogue priced at the old cost, which
+                        // is exactly what checkout refuses.
+                        $newPrices = DB::transaction(
+                            fn () => $this->writePrices->fromCost($product, $cost, $existing)
+                        );
 
-                    // ceil() keeps price >= cost, so the only way member ends up
-                    // below cost is price_max clamping it there (or a hand-typed
-                    // plan price the reprice deliberately left alone).
-                    $isNegative = $newPrices['price_member'] < $cost;
-                    $logRows[] = $this->makeLogRow(
-                        $isNegative ? PriceChangeLogStatus::NEGATIVE_MARGIN : PriceChangeLogStatus::APPLIED,
-                        $existing, $product, $oldPrices, (int) $existing->price, $cost, $newPrices,
-                        $isNegative
-                            ? 'Setelah markup & clamp, harga member masih di bawah modal.'
-                            : 'Harga jual diperbarui otomatis dari aturan margin.',
-                        $now,
-                    );
-                    $isNegative ? $negativeMarginCount++ : $repriced++;
+                        $belowCost = $this->tiersBelowCost($newPrices, $cost);
+                        $moved = $this->tiersMoved($oldPrices, $newPrices);
+
+                        // A log row states what happened, so the status is read off
+                        // the prices that were actually written: "applied" for a
+                        // real movement, "unchanged" when the rule and the price
+                        // window produced the same number, and the margin case
+                        // first because it is the one that stops a sale.
+                        $status = match (true) {
+                            $belowCost !== [] => PriceChangeLogStatus::NEGATIVE_MARGIN,
+                            ! $moved => PriceChangeLogStatus::UNCHANGED,
+                            default => PriceChangeLogStatus::APPLIED,
+                        };
+
+                        $logRows[] = $this->makeLogRow(
+                            $status, $existing, $product, $oldPrices, (int) $existing->price, $cost, $newPrices,
+                            match ($status) {
+                                PriceChangeLogStatus::NEGATIVE_MARGIN => 'Setelah markup & clamp, harga '
+                                    .implode('/', $belowCost).' masih di bawah modal.',
+                                PriceChangeLogStatus::UNCHANGED => 'Modal berubah; harga jual tidak berubah (aturan margin dan batas harga menghasilkan angka yang sama).',
+                                default => 'Harga jual diperbarui otomatis dari aturan margin.',
+                            },
+                            $now,
+                        );
+
+                        match ($status) {
+                            PriceChangeLogStatus::NEGATIVE_MARGIN => $negativeMarginCount++,
+                            PriceChangeLogStatus::UNCHANGED => $unchangedCount++,
+                            default => $repriced++,
+                        };
+                    } catch (Throwable $e) {
+                        // The cost still lands (it is a fact, and it is in the
+                        // upsert below); the selling price is left where it was and
+                        // NO log row is written for it — a log that claims a price
+                        // we did not write is worse than a gap. The negative-margin
+                        // scan picks the row up at the end of this run.
+                        $failedCount++;
+                        if (count($failedSample) < self::FAILED_SAMPLE_LIMIT) {
+                            $failedSample[] = $sku;
+                        }
+
+                        Log::channel('uxiolabs')->error('uxiolabs:check-prices reprice failed for one SKU', [
+                            'buyer_sku_code' => $sku,
+                            'product_id' => $product->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
             }
 
@@ -257,6 +346,8 @@ class CheckUxiolabsPricesAction
             totalFetched: count($items),
             priceChangedCount: $priceChanged,
             repricedCount: $repriced,
+            unchangedCount: $unchangedCount,
+            failedCount: $failedCount,
             negativeMarginCount: $negativeMarginCount,
             deactivatedLoggedCount: $deactivatedLogged,
             deactivated: $deactivated,
@@ -264,7 +355,49 @@ class CheckUxiolabsPricesAction
             negativeMargin: $this->scanNegativeMargins(),
             unknownCount: $unknownCount,
             unknownSkusSample: $unknownSample,
+            failedSkusSample: $failedSample,
         );
+    }
+
+    /**
+     * Whether any tier's billed price actually moved — the difference between a
+     * reprice that changed something and one that re-derived the same number.
+     *
+     * @param  array<string,mixed>  $old  The legacy columns as they stood before this run's write
+     * @param  array<string,int>  $new  What each tier is billed at now
+     */
+    private function tiersMoved(array $old, array $new): bool
+    {
+        foreach (['price_member', 'price_vip', 'price_reseller', 'price_agent'] as $tier) {
+            if ((int) ($old[$tier] ?? 0) !== (int) ($new[$tier] ?? 0)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The tiers now priced below cost, by name.
+     *
+     * Every tier, not just `price_member`: checkout applies the margin guard to
+     * whichever tier the customer is on (`CheckoutAction`), so a VIP row under
+     * cost refuses a VIP customer even when the member price is healthy.
+     *
+     * @param  array<string,int>  $new  What each tier is billed at
+     * @return array<int,string> e.g. ['member', 'vip']
+     */
+    private function tiersBelowCost(array $new, int $cost): array
+    {
+        $below = [];
+
+        foreach (['price_member', 'price_vip', 'price_reseller', 'price_agent'] as $tier) {
+            if (isset($new[$tier]) && (int) $new[$tier] < $cost) {
+                $below[] = str_replace('price_', '', $tier);
+            }
+        }
+
+        return $below;
     }
 
     /**
@@ -361,37 +494,98 @@ class CheckUxiolabsPricesAction
     }
 
     /**
-     * Products whose member price is now below the active supplier cost — the
-     * ones checkout's margin guard will refuse, so surface them. The reprice
-     * above cannot produce one; a `price_max` ceiling or a hand-typed plan price
-     * can, and those need a human.
+     * Products whose BILLED price is below the active supplier cost — the rows
+     * checkout's margin guard will refuse, surfaced before a customer finds one.
+     *
+     * Scanned per PLAN ROW, not against `products.price_member`: that column is
+     * one tier's denormalised copy, so a VIP or reseller row under cost used to be
+     * invisible here and could only ever appear as a refusal at checkout. A running
+     * flash sale is scanned too, for the same reason — it is the price `PlanPrice`
+     * returns for that product while the sale runs.
      *
      * The INNER JOIN on `products` is load-bearing: a pooled mapping has a null
      * `product_id` and therefore no selling price to compare, so it drops out here
      * for free. Do not "fix" this into a left join.
      *
-     * @return array<int,array{sku:string,product:string,cost:int,price_member:int}>
+     * @return array<int,array{product:string,sku:string,cost:int,tier:string,price:int}>
      */
     private function scanNegativeMargins(): array
     {
-        return DB::table('products')
+        $planRows = DB::table('product_plan_prices')
+            ->join('products', 'products.id', '=', 'product_plan_prices.product_id')
+            ->join('membership_plans', 'membership_plans.id', '=', 'product_plan_prices.membership_plan_id')
             ->join('supplier_products', function ($join) {
-                $join->on('products.id', '=', 'supplier_products.product_id')
+                $join->on('supplier_products.product_id', '=', 'products.id')
                     ->where('supplier_products.is_active', true);
             })
-            ->whereColumn('products.price_member', '<', 'supplier_products.price')
+            ->whereColumn('product_plan_prices.price', '<', 'supplier_products.price')
+            ->orderBy('products.name')
             ->get([
-                'supplier_products.buyer_sku_code',
                 'products.name',
-                'supplier_products.price',
-                'products.price_member',
+                'supplier_products.buyer_sku_code',
+                'supplier_products.price as cost',
+                'product_plan_prices.price as billed',
+                // Locale-keyed JSON, so the plan's stable code is the label.
+                'membership_plans.code as plan_code',
             ])
             ->map(fn ($row) => [
-                'sku' => $row->buyer_sku_code,
-                'product' => $row->name,
-                'cost' => (int) $row->price,
-                'price_member' => (int) $row->price_member,
+                'product' => (string) $row->name,
+                'sku' => (string) $row->buyer_sku_code,
+                'cost' => (int) $row->cost,
+                'tier' => (string) $row->plan_code,
+                'price' => (int) $row->billed,
             ])
             ->all();
+
+        return [...$planRows, ...$this->scanFlashSaleBelowCost()];
+    }
+
+    /**
+     * A flash sale is a cut below the list price, and — since `PlanPrice` consults
+     * it — the price the customer is actually charged while it runs. One priced
+     * under the supplier's cost is a below-cost sale for every buyer, not just for
+     * the tier that happens to be on the row.
+     *
+     * @return array<int,array{product:string,sku:string,cost:int,tier:string,price:int}>
+     */
+    private function scanFlashSaleBelowCost(): array
+    {
+        // Read through the same scope the pricing path uses, so "running" cannot
+        // mean two things.
+        $items = FlashSale::running()->with('items')->get()->flatMap->items;
+
+        if ($items->isEmpty()) {
+            return [];
+        }
+
+        $productIds = $items->pluck('product_id')->map(fn ($id) => (int) $id)->unique()->all();
+
+        $mappings = SupplierProduct::query()
+            ->whereIn('product_id', $productIds)
+            ->where('is_active', true)
+            ->get(['product_id', 'price', 'buyer_sku_code'])
+            ->keyBy('product_id');
+
+        $names = Product::query()->whereIn('id', $productIds)->pluck('name', 'id');
+
+        $rows = [];
+
+        foreach ($items as $item) {
+            $mapping = $mappings->get((int) $item->product_id);
+
+            if ($mapping === null || (int) $item->sale_price >= (int) $mapping->price) {
+                continue;
+            }
+
+            $rows[] = [
+                'product' => (string) ($names[(int) $item->product_id] ?? ''),
+                'sku' => (string) $mapping->buyer_sku_code,
+                'cost' => (int) $mapping->price,
+                'tier' => 'flash sale',
+                'price' => (int) $item->sale_price,
+            ];
+        }
+
+        return $rows;
     }
 }

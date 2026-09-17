@@ -14,6 +14,7 @@ import {
 
 const STATUS_VARIANT: Record<PriceChangeStatus, "secondary" | "outline" | "destructive"> = {
   applied: "secondary",
+  unchanged: "outline",
   locked: "outline",
   deactivated: "destructive",
   negative_margin: "destructive",
@@ -23,7 +24,8 @@ const STATUS_VARIANT: Record<PriceChangeStatus, "secondary" | "outline" | "destr
  * Columns for the Price Change Log. Read-only: this is the record of what the
  * 5-minute checker did, so there are no row actions. The status column carries
  * the whole point — an admin scans it for `deactivated` / `negative_margin` rows
- * that need handling, versus routine `applied` reprices.
+ * that need handling, versus routine `applied` reprices and `unchanged` ones
+ * (the cost moved, the price did not).
  */
 /**
  * A factory, not a module constant: headers are rendered text, so they
