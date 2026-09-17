@@ -497,15 +497,17 @@ export interface BulkCreateProductsResult {
 
 /**
  * What the 5-minute checker did to a mapping. `applied` is the routine auto-reprice;
- * `deactivated` and `negative_margin` are the rows an admin has to act on. `locked`
- * is history only — the price lock that produced those rows is gone, so the filter
- * finds old ones and the checker can never add another.
+ * `unchanged` is the cost moving without the price following it; `deactivated` and
+ * `negative_margin` are the rows an admin has to act on. `locked` is history only —
+ * the price lock that produced those rows is gone, so the filter finds old ones and
+ * the checker can never add another.
  */
-export const PRICE_CHANGE_STATUSES = ["applied", "locked", "deactivated", "negative_margin"] as const;
+export const PRICE_CHANGE_STATUSES = ["applied", "unchanged", "locked", "deactivated", "negative_margin"] as const;
 export type PriceChangeStatus = (typeof PRICE_CHANGE_STATUSES)[number];
 
 export const PRICE_CHANGE_STATUS_LABELS: Record<PriceChangeStatus, string> = {
   applied: "Repriced",
+  unchanged: "Unchanged",
   locked: "Locked",
   deactivated: "Deactivated",
   negative_margin: "Negative margin",

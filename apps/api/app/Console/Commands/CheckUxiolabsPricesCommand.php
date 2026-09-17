@@ -28,11 +28,21 @@ class CheckUxiolabsPricesCommand extends Command
             return self::FAILURE;
         }
 
+        if ($report->skippedReason !== null) {
+            // Another sync held the lock. Not a failure — that run will report
+            // what happened, and alerting on this would double every alarm.
+            $this->warn($report->skippedReason);
+
+            return self::SUCCESS;
+        }
+
         $this->info(sprintf(
-            '%d layanan, %d modal berubah (%d di-reprice, %d margin negatif, %d nonaktif perlu perhatian), %d aktif lagi, %d layanan tak dikenal',
+            '%d layanan, %d modal berubah (%d di-reprice, %d tetap, %d gagal, %d margin negatif, %d nonaktif perlu perhatian), %d aktif lagi, %d layanan tak dikenal',
             $report->totalFetched,
             $report->priceChangedCount,
             $report->repricedCount,
+            $report->unchangedCount,
+            $report->failedCount,
             $report->negativeMarginCount,
             $report->deactivatedLoggedCount,
             count($report->reactivated),

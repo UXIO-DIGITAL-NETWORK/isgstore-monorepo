@@ -15,7 +15,7 @@ class GetPriceChangeLogsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['nullable', 'in:applied,locked,deactivated,negative_margin,all'],
+            'status' => ['nullable', 'in:applied,unchanged,locked,deactivated,negative_margin,all'],
             'search' => ['nullable', 'string', 'max:100'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],

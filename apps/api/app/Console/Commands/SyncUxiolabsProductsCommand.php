@@ -31,6 +31,12 @@ class SyncUxiolabsProductsCommand extends Command
             return self::FAILURE;
         }
 
+        if ($report->skippedReason !== null) {
+            $this->warn($report->skippedReason);
+
+            return self::SUCCESS;
+        }
+
         $this->renderReport($report);
         $this->sendDiscordReport($discord, $report);
 
@@ -39,11 +45,13 @@ class SyncUxiolabsProductsCommand extends Command
 
     private function renderReport(PriceCheckReportDTO $report): void
     {
-        $this->info('Uxiolabs price check');
+        $this->info('Uxiotopup price check');
         $this->table(['Metric', 'Value'], [
             ['Services fetched', $report->totalFetched],
             ['Cost changes', $report->priceChangedCount],
             ['Repriced (applied)', $report->repricedCount],
+            ['Unchanged (cost moved, price did not)', $report->unchangedCount],
+            ['Failed (cost updated, price left alone)', $report->failedCount],
             ['Negative margin (logged)', $report->negativeMarginCount],
             ['Deactivated (attention)', $report->deactivatedLoggedCount],
             ['Mappings reactivated', count($report->reactivated)],
@@ -52,7 +60,11 @@ class SyncUxiolabsProductsCommand extends Command
         ]);
 
         foreach ($report->negativeMargin as $row) {
-            $this->warn("  NEGATIVE MARGIN: {$row['product']} ({$row['sku']}) cost {$row['cost']} > member price {$row['price_member']}");
+            $this->warn("  NEGATIVE MARGIN: {$row['product']} ({$row['sku']}) cost {$row['cost']} > {$row['tier']} price {$row['price']}");
+        }
+
+        if ($report->failedSkusSample !== []) {
+            $this->error('  REPRICE FAILED (price left at the old cost): '.implode(', ', $report->failedSkusSample));
         }
     }
 
@@ -62,7 +74,7 @@ class SyncUxiolabsProductsCommand extends Command
             [
                 'name' => 'PREPAID',
                 'value' => "Layanan: {$report->totalFetched} • Modal berubah: {$report->priceChangedCount} • "
-                    ."Reprice: {$report->repricedCount} • "
+                    ."Reprice: {$report->repricedCount} • Tetap: {$report->unchangedCount} • Gagal: {$report->failedCount} • "
                     ."Margin negatif: {$report->negativeMarginCount} • "
                     ."Nonaktif (perlu perhatian): {$report->deactivatedLoggedCount}"
                     .' • Aktif lagi: '.count($report->reactivated)
@@ -72,15 +84,26 @@ class SyncUxiolabsProductsCommand extends Command
         ];
 
         $needsAttention = $report->negativeMargin !== []
-            || $report->deactivatedLoggedCount > 0;
+            || $report->deactivatedLoggedCount > 0
+            || $report->failedCount > 0;
 
         if ($report->negativeMargin !== []) {
             $fields[] = [
-                'name' => '⚠️ Margin negatif — checkout DITOLAK sampai di-reprice',
+                'name' => '⚠️ Margin negatif — checkout DITOLAK untuk tier itu',
                 'value' => implode("\n", array_slice(array_map(
-                    fn ($row) => "`{$row['sku']}` {$row['product']}: modal {$row['cost']} > jual {$row['price_member']}",
+                    fn ($row) => "`{$row['sku']}` {$row['product']} [{$row['tier']}]: modal {$row['cost']} > jual {$row['price']}",
                     $report->negativeMargin
                 ), 0, 15)),
+                'inline' => false,
+            ];
+        }
+
+        if ($report->failedSkusSample !== []) {
+            $fields[] = [
+                'name' => '⚠️ Reprice gagal — harga jual masih di modal lama',
+                'value' => '`'.implode('`, `', $report->failedSkusSample).'`'
+                    .($report->failedCount > count($report->failedSkusSample) ? " … total {$report->failedCount}" : '')
+                    .' — lihat log `uxiolabs` di server.',
                 'inline' => false,
             ];
         }

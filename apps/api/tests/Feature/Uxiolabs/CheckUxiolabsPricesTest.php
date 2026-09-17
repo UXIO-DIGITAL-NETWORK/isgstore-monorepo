@@ -2,18 +2,27 @@
 
 namespace Tests\Feature\Uxiolabs;
 
+use App\Actions\Pricing\WriteProductPricesAction;
 use App\Actions\Uxiolabs\CheckUxiolabsPricesAction;
 use App\Enums\PriceChangeLogStatus;
+use App\Models\FlashSale;
+use App\Models\FlashSaleItem;
+use App\Models\MembershipPlan;
 use App\Models\PricingRule;
 use App\Models\Product;
 use App\Models\ProductPlanPrice;
+use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
+use App\Services\ProductRepricer;
 use App\Support\Membership\DefaultPlan;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Mockery\MockInterface;
+use RuntimeException;
 use Tests\TestCase;
 
 class CheckUxiolabsPricesTest extends TestCase
@@ -473,5 +482,225 @@ class CheckUxiolabsPricesTest extends TestCase
         // The 30% rule drives it, above the 20% built-in default (which would be 14400).
         $this->assertSame($this->expectedPrices($product, 12000)['price_member'], (int) $product->price_member);
         $this->assertGreaterThan(15000, (int) $product->price_member);
+    }
+
+    /**
+     * The log states what happened, so it has to read the BILLED row — not the
+     * number the repricer computed.
+     *
+     * A manual plan row is deliberately skipped by the write, and `PlanPrice`
+     * bills it. Logging the computed figure would claim a VIP price that no VIP
+     * customer is charged, while the legacy column and the log moved together and
+     * only the billed row stood still.
+     */
+    public function test_the_log_records_the_price_actually_billed_not_the_computed_one(): void
+    {
+        $mapping = $this->seedMapping(10000);
+        $product = $mapping->product;
+
+        // A VIP tier that the admin priced by hand, well under the new cost.
+        $vipPlan = $this->vipPlan();
+        ProductPlanPrice::create([
+            'product_id' => $product->id,
+            'membership_plan_id' => $vipPlan->id,
+            'price' => 5000,
+            'is_manual' => true,
+        ]);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        app(CheckUxiolabsPricesAction::class)->execute();
+
+        // The manual row is what a VIP is billed, so that is what the log says.
+        $this->assertSame(5000, (int) ProductPlanPrice::where('product_id', $product->id)
+            ->where('membership_plan_id', $vipPlan->id)->value('price'));
+        $this->assertDatabaseHas('price_change_logs', [
+            'supplier_product_id' => $mapping->id,
+            'new_price_vip' => 5000,
+        ]);
+    }
+
+    /**
+     * The margin guard runs per tier at checkout, so a tier under cost has to be
+     * visible here even when the member price is healthy — otherwise it only ever
+     * shows up as a refusal for whoever is on that tier.
+     */
+    public function test_a_non_default_tier_below_cost_is_surfaced_with_its_tier_name(): void
+    {
+        $mapping = $this->seedMapping(10000);
+        $vipPlan = $this->vipPlan();
+        ProductPlanPrice::create([
+            'product_id' => $mapping->product->id,
+            'membership_plan_id' => $vipPlan->id,
+            'price' => 5000,
+            'is_manual' => true,
+        ]);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        $report = app(CheckUxiolabsPricesAction::class)->execute();
+
+        $this->assertContains('vip', array_column($report->negativeMargin, 'tier'));
+        $this->assertSame(1, $report->negativeMarginCount);
+    }
+
+    /** A flash sale is the price `PlanPrice` returns while it runs, so it counts. */
+    public function test_a_running_flash_sale_below_cost_is_surfaced(): void
+    {
+        $mapping = $this->seedMapping(10000);
+
+        $sale = FlashSale::create([
+            'name' => 'Flash',
+            'starts_at' => now()->subHour(),
+            'ends_at' => now()->addHour(),
+            'is_active' => true,
+        ]);
+        FlashSaleItem::create([
+            'flash_sale_id' => $sale->id,
+            'product_id' => $mapping->product->id,
+            'sale_price' => 5000,
+            'stock_total' => 10,
+        ]);
+
+        $this->fakePriceList([$this->serviceItem()]);
+
+        $report = app(CheckUxiolabsPricesAction::class)->execute();
+
+        $this->assertContains('flash sale', array_column($report->negativeMargin, 'tier'));
+    }
+
+    /**
+     * A cost change that moves no price is not an "applied" reprice.
+     *
+     * The status is derived from the prices read back after the write, so a
+     * rounding coincidence, a price window or a preserved manual row lands as
+     * `unchanged` — the log used to assert an update that never happened.
+     */
+    public function test_a_cost_change_that_moves_no_price_is_logged_as_unchanged(): void
+    {
+        $mapping = $this->seedMapping(10000);
+
+        // Put the product where a 12000 cost would put it, then let the provider
+        // report that cost: the reprice re-derives the same four numbers.
+        app(WriteProductPricesAction::class)->fromCost($mapping->product, 12000, $mapping);
+
+        $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
+
+        $report = app(CheckUxiolabsPricesAction::class)->execute();
+
+        $this->assertSame(1, $report->unchangedCount);
+        $this->assertSame(0, $report->repricedCount);
+        $this->assertDatabaseHas('price_change_logs', [
+            'supplier_product_id' => $mapping->id,
+            'status' => PriceChangeLogStatus::UNCHANGED->value,
+        ]);
+        $this->assertDatabaseMissing('price_change_logs', [
+            'supplier_product_id' => $mapping->id,
+            'status' => PriceChangeLogStatus::APPLIED->value,
+        ]);
+    }
+
+    /**
+     * One row that cannot be repriced costs that row only.
+     *
+     * Every reprice used to share the run's single transaction, so one bad row
+     * rolled back every OTHER product's new price — leaving the catalogue priced
+     * at the old cost, which is exactly what checkout refuses — with nothing in
+     * the log to say so.
+     */
+    public function test_one_row_that_cannot_be_repriced_does_not_roll_back_the_others(): void
+    {
+        $good = $this->seedMapping(10000);
+        $bad = $this->seedMappingForSku('ML172', 10000);
+
+        $real = app(ProductRepricer::class);
+
+        // `WriteProductPricesAction` is final, so the seam is the repricer it
+        // injects: one SKU's margins fail to compute, the rest carry on.
+        $this->mock(ProductRepricer::class, function (MockInterface $mock) use ($real, $bad) {
+            $mock->shouldReceive('compute')
+                ->andReturnUsing(fn (int $cost, Product $product, SupplierProduct $mapping) => $real->compute($cost, $product, $mapping));
+
+            $mock->shouldReceive('computeForPlans')
+                ->andReturnUsing(function (int $cost, Product $product, SupplierProduct $mapping) use ($real, $bad) {
+                    if ($product->id === $bad->product_id) {
+                        throw new RuntimeException('this row cannot be repriced');
+                    }
+
+                    return $real->computeForPlans($cost, $product, $mapping);
+                });
+        });
+
+        $this->fakePriceList([
+            $this->serviceItem(['harga' => 12000]),
+            $this->serviceItem(['id' => 'ML172', 'harga' => 12000]),
+        ]);
+
+        $report = app(CheckUxiolabsPricesAction::class)->execute();
+
+        $this->assertSame(1, $report->repricedCount);
+        $this->assertSame(1, $report->failedCount);
+        $this->assertSame(['ML172'], $report->failedSkusSample);
+
+        // The healthy row is repriced and logged; the broken one is left alone and
+        // has NO log row, because claiming a price we did not write is worse than
+        // a gap.
+        $this->assertSame(14400, (int) $good->product->fresh()->price_member);
+        $this->assertSame(12000, (int) $bad->product->fresh()->price_member);
+        $this->assertDatabaseHas('price_change_logs', ['supplier_product_id' => $good->id]);
+        $this->assertDatabaseMissing('price_change_logs', ['supplier_product_id' => $bad->id]);
+    }
+
+    /**
+     * One run at a time, whatever started it. The scheduled command carries
+     * `withoutOverlapping`, but the manual console command and the HTTP endpoint
+     * do not — two overlapping runs each wrote a log row for one real change.
+     */
+    public function test_a_run_is_skipped_while_another_holds_the_lock(): void
+    {
+        $held = Cache::lock('uxiolabs:price-check', 300);
+        $this->assertTrue($held->get());
+
+        try {
+            $report = app(CheckUxiolabsPricesAction::class)->execute();
+
+            $this->assertNotNull($report->skippedReason);
+            $this->assertSame(0, $report->totalFetched);
+            $this->assertDatabaseCount('price_change_logs', 0);
+        } finally {
+            $held->release();
+        }
+    }
+
+    /** A second, role-linked tier — what `ProductRepricer` maps the legacy VIP column to. */
+    private function vipPlan(): MembershipPlan
+    {
+        return MembershipPlan::create([
+            'code' => 'vip',
+            'name' => ['id' => 'VIP', 'en' => 'VIP'],
+            'price' => 100000,
+            'duration_days' => 30,
+            'role_id' => Role::factory()->create(['name' => 'vip'])->id,
+            'is_active' => true,
+            'sort_order' => 10,
+        ]);
+    }
+
+    /** The same live, priced mapping as `seedMapping`, under a different provider SKU. */
+    private function seedMappingForSku(string $sku, int $cost = 10000, array $productOverrides = []): SupplierProduct
+    {
+        $product = Product::factory()->create(array_merge([
+            'code' => $sku,
+            'price_member' => 12000,
+            'price_vip' => 11500,
+            'price_reseller' => 11000,
+            'price_agent' => 10500,
+        ], $productOverrides));
+
+        return SupplierProduct::factory()->for($product)->for($this->uxiolabs)->create([
+            'buyer_sku_code' => $sku,
+            'price' => $cost,
+            'is_active' => true,
+        ]);
     }
 }
