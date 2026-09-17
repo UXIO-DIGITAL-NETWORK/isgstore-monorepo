@@ -85,7 +85,6 @@ class ProductResource extends JsonResource
             'published_at' => $this->published_at,
             'archived_at' => $this->deleted_at,
             'is_available' => (bool) $this->is_available,
-            'is_price_locked' => (bool) $this->is_price_locked,
             'is_price_hidden' => (bool) $this->is_price_hidden,
             'price_min' => $this->price_min,
             'price_max' => $this->price_max,

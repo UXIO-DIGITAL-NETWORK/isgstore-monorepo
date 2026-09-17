@@ -15,7 +15,7 @@ class CheckUxiolabsPricesCommand extends Command
 {
     protected $signature = 'uxiolabs:check-prices';
 
-    protected $description = 'Check uxiolabs prices: update supplier cost/availability, auto-reprice live products from the margin rules, and record a price-change log. Locked prices are left frozen; products are never auto-created.';
+    protected $description = 'Check uxiolabs prices: update supplier cost/availability, auto-reprice live products from the margin rules, and record a price-change log. Products are never auto-created.';
 
     public function handle(CheckUxiolabsPricesAction $action): int
     {
@@ -29,11 +29,10 @@ class CheckUxiolabsPricesCommand extends Command
         }
 
         $this->info(sprintf(
-            '%d layanan, %d modal berubah (%d di-reprice, %d terkunci, %d margin negatif, %d nonaktif perlu perhatian), %d aktif lagi, %d layanan tak dikenal',
+            '%d layanan, %d modal berubah (%d di-reprice, %d margin negatif, %d nonaktif perlu perhatian), %d aktif lagi, %d layanan tak dikenal',
             $report->totalFetched,
             $report->priceChangedCount,
             $report->repricedCount,
-            $report->lockedCount,
             $report->negativeMarginCount,
             $report->deactivatedLoggedCount,
             count($report->reactivated),

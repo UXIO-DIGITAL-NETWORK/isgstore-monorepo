@@ -601,7 +601,7 @@ at request time and freezes `fee`/`nett`.
 
 ## uxiolabs Price Checker & Manual Product Management
 
-Core principle: **supplier cost is fact (auto-updated), selling price auto-follows the configured margin rules unless the admin locks it, products are never auto-created**. Full admin guide: `docs/uxiolabs-product-management.md`.
+Core principle: **supplier cost is fact (auto-updated), selling price auto-follows the configured margin rules, products are never auto-created**. Full admin guide: `docs/uxiolabs-product-management.md`.
 
 ### 5-minute price checker
 
@@ -611,10 +611,10 @@ Core principle: **supplier cost is fact (auto-updated), selling price auto-follo
 - Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Availability = `status === "aktif"`, mirrored into both `buyer_product_status` and `seller_product_status`. Postpaid/pasca is gone — uxiolabs is prepaid-only.
 - **Availability**: unavailable SKUs get `is_active = false` + `sync_deactivated_at` stamp; only stamped rows are ever auto-reactivated, so a manual admin deactivation is never overridden.
 - **Cost changes auto-reprice** a LIVE mapped product (`product_id` set + `is_active`): selling prices are recomputed from the margin rules via `ProductRepricer` (shared with the manual "Uxiolabs Update" so the two never drift), `products.price_modal` follows cost, and a `price_change_logs` row `applied` is written. Pooled rows (no product) are never repriced/logged — their cost still updates and their preview prices move with it.
-- **Locked prices** (`products.is_price_locked`) are NOT repriced — a `locked` log row is written so the admin can review the shifted margin. (NB: read `products.is_price_locked`, not the separate/unsynced `supplier_products.is_price_locked` — known drift, do not "fix" here.)
+- **Nothing freezes a selling price.** `products.is_price_locked` is a leftover column no longer read (the admin "Lock Price" action was removed): a frozen price is what leaves a product selling below cost, and checkout then refuses the customer with *"Transaksi dibatalkan otomatis: harga modal supplier sedang naik."* The margin rules win. NB: the separate `supplier_products.is_price_locked` is a label/filter only and has never affected pricing.
 - **Needs-attention log rows**: `deactivated` (SKU went inactive at the provider) and `negative_margin` (after markup + `price_max` clamp, member price is still below cost). Everything is append-only — a cost that moves twice leaves two rows; there is no dedupe/acknowledge.
 - **Never** creates products (unknown SKUs are only counted/sampled in the report).
-- Report DTO: `PriceCheckReportDTO` (total_fetched, price_changed, repriced, locked, negative_margin_count, deactivated_logged, deactivated/reactivated, negative_margin detail, unknown_count/sample).
+- Report DTO: `PriceCheckReportDTO` (total_fetched, price_changed, repriced, negative_margin_count, deactivated_logged, deactivated/reactivated, negative_margin detail, unknown_count/sample).
 
 `uxiolabs:sync-products` (name kept; also `POST /v1/uxiolabs/sync-products`) is the **manual** run of the same action with a console table + Discord report — it does not auto-create products.
 
@@ -624,7 +624,7 @@ Core principle: **supplier cost is fact (auto-updated), selling price auto-follo
 - `POST /v1/uxiolabs/products` — `CreateUxiolabsProductAction`: creates Product (price_modal = uxiolabs tier cost) + SupplierProduct mapping; admin supplies all 4 selling prices. Business-rule failures throw `App\Exceptions\UxiolabsProductException` → 422.
 - `POST /v1/uxiolabs/products/import` — Excel bulk import (`ImportUxiolabsProductsAction`, PhpSpreadsheet): headers matched by NAME on row 1 (`buyer_sku_code, category_code, name, code, price_member..price_agent, status`), max 500 rows, per-row validation + transaction so bad rows never abort the batch; blank prices default from `PricingService`.
 - `GET /v1/uxiolabs/products/import-template` — generated xlsx (sheet "Produk" + "Petunjuk" with live category codes). **Binary response — intentional deviation from the ApiResponse envelope.**
-- `GET /v1/uxiolabs/price-change-logs` — paginated read-only audit trail of the checker's actions (filters: `status` = applied|locked|deactivated|negative_margin|all, `search` name/sku, `date_from`/`date_to`). Replaces the old manual price-alert acknowledge endpoints.
+- `GET /v1/uxiolabs/price-change-logs` — paginated read-only audit trail of the checker's actions (filters: `status` = applied|locked|deactivated|negative_margin|all, `search` name/sku, `date_from`/`date_to`). `locked` is history only — rows written before the price lock was removed; nothing writes one now. Replaces the old manual price-alert acknowledge endpoints.
 
 `products.auto_price` was **dropped** — category is always explicit admin input. `PricingService` + `pricing-rules` CRUD remain for suggested/default prices only (member 20 / vip 15 / reseller 10 / agent 5 % built-in fallback).
 

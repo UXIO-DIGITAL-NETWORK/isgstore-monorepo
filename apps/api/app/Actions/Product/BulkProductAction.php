@@ -23,15 +23,6 @@ class BulkProductAction
      * @param  int[]  $ids
      * @return array{updated:int}
      */
-    public function lock(array $ids, bool $locked): array
-    {
-        return $this->each($ids, fn (Product $p) => $this->priceControl->lock($p, $locked));
-    }
-
-    /**
-     * @param  int[]  $ids
-     * @return array{updated:int}
-     */
     public function hide(array $ids, bool $hidden): array
     {
         return $this->each($ids, fn (Product $p) => $this->priceControl->hide($p, $hidden));

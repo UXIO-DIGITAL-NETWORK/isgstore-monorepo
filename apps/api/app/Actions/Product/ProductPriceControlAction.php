@@ -10,8 +10,13 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * Per-product price controls used by the Main Products row and bulk actions:
- * lock (skip the supplier sync), hide the price (Show Price), set min/max limits,
- * and re-pull selling prices from the supplier cost (Uxiolabs Update).
+ * hide the price (Show Price), set min/max limits, and re-pull selling prices
+ * from the supplier cost (Uxiolabs Update).
+ *
+ * There was a fourth — a price lock that froze a product's selling price against
+ * the supplier sync. It is gone: a frozen price is what leaves a product selling
+ * below cost, and checkout then refuses the customer with "harga modal supplier
+ * sedang naik". The margin rules decide the price, always.
  *
  * Every path that moves a price goes through `WriteProductPricesAction`, because
  * the plan rows are what customers are billed from and the legacy columns are
@@ -25,14 +30,6 @@ class ProductPriceControlAction
         private WriteProductPricesAction $writePrices,
         private CreateActivityLogAction $activityLogAction,
     ) {}
-
-    public function lock(Product $product, bool $locked): Product
-    {
-        $product->update(['is_price_locked' => $locked]);
-        $this->log($product, ($locked ? 'Locked' : 'Unlocked').' price');
-
-        return $product->fresh();
-    }
 
     public function hide(Product $product, bool $hidden): Product
     {
@@ -74,15 +71,10 @@ class ProductPriceControlAction
 
     /**
      * Recompute selling prices from the active supplier mapping's cost, honouring
-     * its margin overrides and this product's limits. A locked product is left
-     * untouched.
+     * its margin overrides and this product's limits.
      */
     public function uxiolabsUpdate(Product $product): Product
     {
-        if ($product->is_price_locked) {
-            return $product;
-        }
-
         $mapping = $product->supplierProducts()->where('is_active', true)->first()
             ?? $product->supplierProducts()->first();
 

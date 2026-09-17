@@ -23,11 +23,11 @@ use Illuminate\Support\Facades\DB;
  *  - Supplier cost (the configured tier from /service) and availability are
  *    updated automatically — factual data from the supplier that the checkout
  *    margin guard depends on.
- *  - Selling prices of LIVE products are now recomputed AUTOMATICALLY from the
- *    configured margin/pricing rules (via ProductRepricer) whenever cost moves,
- *    UNLESS the product's price is locked — a locked product is left frozen and
- *    only logged for review.
- *  - Every relevant event writes a row to price_change_logs (applied / locked /
+ *  - Selling prices of LIVE products are recomputed AUTOMATICALLY from the
+ *    configured margin/pricing rules (via ProductRepricer) whenever cost moves.
+ *    Nothing freezes a selling price: a stale one is what makes checkout refuse
+ *    an order ("harga modal supplier sedang naik"), so the margin rule wins.
+ *  - Every relevant event writes a row to price_change_logs (applied /
  *    negative_margin / deactivated) — the admin's audit trail, which replaces the
  *    old manual price-alert acknowledge flow.
  *  - Unknown service ids are NEVER auto-created — products are added manually
@@ -74,7 +74,7 @@ class CheckUxiolabsPricesAction
                 ipAddress: request()?->ip() ?? '127.0.0.1',
                 userAgent: request()?->userAgent() ?? 'System/Scheduler',
                 message: "Cek harga uxiolabs: {$report->priceChangedCount} modal berubah — "
-                    ."{$report->repricedCount} di-reprice, {$report->lockedCount} terkunci, "
+                    ."{$report->repricedCount} di-reprice, "
                     ."{$report->negativeMarginCount} margin negatif, "
                     ."{$report->deactivatedLoggedCount} nonaktif (perlu perhatian).",
                 isSystem: true,
@@ -91,7 +91,7 @@ class CheckUxiolabsPricesAction
     {
         $now = now();
 
-        // with('product'): reprice needs the product's category, limits, lock and
+        // with('product'): reprice needs the product's category, limits and
         // current selling prices — load them once instead of per row.
         $existingMappings = SupplierProduct::where('supplier_id', $supplierId)
             ->with('product')
@@ -106,7 +106,6 @@ class CheckUxiolabsPricesAction
         $unknownSample = [];
         $priceChanged = 0;
         $repriced = 0;
-        $lockedCount = 0;
         $negativeMarginCount = 0;
         $deactivatedLogged = 0;
         $upsertRows = [];
@@ -184,30 +183,24 @@ class CheckUxiolabsPricesAction
                     );
                     $deactivatedLogged++;
                 } elseif ($costChanged && $isActive && $available) {
-                    if ($product->is_price_locked) {
-                        // Frozen by the admin — record the drift, do not reprice.
-                        $logRows[] = $this->makeLogRow(
-                            PriceChangeLogStatus::LOCKED, $existing, $product, $oldPrices,
-                            (int) $existing->price, $cost, null,
-                            'Harga terkunci — modal berubah tapi harga jual dibekukan. Tinjau.', $now,
-                        );
-                        $lockedCount++;
-                    } else {
-                        $newPrices = $this->writePrices->fromCost($product, $cost, $existing);
+                    // Always reprice. A selling price left behind at an old cost
+                    // is the one thing that makes checkout refuse a paying
+                    // customer, so the margin rule is never second-guessed here.
+                    $newPrices = $this->writePrices->fromCost($product, $cost, $existing);
 
-                        // ceil() keeps price >= cost, so the only way member ends up
-                        // below cost is price_max clamping it there.
-                        $isNegative = $newPrices['price_member'] < $cost;
-                        $logRows[] = $this->makeLogRow(
-                            $isNegative ? PriceChangeLogStatus::NEGATIVE_MARGIN : PriceChangeLogStatus::APPLIED,
-                            $existing, $product, $oldPrices, (int) $existing->price, $cost, $newPrices,
-                            $isNegative
-                                ? 'Setelah markup & clamp, harga member masih di bawah modal.'
-                                : 'Harga jual diperbarui otomatis dari aturan margin.',
-                            $now,
-                        );
-                        $isNegative ? $negativeMarginCount++ : $repriced++;
-                    }
+                    // ceil() keeps price >= cost, so the only way member ends up
+                    // below cost is price_max clamping it there (or a hand-typed
+                    // plan price the reprice deliberately left alone).
+                    $isNegative = $newPrices['price_member'] < $cost;
+                    $logRows[] = $this->makeLogRow(
+                        $isNegative ? PriceChangeLogStatus::NEGATIVE_MARGIN : PriceChangeLogStatus::APPLIED,
+                        $existing, $product, $oldPrices, (int) $existing->price, $cost, $newPrices,
+                        $isNegative
+                            ? 'Setelah markup & clamp, harga member masih di bawah modal.'
+                            : 'Harga jual diperbarui otomatis dari aturan margin.',
+                        $now,
+                    );
+                    $isNegative ? $negativeMarginCount++ : $repriced++;
                 }
             }
 
@@ -264,7 +257,6 @@ class CheckUxiolabsPricesAction
             totalFetched: count($items),
             priceChangedCount: $priceChanged,
             repricedCount: $repriced,
-            lockedCount: $lockedCount,
             negativeMarginCount: $negativeMarginCount,
             deactivatedLoggedCount: $deactivatedLogged,
             deactivated: $deactivated,
@@ -278,7 +270,7 @@ class CheckUxiolabsPricesAction
     /**
      * One price_change_logs row as a raw array for bulk insert(). Old selling
      * prices are snapshotted off the product; new prices come from the freshly
-     * computed set, or null for events that don't reprice (locked, deactivated).
+     * computed set, or null for an event that does not reprice (deactivated).
      *
      * @param  array<string,mixed>  $oldPrices  The legacy columns as they were before this run's write
      * @param  array{price_modal:int,price_member:int,price_vip:int,price_reseller:int,price_agent:int}|null  $newPrices
@@ -369,8 +361,10 @@ class CheckUxiolabsPricesAction
     }
 
     /**
-     * Products whose member price is now below the active supplier cost —
-     * these fail checkout's margin guard until repriced, so surface them.
+     * Products whose member price is now below the active supplier cost — the
+     * ones checkout's margin guard will refuse, so surface them. The reprice
+     * above cannot produce one; a `price_max` ceiling or a hand-typed plan price
+     * can, and those need a human.
      *
      * The INNER JOIN on `products` is load-bearing: a pooled mapping has a null
      * `product_id` and therefore no selling price to compare, so it drops out here

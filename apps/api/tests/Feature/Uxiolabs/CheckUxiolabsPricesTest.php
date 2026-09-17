@@ -192,27 +192,33 @@ class CheckUxiolabsPricesTest extends TestCase
         $this->assertSame($this->expectedPrices($product, 12000)['price_agent'], (int) $product->price_agent);
     }
 
-    public function test_locked_product_is_not_repriced_but_is_logged_locked(): void
+    public function test_a_product_flagged_locked_is_still_repriced_from_the_margin_rules(): void
     {
+        // The lock used to freeze the selling price here: the cost rose, the price
+        // stayed put, and checkout then refused the customer with "harga modal
+        // supplier sedang naik". The margin rule now always wins.
         $mapping = $this->seedMapping(10000, ['is_price_locked' => true, 'price_member' => 12000]);
 
         $this->fakePriceList([$this->serviceItem(['harga' => 12000])]);
 
         $report = app(CheckUxiolabsPricesAction::class)->execute();
 
-        $this->assertSame(1, $report->lockedCount);
-        $this->assertSame(0, $report->repricedCount);
+        $this->assertSame(1, $report->repricedCount);
+        $this->assertSame(0, $report->negativeMarginCount);
 
-        // Cost still updates; the frozen selling price does not.
-        $this->assertDatabaseHas('supplier_products', ['buyer_sku_code' => 'ML5', 'price' => 12000]);
-        $this->assertSame(12000, (int) $mapping->product->fresh()->price_member);
+        $product = $mapping->product->fresh();
+        $this->assertSame($this->expectedPrices($product, 12000)['price_member'], (int) $product->price_member);
+        $this->assertGreaterThan(12000, (int) $product->price_member);
 
         $this->assertDatabaseHas('price_change_logs', [
             'supplier_product_id' => $mapping->id,
-            'status' => PriceChangeLogStatus::LOCKED->value,
+            'status' => PriceChangeLogStatus::APPLIED->value,
             'old_cost' => 10000,
             'new_cost' => 12000,
-            'new_price_member' => null,
+        ]);
+        $this->assertDatabaseMissing('price_change_logs', [
+            'supplier_product_id' => $mapping->id,
+            'status' => PriceChangeLogStatus::LOCKED->value,
         ]);
     }
 
@@ -393,18 +399,19 @@ class CheckUxiolabsPricesTest extends TestCase
         $this->assertFalse((bool) $mapping->fresh()->is_active);
     }
 
-    public function test_a_locked_product_with_rising_cost_surfaces_in_the_negative_margin_scan(): void
+    public function test_a_rising_cost_never_leaves_a_product_in_the_negative_margin_scan(): void
     {
-        // Locked → not repriced, so a rising cost leaves member below cost, which
-        // the cross-check scan still surfaces for the Discord report.
-        $this->seedMapping(10000, ['is_price_locked' => true, 'price_member' => 12000]);
+        // The scan is the cross-check that feeds the Discord report. An automatic
+        // reprice can no longer produce a row in it — only a `price_max` ceiling
+        // or a hand-typed plan price can, and both are covered above.
+        $mapping = $this->seedMapping(10000, ['is_price_locked' => true, 'price_member' => 12000]);
 
         $this->fakePriceList([$this->serviceItem(['harga' => 15000])]);
 
         $report = app(CheckUxiolabsPricesAction::class)->execute();
 
-        $this->assertCount(1, $report->negativeMargin);
-        $this->assertSame('ML5', $report->negativeMargin[0]['sku']);
+        $this->assertSame([], $report->negativeMargin);
+        $this->assertGreaterThanOrEqual(15000, (int) $mapping->product->fresh()->price_member);
     }
 
     public function test_error_envelope_is_rejected_not_treated_as_empty_list(): void

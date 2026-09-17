@@ -178,7 +178,6 @@ const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
     ],
     status: row.status === "active",
     is_available: row.is_available,
-    is_price_locked: row.is_price_locked ?? false,
     is_price_hidden: row.is_price_hidden ?? false,
     // Derived server-side from the product AND its supplier mapping; the fixture
     // carries it so the row menu can offer Publish or Unpublish.
