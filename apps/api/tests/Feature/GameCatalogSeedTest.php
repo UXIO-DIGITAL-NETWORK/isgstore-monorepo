@@ -9,12 +9,12 @@ use App\Models\MembershipPlan;
 use App\Models\PaymentChannel;
 use App\Models\PricingRule;
 use App\Models\Product;
-use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\User;
 use App\Support\Auth\Base32;
 use App\Support\Auth\Totp;
 use App\Support\Hub\HubSystemUser;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -63,8 +63,11 @@ class GameCatalogSeedTest extends TestCase
         $this->assertTrue((bool) CategoryType::where('name', 'Voucher')->value('is_voucher'));
         $this->assertFalse((bool) CategoryType::where('name', 'Mobile Game')->value('is_voucher'));
 
-        // Two uxiolabs actions resolve this row with firstOrFail.
-        $this->assertNotNull(Supplier::where('name', 'Uxiolabs')->first());
+        // Two uxiolabs actions resolve this row with firstOrFail, through the one
+        // helper that knows every spelling the row has carried — asserted through
+        // it rather than against a literal, so a rename cannot pass unnoticed here
+        // while breaking the pipeline.
+        $this->assertNotNull(UxiolabsSupplier::model());
 
         // Markup rules are only editable once the rows exist; PricingService
         // falls back to the same numbers when they do not.

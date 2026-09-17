@@ -18,7 +18,7 @@ class UxiolabsSyncController extends Controller
 
             return $this->successResponse(
                 $report->toArray(),
-                "Cek harga selesai: {$report->totalFetched} layanan uxiolabs, {$report->priceChangedCount} perubahan modal"
+                "Cek harga selesai: {$report->totalFetched} layanan Uxiotopup, {$report->priceChangedCount} perubahan modal"
             );
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 502);

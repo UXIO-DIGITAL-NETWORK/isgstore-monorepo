@@ -95,7 +95,7 @@ export default function ChannelFeePage() {
             <Text as="span" variant="small" className="text-warning">
               {r.contract_expected
                 ? `≠ kontrak ${formatCurrency(r.contract_expected.gateway_fee_flat, { fractionDigits: 0 })} + ${r.contract_expected.gateway_fee_percent}%`
-                : "tidak ada di kontrak Monetapay"}
+                : "tidak ada di kontrak payment gateway"}
             </Text>
           )}
         </Box>

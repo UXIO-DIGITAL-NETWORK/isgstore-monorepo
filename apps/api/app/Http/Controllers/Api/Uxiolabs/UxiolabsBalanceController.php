@@ -16,7 +16,7 @@ class UxiolabsBalanceController extends Controller
         try {
             $data = $action->execute();
 
-            return $this->successResponse($data, 'Saldo uxiolabs berhasil diambil');
+            return $this->successResponse($data, 'Saldo Uxiotopup berhasil diambil');
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 502);
         }

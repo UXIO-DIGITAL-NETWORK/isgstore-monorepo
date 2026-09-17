@@ -3,10 +3,10 @@
 namespace App\Actions\Uxiolabs;
 
 use App\Models\Product;
-use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
 use App\Services\UxiolabsService;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 
 /**
  * Preview a uxiolabs service before the admin creates a product from it.
@@ -32,7 +32,7 @@ class LookupUxiolabsSkuAction
 
         $cost = $this->uxiolabsService->costFor($item);
 
-        $supplier = Supplier::where('name', 'Uxiolabs')->first();
+        $supplier = UxiolabsSupplier::model();
         $alreadyMapped = $supplier
             ? SupplierProduct::where('supplier_id', $supplier->id)->where('buyer_sku_code', $sku)->exists()
             : false;

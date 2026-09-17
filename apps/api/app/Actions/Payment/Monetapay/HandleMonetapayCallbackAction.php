@@ -153,7 +153,7 @@ class HandleMonetapayCallbackAction
                 'status' => $isSuccess ? TransactionStatus::PAID : TransactionStatus::EXPIRED,
             ]);
 
-            $this->log($dto->outNo, "Callback processed — Monetapay status: {$dto->status}");
+            $this->log($dto->outNo, "Callback processed — payment gateway status: {$dto->status}");
 
             // ensure latest state is dispatched/notified
             $freshTransaction = $transaction->fresh(['product', 'paymentChannel']);
@@ -278,7 +278,7 @@ class HandleMonetapayCallbackAction
 
             if (! $isSuccess) {
                 $topup->update(['status' => 'EXPIRED']);
-                $this->log($dto->outNo, "Top-up failed — Monetapay status: {$dto->status}");
+                $this->log($dto->outNo, "Top-up failed — payment gateway status: {$dto->status}");
                 $notifyData = [$topup, false];
 
                 return;
@@ -364,7 +364,7 @@ class HandleMonetapayCallbackAction
 
             if (! $isSuccess) {
                 $attempt->update(['status' => 'EXPIRED']);
-                $this->log($dto->outNo, "Service payment failed — Monetapay status: {$dto->status}");
+                $this->log($dto->outNo, "Service payment failed — payment gateway status: {$dto->status}");
                 $notifyData = [$attempt, null, false];
 
                 return;

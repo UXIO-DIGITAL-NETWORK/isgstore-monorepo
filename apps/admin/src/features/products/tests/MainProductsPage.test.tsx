@@ -171,7 +171,7 @@ describe("MainProductsPage", () => {
     await user.click(await screen.findByRole("button", { name: /Actions for Weekly Diamond Pass \(One Week\)/i }));
     const items = await screen.findAllByRole("menuitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "Uxiolabs Update",
+      "Uxiotopup Update",
       "Hide Price",
       "Set Price Limit",
       "Unpublish",

@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class IntegrationChannelsTest extends TestCase
@@ -51,6 +52,64 @@ class IntegrationChannelsTest extends TestCase
         $this->assertSame('payment_gateway', $channels['monetapay']['type']);
         $this->assertSame('connected', $channels['monetapay']['connection_status']);
         $this->assertNull($channels['monetapay']['balance']);
+    }
+
+    /**
+     * The supplier's name is stored data, and it has been renamed twice — the row
+     * reads "Uxiotopup" now. This card is matched on that name, so a build that
+     * knew only one spelling would drop the balance silently: an empty figure, no
+     * error, nobody the wiser. Both have to keep working.
+     */
+    #[DataProvider('supplierNames')]
+    public function test_the_supplier_channel_survives_the_rename(string $supplierName): void
+    {
+        $this->actingAsAdmin();
+        Supplier::factory()->create(['name' => $supplierName]);
+        Http::fake([
+            '*/saldo' => Http::response(['status' => true, 'msg' => 'berhasil', 'data' => ['saldo' => 250000]], 200),
+            '*/v1.0.0/balance' => Http::response([
+                'code' => 0,
+                'messgae' => 'success',
+                'data' => ['current_balance' => '750000', 'current_freeze' => '0'],
+            ], 200),
+        ]);
+
+        $channels = collect($this->getJson('/api/v1/integration/channels')->assertOk()->json('data'))
+            ->keyBy('id');
+
+        $this->assertSame($supplierName, $channels['uxiolabs']['name']);
+        $this->assertSame('connected', $channels['uxiolabs']['connection_status']);
+        $this->assertEquals(250000, $channels['uxiolabs']['balance']);
+    }
+
+    /** @return array<string,array<int,string>> */
+    public static function supplierNames(): array
+    {
+        return [
+            'the current name' => ['Uxiotopup'],
+            'the name it carried before the rename' => ['Uxiolabs'],
+        ];
+    }
+
+    /**
+     * The gateway is shown by what it is, not by whose API it happens to be:
+     * "Payment Gateway" is the label the admin panel renders.
+     */
+    public function test_the_gateway_channel_is_labelled_generically(): void
+    {
+        $this->actingAsAdmin();
+        Http::fake([
+            '*/v1.0.0/balance' => Http::response([
+                'code' => 0,
+                'messgae' => 'success',
+                'data' => ['current_balance' => '750000', 'current_freeze' => '0'],
+            ], 200),
+        ]);
+
+        $channels = collect($this->getJson('/api/v1/integration/channels')->assertOk()->json('data'))
+            ->keyBy('id');
+
+        $this->assertSame('Payment Gateway', $channels['monetapay']['name']);
     }
 
     public function test_reports_disconnected_when_the_upstream_call_fails(): void

@@ -2,10 +2,10 @@
 
 namespace App\Actions\Uxiolabs;
 
-use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\PriceListRow;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 
@@ -31,7 +31,7 @@ class ListUxiolabsPriceListAction
         $items = $this->uxiolabsService->getPriceListCached();
 
         // One query for the whole page: service ids already mapped to a product.
-        $uxiolabsId = Supplier::where('name', 'Uxiolabs')->value('id');
+        $uxiolabsId = UxiolabsSupplier::id();
         $mapped = $uxiolabsId
             ? SupplierProduct::where('supplier_id', $uxiolabsId)->pluck('buyer_sku_code')->flip()
             : collect();

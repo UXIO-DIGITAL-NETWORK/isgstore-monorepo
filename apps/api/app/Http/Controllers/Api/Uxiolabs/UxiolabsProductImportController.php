@@ -22,7 +22,7 @@ class UxiolabsProductImportController extends Controller
     {
         return response($action->execute(), 200, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="template-import-produk-uxiolabs.xlsx"',
+            'Content-Disposition' => 'attachment; filename="template-import-produk-uxiotopup.xlsx"',
         ]);
     }
 
