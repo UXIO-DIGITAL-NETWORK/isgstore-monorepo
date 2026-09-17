@@ -20,7 +20,7 @@ async function openBulkMenu(user: ReturnType<typeof userEvent.setup>, count: num
 
 /**
  * The selection menu (product_requirements.md §4.6) — a single "N items
- * selected" chip that opens the bulk actions (Edit Logo, Uxiolabs Update, Show
+ * selected" chip that opens the bulk actions (Edit Logo, Uxiotopup Update, Show
  * Price, Unpublish, Archive), only while rows are selected.
  */
 describe("Main Products bulk actions", () => {
@@ -38,7 +38,7 @@ describe("Main Products bulk actions", () => {
     await selectTwoRows(user);
     await openBulkMenu(user, 2);
 
-    for (const name of ["Edit Logo", "Uxiolabs Update", "Show Price", "Unpublish", "Archive"]) {
+    for (const name of ["Edit Logo", "Uxiotopup Update", "Show Price", "Unpublish", "Archive"]) {
       expect(await screen.findByRole("menuitem", { name })).toBeInTheDocument();
     }
   });
@@ -71,7 +71,7 @@ describe("Main Products bulk actions", () => {
 
     await selectTwoRows(user);
     await openBulkMenu(user, 2);
-    await user.click(await screen.findByRole("menuitem", { name: "Uxiolabs Update" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Uxiotopup Update" }));
 
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Update" }));
     expect(spy.mock.calls[0][0]).toHaveLength(2);

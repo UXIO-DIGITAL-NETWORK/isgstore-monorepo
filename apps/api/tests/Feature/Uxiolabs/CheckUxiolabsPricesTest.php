@@ -11,6 +11,7 @@ use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
 use App\Support\Membership\DefaultPlan;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -27,7 +28,10 @@ class CheckUxiolabsPricesTest extends TestCase
 
         config(['services.uxiolabs.api_key' => 'test-api-key']);
 
-        $this->uxiolabs = Supplier::factory()->create(['name' => 'Uxiolabs']);
+        // Seeded under the name the pipeline resolves TODAY (a constant, not a
+        // literal) — so a rename that missed a lookup fails here instead of only
+        // in production.
+        $this->uxiolabs = Supplier::factory()->create(['name' => UxiolabsSupplier::NAME]);
     }
 
     private function fakePriceList(array $items): void

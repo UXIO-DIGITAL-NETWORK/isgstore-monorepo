@@ -17,7 +17,7 @@ export const CHANNELS: IntegrationChannel[] = [
     id: "uxiolabs",
     provider: "uxiolabs",
     type: "supplier",
-    name: "Uxiolabs",
+    name: "Uxiotopup",
     logo_url: "",
     currency_config: "Indonesia Rupiah (Rp) IDR - Rp 1",
     connection_status: "connected",

@@ -46,7 +46,7 @@ class PoolUxiolabsSkusAction
                 'pooled' => 0,
                 'skipped' => array_map(fn ($sku) => [
                     'buyer_sku_code' => (string) $sku,
-                    'reason' => 'Supplier uxiolabs belum terdaftar.',
+                    'reason' => 'Supplier Uxiotopup belum terdaftar.',
                 ], array_values(array_unique($buyerSkuCodes))),
             ];
         }
@@ -71,7 +71,7 @@ class PoolUxiolabsSkusAction
             $item = $priceList[$sku] ?? null;
 
             if ($item === null) {
-                $skipped[] = ['buyer_sku_code' => $sku, 'reason' => 'Layanan tidak ditemukan di price list uxiolabs.'];
+                $skipped[] = ['buyer_sku_code' => $sku, 'reason' => 'Layanan tidak ditemukan di price list Uxiotopup.'];
 
                 continue;
             }
@@ -97,7 +97,7 @@ class PoolUxiolabsSkusAction
             $cost = $this->uxiolabsService->costFor($item);
 
             if ($cost <= 0) {
-                $skipped[] = ['buyer_sku_code' => $sku, 'reason' => 'Harga modal dari uxiolabs tidak valid.'];
+                $skipped[] = ['buyer_sku_code' => $sku, 'reason' => 'Harga modal dari Uxiotopup tidak valid.'];
 
                 continue;
             }
@@ -135,7 +135,7 @@ class PoolUxiolabsSkusAction
                 userId: Auth::id(),
                 ipAddress: request()->ip(),
                 userAgent: request()->userAgent(),
-                message: 'Pooled '.count($insert).' uxiolabs SKU into the provider pool',
+                message: 'Pooled '.count($insert).' Uxiotopup SKU into the provider pool',
             ));
         }
 

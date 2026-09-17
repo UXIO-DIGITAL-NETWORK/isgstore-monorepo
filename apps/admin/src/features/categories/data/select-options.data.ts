@@ -21,7 +21,7 @@ export const REGION_OPTIONS: SelectOptionKey[] = [
 // Brand names, so these carry a label rather than a key — there is nothing to
 // translate.
 export const PROVIDER_OPTIONS: SelectOption[] = [
-  { value: "Uxiolabs", label: "Uxiolabs" },
+  { value: "Uxiotopup", label: "Uxiotopup" },
   { value: "Zelpoint", label: "Zelpoint" },
   { value: "Topupkuy", label: "Topupkuy" },
 ];

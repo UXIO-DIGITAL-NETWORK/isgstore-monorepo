@@ -56,7 +56,7 @@ export const useApproveWithdrawal = () => {
       financeService.approve(id, { method, proof }),
     onSuccess: (_, { method }) => {
       queryClient.invalidateQueries({ queryKey: ["finance"] });
-      toast.success(method === "manual" ? "Penarikan disetujui" : "Penarikan diproses ke Monetapay");
+      toast.success(method === "manual" ? "Penarikan disetujui" : "Penarikan diproses ke payment gateway");
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(error.response?.data?.message ?? t("toast.approveWithdrawalFailed"));

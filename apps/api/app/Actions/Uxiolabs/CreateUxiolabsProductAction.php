@@ -8,11 +8,11 @@ use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Uxiolabs\CreateUxiolabsProductDTO;
 use App\Exceptions\UxiolabsProductException;
 use App\Models\Product;
-use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
 use App\Services\ProductRepricer;
 use App\Services\UxiolabsService;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -35,16 +35,16 @@ class CreateUxiolabsProductAction
         $item = $this->uxiolabsService->findServiceInPriceList($dto->buyerSkuCode);
 
         if ($item === null) {
-            throw new UxiolabsProductException('Layanan tidak ditemukan di price list uxiolabs.');
+            throw new UxiolabsProductException('Layanan tidak ditemukan di price list Uxiotopup.');
         }
 
         $cost = $this->uxiolabsService->costFor($item);
 
         if ($cost <= 0) {
-            throw new UxiolabsProductException('Layanan ditemukan tetapi harga modal dari uxiolabs tidak valid.');
+            throw new UxiolabsProductException('Layanan ditemukan tetapi harga modal dari Uxiotopup tidak valid.');
         }
 
-        $supplier = Supplier::where('name', 'Uxiolabs')->firstOrFail();
+        $supplier = UxiolabsSupplier::modelOrFail();
 
         if (SupplierProduct::where('supplier_id', $supplier->id)->where('buyer_sku_code', $dto->buyerSkuCode)->exists()) {
             throw new UxiolabsProductException('Layanan sudah terhubung ke produk lain.');
@@ -104,7 +104,7 @@ class CreateUxiolabsProductAction
             userId: Auth::id(),
             ipAddress: request()?->ip() ?? '127.0.0.1',
             userAgent: request()?->userAgent() ?? 'System/Import',
-            message: "Menambahkan produk uxiolabs manual: {$product->name} ({$dto->buyerSkuCode})"
+            message: "Menambahkan produk Uxiotopup manual: {$product->name} ({$dto->buyerSkuCode})"
         ));
 
         return $product;

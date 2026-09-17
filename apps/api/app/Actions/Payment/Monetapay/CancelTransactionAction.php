@@ -32,7 +32,7 @@ class CancelTransactionAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Monetapay cancel requested for order: {$reference}",
+            message: "Payment gateway cancel requested for order: {$reference}",
         ));
 
         return $response;

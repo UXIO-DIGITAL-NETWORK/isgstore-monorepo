@@ -9,10 +9,10 @@ use App\DTOs\Uxiolabs\PriceCheckReportDTO;
 use App\Enums\PriceChangeLogStatus;
 use App\Models\PriceChangeLog;
 use App\Models\Product;
-use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\SupplierSkuSighting;
 use App\Services\UxiolabsService;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +63,7 @@ class CheckUxiolabsPricesAction
             UxiolabsService::PRICE_LIST_CACHE_TTL
         );
 
-        $supplier = Supplier::where('name', 'Uxiolabs')->firstOrFail();
+        $supplier = UxiolabsSupplier::modelOrFail();
 
         $report = DB::transaction(fn () => $this->check($supplier->id, $items));
 
@@ -73,7 +73,7 @@ class CheckUxiolabsPricesAction
                 userId: auth()->id(),
                 ipAddress: request()?->ip() ?? '127.0.0.1',
                 userAgent: request()?->userAgent() ?? 'System/Scheduler',
-                message: "Cek harga uxiolabs: {$report->priceChangedCount} modal berubah — "
+                message: "Cek harga Uxiotopup: {$report->priceChangedCount} modal berubah — "
                     ."{$report->repricedCount} di-reprice, "
                     ."{$report->negativeMarginCount} margin negatif, "
                     ."{$report->deactivatedLoggedCount} nonaktif (perlu perhatian).",

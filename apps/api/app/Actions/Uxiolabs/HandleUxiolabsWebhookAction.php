@@ -108,7 +108,7 @@ class HandleUxiolabsWebhookAction
                 userId: $transaction->user_id,
                 ipAddress: request()->ip() ?? '127.0.0.1',
                 userAgent: 'Uxiolabs Webhook',
-                message: "Uxiolabs updated {$transaction->invoice_number} to ".($payload['status'] ?? $newStatus->value).'. SN: '.($sn !== '' ? $sn : '-'),
+                message: "Uxiotopup updated {$transaction->invoice_number} to ".($payload['status'] ?? $newStatus->value).'. SN: '.($sn !== '' ? $sn : '-'),
                 isSystem: true,
             ));
 

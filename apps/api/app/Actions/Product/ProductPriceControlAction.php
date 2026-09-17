@@ -83,7 +83,7 @@ class ProductPriceControlAction
         }
 
         $this->writePrices->fromCost($product, (int) $mapping->price, $mapping);
-        $this->log($product, 'Uxiolabs price update');
+        $this->log($product, 'Uxiotopup price update');
 
         return $product->fresh();
     }
