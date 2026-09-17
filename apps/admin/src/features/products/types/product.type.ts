@@ -306,6 +306,13 @@ export interface ProviderProduct {
   /** Selling-price window carried onto the product at promote. 0/null = no limit. */
   price_min: number | null;
   price_max: number | null;
+  /**
+   * The day's selling allowance for this SKU — a LOCAL quota, since the provider
+   * reports no quantity at all. null = no ceiling.
+   */
+  daily_order_limit: number | null;
+  /** Slots left today (null = no ceiling, 0 = nothing left). */
+  stock_left_today: number | null;
   /** Per-tier margin overrides in percent; null = derived from pricing rules.
    * Legacy four-tier view, kept for the provider table. */
   margins: Record<PriceTier, number | null>;
@@ -380,6 +387,12 @@ export interface SetProviderMarginInput {
    * 0 means the SKU earns nothing. */
   point_percent?: number | null;
   point_flat?: number | null;
+  /**
+   * The day's selling allowance for this SKU. Sent only when the form carries
+   * the field; null clears the ceiling back to unlimited, and 0 is a legitimate
+   * "not today".
+   */
+  daily_order_limit?: number | null;
 }
 
 /* ── Provider pool ─────────────────────────────────────────────────────────── */

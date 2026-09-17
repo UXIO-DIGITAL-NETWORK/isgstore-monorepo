@@ -7,6 +7,7 @@ namespace App\Support\Storefront;
 use App\Models\Category;
 use App\Models\Product;
 use App\Support\Points\PointRules;
+use App\Support\Stock\DailyStockLimit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -95,9 +96,11 @@ final class Catalog
     /**
      * @param  array{percent: float, flat: int}|null  $pointGlobals  Site-wide
      *                                                               earning rule, read once by the caller when mapping a whole listing.
-     * @return array{id: int, name: string, code: string, price: int, group: string, sub_category_id: int|null, amount: int|null, point_percent: float, point_flat: int}
+     * @param  int|null  $stockLeft  Slots left today for this SKU (null = no ceiling); resolved by the caller for
+     *                               the whole page in one query, see `DailyStockLimit::remainingFor()`.
+     * @return array{id: int, name: string, code: string, price: int, group: string, sub_category_id: int|null, amount: int|null, point_percent: float, point_flat: int, stock_left: int|null, is_sold_out: bool}
      */
-    public static function denomination(Product $product, int $price, ?array $pointGlobals = null): array
+    public static function denomination(Product $product, int $price, ?array $pointGlobals = null, ?int $stockLeft = null): array
     {
         $points = PointRules::effectiveRuleFor($product, $pointGlobals);
 
@@ -115,6 +118,11 @@ final class Catalog
             // happens here rather than on the client.
             'point_percent' => $points['percent'],
             'point_flat' => $points['flat'],
+            // Today's remaining allowance. Null is "no ceiling", which is what
+            // every SKU without an admin-set limit reports — and is deliberately
+            // different from 0, which stops the order.
+            'stock_left' => $stockLeft,
+            'is_sold_out' => DailyStockLimit::isSoldOut($stockLeft),
         ];
     }
 }

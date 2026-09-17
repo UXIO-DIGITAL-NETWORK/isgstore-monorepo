@@ -12,6 +12,7 @@
   "toolbar": {
     "searchPlaceholder": "Cari nama layanan..."
   },
+  "soldOut": "Habis",
   "sort": {
     "default": "Urutan Default",
     "name-asc": "Nama A–Z",

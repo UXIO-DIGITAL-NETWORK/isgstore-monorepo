@@ -29,6 +29,10 @@ export interface DiamondPackage {
   pointPercent: number;
   /** Flat points added on top of the percentage. */
   pointFlat: number;
+  /** Slots left today from the SKU's local daily allowance; null = no ceiling. */
+  stockLeft: number | null;
+  /** Sold out for today — selectable on the page, but the order will be refused. */
+  isSoldOut: boolean;
 }
 
 export interface CategoryTab {

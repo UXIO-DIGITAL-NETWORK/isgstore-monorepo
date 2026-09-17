@@ -17,6 +17,7 @@ use App\Models\PaymentChannel;
 use App\Models\Product;
 use App\Models\Promo;
 use App\Models\PromoRedemption;
+use App\Models\SupplierProduct;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
@@ -28,6 +29,7 @@ use App\Support\Points\PointLedger;
 use App\Support\Points\PointRules;
 use App\Support\Pricing\PlanPrice;
 use App\Support\Promo\PromoResolver;
+use App\Support\Stock\DailyStockLimit;
 use App\Support\Wallet\WalletLedger;
 use Exception;
 use Illuminate\Support\Facades\Cache;
@@ -138,6 +140,16 @@ class CheckoutAction
         $margin = $sellingPrice - $activeSupplier->price;
         if ($margin < 0) {
             throw new Exception('Transaksi dibatalkan otomatis: harga modal supplier sedang naik.');
+        }
+
+        // ── 4a. The day's allowance ──────────────────────────────────────────
+        // A LOCAL quota, not the provider's stock — uxiolabs reports no quantity
+        // and has no availability probe. Checked here so an exhausted SKU fails
+        // before the gateway is called, and again under a row lock inside the
+        // write transaction, which is what actually stops two simultaneous
+        // orders from taking the same last slot.
+        if (DailyStockLimit::isExhausted($product, $activeSupplier)) {
+            throw new Exception(DailyStockLimit::EXHAUSTED_MESSAGE);
         }
 
         // ── 4b. Promo (resolve only — validate + discount) ───────────────────
@@ -368,6 +380,16 @@ class CheckoutAction
             $pointsSpent, $pointsSpentAmount, $isExternal,
             &$paymentInstructions, &$pgTransactionId, &$transactionStatus,
         ) {
+            // The day's allowance, authoritatively: the mapping row is locked for
+            // the count, so two checkouts racing for the last slot serialise here
+            // and the loser sees the winner's transaction row — which was inserted
+            // in this same transaction, before either of them commits.
+            $lockedMapping = SupplierProduct::whereKey($activeSupplier->id)->lockForUpdate()->first();
+
+            if (DailyStockLimit::isExhausted($product, $lockedMapping)) {
+                throw new Exception(DailyStockLimit::EXHAUSTED_MESSAGE);
+            }
+
             // Promo: lock the row so two concurrent redemptions cannot both slip
             // past a quota of one, and re-validate under the lock (a slot may
             // have been taken since the pricing resolve above). The pre-computed

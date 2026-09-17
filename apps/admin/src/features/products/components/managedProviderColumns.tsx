@@ -90,6 +90,32 @@ export const managedProviderColumnsFor = (t: TFunction<"products">): ColumnDef<P
     },
   },
   {
+    id: "stock",
+    header: t("stockLeftToday"),
+    cell: ({ row }) => {
+      const { daily_order_limit: limit, stock_left_today: left } = row.original;
+
+      // No ceiling — which is every SKU until an admin sets one. A dash keeps a
+      // table full of them quiet.
+      if (limit === null) {
+        return (
+          <Text as="span" variant="small" className="text-muted-foreground">—</Text>
+        );
+      }
+
+      const remaining = left ?? limit;
+
+      return (
+        <Box className="flex items-center gap-1.5">
+          <Text as="span">
+            {remaining} / {limit}
+          </Text>
+          {remaining <= 0 && <Badge variant="destructive">{t("soldOutToday")}</Badge>}
+        </Box>
+      );
+    },
+  },
+  {
     id: "action",
     header: t("action"),
     cell: ({ row }) => <ProviderRowActions provider={row.original} />,

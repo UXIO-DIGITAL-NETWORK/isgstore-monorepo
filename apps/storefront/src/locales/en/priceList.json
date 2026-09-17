@@ -12,6 +12,7 @@
   "toolbar": {
     "searchPlaceholder": "Search service name..."
   },
+  "soldOut": "Sold out",
   "sort": {
     "default": "Default Order",
     "name-asc": "Name A–Z",

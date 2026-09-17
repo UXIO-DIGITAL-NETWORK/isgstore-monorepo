@@ -34,6 +34,8 @@ class SupplierProduct extends Model
         'margin_agent' => 'float',
         'price_min' => 'integer',
         'price_max' => 'integer',
+        // The day's selling allowance; null = unlimited. See DailyStockLimit.
+        'daily_order_limit' => 'integer',
     ];
 
     /** Authored margin per membership plan — see `SupplierProductMargin`. */

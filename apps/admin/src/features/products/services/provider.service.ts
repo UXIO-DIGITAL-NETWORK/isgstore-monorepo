@@ -43,6 +43,9 @@ interface SupplierProductApiRow {
   promote_blocked_reason: string | null;
   price_min: number | null;
   price_max: number | null;
+  /** The day's selling allowance; null = unlimited. Attached per page by the API. */
+  daily_order_limit: number | null;
+  stock_left_today: number | null;
   pool_category?: { id: number; name: string } | null;
   /**
    * Projected prices for a pooled row, which has no product to read real ones
@@ -94,6 +97,8 @@ const toProviderProduct = (row: SupplierProductApiRow): ProviderProduct => {
     is_price_preview: pooled,
     price_min: row.price_min ?? null,
     price_max: row.price_max ?? null,
+    daily_order_limit: row.daily_order_limit ?? null,
+    stock_left_today: row.stock_left_today ?? null,
     supplier_name: row.supplier?.name ?? "—",
     // A pooled row has no product, so it falls back to the category it was
     // pooled for and to the provider's own name for the SKU.

@@ -21,6 +21,9 @@ export interface PriceListRow {
    */
   tiers: PriceListTier[];
   status: "active" | "inactive";
+  /** Slots left today (null = no ceiling), and whether there are none. */
+  stock_left: number | null;
+  is_sold_out: boolean;
 }
 
 export interface PriceListTier {

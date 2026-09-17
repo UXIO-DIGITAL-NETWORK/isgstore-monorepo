@@ -6,6 +6,7 @@ use App\Models\MembershipPlan;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
 use App\Services\ProductRepricer;
+use App\Support\Stock\DailyStockLimit;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class GetSupplierProductsAction
@@ -143,6 +144,19 @@ class GetSupplierProductsAction
     {
         $plans = null;
 
+        // One count for the whole page, before the loop: how much of each SKU's
+        // daily allowance is already spent. A pooled row has no product and
+        // therefore no orders today, so its whole allowance is left.
+        $usedToday = DailyStockLimit::usedTodayFor(
+            collect($paginator->items())
+                ->pluck('product_id')
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all()
+        );
+
         foreach ($paginator->items() as $row) {
             $margins = $this->repricer->planMargins($row);
 
@@ -154,6 +168,12 @@ class GetSupplierProductsAction
                 array_keys($margins),
                 $margins,
             ));
+
+            $limit = DailyStockLimit::forMapping($row);
+            $row->setAttribute(
+                'stock_left_today',
+                $limit === null ? null : max(0, $limit - ($usedToday[(int) $row->product_id] ?? 0))
+            );
 
             // A promoted row has real stored prices to read; only a pooled one
             // needs the projection.
