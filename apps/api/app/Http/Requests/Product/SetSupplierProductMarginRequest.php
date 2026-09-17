@@ -40,6 +40,10 @@ class SetSupplierProductMarginRequest extends FormRequest
             // global `points` settings, 0 = this SKU earns nothing.
             'point_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'point_flat' => ['nullable', 'integer', 'min:0'],
+            // The day's selling allowance for this SKU. Like the window above, it
+            // is only touched when the caller sends it; null clears the ceiling
+            // back to unlimited, and 0 is a legitimate "not today".
+            'daily_order_limit' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ];
     }
 
@@ -116,5 +120,16 @@ class SetSupplierProductMarginRequest extends FormRequest
     public function pointsProvided(): bool
     {
         return $this->has('point_percent') || $this->has('point_flat');
+    }
+
+    /** Null = no ceiling. See `App\Support\Stock\DailyStockLimit`. */
+    public function dailyOrderLimit(): ?int
+    {
+        return $this->filled('daily_order_limit') ? (int) $this->validated('daily_order_limit') : null;
+    }
+
+    public function dailyLimitProvided(): bool
+    {
+        return $this->has('daily_order_limit');
     }
 }

@@ -22,6 +22,10 @@ export interface PriceListItem {
    */
   tiers: PriceListTier[];
   status: PriceStatus;
+  /** Slots left today from the SKU's local daily allowance; null = no ceiling. */
+  stockLeft: number | null;
+  /** Nothing left today. The row stays listed; it cannot be bought. */
+  isSoldOut: boolean;
 }
 
 export interface PriceListTier {

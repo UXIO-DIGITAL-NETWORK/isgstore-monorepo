@@ -49,8 +49,13 @@ export default function PackageCard({ pkg, isSelected, onSelect }: Props): React
     <Box
       as="button"
       type="button"
-      onClick={() => onSelect(pkg.id)}
-      className={cn(cardVariants({ selected: isSelected }))}
+      // Sold out for today: still shown (the ladder should read completely, and
+      // hiding a denomination makes the page look broken), but not selectable —
+      // the API would refuse the order anyway.
+      disabled={pkg.isSoldOut}
+      aria-disabled={pkg.isSoldOut}
+      onClick={() => !pkg.isSoldOut && onSelect(pkg.id)}
+      className={cn(cardVariants({ selected: isSelected }), pkg.isSoldOut && "cursor-not-allowed opacity-55")}
       style={
         isSelected
           ? { boxShadow: "0 0 0 1px rgba(192,132,252,0.2), 0 0 16px rgba(147,51,234,0.15)" }
@@ -60,15 +65,26 @@ export default function PackageCard({ pkg, isSelected, onSelect }: Props): React
       {/* ── Top content ────────────────────────────────────────────────── */}
       <Box className="flex flex-col gap-2 px-3 pt-3 pb-2">
         {/* Package name */}
-        <Text
-          as="span"
-          className={cn(
-            "font-dmsans text-[11px] leading-tight",
-            isSelected ? "text-white" : "text-white/85",
+        <Box className="flex items-start justify-between gap-2">
+          <Text
+            as="span"
+            className={cn(
+              "font-dmsans text-[11px] leading-tight",
+              isSelected ? "text-white" : "text-white/85",
+            )}
+          >
+            {pkg.name}
+          </Text>
+
+          {pkg.isSoldOut && (
+            <Text
+              as="span"
+              className="shrink-0 rounded-full bg-destructive/20 px-2 py-0.5 font-outfit text-[10px] font-medium leading-none text-destructive"
+            >
+              {t("packages.soldOut")}
+            </Text>
           )}
-        >
-          {pkg.name}
-        </Text>
+        </Box>
 
         {/* Price row: diamond icon + price */}
         <Box className="flex items-center gap-2">

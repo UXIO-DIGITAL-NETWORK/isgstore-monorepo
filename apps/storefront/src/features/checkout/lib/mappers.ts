@@ -51,6 +51,10 @@ export function toDiamondPackages(response: GameProductsResponse): DiamondPackag
     // should quote zero points, not render NaN in the summary.
     pointPercent: product.point_percent ?? 0,
     pointFlat: product.point_flat ?? 0,
+    // Today's local allowance. An API that predates it reports neither field,
+    // which reads as "no ceiling" rather than "sold out".
+    stockLeft: product.stock_left ?? null,
+    isSoldOut: Boolean(product.is_sold_out),
   }));
 }
 

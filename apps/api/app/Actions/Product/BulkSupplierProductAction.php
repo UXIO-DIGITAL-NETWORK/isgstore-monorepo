@@ -48,6 +48,8 @@ class BulkSupplierProductAction
         ?float $pointPercent = null,
         ?int $pointFlat = null,
         bool $pointsProvided = false,
+        ?int $dailyOrderLimit = null,
+        bool $dailyLimitProvided = false,
     ): array {
         $rows = SupplierProduct::whereIn('id', $ids)->get();
         foreach ($rows as $row) {
@@ -60,6 +62,8 @@ class BulkSupplierProductAction
                 $pointPercent,
                 $pointFlat,
                 $pointsProvided,
+                $dailyOrderLimit,
+                $dailyLimitProvided,
             );
         }
 

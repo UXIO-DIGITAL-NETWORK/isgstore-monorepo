@@ -54,6 +54,7 @@
       "special": "Special Items"
     },
     "unit": "Diamond",
+    "soldOut": "Habis",
     "popular": "Terlaris",
     "bonus": "Bonus",
     "instantDelivery": "Pengiriman\nInstan"

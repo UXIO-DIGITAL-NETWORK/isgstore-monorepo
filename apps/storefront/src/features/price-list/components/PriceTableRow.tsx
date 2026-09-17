@@ -82,8 +82,18 @@ export default function PriceTableRow({ item, index, gridTemplate }: Props): Rea
         ))}
 
         {/* Status badge */}
-        <Box className="flex justify-center">
+        <Box className="flex items-center justify-center gap-1.5">
           <StatusBadge status={item.status} />
+          {/* Today's allowance, told apart from the upstream status: a SKU the
+              provider still serves can be sold out for the day locally. */}
+          {item.isSoldOut && (
+            <Text
+              as="span"
+              className="inline-flex items-center justify-center rounded-full bg-destructive/20 px-3 py-1 font-outfit text-[12px] font-medium leading-none whitespace-nowrap text-destructive"
+            >
+              {t("soldOut")}
+            </Text>
+          )}
         </Box>
       </Box>
 
@@ -112,7 +122,17 @@ export default function PriceTableRow({ item, index, gridTemplate }: Props): Rea
               </Text>
             </Box>
           </Box>
-          <StatusBadge status={item.status} />
+          <Box className="flex items-center gap-1.5">
+            <StatusBadge status={item.status} />
+            {item.isSoldOut && (
+              <Text
+                as="span"
+                className="inline-flex items-center justify-center rounded-full bg-destructive/20 px-3 py-1 font-outfit text-[12px] font-medium leading-none whitespace-nowrap text-destructive"
+              >
+                {t("soldOut")}
+              </Text>
+            )}
+          </Box>
         </Box>
 
         {/* Service name */}

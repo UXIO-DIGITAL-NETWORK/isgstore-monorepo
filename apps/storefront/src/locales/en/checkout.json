@@ -54,6 +54,7 @@
       "special": "Special Items"
     },
     "unit": "Diamonds",
+    "soldOut": "Sold out",
     "popular": "Best Seller",
     "bonus": "Bonus",
     "instantDelivery": "Instant\nDelivery"

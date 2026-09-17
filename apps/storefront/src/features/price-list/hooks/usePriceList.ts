@@ -73,6 +73,8 @@ export function usePriceList() {
           price: tier.price,
         })),
         status: row.status,
+        stockLeft: row.stock_left ?? null,
+        isSoldOut: Boolean(row.is_sold_out),
       })),
     [data],
   );

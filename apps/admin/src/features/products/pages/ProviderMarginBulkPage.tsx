@@ -69,6 +69,7 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
       price_max: sharedValue(selected, (row) => row.price_max),
       point_percent: sharedValue(selected, (row) => row.point_percent),
       point_flat: sharedValue(selected, (row) => row.point_flat),
+      daily_order_limit: sharedValue(selected, (row) => row.daily_order_limit),
     };
 
     for (const plan of plans) {
@@ -121,7 +122,13 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
       ? { point_percent: parse(draft.point_percent ?? ""), point_flat: parse(draft.point_flat ?? "") }
       : {};
 
-    bulkMargin.mutate({ ids, input: { margins, ...limits, ...points } });
+    // Blank-and-touched clears the ceiling (null = unlimited); blank-and-untouched
+    // leaves whatever each selected row already had.
+    const dailyLimit = meaningful("daily_order_limit")
+      ? { daily_order_limit: parse(draft.daily_order_limit ?? "") }
+      : {};
+
+    bulkMargin.mutate({ ids, input: { margins, ...limits, ...points, ...dailyLimit } });
   };
 
   return (
@@ -263,6 +270,27 @@ export default function ProviderMarginBulkPage({ ids }: { ids: string[] }) {
               />
               <Text variant="small" className="text-muted-foreground">
                 Flat points added on top of the percentage
+              </Text>
+            </Box>
+          </Box>
+
+          {/* The day's selling allowance. A local quota, not the provider's
+              stock: the provider reports no quantity at all and has no
+              availability probe, so this is the operator's own ceiling on how
+              many of this SKU may be sold today. */}
+          <Box className="mt-4 grid grid-cols-1 gap-4 border-t border-border pt-4">
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="daily-order-limit">{t("dailyOrderLimit")}</Label>
+              <Input
+                id="daily-order-limit"
+                type="number"
+                min="0"
+                value={draft.daily_order_limit ?? ""}
+                onChange={(e) => setValue("daily_order_limit", e.target.value)}
+                placeholder={t("unlimited")}
+              />
+              <Text variant="small" className="text-muted-foreground">
+                {t("dailyOrderLimitHint")}
               </Text>
             </Box>
           </Box>
