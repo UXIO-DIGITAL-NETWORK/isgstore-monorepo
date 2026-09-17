@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
-import { Archive, Eye, Lock, RefreshCcw } from "lucide-react";
+import { Archive, Eye, RefreshCcw } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { DataTable } from "@/components/common/DataTable";
@@ -13,7 +13,6 @@ import { MainProductToolbar } from "../components/MainProductToolbar";
 import {
   useDeleteProducts,
   useUxiolabsUpdateProducts,
-  useLockProducts,
   useProductList,
   useSetProductPublished,
   useShowProducts,
@@ -43,7 +42,6 @@ export default function MainProductsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkUnpublishOpen, setBulkUnpublishOpen] = useState(false);
-  const [bulkLockOpen, setBulkLockOpen] = useState(false);
   const [bulkShowOpen, setBulkShowOpen] = useState(false);
   const [bulkUxiolabsOpen, setBulkUxiolabsOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -62,7 +60,6 @@ export default function MainProductsPage() {
   const { data, isLoading, isError, refetch } = useProductList(params);
   const deleteProducts = useDeleteProducts();
   const setProductPublished = useSetProductPublished();
-  const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
   const uxiolabsUpdate = useUxiolabsUpdateProducts();
 
@@ -108,7 +105,6 @@ export default function MainProductsPage() {
           selectedCount={selectedIds.length}
           onBulkUxiolabs={() => setBulkUxiolabsOpen(true)}
           onBulkShowPrice={() => setBulkShowOpen(true)}
-          onBulkLock={() => setBulkLockOpen(true)}
           publishState={publishState}
           onPublishStateChange={(next) => {
             setPublishState(next);
@@ -193,16 +189,6 @@ export default function MainProductsPage() {
         title={selectedIds.length <= 1 ? "Show this price?" : `Show ${selectedIds.length} prices?`}
         description={t("bulkShowDescription")}
         onConfirm={() => showProducts.mutate({ ids: selectedIds, hidden: false })}
-      />
-
-      <DeleteConfirmDialog
-        open={bulkLockOpen}
-        onOpenChange={setBulkLockOpen}
-        icon={<Lock />}
-        confirmLabel={t("lock")}
-        title={selectedIds.length <= 1 ? "Lock this price?" : `Lock ${selectedIds.length} prices?`}
-        description={t("bulkLockDescription")}
-        onConfirm={() => lockProducts.mutate({ ids: selectedIds, locked: true })}
       />
 
       <MainProductFormDialog

@@ -18,7 +18,7 @@ class SyncUxiolabsProductsCommand extends Command
 {
     protected $signature = 'uxiolabs:sync-products';
 
-    protected $description = 'Cek harga uxiolabs manual: update modal/availability, reprice otomatis produk live dari aturan margin, dan catat price-change log. Harga terkunci dibiarkan; produk tidak dibuat otomatis.';
+    protected $description = 'Cek harga uxiolabs manual: update modal/availability, reprice otomatis produk live dari aturan margin, dan catat price-change log. Produk tidak dibuat otomatis.';
 
     public function handle(CheckUxiolabsPricesAction $action, DiscordWebhookService $discord): int
     {
@@ -44,7 +44,6 @@ class SyncUxiolabsProductsCommand extends Command
             ['Services fetched', $report->totalFetched],
             ['Cost changes', $report->priceChangedCount],
             ['Repriced (applied)', $report->repricedCount],
-            ['Locked (skipped)', $report->lockedCount],
             ['Negative margin (logged)', $report->negativeMarginCount],
             ['Deactivated (attention)', $report->deactivatedLoggedCount],
             ['Mappings reactivated', count($report->reactivated)],
@@ -63,7 +62,7 @@ class SyncUxiolabsProductsCommand extends Command
             [
                 'name' => 'PREPAID',
                 'value' => "Layanan: {$report->totalFetched} • Modal berubah: {$report->priceChangedCount} • "
-                    ."Reprice: {$report->repricedCount} • Terkunci: {$report->lockedCount} • "
+                    ."Reprice: {$report->repricedCount} • "
                     ."Margin negatif: {$report->negativeMarginCount} • "
                     ."Nonaktif (perlu perhatian): {$report->deactivatedLoggedCount}"
                     .' • Aktif lagi: '.count($report->reactivated)

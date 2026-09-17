@@ -475,7 +475,6 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
         Route::post('/', [ProductController::class, 'store']);
         // Bulk routes precede the {product} binding so "bulk" is never a model key.
         Route::post('/bulk-create', [ProductController::class, 'bulkCreate']);
-        Route::post('/bulk/lock-price', [ProductController::class, 'bulkLockPrice']);
         Route::post('/bulk/show-price', [ProductController::class, 'bulkShowPrice']);
         Route::post('/bulk/publish', [ProductController::class, 'bulkPublish']);
         Route::post('/bulk/uxiolabs-update', [ProductController::class, 'bulkUxiolabsUpdate']);
@@ -564,7 +563,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
     Route::post('/uxiolabs/products/import', [UxiolabsProductImportController::class, 'import']);
 
     // Uxiolabs Price Change Log — read-only audit trail of what the 5-minute
-    // checker auto-repriced, skipped (locked) or flagged (deactivated / negative margin).
+    // checker auto-repriced or flagged (deactivated / negative margin).
     Route::get('/uxiolabs/price-change-logs', [PriceChangeLogController::class, 'index']);
 
     // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.

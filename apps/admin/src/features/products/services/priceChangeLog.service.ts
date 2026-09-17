@@ -5,9 +5,9 @@ import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import type { PriceChangeLog, PriceChangeLogListParams, PriceChangeStatus } from "../types/product.type";
 
 /**
- * The read-only audit trail of what the 5-minute price checker did — auto-reprices
- * that landed, prices it left frozen because they were locked, and the rows that
- * need an admin (a SKU switched off at the provider, a margin gone negative).
+ * The read-only audit trail of what the 5-minute price checker did — the
+ * auto-reprices that landed, and the rows that need an admin (a SKU switched off
+ * at the provider, a margin gone negative).
  *
  * Its own service because it is a distinct read surface: no mutations, one endpoint.
  */

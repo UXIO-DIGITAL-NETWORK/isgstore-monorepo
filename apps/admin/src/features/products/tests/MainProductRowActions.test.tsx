@@ -13,8 +13,8 @@ const INACTIVE_ROW = "Diamond Top Up 355";
 const BLOCKED_ROW = "Genesis Crystal 60";
 /** Soft-deleted; only reachable through the Archived filter. */
 const ARCHIVED_ROW = "Blessing of the Welkin Moon";
-/** The one fixture row that ships `is_price_locked` and `is_price_hidden`. */
-const LOCKED_ROW = "Diamond Top Up 86";
+/** The one fixture row that ships `is_price_hidden`. */
+const HIDDEN_ROW = "Diamond Top Up 86";
 
 async function openRowMenu(user: ReturnType<typeof userEvent.setup>, row = FIRST_ROW) {
   await user.click(await screen.findByRole("button", { name: `Actions for ${row}` }));
@@ -22,9 +22,9 @@ async function openRowMenu(user: ReturnType<typeof userEvent.setup>, row = FIRST
 
 /**
  * The row action menu (product_requirements.md §4.6). Every action is wired:
- * Activate/Deactive / Uxiolabs Update / Show Price / Lock Price go through a
- * confirm dialog, Set Price Limit opens its page, and Delete/Edit are unchanged.
- * The lifecycle item's label mirrors the row's Status badge, both directions.
+ * Uxiolabs Update / Show Price go through a confirm dialog, Set Price Limit
+ * opens its page, and Delete/Edit are unchanged. The lifecycle item's label
+ * mirrors the row's Status badge, both directions.
  */
 describe("Main Products row actions", () => {
   afterEach(() => {
@@ -109,47 +109,13 @@ describe("Main Products row actions", () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  it("confirms a Lock Price and fires it for the single row", async () => {
-    const spy = vi.spyOn(productsService, "bulkLockPrice").mockResolvedValue(undefined);
-    const user = userEvent.setup();
-    await renderRoute(LIST_PATH);
-
-    await openRowMenu(user);
-    await user.click(await screen.findByRole("menuitem", { name: "Lock Price" }));
-
-    const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText("Lock this price?")).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: "Lock" }));
-
-    expect(spy.mock.calls[0]?.[0]).toHaveLength(1);
-    expect(spy.mock.calls[0]?.[1]).toBe(true);
-  });
-
-  // Same failure the lifecycle item had: without reading the row, a locked price
-  // still offered "Lock Price" and nothing in this menu could ever unlock it.
-  it("offers Unlock Price on a locked row, and unlocks it", async () => {
-    const spy = vi.spyOn(productsService, "bulkLockPrice").mockResolvedValue(undefined);
-    const user = userEvent.setup();
-    await renderRoute(LIST_PATH);
-
-    await openRowMenu(user, LOCKED_ROW);
-    expect(screen.queryByRole("menuitem", { name: "Lock Price" })).not.toBeInTheDocument();
-    await user.click(await screen.findByRole("menuitem", { name: "Unlock Price" }));
-
-    const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText("Unlock this price?")).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: "Unlock" }));
-
-    expect(spy.mock.calls[0]?.[1]).toBe(false);
-  });
-
   it("offers Hide Price on a visible row, and Show Price on a hidden one", async () => {
     const spy = vi.spyOn(productsService, "bulkShowPrice").mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     // A visible row: the only thing left to do is hide it.
-    await openRowMenu(user, LOCKED_ROW);
+    await openRowMenu(user, HIDDEN_ROW);
     await user.click(await screen.findByRole("menuitem", { name: "Show Price" }));
     let dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText("Show price for this product?")).toBeInTheDocument();

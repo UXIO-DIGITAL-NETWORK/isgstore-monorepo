@@ -21,7 +21,7 @@ async function openBulkMenu(user: ReturnType<typeof userEvent.setup>, count: num
 /**
  * The selection menu (product_requirements.md §4.6) — a single "N items
  * selected" chip that opens the bulk actions (Edit Logo, Uxiolabs Update, Show
- * Price, Lock Price, Deactive, Delete), only while rows are selected.
+ * Price, Unpublish, Archive), only while rows are selected.
  */
 describe("Main Products bulk actions", () => {
   afterEach(() => {
@@ -38,7 +38,7 @@ describe("Main Products bulk actions", () => {
     await selectTwoRows(user);
     await openBulkMenu(user, 2);
 
-    for (const name of ["Edit Logo", "Uxiolabs Update", "Show Price", "Lock Price", "Unpublish", "Archive"]) {
+    for (const name of ["Edit Logo", "Uxiolabs Update", "Show Price", "Unpublish", "Archive"]) {
       expect(await screen.findByRole("menuitem", { name })).toBeInTheDocument();
     }
   });

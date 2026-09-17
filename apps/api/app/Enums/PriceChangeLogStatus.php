@@ -7,7 +7,12 @@ enum PriceChangeLogStatus: string
     /** Selling prices were recomputed and applied automatically. */
     case APPLIED = 'applied';
 
-    /** Cost moved but the product's price is locked, so it was left frozen. */
+    /**
+     * Cost moved while the product's price was frozen by the admin.
+     *
+     * No longer written — nothing freezes a selling price any more — but the
+     * rows already in `price_change_logs` are history and must stay readable.
+     */
     case LOCKED = 'locked';
 
     /** The SKU went inactive at the provider — the product can't be sold until handled. */
