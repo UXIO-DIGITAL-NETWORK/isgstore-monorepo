@@ -440,11 +440,44 @@ class CheckUxiolabsPricesTest extends TestCase
         app(CheckUxiolabsPricesAction::class)->execute();
     }
 
-    public function test_check_prices_command_runs_quietly(): void
+    /**
+     * The scheduled tick reports to Discord on EVERY run — the operator's choice,
+     * 288 messages a day — so the checker's log lives in the channel instead of
+     * appearing only when the command crashes.
+     */
+    public function test_the_scheduled_run_reports_to_discord_every_time(): void
     {
-        $this->fakePriceList([$this->serviceItem()]);
+        config(['services.discord.webhook_log_url' => 'https://discord.test/webhook']);
+
+        $this->seedMapping();
+        Http::fake([
+            '*/service' => Http::response(['status' => true, 'msg' => 'ok', 'data' => [$this->serviceItem(['harga' => 11000])]]),
+            'discord.test/*' => Http::response([]),
+        ]);
 
         $this->artisan('uxiolabs:check-prices')->assertExitCode(0);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'discord.test'));
+        Http::assertSent(fn ($request) => str_contains($request->body(), 'terjadwal'));
+    }
+
+    /** A tick that collided with another run is part of the log too. */
+    public function test_a_skipped_tick_is_reported_rather_than_silent(): void
+    {
+        config(['services.discord.webhook_log_url' => 'https://discord.test/webhook']);
+
+        Http::fake(['discord.test/*' => Http::response([])]);
+
+        $held = Cache::lock('uxiolabs:price-check', 300);
+        $this->assertTrue($held->get());
+
+        try {
+            $this->artisan('uxiolabs:check-prices')->assertExitCode(0);
+        } finally {
+            $held->release();
+        }
+
+        Http::assertSent(fn ($request) => str_contains($request->body(), 'Dilewati'));
     }
 
     public function test_sync_products_command_runs_and_reports_to_discord(): void
