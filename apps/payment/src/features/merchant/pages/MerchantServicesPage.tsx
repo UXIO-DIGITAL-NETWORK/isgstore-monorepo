@@ -11,6 +11,8 @@ import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { invoiceStatusLabelKey } from "@/lib/invoiceStatus";
+import { subscriptionStatusLabelKey } from "@/lib/subscriptionStatus";
 import { formatCurrency } from "@/utils/currency";
 import { formatDate, formatDateTime } from "@/utils/date";
 import type { Service, ServiceInvoice, ServicePlanLine, ServiceSubscription } from "@/types/service.type";
@@ -35,7 +37,14 @@ function SubscriptionCard({ subscription }: { subscription: ServiceSubscription 
     <Box className={CARD}>
       <Box className="flex items-start justify-between gap-2">
         <Heading level={3}>{subscription.service?.name ?? t("services.fallbackServiceName")}</Heading>
-        <StatusBadge status={subscription.status} />
+        <StatusBadge
+          status={subscription.status}
+          label={
+            subscriptionStatusLabelKey(subscription.status)
+              ? t(subscriptionStatusLabelKey(subscription.status) as string)
+              : undefined
+          }
+        />
       </Box>
       <Text variant="small">
         {formatDate(subscription.starts_at)} – {formatDate(subscription.ends_at)}
@@ -138,7 +147,16 @@ interface MerchantServicesPageProps {
  * a service the client has been sold and has not settled yet is invisible there,
  * which is precisely the row they need to see.
  */
-function ServicePlanSummary({ lines, isLoading }: { lines: ServicePlanLine[]; isLoading?: boolean }) {
+function ServicePlanSummary({
+  lines,
+  isLoading,
+  onViewBills,
+}: {
+  lines: ServicePlanLine[];
+  isLoading?: boolean;
+  /** Takes the client to the tab that actually pays the amount shown here. */
+  onViewBills: () => void;
+}) {
   const { t } = useTranslation("merchant");
 
   if (isLoading) return <Text variant="small">{t("services.loading")}</Text>;
@@ -166,9 +184,16 @@ function ServicePlanSummary({ lines, isLoading }: { lines: ServicePlanLine[]; is
                 : t("plan.notYetPaid")}
             </Text>
             {line.outstanding_total > 0 && (
-              <Text as="span" variant="small" className="text-warning tabular-nums">
+              // A restated figure with no way through is a dead end; this now
+              // opens the tab where the debt is settled.
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-warning"
+                onClick={onViewBills}
+              >
                 {t("plan.outstanding", { amount: money(line.outstanding_total) })}
-              </Text>
+              </Button>
             )}
           </Box>
         </Box>
@@ -198,6 +223,8 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
 
   const { data: subscriptions, isLoading: loadingSubs } = useMerchantSubscriptions({ page: 1, per_page: 50 });
   const { data: plan, isLoading: loadingPlan } = useServicePlan();
+  /** Decides which next step a client with nothing active is actually offered. */
+  const hasOutstanding = (plan ?? []).some((line) => line.outstanding_total > 0);
   const { data: catalog, isLoading: loadingCatalog } = useMerchantServices({ page: 1, per_page: 50 });
   const {
     data: invoices,
@@ -220,7 +247,17 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
     },
     { key: "service", header: t("services.colService"), cell: (r) => r.service_name },
     { key: "amount", header: t("services.colAmount"), className: "text-right tabular-nums", cell: (r) => money(r.amount) },
-    { key: "status", header: t("services.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+    {
+      key: "status",
+      header: t("services.colStatus"),
+      // Wording rather than the enum — see lib/invoiceStatus.
+      cell: (r) => (
+        <StatusBadge
+          status={r.status}
+          label={invoiceStatusLabelKey(r.status) ? t(invoiceStatusLabelKey(r.status) as string) : undefined}
+        />
+      ),
+    },
     { key: "due", header: t("services.colDue"), cell: (r) => formatDateTime(r.due_at) },
     {
       key: "actions",
@@ -265,12 +302,28 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
             a period has been paid for, so on their own they cannot answer the
             question a client opens this page with.
           */}
-          <ServicePlanSummary lines={plan ?? []} isLoading={loadingPlan} />
+          <ServicePlanSummary
+            lines={plan ?? []}
+            isLoading={loadingPlan}
+            onViewBills={() => goToTab("bills")}
+          />
 
           {loadingSubs ? (
             <Text variant="small">{t("services.loading")}</Text>
           ) : (subscriptions?.rows.length ?? 0) === 0 ? (
-            <Text variant="small">{t("services.noActiveSubscriptions")}</Text>
+            <Box className="flex flex-col gap-1">
+              <Text variant="small">{t("services.noActiveSubscriptions")}</Text>
+              {/* The plan line above can show money owed for a service nobody
+                  has paid for yet, so "nothing active" must not read as
+                  "nothing to do" — the next step depends on which it is. */}
+              <Text
+                as="span"
+                variant="small"
+                className={hasOutstanding ? "text-warning" : undefined}
+              >
+                {hasOutstanding ? t("services.outstandingHint") : t("services.noActiveSubscriptionsCta")}
+              </Text>
+            </Box>
           ) : (
             <Box className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {subscriptions?.rows.map((subscription) => (

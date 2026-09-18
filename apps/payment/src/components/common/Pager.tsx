@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
@@ -9,13 +10,17 @@ interface PagerProps {
   onPageChange: (page: number) => void;
 }
 
-/** Prev/next pager for server-mode tables. */
+/**
+ * Prev/next pager for server-mode tables. Rendered by the client pages and the
+ * internal ones alike, so its wording goes through i18n rather than being
+ * written in one panel's language.
+ */
 export function Pager({ page, lastPage, total, onPageChange }: PagerProps) {
+  const { t } = useTranslation("common");
+
   return (
     <Box className="flex items-center justify-between">
-      <Text variant="small">
-        Halaman {page} dari {lastPage} · {total} data
-      </Text>
+      <Text variant="small">{t("pager.summary", { page, lastPage, total })}</Text>
       <Box className="flex gap-2">
         <Button
           variant="outline"
@@ -23,7 +28,7 @@ export function Pager({ page, lastPage, total, onPageChange }: PagerProps) {
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          Sebelumnya
+          {t("pager.previous")}
         </Button>
         <Button
           variant="outline"
@@ -31,7 +36,7 @@ export function Pager({ page, lastPage, total, onPageChange }: PagerProps) {
           disabled={page >= lastPage}
           onClick={() => onPageChange(page + 1)}
         >
-          Berikutnya
+          {t("pager.next")}
         </Button>
       </Box>
     </Box>

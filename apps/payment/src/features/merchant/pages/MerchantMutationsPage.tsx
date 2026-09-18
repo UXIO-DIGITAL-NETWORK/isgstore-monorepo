@@ -34,7 +34,19 @@ const columnsFor = (t: TFunction<"merchant">): Column<MerchantMutation>[] => [
     key: "balance",
     header: t("mutations.colBalanceAfter"),
     className: "text-right tabular-nums",
-    cell: (r) => formatCurrency(r.balance_after, { fractionDigits: 0 }),
+    cell: (r) => (
+      <Box className="flex flex-col items-end">
+        <Text as="span">{formatCurrency(r.balance_after, { fractionDigits: 0 })}</Text>
+        {/* Where the balance started. Without it the movement can only be taken
+            on trust — with it, before + amount = after can be checked. */}
+        <Text
+          as="span"
+          variant="small"
+        >
+          {t("mutations.fromBalance", { amount: formatCurrency(r.balance_before, { fractionDigits: 0 }) })}
+        </Text>
+      </Box>
+    ),
   },
   { key: "desc", header: t("mutations.colDescription"), cell: (r) => r.description ?? "-" },
 ];
