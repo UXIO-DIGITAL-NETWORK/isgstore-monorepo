@@ -74,6 +74,49 @@ describe("OutstandingBillsPanel", () => {
     expect(screen.getByText(/Tidak ada tagihan/)).toBeInTheDocument();
   });
 
+  /**
+   * An empty plan is not the same claim as "everything is settled". The second
+   * is reassurance; the first is the symptom of a plan that was never pulled,
+   * and it must not be dressed up as the second.
+   */
+  it("does not claim everything is settled when there is no plan to read", () => {
+    render(<OutstandingBillsPanel lines={[]} />);
+
+    expect(screen.getByText("Belum ada tagihan dari paket layananmu.")).toBeInTheDocument();
+    expect(screen.queryByText(/Semua layanan sudah lunas/)).not.toBeInTheDocument();
+  });
+
+  /**
+   * The pay button used to exist only AFTER a selection, so a client who had
+   * just been sent a bill could not see how to pay it. It is on screen from the
+   * start now, with the one missing step named.
+   */
+  it("shows how to pay before anything is ticked", async () => {
+    const user = userEvent.setup();
+    render(<OutstandingBillsPanel lines={[line()]} />);
+
+    expect(
+      screen.getByText("Centang tagihan yang mau dibayar, lalu pilih metode pembayaran."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bayar yang dipilih" })).toBeDisabled();
+
+    await user.click(screen.getByRole("checkbox"));
+
+    // Ticking a bill trades the hint for the actual choice.
+    expect(screen.queryByText(/Centang tagihan/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /QRIS/ })).toBeInTheDocument();
+  });
+
+  /** A bill you must hit a small box to pay is a bill somebody will not pay. */
+  it("toggles a bill from anywhere in its row", async () => {
+    const user = userEvent.setup();
+    render(<OutstandingBillsPanel lines={[line()]} />);
+
+    await user.click(screen.getByText("Domain"));
+
+    expect(screen.getByRole("checkbox")).toBeChecked();
+  });
+
   it("groups bills by the day they fall due", () => {
     render(
       <OutstandingBillsPanel

@@ -279,6 +279,8 @@
   },
   "bills": {
     "nothingDue": "Nothing to pay. Every service is settled for the current period.",
+    "noPlan": "No bills from your service plan yet.",
+    "noPlanHint": "Bills appear here as soon as we issue them. If you expected one, get in touch.",
     "oneTime": "One-time",
     "noDueDate": "No due date",
     "dueOn": "Due {{date}}",
@@ -286,7 +288,8 @@
     "selectedCount": "{{count}} bills selected",
     "feeOnce": "Admin fee (charged once for the whole selection)",
     "total": "Total to pay",
-    "paySelected": "Pay selected"
+    "paySelected": "Pay selected",
+    "selectHint": "Tick the bills you want to pay, then pick a payment method."
   },
   "plan": {
     "title": "Services in your plan",
