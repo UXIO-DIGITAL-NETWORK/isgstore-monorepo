@@ -62,6 +62,18 @@ export const merchantService = {
     return unwrapList<Withdrawal>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
+  /**
+   * One payout, by its human-readable number.
+   *
+   * The list row already carries most of this, but the reasons a client opens
+   * this page — the destination account it is being sent to, why it FAILED, the
+   * transfer proof — are the fields the list has no room for.
+   */
+  withdrawal: async (number: string): Promise<Withdrawal> => {
+    const res: ApiResponse<Withdrawal> = await api.get(`${BASE}/withdrawals/${number}`);
+    return res.data;
+  },
+
   createWithdrawal: async (payload: CreateWithdrawalPayload): Promise<Withdrawal> => {
     const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals`, payload);
     return res.data;

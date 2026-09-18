@@ -3,7 +3,13 @@
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "export": "Export"
+  },
+  "pager": {
+    "summary": "Page {{page}} of {{lastPage}} · {{total}} rows",
+    "previous": "Previous",
+    "next": "Next"
   },
   "theme": {
     "label": "Change theme",
@@ -22,16 +28,12 @@
     "rowsPerPage": "Rows per page",
     "loading": "Loading…",
     "rowNumber": "No.",
-    "empty": "No data"
+    "empty": "No data",
+    "error": "Could not load the data"
   },
   "filters": {
     "search": "Search",
     "searchPlaceholder": "Invoice no.",
-    "status": "Status",
-    "allStatuses": "All statuses",
-    "statusSuccess": "Successful",
-    "statusPending": "Pending",
-    "statusFailed": "Failed",
     "type": "Type",
     "allTypes": "All types",
     "typeSale": "Sale",
@@ -61,7 +63,10 @@
     "loading": "Loading…",
     "notScheduled": "Installation not scheduled yet",
     "notScheduledDescription": "Our team will schedule the setup for this service.",
-    "progress": "Installation progress"
+    "progress": "Installation progress",
+    "steps": "{{done}}/{{total}} steps · {{percent}}%",
+    "window": "Window: {{from}} – {{to}}",
+    "noSteps": "The installation steps have not been laid out yet."
   },
   "errorPage": {
     "notFoundAlt": "Illustration of a page not found",

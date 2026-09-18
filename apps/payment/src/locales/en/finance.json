@@ -122,7 +122,12 @@
     "loadFailed": "Could not load notifications.",
     "loading": "Loading…",
     "empty": "No notifications yet",
-    "unread": "Unread"
+    "unread": "Unread",
+    "markRead": "Mark as read",
+    "markAll": "Mark all as read",
+    "filterAll": "All",
+    "filterUnread": "Unread",
+    "emptyDescription": "Client transactions, service payments, withdrawal requests, and packages nearing expiry all show up here."
   },
   "internalWithdrawals": {
     "title": "Internal withdrawals",
@@ -248,6 +253,9 @@
     "submitting": "Saving…"
   },
   "notificationBell": {
+    "title": "Notifications",
+    "markAll": "Mark all as read",
+    "viewAll": "See all",
     "label": "Notifications",
     "labelUnread": "Notifications, {{count}} unread",
     "loading": "Loading…",

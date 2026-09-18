@@ -187,3 +187,76 @@ describe("MerchantServicesPage", () => {
     expect(screen.queryByRole("link", { name: "Bayar" })).not.toBeInTheDocument();
   });
 });
+
+/** A plan line nobody has paid for yet — the row the subscription cards cannot show. */
+const planLine = {
+  service_code: "uxiotopup",
+  service_name: "Uxiotopup",
+  billing_mode: "billed" as const,
+  amount: 250000,
+  duration_days: 30,
+  governs_licence: true,
+  is_active: true,
+  active_until: null,
+  next_period_starts_at: null,
+  next_due_at: null,
+  outstanding_total: 250000,
+  outstanding: [],
+};
+
+const renderTabs = (onTabChange: (tab: string) => void) =>
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <MerchantServicesPage tab="subscriptions" onTabChange={onTabChange} />
+    </QueryClientProvider>,
+  );
+
+const mockPlan = (lines: unknown[]) =>
+  vi.spyOn(hooks, "useServicePlan").mockReturnValue({
+    data: lines,
+    isLoading: false,
+    isError: false,
+  } as unknown as ReturnType<typeof hooks.useServicePlan>);
+
+describe("MerchantServicesPage — an amount owed is a way in, not a restatement", () => {
+  it("sends the outstanding amount to the tab that pays it", async () => {
+    const user = userEvent.setup();
+    const onTabChange = vi.fn();
+    mockPlan([planLine]);
+    renderTabs(onTabChange);
+
+    await user.click(screen.getByRole("button", { name: "Belum dibayar Rp 250.000" }));
+
+    expect(onTabChange).toHaveBeenCalledWith("bills");
+  });
+
+  /**
+   * "Nothing active" and "you owe money" can both be true, and the old copy
+   * said only the first — sending a client with a bill off to browse instead.
+   */
+  it("points a client with a debt at the bill, not at the catalogue", () => {
+    vi.spyOn(hooks, "useMerchantSubscriptions").mockReturnValue({
+      data: list([]),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof hooks.useMerchantSubscriptions>);
+    mockPlan([planLine]);
+    renderTabs(vi.fn());
+
+    expect(screen.getByText("Ada tagihan yang menunggu dibayar — buka tab Tagihan.")).toBeInTheDocument();
+    expect(screen.queryByText("Lihat tab Katalog untuk berlangganan.")).not.toBeInTheDocument();
+  });
+
+  it("points a client with nothing at all at the catalogue", () => {
+    vi.spyOn(hooks, "useMerchantSubscriptions").mockReturnValue({
+      data: list([]),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof hooks.useMerchantSubscriptions>);
+    mockPlan([]);
+    renderTabs(vi.fn());
+
+    expect(screen.getByText("Lihat tab Katalog untuk berlangganan.")).toBeInTheDocument();
+    expect(screen.queryByText(/Ada tagihan yang menunggu dibayar/)).not.toBeInTheDocument();
+  });
+});

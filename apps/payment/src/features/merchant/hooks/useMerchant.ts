@@ -2,15 +2,47 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEchoConnected } from "@/hooks/useEchoConnected";
+import { isWithdrawalInFlight } from "@/lib/withdrawalStatus";
 import type { ListParams } from "@/lib/list";
 import { merchantService } from "../services/merchant.service";
 import type { CreateWithdrawalPayload } from "../types/merchant.type";
 
+/**
+ * The landing screen's figures.
+ *
+ * Realtime covers the events we subscribe to (a payout settling invalidates
+ * this), but the balances also move on things nobody pushes: a sale landing, a
+ * holding period expiring. So a slow poll is the backstop and the page's own
+ * refresh button is for impatience — it is the difference between a monitoring
+ * screen and a snapshot.
+ */
 export const useMerchantDashboard = () =>
-  useQuery({ queryKey: ["merchant", "dashboard"], queryFn: merchantService.dashboard });
+  useQuery({
+    queryKey: ["merchant", "dashboard"],
+    queryFn: merchantService.dashboard,
+    refetchInterval: 60_000,
+  });
 
+/**
+ * The sales feed.
+ *
+ * No websocket channel carries a merchant's transactions yet — `channels.php`
+ * declares `merchant.{id}.withdrawals` and `merchant.{id}.service-invoices`, and
+ * nothing else — so this list is poll-driven for now. 30s is therefore what the
+ * page can honestly promise, and it is also what keeps the dashboard's
+ * "Aktivitas terbaru" honest; the alternative today is a manual reload.
+ *
+ * `refetchIntervalInBackground` because the app disables refetchOnWindowFocus
+ * globally (main.tsx), so a merchant returning to the tab would otherwise read
+ * a stale list until the next tick.
+ */
 export const useMerchantTransactions = (params: ListParams) =>
-  useQuery({ queryKey: ["merchant", "transactions", params], queryFn: () => merchantService.transactions(params) });
+  useQuery({
+    queryKey: ["merchant", "transactions", params],
+    queryFn: () => merchantService.transactions(params),
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: true,
+  });
 
 export const useMerchantTransactionSummary = (params: ListParams) =>
   useQuery({
@@ -33,7 +65,33 @@ export const useMerchantWithdrawals = (params: ListParams) => {
     queryKey: ["merchant", "withdrawals", params],
     queryFn: () => merchantService.withdrawals(params),
     refetchInterval: (query) => {
-      const inFlight = query.state.data?.rows.some((w) => w.status === "PENDING" || w.status === "PROCESSING");
+      // APPROVED counts as in flight: the payout has cleared us and is on its
+      // way, which is exactly when a client is watching the row.
+      const inFlight = query.state.data?.rows.some((w) => isWithdrawalInFlight(w.status));
+      if (!inFlight) return false;
+      return connected ? 30_000 : 5_000;
+    },
+  });
+};
+
+/**
+ * One payout, opened from its row in the list.
+ *
+ * Polled while it is still moving, exactly like the list: a payout that settles
+ * while the client is looking at it should say so, and the server owns the
+ * terminal state. Once it is SETTLED/REJECTED/FAILED the interval stops — a
+ * finished payout does not change again.
+ */
+export const useMerchantWithdrawal = (number: string) => {
+  const connected = useEchoConnected();
+
+  return useQuery({
+    queryKey: ["merchant", "withdrawal", number],
+    queryFn: () => merchantService.withdrawal(number),
+    enabled: Boolean(number),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      const inFlight = status === "PENDING" || status === "APPROVED" || status === "PROCESSING";
       if (!inFlight) return false;
       return connected ? 30_000 : 5_000;
     },

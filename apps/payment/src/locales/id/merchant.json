@@ -12,7 +12,18 @@
     "totalWithdrawals": "Total Penarikan",
     "totalWithdrawalsCaption": "Penarikan yang telah cair",
     "totalTransactions": "Total Transaksi",
-    "totalTransactionsCaption": "Jumlah transaksi"
+    "totalTransactionsCaption": "Jumlah transaksi",
+    "updatedAt": "Diperbarui {{time}}",
+    "refresh": "Perbarui",
+    "loadFailedTitle": "Ringkasan saldo gagal dimuat",
+    "loadFailed": "Nominal di halaman ini kami tahan dulu supaya tidak terbaca sebagai saldo kosong. Coba muat ulang.",
+    "retry": "Coba lagi",
+    "recentTitle": "Aktivitas terbaru",
+    "viewAll": "Lihat semua transaksi",
+    "recentFailed": "Aktivitas terbaru gagal dimuat.",
+    "recentEmptyTitle": "Belum ada aktivitas",
+    "recentEmpty": "Penjualan dan tagihan layanan akan muncul di sini begitu ada yang masuk.",
+    "recentEmptyCta": "Buka katalog layanan"
   },
   "transactions": {
     "title": "Transaksi",
@@ -34,7 +45,8 @@
     "colReference": "Referensi",
     "colAmount": "Jumlah",
     "colBalanceAfter": "Saldo Akhir",
-    "colDescription": "Keterangan"
+    "colDescription": "Keterangan",
+    "fromBalance": "dari {{amount}}"
   },
   "withdrawals": {
     "title": "Penarikan",
@@ -56,7 +68,57 @@
     "colFee": "Biaya",
     "colNett": "Diterima",
     "colStatus": "Status",
-    "colDate": "Tanggal"
+    "colDate": "Tanggal",
+    "feeNote": "Biaya tetap per penarikan, sama untuk nominal berapa pun."
+  },
+  "withdrawalStatus": {
+    "pending": {
+      "label": "Menunggu persetujuan",
+      "hint": "Permintaanmu sudah masuk dan sedang menunggu kami periksa."
+    },
+    "approved": {
+      "label": "Disetujui",
+      "hint": "Sudah kami setujui dan sedang disiapkan untuk dikirim ke bank atau e-wallet."
+    },
+    "processing": {
+      "label": "Dikirim ke bank",
+      "hint": "Sedang diproses di sisi bank atau e-wallet. Biasanya selesai di hari yang sama."
+    },
+    "settled": {
+      "label": "Selesai",
+      "hint": "Dana sudah masuk ke rekening tujuan."
+    },
+    "rejected": {
+      "label": "Ditolak",
+      "hint": "Penarikan ini tidak kami proses, dan saldo tidak berkurang."
+    },
+    "failed": {
+      "label": "Gagal",
+      "hint": "Pengiriman dana gagal di sisi bank atau gateway, dan saldo tidak berkurang."
+    }
+  },
+  "withdrawalDetail": {
+    "loading": "Memuat…",
+    "notFound": "Penarikan tidak ditemukan",
+    "backToWithdrawals": "← Kembali ke Penarikan",
+    "summary": "Ringkasan",
+    "destination": "Tujuan transfer",
+    "timeline": "Perjalanan penarikan",
+    "requestedAt": "Diajukan",
+    "approvedAt": "Disetujui",
+    "disbursementRef": "Referensi pencairan",
+    "viewProof": "Lihat bukti transfer",
+    "notes": "Catatan",
+    "failedTitle": "Penarikan ini tidak sampai",
+    "rejectedFallback": "Penarikan ini kami tolak. Kalau menurutmu ini keliru, hubungi kami dan sebutkan nomor penarikan ini.",
+    "failedFallback": "Bank atau gateway tidak memberi alasan. Hubungi kami dan sebutkan nomor penarikan ini.",
+    "failedBalanceNote": "Saldo tidak berkurang karena penarikan ini tidak sampai.",
+    "retry": "Ajukan penarikan baru"
+  },
+  "subscriptionStatus": {
+    "active": "Aktif",
+    "expired": "Berakhir",
+    "cancelled": "Dibatalkan"
   },
   "services": {
     "title": "Services",
@@ -69,7 +131,9 @@
     "tabCatalog": "Katalog",
     "tabInvoices": "Riwayat Pembelian",
     "loading": "Memuat…",
-    "noActiveSubscriptions": "Belum ada layanan yang aktif. Lihat tab Katalog untuk berlangganan.",
+    "noActiveSubscriptions": "Belum ada layanan yang aktif.",
+    "noActiveSubscriptionsCta": "Lihat tab Katalog untuk berlangganan.",
+    "outstandingHint": "Ada tagihan yang menunggu dibayar — buka tab Tagihan.",
     "noServicesAvailable": "Belum ada service yang tersedia.",
     "noPurchases": "Belum ada pembelian",
     "colInvoice": "No. Invoice",
@@ -113,6 +177,18 @@
     "allComponents": "Semua Komponen",
     "fallbackTargetName": "Layanan",
     "incidentStarted": "Mulai",
+    "estimatedResolved": "Estimasi selesai {{date}}",
+    "severity": {
+      "minor": "Ringan",
+      "major": "Berat",
+      "critical": "Kritis"
+    },
+    "incidentStatus": {
+      "investigating": "Sedang diselidiki",
+      "identified": "Penyebab ditemukan",
+      "monitoring": "Dipantau",
+      "resolved": "Selesai"
+    },
     "colComponent": "Komponen",
     "colType": "Tipe",
     "colStatus": "Status",
@@ -124,7 +200,8 @@
     "title": "Website Services",
     "description": "Akses dan kelola semua layananmu serta saldo payment gateway lewat dashboard ini.",
     "activeUntil": "• Aktif sampai {{date}}",
-    "cta": "Lihat"
+    "activeCount": "{{count}} layanan aktif",
+    "cta": "Buka layanan"
   },
   "paymentPicker": {
     "loading": "Memuat metode pembayaran…",
@@ -135,6 +212,9 @@
     "title": "Pembayaran",
     "lapsed": "Pembayaran sebelumnya sudah kedaluwarsa. Pilih metode untuk membuat pembayaran baru.",
     "notOpened": "Belum ada pembayaran yang dibuka. Pilih metode untuk melanjutkan.",
+    "received": "Pembayaran diterima",
+    "receivedHint": "Total {{amount}} sudah kami terima. Status layanan ikut terbarui otomatis.",
+    "reopenFromBills": "Buka tab Tagihan untuk membuat pembayaran baru",
     "method": "Metode Pembayaran",
     "adminFee": "Biaya Admin",
     "total": "Total",
@@ -163,7 +243,9 @@
     "notes": "Catatan (opsional)",
     "notesPlaceholder": "Misalnya kebutuhan khusus saat instalasi",
     "openInvoice": "Masih ada invoice yang belum selesai untuk layanan ini.",
+    "openInvoiceHint": "Layanan ini tidak bisa dibeli dua kali selama masih ada tagihan yang belum selesai. Bayar atau selesaikan tagihan itu dulu.",
     "viewInvoice": "Lihat Invoice",
+    "backToCatalog": "← Kembali ke katalog",
     "pay": "Bayar Sekarang",
     "paying": "Memproses…",
     "loading": "Memuat…",
@@ -180,7 +262,20 @@
     "rejected": "Ditolak: {{notes}}",
     "serviceDetails": "Detail Layanan",
     "colLabel": "Label",
-    "colValue": "Nilai"
+    "colValue": "Nilai",
+    "paidTitle": "Pembayaran diterima",
+    "paidDescription": "Layanan ini sudah aktif. Rincian dan kredensialnya ada di bawah.",
+    "expiredTitle": "Tagihan ini sudah kedaluwarsa",
+    "expiredDescription": "Tagihan yang kedaluwarsa tidak bisa dibayar lagi. Hubungi tim kami kalau kamu masih ingin melanjutkan layanan ini.",
+    "credentialsPending": "Kredensial akan muncul di sini setelah instalasi berjalan."
+  },
+  "invoiceStatus": {
+    "unpaid": "Belum dibayar",
+    "waitingConfirmation": "Menunggu konfirmasi",
+    "paid": "Lunas",
+    "rejected": "Ditolak",
+    "cancelled": "Dibatalkan",
+    "expired": "Kedaluwarsa"
   },
   "bills": {
     "nothingDue": "Tidak ada tagihan yang harus dibayar. Semua layanan sudah lunas untuk periode berjalan.",

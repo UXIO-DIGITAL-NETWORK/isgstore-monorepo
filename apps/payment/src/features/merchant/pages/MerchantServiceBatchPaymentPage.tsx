@@ -6,11 +6,12 @@ import { Link } from "@/components/common/Link";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Text } from "@/components/common/Text";
+import { invoiceStatusLabelKey } from "@/lib/invoiceStatus";
 import { formatCurrency } from "@/utils/currency";
 import type { ServiceBatchPayment } from "@/types/service.type";
 
 import { ServicePaymentCard } from "../components/ServicePaymentCard";
-import { useServicePayment, useServicePaymentChannels } from "../hooks/useMerchant";
+import { useServicePayment } from "../hooks/useMerchant";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
@@ -23,11 +24,16 @@ type CoveredBill = ServiceBatchPayment["invoices"][number];
  * a batch's QR under a single invoice would say that invoice costs the batch
  * total — the same misattribution the schema was changed to avoid, only in the
  * UI. Here the total belongs to the page and each bill shows its own share.
+ *
+ * The card is rendered without `onReopen` on purpose: a lapsed batch is
+ * re-opened from the bills tab, where the client can also change which bills
+ * are included, so re-opening it blind here would silently re-bill a set they
+ * may have already part-paid. The card links there instead of offering a
+ * button that would do nothing.
  */
 export default function MerchantServiceBatchPaymentPage({ reference }: { reference: string }) {
   const { t } = useTranslation("merchant");
   const { data: attempt, isLoading, isError } = useServicePayment(reference);
-  const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
 
   if (isLoading) {
     return <Text variant="small">{t("invoiceDetail.loading")}</Text>;
@@ -63,12 +69,31 @@ export default function MerchantServiceBatchPaymentPage({ reference }: { referen
       // these deliberately do not add up to what was paid.
       cell: (r) => money(r.amount),
     },
-    { key: "status", header: t("services.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+    {
+      key: "status",
+      header: t("services.colStatus"),
+      // The same dictionary the purchase-history table uses, so one bill does
+      // not read as "UNPAID" here and "Belum dibayar" there.
+      cell: (r) => (
+        <StatusBadge
+          status={r.status}
+          label={invoiceStatusLabelKey(r.status) ? t(invoiceStatusLabelKey(r.status) as string) : undefined}
+        />
+      ),
+    },
   ];
 
   return (
-    <Box className="flex flex-col gap-6">
+    <Box className="flex max-w-3xl flex-col gap-6">
       <Box className="flex flex-col gap-1">
+        {/* Present in every state, not only the not-found one: a settled batch
+            used to strand the client on this page with nowhere to go. */}
+        <Link
+          href="/app/payment-admin/services?tab=bills"
+          className="text-sm text-muted-foreground underline"
+        >
+          {t("invoiceDetail.backToServicesArrow")}
+        </Link>
         <Heading level={1}>{t("batchPayment.title")}</Heading>
         <Text variant="small" className="text-muted-foreground">
           {t("batchPayment.covers", { count: attempt.invoice_count })} · {attempt.reference_id}
@@ -89,12 +114,7 @@ export default function MerchantServiceBatchPaymentPage({ reference }: { referen
           instructions: attempt.instructions,
         }}
         amount={attempt.amount}
-        channels={channels ?? []}
-        isLoadingChannels={loadingChannels}
-        // A lapsed batch is re-opened from the bills tab, where the client can
-        // also change which bills are included. Re-opening it blind here would
-        // silently re-bill a set they may have already part-paid.
-        onReopen={() => undefined}
+        channels={[]}
       />
 
       <Box className="flex flex-col gap-2">

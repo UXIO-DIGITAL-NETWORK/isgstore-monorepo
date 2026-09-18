@@ -11,10 +11,11 @@ import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { PaymentStatusBadge, ProviderStatusBadge } from "@/components/common/TransactionStatusBadges";
 import { resolvePaymentStatus, resolveProviderStatus } from "@/lib/transactionStatus";
 import { Text } from "@/components/common/Text";
-import { TransactionFilters, type TransactionFilterState } from "@/components/common/TransactionFilters";
+import { TransactionFilters } from "@/components/common/TransactionFilters";
 import { TransactionSummaryPills } from "@/components/common/TransactionSummaryPills";
 import { useDebouncedValue } from "@/components/common/useDebouncedValue";
 import type { ListParams } from "@/lib/list";
+import { EMPTY_TRANSACTION_FILTERS, type TransactionFilterState } from "@/lib/transactionSearch";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 import type { TransactionType, UnifiedTransaction } from "@/types/transaction.type";
@@ -82,19 +83,38 @@ const columnsFor = (t: TFunction<"merchant">): Column<UnifiedTransaction>[] => [
   { key: "created", header: t("transactions.colDate"), cell: (r) => formatDateTime(r.created_at) },
 ];
 
-const INITIAL_FILTERS: TransactionFilterState = {
-  search: "",
-  statusGroup: "",
-  type: "all",
-  startDate: "",
-  endDate: "",
-};
+const INITIAL_FILTERS: TransactionFilterState = EMPTY_TRANSACTION_FILTERS;
 
-export default function MerchantTransactionsPage() {
+interface MerchantTransactionsPageProps {
+  /**
+   * Controlled when a host supplies them — the route, which keeps this state in
+   * the URL so a reload, a Back press and a shared link all land on the same
+   * filtered view. Uncontrolled otherwise, which is what keeps a bare render()
+   * working.
+   */
+  filters?: TransactionFilterState;
+  page?: number;
+  onFiltersChange?: (patch: Partial<TransactionFilterState>) => void;
+  onPageChange?: (page: number) => void;
+}
+
+export default function MerchantTransactionsPage({
+  filters: controlledFilters,
+  page: controlledPage,
+  onFiltersChange,
+  onPageChange,
+}: MerchantTransactionsPageProps = {}) {
   const { t } = useTranslation("merchant");
   const columns = columnsFor(t);
-  const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<TransactionFilterState>(INITIAL_FILTERS);
+  const [internalFilters, setInternalFilters] = useState<TransactionFilterState>(INITIAL_FILTERS);
+  const [internalPage, setInternalPage] = useState(1);
+
+  const filters = controlledFilters ?? internalFilters;
+  const page = controlledPage ?? internalPage;
+
+  // Debounced at the REQUEST, not at the URL: the search box writes through on
+  // every keystroke (so typing never lags behind) and only the query waits —
+  // which is what keeps a keystroke from firing a request and resetting the page.
   const debouncedSearch = useDebouncedValue(filters.search, 300);
 
   // Everything the summary pills, the Recap and the Export share; page/per_page
@@ -112,9 +132,26 @@ export default function MerchantTransactionsPage() {
   const summary = useMerchantTransactionSummary(filterParams);
 
   // Any filter change re-scopes the feed, so an old page number is meaningless.
+  // A controlled host owns that reset — the route writes page=1 alongside it.
   const patch = (next: Partial<TransactionFilterState>) => {
-    setFilters((current) => ({ ...current, ...next }));
-    setPage(1);
+    if (onFiltersChange) {
+      onFiltersChange(next);
+
+      return;
+    }
+
+    setInternalFilters((current) => ({ ...current, ...next }));
+    setInternalPage(1);
+  };
+
+  const changePage = (next: number) => {
+    if (onPageChange) {
+      onPageChange(next);
+
+      return;
+    }
+
+    setInternalPage(next);
   };
 
   return (
@@ -149,7 +186,7 @@ export default function MerchantTransactionsPage() {
         page={data?.page ?? page}
         lastPage={data?.lastPage ?? 1}
         total={data?.total ?? 0}
-        onPageChange={setPage}
+        onPageChange={changePage}
       />
     </Box>
   );

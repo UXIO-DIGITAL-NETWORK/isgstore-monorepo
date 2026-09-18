@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -5,7 +6,22 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import NotificationsPage from "../pages/NotificationsPage";
 import * as hooks from "../hooks/useFinance";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { FinanceNotification } from "../types/finance.type";
+
+// Rows are internal router links now; stub them as anchors so this stays a unit
+// test of the page. onClick is forwarded because opening a row is also what
+// marks it read.
+vi.mock("@/components/common/Link", () => ({
+  Link: ({ href, children, onClick }: { href: string; children: ReactNode; onClick?: () => void }) => (
+    <a
+      href={href}
+      onClick={onClick}
+    >
+      {children}
+    </a>
+  ),
+}));
 
 const markRead = vi.fn();
 const markAll = vi.fn();
@@ -65,7 +81,8 @@ describe("NotificationsPage", () => {
     expect(screen.getByText("Paket akan habis")).toBeInTheDocument();
   });
 
-  it("marks an unread notification read on click", async () => {
+  /** Opening a notification is the moment it stops being unread. */
+  it("marks an unread notification read when it is opened", async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -97,5 +114,23 @@ describe("NotificationsPage", () => {
     renderPage();
 
     expect(screen.getByText("Belum ada notifikasi")).toBeInTheDocument();
+  });
+
+  /**
+   * A notification about a bill you cannot open from the notification is an
+   * announcement. The destination is the reader's own page, never the other
+   * role's — the two audiences share this component but not these routes.
+   */
+  it("sends a client's notification to the client's own page", () => {
+    useAuthStore.setState({ user: { id: 1, role: "payment-admin" } as never });
+    mockRows([unread]);
+    renderPage();
+
+    expect(screen.getByRole("link", { name: /Pembayaran layanan/ })).toHaveAttribute(
+      "href",
+      "/app/payment-admin/services?tab=invoices",
+    );
+
+    useAuthStore.setState({ user: null });
   });
 });

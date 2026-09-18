@@ -71,6 +71,27 @@ const columnsFor = (t: TFunction<"merchant">): Column<ServiceStatusComponent>[] 
   },
 ];
 
+/**
+ * The incident vocabulary, in the client's words.
+ *
+ * Mirrors the API's IncidentSeverity / IncidentStatus enums, whose own comments
+ * are the definitions these labels follow — "MINOR: degraded but usable",
+ * "IDENTIFIED: cause known, fix in progress" — so a client reads what it means
+ * for them rather than the enum we store.
+ */
+const INCIDENT_SEVERITY: Record<string, string> = {
+  MINOR: "serviceStatus.severity.minor",
+  MAJOR: "serviceStatus.severity.major",
+  CRITICAL: "serviceStatus.severity.critical",
+};
+
+const INCIDENT_STATUS: Record<string, string> = {
+  INVESTIGATING: "serviceStatus.incidentStatus.investigating",
+  IDENTIFIED: "serviceStatus.incidentStatus.identified",
+  MONITORING: "serviceStatus.incidentStatus.monitoring",
+  RESOLVED: "serviceStatus.incidentStatus.resolved",
+};
+
 export default function MerchantServiceStatusPage() {
   const { t } = useTranslation("merchant");
   const columns = columnsFor(t);
@@ -109,8 +130,14 @@ export default function MerchantServiceStatusPage() {
               >
                 <Box className="flex flex-wrap items-center gap-2">
                   <Heading level={3}>{incident.title}</Heading>
-                  <StatusBadge status={incident.severity} />
-                  <StatusBadge status={incident.status} />
+                  <StatusBadge
+                    status={incident.severity}
+                    label={INCIDENT_SEVERITY[incident.severity] ? t(INCIDENT_SEVERITY[incident.severity]) : undefined}
+                  />
+                  <StatusBadge
+                    status={incident.status}
+                    label={INCIDENT_STATUS[incident.status] ? t(INCIDENT_STATUS[incident.status]) : undefined}
+                  />
                 </Box>
 
                 <Text variant="small">{incident.message}</Text>
@@ -123,7 +150,7 @@ export default function MerchantServiceStatusPage() {
                   {incident.target.name ?? t("serviceStatus.fallbackTargetName")} · {t("serviceStatus.incidentStarted")}{" "}
                   {formatDateTime(incident.started_at)}
                   {incident.estimated_resolved_at
-                    ? ` · Estimasi selesai ${formatDateTime(incident.estimated_resolved_at)}`
+                    ? ` · ${t("serviceStatus.estimatedResolved", { date: formatDateTime(incident.estimated_resolved_at) })}`
                     : ""}
                 </Text>
               </Box>
