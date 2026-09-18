@@ -279,6 +279,8 @@
   },
   "bills": {
     "nothingDue": "Tidak ada tagihan yang harus dibayar. Semua layanan sudah lunas untuk periode berjalan.",
+    "noPlan": "Belum ada tagihan dari paket layananmu.",
+    "noPlanHint": "Tagihan muncul di sini begitu kami menerbitkannya. Kalau menurutmu seharusnya sudah ada, hubungi kami.",
     "oneTime": "Sekali bayar",
     "noDueDate": "Tanpa jatuh tempo",
     "dueOn": "Jatuh tempo {{date}}",
@@ -286,7 +288,8 @@
     "selectedCount": "{{count}} tagihan dipilih",
     "feeOnce": "Biaya admin (sekali untuk semua yang dipilih)",
     "total": "Total dibayar",
-    "paySelected": "Bayar yang dipilih"
+    "paySelected": "Bayar yang dipilih",
+    "selectHint": "Centang tagihan yang mau dibayar, lalu pilih metode pembayaran."
   },
   "plan": {
     "title": "Layanan dalam paket Anda",
