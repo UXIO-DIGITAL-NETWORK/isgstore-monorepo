@@ -67,11 +67,28 @@ export const useMerchantSubscriptions = (params: ListParams) =>
     queryFn: () => merchantService.subscriptions(params),
   });
 
-export const useMerchantServiceInvoices = (params: ListParams) =>
-  useQuery({
+/**
+ * The bill list. Realtime pushes invalidate this (usePaymentRealtime) and that
+ * is the fast path — but it is also the ONLY path today, and a list nothing
+ * polls is a list that stays empty until a reload whenever the socket is down.
+ * A Hub-issued bill arriving is exactly the case this must not miss.
+ *
+ * So the interval is the fallback: 5s while realtime is unavailable, 30s as a
+ * cheap backstop once it is up — the same shape as useMerchantServiceInvoice.
+ * `refetchIntervalInBackground` because the app disables refetchOnWindowFocus
+ * globally (main.tsx), so a merchant coming back to the tab would otherwise
+ * read a stale list until the next tick.
+ */
+export const useMerchantServiceInvoices = (params: ListParams) => {
+  const connected = useEchoConnected();
+
+  return useQuery({
     queryKey: ["merchant", "service-invoices", params],
     queryFn: () => merchantService.serviceInvoices(params),
+    refetchInterval: connected ? 30_000 : 5_000,
+    refetchIntervalInBackground: true,
   });
+};
 
 /**
  * The plan, read from this site's own cache of it. No Hub call on a page load,

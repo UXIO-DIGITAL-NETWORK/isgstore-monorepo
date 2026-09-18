@@ -48,6 +48,13 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                //
+                // Two seconds, and this is not a tuning knob: the invoice events
+                // push INLINE (ShouldBroadcastNow), so this is the longest a
+                // Pusher hiccup may hold a request that is creating a bill — or
+                // answering a Monetapay webhook. Whatever it abandons, the
+                // payment page's fallback poll picks up.
+                'timeout' => 2,
             ],
         ],
 
