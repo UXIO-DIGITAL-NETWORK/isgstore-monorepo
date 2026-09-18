@@ -70,6 +70,10 @@ class ServiceInvoiceResource extends JsonResource
             // Set on a bill this site issued because the Hub's plan said to,
             // rather than because a client clicked "Langganan".
             'source' => $this->source ?? 'local',
+            // billed | one_time | prepaid. Null on rows issued before the column,
+            // which were all `billed` — so the payment page can label a one-time
+            // setup fee without a second request.
+            'billing_mode' => $this->billing_mode ?? 'billed',
             'settled_offline' => (bool) $this->settled_offline,
             'period_starts_at' => $this->period_starts_at?->toIso8601String(),
             'period_ends_at' => $this->period_ends_at?->toIso8601String(),

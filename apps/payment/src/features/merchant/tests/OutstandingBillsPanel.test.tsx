@@ -151,4 +151,23 @@ describe("OutstandingBillsPanel", () => {
       expect.anything(),
     );
   });
+
+  /**
+   * A one-time setup fee is paid once and buys no period. Saying so on the bill
+   * is what stops the client expecting a renewal — and what explains why this
+   * one will not come back next month like the others.
+   */
+  it("marks a one-time fee as a single payment", () => {
+    render(
+      <OutstandingBillsPanel
+        lines={[
+          line({ service_code: "setup", service_name: "Biaya Setup", billing_mode: "one_time" }),
+          line({ service_code: "email", service_name: "Email" }),
+        ]}
+      />,
+    );
+
+    // Only the setup line carries the badge — a recurring bill must not.
+    expect(screen.getAllByText("Sekali bayar")).toHaveLength(1);
+  });
 });

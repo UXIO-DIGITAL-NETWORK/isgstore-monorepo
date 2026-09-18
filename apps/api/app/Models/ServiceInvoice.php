@@ -26,6 +26,9 @@ class ServiceInvoice extends Model
         'settled_offline' => 'boolean',
         'amount' => 'integer',
         'duration_days' => 'integer',
+        // billed | one_time | prepaid — null on rows issued before the column,
+        // which were all `billed`.
+        'billing_mode' => 'string',
     ];
 
     public function merchant()
@@ -96,5 +99,26 @@ class ServiceInvoice extends Model
     public function isFromHubPlan(): bool
     {
         return $this->source === 'hub_plan';
+    }
+
+    /**
+     * A one-time setup fee: settles like any bill, but opens no subscription
+     * window and extends no term. See ActivateServiceSubscriptionAction.
+     */
+    public function isOneTime(): bool
+    {
+        return $this->billing_mode === 'one_time';
+    }
+
+    /**
+     * The Hub plan line this bill belongs to.
+     *
+     * Matched on the Hub's own period key, so a bill the client raised from the
+     * catalog locally simply has none — which is the difference between "the
+     * Hub says this renews your term" and "the client bought something".
+     */
+    public function hubPlanItem()
+    {
+        return $this->belongsTo(HubPlanItem::class, 'hub_item_key', 'item_key');
     }
 }

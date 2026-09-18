@@ -184,6 +184,7 @@
   },
   "bills": {
     "nothingDue": "Nothing to pay. Every service is settled for the current period.",
+    "oneTime": "One-time",
     "noDueDate": "No due date",
     "dueOn": "Due {{date}}",
     "selectGroup": "Select all due this day",

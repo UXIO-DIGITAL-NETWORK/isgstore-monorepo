@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/utils/currency";
@@ -17,7 +18,11 @@ import { PaymentChannelPicker } from "./PaymentChannelPicker";
 
 const money = (v: number) => formatCurrency(v, { fractionDigits: 0 });
 
-type Bill = ServicePlanLine["outstanding"][number] & { service_name: string };
+type Bill = ServicePlanLine["outstanding"][number] & {
+  service_name: string;
+  /** Carried from the line, so the row can say a bill is a one-off. */
+  billing_mode: ServicePlanLine["billing_mode"];
+};
 
 /** "Tidak ada jatuh tempo" sorts last; everything else by date. */
 const dueKey = (due: string | null) => due?.slice(0, 10) ?? "9999-12-31";
@@ -43,7 +48,11 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
 
   const groups = useMemo(() => {
     const bills: Bill[] = lines.flatMap((line) =>
-      line.outstanding.map((bill) => ({ ...bill, service_name: line.service_name })),
+      line.outstanding.map((bill) => ({
+        ...bill,
+        service_name: line.service_name,
+        billing_mode: line.billing_mode,
+      })),
     );
 
     const byDue = new Map<string, Bill[]>();
@@ -103,9 +112,16 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
                 onCheckedChange={() => toggle(bill.id)}
               />
               <Box className="flex min-w-0 flex-1 flex-col">
-                <label htmlFor={`bill-${bill.id}`} className="cursor-pointer text-sm font-medium">
-                  {bill.service_name}
-                </label>
+                <Box className="flex items-center gap-1.5">
+                  <label htmlFor={`bill-${bill.id}`} className="cursor-pointer text-sm font-medium">
+                    {bill.service_name}
+                  </label>
+                  {/* A setup fee is paid once and buys no period, which is worth
+                      saying: the client should not expect a renewal after it. */}
+                  {bill.billing_mode === "one_time" && (
+                    <Badge variant="secondary">{t("bills.oneTime")}</Badge>
+                  )}
+                </Box>
                 <Text as="span" variant="small" className="text-muted-foreground">
                   {bill.invoice_number}
                   {bill.period_starts_at &&
