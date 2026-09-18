@@ -606,7 +606,7 @@ Core principle: **supplier cost is fact (auto-updated), selling price auto-follo
 
 ### 5-minute price checker
 
-`uxiolabs:check-prices` (scheduled `everyFiveMinutes` in `routes/console.php`, Discord alert only on failure) runs `CheckUxiolabsPricesAction`:
+`uxiolabs:check-prices` (scheduled `everyFiveMinutes` in `routes/console.php`) runs `CheckUxiolabsPricesAction`:
 
 - Fetches the price list (warming the shared cache `uxiolabs:price-list`, TTL 300s — `UxiolabsService::getPriceListCached()` / `findServiceInPriceList()` read it). `supplier_products.buyer_sku_code` stores the uxiolabs service `id`.
 - Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Availability = `status === "aktif"`, mirrored into both `buyer_product_status` and `seller_product_status`. Postpaid/pasca is gone — uxiolabs is prepaid-only.
@@ -620,7 +620,9 @@ Core principle: **supplier cost is fact (auto-updated), selling price auto-follo
 - **Never** creates products (unknown SKUs are only counted/sampled in the report).
 - Report DTO: `PriceCheckReportDTO` (total_fetched, price_changed, repriced, unchanged, failed, negative_margin_count, deactivated_logged, deactivated/reactivated, negative_margin detail `{product,sku,cost,tier,price}`, unknown_count/sample, failed_skus_sample, skipped_reason).
 
-`uxiolabs:sync-products` (name kept; also `POST /v1/uxiolabs/sync-products`) is the **manual** run of the same action with a console table + Discord report — it does not auto-create products.
+`uxiolabs:sync-products` (name kept; also `POST /v1/uxiolabs/sync-products`) is the **manual** run of the same action with a console table — it does not auto-create products.
+
+Both runs post the same Discord report through `SendPriceCheckDiscordReportAction` (title marks the source: `terjadwal` / `manual`; green = nothing to do, orange = margin under cost / SKU switched off / a reprice that could not be written; a skipped run reports as such in blue). The **scheduled** run reports on every tick, 288 messages a day — deliberate, so the checker's log is in the channel rather than only on a crash. Quietening it later is a filter inside that one action, not a change to the commands.
 
 ### Manual product creation
 

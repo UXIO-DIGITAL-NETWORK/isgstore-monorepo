@@ -91,8 +91,11 @@ Schedule::command('queue:health')
     ->onFailure($alertFailure('queue:health'));
 
 // Price checker: updates supplier cost/availability, auto-reprices live products
-// from the margin rules, and records a price-change log. No success/before Discord
-// embeds — 288 runs/day would be spam.
+// from the margin rules, and records a price-change log. The command posts its
+// report to Discord on every tick — 288 messages a day, a deliberate choice so
+// the checker's log is in the channel rather than only on a crash. To quieten it,
+// filter inside SendPriceCheckDiscordReportAction; onFailure stays for a hard
+// crash, which never reaches that report.
 Schedule::command('uxiolabs:check-prices')
     ->everyFiveMinutes()
     ->withoutOverlapping()
