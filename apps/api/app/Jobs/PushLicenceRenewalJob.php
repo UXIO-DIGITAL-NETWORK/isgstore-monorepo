@@ -46,6 +46,12 @@ class PushLicenceRenewalJob implements ShouldQueue
      * The one gate: only this site's OWN subscription renews the licence. A
      * client buying a domain or a WhatsApp API from the same catalog must not
      * extend their website term.
+     *
+     * Two ways a bill qualifies, and the plan line is the authoritative one: the
+     * Hub marks exactly one line "menentukan masa aktif situs" (and now refuses
+     * to mark any service other than the website one). The website service code
+     * stays as the backstop for a bill with no plan item behind it — a client
+     * buying their own subscription straight from the catalog.
      */
     public static function maybeDispatch(ServiceInvoice $invoice): void
     {
@@ -53,7 +59,14 @@ class PushLicenceRenewalJob implements ShouldQueue
             return;
         }
 
-        if ($invoice->service?->code !== WebsiteService::code()) {
+        // A setup fee is not a term. Paying it must not extend anything.
+        if ($invoice->isOneTime()) {
+            return;
+        }
+
+        $governs = (bool) $invoice->hubPlanItem?->governs_licence;
+
+        if (! $governs && $invoice->service?->code !== WebsiteService::code()) {
             return;
         }
 

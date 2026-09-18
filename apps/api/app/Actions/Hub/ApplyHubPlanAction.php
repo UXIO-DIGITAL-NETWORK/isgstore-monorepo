@@ -178,6 +178,10 @@ class ApplyHubPlanAction
                 'status' => ServiceInvoiceStatus::UNPAID,
                 'due_at' => $item->due_at,
                 'source' => 'hub_plan',
+                // Carried onto the invoice because the payment path decides from
+                // HERE whether paying this opens a subscription window. A
+                // one-time setup fee settles and stops; a billed period renews.
+                'billing_mode' => $item->billing_mode,
             ]);
 
             // Tell the Hub an order exists, still UNPAID — the same push a
@@ -269,6 +273,7 @@ class ApplyHubPlanAction
                     'verified_at' => $item->period_starts_at,
                     'settled_offline' => true,
                     'source' => 'hub_plan',
+                    'billing_mode' => HubPlanItem::MODE_PREPAID,
                     'notes' => 'Dibayar di awal (di luar sistem) — dicatat dari Hub',
                 ]);
             } elseif ($invoice->status !== ServiceInvoiceStatus::PAID) {

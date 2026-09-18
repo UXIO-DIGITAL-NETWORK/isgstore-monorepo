@@ -73,7 +73,12 @@ export interface ServiceInvoice {
 export interface ServicePlanLine {
   service_code: string;
   service_name: string;
-  billing_mode: "billed" | "prepaid";
+  /**
+   * billed   — a recurring period.
+   * one_time — a setup fee: one bill, and paying it opens no subscription.
+   * prepaid  — settled outside the system (never shown as outstanding).
+   */
+  billing_mode: "billed" | "one_time" | "prepaid";
   amount: number;
   duration_days: number;
   /** The one line whose lapse takes the storefront down. */

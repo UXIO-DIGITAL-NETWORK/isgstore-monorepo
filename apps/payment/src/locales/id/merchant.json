@@ -184,6 +184,7 @@
   },
   "bills": {
     "nothingDue": "Tidak ada tagihan yang harus dibayar. Semua layanan sudah lunas untuk periode berjalan.",
+    "oneTime": "Sekali bayar",
     "noDueDate": "Tanpa jatuh tempo",
     "dueOn": "Jatuh tempo {{date}}",
     "selectGroup": "Pilih semua di tanggal ini",

@@ -14,6 +14,9 @@ class HubPlanItem extends Model
 {
     public const MODE_PREPAID = 'prepaid';
 
+    /** A single setup bill, never renewed. */
+    public const MODE_ONE_TIME = 'one_time';
+
     protected $guarded = ['id'];
 
     protected $casts = [
@@ -36,5 +39,11 @@ class HubPlanItem extends Model
     public function isPrepaid(): bool
     {
         return $this->billing_mode === self::MODE_PREPAID;
+    }
+
+    /** A one-time setup fee: billed once, and never a second period. */
+    public function isOneTime(): bool
+    {
+        return $this->billing_mode === self::MODE_ONE_TIME;
     }
 }

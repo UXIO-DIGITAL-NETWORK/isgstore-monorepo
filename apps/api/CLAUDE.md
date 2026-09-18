@@ -944,6 +944,17 @@ period into one of this site's own `service_invoices`. The Hub decides WHAT is
 owed and WHEN it becomes payable; this site issues the bill, collects through its
 own Monetapay sub-merchant, and reports back the way it always did.
 
+- **`service_invoices.billing_mode` decides what paying the bill DOES.**
+  `billed` opens a subscription window as always; `one_time` (a setup fee)
+  settles the bill and stops — no subscription, no installation, and no licence
+  extension, or the client would get a free period out of a fee. Null on rows
+  issued before the column, which were all `billed`.
+- **Licence renewal follows the plan's `governs_licence` flag**, not just the
+  website service code: `PushLicenceRenewalJob` dispatches when the bill's
+  `hub_item_key` names a line the Hub marked as governing (falling back to the
+  service code for a bill with no plan item behind it — a client buying their own
+  subscription). Without that, marking any other service as the governor stored a
+  flag nothing acted on. A `one_time` fee never renews anything.
 - **`service_invoices.hub_item_key` is unique, and that is the whole guarantee.**
   It names one period of one plan line (`<plan ulid>:<period index>`). Not a date
   comparison, not a status check — an index, which is why a sync running every
