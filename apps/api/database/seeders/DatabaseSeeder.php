@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
      * What is seeded is only what the app cannot start without, or what is
      * configuration rather than inventory: roles, three known logins, payment
      * channels, pricing rules, the Uxiolabs supplier, category types, plus CMS
-     * content and the plans/services catalogues.
+     * content.
      *
      * The catalogue seeders (Category, SubCategory, ServerCategory,
      * ServerCategoryOption, OrderFormSchema, Product, SupplierCategory,
@@ -86,9 +86,13 @@ class DatabaseSeeder extends Seeder
             PromoSeeder::class,
             FlashSaleSeeder::class,
 
-            // § Payment-page services kita sells to its clients. After
-            // PaymentChannelSeeder, whose rows Monetapay's service points at.
-            ServiceSeeder::class,
+            // § Payment-page services are deliberately NOT seeded either. The
+            // Hub owns that catalogue now: `hub:sync-catalog`
+            // (SyncCatalogFromHubAction) mirrors it down, matched on `code`, and
+            // the payment page reads whatever the mirror holds. Seeding a copy
+            // here would show a client services their Hub had never published,
+            // and would come back on every fresh install. ServiceSeeder still
+            // exists and still works — it is simply not called.
         ]);
     }
 }
