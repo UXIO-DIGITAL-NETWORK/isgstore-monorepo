@@ -6,6 +6,7 @@ namespace Tests\Feature\Hub;
 
 use App\Actions\Hub\SyncCatalogFromHubAction;
 use App\Actions\Hub\SyncChannelSettingsFromHubAction;
+use App\Enums\ServiceCategory;
 use App\Models\PaymentChannel;
 use App\Models\Service;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -79,6 +80,33 @@ class SyncFromHubTest extends TestCase
 
         $created = Service::where('code', 'domain')->firstOrFail();
         $this->assertSame(0, (int) $created->cost_price);
+    }
+
+    /**
+     * One uncastable category must not cost the site its whole catalog.
+     *
+     * The Hub's plan form shipped `"service"` for a while and nothing there
+     * rejected it. Because this sync runs in ONE transaction, the enum cast
+     * threw and took every other row with it — the site ended up with no
+     * services at all, so every plan line it pulled was skipped for an unknown
+     * code and its billing stopped, with only a log line to say why.
+     */
+    public function test_a_category_this_site_cannot_cast_degrades_instead_of_taking_the_catalog(): void
+    {
+        $this->fakeCatalog([
+            $this->catalogRow(['category' => 'service']),
+            $this->catalogRow([
+                'code' => 'domain', 'name' => 'Domain', 'category' => 'infrastructure',
+                'selling_price' => 200000, 'duration_days' => 365,
+            ]),
+        ]);
+
+        $report = app(SyncCatalogFromHubAction::class)->execute();
+
+        // Both land: the bad row degrades to "other", the good one is untouched.
+        $this->assertSame(['created' => 2, 'updated' => 0, 'deactivated' => 0], $report);
+        $this->assertSame(ServiceCategory::OTHER, Service::where('code', 'uxiolabs')->firstOrFail()->category);
+        $this->assertSame(ServiceCategory::INFRASTRUCTURE, Service::where('code', 'domain')->firstOrFail()->category);
     }
 
     public function test_a_code_the_hub_stopped_sending_is_deactivated_never_deleted(): void
