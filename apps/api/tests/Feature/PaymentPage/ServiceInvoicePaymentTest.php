@@ -7,6 +7,7 @@ namespace Tests\Feature\PaymentPage;
 use App\Enums\ServiceInvoiceStatus;
 use App\Models\PlatformMutation;
 use App\Models\Service;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -192,6 +193,79 @@ class ServiceInvoicePaymentTest extends TestCase
         $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
             'payment_channel_id' => $channel->id,
         ])->assertStatus(422);
+    }
+
+    /**
+     * A due date is a DATE, not an instant.
+     *
+     * A bill due today is payable all through today. The guard compared the raw
+     * timestamp, so a bill dated midnight was already "past due" the moment the
+     * clock moved past it — and for a Hub-issued OPENING bill, anchored the
+     * instant it is created, that meant no payment could ever be opened against
+     * it at all.
+     */
+    public function test_a_bill_due_today_can_still_be_opened(): void
+    {
+        $this->fakeGateway();
+        $merchant = $this->merchant();
+        $channel = $this->qrisChannel();
+
+        $invoice = ServiceInvoice::factory()->create([
+            'merchant_id' => $merchant->id,
+            'due_at' => now()->startOfDay(),
+        ]);
+
+        Sanctum::actingAs($merchant, ['access-api']);
+        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
+            'payment_channel_id' => $channel->id,
+        ])->assertOk();
+    }
+
+    /** Once the due day itself is over, the window really is closed. */
+    public function test_a_bill_past_its_due_day_is_refused(): void
+    {
+        $this->fakeGateway();
+        $merchant = $this->merchant();
+        $channel = $this->qrisChannel();
+
+        $invoice = ServiceInvoice::factory()->create([
+            'merchant_id' => $merchant->id,
+            'due_at' => now()->subDay(),
+        ]);
+
+        Sanctum::actingAs($merchant, ['access-api']);
+        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
+            'payment_channel_id' => $channel->id,
+        ])->assertStatus(422)
+            ->assertJsonPath('message', "Invoice {$invoice->invoice_number} sudah melewati jatuh tempo.");
+    }
+
+    /**
+     * A Hub-plan bill has no way back, so lateness must not close the only door.
+     *
+     * It is invisible to the expiry sweep — the unique `hub_item_key` means a
+     * period, once expired, could never be re-issued — and `reopenIfStranded`
+     * only heals rows that sweep closed. Refusing a late payment therefore
+     * strands the bill AND the service behind it: the client holds something
+     * they can never settle, and the site never lights.
+     */
+    public function test_a_hub_plan_bill_stays_payable_past_its_due_date(): void
+    {
+        $this->fakeGateway();
+        $merchant = $this->merchant();
+        $channel = $this->qrisChannel();
+
+        $invoice = ServiceInvoice::factory()->create([
+            'merchant_id' => $merchant->id,
+            'source' => 'hub_plan',
+            'hub_item_key' => '01ABC:0',
+            'due_at' => now()->subMonth(),
+        ]);
+
+        Sanctum::actingAs($merchant, ['access-api']);
+        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
+            'payment_channel_id' => $channel->id,
+        ])->assertOk();
     }
 
     /**
