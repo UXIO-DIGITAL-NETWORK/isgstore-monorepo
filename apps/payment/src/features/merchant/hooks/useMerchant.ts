@@ -131,19 +131,18 @@ export const useMerchantSubscriptions = (params: ListParams) =>
  * polls is a list that stays empty until a reload whenever the socket is down.
  * A Hub-issued bill arriving is exactly the case this must not miss.
  *
- * So the interval is the fallback: 5s while realtime is unavailable, 30s as a
- * cheap backstop once it is up — the same shape as useMerchantServiceInvoice.
- * `refetchIntervalInBackground` because the app disables refetchOnWindowFocus
- * globally (main.tsx), so a merchant coming back to the tab would otherwise
- * read a stale list until the next tick.
+ * So the interval is the fallback, set to the one-minute rule the whole
+ * Hub↔site loop runs on: the site pulls the plan every minute and issues the
+ * bill, and this reads it back within the same cadence. `refetchIntervalInBackground`
+ * because the app disables refetchOnWindowFocus globally (main.tsx), so a
+ * merchant coming back to the tab would otherwise read a stale list until the
+ * next tick.
  */
 export const useMerchantServiceInvoices = (params: ListParams) => {
-  const connected = useEchoConnected();
-
   return useQuery({
     queryKey: ["merchant", "service-invoices", params],
     queryFn: () => merchantService.serviceInvoices(params),
-    refetchInterval: connected ? 30_000 : 5_000,
+    refetchInterval: 60_000,
     refetchIntervalInBackground: true,
   });
 };
@@ -233,18 +232,17 @@ export const useMerchantServiceDetail = (id: number) =>
 /**
  * Realtime-primary: the `merchant.{id}.service-invoices` Pusher channel
  * invalidates this the moment the webhook flips the bill to PAID. Polling stays
- * as a fallback while it is still UNPAID — slow when the socket is up, fast when
- * it's down. Stops on a status the *server* declares terminal, never a
- * client-side guess.
+ * as a fallback while it is still UNPAID, at the same one-minute rule as the
+ * list. Stops on a status the *server* declares terminal, never a client-side
+ * guess.
  */
 export const useMerchantServiceInvoice = (id: number) => {
-  const connected = useEchoConnected();
   return useQuery({
     queryKey: ["merchant", "service-invoice", id],
     queryFn: () => merchantService.serviceInvoice(id),
     refetchInterval: (query) => {
       if (query.state.data?.status !== "UNPAID") return false;
-      return connected ? 30_000 : 5_000;
+      return 60_000;
     },
     refetchIntervalInBackground: true,
   });

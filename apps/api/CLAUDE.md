@@ -844,7 +844,7 @@ default) schedules nothing, calls nowhere, exposes nothing.
   rather than error. Rows the sync writes are flagged `hub_managed`.
 - **The Hub pokes us:** `POST /v1/hub/sync` (middleware `hub` + `throttle:hub-sync`,
   read key only) carries no data — we run the same pulls the scheduler runs, so a
-  Hub edit lands in about a second instead of 15 minutes. Deliberately NOT behind
+  Hub edit lands in about a second instead of a minute. Deliberately NOT behind
   `hub-write`: that gate exists so a leaked read key cannot move money, and
   requiring it here would couple fast fee updates to `HUB_WRITE_ENABLED`.
   **It runs INLINE and answers with `applied`.** It used to queue `RunHubSyncJob`,
@@ -895,8 +895,9 @@ default) schedules nothing, calls nowhere, exposes nothing.
 
 ### The Hub owns this site's licence (and can switch it off)
 
-`hub:sync-licence` (every **5** minutes, tighter than the 15-minute catalog sync
-because this one decides whether the site serves) pulls `GET /api/v1/sites/licence`
+`hub:sync-licence` (every **1** minute, sharing the single Hub tick with the
+catalog, channel and plan pulls because this one decides whether the site
+serves) pulls `GET /api/v1/sites/licence`
 and `ApplyHubLicenceAction` lands it in two places:
 
 - **The gate** — private `Setting`s in group `licence`, read through
@@ -938,7 +939,7 @@ Rules that are load-bearing:
 
 ### The Hub's service plan (this site issues the bills)
 
-`hub:sync-plan` (every 15 minutes, behind **`HUB_MANAGED_PLAN`**, off by default)
+`hub:sync-plan` (every 1 minute, behind **`HUB_MANAGED_PLAN`**, off by default)
 pulls `GET /api/v1/sites/plan` and `ApplyHubPlanAction` turns each published
 period into one of this site's own `service_invoices`. The Hub decides WHAT is
 owed and WHEN it becomes payable; this site issues the bill, collects through its
@@ -958,7 +959,7 @@ own Monetapay sub-merchant, and reports back the way it always did.
 - **`service_invoices.hub_item_key` is unique, and that is the whole guarantee.**
   It names one period of one plan line (`<plan ulid>:<period index>`). Not a date
   comparison, not a status check — an index, which is why a sync running every
-  fifteen minutes forever issues exactly one invoice per period, and so does a
+  minute forever issues exactly one invoice per period, and so does a
   sync racing itself. NULL on every locally raised bill, and both MySQL and
   SQLite treat NULLs as distinct, so the "Langganan" flow is untouched.
 - **Bill the Hub's `amount`, never `services.selling_price`.** The plan carries
@@ -1050,7 +1051,7 @@ exempt list.
 
 ### The site's own name, not the Hub's
 
-`hub:sync-catalog` rewrites `services.name` every 15 minutes, so the website
+`hub:sync-catalog` rewrites `services.name` every minute, so the website
 service cannot be renamed locally — it is "Uxiolabs" at the Hub because that is
 what kita sells. But the client's panels are the client's own product.
 `WebsiteService::label()` resolves the display name from

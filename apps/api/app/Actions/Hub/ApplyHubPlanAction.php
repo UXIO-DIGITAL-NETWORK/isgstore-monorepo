@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
  *
  * THE ONE GUARANTEE: `service_invoices.hub_item_key` is unique, and every bill
  * this action issues carries the Hub's key for that period. Not a date check,
- * not a status check — an index. A sync that runs every fifteen minutes forever
+ * not a status check — an index. A sync that runs every minute forever
  * therefore issues exactly one invoice per period, and so does a sync racing
  * itself, and so does a sync running while a period is republished.
  *
@@ -307,7 +307,7 @@ class ApplyHubPlanAction
      *
      * Six random characters against a unique column is a gamble that is fine
      * when a person is watching and gets a 500 they can retry. This runs
-     * unattended every fifteen minutes, so a collision has to heal itself.
+     * unattended every minute, so a collision has to heal itself.
      */
     private function invoiceNumber(): string
     {

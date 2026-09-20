@@ -42,7 +42,7 @@ class HubClient
      * One row per (plan line, period), each carrying an `item_key` this site
      * stores on the invoice it issues, under a unique index. That key — not a
      * date comparison, not a status check — is what makes a sync running every
-     * fifteen minutes forever issue exactly one bill per period.
+     * minute forever issue exactly one bill per period.
      *
      * WHEN a period appears is the Hub's decision, not ours. If this site also
      * had an opinion about when a renewal falls due, the two would eventually

@@ -141,4 +141,42 @@ class HubSyncTriggerTest extends TestCase
 
         Http::assertNothingSent();
     }
+
+    /**
+     * The Hub has to be able to tell "not armed" from "the bill is on its way".
+     *
+     * A plan sync against a site with HUB_MANAGED_PLAN off applies nothing and
+     * looks exactly like a healthy poke. Reporting the flag is what lets the
+     * Hub refuse to claim a bill was sent.
+     */
+    public function test_it_reports_whether_billing_is_switched_on(): void
+    {
+        $this->fakeHub();
+
+        $this->postJson('/api/v1/hub/sync', ['targets' => ['channels']], ['X-Hub-Key' => self::READ])
+            ->assertOk()
+            // Off in this file's config — a site whose plan sync is not armed.
+            ->assertJsonPath('data.plan_enabled', false);
+    }
+
+    public function test_an_armed_site_runs_the_plan_sync_on_a_licence_poke(): void
+    {
+        config(['services.hub.managed_plan' => true]);
+
+        Http::fake([
+            'hub.test/api/v1/sites/licence' => Http::response(['status' => 'success', 'data' => [
+                'status' => 'active', 'is_serving' => true, 'ends_at' => now()->addYear()->toIso8601String(),
+            ]]),
+            'hub.test/api/v1/sites/plan' => Http::response(['status' => 'success', 'data' => []]),
+        ]);
+
+        // `plan` rides along with `licence` — the target the Hub already pokes on
+        // exactly the events that change a plan.
+        $this->postJson('/api/v1/hub/sync', ['targets' => ['licence']], ['X-Hub-Key' => self::READ])
+            ->assertOk()
+            ->assertJsonPath('data.plan_enabled', true)
+            ->assertJsonPath('data.results.plan.issued', 0);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/api/v1/sites/plan'));
+    }
 }

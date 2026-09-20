@@ -10,7 +10,6 @@ use App\Models\Service;
 use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoicePayment;
 use App\Models\ServiceSubscription;
-use App\Services\Payment\MonetapayService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -40,35 +39,6 @@ class ServiceInvoiceWebhookTest extends TestCase
         // The signature is computed against the configured token, so it has to
         // be a known value rather than whatever the environment happens to set.
         config(['services.monetapay.token' => 'test-token']);
-    }
-
-    /**
-     * Builds the envelope Monetapay posts: a `__`-delimited key=value string,
-     * signed with the double-MD5 the service verifies, then AES-encrypted.
-     */
-    private function signedPayload(string $reference, int $amount, string $status = '3', ?string $sign = null): array
-    {
-        $params = [
-            'mch_order_no' => $reference,
-            'amount' => (string) $amount,
-            'status' => $status,
-        ];
-
-        $timestamp = (string) time();
-
-        ksort($params);
-        $buffer = '';
-        foreach ($params as $key => $value) {
-            $buffer .= $key.'='.$value.'__';
-        }
-        $strMap = substr($buffer, 0, -2);
-
-        $params['sign'] = $sign ?? md5(md5('test-token'.'*|*'.$strMap.'@!@'.$timestamp));
-        $params['timestamp'] = $timestamp;
-
-        $flat = collect($params)->map(fn ($v, $k) => "{$k}={$v}")->implode('__');
-
-        return ['data' => ['en_data' => app(MonetapayService::class)->encryptPayload($flat)]];
     }
 
     private function sendCallback(array $payload)

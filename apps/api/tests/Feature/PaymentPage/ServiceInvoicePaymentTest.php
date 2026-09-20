@@ -278,6 +278,95 @@ class ServiceInvoicePaymentTest extends TestCase
     }
 
     /**
+     * A recovered payment is money kita actually received, so the revenue has to
+     * be booked on the same reference the webhook would have used — otherwise the
+     * client is served, the bill reads PAID, and the income never becomes
+     * withdrawable, with nothing on the row to say so afterwards.
+     */
+    public function test_the_sweep_books_service_revenue_for_the_payment_it_recovers(): void
+    {
+        $this->fakeGateway();
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 150000]), $this->qrisChannel());
+        $attempt = ServiceInvoicePayment::firstOrFail();
+
+        $attempt->forceFill(['created_at' => now()->subDay()])->save();
+
+        Http::swap(new HttpFactory);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['status' => 'success']])]);
+
+        $this->artisan('service-payments:sync-expired')->assertSuccessful();
+
+        $this->assertDatabaseHas('platform_mutations', [
+            'type' => 'service_revenue',
+            'reference' => $attempt->reference_id,
+            'amount' => (int) $invoice->amount,
+        ]);
+        $this->assertSame(
+            1,
+            PlatformMutation::where('type', 'service_revenue')->where('reference', $attempt->reference_id)->count(),
+        );
+    }
+
+    /**
+     * A hand-confirmed bill already booked its revenue under the invoice number.
+     * The sweep then finds nothing left to settle and must book nothing — the
+     * two references are what keep the paths from doubling up.
+     */
+    public function test_the_sweep_does_not_book_revenue_for_a_bill_already_confirmed_by_hand(): void
+    {
+        $this->fakeGateway();
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 150000]), $this->qrisChannel());
+        $attempt = ServiceInvoicePayment::firstOrFail();
+
+        Sanctum::actingAs($this->internal(), ['access-api']);
+        $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
+
+        $attempt->forceFill(['created_at' => now()->subDay()])->save();
+
+        Http::swap(new HttpFactory);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['status' => 'success']])]);
+
+        $this->artisan('service-payments:sync-expired')->assertSuccessful();
+
+        $this->assertSame(
+            0,
+            PlatformMutation::where('type', 'service_revenue')->where('reference', $attempt->reference_id)->count(),
+        );
+        $this->assertSame(1, PlatformMutation::where('type', 'service_revenue')->count());
+    }
+
+    /**
+     * The sweep is for a webhook that never arrived, not one that is merely slow.
+     * Because both paths credit the ATTEMPT's reference, a callback landing after
+     * the sweep finds the attempt settled and books nothing.
+     */
+    public function test_a_late_webhook_after_the_sweep_does_not_double_book(): void
+    {
+        config(['services.monetapay.token' => 'test-token']);
+
+        $this->fakeGateway();
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 150000]), $this->qrisChannel());
+        $attempt = ServiceInvoicePayment::firstOrFail();
+
+        $attempt->forceFill(['created_at' => now()->subDay()])->save();
+
+        Http::swap(new HttpFactory);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['status' => 'success']])]);
+
+        $this->artisan('service-payments:sync-expired')->assertSuccessful();
+
+        // The webhook arrives late, with a perfectly valid signature.
+        $this->postJson('/api/v1/payment/callback', $this->signedPayload($attempt->reference_id, (int) $attempt->total))
+            ->assertOk();
+
+        $this->assertSame(1, PlatformMutation::where('type', 'service_revenue')->count());
+        $this->assertDatabaseCount('service_subscriptions', 1);
+    }
+
+    /**
      * The recovery half of the sweep is the point: a client whose webhook was
      * lost has genuinely paid, and would otherwise sit unpaid forever.
      */

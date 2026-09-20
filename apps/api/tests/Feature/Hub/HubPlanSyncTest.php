@@ -22,7 +22,7 @@ use Tests\TestCase;
  * Turning the Hub's plan into this site's own bills.
  *
  * The one guarantee under test is `service_invoices.hub_item_key`: a sync that
- * runs every fifteen minutes forever must issue exactly one invoice per period.
+ * runs every minute forever must issue exactly one invoice per period.
  */
 class HubPlanSyncTest extends TestCase
 {

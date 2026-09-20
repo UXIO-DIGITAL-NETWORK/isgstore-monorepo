@@ -321,7 +321,7 @@ Cron memanggil `schedule:run` tiap menit; sisanya diatur di `apps/api/routes/con
 | Kadensi | Perintah |
 |---|---|
 | tiap 5 menit | `payments:sync-expired`, `service-payments:sync-expired`, `withdrawals:sync-processing`, `uxiolabs:sync-processing`, `queue:health`, `uxiolabs:check-prices` |
-| tiap 15 menit | `hub:sync-catalog`, `hub:sync-channels` — **hanya bila `HUB_ENABLED`** |
+| tiap 1 menit | `hub:sync-catalog`, `hub:sync-channels`, `hub:sync-licence`, `hub:sync-plan` — **hanya bila `HUB_ENABLED`** (`hub:sync-plan` juga butuh `HUB_MANAGED_PLAN`) |
 | harian 00:10 | `memberships:renew` |
 | harian 00:15 | `memberships:expire` |
 | harian 00:20 | `services:expire` |

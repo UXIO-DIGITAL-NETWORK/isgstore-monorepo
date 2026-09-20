@@ -862,7 +862,7 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
 // ── Hub config-sync trigger ──────────────────────────────────────────────────
 // "Your catalog/fee schedule changed — come and get it." Carries no data and
 // moves no money: the site still fetches everything itself over its own
-// outbound GET to the Hub, this only collapses the wait from 15 minutes to a
+// outbound GET to the Hub, this only collapses the wait from a minute to a
 // second. That is why it sits behind the READ key alone. Requiring the write
 // key would mean a site that accepts the Hub's reports but refuses Hub-driven
 // money movement (HUB_WRITE_ENABLED=false) also loses fast fee updates.

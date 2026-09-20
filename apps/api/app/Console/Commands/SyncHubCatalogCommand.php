@@ -9,7 +9,7 @@ use Throwable;
 
 /**
  * Pulls the service catalog from the Hub and aligns the local copy — scheduled
- * every 15 minutes when hub integration is enabled; also runnable by hand
+ * every minute when hub integration is enabled; also runnable by hand
  * after changing the catalog at the Hub.
  */
 class SyncHubCatalogCommand extends Command

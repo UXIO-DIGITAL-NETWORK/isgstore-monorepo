@@ -12,7 +12,7 @@ namespace App\Support\Settings;
  * including rows whose real owner is somewhere else. Two of them are:
  *
  * - `licence` is operational state pushed by the Uxio Hub
- *   (`ApplyHubLicenceAction`) on a five-minute sync. A local edit is silently
+ *   (`ApplyHubLicenceAction`) on a one-minute sync. A local edit is silently
  *   reverted on the next pass, and in the meantime `is_serving` decides whether
  *   the storefront answers at all. `SiteLicenceState` already states that
  *   "nothing else may write it"; this is what makes that true.
