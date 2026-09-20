@@ -28,11 +28,18 @@ type Bill = ServicePlanLine["outstanding"][number] & {
 const dueKey = (due: string | null) => due?.slice(0, 10) ?? "9999-12-31";
 
 /**
- * Everything the client owes, grouped by the day it falls due.
+ * Everything the client owes, laid out the way a checkout is.
  *
- * The grouping is the point: bills that fall due together are almost always
- * paid together, and paying them in one attempt costs ONE channel fee instead
- * of one per bill. Any other combination can still be ticked by hand.
+ * Two columns from `md` up: what is due on the left, what it costs and how to
+ * pay it on the right, with the summary sticking as the list scrolls. On a phone
+ * it is one column with the summary at the end, which is the shape of every
+ * checkout a client has already used — the left/right split is the part that has
+ * to be earned back on a narrow screen, not the other way round.
+ *
+ * The grouping by due date is the substance, not the decoration: bills that fall
+ * due together are almost always paid together, and paying them in one attempt
+ * costs ONE channel fee instead of one per bill. Any other combination can still
+ * be ticked by hand.
  *
  * The fee shown here is computed on the SUM, mirroring the server — a fee
  * summed per bill would quote a number nobody is ever charged.
@@ -105,74 +112,100 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
   }
 
   return (
-    <Box className="flex flex-col gap-6">
-      {groups.map(([due, bills]) => (
-        <Box key={due} className="flex flex-col gap-2 rounded-xl border border-border p-4">
-          <Box className="flex flex-wrap items-center justify-between gap-2">
-            <Heading level={3}>
-              {due === "9999-12-31" ? t("bills.noDueDate") : t("bills.dueOn", { date: formatDate(due) })}
-            </Heading>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => toggleGroup(bills)}
-            >
-              {t("bills.selectGroup")}
-            </Button>
-          </Box>
+    <Box className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_18rem] lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <Box className="flex min-w-0 flex-col gap-4">
+        {groups.map(([due, bills]) => (
+          <Box
+            key={due}
+            className="flex flex-col overflow-hidden rounded-xl border border-border bg-card"
+          >
+            <Box className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+              <Heading level={3}>
+                {due === "9999-12-31" ? t("bills.noDueDate") : t("bills.dueOn", { date: formatDate(due) })}
+              </Heading>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => toggleGroup(bills)}
+              >
+                {t("bills.selectGroup")}
+              </Button>
+            </Box>
 
-          {bills.map((bill) => {
-            const id = `bill-${bill.id}`;
+            <Box className="flex flex-col divide-y divide-border border-t border-border">
+              {bills.map((bill) => {
+                const id = `bill-${bill.id}`;
 
-            return (
-              <Box key={bill.id} className="flex items-center gap-3 border-t border-border pt-2">
-                <Checkbox
-                  id={id}
-                  checked={selected.includes(bill.id)}
-                  onCheckedChange={() => toggle(bill.id)}
-                />
-                {/* The whole row is the label, not just the name: a bill you
-                    have to hit a small box to pay is a bill somebody will not
-                    pay. */}
-                <label
-                  htmlFor={id}
-                  className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-3"
-                >
-                  <Box className="flex min-w-0 flex-1 flex-col">
-                    <Box className="flex items-center gap-1.5">
+                return (
+                  // The whole row is the label, not just the name: a bill you
+                  // have to hit a small box to pay is a bill somebody will not
+                  // pay. It is also the touch target, so it is a full-height row
+                  // rather than a line of text with a checkbox beside it.
+                  <label
+                    key={bill.id}
+                    htmlFor={id}
+                    className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/40"
+                  >
+                    <Checkbox
+                      id={id}
+                      checked={selected.includes(bill.id)}
+                      onCheckedChange={() => toggle(bill.id)}
+                    />
+                    <Box className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <Box className="flex flex-wrap items-center gap-1.5">
+                        <Text
+                          as="span"
+                          className="text-sm font-medium"
+                        >
+                          {bill.service_name}
+                        </Text>
+                        {/* A setup fee is paid once and buys no period, which is
+                            worth saying: the client should not expect a renewal
+                            after it. */}
+                        {bill.billing_mode === "one_time" && (
+                          <Badge variant="secondary">{t("bills.oneTime")}</Badge>
+                        )}
+                      </Box>
                       <Text
                         as="span"
-                        className="text-sm font-medium"
+                        variant="small"
+                        className="truncate text-muted-foreground"
                       >
-                        {bill.service_name}
+                        {bill.invoice_number}
+                        {bill.period_starts_at &&
+                          bill.period_ends_at &&
+                          ` · ${formatDate(bill.period_starts_at)} – ${formatDate(bill.period_ends_at)}`}
                       </Text>
-                      {/* A setup fee is paid once and buys no period, which is worth
-                          saying: the client should not expect a renewal after it. */}
-                      {bill.billing_mode === "one_time" && (
-                        <Badge variant="secondary">{t("bills.oneTime")}</Badge>
-                      )}
                     </Box>
-                    <Text as="span" variant="small" className="text-muted-foreground">
-                      {bill.invoice_number}
-                      {bill.period_starts_at &&
-                        bill.period_ends_at &&
-                        ` · ${formatDate(bill.period_starts_at)} – ${formatDate(bill.period_ends_at)}`}
+                    <Text
+                      as="span"
+                      className="shrink-0 tabular-nums"
+                    >
+                      {money(bill.amount)}
                     </Text>
-                  </Box>
-                  <Text as="span" className="tabular-nums">{money(bill.amount)}</Text>
-                </label>
-              </Box>
-            );
-          })}
-        </Box>
-      ))}
+                  </label>
+                );
+              })}
+            </Box>
+          </Box>
+        ))}
+      </Box>
 
-      {/* On screen from the start, once there is something to pay. A pay button
-          that only appears after an unstated precondition is one a client never
-          finds — which is what happened the first time this panel shipped. */}
-      <Box className="sticky bottom-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-lg">
-        {chosen.length === 0 ? (
-          <Box className="flex flex-wrap items-center justify-between gap-3">
+      {/*
+        On screen from the start, once there is something to pay: a pay button
+        that only appears after an unstated precondition is one a client never
+        finds, which is what happened the first time this panel shipped. It
+        sticks beside the bills on a wide screen so the total stays in view while
+        the list is scanned; on a phone it simply follows them.
+      */}
+      <Box
+        as="aside"
+        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 md:sticky md:top-6"
+      >
+        <Box className="flex flex-col gap-1">
+          <Heading level={3}>{t("bills.summary")}</Heading>
+
+          {chosen.length === 0 ? (
             <Text
               as="span"
               variant="small"
@@ -180,26 +213,15 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
             >
               {t("bills.selectHint")}
             </Text>
-            <Button disabled>{t("bills.paySelected")}</Button>
-          </Box>
-        ) : (
-          <>
-            <PaymentChannelPicker
-              channels={channels ?? []}
-              isError={channelsError}
-              selectedId={channel?.id ?? null}
-              onSelect={setChannel}
-              isLoading={loadingChannels}
-            />
-
-            <Box className="flex flex-col gap-1 border-t border-border pt-3">
-              <Box className="flex justify-between">
+          ) : (
+            <>
+              <Box className="flex items-baseline justify-between gap-4">
                 <Text as="span" variant="small">
                   {t("bills.selectedCount", { count: chosen.length })}
                 </Text>
                 <Text as="span" className="tabular-nums">{money(subtotal)}</Text>
               </Box>
-              <Box className="flex justify-between">
+              <Box className="flex items-baseline justify-between gap-4">
                 {/* Once for the whole set — saying so is what makes paying
                     together visibly cheaper than paying one at a time. */}
                 <Text as="span" variant="small" className="text-muted-foreground">
@@ -207,32 +229,52 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
                 </Text>
                 <Text as="span" variant="small" className="tabular-nums">{money(fee)}</Text>
               </Box>
-              <Box className="flex justify-between font-medium">
-                <Text as="span">{t("bills.total")}</Text>
-                <Text as="span" className="tabular-nums">{money(subtotal + fee)}</Text>
+              <Box className="mt-1 flex items-baseline justify-between gap-4 border-t border-border pt-2">
+                <Text as="span" className="font-medium">{t("bills.total")}</Text>
+                <Text as="span" className="font-medium tabular-nums">{money(subtotal + fee)}</Text>
               </Box>
-            </Box>
+            </>
+          )}
+        </Box>
 
-            <Button
-              disabled={!channel || paying}
-              onClick={() =>
-                channel &&
-                pay(
-                  { invoiceIds: chosen.map((b) => b.id), channelId: channel.id },
-                  {
-                    onSuccess: (attempt) =>
-                      navigate({
-                        to: "/app/payment-admin/service-payments/$reference",
-                        params: { reference: attempt.reference_id },
-                      }),
-                  },
-                )
-              }
+        {chosen.length > 0 && (
+          <Box className="flex flex-col gap-2">
+            <Text
+              as="span"
+              variant="small"
+              className="text-muted-foreground"
             >
-              {t("bills.paySelected")}
-            </Button>
-          </>
+              {t("payment.method")}
+            </Text>
+            <PaymentChannelPicker
+              channels={channels ?? []}
+              isError={channelsError}
+              selectedId={channel?.id ?? null}
+              onSelect={setChannel}
+              isLoading={loadingChannels}
+            />
+          </Box>
         )}
+
+        <Button
+          className="w-full"
+          disabled={chosen.length === 0 || !channel || paying}
+          onClick={() =>
+            channel &&
+            pay(
+              { invoiceIds: chosen.map((b) => b.id), channelId: channel.id },
+              {
+                onSuccess: (attempt) =>
+                  navigate({
+                    to: "/app/payment-admin/service-payments/$reference",
+                    params: { reference: attempt.reference_id },
+                  }),
+              },
+            )
+          }
+        >
+          {t("bills.paySelected")}
+        </Button>
       </Box>
     </Box>
   );

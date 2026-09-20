@@ -72,7 +72,7 @@ export function PaymentChannelPicker({
   }, {});
 
   return (
-    <Box className="flex flex-col gap-4">
+    <Box className="@container flex flex-col gap-4">
       {Object.entries(groups).map(([type, items]) => (
         <Box
           key={type}
@@ -85,7 +85,7 @@ export function PaymentChannelPicker({
           >
             {TYPE_LABELS[type] ?? type}
           </Text>
-          <Box className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Box className="grid grid-cols-1 gap-2 @sm:grid-cols-2">
             {items.map((channel) => (
               <Box
                 as="button"

@@ -285,6 +285,7 @@
     "oneTime": "Sekali bayar",
     "noDueDate": "Tanpa jatuh tempo",
     "dueOn": "Jatuh tempo {{date}}",
+    "summary": "Ringkasan pembayaran",
     "selectGroup": "Pilih semua di tanggal ini",
     "selectedCount": "{{count}} tagihan dipilih",
     "feeOnce": "Biaya admin (sekali untuk semua yang dipilih)",

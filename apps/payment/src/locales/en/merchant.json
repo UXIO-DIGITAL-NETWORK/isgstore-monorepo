@@ -285,6 +285,7 @@
     "oneTime": "One-time",
     "noDueDate": "No due date",
     "dueOn": "Due {{date}}",
+    "summary": "Payment summary",
     "selectGroup": "Select all due this day",
     "selectedCount": "{{count}} bills selected",
     "feeOnce": "Admin fee (charged once for the whole selection)",
