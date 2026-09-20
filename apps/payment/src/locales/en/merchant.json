@@ -206,6 +206,7 @@
   "paymentPicker": {
     "loading": "Loading payment methods…",
     "none": "No payment methods are active yet. Please get in touch with us.",
+    "error": "Could not load payment methods. Try reloading the page in a moment.",
     "noAdminFee": "No admin fee"
   },
   "payment": {

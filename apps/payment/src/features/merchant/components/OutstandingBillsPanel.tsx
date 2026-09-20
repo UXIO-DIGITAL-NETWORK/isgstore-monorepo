@@ -40,7 +40,7 @@ const dueKey = (due: string | null) => due?.slice(0, 10) ?? "9999-12-31";
 export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
   const { t } = useTranslation("merchant");
   const navigate = useNavigate();
-  const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
+  const { data: channels, isLoading: loadingChannels, isError: channelsError } = useServicePaymentChannels();
   const { mutate: pay, isPending: paying } = usePayInvoiceBatch();
 
   const [selected, setSelected] = useState<number[]>([]);
@@ -186,6 +186,7 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
           <>
             <PaymentChannelPicker
               channels={channels ?? []}
+              isError={channelsError}
               selectedId={channel?.id ?? null}
               onSelect={setChannel}
               isLoading={loadingChannels}

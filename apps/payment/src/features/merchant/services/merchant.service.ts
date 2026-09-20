@@ -99,32 +99,33 @@ export const merchantService = {
   /**
    * The methods a client may settle a bill with — gateway only, no wallet.
    *
-   * Reuses the public storefront endpoint (same one web-topup-fe calls) so the
-   * payment page works against the deployed backend. That endpoint nests the
-   * list under `data.channels` and — because our caller is authenticated —
-   * includes the `balance` wallet, which cannot pay a service bill, so it is
-   * dropped here. The storefront row omits logo/description/sort_order, none of
-   * which the payment-page picker uses.
+   * Deliberately the payment-admin route, NOT the public storefront one it used
+   * to share. The licence kill switch (`EnsureSiteIsServing`) closes the
+   * storefront globally and leaves `payment-admin/*` open on purpose, so a
+   * client whose term has lapsed can still log in and pay to switch the site
+   * back on. Reading the channel list from the storefront therefore put the
+   * payment page behind the very gate it exists to satisfy: the request came
+   * back 503 with `data.licence`, the picker read it as an empty list, and a
+   * client who owed money was told there was no way to pay.
+   *
+   * Same three types (the wallet is excluded server-side, so no filter here),
+   * with logo and sort order the storefront row does not carry.
    */
   paymentChannels: async (): Promise<ServicePaymentChannel[]> => {
-    const res: ApiResponse<{ channels: StorefrontPaymentChannel[] }> = await api.get(
-      `${API_VERSION}/storefront/payment-channels`,
-    );
+    const res: ApiResponse<StorefrontPaymentChannel[]> = await api.get(`${BASE}/payment-channels`);
 
-    return (res.data.channels ?? [])
-      .filter((channel) => channel.channel_code !== "balance")
-      .map((channel) => ({
-        id: channel.id,
-        payment_type: channel.payment_type,
-        channel_code: channel.channel_code,
-        name: channel.name,
-        logo_url: null,
-        description: null,
-        min_amount: channel.min_amount,
-        fee_flat: channel.fee_flat,
-        fee_percent: channel.fee_percent,
-        sort_order: 0,
-      }));
+    return (res.data ?? []).map((channel) => ({
+      id: channel.id,
+      payment_type: channel.payment_type,
+      channel_code: channel.channel_code,
+      name: channel.name,
+      logo_url: null,
+      description: null,
+      min_amount: channel.min_amount,
+      fee_flat: channel.fee_flat,
+      fee_percent: channel.fee_percent,
+      sort_order: 0,
+    }));
   },
 
   /** Issues the bill and opens its payment in one step. */

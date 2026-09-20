@@ -47,7 +47,7 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
   const { t } = useTranslation("merchant");
   const subscriptionId = invoice?.subscription?.id;
   const { data: installation, isLoading: loadingInstallation } = useMerchantInstallation(subscriptionId);
-  const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
+  const { data: channels, isLoading: loadingChannels, isError: channelsError } = useServicePaymentChannels();
   const { mutate: reopenPayment, isPending: isReopening } = usePayServiceInvoice();
   const { mutateAsync: reveal } = useRevealDetail();
 
@@ -172,6 +172,7 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
           payment={invoice.payment ?? null}
           amount={invoice.amount}
           channels={channels ?? []}
+          channelsError={channelsError}
           isLoadingChannels={loadingChannels}
           isReopening={isReopening}
           onReopen={(channel) => reopenPayment({ id: invoice.id, paymentChannelId: channel.id })}

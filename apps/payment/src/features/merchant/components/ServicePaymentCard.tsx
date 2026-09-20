@@ -23,6 +23,8 @@ interface ServicePaymentCardProps {
   /** The bill, for pricing a fresh attempt after this one lapses. */
   amount: number;
   channels: ServicePaymentChannel[];
+  /** A failed load is not the same fact as an empty schedule — see PaymentChannelPicker. */
+  channelsError?: boolean;
   isLoadingChannels?: boolean;
   isReopening?: boolean;
   /**
@@ -53,6 +55,7 @@ export function ServicePaymentCard({
   payment,
   amount,
   channels,
+  channelsError,
   isLoadingChannels,
   isReopening,
   onReopen,
@@ -106,6 +109,7 @@ export function ServicePaymentCard({
               <Label>{t("payment.method")}</Label>
               <PaymentChannelPicker
                 channels={channels}
+                isError={channelsError}
                 selectedId={channel?.id ?? null}
                 onSelect={setChannel}
                 isLoading={isLoadingChannels}

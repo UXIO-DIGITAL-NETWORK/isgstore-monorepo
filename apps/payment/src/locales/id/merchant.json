@@ -206,6 +206,7 @@
   "paymentPicker": {
     "loading": "Memuat metode pembayaran…",
     "none": "Belum ada metode pembayaran yang aktif. Hubungi tim kami.",
+    "error": "Gagal memuat metode pembayaran. Coba muat ulang halaman sebentar lagi.",
     "noAdminFee": "Tanpa biaya admin"
   },
   "payment": {

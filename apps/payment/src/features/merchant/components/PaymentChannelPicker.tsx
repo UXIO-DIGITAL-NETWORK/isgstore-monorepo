@@ -17,6 +17,12 @@ interface PaymentChannelPickerProps {
   selectedId: number | null;
   onSelect: (channel: ServicePaymentChannel) => void;
   isLoading?: boolean;
+  /**
+   * A failed request and an empty schedule used to render the same sentence —
+   * "no payment methods" — so a 503 from the licence gate read as a fact about
+   * the account and sent everyone looking in the wrong place.
+   */
+  isError?: boolean;
 }
 
 /**
@@ -25,11 +31,28 @@ interface PaymentChannelPickerProps {
  * The fee is shown per method rather than only in the total, because it is the
  * one thing that differs between two otherwise identical-looking options.
  */
-export function PaymentChannelPicker({ channels, selectedId, onSelect, isLoading }: PaymentChannelPickerProps) {
+export function PaymentChannelPicker({
+  channels,
+  selectedId,
+  onSelect,
+  isLoading,
+  isError = false,
+}: PaymentChannelPickerProps) {
   const { t } = useTranslation("merchant");
 
   if (isLoading) {
     return <Text variant="small">{t("paymentPicker.loading")}</Text>;
+  }
+
+  if (isError) {
+    return (
+      <Text
+        variant="small"
+        className="text-destructive"
+      >
+        {t("paymentPicker.error")}
+      </Text>
+    );
   }
 
   if (channels.length === 0) {
