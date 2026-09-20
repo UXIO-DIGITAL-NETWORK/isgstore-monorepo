@@ -230,6 +230,10 @@ class SiteAvailabilityTest extends TestCase
             // What this site's owner holds, per service. Same standing.
             'GET api/v1/hub/subscriptions',
             'GET api/v1/hub/summary',
+            // A live Uxiotopup supplier balance. Same standing as the gateway
+            // reading above: read-only, key-gated, and the number an operator
+            // wants while a site is dark.
+            'GET api/v1/hub/supplier-balance',
             'GET api/v1/hub/withdrawal-context',
             'GET api/v1/hub/withdrawals',
             'GET api/v1/ping',

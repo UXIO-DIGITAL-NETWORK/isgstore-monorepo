@@ -16,6 +16,7 @@ use App\Models\ServiceSubscription;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
+use App\Services\UxiolabsService;
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Payment\DefaultMerchant;
 use App\Support\Payment\WebsiteSubscriptionStatus;
@@ -325,6 +326,7 @@ class HubReportController extends Controller
         try {
             if ($request->boolean('force')) {
                 Cache::forget(MonetapayService::balanceCacheKey(null, $currency));
+                Cache::forget(MonetapayService::mainBalanceCacheKey($currency));
             }
 
             $response = app(MonetapayService::class)->inquiryBalanceCached(null, $currency);
@@ -337,11 +339,18 @@ class HubReportController extends Controller
                 ?? $response['balance']
                 ?? null;
 
+            // Additive to the contract: the parent account's balance rides along
+            // so the Hub can show Uxio's own money beside each sub-merchant's.
+            // Its own try/catch inside — a parent-account hiccup must not turn a
+            // good sub-merchant reading into a failure.
+            $main = $this->mainMerchantBalance($currency);
+
             if (! is_numeric($balance)) {
                 return $this->successResponse([
                     'ok' => false,
                     'balance' => null,
                     'currency' => $currency,
+                    ...$main,
                     'error' => 'Gateway tidak memberi angka saldo.',
                 ], 'Gateway balance');
             }
@@ -356,6 +365,7 @@ class HubReportController extends Controller
                 // Masked: the Hub only needs to see that the site is trading as
                 // the sub-merchant it expects, not the identifier itself.
                 'sub_merchant' => $subMerchant === '' ? null : Str::mask($subMerchant, '*', 3, max(0, strlen($subMerchant) - 6)),
+                ...$main,
             ], 'Gateway balance');
         } catch (Throwable $e) {
             Log::channel('monetapay')->warning('Live gateway balance failed', ['error' => $e->getMessage()]);
@@ -366,6 +376,100 @@ class HubReportController extends Controller
                 'currency' => $currency,
                 'error' => mb_substr($e->getMessage(), 0, 200),
             ], 'Gateway balance');
+        }
+    }
+
+    /**
+     * GET /v1/hub/supplier-balance — a LIVE reading of this site's Uxiotopup
+     * (supplier) balance.
+     *
+     * Its own endpoint, like gateway-balance and for the same reason: /saldo
+     * reaches an external service with a 15s timeout, so it must never sit
+     * inside the summary pull the Hub runs every five minutes.
+     *
+     * Asked with THIS site's own key — every site holds its own supplier
+     * account. The Hub stores and renders the answer; it holds no key.
+     *
+     * Answers 200 with `ok: false` on failure, never a 5xx: reaching us and the
+     * supplier answering are different facts, and a 5xx would make a supplier
+     * problem look like an unreachable site.
+     */
+    public function liveSupplierBalance(Request $request)
+    {
+        $currency = 'IDR';
+
+        try {
+            if ($request->boolean('force')) {
+                Cache::forget(UxiolabsService::BALANCE_CACHE_KEY);
+            }
+
+            // getBalanceCached() returns the uxiolabs `data` object already
+            // unwrapped, so the figure is a top-level `saldo`. The nested shape
+            // is read too, so a wrapper change upstream does not silently read
+            // as "no balance".
+            $response = app(UxiolabsService::class)->getBalanceCached();
+
+            $balance = $response['saldo'] ?? $response['data']['saldo'] ?? null;
+
+            if (! is_numeric($balance)) {
+                return $this->successResponse([
+                    'ok' => false,
+                    'balance' => null,
+                    'currency' => $currency,
+                    'supplier' => 'Uxiotopup',
+                    'error' => 'Supplier tidak memberi angka saldo.',
+                ], 'Supplier balance');
+            }
+
+            return $this->successResponse([
+                'ok' => true,
+                'balance' => (int) round((float) $balance),
+                'currency' => $currency,
+                'supplier' => 'Uxiotopup',
+                'fetched_at' => now()->toIso8601String(),
+            ], 'Supplier balance');
+        } catch (Throwable $e) {
+            Log::channel('uxiolabs')->warning('Live supplier balance failed', ['error' => $e->getMessage()]);
+
+            return $this->successResponse([
+                'ok' => false,
+                'balance' => null,
+                'currency' => $currency,
+                'supplier' => 'Uxiotopup',
+                'error' => mb_substr($e->getMessage(), 0, 200),
+            ], 'Supplier balance');
+        }
+    }
+
+    /**
+     * Uxio's own (parent-account) Monetapay balance, read with this site's
+     * credentials minus the sub-merchant id.
+     *
+     * Never throws: a parent-account hiccup is reported as a null `main_balance`
+     * beside the reason, so the sub-merchant figure next to it stays readable.
+     * An unknown balance is not zero, and it must not take the whole reading down.
+     *
+     * @return array{main_balance: int|null, main_error: string|null}
+     */
+    private function mainMerchantBalance(string $currency): array
+    {
+        try {
+            $response = app(MonetapayService::class)->inquiryMainMerchantBalanceCached($currency);
+
+            $balance = $response['data']['current_balance']
+                ?? $response['data']['balance']
+                ?? $response['balance']
+                ?? null;
+
+            if (! is_numeric($balance)) {
+                return ['main_balance' => null, 'main_error' => 'Gateway tidak memberi angka saldo main merchant.'];
+            }
+
+            return ['main_balance' => (int) round((float) $balance), 'main_error' => null];
+        } catch (Throwable $e) {
+            Log::channel('monetapay')->warning('Live main-merchant balance failed', ['error' => $e->getMessage()]);
+
+            return ['main_balance' => null, 'main_error' => mb_substr($e->getMessage(), 0, 200)];
         }
     }
 

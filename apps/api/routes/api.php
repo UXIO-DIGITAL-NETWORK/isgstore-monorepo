@@ -845,6 +845,12 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
     // Hub's pull timeout and would hang every mirror.
     Route::get('/gateway-balance', [HubReportController::class, 'liveGatewayBalance'])
         ->middleware('throttle:hub-balance');
+    // A LIVE Uxiotopup (supplier) balance, read with this site's own supplier
+    // key. Separate from /summary for the same reason as the gateway balance
+    // above: /saldo carries a 15s upstream timeout and must never sit inside the
+    // five-minute mirror pull. Its own throttle bucket for the same reason.
+    Route::get('/supplier-balance', [HubReportController::class, 'liveSupplierBalance'])
+        ->middleware('throttle:hub-balance');
 });
 
 // ── Hub money-path WRITE channel ─────────────────────────────────────────────
