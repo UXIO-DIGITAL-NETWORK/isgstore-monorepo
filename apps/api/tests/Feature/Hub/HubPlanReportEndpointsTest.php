@@ -12,6 +12,7 @@ use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
+use App\Services\UxiolabsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -47,6 +48,7 @@ class HubPlanReportEndpointsTest extends TestCase
     {
         $this->getJson('/api/v1/hub/subscriptions')->assertStatus(403);
         $this->getJson('/api/v1/hub/gateway-balance')->assertStatus(403);
+        $this->getJson('/api/v1/hub/supplier-balance')->assertStatus(403);
     }
 
     public function test_subscriptions_collapses_to_one_row_per_service_at_the_furthest_end_date(): void
@@ -105,6 +107,52 @@ class HubPlanReportEndpointsTest extends TestCase
         $this->assertNotNull(Cache::get(MonetapayService::balanceCacheKey()));
     }
 
+    public function test_the_main_merchant_balance_is_read_separately_from_the_sub_merchant(): void
+    {
+        // Two different cache keys, so the test knows which reading is which.
+        config(['services.monetapay.sub_mch_id' => 'SUB-123']);
+
+        Http::preventStrayRequests();
+        Http::fakeSequence()
+            ->push(['code' => 0, 'data' => ['current_balance' => '4250000']])
+            ->push(['code' => 0, 'data' => ['current_balance' => '777000']]);
+
+        $data = $this->pull('/api/v1/hub/gateway-balance')->assertOk()->json('data');
+
+        // First call = the site's sub-merchant, second = the parent account.
+        $this->assertSame(4250000, $data['balance']);
+        $this->assertSame(777000, $data['main_balance']);
+        $this->assertNull($data['main_error']);
+
+        // ...and the main reading warms its OWN entry, never the sub-merchant's.
+        $this->assertNotSame(
+            MonetapayService::balanceCacheKey(),
+            MonetapayService::mainBalanceCacheKey(),
+        );
+        $this->assertNotNull(Cache::get(MonetapayService::mainBalanceCacheKey()));
+    }
+
+    public function test_a_main_merchant_failure_does_not_fail_the_sub_merchant_reading(): void
+    {
+        // A distinct sub-merchant id, so the two readings do not share a cache
+        // entry and the failure below is really the parent call's.
+        config(['services.monetapay.sub_mch_id' => 'SUB-123']);
+
+        Http::preventStrayRequests();
+        Http::fakeSequence()
+            ->push(['code' => 0, 'data' => ['current_balance' => '4250000']])
+            ->push('boom', 500);
+
+        $data = $this->pull('/api/v1/hub/gateway-balance')->assertOk()->json('data');
+
+        // The sub-merchant figure stays good; only the parent account is unknown
+        // — an unknown is not a zero, and it must not take the row down with it.
+        $this->assertTrue($data['ok']);
+        $this->assertSame(4250000, $data['balance']);
+        $this->assertNull($data['main_balance']);
+        $this->assertNotNull($data['main_error']);
+    }
+
     public function test_a_gateway_failure_answers_200_with_ok_false(): void
     {
         Http::preventStrayRequests();
@@ -117,6 +165,34 @@ class HubPlanReportEndpointsTest extends TestCase
 
         $this->assertFalse($data['ok']);
         $this->assertNull($data['balance']);
+    }
+
+    public function test_a_live_supplier_balance_is_returned(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['status' => true, 'data' => ['saldo' => '1500000']])]);
+
+        $data = $this->pull('/api/v1/hub/supplier-balance')->assertOk()->json('data');
+
+        $this->assertTrue($data['ok']);
+        $this->assertSame(1500000, $data['balance']);
+        $this->assertSame('Uxiotopup', $data['supplier']);
+        $this->assertNotNull(Cache::get(UxiolabsService::BALANCE_CACHE_KEY));
+    }
+
+    public function test_a_supplier_failure_answers_200_with_ok_false(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response('boom', 500)]);
+
+        // Same rule as the gateway reading: reaching us and the supplier
+        // answering are different facts, and a 5xx would make a supplier problem
+        // look like a site that is down.
+        $data = $this->pull('/api/v1/hub/supplier-balance')->assertOk()->json('data');
+
+        $this->assertFalse($data['ok']);
+        $this->assertNull($data['balance']);
+        $this->assertNotNull($data['error']);
     }
 
     public function test_the_summary_still_never_calls_the_gateway(): void
