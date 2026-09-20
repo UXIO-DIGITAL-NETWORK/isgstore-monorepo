@@ -39,7 +39,7 @@ final class WebsiteService
      *
      * Not `services.name`. That row belongs to the Hub — it is "Uxiolabs" there,
      * because that is what kita sells — and `hub:sync-catalog` rewrites it every
-     * fifteen minutes, so renaming it locally lasts until the next tick. But the
+     * minute, so renaming it locally lasts until the next tick. But the
      * client's admin panel and payment page are the client's own product, and a
      * card in their sidebar reading someone else's brand is confusing at best.
      *

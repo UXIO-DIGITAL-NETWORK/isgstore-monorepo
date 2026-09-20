@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\DiscordWebhookService;
+use App\Support\Hub\HubSyncSchedule;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -156,24 +157,33 @@ Schedule::command('subscriptions:notify-expiring')
 // Registered only on hub-managed deployments; a standalone site schedules
 // nothing and calls nowhere.
 if (config('services.hub.enabled')) {
+    // ONE definition of the tick, for all four pulls. A change made in the Hub —
+    // a fee, a plan line, a renewal — has to land on the client's site, and on
+    // the client's payment page, while the operator is still looking at it. The
+    // old 15/5-minute split meant a bill could sit unissued for a quarter of an
+    // hour with nothing reporting a problem.
+    $tick = HubSyncSchedule::cronExpression();
+
     Schedule::command('hub:sync-catalog')
-        ->everyFifteenMinutes()
-        ->withoutOverlapping(30)
+        ->cron($tick)
+        // Two minutes, not thirty: at a one-minute cadence a run that overruns —
+        // or a worker killed mid-flight — must cost the next tick, not the next
+        // half hour.
+        ->withoutOverlapping(2)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-catalog'));
 
-    // Five minutes, not fifteen: this one decides whether the site serves the
-    // public, and a suspension that takes a quarter of an hour to bite is a
-    // suggestion rather than a lever.
+    // The licence decides whether the site serves the public at all, so it was
+    // already the tightest of the four; it now simply shares the tick.
     Schedule::command('hub:sync-licence')
-        ->everyFiveMinutes()
-        ->withoutOverlapping()
+        ->cron($tick)
+        ->withoutOverlapping(2)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-licence'));
 
     Schedule::command('hub:sync-channels')
-        ->everyFifteenMinutes()
-        ->withoutOverlapping(30)
+        ->cron($tick)
+        ->withoutOverlapping(2)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-channels'));
 
@@ -182,8 +192,8 @@ if (config('services.hub.enabled')) {
     // is per site and must be stoppable in one env change.
     if (config('services.hub.managed_plan')) {
         Schedule::command('hub:sync-plan')
-            ->everyFifteenMinutes()
-            ->withoutOverlapping(30)
+            ->cron($tick)
+            ->withoutOverlapping(2)
             ->runInBackground()
             ->onFailure($alertFailure('hub:sync-plan'));
     }

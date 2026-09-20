@@ -46,6 +46,19 @@
         <env name="PAYMENT_PAGE_URL" value="https://pay.isgstore.id"/>
         <env name="PIWAPI_ACCOUNT" value=""/>
         <env name="PIWAPI_SECRET" value=""/>
+        <!-- Uxio Hub belongs in that list for the same reason, and is the newest
+             way a real .env could change the suite's outcome: switching the
+             integration on turns on the service-order push, so every test that
+             issues a bill starts making a live call the moment a developer (or
+             the production server) enables it. Off here; the Hub tests arm it
+             themselves via config(). -->
+        <env name="HUB_ENABLED" value="false"/>
+        <env name="HUB_SITE_API_KEY" value=""/>
+        <env name="HUB_BASE_URL" value=""/>
+        <env name="HUB_MANAGED_PLAN" value="false"/>
+        <env name="HUB_PUSH_ORDERS" value="false"/>
+        <env name="HUB_WRITE_ENABLED" value="false"/>
+        <env name="HUB_SYNC_INTERVAL_MINUTES" value="1"/>
         <!-- Discord belongs in that list too, and was the one gateway missing
              from it. A developer's .env holds the LIVE channel webhook, and the
              service deliberately lets `testing` through (a test that configures

@@ -15,10 +15,10 @@ use Tests\TestCase;
 /**
  * Groups the settings form does not own.
  *
- * `licence` is rewritten by the Hub every five minutes and decides whether the
+ * `licence` is rewritten by the Hub every minute and decides whether the
  * storefront answers at all; `pricing` is configured per membership plan on the
  * Pricing Rules screen. Both used to be ordinary editable rows here, so an
- * admin could switch the licence off — and be silently overruled five minutes
+ * admin could switch the licence off — and be silently overruled a minute
  * later, having closed the storefront in the meantime.
  */
 class SettingManagedGroupsTest extends TestCase

@@ -10,9 +10,11 @@ use Throwable;
 /**
  * Pulls the Hub's service plan and issues this site's own bills from it.
  *
- * Fifteen minutes, not five: this issues invoices, and a fifteen-minute lag on a
- * bill that falls due in a fortnight is nothing. The five-minute slot stays
- * reserved for the licence — the one pull that decides whether the site serves.
+ * It shares the single one-minute Hub tick with the catalogue, channels and
+ * licence pulls — a change made in the Hub has to reach the client's payment
+ * page while the operator is still watching. Issuing a bill moves no money, so
+ * the tight loop is cheap; the unique `hub_item_key` is what keeps it from
+ * ever billing one period twice.
  *
  * Gated by HUB_MANAGED_PLAN, off by default, so the cutover happens one site at
  * a time and can be stopped instantly. A hand-run ignores the flag, the same way

@@ -14,7 +14,6 @@ use App\Models\ServiceInvoicePaymentItem;
 use App\Models\ServiceSubscription;
 use App\Models\Setting;
 use App\Models\User;
-use App\Services\Payment\MonetapayService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Laravel\Sanctum\Sanctum;
@@ -276,31 +275,5 @@ class ServiceInvoiceBatchPaymentTest extends TestCase
             ->assertOk()->json('data.payment');
 
         $this->assertSame('virtual_account', $shown['type']);
-    }
-
-    /** Copied from ServiceInvoiceWebhookTest — never re-derive the signature. */
-    private function signedPayload(string $reference, int $amount, string $status = '3'): array
-    {
-        $params = [
-            'mch_order_no' => $reference,
-            'amount' => (string) $amount,
-            'status' => $status,
-        ];
-
-        $timestamp = (string) time();
-
-        ksort($params);
-        $buffer = '';
-        foreach ($params as $key => $value) {
-            $buffer .= $key.'='.$value.'__';
-        }
-        $strMap = substr($buffer, 0, -2);
-
-        $params['sign'] = md5(md5('test-token'.'*|*'.$strMap.'@!@'.$timestamp));
-        $params['timestamp'] = $timestamp;
-
-        $flat = collect($params)->map(fn ($v, $k) => "{$k}={$v}")->implode('__');
-
-        return ['data' => ['en_data' => app(MonetapayService::class)->encryptPayload($flat)]];
     }
 }

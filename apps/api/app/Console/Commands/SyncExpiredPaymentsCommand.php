@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Settlement\SettleMerchantTransactionAction;
 use App\Enums\PaymentStatus;
 use App\Enums\TransactionStatus;
 use App\Jobs\ProcessUxiolabsTopup;
@@ -26,8 +27,10 @@ class SyncExpiredPaymentsCommand extends Command
     /** Monetapay status strings that mean "still in-flight — come back later". */
     private const PENDING_STATUSES = ['pending', 'processing', 'waiting', '0', ''];
 
-    public function __construct(private readonly MonetapayService $monetapay)
-    {
+    public function __construct(
+        private readonly MonetapayService $monetapay,
+        private readonly SettleMerchantTransactionAction $settle,
+    ) {
         parent::__construct();
     }
 
@@ -143,7 +146,19 @@ class SyncExpiredPaymentsCommand extends Command
             });
 
             if ($dispatched) {
-                ProcessUxiolabsTopup::dispatch($payment->transaction->fresh());
+                // Eager-load the payment: the split reads `gateway_fee` and
+                // `tax_amount` off it, and a lazy load out here is a needless
+                // query on every recovered payment.
+                $transaction = $payment->transaction->fresh(['payment']);
+
+                // The same split the webhook books, in the same order — after
+                // the commit, so a payment recovered here credits the merchant
+                // their `amount_base` and records kita's markup, instead of only
+                // fulfilling the order. Idempotent on the invoice number, so a
+                // late webhook cannot credit it a second time.
+                $this->settle->execute($transaction);
+
+                ProcessUxiolabsTopup::dispatch($transaction);
             }
 
             Log::info('payments:sync-expired updated', [

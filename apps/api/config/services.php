@@ -193,6 +193,12 @@ return [
         // Rollback: set false. Nothing new is pulled, nothing new is issued,
         // and every invoice already issued keeps working exactly as it is.
         'managed_plan' => (bool) env('HUB_MANAGED_PLAN', false),
+        // How often this site re-pulls from the Hub — catalog, channels, licence
+        // and plan. One minute by default: a change made in the Hub has to reach
+        // the client's site, and the client's bill, while the operator is still
+        // watching. A pull is four cheap GETs; the pokes are unaffected and
+        // remain immediate. Bump it if a deployment would rather be gentler.
+        'sync_interval_minutes' => max(1, (int) env('HUB_SYNC_INTERVAL_MINUTES', 1)),
         // Money-path WRITE channel (approve/reject withdrawals + confirm/reject
         // service invoices FROM the Hub). Off by default and gated by a SEPARATE
         // key from the read key above — a leaked read key must never move money.

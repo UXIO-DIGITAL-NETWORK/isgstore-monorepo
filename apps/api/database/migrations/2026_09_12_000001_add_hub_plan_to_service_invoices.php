@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * `hub_item_key` is the whole duplicate-billing guarantee. It names one period
  * of one plan line — "<plan ulid>:<period index>" — and the unique index below
- * is what makes a sync that runs every fifteen minutes, forever, issue exactly
+ * is what makes a sync that runs every minute, forever, issue exactly
  * one invoice for it. Not a status check, not a date comparison: an index.
  *
  * NULL for every invoice a client raised themselves, and MySQL and SQLite both

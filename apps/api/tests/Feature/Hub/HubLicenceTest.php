@@ -227,7 +227,7 @@ class HubLicenceTest extends TestCase
 
     public function test_the_label_follows_the_site_not_the_hubs_catalog(): void
     {
-        // hub:sync-catalog rewrites services.name every 15 minutes, so a local
+        // hub:sync-catalog rewrites services.name every minute, so a local
         // rename would not survive. The label comes from the site's identity.
         Setting::create([
             'group' => 'general', 'key' => 'site_name', 'value' => 'ISG Store',

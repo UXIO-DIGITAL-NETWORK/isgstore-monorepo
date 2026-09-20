@@ -61,7 +61,7 @@ class SettingController extends Controller
 
                 // Unknown keys are ignored, and so is a key whose group this
                 // form does not own: `licence` is rewritten by the Hub every
-                // five minutes, and `pricing` is configured per plan on the
+                // one minute, and `pricing` is configured per plan on the
                 // Pricing Rules screen. Refusing the write is what makes
                 // `SiteLicenceState`'s "nothing else may write it" true — the
                 // row is not merely hidden from the form.

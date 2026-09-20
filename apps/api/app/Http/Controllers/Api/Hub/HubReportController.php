@@ -385,7 +385,7 @@ class HubReportController extends Controller
      *
      * Its own endpoint, like gateway-balance and for the same reason: /saldo
      * reaches an external service with a 15s timeout, so it must never sit
-     * inside the summary pull the Hub runs every five minutes.
+     * inside the summary pull the Hub runs every minute.
      *
      * Asked with THIS site's own key — every site holds its own supplier
      * account. The Hub stores and renders the answer; it holds no key.
