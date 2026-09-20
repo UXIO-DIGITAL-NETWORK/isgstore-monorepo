@@ -41,7 +41,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
   const [channel, setChannel] = useState<ServicePaymentChannel | null>(null);
   const navigate = useNavigate();
   const { data: service, isLoading, isError } = useMerchantServiceDetail(serviceId);
-  const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
+  const { data: channels, isLoading: loadingChannels, isError: channelsError } = useServicePaymentChannels();
   const { mutate: subscribe, isPending } = useSubscribeService();
 
   if (isLoading) {
@@ -177,6 +177,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
                 selectedId={channel?.id ?? null}
                 onSelect={setChannel}
                 isLoading={loadingChannels}
+                isError={channelsError}
               />
               <Box className="flex flex-col gap-2 border-t border-border pt-4">
                 <Row
