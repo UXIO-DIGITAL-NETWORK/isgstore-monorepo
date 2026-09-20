@@ -230,4 +230,48 @@ class HubPlanSyncTest extends TestCase
         $this->assertSame(0, $this->sync()['issued']);
         $this->assertSame(0, ServiceInvoice::count());
     }
+
+    /**
+     * A period the Hub publishes as already overdue must still be payable.
+     *
+     * The Hub dates a bill when the period it buys BEGINS, and an opening period
+     * begins the instant the invoice is created — so period 0 arrives with a due
+     * date already behind us. Stored verbatim that is a bill no payment can be
+     * opened against; and because a Hub-plan invoice is excluded from the expiry
+     * sweep it cannot be closed and re-issued either, so the client is simply
+     * locked out of a service they hold.
+     */
+    public function test_a_period_whose_due_date_has_already_passed_is_still_payable(): void
+    {
+        $this->service('domain', 250000);
+        $yesterday = now()->subDay()->toIso8601String();
+
+        $this->fakePlan([$this->period([
+            'period_starts_at' => $yesterday,
+            'due_at' => $yesterday,
+        ])]);
+
+        $this->assertSame(1, $this->sync()['issued']);
+
+        $this->assertTrue(
+            ServiceInvoice::firstOrFail()->due_at->isFuture(),
+            'a bill has to be payable the moment it is issued',
+        );
+    }
+
+    /** Not a blanket extension: a due date still ahead of us is used as it came. */
+    public function test_a_due_date_still_ahead_is_used_as_published(): void
+    {
+        $this->service('domain', 250000);
+        $inTenDays = now()->addDays(10);
+
+        $this->fakePlan([$this->period(['due_at' => $inTenDays->toIso8601String()])]);
+
+        $this->sync();
+
+        $this->assertSame(
+            $inTenDays->toDateString(),
+            ServiceInvoice::firstOrFail()->due_at->toDateString(),
+        );
+    }
 }

@@ -14,6 +14,7 @@ use App\Models\ServiceSubscription;
 use App\Services\HubClient;
 use App\Support\Payment\DefaultMerchant;
 use App\Support\Payment\WebsiteService;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -176,7 +177,7 @@ class ApplyHubPlanAction
                 'period_starts_at' => $item->period_starts_at,
                 'period_ends_at' => $item->period_ends_at,
                 'status' => ServiceInvoiceStatus::UNPAID,
-                'due_at' => $item->due_at,
+                'due_at' => $this->payableDueAt($item->due_at),
                 'source' => 'hub_plan',
                 // Carried onto the invoice because the payment path decides from
                 // HERE whether paying this opens a subscription window. A
@@ -212,12 +213,32 @@ class ApplyHubPlanAction
 
         $invoice->update([
             'status' => ServiceInvoiceStatus::UNPAID,
-            'due_at' => $item->due_at !== null && $item->due_at->isFuture()
-                ? $item->due_at
-                : now()->addDays((int) config('services.service_invoice.due_days', 3)),
+            'due_at' => $this->payableDueAt($item->due_at),
         ]);
 
         return 'reopened';
+    }
+
+    /**
+     * When this bill must be paid by.
+     *
+     * The Hub's due date while it is still ahead of us; otherwise this site's
+     * own payment window. The second half is not a nicety. The Hub dates a bill
+     * when the period it buys begins, and an OPENING period begins the instant
+     * the invoice is created — so its due date is already behind us by the time
+     * the row exists. Issued verbatim that is a bill no payment can ever be
+     * opened against, and because a Hub-plan invoice is also excluded from the
+     * expiry sweep it cannot be closed and re-issued either: the client is
+     * simply locked out of a service they hold.
+     *
+     * `reopenIfStranded()` asks the same question about a row the sweep closed,
+     * so both share one answer.
+     */
+    private function payableDueAt(?CarbonInterface $dueAt): CarbonInterface
+    {
+        return $dueAt !== null && $dueAt->isFuture()
+            ? $dueAt
+            : now()->addDays((int) config('services.service_invoice.due_days', 3));
     }
 
     /**

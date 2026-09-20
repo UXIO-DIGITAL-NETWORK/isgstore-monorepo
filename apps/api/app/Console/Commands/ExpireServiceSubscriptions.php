@@ -78,7 +78,12 @@ class ExpireServiceSubscriptions extends Command
             ->where('status', ServiceInvoiceStatus::UNPAID)
             ->where('source', '!=', 'hub_plan')
             ->whereNotNull('due_at')
-            ->where('due_at', '<=', now())
+            // Inclusive of the due DAY, the same rule the payment guard uses: a
+            // bill due today is still payable today, so it closes from the day
+            // after. `<= now()` closed it at 00:00 on its own due date — and
+            // this sweep runs at 00:20, so a full day of the client's window was
+            // gone before they woke up.
+            ->where('due_at', '<', now()->startOfDay())
             ->get();
 
         $expiredInvoices = 0;

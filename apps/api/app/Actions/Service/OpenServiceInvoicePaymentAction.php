@@ -93,7 +93,23 @@ class OpenServiceInvoicePaymentAction
                 throw new RuntimeException("Invoice {$invoice->invoice_number} tidak dapat dibayar lagi.");
             }
 
-            if ($invoice->due_at !== null && $invoice->due_at->isPast()) {
+            // A due date is a DATE, not an instant: a bill due on the 20th is
+            // payable all through the 20th. Comparing the raw timestamp made
+            // every bill "past due" from midnight of its own due date — and for
+            // a bill the Hub anchors the moment it is created, whose period
+            // begins immediately, that meant it could never be paid at all.
+            //
+            // And it only lapses for a bill a CLIENT raised. That one may safely
+            // be refused: the request was abandoned, and they can ask again. A
+            // HUB-plan bill must never be — the client owes it, the site stays
+            // dark until it is paid, and there is no second way to raise it:
+            // the period's `hub_item_key` is unique and the expiry sweep skips
+            // `hub_plan` precisely so the row survives. Refusing the payment
+            // therefore strands the bill AND the service behind it, with nothing
+            // anywhere able to re-open either.
+            if ($invoice->due_at !== null
+                && ! $invoice->isFromHubPlan()
+                && $invoice->due_at->copy()->endOfDay()->isPast()) {
                 throw new RuntimeException("Invoice {$invoice->invoice_number} sudah melewati jatuh tempo.");
             }
         }
