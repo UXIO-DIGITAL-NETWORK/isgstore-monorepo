@@ -112,7 +112,7 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
   }
 
   return (
-    <Box className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_18rem] lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <Box className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_20rem] lg:grid-cols-[minmax(0,1fr)_26rem]">
       <Box className="flex min-w-0 flex-col gap-4">
         {groups.map(([due, bills]) => (
           <Box
@@ -200,7 +200,7 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
       */}
       <Box
         as="aside"
-        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 md:sticky md:top-6"
+        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 md:sticky md:top-6 md:max-h-[calc(100vh-3rem)]"
       >
         <Box className="flex flex-col gap-1">
           <Heading level={3}>{t("bills.summary")}</Heading>
@@ -238,26 +238,32 @@ export function OutstandingBillsPanel({ lines }: { lines: ServicePlanLine[] }) {
         </Box>
 
         {chosen.length > 0 && (
-          <Box className="flex flex-col gap-2">
+          <Box className="flex min-h-0 flex-1 flex-col gap-2">
             <Text
               as="span"
               variant="small"
-              className="text-muted-foreground"
+              className="shrink-0 text-muted-foreground"
             >
               {t("payment.method")}
             </Text>
-            <PaymentChannelPicker
-              channels={channels ?? []}
-              isError={channelsError}
-              selectedId={channel?.id ?? null}
-              onSelect={setChannel}
-              isLoading={loadingChannels}
-            />
+            {/* The list scrolls HERE, not the page. With the summary capped to
+                the viewport, the total and the button stay put while the client
+                looks through the methods — and `overscroll-contain` keeps a
+                flick from carrying on into the bills behind it. */}
+            <Box className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+              <PaymentChannelPicker
+                channels={channels ?? []}
+                isError={channelsError}
+                selectedId={channel?.id ?? null}
+                onSelect={setChannel}
+                isLoading={loadingChannels}
+              />
+            </Box>
           </Box>
         )}
 
         <Button
-          className="w-full"
+          className="w-full shrink-0"
           disabled={chosen.length === 0 || !channel || paying}
           onClick={() =>
             channel &&
