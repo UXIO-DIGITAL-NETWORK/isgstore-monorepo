@@ -1,7 +1,10 @@
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import { Check } from "lucide-react";
+
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
+import { resolvePaymentLogo } from "@/constants/paymentLogos";
 import { cn } from "@/lib/utils";
 import type { ServicePaymentChannel } from "@/types/service.type";
 import { formatCurrency } from "@/utils/currency";
@@ -26,10 +29,16 @@ interface PaymentChannelPickerProps {
 }
 
 /**
- * The methods a client may settle a bill with, grouped by kind.
+ * The methods a client may settle a bill with, as brand tiles.
  *
- * The fee is shown per method rather than only in the total, because it is the
- * one thing that differs between two otherwise identical-looking options.
+ * A logo does in 28px what a name needed a line for, so twelve methods fit in a
+ * column that used to hold three — which is what makes the whole list readable
+ * beside the bills rather than below them. The artwork is bundled and resolved
+ * by `channel_code`, the same set the storefront shows, so an unrecognised
+ * channel still renders a tile instead of a broken image.
+ *
+ * The fee stays per method: it is the one thing that differs between two
+ * otherwise identical-looking options.
  */
 export function PaymentChannelPicker({
   channels,
@@ -76,7 +85,7 @@ export function PaymentChannelPicker({
       {Object.entries(groups).map(([type, items]) => (
         <Box
           key={type}
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-1.5"
         >
           <Text
             as="span"
@@ -85,36 +94,47 @@ export function PaymentChannelPicker({
           >
             {TYPE_LABELS[type] ?? type}
           </Text>
-          <Box className="grid grid-cols-1 gap-2 @sm:grid-cols-2">
-            {items.map((channel) => (
-              <Box
-                as="button"
-                type="button"
-                key={channel.id}
-                onClick={() => onSelect(channel)}
-                aria-pressed={selectedId === channel.id}
-                className={cn(
-                  "flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
-                  selectedId === channel.id
-                    ? "border-foreground bg-accent"
-                    : "border-border hover:bg-accent/50",
-                )}
-              >
-                <Text
-                  as="span"
-                  className="font-medium"
+          <Box className="flex flex-col gap-1.5">
+            {items.map((channel) => {
+              const selected = selectedId === channel.id;
+
+              return (
+                <Box
+                  as="button"
+                  type="button"
+                  key={channel.id}
+                  onClick={() => onSelect(channel)}
+                  aria-pressed={selected}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors",
+                    selected ? "border-foreground bg-accent" : "border-border hover:bg-accent/50",
+                  )}
                 >
-                  {channel.name}
-                </Text>
-                <Text
-                  as="span"
-                  variant="small"
-                  className="text-muted-foreground tabular-nums"
-                >
-                  {feeLabel(channel, t)}
-                </Text>
-              </Box>
-            ))}
+                  <img
+                    src={resolvePaymentLogo(channel.channel_code)}
+                    alt=""
+                    className="size-7 shrink-0 object-contain"
+                  />
+                  <Box className="flex min-w-0 flex-1 flex-col">
+                    <Text
+                      as="span"
+                      className="truncate text-sm font-medium"
+                    >
+                      {channel.name}
+                    </Text>
+                    <Text
+                      as="span"
+                      variant="small"
+                      className="tabular-nums text-muted-foreground"
+                    >
+                      {feeLabel(channel, t)}
+                    </Text>
+                  </Box>
+                  {/* Colour is not the only signal for the chosen method. */}
+                  {selected && <Check className="size-4 shrink-0" />}
+                </Box>
+              );
+            })}
           </Box>
         </Box>
       ))}
