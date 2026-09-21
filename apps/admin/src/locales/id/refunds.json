@@ -59,7 +59,7 @@
   "rejectRefundHint": "Tidak ada uang yang berpindah dan penjualan tetap berlaku. Tautan klaim berhenti berfungsi, jadi pelanggan\n              tidak bisa mengirim data rekening setelahnya.",
   "reason": "Alasan",
   "rejectRefundPlaceholder": "misal: Klaim ganda — sudah dikembalikan lewat RFD-…",
-  "rejectClaimHint": "Pengembalian tetap terutang. Akun dilepas dan tautan klaim baru dikirim ke email dan WhatsApp di\n              pesanan asli, jadi pembeli yang sebenarnya masih bisa mengklaimnya.",
+  "rejectClaimHint": "Pengembalian tetap terutang. Akun dilepas dan tautan klaim baru dikirim ke email di\n              pesanan asli, jadi pembeli yang sebenarnya masih bisa mengklaimnya.",
   "rejectClaimPlaceholder": "misal: Kontak akun tidak cocok dengan pesanan",
   "colRefund": "Pengembalian",
   "colCustomer": "Pelanggan",

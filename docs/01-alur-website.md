@@ -93,7 +93,7 @@ flowchart TD
     B -->|Member| C[Saldo langsung ditambah]
     C --> D[COMPLETED — tanpa campur tangan admin]
     B -->|Tamu| E[WAITING_ACCOUNT]
-    E --> F[Tautan klaim dikirim via email & WhatsApp]
+    E --> F[Tautan klaim dikirim via email]
     F --> G[Pelanggan buat akun / masuk]
     G --> H[PENDING — masuk antrean admin]
     H --> I[Admin verifikasi klaim]

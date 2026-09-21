@@ -10,12 +10,17 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * PiWAPI WhatsApp gateway. Used to deliver the purchase receipt (bukti
- * pembayaran) as a document message with the invoice PDF attached.
+ * pembayaran) as a document message with the invoice PDF attached, and the
+ * refund notifications as text.
  *
  * Credentials are DB-backed (admin Integration page) merged over config/.env
  * via IntegrationConfig — an edit takes effect without a redeploy. When the
  * account/secret are unset the service reports `isConfigured() === false` so the
  * caller can skip sending instead of hitting the API with blank credentials.
+ *
+ * Delivery is additionally gated by `services.piwapi.enabled` (OFF by default —
+ * WhatsApp is part of the future subscription). **Callers must guard on
+ * `canSend()`, not `isConfigured()`**, so nothing goes out while it is off.
  */
 class PiWapiService
 {
@@ -39,10 +44,33 @@ class PiWapiService
         $this->secret = (string) ($cfg['secret'] ?? '');
     }
 
+    /**
+     * Whether WhatsApp delivery is switched on at all.
+     *
+     * A product switch, not a credential one: WhatsApp is part of the future
+     * subscription, so it ships OFF. Kept separate from `isConfigured()` so the
+     * Integration page can still show a working gateway while delivery is off.
+     */
+    public function isEnabled(): bool
+    {
+        return (bool) config('services.piwapi.enabled', false);
+    }
+
     /** True only when both credentials are present — otherwise sending is a no-op. */
     public function isConfigured(): bool
     {
         return $this->account !== '' && $this->secret !== '';
+    }
+
+    /**
+     * Whether a message may actually go out: switched on AND credentialed.
+     *
+     * The guard every caller should use — a disabled gateway must drop the send
+     * silently rather than reach the API.
+     */
+    public function canSend(): bool
+    {
+        return $this->isEnabled() && $this->isConfigured();
     }
 
     /** A pending HTTP request with sane timeouts, so a stalled upstream fails fast instead of hanging the worker. */

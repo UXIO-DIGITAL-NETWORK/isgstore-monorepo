@@ -46,6 +46,10 @@
         <env name="PAYMENT_PAGE_URL" value="https://pay.topupgame.id"/>
         <env name="PIWAPI_ACCOUNT" value=""/>
         <env name="PIWAPI_SECRET" value=""/>
+        <!-- Same reasoning: WhatsApp delivery is off by default and part of the
+             future subscription. Pinned here so a developer's .env cannot turn
+             it on and make the "no-op while off" tests lie. -->
+        <env name="PIWAPI_ENABLED" value="false"/>
         <!-- Uxio Hub belongs in that list for the same reason, and is the newest
              way a real .env could change the suite's outcome: switching the
              integration on turns on the service-order push, so every test that
