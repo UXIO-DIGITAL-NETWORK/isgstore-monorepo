@@ -47,7 +47,7 @@ class SettingManagedGroupsTest extends TestCase
 
     public function test_the_settings_list_leaves_managed_groups_out(): void
     {
-        $this->setting('general', 'site_name', 'ISG Store');
+        $this->setting('general', 'site_name', 'TopupGame');
         $this->setting('licence', 'is_serving', '0', 'boolean');
         $this->setting('pricing', 'default_markup_percent', '20', 'number');
 
@@ -90,14 +90,14 @@ class SettingManagedGroupsTest extends TestCase
     {
         // The guard must not have taken the endpoint down with it, and the two
         // kinds of key travel in the same request.
-        $this->setting('general', 'site_name', 'ISG Store');
+        $this->setting('general', 'site_name', 'TopupGame');
         $this->setting('licence', 'is_serving', '0', 'boolean');
 
         $this->putJson('/api/v1/settings', [
-            'settings' => ['site_name' => 'ISG Baru', 'is_serving' => '1'],
+            'settings' => ['site_name' => 'TopupGame Baru', 'is_serving' => '1'],
         ])->assertOk();
 
-        $this->assertSame('ISG Baru', Setting::where('key', 'site_name')->value('value'));
+        $this->assertSame('TopupGame Baru', Setting::where('key', 'site_name')->value('value'));
         $this->assertSame('0', Setting::where('key', 'is_serving')->value('value'));
     }
 

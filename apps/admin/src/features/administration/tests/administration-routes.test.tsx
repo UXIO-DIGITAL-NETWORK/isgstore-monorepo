@@ -104,13 +104,13 @@ describe("administration routes", () => {
 
     const siteName = await screen.findByLabelText("Site Name");
     await user.clear(siteName);
-    await user.type(siteName, "ISG Store Baru");
+    await user.type(siteName, "TopupGame Baru");
 
     await user.click(screen.getByRole("tab", { name: "Contact" }));
     await screen.findByLabelText("WhatsApp");
     await user.click(screen.getByRole("tab", { name: "General" }));
 
-    expect(await screen.findByLabelText("Site Name")).toHaveValue("ISG Store Baru");
+    expect(await screen.findByLabelText("Site Name")).toHaveValue("TopupGame Baru");
   });
 
   it("Settings explains each section and its settings with info tooltips", async () => {

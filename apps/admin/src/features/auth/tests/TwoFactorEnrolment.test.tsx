@@ -61,7 +61,7 @@ describe("post-login enrolment", () => {
       status: "success",
       code: 200,
       message: "ok",
-      data: { secret: "JBSWY3DPEHPK3PXP", otpauth_uri: "otpauth://totp/ISG:admin?secret=JBSWY3DPEHPK3PXP" },
+      data: { secret: "JBSWY3DPEHPK3PXP", otpauth_uri: "otpauth://totp/TopupGame:admin?secret=JBSWY3DPEHPK3PXP" },
     } as never);
     const confirm = vi
       .spyOn(authService, "confirmTwoFactor")

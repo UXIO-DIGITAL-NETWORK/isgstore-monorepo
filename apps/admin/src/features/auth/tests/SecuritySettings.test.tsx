@@ -40,7 +40,7 @@ describe("security settings", () => {
       status: "success",
       code: 200,
       message: "ok",
-      data: { secret: "NEWSECRET234567A", otpauth_uri: "otpauth://totp/ISG:admin?secret=NEWSECRET234567A" },
+      data: { secret: "NEWSECRET234567A", otpauth_uri: "otpauth://totp/TopupGame:admin?secret=NEWSECRET234567A" },
     } as never);
 
     const user = userEvent.setup();
@@ -75,7 +75,7 @@ describe("security settings", () => {
       status: "success",
       code: 200,
       message: "ok",
-      data: { secret: "NEWSECRET234567A", otpauth_uri: "otpauth://totp/ISG:admin?secret=NEWSECRET234567A" },
+      data: { secret: "NEWSECRET234567A", otpauth_uri: "otpauth://totp/TopupGame:admin?secret=NEWSECRET234567A" },
     } as never);
     const confirm = vi.spyOn(authService, "confirmTwoFactorRotation").mockResolvedValue({
       status: "success",

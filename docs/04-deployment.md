@@ -267,7 +267,7 @@ Keduanya ditulis sebagai drop-in (`/etc/php/<versi>/fpm/conf.d/99-uploads.ini` d
 **`conf.d/uploads.conf` hanya boleh berisi direktif konteks `http`.** `conf.d/*.conf` di-include dari dalam blok `http`, dan `location` tidak sah di sana. Sebuah blok `location` yang pernah ditulis ke berkas ini membuat `nginx -t` gagal dengan `"location" directive is not allowed here` dan menggagalkan deploy. Karena itu header per-lokasi — CSP untuk berkas `.svg` yang diunggah, yang disajikan dari origin API itu sendiri — **tidak** ikut masuk drop-in. Pasang manual di blok `server` vhost API:
 
 ```nginx
-# di dalam server { } vhost api.isgstore.id, sebelum location ~ \.php$
+# di dalam server { } vhost api.topupgame.id, sebelum location ~ \.php$
 location ~* \.svg$ {
     add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox" always;
     add_header X-Content-Type-Options "nosniff" always;

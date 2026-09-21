@@ -28,8 +28,8 @@ vi.mock("../services/auth.service", () => ({
  * Content correctness:
  * - The page heading reads "Sign in".
  * - The subcopy "Enter your credentials to access the admin dashboard." is present.
- * - AuthSideHero shows the "ISG Store Admin" wordmark and "UXIOTOPUP" subtitle.
- * - AuthSideHero shows a headline and subcopy describing the ISG Store top-up platform.
+ * - AuthSideHero shows the "TopupGame Admin" wordmark and "UXIOTOPUP" subtitle.
+ * - AuthSideHero shows a headline and subcopy describing the TopupGame top-up platform.
  * - No text or link related to registration exists anywhere on the page.
  * - None of the old placeholder strings remain.
  */
@@ -94,10 +94,10 @@ describe("LoginPage", () => {
     expect(screen.getByText("Enter your credentials to access the admin dashboard.")).toBeInTheDocument();
   });
 
-  it("shows the ISG Store Admin wordmark and UXIOTOPUP subtitle in the hero", async () => {
+  it("shows the TopupGame Admin wordmark and UXIOTOPUP subtitle in the hero", async () => {
     await renderRoute("/login");
 
-    expect(screen.getByText("ISG Store Admin")).toBeInTheDocument();
+    expect(screen.getByText("TopupGame Admin")).toBeInTheDocument();
     expect(screen.getByText("UXIOTOPUP")).toBeInTheDocument();
   });
 
