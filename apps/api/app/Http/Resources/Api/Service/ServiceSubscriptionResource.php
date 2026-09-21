@@ -36,6 +36,11 @@ class ServiceSubscriptionResource extends JsonResource
             'days_remaining' => $this->ends_at
                 ? max(0, (int) ceil(now()->floatDiffInDays($this->ends_at, false)))
                 : 0,
+            // Bought outright: no end date at all. Its own flag because `ends_at`
+            // is null for it, and a card that only reads the date renders "– --"
+            // beside a warning-red "0 hari tersisa" on a subscription the client
+            // has paid for in full.
+            'lifetime' => $this->isLifetime(),
             'status' => $this->status?->value,
             'invoice_number' => $this->whenLoaded('invoice', fn () => $this->invoice?->invoice_number),
             'created_at' => $this->created_at?->toIso8601String(),

@@ -133,8 +133,16 @@ export interface ServiceSubscription {
   service?: { id: number; code: string; name: string; category: ServiceCategoryValue };
   merchant?: { id: number; name: string };
   starts_at: string;
-  ends_at: string;
+  /** Null when bought outright — there is no end date to count down to. */
+  ends_at: string | null;
+  /** Always 0 when `lifetime`: there is nothing running out. */
   days_remaining: number;
+  /**
+   * Bought outright: paid once, no end date. Its own flag because `ends_at` is
+   * null for it, and the card would otherwise render "– --" and a red
+   * "0 hari tersisa" on a subscription the client paid for in full.
+   */
+  lifetime: boolean;
   status: string;
   invoice_number?: string | null;
   created_at: string;

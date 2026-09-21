@@ -51,6 +51,7 @@ const subscription = {
   starts_at: "2026-08-15T00:00:00+07:00",
   ends_at: "2026-09-14T00:00:00+07:00",
   days_remaining: 30,
+  lifetime: false,
   status: "ACTIVE",
   created_at: "",
 };
@@ -112,6 +113,14 @@ describe("MerchantServicesPage", () => {
 
   /** Buying now goes through a checkout page, so the client sees what they get. */
   it("links the catalogue card to the checkout page", async () => {
+    // Nothing held, so the card is a way IN. The "already held" case is its own
+    // test below — see what this same card must become once the service is theirs.
+    vi.spyOn(hooks, "useMerchantSubscriptions").mockReturnValue({
+      data: list([]),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof hooks.useMerchantSubscriptions>);
+
     const user = userEvent.setup();
     renderPage();
 
@@ -123,6 +132,45 @@ describe("MerchantServicesPage", () => {
       "href",
       "/app/payment-admin/services/1/checkout",
     );
+  });
+
+  /**
+   * A service the client already holds cannot be bought a second time.
+   *
+   * Its bill already comes from their plan, so a second subscription would be a
+   * second bill for one thing. The plan is enough on its own — it is the
+   * agreement, whether or not a period has been paid for yet.
+   */
+  it("says Sudah berlangganan instead of Berlangganan for a service already held", async () => {
+    mockPlan([{ ...planLine, service_code: "uxiotopup" }]);
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("tab", { name: "Katalog" }));
+
+    expect(screen.getByRole("button", { name: "Sudah berlangganan" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "Berlangganan" })).not.toBeInTheDocument();
+  });
+
+  /**
+   * A subscription bought outright has no period and nothing counting down, so
+   * the card says so.
+   *
+   * Printing the date range as "– --" beside a warning-red "0 hari tersisa" told
+   * a client who had paid in full that they had nothing left.
+   */
+  it("shows a lifetime subscription as Seumur hidup, not as 0 hari tersisa", () => {
+    vi.spyOn(hooks, "useMerchantSubscriptions").mockReturnValue({
+      data: list([{ ...subscription, ends_at: null, days_remaining: 0, lifetime: true }]),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof hooks.useMerchantSubscriptions>);
+
+    renderPage();
+
+    expect(screen.getByText("Seumur hidup")).toBeInTheDocument();
+    expect(screen.queryByText("0 hari tersisa")).not.toBeInTheDocument();
   });
 
   /** ?tab= drives the page; the page itself never touches the router. */

@@ -46,20 +46,30 @@ function SubscriptionCard({ subscription }: { subscription: ServiceSubscription 
           }
         />
       </Box>
-      <Text variant="small">
-        {formatDate(subscription.starts_at)} – {formatDate(subscription.ends_at)}
-      </Text>
-      <Text
-        as="span"
-        variant="small"
-        className={
-          subscription.days_remaining <= 14
-            ? "text-warning tabular-nums"
-            : "text-success tabular-nums"
-        }
-      >
-        {t("services.daysRemaining", { count: subscription.days_remaining })}
-      </Text>
+      {subscription.lifetime ? (
+        // Bought outright: no period to print and nothing counting down, so the
+        // card says so. Rendering "– --" beside a warning-red "0 hari tersisa"
+        // was telling a client who had paid in full that their subscription had
+        // run out.
+        <Text variant="small">{t("services.lifetime")}</Text>
+      ) : (
+        <>
+          <Text variant="small">
+            {formatDate(subscription.starts_at)} – {formatDate(subscription.ends_at)}
+          </Text>
+          <Text
+            as="span"
+            variant="small"
+            className={
+              subscription.days_remaining <= 14
+                ? "text-warning tabular-nums"
+                : "text-success tabular-nums"
+            }
+          >
+            {t("services.daysRemaining", { count: subscription.days_remaining })}
+          </Text>
+        </>
+      )}
       {/* No invoice means the term was granted rather than bought here — the
           website licence the Hub keeps in step. Saying so beats a blank line
           where every other card shows a purchase. */}
@@ -76,7 +86,7 @@ function SubscriptionCard({ subscription }: { subscription: ServiceSubscription 
   );
 }
 
-function CatalogCard({ service }: { service: Service }) {
+function CatalogCard({ service, subscribed }: { service: Service; subscribed: boolean }) {
   const { t } = useTranslation("merchant");
 
   return (
@@ -124,12 +134,25 @@ function CatalogCard({ service }: { service: Service }) {
         </Text>
       </Text>
 
-      <Button
-        asChild
-        className="w-full"
-      >
-        <Link href={`/app/payment-admin/services/${service.id}/checkout`}>{t("services.subscribe")}</Link>
-      </Button>
+      {/* Already held: the CTA becomes a statement rather than a way in. The
+          client's bill for this service comes from their plan, so a second
+          subscription would be a second bill for one thing. */}
+      {subscribed ? (
+        <Button
+          variant="outline"
+          className="w-full"
+          disabled
+        >
+          {t("services.alreadySubscribed")}
+        </Button>
+      ) : (
+        <Button
+          asChild
+          className="w-full"
+        >
+          <Link href={`/app/payment-admin/services/${service.id}/checkout`}>{t("services.subscribe")}</Link>
+        </Button>
+      )}
     </Box>
   );
 }
@@ -231,6 +254,22 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
   /** Decides which next step a client with nothing active is actually offered. */
   const hasOutstanding = (plan ?? []).some((line) => line.outstanding_total > 0);
   const { data: catalog, isLoading: loadingCatalog } = useMerchantServices({ page: 1, per_page: 50 });
+
+  /**
+   * Services the client already holds — so the catalogue offers a statement
+   * rather than a way to buy the same thing twice.
+   *
+   * Two shapes, both of which count: an ACTIVE subscription (they bought it) and
+   * a live plan line (the Hub bills them for it, paid or not — the plan IS the
+   * agreement). A retired line does not, or the catalogue would be closed to
+   * something the client no longer pays for.
+   */
+  const heldCodes = new Set<string>([
+    ...(plan ?? []).filter((line) => line.is_active).map((line) => line.service_code),
+    ...(subscriptions?.rows ?? [])
+      .filter((row) => row.status === "ACTIVE" && row.service !== undefined)
+      .map((row) => row.service?.code as string),
+  ]);
   const {
     data: invoices,
     isLoading: loadingInvoices,
@@ -366,6 +405,7 @@ export default function MerchantServicesPage({ tab, onTabChange }: MerchantServi
                 <CatalogCard
                   key={service.id}
                   service={service}
+                  subscribed={heldCodes.has(service.code)}
                 />
               ))}
             </Box>
