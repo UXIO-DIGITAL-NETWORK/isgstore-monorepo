@@ -217,6 +217,12 @@ class SiteAvailabilityTest extends TestCase
         // test pass.
         sort($exempt);
         $this->assertSame([
+            // Installation management, driven from the Hub. Key-gated (read +
+            // write key) like the money-path relays below, and reachable while a
+            // site is switched off for the same reason: finishing an install is
+            // work on a suspended site too.
+            'DELETE api/v1/hub/installation-details/{serviceInstallationDetail}',
+            'DELETE api/v1/hub/installation-steps/{serviceInstallationStep}',
             'GET api/broadcasting/auth',
             'GET api/v1/health',
             'GET api/v1/hub/channels',
@@ -225,6 +231,9 @@ class SiteAvailabilityTest extends TestCase
             // a switched-off site's balance is exactly what an operator needs
             // while deciding whether to switch it back on.
             'GET api/v1/hub/gateway-balance',
+            // How far along each installation is. Read-only, key-gated — the
+            // same standing as subscriptions/service-orders above.
+            'GET api/v1/hub/installations',
             'GET api/v1/hub/profit',
             'GET api/v1/hub/service-orders',
             // What this site's owner holds, per service. Same standing.
@@ -256,6 +265,10 @@ class SiteAvailabilityTest extends TestCase
             'POST api/v1/auth/register',
             'POST api/v1/auth/reset-password',
             'POST api/v1/disbursement/merchant/callback',
+            'POST api/v1/hub/installation-details/{serviceInstallationDetail}/reveal',
+            'POST api/v1/hub/installation-steps/{serviceInstallationStep}/completion',
+            'POST api/v1/hub/installations/{installation}/detail-items',
+            'POST api/v1/hub/installations/{installation}/steps',
             'POST api/v1/hub/internal-withdrawals',
             'POST api/v1/hub/service-invoices/{serviceInvoice}/confirm',
             'POST api/v1/hub/service-invoices/{serviceInvoice}/reject',
@@ -271,6 +284,9 @@ class SiteAvailabilityTest extends TestCase
             'POST api/v1/payment/callback',
             'POST api/v1/uxiolabs/callback',
             'POST api/v1/uxiotopup/callback',
+            'PUT api/v1/hub/installation-details/{serviceInstallationDetail}',
+            'PUT api/v1/hub/installation-steps/{serviceInstallationStep}',
+            'PUT api/v1/hub/installations/{installation}',
         ], $exempt);
     }
 }

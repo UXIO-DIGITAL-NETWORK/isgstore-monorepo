@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\Finance\ServiceInvoiceController;
 use App\Http\Controllers\Api\Finance\ServiceSubscriptionController;
 use App\Http\Controllers\Api\FinancialController;
 use App\Http\Controllers\Api\Hub\HubActionController;
+use App\Http\Controllers\Api\Hub\HubInstallationController;
 use App\Http\Controllers\Api\Hub\HubReportController;
 use App\Http\Controllers\Api\Hub\HubSyncTriggerController;
 use App\Http\Controllers\Api\IntegrationController;
@@ -839,6 +840,10 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
     // What this site's owner actually holds, per service — so the Hub can answer
     // "which sites subscribe to X" from real state, not only from what it sold.
     Route::get('/subscriptions', [HubReportController::class, 'subscriptions']);
+    // How far along kita is on each of this owner's installations: the window,
+    // the checklist driving the progress, and the credentials (masked). Read-only
+    // — the Hub sets progress through the hub-write routes below.
+    Route::get('/installations', [HubReportController::class, 'installations']);
     // A LIVE sub-merchant balance inquiry, with its own limiter: every call
     // reaches a real gateway. Deliberately NOT part of /summary — that endpoint
     // refuses to make a live call because Monetapay's 15s timeout equals the
@@ -878,4 +883,18 @@ Route::prefix('v1/hub')->middleware(['hub', 'hub-write', 'throttle:hub-write'])-
     Route::post('/withdrawals/{withdrawal:withdrawal_number}/reject', [HubActionController::class, 'rejectWithdrawal']);
     Route::post('/service-invoices/{serviceInvoice:invoice_number}/confirm', [HubActionController::class, 'confirmInvoice']);
     Route::post('/service-invoices/{serviceInvoice:invoice_number}/reject', [HubActionController::class, 'rejectInvoice']);
+
+    // Installation management, driven from the Hub's Order Service detail. Not
+    // money, but it writes state on this site, so it rides the same two-key
+    // channel rather than widening the read key. Every route binds a row that
+    // already exists — creation belongs to invoice confirmation, not the Hub.
+    Route::put('/installations/{installation}', [HubInstallationController::class, 'updateWindow']);
+    Route::post('/installations/{installation}/steps', [HubInstallationController::class, 'storeStep']);
+    Route::put('/installation-steps/{serviceInstallationStep}', [HubInstallationController::class, 'updateStep']);
+    Route::post('/installation-steps/{serviceInstallationStep}/completion', [HubInstallationController::class, 'setStepCompletion']);
+    Route::delete('/installation-steps/{serviceInstallationStep}', [HubInstallationController::class, 'destroyStep']);
+    Route::post('/installations/{installation}/detail-items', [HubInstallationController::class, 'storeDetail']);
+    Route::put('/installation-details/{serviceInstallationDetail}', [HubInstallationController::class, 'updateDetail']);
+    Route::delete('/installation-details/{serviceInstallationDetail}', [HubInstallationController::class, 'destroyDetail']);
+    Route::post('/installation-details/{serviceInstallationDetail}/reveal', [HubInstallationController::class, 'revealDetail']);
 });
