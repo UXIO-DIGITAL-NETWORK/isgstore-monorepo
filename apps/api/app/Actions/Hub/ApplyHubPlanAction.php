@@ -11,6 +11,7 @@ use App\Models\HubPlanItem;
 use App\Models\Service;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
+use App\Models\Setting;
 use App\Services\HubClient;
 use App\Support\Payment\DefaultMerchant;
 use App\Support\Payment\WebsiteService;
@@ -77,6 +78,8 @@ class ApplyHubPlanAction
                 continue;
             }
 
+            $this->rememberLicenceService($row);
+
             $service = Service::where('code', $item->service_code)->first();
 
             if ($service === null) {
@@ -99,6 +102,43 @@ class ApplyHubPlanAction
         }
 
         return $result;
+    }
+
+    /**
+     * Learn which catalog service IS this site's licence.
+     *
+     * The Hub creates that service per site, so its code cannot be configured
+     * here in advance — this is how it arrives. Everything that answers "what is
+     * this site's own subscription" resolves through `WebsiteService::code()`,
+     * so writing it once here is what makes the licence, its renewal report and
+     * the client's admin card all point at the same service.
+     *
+     * Written only when it actually changes: this runs on every one-minute sync
+     * and a needless write per tick is a needless write.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function rememberLicenceService(array $row): void
+    {
+        if (! (bool) ($row['is_licence'] ?? false)) {
+            return;
+        }
+
+        $code = trim((string) ($row['service_code'] ?? ''));
+
+        if ($code === '' || WebsiteService::code() === $code) {
+            return;
+        }
+
+        Setting::updateOrCreate(
+            ['group' => 'payment', 'key' => WebsiteService::LICENCE_CODE_KEY],
+            [
+                'value' => $code,
+                'type' => 'string',
+                'label' => 'Layanan lisensi situs (dari Hub)',
+                'is_public' => false,
+            ],
+        );
     }
 
     /**

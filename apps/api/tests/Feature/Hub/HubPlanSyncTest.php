@@ -14,6 +14,7 @@ use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\Payment\WebsiteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -273,5 +274,33 @@ class HubPlanSyncTest extends TestCase
             $inTenDays->toDateString(),
             ServiceInvoice::firstOrFail()->due_at->toDateString(),
         );
+    }
+
+    /**
+     * The Hub NAMES this site's licence, and everything that answers "what is
+     * this site's own subscription" follows it.
+     *
+     * A licence is created per site, so its code cannot be configured here in
+     * advance — it arrives with the plan. This is what makes the licence grant,
+     * the renewal report and the client's own admin card all land on the right
+     * service instead of on the deployment's default.
+     */
+    public function test_a_licence_row_tells_the_site_which_service_is_its_own(): void
+    {
+        $this->service('lisensi-klien-a', 12_000_000);
+
+        $this->fakePlan([$this->period([
+            'item_key' => '01LIC:0',
+            'plan_uid' => '01LIC',
+            'service_code' => 'lisensi-klien-a',
+            'service_name' => 'Lisensi Klien A',
+            'amount' => 12_000_000,
+            'governs_licence' => true,
+            'is_licence' => true,
+        ])]);
+
+        $this->sync();
+
+        $this->assertSame('lisensi-klien-a', WebsiteService::code());
     }
 }
