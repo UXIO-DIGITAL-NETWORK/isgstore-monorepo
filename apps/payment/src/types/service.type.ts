@@ -84,8 +84,13 @@ export interface ServicePlanLine {
   /** The one line whose lapse takes the storefront down. */
   governs_licence: boolean;
   is_active: boolean;
-  /** Paid up to. Null when nothing has been paid for yet. */
+  /** Paid up to. Null when nothing has been paid for yet — or when lifetime. */
   active_until: string | null;
+  /**
+   * Bought outright: paid once, no end date. Its own flag because `active_until`
+   * is null for it too, and null there otherwise means "never paid".
+   */
+  lifetime: boolean;
   next_period_starts_at: string | null;
   next_due_at: string | null;
   outstanding_total: number;

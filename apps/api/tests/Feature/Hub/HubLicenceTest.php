@@ -6,6 +6,7 @@ namespace Tests\Feature\Hub;
 
 use App\Actions\Hub\ApplyHubLicenceAction;
 use App\Enums\RoleType;
+use App\Enums\ServiceInvoiceStatus;
 use App\Enums\SubscriptionStatus;
 use App\Jobs\PushLicenceRenewalJob;
 use App\Models\HubPlanItem;
@@ -310,6 +311,83 @@ class HubLicenceTest extends TestCase
     }
 
     // ── Reporting the payment that bought it ─────────────────────────────────
+
+    /**
+     * A licence bill the Hub never acknowledged is reported again.
+     *
+     * The report is one-shot, so a bill settled while the dispatch was broken —
+     * or while the Hub was permanently unreachable — leaves a client who has PAID
+     * looking at a dark site with nothing anywhere reporting a problem. Re-sending
+     * is safe: the Hub de-dupes on the invoice number, so a redelivery cannot buy
+     * a second term.
+     */
+    public function test_a_paid_licence_the_hub_never_acknowledged_is_reported_again(): void
+    {
+        Queue::fake();
+
+        $this->paidLicenceInvoice();
+
+        // The Hub's answer: this site holds no licence at all.
+        $this->fakeLicence(['status' => 'none', 'ends_at' => null, 'is_serving' => false]);
+
+        app(ApplyHubLicenceAction::class)->execute();
+
+        Queue::assertPushed(PushLicenceRenewalJob::class);
+    }
+
+    /**
+     * A LAPSED licence is not a missing one.
+     *
+     * It has an end date, so the site knows the Hub has heard it — re-sending the
+     * old bill would push at the Hub every minute forever for a client who simply
+     * has not renewed.
+     */
+    public function test_a_lapsed_licence_is_not_reported_again(): void
+    {
+        Queue::fake();
+
+        $this->paidLicenceInvoice();
+
+        $this->fakeLicence([
+            'status' => 'expired',
+            'ends_at' => now()->subDay()->toIso8601String(),
+            'is_serving' => false,
+        ]);
+
+        app(ApplyHubLicenceAction::class)->execute();
+
+        Queue::assertNotPushed(PushLicenceRenewalJob::class);
+    }
+
+    /** The site's own subscription, paid — with the plan line that governs behind it. */
+    private function paidLicenceInvoice(): ServiceInvoice
+    {
+        HubPlanItem::create([
+            'item_key' => '01LIC:0',
+            'plan_uid' => '01LIC',
+            'period_index' => 0,
+            'service_code' => 'uxiolabs',
+            'service_name' => 'Lisensi Situs',
+            'amount' => 12_000_000,
+            'duration_days' => 365,
+            'billing_mode' => 'billed',
+            'governs_licence' => true,
+            'period_starts_at' => now(),
+            'period_ends_at' => now()->addDays(365),
+            'due_at' => now(),
+            'is_active' => true,
+            'synced_at' => now(),
+        ]);
+
+        return ServiceInvoice::factory()->create([
+            'merchant_id' => $this->merchant->id,
+            'service_id' => $this->service->id,
+            'billing_mode' => 'billed',
+            'status' => ServiceInvoiceStatus::PAID,
+            'verified_at' => now(),
+            'hub_item_key' => '01LIC:0',
+        ]);
+    }
 
     /**
      * A one-time LICENCE is the one one-time bill that moves the term.

@@ -198,6 +198,7 @@ const planLine = {
   governs_licence: true,
   is_active: true,
   active_until: null,
+  lifetime: false,
   next_period_starts_at: null,
   next_due_at: null,
   outstanding_total: 250000,
@@ -217,6 +218,25 @@ const mockPlan = (lines: unknown[]) =>
     isLoading: false,
     isError: false,
   } as unknown as ReturnType<typeof hooks.useServicePlan>);
+
+/**
+ * A licence bought outright reads as PAID, not as "never paid".
+ *
+ * `active_until` is null for a lifetime row — the very null that otherwise means
+ * "never subscribed" — so the flag beside it is what stops a client who has paid
+ * in full being told, on their own panel, that they have paid nothing. That is
+ * the one screen that should be confirming the payment landed.
+ */
+describe("MerchantServicesPage — a lifetime licence is not an unpaid one", () => {
+  it("says Seumur hidup instead of Belum pernah dibayar", () => {
+    mockPlan([{ ...planLine, lifetime: true, outstanding_total: 0 }]);
+
+    renderPage();
+
+    expect(screen.getByText("Seumur hidup")).toBeInTheDocument();
+    expect(screen.queryByText("Belum pernah dibayar")).not.toBeInTheDocument();
+  });
+});
 
 describe("MerchantServicesPage — an amount owed is a way in, not a restatement", () => {
   it("sends the outstanding amount to the tab that pays it", async () => {

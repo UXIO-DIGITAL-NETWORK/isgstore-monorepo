@@ -6,10 +6,12 @@ namespace Tests\Feature\Hub;
 
 use App\Actions\Hub\ApplyHubPlanAction;
 use App\Enums\ServiceInvoiceStatus;
+use App\Enums\SubscriptionStatus;
 use App\Jobs\PushLicenceRenewalJob;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceInvoice;
+use App\Models\ServiceSubscription;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -163,6 +165,39 @@ class HubPlanPaymentPageVisibilityTest extends TestCase
         $this->assertSame('billed', $byCode['website']['billing_mode']);
         $this->assertTrue($byCode['website']['governs_licence']);
         $this->assertSame(1500000, $byCode['website']['outstanding_total']);
+    }
+
+    /**
+     * A licence bought outright reads as PAID, not as never-subscribed.
+     *
+     * A lifetime grant is a window-less subscription row, so `active_until` is
+     * null for it — the same null that means "nothing was ever paid". The flag
+     * travels beside the date, because otherwise the client's own panel tells
+     * somebody who has paid in full that they owe nothing and hold nothing.
+     */
+    public function test_a_lifetime_licence_reads_as_paid_not_as_never_paid(): void
+    {
+        $this->syncOpeningPlan();
+
+        $service = Service::where('code', 'website')->firstOrFail();
+
+        ServiceSubscription::create([
+            'merchant_id' => $this->merchant->id,
+            'service_id' => $service->id,
+            'source' => 'hub',
+            'starts_at' => now(),
+            // NULL is the lifetime sentinel; see the migration.
+            'ends_at' => null,
+            'status' => SubscriptionStatus::ACTIVE,
+        ]);
+
+        $this->asMerchant();
+
+        $rows = collect($this->getJson('/api/v1/payment-admin/service-plan')->assertOk()->json('data'))
+            ->keyBy('service_code');
+
+        $this->assertTrue($rows['website']['lifetime']);
+        $this->assertNull($rows['website']['active_until']);
     }
 
     /**

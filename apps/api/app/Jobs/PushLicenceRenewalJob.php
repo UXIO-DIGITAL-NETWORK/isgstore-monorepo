@@ -53,10 +53,9 @@ class PushLicenceRenewalJob implements ShouldQueue
      * a client buying their own subscription straight from the catalog.
      *
      * A ONE-TIME bill is normally a setup fee and renews nothing. The single
-     * exception is a LICENCE bought outright: a governing one-time line on the
-     * website service means "paid once, seumur hidup", and the Hub grants the
-     * permanent term from it. Both halves are required — a one-time fee for
-     * anything else would otherwise make a site permanent the moment it was paid.
+     * exception is a LICENCE bought outright — a one-time line marked as
+     * governing the term, which is what the Hub only ever marks on the licence.
+     * Paying it grants the permanent term instead of a duration.
      */
     public static function maybeDispatch(ServiceInvoice $invoice): void
     {
@@ -68,7 +67,12 @@ class PushLicenceRenewalJob implements ShouldQueue
         $isWebsiteService = $invoice->service?->code === WebsiteService::code();
 
         if ($invoice->isOneTime()) {
-            if ($governs && $isWebsiteService) {
+            // A one-time line that GOVERNS the term is the licence, by
+            // definition: the Hub refuses to mark anything else that way. So it
+            // needs no second opinion about which service it is — and asking for
+            // one made the grant depend on a code the site may not have learned
+            // yet, which is how a client who had PAID stayed dark.
+            if ($governs) {
                 self::dispatch($invoice);
             }
 

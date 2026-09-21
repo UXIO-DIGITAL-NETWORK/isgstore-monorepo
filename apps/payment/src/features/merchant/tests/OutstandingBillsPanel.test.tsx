@@ -37,6 +37,7 @@ const line = (over: Partial<ServicePlanLine> = {}): ServicePlanLine => ({
   governs_licence: false,
   is_active: true,
   active_until: null,
+  lifetime: false,
   next_period_starts_at: null,
   next_due_at: "2026-10-01T00:00:00+07:00",
   outstanding_total: 100_000,

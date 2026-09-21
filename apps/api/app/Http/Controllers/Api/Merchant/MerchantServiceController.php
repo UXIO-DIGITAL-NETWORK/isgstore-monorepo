@@ -131,7 +131,15 @@ class MerchantServiceController extends Controller
 
             // The furthest paid-for date, from the subscriptions actually held —
             // which for the website service is the Hub's own mirrored term.
-            $activeUntil = ($held[$code] ?? collect())->max('ends_at');
+            //
+            // A LIFETIME row has no date at all, and `max('ends_at')` returns null
+            // for it — the same null that means "never subscribed". So the flag
+            // travels BESIDE the date: without it, a client who bought their
+            // licence outright reads as unpaid in their own panel, which is the
+            // one screen that should be confirming they paid.
+            $heldForService = $held[$code] ?? collect();
+            $lifetime = $heldForService->contains(fn (ServiceSubscription $s) => $s->isLifetime());
+            $activeUntil = $lifetime ? null : $heldForService->max('ends_at');
 
             return [
                 'service_code' => $code,
@@ -142,6 +150,7 @@ class MerchantServiceController extends Controller
                 'governs_licence' => (bool) $latest->governs_licence,
                 'is_active' => (bool) $latest->is_active,
                 'active_until' => $activeUntil?->toIso8601String(),
+                'lifetime' => $lifetime,
                 'next_period_starts_at' => $latest->period_starts_at?->toIso8601String(),
                 'next_due_at' => $outstanding->min('due_at')?->toIso8601String(),
                 'outstanding_total' => (int) $outstanding->sum('amount'),

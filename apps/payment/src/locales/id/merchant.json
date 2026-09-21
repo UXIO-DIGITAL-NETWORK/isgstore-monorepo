@@ -298,6 +298,7 @@
     "days": "hari",
     "governsSite": "menentukan masa aktif situs",
     "activeUntil": "Aktif s/d {{date}}",
+    "lifetime": "Seumur hidup",
     "notYetPaid": "Belum pernah dibayar",
     "outstanding": "Belum dibayar {{amount}}"
   },
