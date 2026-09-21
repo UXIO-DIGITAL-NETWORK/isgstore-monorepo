@@ -9,8 +9,11 @@ use App\Support\Phone;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Notifies the buyer that an order is COMPLETED, over two independent channels:
- * email (the receipt) and WhatsApp (the same bukti pembayaran as a PDF document).
+ * Notifies the buyer that an order is COMPLETED, over email (the receipt) and
+ * WhatsApp (the same bukti pembayaran as a PDF document). WhatsApp is part of
+ * the future subscription and ships off, so its queued send is a no-op until it
+ * is switched on (`PiWapiService::canSend()`) — **email is the only channel
+ * right now.**
  *
  * Each channel is idempotent on its own timestamp — `receipt_sent_at` for email,
  * `whatsapp_sent_at` for WhatsApp — so one can send when the other has no

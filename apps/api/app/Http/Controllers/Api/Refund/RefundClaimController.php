@@ -41,7 +41,7 @@ class RefundClaimController extends Controller
      * Deliberately constant. Do not make this depend on whether a refund was
      * found — that difference is the whole attack.
      */
-    private const RESEND_MESSAGE = 'Jika data cocok dengan pesanan yang menunggu pengembalian dana, kami sudah mengirim tautan klaim ke email dan WhatsApp yang terdaftar.';
+    private const RESEND_MESSAGE = 'Jika data cocok dengan pesanan yang menunggu pengembalian dana, kami sudah mengirim tautan klaim ke email yang terdaftar.';
 
     public function resend(ResendRefundClaimRequest $request, ResendRefundClaimLinkAction $action)
     {

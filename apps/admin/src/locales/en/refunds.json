@@ -59,7 +59,7 @@
   "rejectRefundHint": "No money moves and the sale still stands. The claim link stops working, so the customer cannot submit\n              payout details afterwards.",
   "reason": "Reason",
   "rejectRefundPlaceholder": "e.g. Duplicate claim — already refunded under RFD-…",
-  "rejectClaimHint": "The refund stays owed. The account is detached and a new claim link is sent to the email and WhatsApp on\n              the original order, so the real buyer can still claim it.",
+  "rejectClaimHint": "The refund stays owed. The account is detached and a new claim link is sent to the email on\n              the original order, so the real buyer can still claim it.",
   "rejectClaimPlaceholder": "e.g. Account contact does not match the order",
   "colRefund": "Refund",
   "colCustomer": "Customer",

@@ -97,6 +97,11 @@ return [
         // WhatsApp gateway used to deliver the purchase receipt (bukti pembayaran)
         // as a document message. Credentials are usually set via the admin
         // Integration page (DB-backed) and fall back to these env defaults.
+        //
+        // OFF by default: WhatsApp delivery is part of the future subscription,
+        // so nothing goes out over WhatsApp until it is switched on here. Email
+        // is unaffected. Flipping this to true is the whole re-enable.
+        'enabled' => env('PIWAPI_ENABLED', false),
         'api_url' => env('PIWAPI_API_URL', 'https://piwapi.com/api/send/whatsapp'),
         'account' => env('PIWAPI_ACCOUNT'),
         'secret' => env('PIWAPI_SECRET'),

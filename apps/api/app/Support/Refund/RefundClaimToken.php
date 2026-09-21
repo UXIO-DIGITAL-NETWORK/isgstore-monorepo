@@ -10,8 +10,9 @@ use Illuminate\Support\Str;
 /**
  * The single definition of the guest refund claim credential.
  *
- * The plaintext token travels once, in the customer's email and WhatsApp, and
- * is never stored: only its sha256 lands in `refund_requests.claim_token_hash`.
+ * The plaintext token travels once, in the customer's email (and WhatsApp, once
+ * delivery is switched on), and is never stored: only its sha256 lands in
+ * `refund_requests.claim_token_hash`.
  * A leaked database dump therefore cannot redirect anyone's refund, and the
  * lookup by hash stays a single indexed read.
  *

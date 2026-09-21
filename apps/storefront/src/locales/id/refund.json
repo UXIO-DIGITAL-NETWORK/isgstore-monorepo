@@ -11,8 +11,8 @@
     "contactPlaceholder": "email@contoh.com atau 08xxxxxxxxxx",
     "button": "Kirim Tautan Klaim",
     "sending": "Mengirim...",
-    "hint": "Demi keamanan, tautan pengisian rekening kami kirim ke email dan WhatsApp yang kamu pakai saat memesan — bukan ditampilkan di halaman ini.",
-    "sent": "Jika data cocok dengan pesanan yang menunggu pengembalian dana, tautan klaim sudah kami kirim ke email dan WhatsApp yang terdaftar. Cek juga folder spam."
+    "hint": "Demi keamanan, tautan pengisian rekening kami kirim ke email yang kamu pakai saat memesan — bukan ditampilkan di halaman ini.",
+    "sent": "Jika data cocok dengan pesanan yang menunggu pengembalian dana, tautan klaim sudah kami kirim ke email yang terdaftar. Cek juga folder spam."
   },
   "claim": {
     "heading": "Pengembalian Dana",
@@ -53,7 +53,7 @@
   },
   "submitted": {
     "heading": "Data rekening tersimpan",
-    "body": "Terima kasih. Dana akan kami transfer ke rekening di atas dalam 1×24 jam kerja, dan kamu akan mendapat konfirmasi lewat email dan WhatsApp."
+    "body": "Terima kasih. Dana akan kami transfer ke rekening di atas dalam 1×24 jam kerja, dan kamu akan mendapat konfirmasi lewat email."
   },
   "done": {
     "heading": "Dana sudah dikembalikan",

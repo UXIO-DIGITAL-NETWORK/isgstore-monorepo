@@ -128,7 +128,7 @@ Two rules that keep the guard airtight:
 Every refund ends up in a wallet — the only question is whose, and how soon:
 
 - **Member → wallet, immediately.** `WalletLedger::record(type: 'refund')` — never a raw `increment`, so it lands in `balance_mutations` with before/after figures. `payments.status` and `transactions.status` both go `REFUNDED` in the same transaction, and the merchant settlement is reversed post-commit. Method `balance`, born `COMPLETED`, zero admin actions.
-- **Guest → the claim queue.** Method `balance_claim`, born `WAITING_ACCOUNT`, with a claim link emailed and WhatsApped. There is no account to credit yet: the customer follows the link, creates or signs in to an account, and an admin verifies it before the balance moves.
+- **Guest → the claim queue.** Method `balance_claim`, born `WAITING_ACCOUNT`, with a claim link emailed (and WhatsApped once delivery is switched on — see **WhatsApp delivery is off by default**). There is no account to credit yet: the customer follows the link, creates or signs in to an account, and an admin verifies it before the balance moves.
 - **`manual_transfer` is retired.** No new rows are opened this way, but the ones already open still drain through the same admin queue, so every payout guard must keep handling it. It is legacy, not dead.
 
 **The load-bearing invariant is that `payments.status` flips exactly when the credit happens** — at initiation on the member path, at `complete` on both guest paths. `GetFinancialSummaryAction` and `ReconcileGatewayFeesAction` read that column as cash out, and since unclaimed refunds never expire a row can legitimately sit `SUCCESS` for months. Flipping it at request time would report money that is still in the account.
@@ -189,6 +189,21 @@ Every refund ends up in a wallet — the only question is whose, and how soon:
 `kontak` on the uxiolabs order is left raw — its own fallback is the literal `'0000000000'`, so it is not a format-validated field. The four PiWAPI senders are left alone: E.164 is exactly what they want.
 
 Accepted and documented in the helper: a foreign number typed **bare** (a Singaporean `91234567`, no plus) reads as local. That is inherent to supporting country codes without a picker — an exact collision, not enumeration.
+
+### WhatsApp delivery is off by default
+
+WhatsApp is part of the future subscription, so nothing goes out over it yet:
+`PIWAPI_ENABLED` (default **false**) gates both PiWAPI senders — the purchase
+receipt (`SendTransactionWhatsAppJob`) and the refund notifications
+(`SendRefundWhatsAppJob`). **Email is unaffected and is the only channel right
+now.**
+
+`PiWapiService::canSend()` is the guard every caller must use; it is
+`isEnabled() && isConfigured()`, so a switched-off gateway drops the send
+silently instead of reaching the API — including a job already sitting in the
+queue when the switch flips. `isConfigured()` (credentials present) stays its own
+question on purpose, so the Integration page can still report a reachable gateway
+while delivery is off. Flipping `PIWAPI_ENABLED=true` is the whole re-enable.
 
 ### Membership-plan pricing
 
