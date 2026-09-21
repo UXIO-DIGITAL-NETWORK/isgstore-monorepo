@@ -113,6 +113,12 @@ class PushLicenceRenewalJob implements ShouldQueue
                 : ['days' => (int) $invoice->duration_days]),
             'paid_at' => $invoice->verified_at?->toIso8601String(),
         ]);
+
+        // The Hub accepted the report, so the term is about to move. Said out
+        // loud because this is the one place where a payment and the site it
+        // lights are tied together, and a silent success here is how a client
+        // who paid ends up staring at a dark site with nothing to point at.
+        SendDiscordActivityJob::licenceReported($invoice);
     }
 
     public function failed(Throwable $e): void
