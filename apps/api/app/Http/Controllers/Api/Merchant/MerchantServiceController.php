@@ -125,7 +125,7 @@ class MerchantServiceController extends Controller
             ->get()
             ->groupBy(fn (ServiceSubscription $s) => $s->service?->code ?? '');
 
-        $rows = $items->map(function ($periods, string $code) use ($invoices, $held) {
+        $rows = $items->map(function ($periods, string $code) use ($invoices, $held, $licenceCode) {
             /** @var HubPlanItem $latest */
             $latest = $periods->sortByDesc('period_index')->first();
 
