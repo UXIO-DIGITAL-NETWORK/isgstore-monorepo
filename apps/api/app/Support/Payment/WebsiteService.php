@@ -24,9 +24,23 @@ final class WebsiteService
 {
     private const DEFAULT_CODE = 'uxiolabs';
 
+    /**
+     * The setting this site's licence code arrives in.
+     *
+     * The Hub creates a licence PER SITE — named and priced for that client — so
+     * the code is not something this deployment can know in advance. The plan
+     * sync writes it here when it sees the line the Hub marked as the licence.
+     */
+    public const LICENCE_CODE_KEY = 'licence_service_code';
+
     public static function code(): string
     {
-        return self::setting('payment', 'website_service_code') ?? self::DEFAULT_CODE;
+        // The Hub's own answer first; then the deployment's configured website
+        // service, where a site registered before licences were per-site still
+        // keeps its own; then the built-in default.
+        return self::setting('payment', self::LICENCE_CODE_KEY)
+            ?? self::setting('payment', 'website_service_code')
+            ?? self::DEFAULT_CODE;
     }
 
     public static function get(): ?Service
