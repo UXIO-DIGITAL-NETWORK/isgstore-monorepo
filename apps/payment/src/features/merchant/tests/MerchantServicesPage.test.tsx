@@ -286,6 +286,33 @@ describe("MerchantServicesPage — a lifetime licence is not an unpaid one", () 
   });
 });
 
+/**
+ * A line bought once has no period.
+ *
+ * `duration_days` is still on the wire whatever the billing mode — the Hub fills
+ * it from the catalogue (365 for the website) — so rendering it printed
+ * "/365 hari" beside a "Sekali bayar" line and a yearly renewal that never
+ * comes. Only a recurring line has a period to print.
+ */
+describe("MerchantServicesPage — a one-time/lifetime line has no period", () => {
+  it("says Sekali bayar instead of printing a / N hari period", () => {
+    mockPlan([{ ...planLine, billing_mode: "one_time", duration_days: 365, lifetime: false, outstanding_total: 0 }]);
+
+    renderPage();
+
+    expect(screen.getByText(/Sekali bayar/)).toBeInTheDocument();
+    expect(screen.queryByText(/\/ 365 hari/)).not.toBeInTheDocument();
+  });
+
+  it("drops the period for a lifetime line too", () => {
+    mockPlan([{ ...planLine, lifetime: true, duration_days: 365, outstanding_total: 0 }]);
+
+    renderPage();
+
+    expect(screen.queryByText(/\/ 365 hari/)).not.toBeInTheDocument();
+  });
+});
+
 describe("MerchantServicesPage — an amount owed is a way in, not a restatement", () => {
   it("sends the outstanding amount to the tab that pays it", async () => {
     const user = userEvent.setup();

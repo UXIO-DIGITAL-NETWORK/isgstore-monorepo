@@ -298,6 +298,7 @@
   "plan": {
     "title": "Layanan dalam paket Anda",
     "days": "hari",
+    "oneTime": "Sekali bayar",
     "governsSite": "menentukan masa aktif situs",
     "activeUntil": "Aktif s/d {{date}}",
     "lifetime": "Seumur hidup",
