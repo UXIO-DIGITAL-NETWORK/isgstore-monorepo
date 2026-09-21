@@ -298,6 +298,7 @@
     "days": "days",
     "governsSite": "governs the site's licence",
     "activeUntil": "Active until {{date}}",
+    "lifetime": "Lifetime",
     "notYetPaid": "Never paid",
     "outstanding": "Outstanding {{amount}}"
   },

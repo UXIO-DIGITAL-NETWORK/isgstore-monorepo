@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions\Hub;
 
+use App\Enums\ServiceInvoiceStatus;
 use App\Enums\SubscriptionStatus;
+use App\Jobs\PushLicenceRenewalJob;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Setting;
 use App\Services\HubClient;
@@ -13,6 +16,7 @@ use App\Support\Payment\WebsiteService;
 use App\Support\SiteLicenceState;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Pulls this site's own licence from the Hub and applies it locally.
@@ -61,6 +65,8 @@ class ApplyHubLicenceAction
 
         SiteLicenceState::forget();
 
+        $this->reportUnacknowledgedLicence($block);
+
         return [
             'status' => $status,
             'suspended' => (bool) ($block['suspended'] ?? false),
@@ -68,6 +74,50 @@ class ApplyHubLicenceAction
             'ends_at' => $endsAt?->toIso8601String(),
             'subscription' => $lifetime || $endsAt !== null,
         ];
+    }
+
+    /**
+     * Tell the Hub again about a licence bill it never acknowledged.
+     *
+     * The report is ONE-SHOT: a bill settled while the dispatch was broken — or
+     * while the Hub was permanently unreachable — would otherwise leave a client
+     * who has PAID staring at a dark site, with nothing anywhere reporting a
+     * problem. Re-sending is safe, because the Hub de-dupes on the invoice number
+     * and a redelivery cannot buy a second term.
+     *
+     * It fires ONLY on this exact mismatch: the Hub says we hold no licence at
+     * all, yet we hold a paid bill for one. A LAPSED licence has an end date, so
+     * it never lands here; a site that has never paid has nothing to re-send; and
+     * a lifetime grant carries its own flag. That is what keeps this from being a
+     * push every minute forever.
+     *
+     * @param  array<string, mixed>  $block
+     */
+    private function reportUnacknowledgedLicence(array $block): void
+    {
+        $status = is_string($block['status'] ?? null) ? $block['status'] : 'none';
+
+        if ($status !== 'none' || (bool) ($block['lifetime'] ?? false)) {
+            return;
+        }
+
+        // Found by what the bill IS, not by a service code: a paid bill whose
+        // plan line governs the term. Resolving "my licence service" first would
+        // make the heal depend on the site having already learned that code —
+        // which is exactly what it may not have done yet.
+        $invoice = ServiceInvoice::query()
+            ->where('status', ServiceInvoiceStatus::PAID)
+            ->whereHas('hubPlanItem', fn ($query) => $query->where('governs_licence', true))
+            ->latest('id')
+            ->first();
+
+        if ($invoice !== null) {
+            Log::info('Hub licence unacknowledged — reporting it again', [
+                'invoice_number' => $invoice->invoice_number,
+            ]);
+
+            PushLicenceRenewalJob::maybeDispatch($invoice);
+        }
     }
 
     /**

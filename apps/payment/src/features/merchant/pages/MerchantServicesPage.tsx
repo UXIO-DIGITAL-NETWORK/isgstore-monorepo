@@ -179,9 +179,14 @@ function ServicePlanSummary({
           </Box>
           <Box className="flex flex-col items-end">
             <Text as="span" variant="small">
-              {line.active_until
-                ? t("plan.activeUntil", { date: formatDate(line.active_until) })
-                : t("plan.notYetPaid")}
+              {/* Lifetime first: a licence bought outright has no date, and an
+                  empty date here would read as "never paid" on the one screen
+                  that should be confirming the client HAS paid. */}
+              {line.lifetime
+                ? t("plan.lifetime")
+                : line.active_until
+                  ? t("plan.activeUntil", { date: formatDate(line.active_until) })
+                  : t("plan.notYetPaid")}
             </Text>
             {line.outstanding_total > 0 && (
               // A restated figure with no way through is a dead end; this now
