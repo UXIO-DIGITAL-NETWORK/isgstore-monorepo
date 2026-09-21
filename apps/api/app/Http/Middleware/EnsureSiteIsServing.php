@@ -8,8 +8,10 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * The kill switch: when the Hub has suspended this site or its licence has
- * lapsed, the public side stops answering.
+ * The kill switch: when the Hub has suspended this site, its licence has
+ * lapsed, or the Hub has never (yet) confirmed it may serve, the public side
+ * stops answering. A site that has not been provisioned is dark by default —
+ * only an explicit answer from the Hub opens it.
  *
  * This is the first middleware this app appends globally, and that is the
  * point. The alternative — attaching it to each public route group — fails in
@@ -99,9 +101,11 @@ class EnsureSiteIsServing
         return response()->json([
             'status' => 'error',
             'code' => 503,
-            'message' => $closure['status'] === 'suspended'
-                ? 'Situs sedang dinonaktifkan. Hubungi pengelola untuk mengaktifkan kembali.'
-                : 'Masa aktif situs telah berakhir. Perpanjang untuk mengaktifkan kembali.',
+            'message' => match ($closure['status']) {
+                'suspended' => 'Situs sedang dinonaktifkan. Hubungi pengelola untuk mengaktifkan kembali.',
+                'none', 'unknown' => 'Situs belum diaktifkan. Hubungi pengelola untuk mengaktifkan.',
+                default => 'Masa aktif situs telah berakhir. Perpanjang untuk mengaktifkan kembali.',
+            },
             'data' => ['licence' => $closure],
         ], 503)->header('Retry-After', '900');
     }

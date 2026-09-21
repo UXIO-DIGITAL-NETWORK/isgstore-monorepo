@@ -3,6 +3,7 @@ import { describe, expect, it, beforeEach } from "vitest";
 import {
   closureFromError,
   getSiteClosure,
+  isAlwaysOpenUrl,
   setSiteClosure,
   subscribeSiteClosure,
 } from "./siteClosed";
@@ -37,6 +38,24 @@ describe("closureFromError", () => {
     expect(closureFromError({ response: { status: 500, data: { data: { licence: {} } } } })).toBeNull();
     expect(closureFromError(new Error("network"))).toBeNull();
     expect(closureFromError(undefined)).toBeNull();
+  });
+});
+
+describe("isAlwaysOpenUrl", () => {
+  it("treats the endpoints that answer while the site is dark as always-open", () => {
+    // A 200 from any of these is not evidence the public side is open, so the
+    // interceptor must not let it clear the notice.
+    expect(isAlwaysOpenUrl("/v1/storefront/settings")).toBe(true);
+    expect(isAlwaysOpenUrl("/v1/auth/login")).toBe(true);
+    expect(isAlwaysOpenUrl("/v1/auth/refresh")).toBe(true);
+    expect(isAlwaysOpenUrl("/v1/ping")).toBe(true);
+  });
+
+  it("treats the gated endpoints as the reopening signal", () => {
+    expect(isAlwaysOpenUrl("/v1/games")).toBe(false);
+    expect(isAlwaysOpenUrl("/v1/games/mobile-legends/products")).toBe(false);
+    expect(isAlwaysOpenUrl("/v1/checkout")).toBe(false);
+    expect(isAlwaysOpenUrl(undefined)).toBe(false);
   });
 });
 

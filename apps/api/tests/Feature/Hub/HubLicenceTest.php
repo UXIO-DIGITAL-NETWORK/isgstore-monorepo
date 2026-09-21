@@ -215,10 +215,17 @@ class HubLicenceTest extends TestCase
         $this->assertTrue(SiteLicenceState::isServing());
     }
 
-    public function test_a_site_that_never_synced_serves(): void
+    public function test_a_site_that_never_synced_is_dark_until_the_hub_answers(): void
     {
         // A fresh deployment, or one whose first sync has not run yet. Silence
-        // is not evidence of a lapse.
+        // is not permission: a Hub-managed site is CLOSED until the Hub says it
+        // may serve — "not yet provisioned" is not "allowed".
+        $this->assertFalse(SiteLicenceState::isServing());
+
+        // The Hub's first answer opens it, with nothing else changing.
+        $this->fakeLicence();
+        app(ApplyHubLicenceAction::class)->execute();
+
         $this->assertTrue(SiteLicenceState::isServing());
     }
 

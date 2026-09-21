@@ -2,7 +2,7 @@ import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestCo
 import { API_VERSION, ENV } from "@/config/env";
 import { useAuthStore } from "@/store/useAuthStore";
 import { clearClientSession } from "@/lib/session";
-import { closureFromError, setSiteClosure } from "@/lib/siteClosed";
+import { closureFromError, isAlwaysOpenUrl, setSiteClosure } from "@/lib/siteClosed";
 
 export const api = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -91,9 +91,14 @@ api.interceptors.response.use(
   // Unwrap to the response body, so callers work with the API envelope
   // directly instead of reaching through `response.data` every time.
   (response) => {
-    // A successful call is the site telling us it is open again — which is how
-    // the notice clears itself after the Hub re-activates, without a reload.
-    setSiteClosure(null);
+    // A successful call to a GATED endpoint is the site telling us it is open
+    // again — which is how the notice clears itself after the Hub re-activates,
+    // without a reload. Endpoints that stay open while the site is dark
+    // (settings, ping, auth) answer 200 regardless, so they must never clear
+    // it — otherwise the notice flickers away on landing.
+    if (!isAlwaysOpenUrl(response.config?.url)) {
+      setSiteClosure(null);
+    }
 
     return response.data;
   },

@@ -29,16 +29,17 @@ final class SiteLicenceState
     /**
      * Whether the public side is open.
      *
-     * **A site with no answer yet serves.** A fresh deployment, a site whose
-     * first sync has not run, a site whose Hub is unreachable — all of them keep
-     * working. Only an explicit "not serving" from the Hub closes the door, and
-     * that answer then persists until the Hub says otherwise.
+     * **A site with no answer yet is CLOSED.** A fresh deployment, or one whose
+     * first sync has not run, has never been told it may serve — and "not yet
+     * provisioned" is not the same as "allowed". Only an explicit answer from
+     * the Hub opens the door, and that answer then persists until the Hub says
+     * otherwise.
      *
-     * Note what this deliberately does NOT do: expire the suspension after some
-     * period of silence. An amnesty would teach a delinquent client that
-     * blocking the Hub brings their site back, and it is not needed to protect
-     * against a Hub outage — a serving site stays serving when the Hub dies,
-     * because nothing changes its answer.
+     * Note what this deliberately does NOT do: expire an answer after some
+     * period of silence. Once the Hub has answered, a serving site STAYS serving
+     * when the Hub dies — nothing rewrites the stored answer, so a Hub outage
+     * never takes a running storefront down. That safety lives in the
+     * persistence of the answer, not in the default.
      */
     public static function isServing(): bool
     {
@@ -95,10 +96,10 @@ final class SiteLicenceState
             $rows = Setting::where('group', self::GROUP)->get()->keyBy('key');
 
             return [
-                // Absent means "never synced" — which serves. See isServing().
+                // Absent means "never synced" — which is CLOSED. See isServing().
                 'is_serving' => $rows->has('is_serving')
                     ? (bool) $rows->get('is_serving')->typedValue()
-                    : true,
+                    : false,
                 // Absent means "not a lifetime licence" — the ordinary case, and
                 // the safe default: a missing answer must never grant forever.
                 'lifetime' => $rows->has('lifetime')
