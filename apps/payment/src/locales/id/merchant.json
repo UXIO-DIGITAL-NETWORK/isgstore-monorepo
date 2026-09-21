@@ -124,6 +124,8 @@
     "title": "Services",
     "fallbackServiceName": "Service",
     "daysRemaining": "{{count}} hari tersisa",
+    "lifetime": "Seumur hidup",
+    "alreadySubscribed": "Sudah berlangganan",
     "includedWithWebsite": "Termasuk langganan website",
     "perDays": "/ {{count}} hari",
     "subscribe": "Berlangganan",

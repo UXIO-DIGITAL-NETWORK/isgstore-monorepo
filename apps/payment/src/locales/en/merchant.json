@@ -124,6 +124,8 @@
     "title": "Services",
     "fallbackServiceName": "Service",
     "daysRemaining": "{{count}} days left",
+    "lifetime": "Lifetime",
+    "alreadySubscribed": "Already subscribed",
     "includedWithWebsite": "Included with your website subscription",
     "perDays": "/ {{count}} days",
     "subscribe": "Subscribe",
