@@ -92,6 +92,26 @@ class SiteAvailabilityTest extends TestCase
             ->assertJsonFragment(['message' => 'Masa aktif situs telah berakhir. Perpanjang untuk mengaktifkan kembali.']);
     }
 
+    public function test_a_site_the_hub_has_never_answered_for_is_closed_by_default(): void
+    {
+        // "Never provisioned" is not "allowed". A Hub-managed site that has not
+        // yet landed a licence answer is dark until the Hub first says it may
+        // serve. The setUp() above writes a suspended state; wipe it, and change
+        // nothing else.
+        Setting::where('group', SiteLicenceState::GROUP)->delete();
+        SiteLicenceState::forget();
+
+        $this->getJson('/api/v1/games')
+            ->assertStatus(503)
+            ->assertJsonPath('data.licence.status', 'unknown')
+            ->assertJsonFragment(['message' => 'Situs belum diaktifkan. Hubungi pengelola untuk mengaktifkan.']);
+
+        // The doors that must stay open still do, so the client can reach the
+        // panel where they pay to switch it on.
+        $this->getJson('/api/v1/storefront/settings')->assertOk();
+        $this->getJson('/api/v1/ping')->assertOk();
+    }
+
     // ── Open, and load-bearing ───────────────────────────────────────────────
 
     public function test_the_hub_can_always_reach_in(): void

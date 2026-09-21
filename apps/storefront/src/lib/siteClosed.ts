@@ -20,6 +20,22 @@ export interface SiteClosure {
 
 type Listener = (closure: SiteClosure | null) => void;
 
+/**
+ * Paths the API keeps answering even while the site is switched off.
+ *
+ * A 200 from one of these is NOT evidence the public side is open, so it must
+ * never clear the notice. Mirrors `EnsureSiteIsServing::ALWAYS_OPEN`, narrowed
+ * to the ones this SPA actually calls: the public settings (branding for this
+ * very notice), health probes, and the auth endpoints a client uses to log in
+ * and pay to come back.
+ */
+const ALWAYS_OPEN = ["/storefront/settings", "/ping", "/health", "/auth/"];
+
+/** Whether a request URL is on the always-open list above. */
+export function isAlwaysOpenUrl(url: string | undefined): boolean {
+  return !!url && ALWAYS_OPEN.some((path) => url.includes(path));
+}
+
 let current: SiteClosure | null = null;
 const listeners = new Set<Listener>();
 

@@ -44,12 +44,21 @@ final class WebsiteSubscriptionStatus
             $closure = SiteLicenceState::closure();
             $service = WebsiteService::get();
 
+            // `none`/`unknown` mean the Hub holds no term for this site at all —
+            // read that as "belum berlangganan" (with its renew CTA), not as a
+            // lapsed one. Only a real end date makes it `expired`.
+            $cardStatus = match ($closure['status']) {
+                'suspended' => 'suspended',
+                'none', 'unknown' => 'none',
+                default => 'expired',
+            };
+
             // array_merge, not `+`: the union operator keeps the LEFT side's
             // key, so the null default in payload() would win and the client
             // would never see why their site is off.
             return array_merge(
                 self::payload(
-                    $closure['status'] === 'suspended' ? 'suspended' : 'expired',
+                    $cardStatus,
                     $service,
                     $closure['ends_at'] ? Carbon::parse($closure['ends_at']) : null,
                     null,

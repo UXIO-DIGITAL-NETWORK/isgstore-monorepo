@@ -922,9 +922,12 @@ Rules that are load-bearing:
   (the client has to reach the panel where they pay), the gateway callbacks
   (money in flight, and the path a renewal arrives on), and
   `v1/storefront/settings` (the down-page renders the client's own branding).
-- **An unreachable Hub changes nothing.** The last synced answer stands, so a
-  Hub outage cannot darken five storefronts, and a site that never synced
-  serves. There is deliberately **no amnesty** after N hours of silence — that
+- **Dark by default; an unreachable Hub changes nothing.** A site with no synced
+  answer at all is CLOSED — "never provisioned" is not "allowed" — so a fresh
+  deployment (or one whose key is wrong) answers 503 on every public route until
+  the Hub first says it may serve. After that, the last synced answer STANDS: a
+  Hub outage cannot darken five storefronts, because nothing rewrites the stored
+  answer. There is deliberately **no amnesty** after N hours of silence — that
   would teach a delinquent client that blocking the Hub revives their site.
 - **`services:expire` will flip the hub row to EXPIRED overnight** once the term
   lapses. The sync resets `status` to ACTIVE on renewal; without that a paid-up
