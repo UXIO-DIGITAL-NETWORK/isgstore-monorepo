@@ -112,6 +112,7 @@
   "licenceStatus_none": "Belum berlangganan",
   "licenceStatus_unconfigured": "Belum diatur",
   "licenceEndsAt": "Berlaku sampai",
+  "licenceLifetime": "Seumur hidup",
   "licenceDaysRemaining": "Sisa hari",
   "licenceDays": "{{days}} hari",
   "licenceSuspendReason": "Alasan",

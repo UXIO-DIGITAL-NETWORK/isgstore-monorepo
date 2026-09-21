@@ -43,15 +43,20 @@ class PushLicenceRenewalJob implements ShouldQueue
     public function __construct(public ServiceInvoice $invoice) {}
 
     /**
-     * The one gate: only this site's OWN subscription renews the licence. A
-     * client buying a domain or a WhatsApp API from the same catalog must not
-     * extend their website term.
+     * The one gate: only this site's OWN subscription moves the licence. A client
+     * buying a domain or a WhatsApp API from the same catalog must not extend
+     * their website term.
      *
      * Two ways a bill qualifies, and the plan line is the authoritative one: the
-     * Hub marks exactly one line "menentukan masa aktif situs" (and now refuses
-     * to mark any service other than the website one). The website service code
-     * stays as the backstop for a bill with no plan item behind it — a client
-     * buying their own subscription straight from the catalog.
+     * Hub marks the licence line "menentukan masa aktif situs". The website
+     * service code stays as the backstop for a bill with no plan item behind it —
+     * a client buying their own subscription straight from the catalog.
+     *
+     * A ONE-TIME bill is normally a setup fee and renews nothing. The single
+     * exception is a LICENCE bought outright: a governing one-time line on the
+     * website service means "paid once, seumur hidup", and the Hub grants the
+     * permanent term from it. Both halves are required — a one-time fee for
+     * anything else would otherwise make a site permanent the moment it was paid.
      */
     public static function maybeDispatch(ServiceInvoice $invoice): void
     {
@@ -59,14 +64,18 @@ class PushLicenceRenewalJob implements ShouldQueue
             return;
         }
 
-        // A setup fee is not a term. Paying it must not extend anything.
+        $governs = (bool) $invoice->hubPlanItem?->governs_licence;
+        $isWebsiteService = $invoice->service?->code === WebsiteService::code();
+
         if ($invoice->isOneTime()) {
+            if ($governs && $isWebsiteService) {
+                self::dispatch($invoice);
+            }
+
             return;
         }
 
-        $governs = (bool) $invoice->hubPlanItem?->governs_licence;
-
-        if (! $governs && $invoice->service?->code !== WebsiteService::code()) {
+        if (! $governs && ! $isWebsiteService) {
             return;
         }
 
@@ -85,12 +94,19 @@ class PushLicenceRenewalJob implements ShouldQueue
             return;
         }
 
+        // One-time means bought outright: the Hub grants a term with no end date
+        // rather than adding days. Sending both would be two answers to "how long
+        // for", and the Hub refuses it.
+        $lifetime = $invoice->isOneTime();
+
         $hub->pushLicenceRenewal([
             'invoice_number' => $invoice->invoice_number,
             'service_code' => WebsiteService::code(),
-            // The term the client actually bought, frozen on the invoice at
-            // purchase — not today's catalog value, which may have changed.
-            'days' => (int) $invoice->duration_days,
+            ...($lifetime
+                ? ['lifetime' => true]
+                // The term the client actually bought, frozen on the invoice at
+                // purchase — not today's catalog value, which may have changed.
+                : ['days' => (int) $invoice->duration_days]),
             'paid_at' => $invoice->verified_at?->toIso8601String(),
         ]);
     }

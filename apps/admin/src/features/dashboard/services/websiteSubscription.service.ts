@@ -27,6 +27,12 @@ export interface WebsiteSubscription {
   service: { id: number; code: string; name: string } | null;
   ends_at: string | null;
   days_remaining: number | null;
+  /**
+   * Paid once, no end date. `ends_at` is null for it too — so without this flag
+   * a licence bought outright is indistinguishable from one that never existed.
+   * Optional: an older API omits it.
+   */
+  lifetime?: boolean;
   /** Deep link into the site's payment panel; the client signs in there. */
   checkout_url: string | null;
   /** Whether the public side is actually up. Optional — an older API omits it. */

@@ -46,6 +46,19 @@ final class SiteLicenceState
     }
 
     /**
+     * Whether the licence was bought outright — paid once, no end date.
+     *
+     * Kept beside `is_serving` rather than derived from an empty `ends_at`,
+     * because an empty date also means "the Hub has not told us anything yet".
+     * Only the Hub sets this, and it only sets it true when a lifetime grant
+     * actually happened.
+     */
+    public static function isLifetime(): bool
+    {
+        return self::read()['lifetime'];
+    }
+
+    /**
      * Why the site is closed, for the 503 body. Never leaks anything the client
      * does not already know about their own account.
      *
@@ -75,7 +88,7 @@ final class SiteLicenceState
         Cache::forget(self::CACHE_KEY);
     }
 
-    /** @return array{is_serving: bool, status: string, suspend_reason: string, ends_at: string, checkout_url: string} */
+    /** @return array{is_serving: bool, lifetime: bool, status: string, suspend_reason: string, ends_at: string, checkout_url: string} */
     private static function read(): array
     {
         return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function (): array {
@@ -86,6 +99,11 @@ final class SiteLicenceState
                 'is_serving' => $rows->has('is_serving')
                     ? (bool) $rows->get('is_serving')->typedValue()
                     : true,
+                // Absent means "not a lifetime licence" — the ordinary case, and
+                // the safe default: a missing answer must never grant forever.
+                'lifetime' => $rows->has('lifetime')
+                    ? (bool) $rows->get('lifetime')->typedValue()
+                    : false,
                 'status' => (string) ($rows->get('status')?->value ?? 'unknown'),
                 'suspend_reason' => (string) ($rows->get('suspend_reason')?->value ?? ''),
                 'ends_at' => (string) ($rows->get('ends_at')?->value ?? ''),

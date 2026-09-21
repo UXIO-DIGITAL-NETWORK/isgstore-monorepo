@@ -41,7 +41,11 @@ export function WebsiteSubscriptionCard() {
         ? "Langganan berakhir"
         : data.status === "none"
           ? "Belum berlangganan"
-          : `${data.days_remaining} hari tersisa`;
+          : data.lifetime
+            // Nothing to count down to, and nothing to renew — saying a number
+            // of days here would invent a deadline the client does not have.
+            ? "Seumur hidup"
+            : `${data.days_remaining} hari tersisa`;
 
   return (
     <SidebarMenu>
