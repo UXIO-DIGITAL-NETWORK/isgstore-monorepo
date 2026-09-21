@@ -39,12 +39,19 @@ class ActivateServiceSubscriptionAction
         // A one-time setup fee buys no window, so there is nothing to open and
         // nothing to renew. It still tells the internal team and still reports
         // the PAID order to the Hub — both sides must agree the money arrived —
-        // but no subscription, no installation, and no licence extension: a
-        // setup fee that extended a term would hand over a free period.
+        // but no subscription and no installation.
         if ($invoice->isOneTime()) {
             $this->notify($invoice);
 
             PushServiceOrderToHubJob::maybeDispatch($invoice);
+
+            // A one-time LICENCE is the exception: paying it is what lights the
+            // site, and the lifetime grant can only reach the Hub from here.
+            // Dispatching unconditionally and letting the job's own gate decide
+            // is deliberate — that gate is the one place that knows a licence
+            // from a setup fee, and duplicating the rule here is how the two
+            // drifted apart and left a paid-for site dark.
+            PushLicenceRenewalJob::maybeDispatch($invoice);
 
             return null;
         }

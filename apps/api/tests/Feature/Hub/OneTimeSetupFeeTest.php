@@ -192,6 +192,57 @@ class OneTimeSetupFeeTest extends TestCase
         Queue::assertNotPushed(PushLicenceRenewalJob::class);
     }
 
+    /**
+     * The one-time LICENCE is reported from the PAYMENT path, not only from the
+     * job's own gate.
+     *
+     * This is the bug the whole flow died on: a one-time invoice buys no
+     * subscription window, so this action returned early and never told the Hub
+     * anything — and a client who had paid for their site in full kept looking at
+     * a storefront that stayed dark, with nothing anywhere reporting a problem.
+     */
+    public function test_paying_a_one_time_licence_reports_it_from_the_payment_path(): void
+    {
+        Queue::fake();
+
+        $this->service('website');
+
+        HubPlanItem::create([
+            'item_key' => '01LIC:0',
+            'plan_uid' => '01LIC',
+            'period_index' => 0,
+            'service_code' => 'website',
+            'service_name' => 'Lisensi Situs',
+            'amount' => 12000000,
+            'duration_days' => 365,
+            'billing_mode' => 'one_time',
+            'governs_licence' => true,
+            'period_starts_at' => now(),
+            'period_ends_at' => now()->addDays(365),
+            'due_at' => now(),
+            'is_active' => true,
+            'synced_at' => now(),
+        ]);
+
+        $invoice = ServiceInvoice::create([
+            'invoice_number' => 'SINV-LIC-1',
+            'merchant_id' => $this->merchant->id,
+            'service_id' => Service::where('code', 'website')->firstOrFail()->id,
+            'service_name' => 'Lisensi Situs',
+            'amount' => 12000000,
+            'duration_days' => 365,
+            'status' => ServiceInvoiceStatus::PAID,
+            'verified_at' => now(),
+            'source' => 'hub_plan',
+            'billing_mode' => 'one_time',
+            'hub_item_key' => '01LIC:0',
+        ]);
+
+        app(ActivateServiceSubscriptionAction::class)->execute($invoice);
+
+        Queue::assertPushed(PushLicenceRenewalJob::class);
+    }
+
     public function test_the_governing_plan_line_renews_the_licence_on_its_own_service(): void
     {
         Queue::fake();
