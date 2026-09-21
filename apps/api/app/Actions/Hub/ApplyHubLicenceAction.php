@@ -7,6 +7,7 @@ namespace App\Actions\Hub;
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\SubscriptionStatus;
 use App\Jobs\PushLicenceRenewalJob;
+use App\Jobs\SendDiscordActivityJob;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Setting;
@@ -58,12 +59,18 @@ class ApplyHubLicenceAction
         // date, and a second opinion here could only ever disagree.
         $serving = (bool) ($block['is_serving'] ?? true);
 
+        // Read BEFORE the write, because this runs every minute and only a real
+        // move is worth a message. See notifyLicenceChanges().
+        $before = $this->readGate();
+
         DB::transaction(function () use ($block, $status, $endsAt, $startsAt, $serving, $lifetime) {
             $this->writeGate($block, $status, $endsAt, $serving, $lifetime);
             $this->writeSubscription($startsAt, $endsAt, $lifetime);
         });
 
         SiteLicenceState::forget();
+
+        $this->notifyLicenceChanges($before, $status, $endsAt, $lifetime, $serving, $block);
 
         $this->reportUnacknowledgedLicence($block);
 
@@ -74,6 +81,56 @@ class ApplyHubLicenceAction
             'ends_at' => $endsAt?->toIso8601String(),
             'subscription' => $lifetime || $endsAt !== null,
         ];
+    }
+
+    /**
+     * The gate as it stands before this sync, so a move can be told from a
+     * no-op. Read from the settings rows rather than the cache: the cache is
+     * what the middleware serves, and it may be a minute behind.
+     *
+     * @return array<string, string>
+     */
+    private function readGate(): array
+    {
+        return Setting::where('group', SiteLicenceState::GROUP)
+            ->whereIn('key', ['status', 'ends_at', 'lifetime', 'is_serving'])
+            ->pluck('value', 'key')
+            ->all();
+    }
+
+    /**
+     * Announce only what actually moved.
+     *
+     * This action runs every minute. Reporting per tick would drown the channel
+     * in the same unchanged facts until nobody reads it — which is the exact
+     * failure the channel was cleaned up to avoid.
+     *
+     * A first sync (no rows yet) stays silent: a fresh deployment coming online
+     * is not news, and the term it inherits is announced by whoever granted it.
+     *
+     * @param  array<string, string>  $before
+     * @param  array<string, mixed>  $block
+     */
+    private function notifyLicenceChanges(array $before, string $status, ?Carbon $endsAt, bool $lifetime, bool $serving, array $block): void
+    {
+        if ($before === []) {
+            return;
+        }
+
+        $newEnds = $endsAt?->toIso8601String() ?? '';
+        $wasLifetime = ($before['lifetime'] ?? '0') === '1';
+
+        $termChanged = (string) ($before['ends_at'] ?? '') !== $newEnds
+            || $wasLifetime !== $lifetime
+            || (string) ($before['status'] ?? '') !== $status;
+
+        if ($termChanged) {
+            SendDiscordActivityJob::licenceTermUpdated($newEnds !== '' ? $newEnds : null, $lifetime, $status);
+        }
+
+        if (array_key_exists('is_serving', $before) && (($before['is_serving'] === '1') !== $serving)) {
+            SendDiscordActivityJob::licenceServingChanged($serving, (string) ($block['suspend_reason'] ?? '') ?: null);
+        }
     }
 
     /**

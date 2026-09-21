@@ -133,6 +133,15 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(30)->by($request->ip());
         });
 
+        // Discord's own ceiling is roughly thirty messages a minute per webhook.
+        // Every activity notification goes through SendDiscordActivityJob, and
+        // this is what stops a busy hour from turning into a 429 storm that
+        // Discord answers by dropping the messages. One shared budget, because
+        // there is one webhook.
+        RateLimiter::for('discord', function () {
+            return Limit::perMinute(25)->by('activity');
+        });
+
         // Config-sync pokes from the Hub. One caller, and the job behind it is
         // unique-for-60s anyway, so this only has to blunt a loop — a panel
         // save burst of a dozen in a minute is normal and must pass.

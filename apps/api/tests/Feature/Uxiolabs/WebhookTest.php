@@ -231,7 +231,13 @@ class WebhookTest extends TestCase
             'status' => 'processing',
         ])->assertOk();
 
-        Http::assertNothingSent();
+        // Only the supplier's own progress report is under test here: the
+        // transaction's creation notification is this file's fixture talking,
+        // not the webhook.
+        Http::assertNotSent(fn ($request) => str_starts_with(
+            (string) ($request['embeds'][0]['title'] ?? ''),
+            '[UXIOLABS]',
+        ));
         // The row is still updated — only the announcement is skipped.
         $this->assertSame(TransactionStatus::PROCESSING, $transaction->fresh()->status);
     }

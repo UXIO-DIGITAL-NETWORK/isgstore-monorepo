@@ -118,7 +118,10 @@ class ProviderStatusLogTest extends TestCase
 
         app(CheckUxiolabsTransactionStatusAction::class)->execute($transaction->invoice_number);
 
-        $this->assertSame(['[UXIOLABS] ❌ Topup Gagal'], $this->titles());
+        // Two messages, and they say different things: the order is dead (the
+        // transaction's own observer) and the supplier is why (this action).
+        $this->assertContains('[UXIOLABS] ❌ Topup Gagal', $this->titles());
+        $this->assertContains('[TRANSAKSI] 🚨 Gagal', $this->titles());
     }
 
     // ── Not becoming the next flood ─────────────────────────────────────────
