@@ -14,6 +14,7 @@ use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\SiteLicenceState;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -198,6 +199,64 @@ class HubPlanPaymentPageVisibilityTest extends TestCase
 
         $this->assertTrue($rows['website']['lifetime']);
         $this->assertNull($rows['website']['active_until']);
+    }
+
+    /**
+     * The Hub's verdict is the licence line's paid state, not only the mirrored
+     * subscription row.
+     *
+     * That mirror is attached to `DefaultMerchant` + `WebsiteService`, and a
+     * service-code or merchant mismatch there is exactly what left a licence the
+     * client had PAID FOR reading "never paid" on their own panel. This creates
+     * NO subscription row on purpose: the Hub's answer alone must be enough.
+     */
+    public function test_a_hub_lifetime_licence_reads_as_paid_without_a_subscription_row(): void
+    {
+        $this->syncOpeningPlan();
+
+        Setting::updateOrCreate(
+            ['group' => SiteLicenceState::GROUP, 'key' => 'lifetime'],
+            ['value' => '1', 'type' => 'boolean'],
+        );
+        SiteLicenceState::forget();
+
+        $this->asMerchant();
+
+        $rows = collect($this->getJson('/api/v1/payment-admin/service-plan')->assertOk()->json('data'))
+            ->keyBy('service_code');
+
+        $this->assertTrue($rows['website']['lifetime']);
+        $this->assertNull($rows['website']['active_until']);
+    }
+
+    /** A licence with a real period shows the date the Hub set, not "never paid". */
+    public function test_a_hub_dated_licence_fills_active_until(): void
+    {
+        $this->syncOpeningPlan();
+
+        $endsAt = now()->addDays(30);
+
+        Setting::updateOrCreate(
+            ['group' => SiteLicenceState::GROUP, 'key' => 'lifetime'],
+            ['value' => '0', 'type' => 'boolean'],
+        );
+        Setting::updateOrCreate(
+            ['group' => SiteLicenceState::GROUP, 'key' => 'status'],
+            ['value' => 'active', 'type' => 'string'],
+        );
+        Setting::updateOrCreate(
+            ['group' => SiteLicenceState::GROUP, 'key' => 'ends_at'],
+            ['value' => $endsAt->toIso8601String(), 'type' => 'string'],
+        );
+        SiteLicenceState::forget();
+
+        $this->asMerchant();
+
+        $rows = collect($this->getJson('/api/v1/payment-admin/service-plan')->assertOk()->json('data'))
+            ->keyBy('service_code');
+
+        $this->assertFalse($rows['website']['lifetime']);
+        $this->assertSame($endsAt->toIso8601String(), $rows['website']['active_until']);
     }
 
     /**

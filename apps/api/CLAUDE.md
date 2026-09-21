@@ -1019,6 +1019,17 @@ own Monetapay sub-merchant, and reports back the way it always did.
   show "what you must renew" with no live Hub call, and what keeps billing
   working through a Hub outage — which would otherwise quietly mean nobody gets
   billed while the Hub is down.
+- **The licence line the client sees is not just the subscription lookup.** For
+  the site's OWN licence, `MerchantServiceController::plan()` takes the paid
+  state from the Hub's verdict (`SiteLicenceState`) as well, beside the
+  `ServiceSubscription` rows: the mirror row lands on `DefaultMerchant` +
+  `WebsiteService`, and any mismatch there (service code or merchant) used to
+  make a licence the client had PAID FOR read "Belum pernah dibayar" on the one
+  screen that should confirm it. Keyed on the resolved licence code, so a retired
+  `item_key` still flagged `governs_licence` is not mistaken for it. A `one_time`
+  line carries a numeric `duration_days` (the catalogue default, 365 for the
+  website) but bills once — the payment page shows "Sekali bayar" and never
+  "/365 hari"; only a recurring line has a period.
 
 ### One payment, several bills
 

@@ -196,7 +196,15 @@ function ServicePlanSummary({
           <Box className="flex min-w-0 flex-col">
             <Text as="span" className="font-medium">{line.service_name}</Text>
             <Text as="span" variant="small" className="text-muted-foreground">
-              {money(line.amount)} / {line.duration_days} {t("plan.days")}
+              {/* A lifetime or one-time line still carries a numeric
+                  `duration_days` on the wire — the Hub fills it from the
+                  catalogue, 365 for the website — but it bills once, so there is
+                  no period to count. Printing "/365 hari" promises a renewal
+                  that never comes, and beside the "Seumur hidup" on the right it
+                  contradicts itself. Only a recurring line has a period. */}
+              {line.lifetime || line.billing_mode === "one_time"
+                ? `${money(line.amount)} · ${t("plan.oneTime")}`
+                : `${money(line.amount)} / ${line.duration_days} ${t("plan.days")}`}
               {line.governs_licence && ` · ${t("plan.governsSite")}`}
             </Text>
           </Box>

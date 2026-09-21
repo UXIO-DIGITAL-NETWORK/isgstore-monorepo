@@ -13,6 +13,7 @@ use App\Models\Service;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Support\Payment\WebsiteService;
+use App\Support\SiteLicenceState;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -101,6 +102,10 @@ class MerchantServiceController extends Controller
     {
         $merchantId = $request->user()->id;
 
+        // Resolved once: "the service that is this site's own licence". See the
+        // per-line use below.
+        $licenceCode = WebsiteService::code();
+
         $items = HubPlanItem::query()
             ->orderBy('service_code')
             ->orderBy('period_index')
@@ -140,6 +145,28 @@ class MerchantServiceController extends Controller
             $heldForService = $held[$code] ?? collect();
             $lifetime = $heldForService->contains(fn (ServiceSubscription $s) => $s->isLifetime());
             $activeUntil = $lifetime ? null : $heldForService->max('ends_at');
+
+            // This site's own licence lives on the Hub, mirrored into the licence
+            // state — while its subscription row is attached to whichever service
+            // the site resolved as "its own" (and whichever merchant). A mismatch
+            // there made a licence the client had PAID FOR read "Belum pernah
+            // dibayar" on the one screen that should confirm it. So the licence
+            // line takes the Hub's verdict directly, beside what the
+            // subscriptions say. Keyed on the resolved licence code, not
+            // `governs_licence`: an item_key the Hub retired is never deleted
+            // locally and can sit there still flagged as governing.
+            if ($code === $licenceCode && SiteLicenceState::isManaged()) {
+                if (SiteLicenceState::isLifetime()) {
+                    $lifetime = true;
+                    $activeUntil = null;
+                } elseif ($activeUntil === null) {
+                    $endsAt = SiteLicenceState::closure()['ends_at'];
+
+                    if ($endsAt !== null) {
+                        $activeUntil = Carbon::parse($endsAt);
+                    }
+                }
+            }
 
             return [
                 'service_code' => $code,

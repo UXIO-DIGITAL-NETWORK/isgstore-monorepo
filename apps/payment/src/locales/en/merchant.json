@@ -298,6 +298,7 @@
   "plan": {
     "title": "Services in your plan",
     "days": "days",
+    "oneTime": "One-time",
     "governsSite": "governs the site's licence",
     "activeUntil": "Active until {{date}}",
     "lifetime": "Lifetime",
