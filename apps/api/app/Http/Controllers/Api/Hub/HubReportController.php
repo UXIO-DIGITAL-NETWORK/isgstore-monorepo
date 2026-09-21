@@ -10,6 +10,7 @@ use App\Models\GatewayBalanceSnapshot;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\PlatformMutation;
+use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Transaction;
@@ -298,6 +299,85 @@ class HubReportController extends Controller
             ->values();
 
         return $this->successResponse($rows, 'Subscriptions');
+    }
+
+    /**
+     * GET /v1/hub/installations — how far along kita is on each of this site
+     * owner's service installments, the checklist driving the progress, and the
+     * credentials handed over (masked — plaintext leaves only via the reveal
+     * route).
+     *
+     * Scoped to the default merchant, exactly like subscriptions(): one site,
+     * one owner, so (site, service_code) identifies an installation for the Hub.
+     * Progress is DERIVED from the checklist here — never read from a column —
+     * so the Hub's mirror cannot drift from the steps behind it.
+     *
+     * Additive to the reporting contract: a Hub that does not know this route
+     * never calls it, and one that does treats a 404 from an older site as "no
+     * answer", not a failed pull.
+     */
+    public function installations()
+    {
+        $merchantId = DefaultMerchant::id();
+
+        if ($merchantId === null) {
+            return $this->successResponse([], 'Installations');
+        }
+
+        $rows = ServiceInstallation::query()
+            ->with(['service:id,code,name', 'steps.completedBy:id,name', 'details'])
+            ->where('merchant_id', $merchantId)
+            ->orderBy('id')
+            ->get()
+            ->map(function (ServiceInstallation $installation) {
+                $steps = $installation->steps;
+                $total = $steps->count();
+                $completed = $steps->whereNotNull('completed_at')->count();
+
+                return [
+                    'installation_id' => $installation->id,
+                    'service_code' => $installation->service?->code,
+                    'service_name' => $installation->service?->name,
+                    'starts_at' => $installation->starts_at?->toIso8601String(),
+                    'ends_at' => $installation->ends_at?->toIso8601String(),
+                    'notes' => $installation->notes,
+                    'steps_total' => $total,
+                    'steps_completed' => $completed,
+                    'progress_percent' => $total > 0 ? (int) round($completed / $total * 100) : 0,
+                    // No steps is "nothing planned yet", a different thing from
+                    // "planned and not started" — same distinction the panel makes.
+                    'status' => match (true) {
+                        $total === 0 => 'NOT_STARTED',
+                        $completed === $total => 'DONE',
+                        default => 'IN_PROGRESS',
+                    },
+                    'steps' => $steps->map(fn ($step) => [
+                        'id' => $step->id,
+                        'title' => $step->title,
+                        'description' => $step->description,
+                        'sort_order' => (int) $step->sort_order,
+                        'is_completed' => $step->completed_at !== null,
+                        'completed_at' => $step->completed_at?->toIso8601String(),
+                        'completed_by' => $step->completedBy?->name,
+                    ])->values(),
+                    // Masked only. Plaintext is never in this payload — the Hub
+                    // fetches it on demand through the reveal route, which is a
+                    // throttled POST so it is neither cached nor logged in a URL.
+                    'details' => $installation->details->map(fn ($detail) => [
+                        'id' => $detail->id,
+                        'label' => $detail->label,
+                        'is_secret' => (bool) $detail->is_secret,
+                        'masked_value' => $detail->is_secret
+                            ? $detail->maskedValue()
+                            : (string) $detail->value,
+                        'sort_order' => (int) $detail->sort_order,
+                    ])->values(),
+                ];
+            })
+            ->reject(fn ($row) => $row['service_code'] === null)
+            ->values();
+
+        return $this->successResponse($rows, 'Installations');
     }
 
     /**
