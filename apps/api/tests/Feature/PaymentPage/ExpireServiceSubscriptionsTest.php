@@ -110,6 +110,27 @@ class ExpireServiceSubscriptionsTest extends TestCase
     }
 
     /**
+     * A lifetime subscription has no window, so there is nothing to lapse.
+     *
+     * `ends_at <= now()` already excludes NULL in SQL — this pins it, because the
+     * comparison is exactly the kind of thing a later edit "tidies" into
+     * sweeping a licence the client paid for outright.
+     */
+    public function test_a_lifetime_subscription_is_never_expired(): void
+    {
+        $subscription = ServiceSubscription::factory()->create([
+            'merchant_id' => $this->merchant()->id,
+            'ends_at' => null,
+        ]);
+
+        $this->assertTrue($subscription->isLifetime());
+
+        $this->artisan('services:expire')->assertSuccessful();
+
+        $this->assertSame('ACTIVE', $subscription->fresh()->status->value);
+    }
+
+    /**
      * The due date is a DAY, so the day itself is still the client's to pay in.
      *
      * `due_at <= now()` closed a bill at 00:00 on its own due date, and this

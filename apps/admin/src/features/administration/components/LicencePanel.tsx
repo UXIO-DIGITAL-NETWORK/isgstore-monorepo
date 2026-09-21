@@ -65,10 +65,18 @@ export function LicencePanel() {
           </Badge>
         </Row>
 
-        {data.ends_at && <Row label={t("licenceEndsAt")}>{formatWib(data.ends_at, "d MMMM yyyy")}</Row>}
+        {/* A licence bought outright has no end date to show and no countdown to
+            run — the row says so instead of leaving the panel looking empty. */}
+        {data.lifetime ? (
+          <Row label={t("licenceEndsAt")}>{t("licenceLifetime")}</Row>
+        ) : (
+          <>
+            {data.ends_at && <Row label={t("licenceEndsAt")}>{formatWib(data.ends_at, "d MMMM yyyy")}</Row>}
 
-        {data.days_remaining !== null && data.status !== "suspended" && (
-          <Row label={t("licenceDaysRemaining")}>{t("licenceDays", { days: data.days_remaining })}</Row>
+            {data.days_remaining !== null && data.status !== "suspended" && (
+              <Row label={t("licenceDaysRemaining")}>{t("licenceDays", { days: data.days_remaining })}</Row>
+            )}
+          </>
         )}
 
         {data.suspend_reason && <Row label={t("licenceSuspendReason")}>{data.suspend_reason}</Row>}

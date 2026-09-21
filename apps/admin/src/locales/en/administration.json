@@ -112,6 +112,7 @@
   "licenceStatus_none": "Not subscribed",
   "licenceStatus_unconfigured": "Not configured",
   "licenceEndsAt": "Active until",
+  "licenceLifetime": "Lifetime",
   "licenceDaysRemaining": "Days remaining",
   "licenceDays": "{{days}} days",
   "licenceSuspendReason": "Reason",

@@ -21,10 +21,30 @@ class ServiceSubscription extends Model
         'ends_at' => 'datetime',
     ];
 
-    /** Rows that are ACTIVE *and* still inside their window. */
+    /**
+     * Rows that are ACTIVE *and* still inside their window — where a window-less
+     * row is inside it by definition.
+     *
+     * A NULL `ends_at` is a licence bought outright (see the
+     * `allow_lifetime_service_subscriptions` migration). Without the null arm
+     * this scope would quietly exclude every lifetime row — `NULL > now()` is
+     * false — and a site the client had paid for in full would read as unsubscribed.
+     */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', SubscriptionStatus::ACTIVE)->where('ends_at', '>', now());
+        return $query->where('status', SubscriptionStatus::ACTIVE)
+            ->where(fn (Builder $q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', now()));
+    }
+
+    /**
+     * A subscription with no end date — paid once, never expires.
+     *
+     * The single definition of the sentinel, so "lifetime" cannot come to mean
+     * two different things. Same rule as `MembershipSubscription::isLifetime()`.
+     */
+    public function isLifetime(): bool
+    {
+        return $this->ends_at === null;
     }
 
     public function merchant()

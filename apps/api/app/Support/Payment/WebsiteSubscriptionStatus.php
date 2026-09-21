@@ -54,6 +54,7 @@ final class WebsiteSubscriptionStatus
                     $closure['ends_at'] ? Carbon::parse($closure['ends_at']) : null,
                     null,
                     $closure['checkout_url'] ?: self::checkoutUrl($service),
+                    SiteLicenceState::isLifetime(),
                 ),
                 ['suspend_reason' => $closure['reason']],
             );
@@ -68,6 +69,23 @@ final class WebsiteSubscriptionStatus
             return self::payload('unconfigured');
         }
 
+        $checkoutUrl = self::checkoutUrl($service);
+
+        // A licence bought outright answers before any date does: there is
+        // nothing to count down to, and `max(ends_at)` returns null for it — the
+        // very null that means "never subscribed", which is the opposite of what
+        // a client who has paid in full should read.
+        $lifetime = ServiceSubscription::query()
+            ->where('merchant_id', $merchantId)
+            ->where('service_id', $service->id)
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->whereNull('ends_at')
+            ->exists();
+
+        if ($lifetime) {
+            return self::payload('active', $service, null, null, $checkoutUrl, true);
+        }
+
         // The raw maximum, deliberately **not** `scopeActive()`: that scope also
         // filters `ends_at > now()`, which would return nothing for a lapsed
         // subscription and make "expired" indistinguishable from "never
@@ -78,8 +96,6 @@ final class WebsiteSubscriptionStatus
             ->where('service_id', $service->id)
             ->where('status', SubscriptionStatus::ACTIVE)
             ->max('ends_at');
-
-        $checkoutUrl = self::checkoutUrl($service);
 
         if (! $endsAt) {
             // Never subscribed — the moment the CTA matters most, so the link
@@ -125,6 +141,7 @@ final class WebsiteSubscriptionStatus
         ?Carbon $endsAt = null,
         ?int $daysRemaining = null,
         ?string $checkoutUrl = null,
+        bool $lifetime = false,
     ): array {
         return [
             'status' => $status,
@@ -138,6 +155,9 @@ final class WebsiteSubscriptionStatus
             'ends_at' => $endsAt?->toIso8601String(),
             'days_remaining' => $daysRemaining,
             'checkout_url' => $checkoutUrl,
+            // Paid once, no end date: the card says "Seumur hidup" instead of a
+            // date, and never nags about a renewal that will not come.
+            'lifetime' => $lifetime,
             // Whether the public side is actually up. Additive to the Hub
             // contract; older readers ignore it.
             'is_serving' => ! SiteLicenceState::isManaged() || SiteLicenceState::isServing(),

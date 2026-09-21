@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\Hub;
 
 use App\Enums\ServiceInvoiceStatus;
-use App\Enums\SubscriptionStatus;
 use App\Enums\TransactionStatus;
 use App\Enums\WithdrawalStatus;
 use App\Http\Controllers\Controller;
@@ -67,9 +66,12 @@ class HubReportController extends Controller
             'oldest_pending_minutes' => $oldestPendingAt
                 ? (int) Carbon::parse($oldestPendingAt)->diffInMinutes(now())
                 : null,
+            // `active()` rather than a hand-written date comparison: it is the
+            // one definition of the window, and it already counts a lifetime
+            // subscription (NULL ends_at) as active — which a raw
+            // `ends_at > now()` would silently drop.
             'active_subscriptions_count' => (int) ServiceSubscription::query()
-                ->where('status', SubscriptionStatus::ACTIVE)
-                ->where('ends_at', '>', now())
+                ->active()
                 ->count(),
             'paid_service_invoices_this_month' => (int) ServiceInvoice::query()
                 ->where('status', ServiceInvoiceStatus::PAID)

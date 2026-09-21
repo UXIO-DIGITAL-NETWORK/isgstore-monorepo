@@ -34,6 +34,11 @@ class ExpireServiceSubscriptions extends Command
 
         $lapsed = ServiceSubscription::query()
             ->where('status', SubscriptionStatus::ACTIVE)
+            // Explicit, like ExpireMemberships: a NULL window is a lifetime
+            // subscription and must never be swept. `<= now()` already excludes
+            // NULL in SQL, and saying so here is what keeps that true when
+            // somebody edits the comparison.
+            ->whereNotNull('ends_at')
             ->where('ends_at', '<=', now())
             ->get();
 
