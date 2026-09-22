@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Hub;
 
 use App\Models\GatewayBalanceSnapshot;
+use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceInvoice;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
@@ -86,6 +88,77 @@ class HubReportEndpointsTest extends TestCase
         // The test client reports 127.0.0.1 — listing it opens the gate.
         config(['services.hub.allowed_ips' => '10.9.9.9, 127.0.0.1']);
         $this->pull('/api/v1/hub/summary')->assertOk();
+    }
+
+    /**
+     * /v1/hub/balances answers by OUR sales rules, not by the gateway: settled
+     * sales only, minus the withdrawals that still hold money. The Hub mirrors
+     * the sub-merchant's gateway figure separately — this is the other half, and
+     * the one that says what the merchant may actually take.
+     */
+    public function test_balances_report_the_merchant_figure_by_settlement_rules(): void
+    {
+        config(['services.withdrawal.hold_buffer_days' => 1]);
+
+        $merchant = User::factory()->create([
+            'role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id,
+        ]);
+
+        // QRIS settles T+1; with the 1-day buffer a sale clears after 48h.
+        $this->paidSale($merchant, 'qris', 100000, now()->subDays(3));
+        $this->paidSale($merchant, 'qris', 40000, now()->subHour());
+
+        $data = $this->pull('/api/v1/hub/balances')->assertOk()->json('data');
+
+        $this->assertSame(100000, $data['merchant_available']);
+        $this->assertSame(40000, $data['merchant_held']);
+        $this->assertSame(140000, $data['sales_total']);
+        $this->assertSame(0, $data['withdrawn_hold']);
+        $this->assertSame(1, $data['hold_buffer_days']);
+    }
+
+    public function test_balances_are_unknown_rather_than_zero_without_a_merchant(): void
+    {
+        $data = $this->pull('/api/v1/hub/balances')->assertOk()->json('data');
+
+        // No merchant yet: unknown, never a tidy zero the Hub would draw a
+        // conclusion from.
+        $this->assertNull($data['merchant_available']);
+        $this->assertNull($data['merchant_held']);
+        // The platform's own profit is still a real number.
+        $this->assertSame(0, $data['platform_available']);
+    }
+
+    public function test_balances_requires_the_hub_key(): void
+    {
+        $this->getJson('/api/v1/hub/balances')->assertStatus(403);
+    }
+
+    /** A paid sale on the given channel, with its payment stamped paid at $paidAt. */
+    private function paidSale(User $merchant, string $channelCode, int $amount, \DateTimeInterface $paidAt): void
+    {
+        $channel = PaymentChannel::firstOrCreate(
+            ['channel_code' => $channelCode],
+            PaymentChannel::factory()->make(['channel_code' => $channelCode])->getAttributes(),
+        );
+
+        $transaction = Transaction::factory()->create([
+            'merchant_id' => $merchant->id,
+            'payment_channel_id' => $channel->id,
+            'amount_base' => $amount,
+            'amount_fee' => 0,
+            'amount_total' => $amount,
+            'status' => 'PAID',
+            'created_at' => $paidAt,
+        ]);
+
+        Payment::factory()->create([
+            'transaction_id' => $transaction->id,
+            'payment_channel_id' => $channel->id,
+            'gross_amount' => $amount,
+            'status' => '3',
+            'paid_at' => $paidAt,
+        ]);
     }
 
     public function test_summary_shape_is_pinned(): void

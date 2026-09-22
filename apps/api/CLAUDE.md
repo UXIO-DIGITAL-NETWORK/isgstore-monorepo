@@ -908,6 +908,12 @@ default) schedules nothing, calls nowhere, exposes nothing.
   deletes any leftover row (leaving it deactivated instead when transactions or
   other money paths reference it). Absence from the contract is also what stops
   `hub:sync-channels` re-creating it.
+- `GET /v1/hub/balances` reports this SITE's merchant figures by our sales rules —
+  `merchant_available` (settled sales − withdraw-hold), `merchant_held`,
+  `sales_total`, `withdrawn_hold` — beside the platform's own
+  `platform_available`. It makes no gateway call (settlement is a ledger
+  question), and the Hub reads a 404 from an older deploy as unknown, never as
+  zero.
 - Monetapay balance cache is keyed per `(sub_mch_id, currency)` —
   `MonetapayService::balanceCacheKey()` is the shared key helper for
   cache-busting callers, and with no argument it resolves the configured
