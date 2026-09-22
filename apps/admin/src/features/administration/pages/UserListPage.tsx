@@ -17,16 +17,22 @@ import type { AdminUser } from "../types/administration.type";
 
 const DEFAULT_PAGE_SIZE = 10;
 
+/**
+ * The client's own people. Staff and system accounts (payment-admin,
+ * payment-internal, the Hub system user) also live in `users`, and this list is
+ * not their home.
+ */
+const LISTED_ROLES = ["admin", "member"];
+
 export function UserListPage() {
   const { t } = useTranslation("administration");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-  // Every account, not only admins: this is the client's whole user base, and
-  // the panel is where an operator looks one up to see what they bought.
+  // Admin + member only: their whole user base, searched and paged server-side.
   const params = useMemo(
-    () => ({ search: search || undefined, page, per_page: pageSize }),
+    () => ({ search: search || undefined, page, per_page: pageSize, roles: LISTED_ROLES }),
     [search, page, pageSize],
   );
   const { data, isLoading, isError, refetch } = useUserList(params);

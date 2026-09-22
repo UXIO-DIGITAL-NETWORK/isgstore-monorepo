@@ -117,6 +117,8 @@ export interface AdministrationListParams {
   search?: string;
   role_id?: string;
   role?: string;
+  /** Allowlist of role names in one request, e.g. the user list's admin+member. */
+  roles?: string[];
   payment_type?: string;
   page?: number;
   per_page?: number;

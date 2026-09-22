@@ -18,6 +18,10 @@ class IndexUserRequest extends FormRequest
             'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'exclude_role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'role' => ['nullable', 'string', 'in:admin,member,vip,reseller,agent,payment-internal,payment-admin'],
+            // Allowlist of roles in one request — the admin list shows only the
+            // client's own people, leaving staff/internal roles out.
+            'roles' => ['nullable', 'array'],
+            'roles.*' => ['string', 'in:admin,member,vip,reseller,agent,payment-internal,payment-admin'],
 
             // Filter Saldo & Poin
             'min_balance' => ['nullable', 'numeric', 'min:0'],

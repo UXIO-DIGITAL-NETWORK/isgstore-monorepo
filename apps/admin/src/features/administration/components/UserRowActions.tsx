@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import { Ban, MoreVertical, RotateCcw, Trash2, UserX, Wallet } from "lucide-react";
+import { Ban, Eye, MoreVertical, RotateCcw, Trash2, UserX, Wallet } from "lucide-react";
 
 import { Can } from "@/components/common/Can";
 import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
+import { Link } from "@/components/common/Link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -46,6 +47,13 @@ export function UserRowActions({ user }: { user: AdminUser }) {
           align="end"
           className="rounded-2xl"
         >
+          {/* The whole account. The row's name links here too, but the menu is
+              where an operator's hand already is. */}
+          <DropdownMenuItem asChild>
+            <Link href={`/admin/users/${user.id}`}>
+              <Eye />{t("detail")}</Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <Can permission="users.adjust-balance">
             <DropdownMenuItem onSelect={() => setAdjustOpen(true)}>
               <Wallet />{t("adjustBalance")}</DropdownMenuItem>
