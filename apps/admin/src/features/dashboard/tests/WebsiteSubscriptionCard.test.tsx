@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 
-import { makeUser, renderRoute, screen } from "@/test/test-utils";
+import { makeUser, renderRoute, screen, within } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { websiteSubscriptionService } from "../services/websiteSubscription.service";
 
@@ -34,13 +35,25 @@ describe("WebsiteSubscriptionCard", () => {
     expect(screen.getByText("9 days remaining")).toBeInTheDocument();
   });
 
-  it("lists the services that govern the term, with how long each lasts", async () => {
-    // The overall term says "up until X"; these say WHAT keeps it up and for
-    // how long. The licence + any add-on stacked on it.
+  it("lists each service with just its name and how long it lasts", async () => {
+    // One line per service and nothing else: the caption that used to sit over
+    // the list was longer than the list.
     await renderRoute("/admin/dashboard");
 
-    expect(await screen.findByText("Governs the site's licence")).toBeInTheDocument();
-    expect(screen.getByText("Active until 14 Sep 2026")).toBeInTheDocument();
+    expect(await screen.findByText("Active until 14 Sep 2026")).toBeInTheDocument();
+    expect(screen.queryByText("Governs the site's licence")).not.toBeInTheDocument();
+  });
+
+  it("opens the full list from Detail", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/dashboard");
+    await screen.findByText("Active until 14 Sep 2026");
+
+    await user.click(screen.getByRole("button", { name: "Detail" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Site subscription")).toBeInTheDocument();
+    expect(within(dialog).getByText("Active until 14 Sep 2026")).toBeInTheDocument();
   });
 
   it("prints no period for a lifetime licence", async () => {
