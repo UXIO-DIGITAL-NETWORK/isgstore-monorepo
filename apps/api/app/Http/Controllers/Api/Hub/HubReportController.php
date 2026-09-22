@@ -21,6 +21,7 @@ use App\Support\Integration\IntegrationConfig;
 use App\Support\Payment\DefaultMerchant;
 use App\Support\Payment\WebsiteSubscriptionStatus;
 use App\Support\Payout\BankCatalog;
+use App\Support\Wallet\MerchantBalance;
 use App\Support\Wallet\PlatformBalance;
 use App\Support\Withdrawal\WithdrawalFeeCalculator;
 use App\Traits\ApiResponse;
@@ -247,6 +248,57 @@ class HubReportController extends Controller
                 ->values()
                 ->all(),
         ], 'Withdrawal context');
+    }
+
+    /**
+     * GET /v1/hub/balances — what this site's merchant can actually withdraw, by
+     * our own sales rules.
+     *
+     * The Hub already mirrors this site's Monetapay SUB-MERCHANT balance, which
+     * answers "what is sitting at the gateway". It cannot answer "what is the
+     * merchant's to take", because that is derived HERE: paid sales that have
+     * cleared their channel's settlement window plus the fraud buffer, minus every
+     * non-refunded withdrawal. `MerchantBalance` is the single definition of that
+     * figure, and it is exposed rather than recomputed on the Hub — which holds
+     * none of the transactions the rule is about.
+     *
+     * Deliberately makes no gateway call: settlement is a ledger question, not a
+     * live one, and the Hub's balance pull already carries its own 15s timeout.
+     *
+     * Additive to the reporting contract: a Hub that does not know this route
+     * never calls it, and a null figure means unknown — never zero.
+     */
+    public function balances()
+    {
+        $merchantId = DefaultMerchant::id();
+        $buffer = max(0, (int) config('services.withdrawal.hold_buffer_days', 1));
+
+        if ($merchantId === null) {
+            // No merchant on this site yet: the merchant figures are unknown,
+            // while the platform's own profit still is not.
+            return $this->successResponse([
+                'merchant_available' => null,
+                'merchant_held' => null,
+                'sales_total' => null,
+                'withdrawn_hold' => null,
+                'platform_available' => PlatformBalance::available(),
+                'hold_buffer_days' => $buffer,
+                'captured_at' => now()->toIso8601String(),
+            ], 'Balances');
+        }
+
+        return $this->successResponse([
+            // Withdrawable now: settled sales minus withdrawals that still hold money.
+            'merchant_available' => MerchantBalance::available($merchantId),
+            // Earned but still inside the holding period — the merchant's "Saldo Tertahan".
+            'merchant_held' => MerchantBalance::heldSalesTotal($merchantId),
+            'sales_total' => MerchantBalance::salesTotal($merchantId),
+            'withdrawn_hold' => MerchantBalance::withdrawnHold($merchantId),
+            // kita's own profit on this site, beside the merchant's.
+            'platform_available' => PlatformBalance::available(),
+            'hold_buffer_days' => $buffer,
+            'captured_at' => now()->toIso8601String(),
+        ], 'Balances');
     }
 
     /**

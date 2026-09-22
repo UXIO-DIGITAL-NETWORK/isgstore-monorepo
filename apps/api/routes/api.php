@@ -843,6 +843,11 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
     // form. Read-only, so the read key alone is the right gate — a site with the
     // write channel off can still be looked at.
     Route::get('/withdrawal-context', [HubReportController::class, 'withdrawalContext']);
+    // What this site's merchant can actually withdraw by OUR sales rules
+    // (settled sales − hold − non-refunded withdrawals), beside what sits in the
+    // platform account. A ledger answer, so no gateway call; additive, so a Hub
+    // that does not know this route simply never asks.
+    Route::get('/balances', [HubReportController::class, 'balances']);
     // What this site's owner actually holds, per service — so the Hub can answer
     // "which sites subscribe to X" from real state, not only from what it sold.
     Route::get('/subscriptions', [HubReportController::class, 'subscriptions']);

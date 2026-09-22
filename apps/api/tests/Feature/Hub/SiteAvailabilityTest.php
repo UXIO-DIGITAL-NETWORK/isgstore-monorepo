@@ -245,6 +245,10 @@ class SiteAvailabilityTest extends TestCase
             'DELETE api/v1/hub/installation-steps/{serviceInstallationStep}',
             'GET api/broadcasting/auth',
             'GET api/v1/health',
+            // What this site's merchant may withdraw by our sales rules. Read-only
+            // and key-gated, and the figure an operator needs while a site is dark
+            // and they are deciding whether to switch it back on.
+            'GET api/v1/hub/balances',
             'GET api/v1/hub/channels',
             // A live sub-merchant balance reading. Read-only and key-gated like
             // its neighbours; it asserts nothing the Hub cannot already see, and
