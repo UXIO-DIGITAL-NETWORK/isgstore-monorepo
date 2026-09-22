@@ -83,7 +83,9 @@
       "email": "Email",
       "phone": "WhatsApp number",
       "password": "Password",
-      "passwordConfirmation": "Repeat password"
+      "passwordConfirmation": "Repeat password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     },
     "submitRegister": "Create Account & Claim",
     "submitAttach": "Claim to This Account",
