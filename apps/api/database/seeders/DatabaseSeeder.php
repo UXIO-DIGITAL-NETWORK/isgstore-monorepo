@@ -17,8 +17,8 @@ class DatabaseSeeder extends Seeder
      *
      * What is seeded is only what the app cannot start without, or what is
      * configuration rather than inventory: roles, three known logins, payment
-     * channels, pricing rules, the Uxiolabs supplier, category types, plus CMS
-     * content.
+     * channels, pricing rules, the Uxiolabs supplier, category types, plus the
+     * static pages and site settings.
      *
      * The catalogue seeders (Category, SubCategory, ServerCategory,
      * ServerCategoryOption, OrderFormSchema, Product, SupplierCategory,
@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
      * Order still follows the foreign keys:
      * 1. Foundation (roles, category types, suppliers, payment channels, pricing)
      * 2. Users (depends on roles)
-     * 3. CMS content, plans, services
+     * 3. Static pages + settings
      */
     public function run(): void
     {
@@ -70,21 +70,22 @@ class DatabaseSeeder extends Seeder
             // ActivityLogSeeder::class,
 
             // === 6. CMS Content ===
-            // No BannerSeeder: it seeded ten rows whose image files this
+            // Only the STATIC pages and the site's own settings are seeded.
+            // Promos, flash sales and the editorial content — announcements,
+            // articles and their categories, FAQ, testimonials — are the
+            // operator's own listing, not the app's: a fresh install shows those
+            // admin pages EMPTY. Their seeders used to ship sample rows
+            // (HEMAT10, "Flash Sale Mingguan", Admin_Topupgame's articles) that
+            // every install had to delete before publishing anything real.
+            //
+            // § The static pages stay: they carry backing copy the storefront
+            // links to (privacy policy, terms, refund policy).
+            //
+            // § No BannerSeeder either: it seeded ten rows whose image files this
             // repository never shipped, so the storefront's feed dropped every
             // one of them. Hero artwork is the operator's to upload.
-            AnnouncementSeeder::class,
-
-            // § Content & marketing. FlashSaleSeeder self-disables when there
-            // are no active products, which is now always the case on a fresh
-            // install — it stays in the list for installs that have stock.
-            ArticleSeeder::class,
-            FaqSeeder::class,
             PageSeeder::class,
-            TestimonialSeeder::class,
             SettingSeeder::class,
-            PromoSeeder::class,
-            FlashSaleSeeder::class,
 
             // § Payment-page services are deliberately NOT seeded either. The
             // Hub owns that catalogue now: `hub:sync-catalog`
