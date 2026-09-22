@@ -20,6 +20,10 @@ class PaymentChannelSeeder extends Seeder
      * fee — the customer covers Monetapay's cut, so kita breaks even on fees (its
      * profit is the product/service margin, not the payment fee). Editable per
      * channel via the finance Biaya Channel page.
+     *
+     * Every channel here is offered. BCA VA used to sit in this list, seeded
+     * inactive; it is gone now — the gateway has no BCA VA, and a deactivated row
+     * still showed on the admin Metode Pembayaran page. See the removal migration.
      */
     public function run(): void
     {
@@ -32,10 +36,6 @@ class PaymentChannelSeeder extends Seeder
             ['Saldo (Wallet)', 'balance', 'balance', 0, false, 0, 0],
 
             // Virtual Account — flat gateway fee, no gateway percent.
-            // BCA isn't in the Monetapay contract, so its rate can never be
-            // verified — deactivated by decision (27 Aug 2026); the row stays
-            // so historical bca_va payments keep resolving.
-            ['BCA Virtual Account', 'virtual_account', 'bca_va', 10000, true, 1900, 0],
             ['BRI Virtual Account', 'virtual_account', 'bri_va', 10000, true, 1500, 0],
             ['BNI Virtual Account', 'virtual_account', 'bni_va', 10000, true, 1500, 0],
             ['Mandiri Virtual Account', 'virtual_account', 'mandiri_va', 10000, true, 1900, 0],
@@ -64,8 +64,7 @@ class PaymentChannelSeeder extends Seeder
                 'payment_type' => $type,
                 'channel_code' => $code,
                 'min_amount' => $min,
-                // bca_va is seeded inactive — not in the Monetapay contract.
-                'is_active' => $code !== 'bca_va',
+                'is_active' => true,
                 'is_single_use' => $singleUse,
                 // Admin fee (Biaya Admin) = gateway fee: customer covers Monetapay's cut.
                 'fee_flat' => $gwFlat,

@@ -46,6 +46,10 @@ class DatabaseSeeder extends Seeder
 
             // === 2. Users ===
             UserSeeder::class,
+            // The one login that skips the second factor (two_factor_exempt).
+            // Its own seeder so a live install can add it without re-running
+            // UserSeeder — which would reset the operator passwords.
+            DeveloperUserSeeder::class,
             // System account for Hub-driven money-path actions (approved_by).
             HubSystemUserSeeder::class,
 

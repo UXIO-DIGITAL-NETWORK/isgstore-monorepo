@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['role_id', 'name', 'username', 'avatar', 'email', 'google_id', 'password', 'phone', 'balance', 'point', 'status', 'locale', 'timezone', 'email_verified_at'])]
+#[Fillable(['role_id', 'name', 'username', 'avatar', 'email', 'google_id', 'password', 'phone', 'balance', 'point', 'status', 'locale', 'timezone', 'email_verified_at', 'two_factor_exempt'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -40,6 +40,9 @@ class User extends Authenticatable
             'two_factor_pending_created_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             'two_factor_last_used_timestep' => 'integer',
+            // The deliberate hole: this account never owes a second factor.
+            // See App\Support\Auth\TwoFactorPolicy.
+            'two_factor_exempt' => 'boolean',
         ];
     }
 

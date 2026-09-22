@@ -27,8 +27,10 @@ class MonetapayContractFeesTest extends TestCase
         $this->assertFalse(MonetapayContractFees::has('nonexistent_va'));
         $this->assertNull(MonetapayContractFees::expectedGatewayFee('nonexistent_va', 50000));
         $this->assertTrue(MonetapayContractFees::has('dana'));
-        // BCA VA is provisionally pinned to the Mandiri rate until Monetapay confirms.
-        $this->assertSame(1900, MonetapayContractFees::expectedGatewayFee('bca_va', 50000));
+        // BCA VA is not offered by this site's gateway: no rate to compare
+        // against, and nothing for the Hub sync to treat as activatable.
+        $this->assertFalse(MonetapayContractFees::has('bca_va'));
+        $this->assertNull(MonetapayContractFees::expectedGatewayFee('bca_va', 50000));
     }
 
     public function test_contract_rates_match_the_agreement(): void
