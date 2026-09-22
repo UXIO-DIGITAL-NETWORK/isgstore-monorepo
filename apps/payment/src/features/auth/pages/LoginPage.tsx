@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { PasswordInput } from "@/components/common/PasswordInput";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Input } from "@/components/ui/input";
@@ -84,7 +85,8 @@ export default function LoginPage() {
           {errors.email && <Text className="text-red-500 text-xs font-medium">{errors.email.message}</Text>}
         </Box>
 
-        {/* Password Input */}
+        {/* Password Input — with the show/hide toggle, so a mistyped character is
+            visible before the sign-in attempt rather than after. */}
         <Box className="space-y-2">
           <Label
             htmlFor="password"
@@ -93,15 +95,14 @@ export default function LoginPage() {
             Password
           </Label>
           <Box className="relative">
-            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <Box className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
               <Lock className="w-5 h-5 text-slate-400" />
             </Box>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               {...register("password")}
               placeholder="••••••••"
-              className="w-full h-auto pl-10 pr-4 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:border-black"
+              className="w-full h-auto pl-10 py-2.5 bg-white border-slate-200 rounded-xl text-sm focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:border-black"
             />
           </Box>
           {errors.password && <Text className="text-red-500 text-xs font-medium">{errors.password.message}</Text>}

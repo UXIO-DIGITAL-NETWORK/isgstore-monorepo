@@ -6,6 +6,7 @@ import { AlertTriangle, LogIn, UserPlus, Wallet } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Link } from "@/components/common/Link";
+import { PasswordInput } from "@/components/common/PasswordInput";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -192,7 +193,13 @@ export default function ClaimAccountCard({ token, amount, contact, locale, onCla
             <Box as="label" htmlFor="claim-password" className="font-inter text-[13px] text-white/55">
               {t("account.fields.password")}
             </Box>
-            <Input id="claim-password" {...register("password")} type="password" placeholder="••••••" />
+            <PasswordInput
+              id="claim-password"
+              {...register("password")}
+              placeholder="••••••"
+              showLabel={t("account.fields.showPassword")}
+              hideLabel={t("account.fields.hidePassword")}
+            />
             {field("password")}
           </Box>
 
@@ -200,7 +207,13 @@ export default function ClaimAccountCard({ token, amount, contact, locale, onCla
             <Box as="label" htmlFor="claim-password-confirm" className="font-inter text-[13px] text-white/55">
               {t("account.fields.passwordConfirmation")}
             </Box>
-            <Input id="claim-password-confirm" {...register("password_confirmation")} type="password" placeholder="••••••" />
+            <PasswordInput
+              id="claim-password-confirm"
+              {...register("password_confirmation")}
+              placeholder="••••••"
+              showLabel={t("account.fields.showPassword")}
+              hideLabel={t("account.fields.hidePassword")}
+            />
             {field("password_confirmation")}
           </Box>
 

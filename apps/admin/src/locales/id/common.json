@@ -43,5 +43,9 @@
   },
   "field": {
     "moreInformation": "Informasi lebih lanjut"
+  },
+  "password": {
+    "show": "Tampilkan password",
+    "hide": "Sembunyikan password"
   }
 }

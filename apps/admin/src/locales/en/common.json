@@ -43,5 +43,9 @@
   },
   "field": {
     "moreInformation": "More information"
+  },
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password"
   }
 }

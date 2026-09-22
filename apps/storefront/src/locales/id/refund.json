@@ -83,7 +83,9 @@
       "email": "Email",
       "phone": "Nomor WhatsApp",
       "password": "Password",
-      "passwordConfirmation": "Ulangi password"
+      "passwordConfirmation": "Ulangi password",
+      "showPassword": "Tampilkan password",
+      "hidePassword": "Sembunyikan password"
     },
     "submitRegister": "Buat Akun & Klaim Dana",
     "submitAttach": "Klaim ke Akun Ini",
