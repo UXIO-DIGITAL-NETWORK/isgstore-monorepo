@@ -22,6 +22,25 @@ export type WebsiteSubscriptionStatus =
    */
   | "suspended";
 
+/**
+ * One service the Hub marked as governing the site's term.
+ *
+ * `HubPlanItem` publishes the plan; only a `governs_licence` line can move
+ * `sites.licence_ends_at` — the licence itself, plus any add-on stacked on it.
+ */
+export interface GoverningService {
+  service_code: string;
+  service_name: string;
+  /** `billed` | `one_time` | `prepaid`. */
+  billing_mode: string;
+  duration_days: number;
+  governs_licence: boolean;
+  /** Bought outright — nothing to count down to. */
+  lifetime: boolean;
+  /** Paid up to for this service. Null when `lifetime`. */
+  active_until: string | null;
+}
+
 export interface WebsiteSubscription {
   status: WebsiteSubscriptionStatus;
   service: { id: number; code: string; name: string } | null;
@@ -33,6 +52,11 @@ export interface WebsiteSubscription {
    * Optional: an older API omits it.
    */
   lifetime?: boolean;
+  /**
+   * The services that keep the site up, each with its own duration, so "up until
+   * X" can be read with WHAT buys it. Optional — empty on a standalone site.
+   */
+  services?: GoverningService[];
   /** Deep link into the site's payment panel; the client signs in there. */
   checkout_url: string | null;
   /** Whether the public side is actually up. Optional — an older API omits it. */

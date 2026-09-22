@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\RoleType;
+use App\Models\HubPlanItem;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceSubscription;
@@ -170,5 +171,88 @@ class WebsiteSubscriptionTest extends TestCase
         $this->getJson('/api/v1/website-subscription')
             ->assertOk()
             ->assertJsonPath('data.service.code', 'my-site');
+    }
+
+    public function test_it_reports_which_services_govern_the_term(): void
+    {
+        $this->actingAsAdmin();
+        $this->merchant();
+        $this->websiteService();
+
+        // The licence itself, plus a billed add-on stacked on it.
+        $this->governingItem([
+            'service_code' => 'uxiolabs',
+            'service_name' => 'Lisensi Situs',
+            'period_ends_at' => now()->addDays(365),
+        ]);
+        $this->governingItem([
+            'item_key' => '01LIC:1',
+            'period_index' => 1,
+            'service_code' => 'extra-mail',
+            'service_name' => 'Extra Mail',
+            'duration_days' => 30,
+            'period_ends_at' => now()->addDays(30),
+        ]);
+        // A setup fee: billed once, but it does not carry the term, so it must
+        // not sit beside the licence as if it did.
+        $this->governingItem([
+            'item_key' => '01SET:0',
+            'service_code' => 'setup',
+            'service_name' => 'Setup Fee',
+            'governs_licence' => false,
+        ]);
+
+        $services = $this->getJson('/api/v1/website-subscription')
+            ->assertOk()
+            ->json('data.services');
+
+        $this->assertCount(2, $services);
+        // The licence leads; the add-on follows.
+        $this->assertSame('uxiolabs', $services[0]['service_code']);
+        $this->assertSame('extra-mail', $services[1]['service_code']);
+        $this->assertTrue($services[0]['governs_licence']);
+        $this->assertSame(365, $services[0]['duration_days']);
+        $this->assertFalse($services[0]['lifetime']);
+        $this->assertNotNull($services[0]['active_until']);
+    }
+
+    public function test_a_one_time_governing_line_reads_as_lifetime(): void
+    {
+        $this->actingAsAdmin();
+        $this->merchant();
+        $this->websiteService();
+
+        // Bought outright: there is nothing to count down to, so the line must
+        // carry no end date rather than invent one.
+        $this->governingItem(['billing_mode' => HubPlanItem::MODE_ONE_TIME]);
+
+        $services = $this->getJson('/api/v1/website-subscription')
+            ->assertOk()
+            ->json('data.services');
+
+        $this->assertCount(1, $services);
+        $this->assertTrue($services[0]['lifetime']);
+        $this->assertNull($services[0]['active_until']);
+    }
+
+    /** One Hub plan line, governing the term unless said otherwise. */
+    private function governingItem(array $overrides = []): HubPlanItem
+    {
+        return HubPlanItem::create(array_merge([
+            'item_key' => '01LIC:0',
+            'plan_uid' => '01LIC',
+            'period_index' => 0,
+            'service_code' => 'uxiolabs',
+            'service_name' => 'Lisensi Situs',
+            'amount' => 12_000_000,
+            'duration_days' => 365,
+            'billing_mode' => 'billed',
+            'governs_licence' => true,
+            'period_starts_at' => now()->subDay(),
+            'period_ends_at' => now()->addDays(365),
+            'due_at' => now(),
+            'is_active' => true,
+            'synced_at' => now(),
+        ], $overrides));
     }
 }

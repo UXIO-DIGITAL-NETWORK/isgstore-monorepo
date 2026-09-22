@@ -5,6 +5,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/utils/date";
 import { useWebsiteSubscription } from "../hooks/useWebsiteSubscription";
 
 /**
@@ -38,14 +39,18 @@ export function WebsiteSubscriptionCard() {
     data.status === "suspended"
       ? (data.suspend_reason ?? t("siteDisabled"))
       : data.status === "expired"
-        ? "Langganan berakhir"
+        ? t("subscriptionExpired")
         : data.status === "none"
-          ? "Belum berlangganan"
+          ? t("subscriptionNone")
           : data.lifetime
             // Nothing to count down to, and nothing to renew — saying a number
             // of days here would invent a deadline the client does not have.
-            ? "Seumur hidup"
-            : `${data.days_remaining} hari tersisa`;
+            ? t("subscriptionLifetime")
+            : t("subscriptionDaysRemaining", { days: data.days_remaining });
+
+  // WHAT keeps the site up, beside the one overall term above it. Empty on a
+  // standalone site, where there is no Hub plan to read.
+  const services = data.services ?? [];
 
   return (
     <SidebarMenu>
@@ -80,6 +85,45 @@ export function WebsiteSubscriptionCard() {
               >
                 {summary}
               </Text>
+              {services.length > 0 && (
+                // The services that actually carry the term, each with how long
+                // it lasts. A lifetime/one-time line prints no period at all:
+                // "365 hari" beside "Seumur hidup" contradicts itself.
+                <Box className="mt-1 flex w-full flex-col gap-0.5 border-t border-border/60 pt-1">
+                  <Text
+                    as="span"
+                    variant="small"
+                    className="truncate text-muted-foreground"
+                  >
+                    {t("licenceServices")}
+                  </Text>
+                  {services.map((service) => (
+                    <Box
+                      key={service.service_code}
+                      className="flex items-baseline justify-between gap-2"
+                    >
+                      <Text
+                        as="span"
+                        variant="small"
+                        className="truncate"
+                      >
+                        {service.service_name}
+                      </Text>
+                      <Text
+                        as="span"
+                        variant="small"
+                        className="shrink-0 tabular-nums text-muted-foreground"
+                      >
+                        {service.lifetime
+                          ? t("subscriptionLifetime")
+                          : service.active_until
+                            ? t("licenceActiveUntil", { date: formatDate(service.active_until) })
+                            : t("licenceNoPeriod")}
+                      </Text>
+                    </Box>
+                  ))}
+                </Box>
+              )}
               <Text
                 as="span"
                 variant="small"

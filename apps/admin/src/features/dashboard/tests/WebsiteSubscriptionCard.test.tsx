@@ -24,14 +24,52 @@ describe("WebsiteSubscriptionCard", () => {
     // The CTA names the action, not kita's brand: this card sits in the
     // client's own panel, and the service label beside it already carries the
     // site's name.
-    const link = await screen.findByRole("link", { name: /Perpanjang langganan/ });
+    const link = await screen.findByRole("link", { name: /Renew subscription/ });
 
     expect(link).toHaveAttribute("href", "https://pay.example.test/app/payment-admin/services/1/checkout");
     // The route is behind a login over there, so it must open in a new tab
     // rather than navigating the admin out of their own panel.
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
-    expect(screen.getByText("9 hari tersisa")).toBeInTheDocument();
+    expect(screen.getByText("9 days remaining")).toBeInTheDocument();
+  });
+
+  it("lists the services that govern the term, with how long each lasts", async () => {
+    // The overall term says "up until X"; these say WHAT keeps it up and for
+    // how long. The licence + any add-on stacked on it.
+    await renderRoute("/admin/dashboard");
+
+    expect(await screen.findByText("Governs the site's licence")).toBeInTheDocument();
+    expect(screen.getByText("Active until 14 Sep 2026")).toBeInTheDocument();
+  });
+
+  it("prints no period for a lifetime licence", async () => {
+    vi.spyOn(websiteSubscriptionService, "get").mockResolvedValue({
+      status: "active",
+      service: { id: 1, code: "uxiolabs", name: "ISG Store" },
+      ends_at: null,
+      days_remaining: null,
+      lifetime: true,
+      services: [
+        {
+          service_code: "uxiolabs",
+          service_name: "ISG Store",
+          billing_mode: "one_time",
+          duration_days: 365,
+          governs_licence: true,
+          lifetime: true,
+          active_until: null,
+        },
+      ],
+      checkout_url: "https://pay.example.test/app/payment-admin/services/1/checkout",
+    });
+
+    await renderRoute("/admin/dashboard");
+
+    // A one-time licence says "Lifetime" twice (summary + its row) and never
+    // an "Active until" period that would promise a renewal that never comes.
+    expect(await screen.findAllByText("Lifetime")).toHaveLength(2);
+    expect(screen.queryByText(/Active until/)).not.toBeInTheDocument();
   });
 
   it("still offers the link when the site has never subscribed", async () => {
@@ -46,7 +84,7 @@ describe("WebsiteSubscriptionCard", () => {
 
     await renderRoute("/admin/dashboard");
 
-    expect(await screen.findByText("Belum berlangganan")).toBeInTheDocument();
+    expect(await screen.findByText("Not subscribed")).toBeInTheDocument();
   });
 
   it("renders nothing when there is nowhere to send the client", async () => {
