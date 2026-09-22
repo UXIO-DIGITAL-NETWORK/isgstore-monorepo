@@ -37,23 +37,30 @@ afterEach(() => {
 });
 
 describe("UserListPage", () => {
-  it("requests only admin-role users", async () => {
+  it("requests every account, not only admins", async () => {
     const listSpy = vi.spyOn(usersService, "list").mockResolvedValue(paginated([adminUser()]));
 
     await renderRoute("/admin/users");
     await screen.findByText("Super Admin");
 
-    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ role: "admin" }));
+    // No role filter: this is the client's whole user base, admins included.
+    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 1, per_page: 10 }));
+    expect(listSpy).not.toHaveBeenCalledWith(expect.objectContaining({ role: "admin" }));
   });
 
-  it("does not list merchant, hub-system or internal accounts", async () => {
-    vi.spyOn(usersService, "list").mockResolvedValue(paginated([adminUser()]));
+  it("lists members beside admins and links each name to its detail page", async () => {
+    vi.spyOn(usersService, "list").mockResolvedValue(
+      paginated([
+        adminUser(),
+        adminUser({ id: "9", role: "member", name: "Randy Galang", email: "randy@example.test" }),
+      ]),
+    );
 
     await renderRoute("/admin/users");
-    await screen.findByText("Super Admin");
 
-    expect(screen.queryByText("Client Merchant")).not.toBeInTheDocument();
-    expect(screen.queryByText("Uxio Hub (sistem)")).not.toBeInTheDocument();
-    expect(screen.queryByText("Internal Finance")).not.toBeInTheDocument();
+    expect(await screen.findByText("Super Admin")).toBeInTheDocument();
+    // The row is the way into the detail page; the actions menu stays on the list.
+    const member = await screen.findByRole("link", { name: "Randy Galang" });
+    expect(member).toHaveAttribute("href", "/admin/users/9");
   });
 });
