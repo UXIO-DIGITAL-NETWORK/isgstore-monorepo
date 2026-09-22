@@ -306,6 +306,18 @@ const DOCUMENTS: Record<string, unknown> = {
     ends_at: "2026-09-14T00:00:00.000Z",
     days_remaining: 9,
     checkout_url: "https://pay.example.test/app/payment-admin/services/1/checkout",
+    // The Hub-marked lines that carry the term, each with its own duration.
+    services: [
+      {
+        service_code: "uxiolabs",
+        service_name: "Website Topup",
+        billing_mode: "billed",
+        duration_days: 365,
+        governs_licence: true,
+        lifetime: false,
+        active_until: "2026-09-14T00:00:00.000Z",
+      },
+    ],
   },
   "/v1/transactions/status-counts": { pending: 12, processing: 32, failed_provider: 8, refunded: 3 },
   "/v1/refunds/status-counts": {
