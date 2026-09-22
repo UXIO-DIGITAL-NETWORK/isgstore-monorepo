@@ -353,6 +353,8 @@ Things that are load-bearing and easy to undo:
 
 **Deployment consequence, pinned by `GameCatalogSeedTest`:** every pre-existing admin is refused the panel until they enrol. The way out is always open because `/2fa/setup` and `/2fa/confirm` live outside the admin group.
 
+**One account is exempt, and only one.** `users.two_factor_exempt` — granted by `DeveloperUserSeeder` to `developer@isgstore.id` — is a deliberate hole: that login never owes a factor, so the developer can get in when the authenticator is lost. `App\Support\Auth\TwoFactorPolicy::requiredFor()` is the single answer to "does this account owe one", read by the panel gate (`EnsureTwoFactorSatisfied`), the client's navigation signal (`UserResource.two_factor_required`) and the login door (`IssueSessionAction`). Three separate copies is exactly how one of them ends up disagreeing — either bouncing the developer to the setup screen the API has already waved through, or leaving a normal admin with a password alone. `where two_factor_exempt = 1` lists every account that skips the factor.
+
 ### Language (ID/EN)
 
 **`App\Support\Locale\SupportedLocale` is the one definition of which languages exist.** The set
@@ -901,7 +903,11 @@ default) schedules nothing, calls nowhere, exposes nothing.
   `WITHDRAWAL_HOLD_BUFFER_DAYS` (default 1). Dashboard exposes
   `saldo_tertahan`. Test fixtures that seed paid sales must backdate
   `created_at` past the longest hold (5 days) or the balance reads 0.
-- BCA VA is deactivated (not in the Monetapay contract; row kept for history).
+- BCA VA is gone from this site — the gateway does not offer it. No seeder row,
+  no `MonetapayContractFees` entry, and `2026_09_22_000002_remove_bca_va_channel`
+  deletes any leftover row (leaving it deactivated instead when transactions or
+  other money paths reference it). Absence from the contract is also what stops
+  `hub:sync-channels` re-creating it.
 - Monetapay balance cache is keyed per `(sub_mch_id, currency)` —
   `MonetapayService::balanceCacheKey()` is the shared key helper for
   cache-busting callers, and with no argument it resolves the configured

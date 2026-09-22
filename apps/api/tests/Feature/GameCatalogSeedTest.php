@@ -90,16 +90,18 @@ class GameCatalogSeedTest extends TestCase
         );
     }
 
-    public function test_it_seeds_exactly_the_three_operator_logins(): void
+    public function test_it_seeds_exactly_the_four_operator_logins(): void
     {
         $this->seed();
 
-        // Three human operator logins, plus the non-login Hub system account
-        // (no password) that Hub-driven money-path actions are attributed to.
-        $this->assertSame(3, User::whereNot('email', HubSystemUser::EMAIL)->count());
+        // Four human operator logins — including the developer account that
+        // skips the second factor — plus the non-login Hub system account (no
+        // password) that Hub-driven money-path actions are attributed to.
+        $this->assertSame(4, User::whereNot('email', HubSystemUser::EMAIL)->count());
 
         foreach ([
             'admin@isgstore.id' => RoleType::ADMIN,
+            'developer@isgstore.id' => RoleType::ADMIN,
             'internal@isgstore.id' => RoleType::PAYMENT_INTERNAL,
             'payment@isgstore.id' => RoleType::PAYMENT_ADMIN,
         ] as $email => $role) {
@@ -164,6 +166,35 @@ class GameCatalogSeedTest extends TestCase
         ])->assertOk()->json('data.access_token');
 
         $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/v1/products')
+            ->assertOk();
+    }
+
+    /**
+     * The developer login is the one account the panel lets in without a code.
+     *
+     * Pinned end to end because it is a deliberate hole: the door must not even
+     * offer a challenge, and the panel gate must let the bearer through. If this
+     * ever goes green for `admin@isgstore.id` instead, the hole has widened.
+     */
+    public function test_the_seeded_developer_reaches_the_panel_without_a_second_factor(): void
+    {
+        $this->seed();
+
+        $data = $this->postJson('/api/v1/auth/login', [
+            'email' => 'developer@isgstore.id',
+            'password' => 'isgStore#@$8',
+        ])->assertOk()->json('data');
+
+        // Straight to a session — no `challenge_token`.
+        $this->assertArrayNotHasKey('two_factor_required', $data);
+        $this->assertNotNull($data['access_token']);
+        // The client routes on this. True here would bounce the account to the
+        // setup screen the API would then wave through — the mismatch the shared
+        // policy exists to prevent.
+        $this->assertFalse($data['user']['two_factor_required']);
+
+        $this->withHeader('Authorization', "Bearer {$data['access_token']}")
             ->getJson('/api/v1/products')
             ->assertOk();
     }

@@ -51,8 +51,9 @@ class ReconcileGatewayFeesAction
     }
 
     /**
-     * (a) Every active channel compared to the Monetapay contract. An unlisted
-     * channel (bca_va) and a rate that no longer matches both surface here.
+     * (a) Every active channel compared to the Monetapay contract. A channel the
+     * contract holds no rate for, and a rate that has since diverged, both
+     * surface here.
      */
     private function auditConfig(): array
     {

@@ -148,7 +148,7 @@ class ChannelFeeController extends Controller
     private function contractInfo(PaymentChannel $c): array
     {
         if (! MonetapayContractFees::has($c->channel_code)) {
-            // Unlisted channel (e.g. bca_va): no contract row to check against.
+            // Unlisted channel: no contract row to check against.
             return ['mismatch' => true, 'expected' => null];
         }
 

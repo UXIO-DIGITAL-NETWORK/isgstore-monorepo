@@ -61,6 +61,21 @@ class UserFactory extends Factory
         ]);
     }
 
+    /**
+     * An account the panel lets in without a second factor at all.
+     *
+     * Distinct from `withoutTwoFactor()`: that one simply has not enrolled yet
+     * and is refused by `EnsureTwoFactorSatisfied`; this one is exempt from ever
+     * being asked. See App\Support\Auth\TwoFactorPolicy.
+     */
+    public function twoFactorExempt(): static
+    {
+        return $this->state(fn () => [
+            'two_factor_confirmed_at' => null,
+            'two_factor_exempt' => true,
+        ]);
+    }
+
     /** An account that has never set up a second factor. */
     public function withoutTwoFactor(): static
     {
