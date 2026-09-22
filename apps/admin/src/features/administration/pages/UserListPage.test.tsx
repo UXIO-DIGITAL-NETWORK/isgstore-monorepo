@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 
 import { makeUser, renderRoute, screen } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -37,14 +38,17 @@ afterEach(() => {
 });
 
 describe("UserListPage", () => {
-  it("requests every account, not only admins", async () => {
+  it("requests only the admin and member accounts", async () => {
     const listSpy = vi.spyOn(usersService, "list").mockResolvedValue(paginated([adminUser()]));
 
     await renderRoute("/admin/users");
     await screen.findByText("Super Admin");
 
-    // No role filter: this is the client's whole user base, admins included.
-    expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ page: 1, per_page: 10 }));
+    // Staff/internal roles also live in `users`; only the client's own people
+    // belong in this list.
+    expect(listSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 1, per_page: 10, roles: ["admin", "member"] }),
+    );
     expect(listSpy).not.toHaveBeenCalledWith(expect.objectContaining({ role: "admin" }));
   });
 
@@ -62,5 +66,18 @@ describe("UserListPage", () => {
     // The row is the way into the detail page; the actions menu stays on the list.
     const member = await screen.findByRole("link", { name: "Randy Galang" });
     expect(member).toHaveAttribute("href", "/admin/users/9");
+  });
+
+  it("offers a Detail action in each row's menu", async () => {
+    vi.spyOn(usersService, "list").mockResolvedValue(paginated([adminUser()]));
+
+    await renderRoute("/admin/users");
+    await screen.findByText("Super Admin");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Actions for Super Admin" }));
+
+    const detail = await screen.findByRole("menuitem", { name: "Detail" });
+    expect(detail).toHaveAttribute("href", "/admin/users/3");
   });
 });
