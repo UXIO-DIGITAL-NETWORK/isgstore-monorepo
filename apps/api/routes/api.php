@@ -380,6 +380,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
         Route::get('/', [UserController::class, 'index']);
         Route::post('/', [UserController::class, 'store']);
         Route::get('/{user}', [UserController::class, 'show']);
+        // The user-detail read side: aggregates plus the threads an operator
+        // follows from one account. Read-only, and admin-gated like the rest.
+        Route::get('/{user}/overview', [UserController::class, 'overview']);
+        Route::get('/{user}/balance-mutations', [UserController::class, 'balanceMutations']);
+        Route::get('/{user}/point-history', [UserController::class, 'pointHistory']);
+        Route::get('/{user}/refunds', [UserController::class, 'refunds']);
         Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
         // Admin moderation + audited wallet adjustment (money-moving, so a

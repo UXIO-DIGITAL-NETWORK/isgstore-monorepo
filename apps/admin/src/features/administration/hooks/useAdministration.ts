@@ -55,6 +55,35 @@ export const useDeletePaymentChannels = () => {
 export const useUserList = (params: AdministrationListParams) =>
   useQuery({ queryKey: ["users", "list", params], queryFn: () => usersService.list(params) });
 
+/** The detail page's summary: profile, aggregates and membership in one call. */
+export const useUserOverview = (id?: string) =>
+  useQuery({
+    queryKey: ["users", "overview", id],
+    queryFn: () => usersService.overview(id as string),
+    enabled: Boolean(id),
+  });
+
+export const useUserBalanceMutations = (id: string | undefined, params: AdministrationListParams) =>
+  useQuery({
+    queryKey: ["users", id, "balance-mutations", params],
+    queryFn: () => usersService.balanceMutations(id as string, params),
+    enabled: Boolean(id),
+  });
+
+export const useUserPointHistory = (id: string | undefined, params: AdministrationListParams) =>
+  useQuery({
+    queryKey: ["users", id, "point-history", params],
+    queryFn: () => usersService.pointHistory(id as string, params),
+    enabled: Boolean(id),
+  });
+
+export const useUserRefunds = (id: string | undefined, params: AdministrationListParams) =>
+  useQuery({
+    queryKey: ["users", id, "refunds", params],
+    queryFn: () => usersService.refunds(id as string, params),
+    enabled: Boolean(id),
+  });
+
 export const useAdjustBalance = () => {
   const { t } = useTranslation("administration");
   const queryClient = useQueryClient();

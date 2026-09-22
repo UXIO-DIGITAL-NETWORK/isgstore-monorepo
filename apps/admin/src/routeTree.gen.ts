@@ -49,6 +49,7 @@ import { Route as AdminPreviewIntegrationPreviewIndexRouteImport } from './route
 import { Route as AdminPreviewFinancePreviewIndexRouteImport } from './routes/admin/_preview/finance-preview/index'
 import { Route as AdminPreviewDashboardPreviewIndexRouteImport } from './routes/admin/_preview/dashboard-preview/index'
 import { Route as AdminPreviewCategoriesPreviewIndexRouteImport } from './routes/admin/_preview/categories-preview/index'
+import { Route as AdminProtectedUsersUserIdIndexRouteImport } from './routes/admin/_protected/users/$userId/index'
 import { Route as AdminProtectedTransactionsManualIndexRouteImport } from './routes/admin/_protected/transactions/manual/index'
 import { Route as AdminProtectedTransactionsAutomaticIndexRouteImport } from './routes/admin/_protected/transactions/automatic/index'
 import { Route as AdminProtectedSettingsSecurityIndexRouteImport } from './routes/admin/_protected/settings/security/index'
@@ -314,6 +315,12 @@ const AdminPreviewCategoriesPreviewIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AdminPreviewCategoriesPreviewRouteRoute,
+  } as any)
+const AdminProtectedUsersUserIdIndexRoute =
+  AdminProtectedUsersUserIdIndexRouteImport.update({
+    id: '/users/$userId/',
+    path: '/users/$userId/',
+    getParentRoute: () => AdminProtectedRoute,
   } as any)
 const AdminProtectedTransactionsManualIndexRoute =
   AdminProtectedTransactionsManualIndexRouteImport.update({
@@ -585,6 +592,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings/security/': typeof AdminProtectedSettingsSecurityIndexRoute
   '/admin/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
+  '/admin/users/$userId/': typeof AdminProtectedUsersUserIdIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/products/main/add-bulk/': typeof AdminProtectedProductsMainAddBulkIndexRoute
   '/admin/products/main/set-price-limit/': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
@@ -652,6 +660,7 @@ export interface FileRoutesByTo {
   '/admin/settings/security': typeof AdminProtectedSettingsSecurityIndexRoute
   '/admin/transactions/automatic': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual': typeof AdminProtectedTransactionsManualIndexRoute
+  '/admin/users/$userId': typeof AdminProtectedUsersUserIdIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/products/main/add-bulk': typeof AdminProtectedProductsMainAddBulkIndexRoute
   '/admin/products/main/set-price-limit': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
@@ -729,6 +738,7 @@ export interface FileRoutesById {
   '/admin/_protected/settings/security/': typeof AdminProtectedSettingsSecurityIndexRoute
   '/admin/_protected/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/_protected/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
+  '/admin/_protected/users/$userId/': typeof AdminProtectedUsersUserIdIndexRoute
   '/admin/_preview/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
   '/admin/_protected/products/main/add-bulk/': typeof AdminProtectedProductsMainAddBulkIndexRoute
   '/admin/_protected/products/main/set-price-limit/': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
@@ -804,6 +814,7 @@ export interface FileRouteTypes {
     | '/admin/settings/security/'
     | '/admin/transactions/automatic/'
     | '/admin/transactions/manual/'
+    | '/admin/users/$userId/'
     | '/admin/transaction-preview/$invoiceNo/edit/'
     | '/admin/products/main/add-bulk/'
     | '/admin/products/main/set-price-limit/'
@@ -871,6 +882,7 @@ export interface FileRouteTypes {
     | '/admin/settings/security'
     | '/admin/transactions/automatic'
     | '/admin/transactions/manual'
+    | '/admin/users/$userId'
     | '/admin/transaction-preview/$invoiceNo/edit'
     | '/admin/products/main/add-bulk'
     | '/admin/products/main/set-price-limit'
@@ -947,6 +959,7 @@ export interface FileRouteTypes {
     | '/admin/_protected/settings/security/'
     | '/admin/_protected/transactions/automatic/'
     | '/admin/_protected/transactions/manual/'
+    | '/admin/_protected/users/$userId/'
     | '/admin/_preview/transaction-preview/$invoiceNo/edit/'
     | '/admin/_protected/products/main/add-bulk/'
     | '/admin/_protected/products/main/set-price-limit/'
@@ -1246,6 +1259,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/categories-preview/'
       preLoaderRoute: typeof AdminPreviewCategoriesPreviewIndexRouteImport
       parentRoute: typeof AdminPreviewCategoriesPreviewRouteRoute
+    }
+    '/admin/_protected/users/$userId/': {
+      id: '/admin/_protected/users/$userId/'
+      path: '/users/$userId'
+      fullPath: '/admin/users/$userId/'
+      preLoaderRoute: typeof AdminProtectedUsersUserIdIndexRouteImport
+      parentRoute: typeof AdminProtectedRoute
     }
     '/admin/_protected/transactions/manual/': {
       id: '/admin/_protected/transactions/manual/'
@@ -1743,6 +1763,7 @@ interface AdminProtectedRouteChildren {
   AdminProtectedSettingsIndexRoute: typeof AdminProtectedSettingsIndexRoute
   AdminProtectedUsersIndexRoute: typeof AdminProtectedUsersIndexRoute
   AdminProtectedSettingsSecurityIndexRoute: typeof AdminProtectedSettingsSecurityIndexRoute
+  AdminProtectedUsersUserIdIndexRoute: typeof AdminProtectedUsersUserIdIndexRoute
 }
 
 const AdminProtectedRouteChildren: AdminProtectedRouteChildren = {
@@ -1770,6 +1791,7 @@ const AdminProtectedRouteChildren: AdminProtectedRouteChildren = {
   AdminProtectedUsersIndexRoute: AdminProtectedUsersIndexRoute,
   AdminProtectedSettingsSecurityIndexRoute:
     AdminProtectedSettingsSecurityIndexRoute,
+  AdminProtectedUsersUserIdIndexRoute: AdminProtectedUsersUserIdIndexRoute,
 }
 
 const AdminProtectedRouteWithChildren = AdminProtectedRoute._addFileChildren(
