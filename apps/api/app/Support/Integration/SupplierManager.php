@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Support\Integration;
 
 use App\Contracts\SupplierGateway;
-use InvalidArgumentException;
 
 /**
  * Picks the supplier adapter this site talks to.
@@ -25,27 +24,12 @@ final class SupplierManager
     {
         $driver ??= (string) config('services.supplier.driver', 'uxiolabs');
 
-        /** @var array<string,class-string> $adapters */
-        $adapters = (array) config('services.supplier.adapters', []);
-        $class = $adapters[$driver] ?? null;
-
-        if (! is_string($class) || ! class_exists($class)) {
-            throw new InvalidArgumentException(
-                "Supplier driver [{$driver}] tidak dikenal. Terdaftar: "
-                .(($adapters === []) ? '(kosong)' : implode(', ', array_keys($adapters)))
-                .'. Lihat services.supplier.adapters.'
-            );
-        }
-
-        $gateway = app($class);
-
-        if (! $gateway instanceof SupplierGateway) {
-            throw new InvalidArgumentException(
-                "Adapter supplier [{$class}] tidak mengimplementasikan ".SupplierGateway::class.'.'
-            );
-        }
-
-        return $gateway;
+        /** @var SupplierGateway */
+        return AdapterResolver::resolve(
+            SupplierGateway::class,
+            $driver,
+            (array) config('services.supplier.adapters', []),
+        );
     }
 
     /**

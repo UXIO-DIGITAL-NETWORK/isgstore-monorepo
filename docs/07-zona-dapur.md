@@ -53,9 +53,13 @@ dipertukarkan.
 - **Dilarang** menulis percabangan `if (provider == 'A') ... else if (provider == 'B')`
   di dalam dapur. Kalau itu muncul, tarik ke colokan.
 
-Di kode, colokan supplier sudah nyata: **`App\Contracts\SupplierGateway`** adalah bentuk yang wajib dipakai setiap adapter, dan `SupplierManager` memilihnya dari `services.supplier.driver` (`SUPPLIER_DRIVER`). Karena itu, menambah supplier = **satu kelas adapter + satu baris di `services.supplier.adapters`**; engine transaksi tidak disentuh. Sinyal "order sudah ada di supplier" juga sudah jadi kontrak (`SupplierDuplicateOrderException`), bukan nama milik satu supplier.
+Di kode, colokan sudah nyata untuk **kedua** integrasi uang:
+- **Supplier** — `App\Contracts\SupplierGateway`, dipilih `SupplierManager` dari `services.supplier.driver` (`SUPPLIER_DRIVER`). Sinyal "order sudah ada di supplier" ikut jadi kontrak (`SupplierDuplicateOrderException`), bukan nama milik satu supplier.
+- **Payment gateway** — `App\Contracts\PaymentGateway` (subset yang dipakai engine: charge, payout, reversal, inquiry status, saldo, verifikasi callback), dipilih `PaymentManager` dari `services.payment.driver` (`PAYMENT_DRIVER`).
 
-Payment gateway belum punya kontrak; `MonetapayService` masih konkret. Pola seam yang sama (`PaymentGateway` + driver) menyusul.
+Menambah supplier atau gateway = **satu kelas adapter + satu baris di `config/services.php`**; engine transaksi tidak disentuh. Driver tak dikenal **gagal keras** saat resolusi (`AdapterResolver`), bukan nanti di jalur uang.
+
+Satu batas yang disengaja: **alat diagnosis milik satu vendor** — mis. `QueryMonetapayAction` beserta ~30 inquiry manual — tetap terikat ke `MonetapayService`. Itu konsol operator milik gateway tertentu, bukan permukaan engine, jadi tidak dipaksa masuk kontrak.
 
 ## Pendengar: dapur berteriak, siapa pun boleh mendengar
 

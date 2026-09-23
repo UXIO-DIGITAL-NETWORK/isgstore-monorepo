@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Hub;
 
+use App\Contracts\PaymentGateway;
 use App\Contracts\SupplierGateway;
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\WithdrawalStatus;
@@ -13,7 +14,6 @@ use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Withdrawal;
-use App\Services\Payment\MonetapayService;
 use App\Support\Finance\FinanceTotals;
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Payment\DefaultMerchant;
@@ -438,11 +438,11 @@ class HubReportController extends Controller
 
         try {
             if ($request->boolean('force')) {
-                Cache::forget(MonetapayService::balanceCacheKey(null, $currency));
-                Cache::forget(MonetapayService::mainBalanceCacheKey($currency));
+                Cache::forget(app(PaymentGateway::class)->balanceCacheKey(null, $currency));
+                Cache::forget(app(PaymentGateway::class)->mainBalanceCacheKey($currency));
             }
 
-            $response = app(MonetapayService::class)->inquiryBalanceCached(null, $currency);
+            $response = app(PaymentGateway::class)->inquiryBalanceCached(null, $currency);
 
             // `current_balance` is the real Monetapay 5.1 field; `balance` is
             // kept only for older cached shapes. Same order gatewayBalance()
@@ -567,7 +567,7 @@ class HubReportController extends Controller
     private function mainMerchantBalance(string $currency): array
     {
         try {
-            $response = app(MonetapayService::class)->inquiryMainMerchantBalanceCached($currency);
+            $response = app(PaymentGateway::class)->inquiryMainMerchantBalanceCached($currency);
 
             $balance = $response['data']['current_balance']
                 ?? $response['data']['balance']
@@ -601,7 +601,7 @@ class HubReportController extends Controller
             // entry nothing ever wrote, so this always fell through to the
             // snapshot. `current_balance` is the real Monetapay 5.1 field;
             // `balance` is kept only for older cached shapes.
-            $cached = Cache::get(MonetapayService::balanceCacheKey());
+            $cached = Cache::get(app(PaymentGateway::class)->balanceCacheKey());
 
             $balance = $cached['data']['current_balance']
                 ?? $cached['data']['balance']

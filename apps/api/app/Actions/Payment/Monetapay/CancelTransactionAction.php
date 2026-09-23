@@ -3,8 +3,8 @@
 namespace App\Actions\Payment\Monetapay;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Contracts\PaymentGateway;
 use App\DTOs\Log\CreateActivityLogDTO;
-use App\Services\Payment\MonetapayService;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 class CancelTransactionAction
 {
     public function __construct(
-        private readonly MonetapayService $monetapayService,
+        private readonly PaymentGateway $monetapayService,
         private readonly CreateActivityLogAction $activityLogAction
     ) {}
 

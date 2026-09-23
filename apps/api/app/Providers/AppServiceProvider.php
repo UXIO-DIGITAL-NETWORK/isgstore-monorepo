@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGateway;
 use App\Contracts\SupplierGateway;
 use App\Services\DiscordWebhookService;
+use App\Support\Integration\PaymentManager;
 use App\Support\Integration\SupplierManager;
 use App\Support\Storefront\Catalog;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -28,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
         // site on a different top-up supplier adds one adapter class and changes
         // one line — it never edits the engine.
         $this->app->bind(SupplierGateway::class, fn () => SupplierManager::make());
+
+        // The same seam for the payment gateway: which adapter charges and
+        // pays out is a config decision (PAYMENT_DRIVER), not a code decision.
+        $this->app->bind(PaymentGateway::class, fn () => PaymentManager::make());
     }
 
     /**

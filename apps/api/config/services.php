@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Payment\MonetapayService;
 use App\Services\UxiolabsService;
 
 return [
@@ -84,6 +85,16 @@ return [
         'driver' => env('SUPPLIER_DRIVER', 'uxiolabs'),
         'adapters' => [
             'uxiolabs' => UxiolabsService::class,
+        ],
+    ],
+
+    'payment' => [
+        // Which adapter charges and pays out for this site (PAYMENT_DRIVER).
+        // Adding a gateway means adding its class to `adapters` and naming it
+        // here — checkout, payouts, callbacks and settlement are not touched.
+        'driver' => env('PAYMENT_DRIVER', 'monetapay'),
+        'adapters' => [
+            'monetapay' => MonetapayService::class,
         ],
     ],
 
