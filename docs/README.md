@@ -14,6 +14,7 @@ ikut terender di kedua tempat.
 | [04 — Deployment](04-deployment.md) | Cara menaikkan ke produksi tanpa merusak apa pun |
 | [05 — Basis data](05-basis-data.md) | Arti tiap kolom uang, dan relasi antar tabel |
 | [06 — Referensi rute API](06-referensi-rute-api.md) | Peta 152 endpoint per grup rute. Dulu dilayani publik di `GET /` |
+| [07 — Zona: dapur, colokan, pendengar, hiasan](07-zona-dapur.md) | Bagian mana yang wajib sama di semua situs, mana yang bebas, dan di mana sebuah perubahan harus dikerjakan |
 
 ## Urutan acuan bila dokumen bertentangan
 

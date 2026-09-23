@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Command, Search } from "lucide-react";
 
 import { useBranding } from "@/hooks/useBranding";
+import { ENV } from "@/config/env";
 import { NAV_GROUPS } from "../data/nav-groups.data";
 import { Box } from "@/components/common/Box";
 import {
@@ -180,6 +181,16 @@ export function DashboardSidebar() {
           thing an admin sees, and links out to where it is actually renewed. */}
       <SidebarFooter>
         <WebsiteSubscriptionCard />
+        {/* The release stamp. Rendered only when the build carried one, so a
+            local build shows nothing instead of a meaningless version. */}
+        {ENV.APP_VERSION && (
+          <Text
+            as="span"
+            className="px-2 pb-1 text-center text-[10px] text-muted-foreground"
+          >
+            {ENV.APP_VERSION}
+          </Text>
+        )}
       </SidebarFooter>
 
       <CommandDialog
