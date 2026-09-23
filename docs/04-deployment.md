@@ -385,13 +385,17 @@ Kunci di luar bawaan Laravel, dikelompokkan menurut fungsinya:
 
 > Tiga identitas yang **jangan dicampur**: `mch_id` adalah identitas merchant, `collection_app_id` untuk jalur pemasukan, `disbursement_app_id` untuk jalur pembayaran keluar. `collection_app_id` **tidak punya nilai cadangan** — kalau tidak diisi, panggilan pemasukan ditandatangani dengan `app_id` kosong.
 
-**Supplier (Uxiolabs)** — `UXIOLABS_API_KEY`, `UXIOLABS_BASE_URL`, `UXIOLABS_CALLBACK_URL`, `UXIOLABS_PRICE_TIER`, `UXIOLABS_CALLBACK_IP`.
+**Supplier (Uxiotopup)** — `UXIOTOPUP_API_KEY`, `UXIOTOPUP_BASE_URL`, `UXIOTOPUP_CALLBACK_URL`, `UXIOTOPUP_PRICE_TIER`, `UXIOTOPUP_CALLBACK_IP`.
 
-> ⚠️ **Kunci-kunci ini dulu bernama `UXIOTOPUP_*` dan sudah diganti nama, tanpa nilai cadangan.** Kalau `.env` produksi masih memakai nama lama, `UXIOLABS_API_KEY` terbaca kosong dan **setiap pesanan gagal di supplier**. Kecuali kuncinya tersimpan lewat halaman Integration di panel admin — kredensial dari basis data menimpa `.env`, dan migrasi `2026_09_04_000001` sudah mengganti nama baris itu. **Periksa yang mana yang berlaku di server Anda sebelum deploy.**
+> ⚠️ **Nama kunci ini pernah berputar arah.** Providernya sempat dinamai "Uxiolabs" sehingga kuncinya ikut menjadi `UXIOLABS_*`, lalu dikembalikan ke "Uxiotopup". Yang berlaku **sekarang** adalah `UXIOTOPUP_*` — itu yang dibaca `config/services.php` dan yang ada di `.env.example`. Nama `UXIOLABS_*` **tidak** dibaca: `.env` produksi yang masih memakainya akan terbaca kosong dan **setiap pesanan gagal di supplier**. Yang benar-benar berlaku di server bisa diperiksa dari halaman Integration di panel admin, karena kredensial dari basis data menimpa `.env`. **Pastikan `.env` memakai `UXIOTOPUP_*` sebelum deploy.**
 
 **Penarikan dana** — `WITHDRAWAL_FEE_FLAT` (1500), `WITHDRAWAL_FEE_PERCENT` (11), `WITHDRAWAL_MIN_AMOUNT` (10000), `WITHDRAWAL_HOLD_BUFFER_DAYS` (1).
 
-**Uxio Hub** — `HUB_ENABLED` (default `false` = mandiri, tidak ada yang dijadwalkan), `HUB_SITE_API_KEY`, `HUB_BASE_URL`, `HUB_ALLOWED_IPS`, `HUB_MANAGED_CATALOG`, `HUB_MANAGED_CHANNELS`, `HUB_PUSH_ORDERS`, `HUB_WRITE_ENABLED`, `HUB_WRITE_API_KEY`.
+**Uxio Hub** — `HUB_ENABLED` (default `false` = mandiri, tidak ada yang dijadwalkan), `HUB_SITE_API_KEY`, `HUB_BASE_URL`, `HUB_ALLOWED_IPS`, `HUB_MANAGED_CATALOG`, `HUB_MANAGED_CHANNELS`, `HUB_MANAGED_LICENCE`, `HUB_MANAGED_PLAN`, `HUB_PUSH_ORDERS`, `HUB_SYNC_INTERVAL_MINUTES`, `HUB_WRITE_ENABLED`, `HUB_WRITE_API_KEY`, `HUB_CONTRACT_VERSION`.
+
+**Colokan integrasi** — `SUPPLIER_DRIVER` (default `uxiolabs`) dan `PAYMENT_DRIVER` (default `monetapay`) memilih adapter mana yang dipakai situs ini; daftar adapter-nya di `config/services.php`. Lihat [07 — Zona](07-zona-dapur.md).
+
+**Stempel rilis** — `APP_VERSION`, `APP_COMMIT`, `APP_UPSTREAM`, ditulis deploy sendiri dari tag (lihat [§Rilis](#rilis-tag-stempel-rollback)); jangan diisi manual di secret `ENV_FILE`, karena akan ditimpa.
 
 > `HUB_PUSH_ORDERS` **jangan diisi kosong** — nilai kosong terbaca sebagai `false` dan mematikan dorongan pesanan secara diam-diam. Biarkan tidak ada sama sekali agar mengikuti `HUB_ENABLED`.
 
