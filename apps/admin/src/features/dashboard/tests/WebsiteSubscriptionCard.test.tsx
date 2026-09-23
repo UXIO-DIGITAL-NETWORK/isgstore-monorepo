@@ -59,14 +59,14 @@ describe("WebsiteSubscriptionCard", () => {
   it("prints no period for a lifetime licence", async () => {
     vi.spyOn(websiteSubscriptionService, "get").mockResolvedValue({
       status: "active",
-      service: { id: 1, code: "uxiolabs", name: "ISG Store" },
+      service: { id: 1, code: "uxiolabs", name: "TopupGame by Uxiolabs" },
       ends_at: null,
       days_remaining: null,
       lifetime: true,
       services: [
         {
           service_code: "uxiolabs",
-          service_name: "ISG Store",
+          service_name: "TopupGame by Uxiolabs",
           billing_mode: "one_time",
           duration_days: 365,
           governs_licence: true,
