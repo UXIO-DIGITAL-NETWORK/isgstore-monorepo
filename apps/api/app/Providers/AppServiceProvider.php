@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\SupplierGateway;
 use App\Services\DiscordWebhookService;
+use App\Support\Integration\SupplierManager;
 use App\Support\Storefront\Catalog;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -21,7 +23,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // The supplier seam. The transaction engine depends on the contract;
+        // which adapter answers it is a config decision (SUPPLIER_DRIVER), so a
+        // site on a different top-up supplier adds one adapter class and changes
+        // one line — it never edits the engine.
+        $this->app->bind(SupplierGateway::class, fn () => SupplierManager::make());
     }
 
     /**

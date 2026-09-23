@@ -2,8 +2,8 @@
 
 namespace App\Actions\Uxiolabs;
 
+use App\Contracts\SupplierGateway;
 use App\Models\SupplierProduct;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\PriceListRow;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -21,7 +21,7 @@ use Illuminate\Pagination\Paginator;
 class ListUxiolabsPriceListAction
 {
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService
+        private readonly SupplierGateway $uxiolabsService
     ) {}
 
     public function execute(?string $search, bool $onlyUnmapped, int $perPage, int $page): LengthAwarePaginator

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Hub;
 
+use App\Contracts\SupplierGateway;
 use App\Enums\ServiceInvoiceStatus;
 use App\Enums\WithdrawalStatus;
 use App\Http\Controllers\Controller;
@@ -13,7 +14,6 @@ use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
-use App\Services\UxiolabsService;
 use App\Support\Finance\FinanceTotals;
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Payment\DefaultMerchant;
@@ -513,14 +513,14 @@ class HubReportController extends Controller
 
         try {
             if ($request->boolean('force')) {
-                Cache::forget(UxiolabsService::BALANCE_CACHE_KEY);
+                Cache::forget(app(SupplierGateway::class)->balanceCacheKey());
             }
 
             // getBalanceCached() returns the uxiolabs `data` object already
             // unwrapped, so the figure is a top-level `saldo`. The nested shape
             // is read too, so a wrapper change upstream does not silently read
             // as "no balance".
-            $response = app(UxiolabsService::class)->getBalanceCached();
+            $response = app(SupplierGateway::class)->getBalanceCached();
 
             $balance = $response['saldo'] ?? $response['data']['saldo'] ?? null;
 

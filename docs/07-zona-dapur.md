@@ -53,6 +53,10 @@ dipertukarkan.
 - **Dilarang** menulis percabangan `if (provider == 'A') ... else if (provider == 'B')`
   di dalam dapur. Kalau itu muncul, tarik ke colokan.
 
+Di kode, colokan supplier sudah nyata: **`App\Contracts\SupplierGateway`** adalah bentuk yang wajib dipakai setiap adapter, dan `SupplierManager` memilihnya dari `services.supplier.driver` (`SUPPLIER_DRIVER`). Karena itu, menambah supplier = **satu kelas adapter + satu baris di `services.supplier.adapters`**; engine transaksi tidak disentuh. Sinyal "order sudah ada di supplier" juga sudah jadi kontrak (`SupplierDuplicateOrderException`), bukan nama milik satu supplier.
+
+Payment gateway belum punya kontrak; `MonetapayService` masih konkret. Pola seam yang sama (`PaymentGateway` + driver) menyusul.
+
 ## Pendengar: dapur berteriak, siapa pun boleh mendengar
 
 Notifikasi (WhatsApp/email/sosmed) **tidak boleh dipanggil dari dalam dapur**.
