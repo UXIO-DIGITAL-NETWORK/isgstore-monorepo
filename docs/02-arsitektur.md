@@ -42,7 +42,9 @@ Satu penyimpangan yang disengaja: **`CheckoutController` memvalidasi inline**, b
 | `Support/` | Helper domain murni, tanpa DB | ~45 berkas, 19 subdirektori |
 | `Models/` | Eloquent | 58 berkas |
 | `Enums/` | Kosakata status | 15 berkas |
-| `Services/` | Klien sistem luar | 9 berkas |
+| `Services/` | Klien sistem luar — sekaligus implementasi default tiap colokan | 9 berkas |
+| `Contracts/` | Kontrak colokan: supplier, payment gateway, kanal notifikasi | 4 berkas |
+| `Notifications/Channels/` | Kanal notifikasi receipt (email, WhatsApp) | 2 berkas |
 | `Jobs/` | Pekerjaan antrean | 7 berkas |
 | `Console/Commands/` | Perintah artisan | 19 berkas |
 
@@ -67,6 +69,24 @@ Bagian ini paling layak dibaca lebih dulu, karena di sinilah aturan yang *tidak 
 | `Support/Transaction/ProviderStatusPolicy.php` | Matriks `status` ↔ `provider_status` |
 
 Aturannya sederhana: **kalau sebuah angka menyangkut uang, ia hanya boleh dihitung di satu tempat.** Buku besar poin dan saldo menolak menjadi negatif, mengunci baris selama baca-ubah-tulis, dan mencatat nilai sebelum/sesudah di tiap entri.
+
+### Colokan — kontrak + driver
+
+Yang berbeda antar situs (supplier top-up, payment gateway, kanal notifikasi) **tidak boleh** mengubah engine. Semuanya lewat kontrak, dan implementasinya dipilih dari config:
+
+| Kontrak | Dipilih oleh | Implementasi default |
+|---|---|---|
+| `Contracts/SupplierGateway` | `SUPPLIER_DRIVER` → `services.supplier.adapters` | `UxiolabsService` |
+| `Contracts/PaymentGateway` | `PAYMENT_DRIVER` → `services.payment.adapters` | `MonetapayService` |
+| `Contracts/ReceiptChannel` (berupa **daftar**) | `config/notifications.php` → `notifications.receipt` | email + WhatsApp |
+
+`Support/Integration/AdapterResolver` menyelesaikan sekaligus **memvalidasi** tiap adapter terhadap kontraknya, dan gagal keras kalau tidak sesuai — supaya kesalahan ketahuan saat resolusi, bukan di jalur uang. Menambah supplier/gateway/kanal berarti **satu kelas + satu baris config**; kode engine selalu memakai tipe kontrak, bukan kelas konkret. Satu pengecualian yang disengaja: `QueryMonetapayAction` tetap terikat `MonetapayService` karena itu konsol diagnosis vendor, bukan permukaan engine.
+
+Aturan lengkapnya, termasuk apa yang boleh dan tidak boleh difork, ada di [07 — Zona](07-zona-dapur.md).
+
+### Stempel rilis
+
+`GET /v1/version` menjawab versi yang benar-benar berjalan: `version` (tag), `commit`, `upstream` (rilis cetakan asal), dan `hub_contract` — dibaca dari `config/version.php`, yang diisi deploy dari `.env`. Nilai yang sama tampil di sidebar admin lewat `VITE_APP_VERSION`. Rute ini **sengaja tetap terbuka** saat situs dinonaktifkan. Rilis, rollback, dan staging: [04 — Deployment](04-deployment.md).
 
 ---
 
