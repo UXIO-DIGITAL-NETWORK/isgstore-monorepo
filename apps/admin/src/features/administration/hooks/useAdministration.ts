@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { getApiErrorMessage } from "@/utils/apiError";
 import {
   paymentChannelsService,
   settingsService,
@@ -53,6 +54,35 @@ export const useDeletePaymentChannels = () => {
 
 export const useUserList = (params: AdministrationListParams) =>
   useQuery({ queryKey: ["users", "list", params], queryFn: () => usersService.list(params) });
+
+/** The detail page's summary: profile, aggregates and membership in one call. */
+export const useUserOverview = (id?: string) =>
+  useQuery({
+    queryKey: ["users", "overview", id],
+    queryFn: () => usersService.overview(id as string),
+    enabled: Boolean(id),
+  });
+
+export const useUserBalanceMutations = (id: string | undefined, params: AdministrationListParams) =>
+  useQuery({
+    queryKey: ["users", id, "balance-mutations", params],
+    queryFn: () => usersService.balanceMutations(id as string, params),
+    enabled: Boolean(id),
+  });
+
+export const useUserPointHistory = (id: string | undefined, params: AdministrationListParams) =>
+  useQuery({
+    queryKey: ["users", id, "point-history", params],
+    queryFn: () => usersService.pointHistory(id as string, params),
+    enabled: Boolean(id),
+  });
+
+export const useUserRefunds = (id: string | undefined, params: AdministrationListParams) =>
+  useQuery({
+    queryKey: ["users", id, "refunds", params],
+    queryFn: () => usersService.refunds(id as string, params),
+    enabled: Boolean(id),
+  });
 
 export const useAdjustBalance = () => {
   const { t } = useTranslation("administration");
@@ -128,6 +158,16 @@ export const useUploadSetting = () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       toast.success(t("imageUploaded"));
     },
-    onError: () => toast.error(t("imageUploadFailed")),
+    onError: (error) => {
+      // A refusal the API never produced — nginx rejecting an oversized upload,
+      // a proxy giving up — carries no JSON message, so the status code is the
+      // only thing that says which layer refused the file. Without it, "Gagal
+      // mengunggah gambar" reads the same for a wrong mime list and for a
+      // server-side size limit, which is exactly how this stayed undiagnosed.
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      const fallback = status ? `${t("imageUploadFailed")} (HTTP ${status})` : t("imageUploadFailed");
+
+      toast.error(getApiErrorMessage(error, fallback));
+    },
   });
 };

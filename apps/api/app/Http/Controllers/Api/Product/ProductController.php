@@ -139,14 +139,6 @@ class ProductController extends Controller
         );
     }
 
-    public function bulkLockPrice(BulkProductActionRequest $request, BulkProductAction $action)
-    {
-        return $this->successResponse(
-            $action->lock($request->validated('ids'), (bool) $request->boolean('locked')),
-            'Product price locks updated successfully'
-        );
-    }
-
     public function bulkShowPrice(BulkProductActionRequest $request, BulkProductAction $action)
     {
         // The client sends `hidden`: "Show Price" posts false, "Hide" posts true.

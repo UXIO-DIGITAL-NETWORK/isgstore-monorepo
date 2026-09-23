@@ -22,7 +22,7 @@ class UxiolabsProductController extends Controller
         } catch (UxiolabsProductException $e) {
             return $this->errorResponse($e->getMessage(), 422);
         } catch (Exception $e) {
-            return $this->errorResponse('Gagal mengambil price list uxiolabs: '.$e->getMessage(), 502);
+            return $this->errorResponse('Gagal mengambil price list Uxiotopup: '.$e->getMessage(), 502);
         }
 
         return $this->successResponse(
@@ -42,7 +42,7 @@ class UxiolabsProductController extends Controller
                 (bool) $request->validated('status'),
             );
         } catch (Exception $e) {
-            return $this->errorResponse('Gagal mengambil price list uxiolabs: '.$e->getMessage(), 502);
+            return $this->errorResponse('Gagal mengambil price list Uxiotopup: '.$e->getMessage(), 502);
         }
 
         return $this->successResponse(

@@ -3,14 +3,16 @@
 namespace App\Actions\Uxiolabs;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Pricing\WriteProductPricesAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Uxiolabs\CreateUxiolabsProductDTO;
 use App\Exceptions\UxiolabsProductException;
 use App\Models\Product;
-use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
+use App\Services\ProductRepricer;
 use App\Services\UxiolabsService;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +26,7 @@ class CreateUxiolabsProductAction
     public function __construct(
         private readonly UxiolabsService $uxiolabsService,
         private readonly PricingService $pricingService,
+        private readonly WriteProductPricesAction $writePrices,
         private readonly CreateActivityLogAction $logAction
     ) {}
 
@@ -32,16 +35,16 @@ class CreateUxiolabsProductAction
         $item = $this->uxiolabsService->findServiceInPriceList($dto->buyerSkuCode);
 
         if ($item === null) {
-            throw new UxiolabsProductException('Layanan tidak ditemukan di price list uxiolabs.');
+            throw new UxiolabsProductException('Layanan tidak ditemukan di price list Uxiotopup.');
         }
 
         $cost = $this->uxiolabsService->costFor($item);
 
         if ($cost <= 0) {
-            throw new UxiolabsProductException('Layanan ditemukan tetapi harga modal dari uxiolabs tidak valid.');
+            throw new UxiolabsProductException('Layanan ditemukan tetapi harga modal dari Uxiotopup tidak valid.');
         }
 
-        $supplier = Supplier::where('name', 'Uxiolabs')->firstOrFail();
+        $supplier = UxiolabsSupplier::modelOrFail();
 
         if (SupplierProduct::where('supplier_id', $supplier->id)->where('buyer_sku_code', $dto->buyerSkuCode)->exists()) {
             throw new UxiolabsProductException('Layanan sudah terhubung ke produk lain.');
@@ -64,7 +67,10 @@ class CreateUxiolabsProductAction
 
         $available = UxiolabsService::isItemActive($item);
 
-        $product = DB::transaction(function () use ($dto, $item, $cost, $code, $prices, $available, $supplier) {
+        // The same prices, where they are actually billed.
+        $planPrices = $this->planPricesFor($cost, $dto);
+
+        $product = DB::transaction(function () use ($dto, $item, $cost, $code, $prices, $planPrices, $available, $supplier) {
             $product = Product::create([
                 'category_id' => $dto->categoryId,
                 'sub_category_id' => $dto->subCategoryId,
@@ -86,6 +92,11 @@ class CreateUxiolabsProductAction
                 'is_active' => $available,
             ]);
 
+            // In the same transaction as the product: a half-created product with
+            // no plan row is one `PlanPrice` can only serve by falling back to
+            // `price_member` and logging a warning.
+            $this->writePrices->forPlans($product, $planPrices, overwriteManual: true);
+
             return $product;
         });
 
@@ -93,9 +104,40 @@ class CreateUxiolabsProductAction
             userId: Auth::id(),
             ipAddress: request()?->ip() ?? '127.0.0.1',
             userAgent: request()?->userAgent() ?? 'System/Import',
-            message: "Menambahkan produk uxiolabs manual: {$product->name} ({$dto->buyerSkuCode})"
+            message: "Menambahkan produk Uxiotopup manual: {$product->name} ({$dto->buyerSkuCode})"
         ));
 
         return $product;
+    }
+
+    /**
+     * The prices that will actually be billed, one per membership plan.
+     *
+     * An explicit price from the form or the import sheet wins, and it has to win
+     * on the plan whose price the legacy column used to hold — `planIdByRole()` is
+     * the same role→plan map the legacy `computePrices()` bridge derives those
+     * columns from, so `price_vip` lands on exactly the plan that granted VIP.
+     *
+     * @return array<int,int> Keyed by membership plan id.
+     */
+    private function planPricesFor(int $cost, CreateUxiolabsProductDTO $dto): array
+    {
+        $planPrices = $this->pricingService->computePlanPrices($cost, $dto->categoryId);
+        $planByRole = ProductRepricer::planIdByRole();
+
+        foreach ([
+            'member' => $dto->priceMember,
+            'vip' => $dto->priceVip,
+            'reseller' => $dto->priceReseller,
+            'agent' => $dto->priceAgent,
+        ] as $role => $explicit) {
+            $planId = $planByRole[$role] ?? null;
+
+            if ($explicit !== null && $planId !== null) {
+                $planPrices[$planId] = (int) $explicit;
+            }
+        }
+
+        return $planPrices;
     }
 }

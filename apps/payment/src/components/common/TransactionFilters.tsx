@@ -11,17 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-export interface TransactionFilterState {
-  search: string;
-  /** "" | "success" | "pending" | "failed". */
-  statusGroup: string;
-  /** "all" | "sale" | "service". */
-  type: string;
-  /** "" or "YYYY-MM-DD". */
-  startDate: string;
-  endDate: string;
-}
+import { TRANSACTION_TYPES, type TransactionFilterState } from "@/lib/transactionSearch";
 
 interface Props {
   value: TransactionFilterState;
@@ -30,18 +20,12 @@ interface Props {
   extra?: ReactNode;
 }
 
-const STATUS_OPTIONS = [
-  { value: "all", labelKey: "filters.allStatuses" },
-  { value: "success", labelKey: "filters.statusSuccess" },
-  { value: "pending", labelKey: "filters.statusPending" },
-  { value: "failed", labelKey: "filters.statusFailed" },
-];
-
-const TYPE_OPTIONS = [
-  { value: "all", labelKey: "filters.allTypes" },
-  { value: "sale", labelKey: "filters.typeSale" },
-  { value: "service", labelKey: "filters.typeService" },
-];
+/** Label keys, keyed by the same values the URL is validated against. */
+const TYPE_LABEL_KEYS: Record<string, string> = {
+  all: "filters.allTypes",
+  sale: "filters.typeSale",
+  service: "filters.typeService",
+};
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -54,7 +38,13 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** Search + status + type + date-range bar. A change resets the caller's page. */
+/** Search + type + date-range bar. A change resets the caller's page.
+ *
+ * Status is deliberately NOT here: both pages that use this bar put the
+ * clickable summary pills directly above it, and two controls writing the same
+ * `status_group` meant the same filter appeared twice, in two vocabularies. The
+ * pills carry the counts, so they are the better half to keep.
+ */
 export function TransactionFilters({ value, onChange, extra }: Props) {
   const { t } = useTranslation("common");
 
@@ -69,33 +59,15 @@ export function TransactionFilters({ value, onChange, extra }: Props) {
         />
       </Field>
 
-      <Field label={t("filters.status")}>
-        <Select
-          value={value.statusGroup || "all"}
-          onValueChange={(next) => onChange({ statusGroup: next === "all" ? "" : next })}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={t("filters.allStatuses")} />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {t(option.labelKey)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Field>
-
       <Field label={t("filters.type")}>
         <Select value={value.type} onValueChange={(next) => onChange({ type: next })}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder={t("filters.allTypes")} />
           </SelectTrigger>
           <SelectContent>
-            {TYPE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {t(option.labelKey)}
+            {TRANSACTION_TYPES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {t(TYPE_LABEL_KEYS[value])}
               </SelectItem>
             ))}
           </SelectContent>

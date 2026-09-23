@@ -14,11 +14,15 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * Guards the backfill in 2026_07_31_000006_backfill_order_form_schemas.
+ * Guards the order-form schema backfill.
  *
- * RefreshDatabase runs migrations against an empty database, so the backfill
- * itself finds no rows. These tests therefore re-run its logic against seeded
- * rows to assert the two properties that matter.
+ * The logic lives in `Database\Seeders\OrderFormSchemaSeeder`, and that seeder
+ * is what these tests re-run. (An earlier version of this comment named a
+ * migration; no migration by that name is in the tree.)
+ *
+ * RefreshDatabase runs migrations against an empty database, so a backfill
+ * inside a migration would find no rows. These tests therefore re-run the
+ * logic against seeded rows to assert the two properties that matter.
  */
 class OrderFormBackfillTest extends TestCase
 {

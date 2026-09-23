@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Report;
 
+use App\Support\DateTime\Wib;
 use DateTimeZone;
 use Illuminate\Support\Carbon;
 
@@ -81,7 +82,9 @@ class PeriodResolver
      */
     public static function sanitizeTimezone(?string $timezone): string
     {
-        $fallback = config('app.timezone') ?: 'UTC';
+        // The platform's wall clock, not `config('app.timezone')` (UTC): a
+        // report window and the time beside it must describe the same day.
+        $fallback = Wib::TZ;
 
         if ($timezone === null || $timezone === '') {
             return $fallback;

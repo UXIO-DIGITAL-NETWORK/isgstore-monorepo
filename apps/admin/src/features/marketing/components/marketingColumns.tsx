@@ -1,12 +1,12 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
+import { formatDate, formatWib } from "@/utils/date";
 import { MarketingRowActions } from "./MarketingRowActions";
 import type { FlashSale, Promo } from "../types/marketing.type";
 
@@ -15,7 +15,7 @@ const dateCell = (value?: string) => (
     as="span"
     className="tabular-nums"
   >
-    {value ? format(new Date(value), "d MMM yyyy") : "—"}
+    {value ? formatDate(value) : "—"}
   </Text>
 );
 
@@ -148,7 +148,7 @@ export const flashSaleColumns = (
         as="span"
         className="tabular-nums"
       >
-        {format(new Date(row.original.starts_at), "d MMM")} – {format(new Date(row.original.ends_at), "d MMM yyyy")}
+        {formatWib(row.original.starts_at, "d MMM")} – {formatWib(row.original.ends_at, "d MMM yyyy")}
       </Text>
     ),
   },

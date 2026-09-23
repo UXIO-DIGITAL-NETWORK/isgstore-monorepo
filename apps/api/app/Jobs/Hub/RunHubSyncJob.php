@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Runs the same pulls the 15-minute scheduler runs, on demand.
+ * Runs the same pulls the 1-minute scheduler runs, on demand.
  *
  * RETIRED as the poke's execution path: HubSyncTriggerController now applies the
  * sync inline and answers with the outcome, because queuing it made a config
@@ -34,7 +34,7 @@ use Throwable;
  *
  * Failure is safe by construction — HubClient throws on a non-2xx AND on a 200
  * carrying an error envelope, both before the sync's transaction opens, so a
- * failed run changes nothing and the scheduler heals it within 15 minutes.
+ * failed run changes nothing and the scheduler heals it within a minute.
  */
 class RunHubSyncJob implements ShouldBeUnique, ShouldQueue
 {
@@ -88,7 +88,7 @@ class RunHubSyncJob implements ShouldBeUnique, ShouldQueue
 
         app(DiscordWebhookService::class)->sendAlert(
             'Sinkronisasi dari Hub gagal setelah dipicu: '.$e->getMessage()
-            .' — jadwal 15 menit masih berjalan sebagai cadangan.'
+            .' — jadwal 1 menit masih berjalan sebagai cadangan.'
         );
     }
 }

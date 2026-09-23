@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { pointsEarned, totalAfterPoints } from "@/features/checkout/lib/points";
+import { orderTotalAfterDiscounts, pointsEarned } from "@/features/checkout/lib/points";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { PriceText } from "@/components/common/PriceText";
@@ -14,6 +14,8 @@ interface Props {
   selectedPackage: DiamondPackage | null;
   /** Package price ("Harga"). */
   totalPrice: number;
+  /** Rupiah taken off by the promo code; 0 when none is applied. */
+  promoDiscount?: number;
   /** "Biaya Admin" — the selected payment method's fee. */
   adminFee: number;
   /** Rupiah covered by redeemed loyalty points; 0 when none are applied. */
@@ -56,6 +58,7 @@ function FeeRow({ label, value }: { label: string; value: string }) {
 export default function OrderSummary({
   selectedPackage,
   totalPrice,
+  promoDiscount = 0,
   adminFee,
   pointsDiscount = 0,
   gameThumbnail,
@@ -74,16 +77,19 @@ export default function OrderSummary({
   const locale = i18n.language;
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // Points come off before the fee, and a fully covered order owes nothing at
-  // all — there is no payment left for a fee to sit on. Mirrors what the API
+  // The same order the server applies them in: the promo comes off the package
+  // price, points come off what is left, and a fully covered order owes nothing
+  // at all — there is no payment left for a fee to sit on. Mirrors what the API
   // recomputes, so the number shown is the number charged.
-  const total = totalAfterPoints(totalPrice, adminFee, pointsDiscount);
+  const priceAfterPromo = Math.max(0, totalPrice - promoDiscount);
+  const remaining = Math.max(0, priceAfterPromo - pointsDiscount);
+  const total = orderTotalAfterDiscounts(totalPrice, promoDiscount, pointsDiscount, adminFee);
 
   // Points are only ever granted to an account, so a guest sees the number as
   // an invitation rather than a promise.
   const isGuest = useAuthStore((state) => state.user) === null;
   const earnedPoints = pointsEarned(
-    totalPrice,
+    priceAfterPromo,
     pointsDiscount,
     selectedPackage?.pointPercent ?? 0,
     selectedPackage?.pointFlat ?? 0,
@@ -135,13 +141,19 @@ export default function OrderSummary({
       {/* Price breakdown */}
       <Box className="px-4 pt-4 pb-2 flex flex-col gap-2.5">
         <FeeRow label={t("summary.price")} value={formatCurrency(totalPrice, locale)} />
+        {promoDiscount > 0 && (
+          <FeeRow
+            label={t("summary.promoDiscount")}
+            value={`- ${formatCurrency(promoDiscount, locale)}`}
+          />
+        )}
         {pointsDiscount > 0 && (
           <FeeRow
             label={t("summary.pointsDiscount")}
             value={`- ${formatCurrency(pointsDiscount, locale)}`}
           />
         )}
-        {adminFee > 0 && totalPrice - pointsDiscount > 0 && (
+        {adminFee > 0 && remaining > 0 && (
           <FeeRow label={t("summary.adminFee")} value={formatCurrency(adminFee, locale)} />
         )}
       </Box>
@@ -215,6 +227,8 @@ export default function OrderSummary({
         }
         productName={gameName}
         price={selectedPackage?.price ?? 0}
+        promoDiscount={promoDiscount}
+        pointsDiscount={pointsDiscount}
         paymentName={selectedPaymentName}
         adminFee={adminFee}
         total={total}

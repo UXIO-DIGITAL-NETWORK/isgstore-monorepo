@@ -34,6 +34,11 @@ class ExpireServiceSubscriptions extends Command
 
         $lapsed = ServiceSubscription::query()
             ->where('status', SubscriptionStatus::ACTIVE)
+            // Explicit, like ExpireMemberships: a NULL window is a lifetime
+            // subscription and must never be swept. `<= now()` already excludes
+            // NULL in SQL, and saying so here is what keeps that true when
+            // somebody edits the comparison.
+            ->whereNotNull('ends_at')
             ->where('ends_at', '<=', now())
             ->get();
 
@@ -65,10 +70,25 @@ class ExpireServiceSubscriptions extends Command
             $expiredSubscriptions++;
         }
 
+        // A bill a CLIENT raised and abandoned should close — an unpaid request
+        // left open forever is clutter, and they can always ask again.
+        //
+        // A bill KITA issued on a schedule must not. `service_invoices` has a
+        // unique `hub_item_key`, so once a plan invoice is expired that period
+        // can never be re-issued: the client would simply have no way to pay for
+        // a service they still hold, and nothing anywhere would report a
+        // problem. The plan sync reopens rows this sweep closed before the
+        // exclusion existed; see ApplyHubPlanAction::reopenIfStranded().
         $overdue = ServiceInvoice::query()
             ->where('status', ServiceInvoiceStatus::UNPAID)
+            ->where('source', '!=', 'hub_plan')
             ->whereNotNull('due_at')
-            ->where('due_at', '<=', now())
+            // Inclusive of the due DAY, the same rule the payment guard uses: a
+            // bill due today is still payable today, so it closes from the day
+            // after. `<= now()` closed it at 00:00 on its own due date — and
+            // this sweep runs at 00:20, so a full day of the client's window was
+            // gone before they woke up.
+            ->where('due_at', '<', now()->startOfDay())
             ->get();
 
         $expiredInvoices = 0;

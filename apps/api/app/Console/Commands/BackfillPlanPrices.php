@@ -9,6 +9,7 @@ use App\Models\ProductPlanPrice;
 use App\Services\PricingService;
 use App\Support\Membership\DefaultPlan;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Give every product a price on every plan.
@@ -101,14 +102,60 @@ class BackfillPlanPrices extends Command
             }
         });
 
+        $reconciled = $this->reconcileDriftedCopy($defaultPlanId, $dryRun);
+
         $verb = $dryRun ? 'would write' : 'wrote';
-        $this->info("Plan prices: {$verb} {$written} row(s), skipped {$skipped} already priced.");
+        $this->info("Plan prices: {$verb} {$written} row(s), skipped {$skipped} already priced, reconciled {$reconciled} drifted copy.");
 
         if (! $dryRun) {
             $this->info('Total rows now: '.ProductPlanPrice::count());
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Make the denormalised copy agree with the row customers are charged from.
+     *
+     * **One direction only, always**: `price_member` follows the default plan's
+     * price. Copying the other way would move what every member pays, and a
+     * deploy is not the place to decide that — an admin who really did mean to
+     * change a price re-saves the product, which writes the plan row properly.
+     * Fixing the copy is also the only direction that cannot alter an invoice.
+     *
+     * This runs on every deploy, so a database that drifted while the legacy
+     * writers were still loose heals itself and `pricing:verify` can pass.
+     *
+     * Soft-deleted products are included on purpose: `VerifyPlanPrices` counts
+     * drift with a raw table query, so skipping them here would leave a product
+     * the gate still complains about.
+     */
+    private function reconcileDriftedCopy(int $defaultPlanId, bool $dryRun): int
+    {
+        $reconciled = 0;
+
+        DB::table('products')
+            ->join('product_plan_prices as ppp', function ($join) use ($defaultPlanId) {
+                $join->on('ppp.product_id', '=', 'products.id')
+                    ->where('ppp.membership_plan_id', '=', $defaultPlanId);
+            })
+            ->whereColumn('products.price_member', '!=', 'ppp.price')
+            ->select(['products.id as id', 'ppp.price'])
+            // chunkById, not chunk: the update removes each row from this
+            // result set, and offset paging would skip whatever shuffled up.
+            ->chunkById(200, function ($rows) use (&$reconciled, $dryRun) {
+                foreach ($rows as $row) {
+                    if (! $dryRun) {
+                        DB::table('products')
+                            ->where('id', $row->id)
+                            ->update(['price_member' => (int) $row->price]);
+                    }
+
+                    $reconciled++;
+                }
+            }, 'products.id', 'id');
+
+        return $reconciled;
     }
 
     /**

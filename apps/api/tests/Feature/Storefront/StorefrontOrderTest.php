@@ -4,6 +4,7 @@ namespace Tests\Feature\Storefront;
 
 use App\Enums\PaymentStatus;
 use App\Enums\TransactionStatus;
+use App\Jobs\ProcessUxiolabsTopup;
 use App\Models\Category;
 use App\Models\Payment;
 use App\Models\PaymentChannel;
@@ -14,6 +15,7 @@ use App\Models\SupplierProduct;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -400,5 +402,52 @@ class StorefrontOrderTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.points.earned', 0)
             ->assertJsonPath('data.points.is_estimate', false);
+    }
+
+    /**
+     * A recovered payment is a sale that really happened, so it settles like any
+     * other. Marking it PAID and fulfilling the order without booking the split
+     * would leave the merchant unpaid for it and kita's markup unrecorded.
+     */
+    public function test_the_checkout_sweep_settles_the_split_for_a_payment_it_recovers(): void
+    {
+        Bus::fake([ProcessUxiolabsTopup::class]);
+
+        $merchant = $this->member();
+
+        // The frozen figures the split reads: 1000 admin fee, minus the
+        // gateway's 300 and the 100 tax on the fee, leaves kita 600.
+        $transaction = $this->order(
+            ['merchant_id' => $merchant->id],
+            ['gross_amount' => 26000, 'admin_fee' => 1000, 'gateway_fee' => 300, 'tax_amount' => 100],
+        );
+
+        // Past the qris window (900s + 300s grace) so the sweep picks it up.
+        Payment::whereKey($transaction->payment->id)->update(['created_at' => now()->subHours(2)]);
+
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['status' => 'success']])]);
+
+        $this->artisan('payments:sync-expired')->assertSuccessful();
+
+        $this->assertSame(PaymentStatus::SUCCESS, $transaction->payment->fresh()->status);
+        $this->assertSame(TransactionStatus::PAID, $transaction->fresh()->status);
+
+        // The merchant is credited their net sale price...
+        $this->assertDatabaseHas('balance_mutations', [
+            'user_id' => $merchant->id,
+            'type' => 'settlement',
+            'reference' => $transaction->invoice_number,
+            'amount' => 25000,
+        ]);
+
+        // ...and kita books the admin fee net of the gateway cut and the tax.
+        $this->assertDatabaseHas('platform_mutations', [
+            'type' => 'markup',
+            'reference' => $transaction->invoice_number,
+            'amount' => 600,
+        ]);
+
+        Bus::assertDispatched(ProcessUxiolabsTopup::class);
     }
 }

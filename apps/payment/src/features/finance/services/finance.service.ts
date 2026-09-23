@@ -1,4 +1,6 @@
 import { api } from "@/lib/axios";
+import { isPaymentAdmin } from "@/constants/roles";
+import { useAuthStore } from "@/store/useAuthStore";
 import { API_VERSION } from "@/config/env";
 import { unwrapList, type ListParams, type ListResult } from "@/lib/list";
 import type { ApiResponse } from "@/types/api.type";
@@ -30,6 +32,18 @@ import type {
 
 const BASE = `${API_VERSION}/payment-internal`;
 
+/**
+ * The notification feed is the one thing on this service both roles read.
+ *
+ * One controller serves it under three route groups and scopes every query to
+ * the caller, so the prefix only decides which door is knocked on — a merchant
+ * calling the internal group gets a 403, not somebody else's rows. Resolved per
+ * call rather than captured at module scope: this file is imported once and the
+ * signed-in user can change without a reload.
+ */
+const notificationsBase = () =>
+  `${API_VERSION}/${isPaymentAdmin(useAuthStore.getState().user) ? "payment-admin" : "payment-internal"}/notifications`;
+
 /** Both paths resolve to the same (merchant, service) installation row. */
 const installationPath = (scope: InstallationScope) =>
   scope.by === "invoice"
@@ -43,21 +57,21 @@ export const financeService = {
   },
 
   notifications: async (params: ListParams): Promise<ListResult<FinanceNotification>> => {
-    const res = await api.get(`${BASE}/notifications`, { params });
+    const res = await api.get(notificationsBase(), { params });
     return unwrapList<FinanceNotification>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
   notificationsUnreadCount: async (): Promise<number> => {
-    const res: ApiResponse<NotificationUnreadCount> = await api.get(`${BASE}/notifications/unread-count`);
+    const res: ApiResponse<NotificationUnreadCount> = await api.get(`${notificationsBase()}/unread-count`);
     return res.data.unread_count;
   },
 
   markNotificationRead: async (id: number): Promise<void> => {
-    await api.post(`${BASE}/notifications/${id}/read`, {});
+    await api.post(`${notificationsBase()}/${id}/read`, {});
   },
 
   markAllNotificationsRead: async (): Promise<void> => {
-    await api.post(`${BASE}/notifications/read-all`, {});
+    await api.post(`${notificationsBase()}/read-all`, {});
   },
 
   merchants: async (params: ListParams): Promise<ListResult<FinanceMerchant>> => {

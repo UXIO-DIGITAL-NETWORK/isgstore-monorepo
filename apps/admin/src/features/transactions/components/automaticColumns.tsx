@@ -1,6 +1,5 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 import { Clock } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -8,6 +7,7 @@ import { Text } from "@/components/common/Text";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/currency";
+import { formatDateTime } from "@/utils/date";
 import { initials } from "@/utils/initials";
 import { formatElapsed } from "../lib/formatElapsed";
 import type { Transaction } from "../types/transaction.type";
@@ -206,14 +206,14 @@ export const automaticColumnsFor = (t: TFunction<"transactions">): ColumnDef<Tra
             variant="muted"
             as="span"
           >
-            Created: {format(new Date(tx.created_at), "MMM d, HH:mm")}
+            Created: {formatDateTime(tx.created_at)}
           </Text>
           {tx.resolved_at && (
             <Text
               as="span"
               className={outcome.className}
             >
-              {t(outcome.labelKey)}: {format(new Date(tx.resolved_at), "MMM d, HH:mm")}
+              {t(outcome.labelKey)}: {formatDateTime(tx.resolved_at)}
             </Text>
           )}
           {tx.elapsed_seconds !== undefined && (

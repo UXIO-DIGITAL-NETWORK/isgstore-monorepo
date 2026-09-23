@@ -18,6 +18,16 @@ const imageFileSchema = z
 /** Meta Description live-counter cap (§4.5). */
 export const META_DESCRIPTION_MAX = 280;
 
+/**
+ * How many identifiers a category may declare.
+ *
+ * Mirrors the API's `OrderFormSchema::MAX_FIELDS`: every field is composed into
+ * the single `target` string the supplier receives, and the first two are also
+ * mirrored into the transactions columns. Catching the cap here turns a
+ * save-time 422 into an inline error.
+ */
+export const MAX_ORDER_FORM_FIELDS = 5;
+
 const orderFormFieldSchema = z.object({
   key: z
     .string()
@@ -45,7 +55,7 @@ export const categoryFormSchema = z.object({
   region: z.string().optional(),
   code: z.string().min(1, "Category Code is required"),
   slug: z.string().min(1, "Category Slug is required"),
-  orderFormFields: z.array(orderFormFieldSchema),
+  orderFormFields: z.array(orderFormFieldSchema).max(MAX_ORDER_FORM_FIELDS, `Up to ${MAX_ORDER_FORM_FIELDS} fields`),
   // Media & description
   logo: imageFileSchema,
   // Card background (portrait) and checkout header (wide). Separate from the

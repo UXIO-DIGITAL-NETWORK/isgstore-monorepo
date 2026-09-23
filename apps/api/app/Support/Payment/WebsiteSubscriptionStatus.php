@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Payment;
 
 use App\Enums\SubscriptionStatus;
+use App\Models\HubPlanItem;
 use App\Models\Service;
 use App\Models\ServiceSubscription;
 use App\Support\PublicUrl;
@@ -44,16 +45,26 @@ final class WebsiteSubscriptionStatus
             $closure = SiteLicenceState::closure();
             $service = WebsiteService::get();
 
+            // `none`/`unknown` mean the Hub holds no term for this site at all —
+            // read that as "belum berlangganan" (with its renew CTA), not as a
+            // lapsed one. Only a real end date makes it `expired`.
+            $cardStatus = match ($closure['status']) {
+                'suspended' => 'suspended',
+                'none', 'unknown' => 'none',
+                default => 'expired',
+            };
+
             // array_merge, not `+`: the union operator keeps the LEFT side's
             // key, so the null default in payload() would win and the client
             // would never see why their site is off.
             return array_merge(
                 self::payload(
-                    $closure['status'] === 'suspended' ? 'suspended' : 'expired',
+                    $cardStatus,
                     $service,
                     $closure['ends_at'] ? Carbon::parse($closure['ends_at']) : null,
                     null,
                     $closure['checkout_url'] ?: self::checkoutUrl($service),
+                    SiteLicenceState::isLifetime(),
                 ),
                 ['suspend_reason' => $closure['reason']],
             );
@@ -68,6 +79,23 @@ final class WebsiteSubscriptionStatus
             return self::payload('unconfigured');
         }
 
+        $checkoutUrl = self::checkoutUrl($service);
+
+        // A licence bought outright answers before any date does: there is
+        // nothing to count down to, and `max(ends_at)` returns null for it — the
+        // very null that means "never subscribed", which is the opposite of what
+        // a client who has paid in full should read.
+        $lifetime = ServiceSubscription::query()
+            ->where('merchant_id', $merchantId)
+            ->where('service_id', $service->id)
+            ->where('status', SubscriptionStatus::ACTIVE)
+            ->whereNull('ends_at')
+            ->exists();
+
+        if ($lifetime) {
+            return self::payload('active', $service, null, null, $checkoutUrl, true);
+        }
+
         // The raw maximum, deliberately **not** `scopeActive()`: that scope also
         // filters `ends_at > now()`, which would return nothing for a lapsed
         // subscription and make "expired" indistinguishable from "never
@@ -78,8 +106,6 @@ final class WebsiteSubscriptionStatus
             ->where('service_id', $service->id)
             ->where('status', SubscriptionStatus::ACTIVE)
             ->max('ends_at');
-
-        $checkoutUrl = self::checkoutUrl($service);
 
         if (! $endsAt) {
             // Never subscribed — the moment the CTA matters most, so the link
@@ -125,6 +151,7 @@ final class WebsiteSubscriptionStatus
         ?Carbon $endsAt = null,
         ?int $daysRemaining = null,
         ?string $checkoutUrl = null,
+        bool $lifetime = false,
     ): array {
         return [
             'status' => $status,
@@ -138,10 +165,94 @@ final class WebsiteSubscriptionStatus
             'ends_at' => $endsAt?->toIso8601String(),
             'days_remaining' => $daysRemaining,
             'checkout_url' => $checkoutUrl,
+            // Paid once, no end date: the card says "Seumur hidup" instead of a
+            // date, and never nags about a renewal that will not come.
+            'lifetime' => $lifetime,
+            // WHAT keeps the site up, beside the one overall term — the lines the
+            // Hub marked as governing, each with its own duration. Empty on a
+            // standalone site, and the card renders nothing for it.
+            'services' => self::governingServices(),
             // Whether the public side is actually up. Additive to the Hub
             // contract; older readers ignore it.
             'is_serving' => ! SiteLicenceState::isManaged() || SiteLicenceState::isServing(),
             'suspend_reason' => null,
         ];
+    }
+
+    /**
+     * The services that actually carry this site's term.
+     *
+     * The Hub publishes the plan; only the lines it marked `governs_licence` can
+     * move `sites.licence_ends_at` — the site's own licence line, plus any add-on
+     * an operator stacked on it. Listing them beside the single overall term is
+     * what lets "up until X" be read together with WHICH service buys it and for
+     * how long.
+     *
+     * `lifetime` for a line is either the site's own lifetime licence or a
+     * `one_time` line (bought outright — the licence, by the Hub's own rule).
+     * `active_until` is what the site actually holds for that service, falling
+     * back to the period the Hub published. `null` when the line is lifetime.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function governingServices(): array
+    {
+        $items = HubPlanItem::query()
+            ->where('governs_licence', true)
+            ->orderBy('service_code')
+            ->orderByDesc('period_index')
+            ->get()
+            ->groupBy('service_code');
+
+        if ($items->isEmpty()) {
+            return [];
+        }
+
+        $merchantId = DefaultMerchant::id();
+        $licenceCode = WebsiteService::code();
+        $licenceLifetime = SiteLicenceState::isLifetime();
+
+        $held = $merchantId === null
+            ? collect()
+            : ServiceSubscription::query()
+                ->where('merchant_id', $merchantId)
+                ->where('status', SubscriptionStatus::ACTIVE)
+                ->with('service:id,code')
+                ->get()
+                ->groupBy(fn (ServiceSubscription $s) => $s->service?->code ?? '');
+
+        $rows = [];
+
+        foreach ($items as $code => $periods) {
+            /** @var HubPlanItem $latest */
+            $latest = $periods->first();
+
+            $heldForService = $held[$code] ?? collect();
+
+            $lifetime = $latest->billing_mode === HubPlanItem::MODE_ONE_TIME
+                || $heldForService->contains(fn (ServiceSubscription $s) => $s->isLifetime())
+                || ($code === $licenceCode && $licenceLifetime);
+
+            $endsAt = $lifetime
+                ? null
+                : ($heldForService->max('ends_at') ?? $latest->period_ends_at);
+
+            $rows[] = [
+                'service_code' => (string) $code,
+                'service_name' => (string) $latest->service_name,
+                'billing_mode' => (string) $latest->billing_mode,
+                'duration_days' => (int) $latest->duration_days,
+                'governs_licence' => true,
+                'lifetime' => $lifetime,
+                'active_until' => $endsAt?->toIso8601String(),
+            ];
+        }
+
+        // The licence leads; the rest follow by code, so the card reads the same
+        // way on every load.
+        usort($rows, fn (array $a, array $b): int => [$a['service_code'] === $licenceCode ? 0 : 1, $a['service_code']]
+            <=> [$b['service_code'] === $licenceCode ? 0 : 1, $b['service_code']]);
+
+        return $rows;
     }
 }

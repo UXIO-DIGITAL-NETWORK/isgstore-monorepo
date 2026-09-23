@@ -89,8 +89,7 @@ export function ReportsPage() {
           variant="section"
         >{t("title")}</Heading>
         <Text variant="muted">
-          Consolidated revenue, transaction volume and profit, with a breakdown per product and payment channel.
-          {data?.timezone ? ` All figures follow your timezone (${data.timezone}).` : ""}
+          Consolidated revenue, transaction volume and profit, with a breakdown per product and payment channel. All figures follow WIB (GMT+7).
         </Text>
       </Box>
 

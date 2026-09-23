@@ -45,7 +45,8 @@ describe("post-login enrolment", () => {
     const { router } = await renderRoute("/login");
 
     await user.type(await screen.findByLabelText(/email/i), "admin@example.test");
-    await user.type(screen.getByLabelText(/password/i), "secret123");
+    // Exact: the field now has a "Show password" toggle beside it.
+    await user.type(screen.getByLabelText("Password"), "secret123");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(await screen.findByRole("heading", { name: /one more step/i })).toBeInTheDocument();
@@ -61,7 +62,7 @@ describe("post-login enrolment", () => {
       status: "success",
       code: 200,
       message: "ok",
-      data: { secret: "JBSWY3DPEHPK3PXP", otpauth_uri: "otpauth://totp/ISG:admin?secret=JBSWY3DPEHPK3PXP" },
+      data: { secret: "JBSWY3DPEHPK3PXP", otpauth_uri: "otpauth://totp/TopupGame:admin?secret=JBSWY3DPEHPK3PXP" },
     } as never);
     const confirm = vi
       .spyOn(authService, "confirmTwoFactor")

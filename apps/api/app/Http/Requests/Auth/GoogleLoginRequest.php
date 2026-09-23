@@ -27,7 +27,8 @@ class GoogleLoginRequest extends FormRequest
     {
         return [
             'credential' => ['required', 'string'],
-            'timezone' => ['nullable', 'string', 'timezone'], // Optional timezone sync (same as login)
+            // No `timezone`: one platform wall clock (WIB) — see
+            // GoogleLoginAction.
         ];
     }
 
@@ -38,7 +39,6 @@ class GoogleLoginRequest extends FormRequest
     {
         return new GoogleLoginDTO(
             credential: $this->validated('credential'),
-            timezone: $this->validated('timezone'),
         );
     }
 }

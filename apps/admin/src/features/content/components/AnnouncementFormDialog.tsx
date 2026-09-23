@@ -128,6 +128,7 @@ export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: A
             onChange={setImage}
             accept="image/jpeg,image/png,image/webp"
             formatsLabel="JPG, PNG or WEBP up to 2MB"
+            uploading={isPending}
           />
 
           <Controller

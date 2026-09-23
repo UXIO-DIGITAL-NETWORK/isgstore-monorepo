@@ -131,3 +131,71 @@ describe("MerchantTransactionsPage", () => {
     expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ status_group: "failed", page: 1 }));
   });
 });
+
+/**
+ * Controlled mode: the route in the client app owns this state in the URL, so
+ * the page must ASK rather than decide. Both halves are asserted — what it
+ * requests, and that it does not quietly keep a copy.
+ */
+describe("MerchantTransactionsPage — driven by the URL", () => {
+  const controlled = (onFiltersChange = vi.fn(), onPageChange = vi.fn(), page = 2) =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MerchantTransactionsPage
+          filters={{
+            search: "INV-1",
+            statusGroup: "failed",
+            type: "service",
+            startDate: "2026-08-01",
+            endDate: "2026-08-31",
+          }}
+          page={page}
+          onFiltersChange={onFiltersChange}
+          onPageChange={onPageChange}
+        />
+      </QueryClientProvider>,
+    );
+
+  it("asks for exactly the view the URL describes", () => {
+    const spy = mockRows([sale]);
+    controlled();
+
+    expect(spy).toHaveBeenCalledWith({
+      type: "service",
+      search: "INV-1",
+      status_group: "failed",
+      start_date: "2026-08-01",
+      end_date: "2026-08-31",
+      page: 2,
+      per_page: 20,
+    });
+  });
+
+  it("hands a filter change to its host instead of holding it", () => {
+    const spy = mockRows([sale]);
+    const onFiltersChange = vi.fn();
+    controlled(onFiltersChange);
+
+    fireEvent.click(screen.getByRole("button", { name: /Sukses/i }));
+
+    expect(onFiltersChange).toHaveBeenCalledWith({ statusGroup: "success" });
+    // The host writes the new value back; until it does, the request stands.
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("hands a page change to its host", () => {
+    const spy = mockRows([sale]);
+    vi.mocked(hooks.useMerchantTransactions).mockReturnValue({
+      data: { rows: [sale], page: 2, lastPage: 3, total: 60, perPage: 20 },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof hooks.useMerchantTransactions>);
+    const onPageChange = vi.fn();
+    controlled(vi.fn(), onPageChange);
+
+    fireEvent.click(screen.getByRole("button", { name: "Berikutnya" }));
+
+    expect(onPageChange).toHaveBeenCalledWith(3);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+});

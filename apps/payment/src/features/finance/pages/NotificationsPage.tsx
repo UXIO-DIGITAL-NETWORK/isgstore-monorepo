@@ -5,14 +5,22 @@ import type { ComponentType } from "react";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
 import { Pager } from "@/components/common/Pager";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { isPaymentAdmin } from "@/constants/roles";
+import { notificationTarget, type NotificationAudience } from "@/lib/notificationTarget";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/useAuthStore";
 import { formatDateTime } from "@/utils/date";
 
-import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from "../hooks/useFinance";
+import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from "../hooks/useFinance";
 import type { FinanceNotification } from "../types/finance.type";
 
 const ICONS: Record<string, ComponentType<{ className?: string }>> = {
@@ -25,12 +33,20 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
 type Filter = "all" | "unread";
 
 /**
- * The internal team's full notification feed. Newest first, unread emphasised;
- * clicking an unread row marks it read, and "Tandai semua dibaca" clears the
- * badge in one call. The filter mirrors the API's `?filter=unread`.
+ * The full notification feed, for both roles. Newest first, unread emphasised.
+ *
+ * A row that has somewhere to go is a link to it: a notification about a bill
+ * you cannot open from the notification is an announcement, not a notification.
+ * The destination is per type and per audience — see lib/notificationTarget,
+ * because the two roles' pages are not the same pages.
+ *
+ * Marking read is a visible control rather than the whole card, so the click
+ * that navigates and the click that changes state are never the same gesture.
  */
 export default function NotificationsPage() {
   const { t } = useTranslation("finance");
+  const isClient = isPaymentAdmin(useAuthStore((state) => state.user));
+  const audience: NotificationAudience = isClient ? "client" : "internal";
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<Filter>("all");
   const { data, isLoading, isError } = useNotifications({
@@ -58,7 +74,7 @@ export default function NotificationsPage() {
           disabled={markAll.isPending}
           onClick={() => markAll.mutate()}
         >
-          Tandai semua dibaca
+          {t("notifications.markAll")}
         </Button>
       </Box>
 
@@ -68,14 +84,14 @@ export default function NotificationsPage() {
           size="sm"
           onClick={() => setFilterAndReset("all")}
         >
-          Semua
+          {t("notifications.filterAll")}
         </Button>
         <Button
           variant={filter === "unread" ? "default" : "outline"}
           size="sm"
           onClick={() => setFilterAndReset("unread")}
         >
-          Belum dibaca
+          {t("notifications.filterUnread")}
         </Button>
       </Box>
 
@@ -90,10 +106,7 @@ export default function NotificationsPage() {
               <Bell />
             </EmptyMedia>
             <EmptyTitle>{t("notifications.empty")}</EmptyTitle>
-            <EmptyDescription>
-              Notifikasi transaksi client, pembayaran layanan, permintaan penarikan, dan paket yang akan berakhir akan
-              muncul di sini.
-            </EmptyDescription>
+            <EmptyDescription>{t("notifications.emptyDescription")}</EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -102,6 +115,7 @@ export default function NotificationsPage() {
             <NotificationCard
               key={notification.id}
               notification={notification}
+              audience={audience}
               onMarkRead={() => {
                 if (!notification.is_read) markRead.mutate(notification.id);
               }}
@@ -122,56 +136,87 @@ export default function NotificationsPage() {
 
 function NotificationCard({
   notification,
+  audience,
   onMarkRead,
 }: {
   notification: FinanceNotification;
+  audience: NotificationAudience;
   onMarkRead: () => void;
 }) {
   const { t } = useTranslation("finance");
   const Icon = ICONS[notification.type] ?? Bell;
+  const target = notificationTarget(notification.type, audience);
+
+  const body = (
+    <>
+      <Box className="flex items-center gap-2">
+        <Text
+          as="span"
+          className="truncate text-sm font-medium text-foreground"
+        >
+          {notification.title}
+        </Text>
+        {!notification.is_read && (
+          <Box
+            as="span"
+            aria-label={t("notifications.unread")}
+            className="size-2 shrink-0 rounded-full bg-destructive"
+          />
+        )}
+      </Box>
+      <Text
+        as="span"
+        className="text-sm text-muted-foreground"
+      >
+        {notification.message}
+      </Text>
+      <Text
+        as="span"
+        className="text-xs text-muted-foreground tabular-nums"
+      >
+        {formatDateTime(notification.created_at)}
+      </Text>
+    </>
+  );
+
+  const bodyClass = "flex min-w-0 flex-1 flex-col gap-0.5";
 
   return (
     <Box
-      as="button"
-      type="button"
-      onClick={onMarkRead}
       className={cn(
-        "flex w-full gap-4 rounded-lg border border-border px-4 py-3 text-left transition-colors hover:bg-muted/50",
+        "flex w-full items-start gap-4 rounded-lg border border-border px-4 py-3",
         !notification.is_read && "bg-muted/40",
       )}
     >
       <Box className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
         <Icon className="size-4 text-muted-foreground" />
       </Box>
-      <Box className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <Box className="flex items-center gap-2">
-          <Text
-            as="span"
-            className="truncate text-sm font-medium text-foreground"
-          >
-            {notification.title}
-          </Text>
-          {!notification.is_read && (
-            <Box
-              as="span"
-              aria-label={t("notifications.unread")}
-              className="size-2 shrink-0 rounded-full bg-destructive"
-            />
+
+      {target ? (
+        <Link
+          href={target}
+          onClick={onMarkRead}
+          className={cn(
+            bodyClass,
+            "rounded-md outline-none hover:underline focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
           )}
-        </Box>
-        <Text
-          as="span"
-          className="text-sm text-muted-foreground"
         >
-          {notification.message}
-        </Text>
-        <Text
-          as="span"
-          className="text-xs text-muted-foreground tabular-nums"
+          {body}
+        </Link>
+      ) : (
+        <Box className={bodyClass}>{body}</Box>
+      )}
+
+      {!notification.is_read && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0"
+          onClick={onMarkRead}
         >
-          {formatDateTime(notification.created_at)}
-        </Text>
-      </Box>
+          {t("notifications.markRead")}
+        </Button>
+      )}
     </Box>
   );
 }

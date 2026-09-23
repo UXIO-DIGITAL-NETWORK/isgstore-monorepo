@@ -20,8 +20,8 @@ class UpdateUserAction
             'name' => $dto->name,
             'email' => $dto->email,
             'phone' => $dto->phone,
-            'balance' => $dto->balance,
-            'point' => $dto->point,
+            // balance/point are not here on purpose — money moves through
+            // WalletLedger, which locks the row and writes the ledger entry.
             'locale' => $dto->locale,
             'timezone' => $dto->timezone,
         ];

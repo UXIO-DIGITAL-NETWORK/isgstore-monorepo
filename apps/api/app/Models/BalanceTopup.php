@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Observers\BalanceTopupObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 
+#[ObservedBy(BalanceTopupObserver::class)]
 class BalanceTopup extends Model
 {
     protected $guarded = ['id'];

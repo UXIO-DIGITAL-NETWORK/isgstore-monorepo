@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Report;
 
 use App\DTOs\Report\ReportSummaryDTO;
+use App\Support\DateTime\Wib;
 use App\Support\Report\PeriodResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -60,7 +61,7 @@ class GetReportSummaryRequest extends FormRequest
     {
         return ReportSummaryDTO::fromValidated(
             $this->validated(),
-            $this->user()?->timezone ?? config('app.timezone')
+            $this->user()?->timezone ?? Wib::TZ
         );
     }
 }

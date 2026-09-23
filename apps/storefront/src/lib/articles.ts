@@ -1,6 +1,6 @@
 import { formatDate } from "@/lib/format";
 import type { ArticleModel } from "@/types/models/article.model";
-import type { Article as BeritaArticle, BeritaCategoryKey } from "@/features/berita/types/article.type";
+import type { Article as BeritaArticle } from "@/features/berita/types/article.type";
 import type { Article as HomeArticle } from "@/features/home/types/artikel.type";
 
 /**
@@ -11,25 +11,6 @@ import type { Article as HomeArticle } from "@/features/home/types/artikel.type"
  * import a feature's *type* (types flow up), while the reverse would break the
  * isolation rule.
  */
-
-/**
- * The storefront's category pills are a closed set with their own translated
- * labels, so an unrecognised key is folded into the catch-all rather than
- * rendering a pill that does not exist.
- */
-const KNOWN_KEYS: readonly BeritaCategoryKey[] = [
-  "promo",
-  "mobile-legend",
-  "free-fire",
-  "honor-of-kings",
-  "valorant",
-  "lainnya",
-];
-
-export const coerceCategoryKey = (key: string | null | undefined): Exclude<BeritaCategoryKey, "semua"> => {
-  const match = KNOWN_KEYS.find((known) => known === key);
-  return (match ?? "lainnya") as Exclude<BeritaCategoryKey, "semua">;
-};
 
 /**
  * The badge is whatever the API sends as the category name — which may
@@ -46,7 +27,10 @@ export const toBeritaArticle = (model: ArticleModel, locale: string): BeritaArti
   id: String(model.id),
   slug: model.slug,
   category: badge(model),
-  categoryKey: coerceCategoryKey(model.category.key),
+  // Passed through as-is: the pills are the API's own category list, so folding
+  // an unrecognised key into a catch-all would file an operator's new category
+  // under "Lainnya" and hide it behind a pill that does not match.
+  categoryKey: model.category.key ?? "lainnya",
   title: model.title,
   date: displayDate(model, locale),
   author: model.author,

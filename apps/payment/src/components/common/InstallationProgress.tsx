@@ -53,7 +53,7 @@ export function InstallationProgress({ installation, isLoading = false }: Instal
           variant="small"
           className="tabular-nums text-muted-foreground"
         >
-          {done}/{total} langkah · {percent}%
+          {t("installation.steps", { done, total, percent })}
         </Text>
       </Box>
 
@@ -65,7 +65,10 @@ export function InstallationProgress({ installation, isLoading = false }: Instal
           variant="small"
           className="text-muted-foreground"
         >
-          Rentang: {formatDate(installation.starts_at)} – {formatDate(installation.ends_at)}
+          {t("installation.window", {
+            from: formatDate(installation.starts_at),
+            to: formatDate(installation.ends_at),
+          })}
         </Text>
       )}
 
@@ -76,7 +79,7 @@ export function InstallationProgress({ installation, isLoading = false }: Instal
           variant="small"
           className="text-muted-foreground"
         >
-          Tahapan instalasi belum disusun.
+          {t("installation.noSteps")}
         </Text>
       ) : (
         <Box

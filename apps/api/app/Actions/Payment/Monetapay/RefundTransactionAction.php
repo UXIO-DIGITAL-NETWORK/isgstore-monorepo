@@ -32,7 +32,7 @@ class RefundTransactionAction
             userId: Auth::id(),
             ipAddress: request()->ip(),
             userAgent: request()->userAgent(),
-            message: "Monetapay refund requested for payment order: {$reference} (amount: {$params['amount']})",
+            message: "Payment gateway refund requested for payment order: {$reference} (amount: {$params['amount']})",
         ));
 
         return $response;

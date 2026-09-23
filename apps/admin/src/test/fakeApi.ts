@@ -178,7 +178,6 @@ const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
     ],
     status: row.status === "active",
     is_available: row.is_available,
-    is_price_locked: row.is_price_locked ?? false,
     is_price_hidden: row.is_price_hidden ?? false,
     // Derived server-side from the product AND its supplier mapping; the fixture
     // carries it so the row menu can offer Publish or Unpublish.
@@ -248,12 +247,55 @@ const DOCUMENTS: Record<string, unknown> = {
     {
       id: 4,
       group: "general",
-      key: "site_logo",
+      // `logo`, matching SettingSeeder — the page special-cases that key for the
+      // formats it accepts, and a fixture that renamed it left that branch
+      // unreachable.
+      key: "logo",
       value: null,
       value_url: null,
       type: "image",
-      label: "Site Logo",
+      label: "Logo",
       is_public: true,
+    },
+    {
+      id: 5,
+      group: "payment",
+      key: "balance_topup_presets",
+      value: "[10000,25000,50000]",
+      type: "json",
+      label: "Top-up Nominal Presets",
+      is_public: true,
+    },
+    {
+      id: 6,
+      group: "operational",
+      key: "order_expiry_minutes",
+      value: '{"virtual_account":15,"qris":20,"ewallet":125,"payment_link":605,"convenience_store":1445}',
+      type: "json",
+      label: "Order Expiry (minutes)",
+      is_public: false,
+    },
+    // Present on purpose, though the API no longer serves either group: the
+    // panel and the API deploy separately, and an older API must not be able to
+    // put a Hub-owned licence or a per-plan markup back on screen — or into the
+    // save payload — just because it still sends the rows.
+    {
+      id: 7,
+      group: "licence",
+      key: "is_serving",
+      value: "1",
+      type: "boolean",
+      label: "Lisensi situs: is_serving",
+      is_public: false,
+    },
+    {
+      id: 8,
+      group: "pricing",
+      key: "default_markup_percent",
+      value: "20",
+      type: "number",
+      label: "Default Markup (%)",
+      is_public: false,
     },
   ],
   // This site's own platform subscription — feeds the sidebar footer card,
@@ -264,6 +306,18 @@ const DOCUMENTS: Record<string, unknown> = {
     ends_at: "2026-09-14T00:00:00.000Z",
     days_remaining: 9,
     checkout_url: "https://pay.example.test/app/payment-admin/services/1/checkout",
+    // The Hub-marked lines that carry the term, each with its own duration.
+    services: [
+      {
+        service_code: "uxiolabs",
+        service_name: "Website Topup",
+        billing_mode: "billed",
+        duration_days: 365,
+        governs_licence: true,
+        lifetime: false,
+        active_until: "2026-09-14T00:00:00.000Z",
+      },
+    ],
   },
   "/v1/transactions/status-counts": { pending: 12, processing: 32, failed_provider: 8, refunded: 3 },
   "/v1/refunds/status-counts": {

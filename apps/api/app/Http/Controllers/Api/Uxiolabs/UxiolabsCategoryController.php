@@ -22,9 +22,9 @@ class UxiolabsCategoryController extends Controller
         } catch (Throwable $e) {
             // Throwable, not Exception: a malformed upstream payload surfaces as a
             // TypeError, which must degrade to a clean 502 rather than a 500.
-            return $this->errorResponse('Gagal mengambil kategori uxiolabs: '.$e->getMessage(), 502);
+            return $this->errorResponse('Gagal mengambil kategori Uxiotopup: '.$e->getMessage(), 502);
         }
 
-        return $this->successResponse($rows, 'Kategori provider uxiolabs');
+        return $this->successResponse($rows, 'Kategori provider Uxiotopup');
     }
 }

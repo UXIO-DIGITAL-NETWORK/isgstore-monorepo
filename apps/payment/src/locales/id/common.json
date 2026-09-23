@@ -3,7 +3,13 @@
     "cancel": "Batal",
     "save": "Simpan",
     "delete": "Hapus",
-    "refresh": "Muat ulang"
+    "refresh": "Muat ulang",
+    "export": "Ekspor"
+  },
+  "pager": {
+    "summary": "Halaman {{page}} dari {{lastPage}} · {{total}} data",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya"
   },
   "theme": {
     "label": "Ganti tema",
@@ -22,16 +28,12 @@
     "rowsPerPage": "Baris per halaman",
     "loading": "Memuat…",
     "rowNumber": "No.",
-    "empty": "Tidak ada data"
+    "empty": "Tidak ada data",
+    "error": "Gagal memuat data"
   },
   "filters": {
     "search": "Cari",
     "searchPlaceholder": "No. invoice",
-    "status": "Status",
-    "allStatuses": "Semua status",
-    "statusSuccess": "Sukses",
-    "statusPending": "Pending",
-    "statusFailed": "Gagal",
     "type": "Tipe",
     "allTypes": "Semua tipe",
     "typeSale": "Penjualan",
@@ -60,8 +62,11 @@
   "installation": {
     "loading": "Memuat…",
     "notScheduled": "Instalasi belum dijadwalkan",
-    "notScheduledDescription": "Tim kami akan menjadwalkan pemasangan layanan ini.",
-    "progress": "Progress Instalasi"
+    "notScheduledDescription": "Kami akan menjadwalkan instalasi setelah pembayaran dikonfirmasi.",
+    "progress": "Progres instalasi",
+    "steps": "{{done}}/{{total}} langkah · {{percent}}%",
+    "window": "Rentang: {{from}} – {{to}}",
+    "noSteps": "Tahapan instalasi belum disusun."
   },
   "errorPage": {
     "notFoundAlt": "Ilustrasi halaman tidak ditemukan",
@@ -138,7 +143,8 @@
     "clipboardUnavailable": "Clipboard tidak tersedia di browser ini"
   },
   "dropzone": {
-    "prompt": "Tarik & lepas berkas di sini"
+    "prompt": "Tarik & lepas berkas di sini",
+    "uploading": "Mengunggah…"
   },
   "copy": {
     "defaultLabel": "Nilai",

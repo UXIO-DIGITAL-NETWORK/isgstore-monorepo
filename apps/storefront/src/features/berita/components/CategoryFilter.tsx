@@ -42,7 +42,9 @@ export default function CategoryFilter({
           onClick={() => onCategoryChange(pill.key)}
           className={cn(pillVariants({ active: activeCategory === pill.key }))}
         >
-          {t(`categories.${pill.key}`)}
+          {/* A category an operator added has no translation, so the API's own
+              label is the fallback rather than the raw key. */}
+          {t(`categories.${pill.key}`, { defaultValue: pill.label ?? pill.key })}
         </Box>
       ))}
     </Box>

@@ -19,7 +19,8 @@ use Throwable;
  * document message with the invoice PDF attached. Dispatched by
  * SendTransactionReceiptAction when an order is COMPLETED, alongside the email.
  *
- * No-op — not a failure — when PiWAPI is unconfigured or the buyer has no usable
+ * No-op — not a failure — when PiWAPI is unconfigured, WhatsApp delivery is
+ * switched off (`PIWAPI_ENABLED=false`, the default), or the buyer has no usable
  * number; those are expected states, not errors to retry. Queued with retries so
  * a transient gateway blip doesn't drop the receipt on the first HTTP hiccup.
  */
@@ -36,7 +37,7 @@ class SendTransactionWhatsAppJob implements ShouldQueue
 
     public function handle(PiWapiService $piwapi): void
     {
-        if (! $piwapi->isConfigured()) {
+        if (! $piwapi->canSend()) {
             return;
         }
 

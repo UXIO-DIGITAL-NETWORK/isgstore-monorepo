@@ -40,7 +40,7 @@ describe("security settings", () => {
       status: "success",
       code: 200,
       message: "ok",
-      data: { secret: "NEWSECRET234567A", otpauth_uri: "otpauth://totp/ISG:admin?secret=NEWSECRET234567A" },
+      data: { secret: "NEWSECRET234567A", otpauth_uri: "otpauth://totp/TopupGame:admin?secret=NEWSECRET234567A" },
     } as never);
 
     const user = userEvent.setup();
@@ -75,7 +75,7 @@ describe("security settings", () => {
       status: "success",
       code: 200,
       message: "ok",
-      data: { secret: "NEWSECRET234567A", otpauth_uri: "otpauth://totp/ISG:admin?secret=NEWSECRET234567A" },
+      data: { secret: "NEWSECRET234567A", otpauth_uri: "otpauth://totp/TopupGame:admin?secret=NEWSECRET234567A" },
     } as never);
     const confirm = vi.spyOn(authService, "confirmTwoFactorRotation").mockResolvedValue({
       status: "success",
@@ -109,5 +109,45 @@ describe("security settings", () => {
     await renderRoute("/admin/settings/security");
 
     expect(await screen.findByText(/started but never confirmed/i)).toBeInTheDocument();
+  });
+
+  it("changes the password with all three fields", async () => {
+    signedIn();
+    const change = vi.spyOn(authService, "changePassword").mockResolvedValue({
+      status: "success",
+      code: 200,
+      message: "ok",
+      data: null,
+    } as never);
+
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings/security");
+
+    await user.type(screen.getByLabelText("Current password"), "old-secret");
+    await user.type(screen.getByLabelText("New password"), "new-secret");
+    await user.type(screen.getByLabelText("Confirm new password"), "new-secret");
+    await user.click(screen.getByRole("button", { name: "Change password" }));
+
+    expect(change).toHaveBeenCalledWith({
+      current_password: "old-secret",
+      password: "new-secret",
+      password_confirmation: "new-secret",
+    });
+  });
+
+  it("catches a mismatched confirmation before spending a round trip", async () => {
+    signedIn();
+    const change = vi.spyOn(authService, "changePassword");
+
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings/security");
+
+    await user.type(screen.getByLabelText("Current password"), "old-secret");
+    await user.type(screen.getByLabelText("New password"), "new-secret");
+    await user.type(screen.getByLabelText("Confirm new password"), "typo-secret");
+    await user.click(screen.getByRole("button", { name: "Change password" }));
+
+    expect(change).not.toHaveBeenCalled();
+    expect(screen.getByText("The confirmation does not match.")).toBeInTheDocument();
   });
 });

@@ -1,5 +1,4 @@
 import { Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { Toaster } from "sonner";
 import { Box } from "@/components/common/Box";
 import { MaintenanceGate } from "@/components/shared/MaintenanceGate";
@@ -36,7 +35,6 @@ export function RootLayout(): React.JSX.Element {
           },
         }}
       />
-      <TanStackRouterDevtools initialIsOpen={false} />
     </Box>
   );
 }

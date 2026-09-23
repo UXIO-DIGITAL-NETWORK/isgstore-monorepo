@@ -7,6 +7,7 @@ namespace Tests\Feature\PaymentPage;
 use App\Enums\ServiceInvoiceStatus;
 use App\Models\PlatformMutation;
 use App\Models\Service;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -195,6 +196,79 @@ class ServiceInvoicePaymentTest extends TestCase
     }
 
     /**
+     * A due date is a DATE, not an instant.
+     *
+     * A bill due today is payable all through today. The guard compared the raw
+     * timestamp, so a bill dated midnight was already "past due" the moment the
+     * clock moved past it — and for a Hub-issued OPENING bill, anchored the
+     * instant it is created, that meant no payment could ever be opened against
+     * it at all.
+     */
+    public function test_a_bill_due_today_can_still_be_opened(): void
+    {
+        $this->fakeGateway();
+        $merchant = $this->merchant();
+        $channel = $this->qrisChannel();
+
+        $invoice = ServiceInvoice::factory()->create([
+            'merchant_id' => $merchant->id,
+            'due_at' => now()->startOfDay(),
+        ]);
+
+        Sanctum::actingAs($merchant, ['access-api']);
+        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
+            'payment_channel_id' => $channel->id,
+        ])->assertOk();
+    }
+
+    /** Once the due day itself is over, the window really is closed. */
+    public function test_a_bill_past_its_due_day_is_refused(): void
+    {
+        $this->fakeGateway();
+        $merchant = $this->merchant();
+        $channel = $this->qrisChannel();
+
+        $invoice = ServiceInvoice::factory()->create([
+            'merchant_id' => $merchant->id,
+            'due_at' => now()->subDay(),
+        ]);
+
+        Sanctum::actingAs($merchant, ['access-api']);
+        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
+            'payment_channel_id' => $channel->id,
+        ])->assertStatus(422)
+            ->assertJsonPath('message', "Invoice {$invoice->invoice_number} sudah melewati jatuh tempo.");
+    }
+
+    /**
+     * A Hub-plan bill has no way back, so lateness must not close the only door.
+     *
+     * It is invisible to the expiry sweep — the unique `hub_item_key` means a
+     * period, once expired, could never be re-issued — and `reopenIfStranded`
+     * only heals rows that sweep closed. Refusing a late payment therefore
+     * strands the bill AND the service behind it: the client holds something
+     * they can never settle, and the site never lights.
+     */
+    public function test_a_hub_plan_bill_stays_payable_past_its_due_date(): void
+    {
+        $this->fakeGateway();
+        $merchant = $this->merchant();
+        $channel = $this->qrisChannel();
+
+        $invoice = ServiceInvoice::factory()->create([
+            'merchant_id' => $merchant->id,
+            'source' => 'hub_plan',
+            'hub_item_key' => '01ABC:0',
+            'due_at' => now()->subMonth(),
+        ]);
+
+        Sanctum::actingAs($merchant, ['access-api']);
+        $this->postJson("/api/v1/payment-admin/service-invoices/{$invoice->id}/pay", [
+            'payment_channel_id' => $channel->id,
+        ])->assertOk();
+    }
+
+    /**
      * A manually-confirmed invoice never gets a ServiceInvoicePayment row, so
      * its revenue must be booked off the invoice's own amount, keyed on the
      * invoice number rather than an attempt reference.
@@ -275,6 +349,95 @@ class ServiceInvoicePaymentTest extends TestCase
         $attempt = ServiceInvoicePayment::firstOrFail();
         $this->assertSame(102500, $attempt->total);
         Http::assertSentCount(1);
+    }
+
+    /**
+     * A recovered payment is money kita actually received, so the revenue has to
+     * be booked on the same reference the webhook would have used — otherwise the
+     * client is served, the bill reads PAID, and the income never becomes
+     * withdrawable, with nothing on the row to say so afterwards.
+     */
+    public function test_the_sweep_books_service_revenue_for_the_payment_it_recovers(): void
+    {
+        $this->fakeGateway();
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 150000]), $this->qrisChannel());
+        $attempt = ServiceInvoicePayment::firstOrFail();
+
+        $attempt->forceFill(['created_at' => now()->subDay()])->save();
+
+        Http::swap(new HttpFactory);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['status' => 'success']])]);
+
+        $this->artisan('service-payments:sync-expired')->assertSuccessful();
+
+        $this->assertDatabaseHas('platform_mutations', [
+            'type' => 'service_revenue',
+            'reference' => $attempt->reference_id,
+            'amount' => (int) $invoice->amount,
+        ]);
+        $this->assertSame(
+            1,
+            PlatformMutation::where('type', 'service_revenue')->where('reference', $attempt->reference_id)->count(),
+        );
+    }
+
+    /**
+     * A hand-confirmed bill already booked its revenue under the invoice number.
+     * The sweep then finds nothing left to settle and must book nothing — the
+     * two references are what keep the paths from doubling up.
+     */
+    public function test_the_sweep_does_not_book_revenue_for_a_bill_already_confirmed_by_hand(): void
+    {
+        $this->fakeGateway();
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 150000]), $this->qrisChannel());
+        $attempt = ServiceInvoicePayment::firstOrFail();
+
+        Sanctum::actingAs($this->internal(), ['access-api']);
+        $this->postJson("/api/v1/payment-internal/service-invoices/{$invoice->id}/confirm")->assertOk();
+
+        $attempt->forceFill(['created_at' => now()->subDay()])->save();
+
+        Http::swap(new HttpFactory);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['status' => 'success']])]);
+
+        $this->artisan('service-payments:sync-expired')->assertSuccessful();
+
+        $this->assertSame(
+            0,
+            PlatformMutation::where('type', 'service_revenue')->where('reference', $attempt->reference_id)->count(),
+        );
+        $this->assertSame(1, PlatformMutation::where('type', 'service_revenue')->count());
+    }
+
+    /**
+     * The sweep is for a webhook that never arrived, not one that is merely slow.
+     * Because both paths credit the ATTEMPT's reference, a callback landing after
+     * the sweep finds the attempt settled and books nothing.
+     */
+    public function test_a_late_webhook_after_the_sweep_does_not_double_book(): void
+    {
+        config(['services.monetapay.token' => 'test-token']);
+
+        $this->fakeGateway();
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 150000]), $this->qrisChannel());
+        $attempt = ServiceInvoicePayment::firstOrFail();
+
+        $attempt->forceFill(['created_at' => now()->subDay()])->save();
+
+        Http::swap(new HttpFactory);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['code' => 0, 'data' => ['status' => 'success']])]);
+
+        $this->artisan('service-payments:sync-expired')->assertSuccessful();
+
+        // The webhook arrives late, with a perfectly valid signature.
+        $this->postJson('/api/v1/payment/callback', $this->signedPayload($attempt->reference_id, (int) $attempt->total))
+            ->assertOk();
+
+        $this->assertSame(1, PlatformMutation::where('type', 'service_revenue')->count());
+        $this->assertDatabaseCount('service_subscriptions', 1);
     }
 
     /**

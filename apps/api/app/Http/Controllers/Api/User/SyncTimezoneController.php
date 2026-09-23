@@ -3,32 +3,32 @@
 namespace App\Http\Controllers\Api\User;
 
 use App\Actions\User\SyncUserTimezoneAction;
-use App\DTOs\User\SyncTimezoneDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\SyncTimezoneRequest;
 use App\Models\User;
+use App\Support\DateTime\Wib;
 use Illuminate\Http\JsonResponse;
 
 class SyncTimezoneController extends Controller
 {
     /**
-     * (Asumsi: Menggunakan trait ApiResponse yang sama dengan standar arsitektur kita)
+     * Kept as a compatibility endpoint: the platform displays one wall clock
+     * (WIB), so the zone in the payload is ignored and the account is
+     * normalised onto it. See SyncUserTimezoneAction.
      */
     public function __invoke(SyncTimezoneRequest $request, SyncUserTimezoneAction $action): JsonResponse
     {
-        $dto = SyncTimezoneDTO::fromValidated($request->validated());
-
         /** @var User $user */
         $user = $request->user();
 
-        $action->execute($user, $dto);
+        $action->execute($user);
 
         return response()->json([
             'status' => 'success',
             'code' => 200,
             'message' => 'Zona waktu berhasil disinkronisasi.',
             'data' => [
-                'timezone' => $dto->timezone,
+                'timezone' => Wib::TZ,
             ],
         ], 200);
     }

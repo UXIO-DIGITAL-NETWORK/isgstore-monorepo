@@ -55,7 +55,9 @@ describe("MembershipListPage", () => {
 
     expect(await screen.findByText("Gold")).toBeInTheDocument();
     expect(screen.getByText("Lifetime")).toBeInTheDocument();
-    expect(screen.queryByText(/days/)).not.toBeInTheDocument();
+    // Only this page's table: the sidebar's subscription card counts its own
+    // days, and that is not what this row is about.
+    expect(within(screen.getByRole("table")).queryByText(/days/)).not.toBeInTheDocument();
   });
 
   it("creates a lifetime plan by default", async () => {

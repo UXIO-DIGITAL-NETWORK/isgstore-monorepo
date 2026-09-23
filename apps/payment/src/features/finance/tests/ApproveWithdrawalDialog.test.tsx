@@ -43,7 +43,7 @@ describe("ApproveWithdrawalDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "Setujui" }));
 
-    expect(screen.getByText("Cairkan via Monetapay")).toBeInTheDocument();
+    expect(screen.getByText("Cairkan via payment gateway")).toBeInTheDocument();
     expect(screen.getByText("BCA · 6700519102")).toBeInTheDocument();
     expect(approve).not.toHaveBeenCalled();
   });
@@ -53,7 +53,7 @@ describe("ApproveWithdrawalDialog", () => {
     render(<ApproveWithdrawalDialog withdrawal={withdrawal} />);
 
     await user.click(screen.getByRole("button", { name: "Setujui" }));
-    await user.click(screen.getByRole("button", { name: "Setujui & Cairkan via Monetapay" }));
+    await user.click(screen.getByRole("button", { name: "Setujui & Cairkan via payment gateway" }));
 
     expect(approve).toHaveBeenCalledWith(
       { id: 42, method: "monetapay", proof: undefined },

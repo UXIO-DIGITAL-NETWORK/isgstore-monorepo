@@ -12,7 +12,18 @@
     "totalWithdrawals": "Total withdrawn",
     "totalWithdrawalsCaption": "Payouts already settled",
     "totalTransactions": "Total transactions",
-    "totalTransactionsCaption": "Number of transactions"
+    "totalTransactionsCaption": "Number of transactions",
+    "updatedAt": "Updated {{time}}",
+    "refresh": "Refresh",
+    "loadFailedTitle": "Could not load your balance summary",
+    "loadFailed": "The figures on this page are held back rather than shown wrong. Try loading again.",
+    "retry": "Try again",
+    "recentTitle": "Recent activity",
+    "viewAll": "See all transactions",
+    "recentFailed": "Could not load recent activity.",
+    "recentEmptyTitle": "No activity yet",
+    "recentEmpty": "Sales and service bills will show up here as soon as they happen.",
+    "recentEmptyCta": "Browse the service catalogue"
   },
   "transactions": {
     "title": "Transactions",
@@ -34,7 +45,8 @@
     "colReference": "Reference",
     "colAmount": "Amount",
     "colBalanceAfter": "Balance after",
-    "colDescription": "Description"
+    "colDescription": "Description",
+    "fromBalance": "from {{amount}}"
   },
   "withdrawals": {
     "title": "Withdrawals",
@@ -56,12 +68,64 @@
     "colFee": "Fee",
     "colNett": "Received",
     "colStatus": "Status",
-    "colDate": "Date"
+    "colDate": "Date",
+    "feeNote": "A flat fee per payout, the same whatever the amount."
+  },
+  "withdrawalStatus": {
+    "pending": {
+      "label": "Awaiting approval",
+      "hint": "Your request is in and is waiting for us to review it."
+    },
+    "approved": {
+      "label": "Approved",
+      "hint": "We have approved it and are preparing it for the bank or e-wallet."
+    },
+    "processing": {
+      "label": "Sent to the bank",
+      "hint": "The bank or e-wallet is processing it. It usually completes the same day."
+    },
+    "settled": {
+      "label": "Completed",
+      "hint": "The money has arrived in the destination account."
+    },
+    "rejected": {
+      "label": "Rejected",
+      "hint": "We did not process this payout, and the balance is unchanged."
+    },
+    "failed": {
+      "label": "Failed",
+      "hint": "The transfer failed at the bank or the gateway, and the balance is unchanged."
+    }
+  },
+  "withdrawalDetail": {
+    "loading": "Loading…",
+    "notFound": "Withdrawal not found",
+    "backToWithdrawals": "← Back to withdrawals",
+    "summary": "Summary",
+    "destination": "Payout destination",
+    "timeline": "Payout progress",
+    "requestedAt": "Requested",
+    "approvedAt": "Approved",
+    "disbursementRef": "Disbursement reference",
+    "viewProof": "View the transfer proof",
+    "notes": "Notes",
+    "failedTitle": "This payout did not arrive",
+    "rejectedFallback": "We rejected this payout. If that looks wrong, get in touch and quote this withdrawal number.",
+    "failedFallback": "The bank or gateway gave no reason. Get in touch and quote this withdrawal number.",
+    "failedBalanceNote": "The balance is unchanged because this payout did not arrive.",
+    "retry": "Request a new withdrawal"
+  },
+  "subscriptionStatus": {
+    "active": "Active",
+    "expired": "Ended",
+    "cancelled": "Cancelled"
   },
   "services": {
     "title": "Services",
     "fallbackServiceName": "Service",
     "daysRemaining": "{{count}} days left",
+    "lifetime": "Lifetime",
+    "alreadySubscribed": "Already subscribed",
     "includedWithWebsite": "Included with your website subscription",
     "perDays": "/ {{count}} days",
     "subscribe": "Subscribe",
@@ -69,7 +133,9 @@
     "tabCatalog": "Catalogue",
     "tabInvoices": "Purchase history",
     "loading": "Loading…",
-    "noActiveSubscriptions": "No active services yet. Open the Catalogue tab to subscribe.",
+    "noActiveSubscriptions": "No active services yet.",
+    "noActiveSubscriptionsCta": "Open the Catalogue tab to subscribe.",
+    "outstandingHint": "A bill is waiting to be paid — open the Bills tab.",
     "noServicesAvailable": "No services available yet.",
     "noPurchases": "No purchases yet",
     "colInvoice": "Invoice no.",
@@ -79,7 +145,8 @@
     "colDue": "Due",
     "colAction": "Action",
     "pay": "Pay",
-    "detail": "Details"
+    "detail": "Details",
+    "tabBills": "Bills"
   },
   "serviceStatus": {
     "title": "Service status",
@@ -112,6 +179,18 @@
     "allComponents": "All components",
     "fallbackTargetName": "Service",
     "incidentStarted": "Started",
+    "estimatedResolved": "Estimated resolution {{date}}",
+    "severity": {
+      "minor": "Minor",
+      "major": "Major",
+      "critical": "Critical"
+    },
+    "incidentStatus": {
+      "investigating": "Investigating",
+      "identified": "Cause found",
+      "monitoring": "Monitoring",
+      "resolved": "Resolved"
+    },
     "colComponent": "Component",
     "colType": "Type",
     "colStatus": "Status",
@@ -123,17 +202,22 @@
     "title": "Website Services",
     "description": "Access and manage all your services and payment gateway balance from this dashboard.",
     "activeUntil": "• Active until {{date}}",
-    "cta": "Go check"
+    "activeCount": "{{count}} active services",
+    "cta": "Open services"
   },
   "paymentPicker": {
     "loading": "Loading payment methods…",
     "none": "No payment methods are active yet. Please get in touch with us.",
+    "error": "Could not load payment methods. Try reloading the page in a moment.",
     "noAdminFee": "No admin fee"
   },
   "payment": {
     "title": "Payment",
     "lapsed": "The previous payment has expired. Pick a method to open a new one.",
     "notOpened": "No payment has been opened yet. Pick a method to continue.",
+    "received": "Payment received",
+    "receivedHint": "We have received the {{amount}} total. The service status follows automatically.",
+    "reopenFromBills": "Open the Bills tab to start a new payment",
     "method": "Payment method",
     "adminFee": "Admin fee",
     "total": "Total",
@@ -162,7 +246,9 @@
     "notes": "Notes (optional)",
     "notesPlaceholder": "For example, anything special we should know during setup",
     "openInvoice": "There is still an unfinished invoice for this service.",
+    "openInvoiceHint": "This service cannot be bought twice while a bill is still open. Settle that bill first.",
     "viewInvoice": "View invoice",
+    "backToCatalog": "← Back to the catalogue",
     "pay": "Pay now",
     "paying": "Processing…",
     "loading": "Loading…",
@@ -179,6 +265,49 @@
     "rejected": "Rejected: {{notes}}",
     "serviceDetails": "Service details",
     "colLabel": "Label",
-    "colValue": "Value"
+    "colValue": "Value",
+    "paidTitle": "Payment received",
+    "paidDescription": "This service is active. Its details and credentials are below.",
+    "expiredTitle": "This invoice has expired",
+    "expiredDescription": "An expired invoice can no longer be paid. Get in touch with us if you still want to go ahead with this service.",
+    "credentialsPending": "Credentials will appear here once installation is under way."
+  },
+  "invoiceStatus": {
+    "unpaid": "Unpaid",
+    "waitingConfirmation": "Awaiting confirmation",
+    "paid": "Paid",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
+    "expired": "Expired"
+  },
+  "bills": {
+    "nothingDue": "Nothing to pay. Every service is settled for the current period.",
+    "noPlan": "No bills from your service plan yet.",
+    "noPlanHint": "Bills appear here as soon as we issue them. If you expected one, get in touch.",
+    "oneTime": "One-time",
+    "noDueDate": "No due date",
+    "dueOn": "Due {{date}}",
+    "summary": "Payment summary",
+    "selectGroup": "Select all due this day",
+    "selectedCount": "{{count}} bills selected",
+    "feeOnce": "Admin fee (charged once for the whole selection)",
+    "total": "Total to pay",
+    "paySelected": "Pay selected",
+    "selectHint": "Tick the bills you want to pay, then pick a payment method."
+  },
+  "plan": {
+    "title": "Services in your plan",
+    "days": "days",
+    "oneTime": "One-time",
+    "governsSite": "governs the site's licence",
+    "activeUntil": "Active until {{date}}",
+    "lifetime": "Lifetime",
+    "notYetPaid": "Never paid",
+    "outstanding": "Outstanding {{amount}}"
+  },
+  "batchPayment": {
+    "title": "Combined payment",
+    "covers": "Covers {{count}} bills",
+    "billsCovered": "Bills covered"
   }
 }

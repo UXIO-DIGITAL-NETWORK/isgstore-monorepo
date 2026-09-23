@@ -95,7 +95,7 @@ describe("FinanceWithdrawalsPage", () => {
 
     // The confirm dialog is open; the payout has not fired yet.
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Cairkan via Monetapay")).toBeInTheDocument();
+    expect(screen.getByText("Cairkan via payment gateway")).toBeInTheDocument();
     expect(approve).not.toHaveBeenCalled();
   });
 
@@ -104,7 +104,7 @@ describe("FinanceWithdrawalsPage", () => {
     renderPage();
 
     await user.click(screen.getByRole("button", { name: "Setujui" }));
-    await user.click(screen.getByRole("button", { name: "Setujui & Cairkan via Monetapay" }));
+    await user.click(screen.getByRole("button", { name: "Setujui & Cairkan via payment gateway" }));
 
     expect(approve).toHaveBeenCalledWith(
       { id: 5, method: "monetapay", proof: undefined },

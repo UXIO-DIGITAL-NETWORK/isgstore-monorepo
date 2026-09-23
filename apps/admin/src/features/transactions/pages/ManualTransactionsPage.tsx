@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
-import { endOfDay, startOfDay } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
+import { wibDayRange } from "@/utils/date";
 import { ExportButton } from "../components/ExportButton";
 import { manualColumnsFor } from "../components/manualColumns";
 import { TransactionFilterBar, type TransactionFilters, type FilterField } from "../components/TransactionFilterBar";
@@ -30,10 +30,11 @@ const MANUAL_FILTER_FIELDS: FilterField[] = [
 export default function ManualTransactionsPage() {
   const { t } = useTranslation("transactions");
   const [filters, setFilters] = useState<TransactionFilters>(() => {
-    // Day boundaries — see AutomaticTransactionsPage: an identical start/end
-    // instant is a zero-width window the service can never match.
-    const now = new Date();
-    return { startDate: startOfDay(now).toISOString(), endDate: endOfDay(now).toISOString() };
+    // The WIB day's bounds — see AutomaticTransactionsPage: the server buckets
+    // by the day the panel shows, and an identical start/end instant is a
+    // zero-width window the service can never match.
+    const { start, end } = wibDayRange();
+    return { startDate: start, endDate: end };
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);

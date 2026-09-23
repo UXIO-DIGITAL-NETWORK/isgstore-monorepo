@@ -165,6 +165,12 @@ class RefundSettlementReversalTest extends TestCase
             'type' => 'settlement_reversal',
         ]);
         $this->assertSame(1800, (int) PlatformAccount::where('code', 'default')->value('balance'));
+
+        // And deliberately left unmarked. The marker means "the books are
+        // square"; stamping it here is what made a shortfall permanent, because
+        // `refunds:retry-settlement-reversal` looks for exactly this pair —
+        // refunded, not yet reversed.
+        $this->assertNull(RefundRequest::find($refund->id)->settlement_reversed_at);
     }
 
     public function test_a_rejected_guest_refund_leaves_the_settlement_intact(): void

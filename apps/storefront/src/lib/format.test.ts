@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCurrency, formatNumber } from "./format";
+import { formatCurrency, formatDate, formatDateTime, formatNumber, wibDay } from "./format";
 
 describe("formatCurrency", () => {
   it("writes rupiah as rupiah in every language", () => {
@@ -33,5 +33,38 @@ describe("formatNumber", () => {
   it("still honours the locale — only currency is pinned", () => {
     expect(formatNumber(1500, "id")).toBe("1.500");
     expect(formatNumber(1500, "en")).toBe("1,500");
+  });
+});
+
+/**
+ * Literal times rather than values computed from the host's zone: the point of
+ * these helpers is that the host's zone must not influence the output, and a
+ * derived expectation would go on passing if it did.
+ */
+describe("formatDate", () => {
+  it("reads the date on the WIB clock", () => {
+    // 11:15Z is 18:15 WIB, whatever zone the visitor's browser is in.
+    expect(formatDate("2026-09-15T11:15:00.000Z", "id")).toBe("15 September 2026");
+  });
+
+  it("still honours the page locale — only the zone is pinned", () => {
+    expect(formatDate("2026-09-15T11:15:00.000Z", "en")).toBe("September 15, 2026");
+  });
+});
+
+describe("formatDateTime", () => {
+  it("shows the WIB time with the zone label", () => {
+    expect(formatDateTime("2026-09-15T11:15:00.000Z", "id")).toBe("15 Sep 2026, 18.15 WIB (GMT+7)");
+  });
+
+  it("carries the label in either language", () => {
+    expect(formatDateTime("2026-09-15T11:15:00.000Z", "en")).toContain("WIB (GMT+7)");
+  });
+});
+
+describe("wibDay", () => {
+  it("reads the WIB calendar day, not the UTC one", () => {
+    // 18:00Z is already the next day in WIB (+7).
+    expect(wibDay("2026-09-15T18:00:00.000Z")).toBe("2026-09-16");
   });
 });

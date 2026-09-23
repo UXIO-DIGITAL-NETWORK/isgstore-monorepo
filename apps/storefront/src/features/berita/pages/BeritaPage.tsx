@@ -10,13 +10,13 @@ import CategoryFilter from "@/features/berita/components/CategoryFilter";
 import ArticleCard from "@/features/berita/components/ArticleCard";
 import BeritaPagination from "@/features/berita/components/BeritaPagination";
 import { useBerita } from "@/features/berita/hooks/useBerita";
-import { BERITA_CATEGORIES } from "@/features/berita/data/categories";
 
 export default function BeritaPage(): React.JSX.Element {
   const { t } = useTranslation("berita");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
   const {
     pagedArticles,
+    categories,
     activeCategory,
     setActiveCategory,
     currentPage,
@@ -34,7 +34,7 @@ export default function BeritaPage(): React.JSX.Element {
 
         {/* Category filter pills */}
         <CategoryFilter
-          categories={BERITA_CATEGORIES}
+          categories={categories}
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
         />

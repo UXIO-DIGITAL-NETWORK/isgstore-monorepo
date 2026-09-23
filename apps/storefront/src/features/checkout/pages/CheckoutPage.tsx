@@ -66,8 +66,7 @@ export default function CheckoutPage(): React.JSX.Element {
     selectedPackageId,
     selectedPaymentId,
     activeCategory,
-    userId,
-    serverId,
+    fieldValues,
     whatsapp,
     email,
     filteredPackages,
@@ -81,6 +80,13 @@ export default function CheckoutPage(): React.JSX.Element {
     handleSelectPackage,
     handleSelectPayment,
   } = useCheckoutSelection({ packages, categories });
+
+  // The game decides how many identifiers it wants; the first two are the ones
+  // the mirrored columns and the nickname lookup know about. Derived from the
+  // declared field list rather than held separately, so they cannot fall out of
+  // step with the order the API declared them in.
+  const userId = fieldValues[orderFormFields[0]?.key ?? ""] ?? "";
+  const serverId = fieldValues[orderFormFields[1]?.key ?? ""] ?? "";
 
   // Prefill the email for a logged-in member from their account (still editable).
   const authEmail = useAuthStore((s) => s.user?.email);
@@ -110,8 +116,8 @@ export default function CheckoutPage(): React.JSX.Element {
   // game with no lookup provider this is the only thing standing between a
   // typo'd id and a paid order the supplier will reject.
   const fieldErrors = useMemo(
-    () => getOrderFormErrors(orderFormFields, [userId, serverId]),
-    [orderFormFields, userId, serverId],
+    () => getOrderFormErrors(orderFormFields, fieldValues),
+    [orderFormFields, fieldValues],
   );
   const [showFieldErrors, setShowFieldErrors] = useState(false);
 
@@ -139,14 +145,17 @@ export default function CheckoutPage(): React.JSX.Element {
     return null;
   }, [selectedPaymentId, memberCredits, paymentGroups, t]);
 
-  // Mirrors CheckoutAction's fee maths so the summary/modal show the exact
-  // total the customer is about to be charged: package + the method's fee.
-  const adminFee = selectedPayment ? calculateAdminFee(selectedPayment, totalPrice) : 0;
-
   // Held here rather than inside PromoCode so the code reaches checkout and
   // the summary can show what it is worth. The server re-resolves it, so this
   // figure is display-only.
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountAmount: number } | null>(null);
+  const promoDiscount = appliedPromo?.discountAmount ?? 0;
+
+  // Everything below mirrors `CheckoutAction`'s order of operations exactly —
+  // promo, then points, then the channel fee on what is left — because a
+  // summary that disagrees with the invoice is the one thing this screen must
+  // not do. See the numbered blocks in that action.
+  const priceAfterPromo = Math.max(0, totalPrice - promoDiscount);
 
   // Loyalty points. The API re-derives every figure at checkout — this is so
   // the buyer sees the same total before they commit.
@@ -155,12 +164,23 @@ export default function CheckoutPage(): React.JSX.Element {
   const pointsRate = pointsSummary?.redeem_rate ?? 1;
   // Derived, never stored: ticking the box means "spend what this order can
   // absorb", and the answer changes the moment the buyer picks another package.
-  // Holding a number here would leave a stale one behind.
+  // Holding a number here would leave a stale one behind. Capped on the price
+  // the promo already reduced, as `PointRules::pointsToCover` caps it server-side.
   const pointsToSpend =
-    usePoints && pointsSummary ? maxRedeemablePoints(totalPrice, pointsSummary.points, pointsRate) : 0;
+    usePoints && pointsSummary ? maxRedeemablePoints(priceAfterPromo, pointsSummary.points, pointsRate) : 0;
   const pointsApplied = pointsSummary
-    ? applyPoints(totalPrice, pointsSummary.points, pointsRate, pointsToSpend)
+    ? applyPoints(priceAfterPromo, pointsSummary.points, pointsRate, pointsToSpend)
     : { points: 0, discount: 0, coversEverything: false };
+
+  /** What is left to pay for the item itself, before the channel's fee. */
+  const payablePrice = Math.max(0, priceAfterPromo - pointsApplied.discount);
+
+  // Mirrors CheckoutAction's fee maths so the summary/modal show the exact
+  // total the customer is about to be charged: the discounted price plus the
+  // method's fee. Charged on what the customer actually pays, so a fully
+  // covered order carries no fee at all — the same rule the server applies.
+  const adminFee =
+    selectedPayment && payablePrice > 0 ? calculateAdminFee(selectedPayment, payablePrice) : 0;
 
   /**
    * Runs when the buyer presses "Top Up Sekarang", before the confirmation
@@ -172,7 +192,7 @@ export default function CheckoutPage(): React.JSX.Element {
    * it.
    */
   const handleRequestConfirm = async (): Promise<boolean> => {
-    if (fieldErrors.some(Boolean)) {
+    if (Object.values(fieldErrors).some(Boolean)) {
       setShowFieldErrors(true);
       toast.error(t("accountDetail.errors.fixFields"));
       return false;
@@ -196,6 +216,11 @@ export default function CheckoutPage(): React.JSX.Element {
       {
         product_id: selectedPackage.productId,
         payment_channel_id: selectedPayment.channelId,
+        // The full keyed set — how many identifiers a game needs is a data
+        // decision, not a layout one.
+        order_fields: fieldValues,
+        // The first two, mirrored for the API's named columns and kept so an API
+        // that has not been redeployed yet still reads the pair it knows.
         target_uid: userId.trim(),
         target_server: serverId.trim() || undefined,
         // Display-only echo of what validate-id returned; the API stores it so
@@ -230,9 +255,10 @@ export default function CheckoutPage(): React.JSX.Element {
             total: result.payment.amount,
             // Seeded so the invoice's points row does not flicker in from zero
             // before the invoice query resolves. It is still an estimate, and
-            // the server's answer overwrites it a moment later.
+            // the server's answer overwrites it a moment later. Earned on the
+            // price net of the promo, as the server bases it on `amount_base`.
             pointsEarned: pointsEarned(
-              totalPrice,
+              priceAfterPromo,
               pointsApplied.discount,
               selectedPackage.pointPercent,
               selectedPackage.pointFlat,
@@ -282,7 +308,7 @@ export default function CheckoutPage(): React.JSX.Element {
           <Box className="contents lg:flex lg:flex-col lg:gap-5">
             <AccountDetailForm
               fields={orderFormFields}
-              values={[userId, serverId]}
+              values={fieldValues}
               onValueChange={setFieldValue}
               errors={fieldErrors}
               showErrors={showFieldErrors}
@@ -347,6 +373,7 @@ export default function CheckoutPage(): React.JSX.Element {
             <OrderSummary
               selectedPackage={selectedPackage}
               totalPrice={totalPrice}
+              promoDiscount={promoDiscount}
               adminFee={adminFee}
               pointsDiscount={pointsApplied.discount}
               gameThumbnail={game.thumbnail}

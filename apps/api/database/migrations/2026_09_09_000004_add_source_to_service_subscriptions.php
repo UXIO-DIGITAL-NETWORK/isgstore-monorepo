@@ -12,10 +12,16 @@ use Illuminate\Support\Facades\Schema;
  * new row. Those keep stacking — one row per purchase, which is how the billing
  * history stays readable.
  *
- * `hub` is different: it is this site's OWN licence, mirrored down from the Hub,
- * and there is exactly one of it, updated in place. The Hub already holds the
- * stacked truth; stacking it again here would double-count against the
- * `max(ends_at)` every reader uses.
+ * `hub` is different: the row is mirrored from the Hub and updated IN PLACE
+ * rather than stacked, because the Hub already holds the stacked truth and
+ * stacking it again here would double-count against the `max(ends_at)` every
+ * reader uses.
+ *
+ * There is exactly one such row PER SERVICE, not one in total — the index below
+ * is deliberately not unique. `ApplyHubLicenceAction` owns the one for the
+ * website service (this site's own licence); `ApplyHubPlanAction` writes one per
+ * prepaid service in the Hub's plan, and writes none for the website service so
+ * the two can never both claim that row.
  *
  * Storing the term as an ordinary subscription row rather than in a table of its
  * own is what makes the admin sidebar card and the client's "Langganan Saya" tab

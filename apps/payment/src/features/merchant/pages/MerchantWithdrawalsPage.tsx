@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { BankCombobox } from "@/components/common/BankCombobox";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Pager } from "@/components/common/Pager";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
@@ -17,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isEwalletCode, usePayoutBanks } from "@/hooks/usePayoutBanks";
 import { withdrawalFeeFor, withdrawalNettFor } from "@/lib/withdrawalFee";
+import { withdrawalStatusLabelKey } from "@/lib/withdrawalStatus";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 
@@ -29,11 +31,31 @@ import type { Withdrawal } from "../types/merchant.type";
  * they have to be resolved when the component renders, not frozen at import.
  */
 const columnsFor = (t: TFunction<"merchant">): Column<Withdrawal>[] => [
-  { key: "number", header: t("withdrawals.colNumber"), cell: (r) => <Text as="span" className="font-medium">{r.withdrawal_number}</Text> },
+  {
+    key: "number",
+    header: t("withdrawals.colNumber"),
+    // The row is the way in to the one page that can say WHERE the money is
+    // being sent and why it failed.
+    cell: (r) => (
+      <Link href={`/app/payment-admin/withdrawals/${r.withdrawal_number}`} className="font-medium underline">
+        {r.withdrawal_number}
+      </Link>
+    ),
+  },
   { key: "amount", header: t("withdrawals.colAmount"), className: "text-right tabular-nums", cell: (r) => formatCurrency(r.amount, { fractionDigits: 0 }) },
   { key: "fee", header: t("withdrawals.colFee"), className: "text-right tabular-nums", cell: (r) => formatCurrency(r.fee, { fractionDigits: 0 }) },
   { key: "nett", header: t("withdrawals.colNett"), className: "text-right tabular-nums", cell: (r) => formatCurrency(r.nett, { fractionDigits: 0 }) },
-  { key: "status", header: t("withdrawals.colStatus"), cell: (r) => <StatusBadge status={r.status} /> },
+  {
+    key: "status",
+    header: t("withdrawals.colStatus"),
+    // Wording, not the enum — see lib/withdrawalStatus.
+    cell: (r) => (
+      <StatusBadge
+        status={r.status}
+        label={withdrawalStatusLabelKey(r.status) ? t(withdrawalStatusLabelKey(r.status) as string) : undefined}
+      />
+    ),
+  },
   { key: "created", header: t("withdrawals.colDate"), cell: (r) => formatDateTime(r.created_at) },
 ];
 
@@ -145,12 +167,20 @@ export default function MerchantWithdrawalsPage() {
         </Box>
         <Box className="flex flex-col gap-2 sm:col-span-2 lg:col-span-4">
           {previewAmount > 0 && (
-            <Box className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-muted/50 px-4 py-3 text-sm tabular-nums">
-              <Text as="span" className="text-muted-foreground">
-                {t("withdrawals.feeLabel")}: <Text as="span" className="text-foreground">{formatCurrency(previewFee, { fractionDigits: 0 })}</Text>
-              </Text>
-              <Text as="span" className="text-muted-foreground">
-                {t("withdrawals.receivedLabel")}: <Text as="span" className="font-medium text-foreground">{formatCurrency(previewNett, { fractionDigits: 0 })}</Text>
+            <Box className="flex flex-col gap-1 rounded-lg bg-muted/50 px-4 py-3 text-sm tabular-nums">
+              <Box className="flex flex-wrap gap-x-6 gap-y-1">
+                <Text as="span" className="text-muted-foreground">
+                  {t("withdrawals.feeLabel")}: <Text as="span" className="text-foreground">{formatCurrency(previewFee, { fractionDigits: 0 })}</Text>
+                </Text>
+                <Text as="span" className="text-muted-foreground">
+                  {t("withdrawals.receivedLabel")}: <Text as="span" className="font-medium text-foreground">{formatCurrency(previewNett, { fractionDigits: 0 })}</Text>
+                </Text>
+              </Box>
+              {/* Without this the arithmetic reads as a percentage: 1.665 on
+                  100.000 looks like a rate, and a client would expect the fee to
+                  grow with the amount. */}
+              <Text as="span" variant="small">
+                {t("withdrawals.feeNote")}
               </Text>
             </Box>
           )}

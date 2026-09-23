@@ -21,10 +21,18 @@ class CheckUxiolabsTransactionStatusAction
         private readonly InitiateRefundAction $refundAction,
         private readonly SendTransactionReceiptAction $receiptAction,
         private readonly GrantTransactionPointsAction $pointsAction,
+        private readonly SendUxiolabsStatusNotificationAction $announce,
     ) {}
 
-    public function execute(string $invoiceNumber): Transaction
-    {
+    /**
+     * `$source` only labels the announcement — the poll chain and an admin
+     * pressing "cek status" reach the same supplier endpoint, but "we polled"
+     * and "someone went looking" are different things to read in the channel.
+     */
+    public function execute(
+        string $invoiceNumber,
+        string $source = SendUxiolabsStatusNotificationAction::SOURCE_POLL,
+    ): Transaction {
         $transaction = Transaction::where('invoice_number', $invoiceNumber)
             ->where('status', TransactionStatus::PROCESSING->value)
             ->firstOrFail();
@@ -36,6 +44,10 @@ class CheckUxiolabsTransactionStatusAction
         if (! $transaction->supplier_trx_id) {
             throw new Exception('Transaksi belum memiliki ID order uxiolabs — menunggu callback dari supplier.');
         }
+
+        // Read before the update: afterwards the row holds the new status and
+        // can no longer say what it moved from.
+        $oldStatus = $transaction->status;
 
         $response = $this->uxiolabsService->checkTransactionStatus($transaction->supplier_trx_id);
 
@@ -66,6 +78,12 @@ class CheckUxiolabsTransactionStatusAction
             $this->receiptAction->execute($fresh);
             $this->pointsAction->execute($fresh);
         }
+
+        // This is the path that most orders actually finish on — the supplier
+        // callback is unreliable enough that the poll chain exists to cover it —
+        // and until now it was the one path that told the channel nothing.
+        // Deduped against the callback, which may be reporting the same move.
+        $this->announce->statusChanged($fresh, $oldStatus, $newStatus, $source);
 
         return $fresh;
     }

@@ -26,12 +26,12 @@ class UxiolabsPriceListController extends Controller
             // Catch Throwable, not just Exception: a malformed upstream payload
             // can surface as a TypeError (an Error), which must degrade to a
             // clean 502 rather than an uncaught 500.
-            return $this->errorResponse('Gagal mengambil price list uxiolabs: '.$e->getMessage(), 502);
+            return $this->errorResponse('Gagal mengambil price list Uxiotopup: '.$e->getMessage(), 502);
         }
 
         return $this->paginatedResponse(
             UxiolabsPriceListItemResource::collection($paginator),
-            'Price list uxiolabs'
+            'Price list Uxiotopup'
         );
     }
 }

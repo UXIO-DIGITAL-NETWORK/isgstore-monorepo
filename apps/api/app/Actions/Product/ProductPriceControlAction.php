@@ -3,30 +3,33 @@
 namespace App\Actions\Product;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Actions\Pricing\WriteProductPricesAction;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\Product;
-use App\Services\ProductRepricer;
 use Illuminate\Support\Facades\Auth;
 
 /**
  * Per-product price controls used by the Main Products row and bulk actions:
- * lock (skip the supplier sync), hide the price (Show Price), set min/max limits,
- * and re-pull selling prices from the supplier cost (Uxiolabs Update).
+ * hide the price (Show Price), set min/max limits, and re-pull selling prices
+ * from the supplier cost (Uxiolabs Update).
+ *
+ * There was a fourth — a price lock that froze a product's selling price against
+ * the supplier sync. It is gone: a frozen price is what leaves a product selling
+ * below cost, and checkout then refuses the customer with "harga modal supplier
+ * sedang naik". The margin rules decide the price, always.
+ *
+ * Every path that moves a price goes through `WriteProductPricesAction`, because
+ * the plan rows are what customers are billed from and the legacy columns are
+ * only a copy of one of them. Writing `price_member` alone — which this class
+ * used to do — left the two disagreeing, and the storefront charged the old
+ * price while the admin list showed the new one.
  */
 class ProductPriceControlAction
 {
     public function __construct(
-        private ProductRepricer $repricer,
+        private WriteProductPricesAction $writePrices,
         private CreateActivityLogAction $activityLogAction,
     ) {}
-
-    public function lock(Product $product, bool $locked): Product
-    {
-        $product->update(['is_price_locked' => $locked]);
-        $this->log($product, ($locked ? 'Locked' : 'Unlocked').' price');
-
-        return $product->fresh();
-    }
 
     public function hide(Product $product, bool $hidden): Product
     {
@@ -47,6 +50,20 @@ class ProductPriceControlAction
             'price_reseller' => $this->clamp((int) $product->price_reseller, $min, $max),
             'price_agent' => $this->clamp((int) $product->price_agent, $min, $max),
         ]);
+
+        // The window binds what is charged, not just the copy: clamp each plan's
+        // row as well and write them back, which re-syncs `price_member` from the
+        // default one. `overwriteManual` because the admin is setting the window
+        // right now, and a stored price outside it is what they are correcting.
+        $planPrices = $product->planPrices()
+            ->pluck('price', 'membership_plan_id')
+            ->map(fn ($price) => $this->clamp((int) $price, $min, $max))
+            ->all();
+
+        if ($planPrices !== []) {
+            $this->writePrices->forPlans($product, $planPrices, overwriteManual: true);
+        }
+
         $this->log($product, 'Set price limits');
 
         return $product->fresh();
@@ -54,15 +71,10 @@ class ProductPriceControlAction
 
     /**
      * Recompute selling prices from the active supplier mapping's cost, honouring
-     * its margin overrides and this product's limits. A locked product is left
-     * untouched.
+     * its margin overrides and this product's limits.
      */
     public function uxiolabsUpdate(Product $product): Product
     {
-        if ($product->is_price_locked) {
-            return $product;
-        }
-
         $mapping = $product->supplierProducts()->where('is_active', true)->first()
             ?? $product->supplierProducts()->first();
 
@@ -70,9 +82,8 @@ class ProductPriceControlAction
             return $product;
         }
 
-        $prices = $this->repricer->compute((int) $mapping->price, $product, $mapping);
-        $product->update($prices);
-        $this->log($product, 'Uxiolabs price update');
+        $this->writePrices->fromCost($product, (int) $mapping->price, $mapping);
+        $this->log($product, 'Uxiotopup price update');
 
         return $product->fresh();
     }

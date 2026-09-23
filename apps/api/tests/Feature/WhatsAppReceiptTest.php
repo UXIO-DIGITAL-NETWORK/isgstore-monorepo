@@ -22,6 +22,7 @@ class WhatsAppReceiptTest extends TestCase
     private function configurePiwapi(): void
     {
         config([
+            'services.piwapi.enabled' => true,
             'services.piwapi.api_url' => 'https://piwapi.test/send',
             'services.piwapi.account' => 'acc-1',
             'services.piwapi.secret' => 'sec-1',
@@ -105,6 +106,21 @@ class WhatsAppReceiptTest extends TestCase
     public function test_job_is_a_noop_when_unconfigured(): void
     {
         config(['services.piwapi.account' => '', 'services.piwapi.secret' => '']);
+        Http::fake();
+
+        $transaction = Transaction::factory()->create(['guest_contact' => '081234567890']);
+
+        (new SendTransactionWhatsAppJob($transaction, 'id'))->handle(app(PiWapiService::class));
+
+        Http::assertNothingSent();
+    }
+
+    public function test_job_is_a_noop_when_whatsapp_delivery_is_switched_off(): void
+    {
+        // WhatsApp is part of the future subscription: credentials may be in
+        // place, but a disabled gateway must still not reach the API.
+        $this->configurePiwapi();
+        config(['services.piwapi.enabled' => false]);
         Http::fake();
 
         $transaction = Transaction::factory()->create(['guest_contact' => '081234567890']);

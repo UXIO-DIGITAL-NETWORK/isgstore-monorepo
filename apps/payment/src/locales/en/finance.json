@@ -6,7 +6,7 @@
     "totalAdminFee": "Total admin fees",
     "totalAdminFeeCaption": "Payment-method fees across every transaction",
     "totalGatewayFee": "Total gateway fees",
-    "totalGatewayFeeCaption": "Monetapay's cut",
+    "totalGatewayFeeCaption": "The payment gateway's cut",
     "totalTax": "Total tax",
     "totalTaxCaption": "VAT on admin fees across every transaction",
     "settled": "Settled to merchants",
@@ -122,7 +122,12 @@
     "loadFailed": "Could not load notifications.",
     "loading": "Loading…",
     "empty": "No notifications yet",
-    "unread": "Unread"
+    "unread": "Unread",
+    "markRead": "Mark as read",
+    "markAll": "Mark all as read",
+    "filterAll": "All",
+    "filterUnread": "Unread",
+    "emptyDescription": "Client transactions, service payments, withdrawal requests, and packages nearing expiry all show up here."
   },
   "internalWithdrawals": {
     "title": "Internal withdrawals",
@@ -220,10 +225,10 @@
     "trigger": "Approve",
     "proofRequired": "Transfer proof is required",
     "titleManual": "Mark settled (manual transfer)",
-    "titleMonetapay": "Pay out via Monetapay",
-    "descriptionManual": "Use this when the money has already been transferred by hand, outside Monetapay. Attach the proof.",
-    "descriptionMonetapay": "The money will be transferred to the recipient's account through Monetapay. This cannot be undone.",
-    "methodMonetapay": "Monetapay",
+    "titleMonetapay": "Pay out via payment gateway",
+    "descriptionManual": "Use this when the money has already been transferred by hand, outside the payment gateway. Attach the proof.",
+    "descriptionMonetapay": "The money will be transferred to the recipient's account through the payment gateway. This cannot be undone.",
+    "methodMonetapay": "Payment gateway",
     "methodManual": "Manual transfer",
     "merchant": "Merchant",
     "requester": "Requested by",
@@ -235,7 +240,7 @@
     "cancel": "Cancel",
     "submitting": "Processing…",
     "submitManual": "Approve & mark settled",
-    "submitMonetapay": "Approve & pay out via Monetapay"
+    "submitMonetapay": "Approve & pay out via payment gateway"
   },
   "rejectInvoice": {
     "trigger": "Reject",
@@ -248,6 +253,9 @@
     "submitting": "Saving…"
   },
   "notificationBell": {
+    "title": "Notifications",
+    "markAll": "Mark all as read",
+    "viewAll": "See all",
     "label": "Notifications",
     "labelUnread": "Notifications, {{count}} unread",
     "loading": "Loading…",

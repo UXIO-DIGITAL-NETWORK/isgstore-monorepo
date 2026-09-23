@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { CategoryFormValues } from "../schemas/categoryForm.schema";
+import { MAX_ORDER_FORM_FIELDS } from "../schemas/categoryForm.schema";
 
 interface CategoryFormFieldsBuilderProps {
   control: Control<CategoryFormValues>;
@@ -35,6 +36,7 @@ export function CategoryFormFieldsBuilder({ control, register, errors }: Categor
         <AlertDescription>
           <Text as="p">{t("noWhatsappEmail")}</Text>
           <Text as="p">{t("suggestedKeys")}</Text>
+          <Text as="p">{t("fieldOrderHint")}</Text>
         </AlertDescription>
       </Alert>
 
@@ -42,6 +44,7 @@ export function CategoryFormFieldsBuilder({ control, register, errors }: Categor
         type="button"
         variant="outline"
         className="w-fit self-end rounded-xl"
+        disabled={fields.length >= MAX_ORDER_FORM_FIELDS}
         onClick={() => append({ key: "", label: "", required: false })}
       >
         <Plus className="size-4" />{t("addForm")}</Button>

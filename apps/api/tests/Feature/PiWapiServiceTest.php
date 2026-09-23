@@ -14,6 +14,7 @@ class PiWapiServiceTest extends TestCase
     private function configure(): void
     {
         config([
+            'services.piwapi.enabled' => true,
             'services.piwapi.api_url' => 'https://piwapi.test/send',
             'services.piwapi.account' => 'acc-1',
             'services.piwapi.secret' => 'sec-1',
@@ -70,6 +71,29 @@ class PiWapiServiceTest extends TestCase
 
         $this->configure();
         $this->assertTrue(app(PiWapiService::class)->isConfigured());
+    }
+
+    public function test_delivery_is_off_by_default(): void
+    {
+        // WhatsApp is part of the future subscription, so it ships disabled: even
+        // with credentials in place nothing may go out until it is switched on.
+        $this->configure();
+        config(['services.piwapi.enabled' => false]);
+
+        $service = app(PiWapiService::class);
+
+        $this->assertFalse($service->isEnabled());
+        $this->assertTrue($service->isConfigured());
+        $this->assertFalse($service->canSend());
+    }
+
+    public function test_can_send_requires_both_the_switch_and_credentials(): void
+    {
+        $this->configure();
+        $this->assertTrue(app(PiWapiService::class)->canSend());
+
+        config(['services.piwapi.account' => '']);
+        $this->assertFalse(app(PiWapiService::class)->canSend());
     }
 
     #[DataProvider('phoneCases')]

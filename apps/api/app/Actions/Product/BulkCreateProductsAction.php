@@ -2,6 +2,7 @@
 
 namespace App\Actions\Product;
 
+use App\Actions\Pricing\WriteProductPricesAction;
 use App\Models\Product;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
@@ -17,7 +18,10 @@ use Throwable;
  */
 class BulkCreateProductsAction
 {
-    public function __construct(private PricingService $pricing) {}
+    public function __construct(
+        private PricingService $pricing,
+        private WriteProductPricesAction $writePrices,
+    ) {}
 
     /**
      * @param  array<int,array{code:string,name:string,cost:int,sub_category_id:?int}>  $items
@@ -59,6 +63,16 @@ class BulkCreateProductsAction
                         'price' => (int) $item['cost'],
                         'is_active' => true,
                     ]);
+
+                    // …and the same prices where they are billed. The five columns
+                    // above are NOT NULL and have to be supplied, but they are a
+                    // copy: a product created with only those has no plan row, and
+                    // `PlanPrice` can only serve it by falling back and warning.
+                    $this->writePrices->forPlans(
+                        $product,
+                        $this->pricing->computePlanPrices((int) $item['cost'], $categoryId),
+                        overwriteManual: true,
+                    );
                 });
                 $created++;
             } catch (Throwable $e) {

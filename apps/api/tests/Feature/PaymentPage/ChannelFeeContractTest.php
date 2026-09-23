@@ -4,6 +4,7 @@ namespace Tests\Feature\PaymentPage;
 
 use App\Models\PaymentChannel;
 use App\Models\Role;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Support\Payment\MonetapayContractFees;
 use Database\Seeders\PaymentChannelSeeder;
@@ -22,25 +23,56 @@ class ChannelFeeContractTest extends TestCase
     }
 
     /**
-     * bca_va is not in the Monetapay contract, so its rate can never be
-     * verified — deactivated by decision (27 Aug 2026). The row stays (history
-     * must keep resolving) but is never offered.
+     * BCA VA is not offered at all — this site's gateway has no BCA VA. The
+     * seeder must not ship the row, or the admin list (which deliberately does
+     * NOT filter `is_active`) shows a channel no customer can ever pay with.
      */
-    public function test_bca_va_is_seeded_inactive(): void
+    public function test_bca_va_is_no_longer_seeded(): void
     {
         $this->seed(PaymentChannelSeeder::class);
 
-        $bca = PaymentChannel::where('channel_code', 'bca_va')->firstOrFail();
-        $this->assertFalse((bool) $bca->is_active);
+        $this->assertDatabaseMissing('payment_channels', ['channel_code' => 'bca_va']);
 
-        // Every other seeded channel remains active.
-        $this->assertSame(
-            0,
-            PaymentChannel::where('channel_code', '!=', 'bca_va')->where('is_active', false)->count(),
-        );
+        // And nothing else is left switched off behind it: every seeded channel
+        // is one the site actually offers.
+        $this->assertSame(0, PaymentChannel::where('is_active', false)->count());
     }
 
-    /** The shipped seeder must mirror the Monetapay contract — bca_va aside. */
+    /** The cleanup migration deletes an unused BCA VA row outright. */
+    public function test_the_cleanup_migration_deletes_an_unused_bca_va_row(): void
+    {
+        $channel = PaymentChannel::factory()->create([
+            'channel_code' => 'bca_va',
+            'payment_type' => 'virtual_account',
+            'is_active' => false,
+        ]);
+
+        $this->runBcaVaRemoval();
+
+        $this->assertDatabaseMissing('payment_channels', ['id' => $channel->id]);
+    }
+
+    /**
+     * A row something already points at is kept — deactivated, not deleted. The
+     * money-path foreign keys are `restrictOnDelete`, and orphaning that history
+     * would be worse than an inactive row.
+     */
+    public function test_the_cleanup_migration_keeps_a_referenced_row_inactive(): void
+    {
+        $channel = PaymentChannel::factory()->create([
+            'channel_code' => 'bca_va',
+            'payment_type' => 'virtual_account',
+            'is_active' => false,
+        ]);
+        Transaction::factory()->create(['payment_channel_id' => $channel->id]);
+
+        $this->runBcaVaRemoval();
+
+        $this->assertTrue(PaymentChannel::whereKey($channel->id)->exists());
+        $this->assertFalse((bool) PaymentChannel::whereKey($channel->id)->value('is_active'));
+    }
+
+    /** The shipped seeder must mirror the Monetapay contract. */
     public function test_seeder_matches_the_contract(): void
     {
         $this->seed(PaymentChannelSeeder::class);
@@ -117,5 +149,13 @@ class ChannelFeeContractTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.contract_mismatch', true)
             ->assertJsonPath('data.contract_expected', null);
+    }
+
+    /** Run the shipped cleanup migration against the current database. */
+    private function runBcaVaRemoval(): void
+    {
+        $migration = require database_path('migrations/2026_09_22_000002_remove_bca_va_channel.php');
+
+        $migration->up();
     }
 }

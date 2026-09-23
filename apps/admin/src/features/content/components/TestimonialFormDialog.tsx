@@ -200,6 +200,7 @@ export function TestimonialFormDialog({ open, onOpenChange, testimonialId }: Tes
             onChange={setAvatar}
             accept="image/jpeg,image/png,image/webp"
             formatsLabel="JPG, PNG or WEBP up to 2MB"
+            uploading={isPending}
           />
 
           <Box className="flex flex-col gap-3 sm:flex-row sm:gap-8">

@@ -32,10 +32,13 @@ class StoreUserRequest extends FormRequest
             // one — and `UniquePhone` asks the question over every legacy
             // spelling the column may still hold.
             'phone' => ['required', 'string', 'max:20', self::E164_RULE, new UniquePhone],
-            'balance' => ['nullable', 'numeric', 'min:0'],
-            'point' => ['nullable', 'integer', 'min:0'],
+            // No `balance`/`point`: a new account starts at zero, and an opening
+            // balance is an audited adjustment like any other movement — see the
+            // note in UpdateUserRequest.
             'locale' => ['nullable', 'string', 'max:10'],
-            'timezone' => ['nullable', 'string', 'max:50'],
+            // No `timezone`: the platform runs on one wall clock (WIB) — see
+            // UserDTO. Accepting a zone here would create an account whose
+            // reported times disagree with every report window.
         ];
     }
 }

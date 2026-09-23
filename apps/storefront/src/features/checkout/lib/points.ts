@@ -50,6 +50,25 @@ export function totalAfterPoints(price: number, adminFee: number, discount: numb
 }
 
 /**
+ * The order total after the promo, the points, and the channel fee.
+ *
+ * The order is the one `CheckoutAction` applies them in: the promo comes off
+ * the package price, the points come off what is left, and the fee follows on
+ * whatever remains. It lives here rather than in the summary component so the
+ * arithmetic that has to agree with the invoice is a single, tested function —
+ * the summary showing a different number from the charge is the one failure
+ * this screen must not have.
+ */
+export function orderTotalAfterDiscounts(
+  price: number,
+  promoDiscount: number,
+  pointsDiscount: number,
+  adminFee: number,
+): number {
+  return totalAfterPoints(Math.max(0, price - promoDiscount), adminFee, pointsDiscount);
+}
+
+/**
  * Points this order will earn.
  *
  * Mirrors `PointRules::earnedFor` on the server: the percentage is charged on

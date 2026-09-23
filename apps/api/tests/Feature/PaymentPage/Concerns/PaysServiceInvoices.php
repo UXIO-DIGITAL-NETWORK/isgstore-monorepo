@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceInvoice;
 use App\Models\User;
+use App\Services\Payment\MonetapayService;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 
@@ -79,5 +80,40 @@ trait PaysServiceInvoices
         ])->assertCreated();
 
         return ServiceInvoice::findOrFail($response->json('data.id'));
+    }
+
+    /**
+     * Builds the envelope Monetapay posts: a `__`-delimited key=value string,
+     * signed with the double-MD5 the service verifies, then AES-encrypted.
+     *
+     * One copy, because a signature rebuilt by hand in each test drifts from the
+     * verifier silently — the failure looks like a rejected payment rather than
+     * a stale test. The signing token is read from config, so a test that forgets
+     * to pin it fails loudly instead of signing against nothing.
+     */
+    protected function signedPayload(string $reference, int $amount, string $status = '3', ?string $sign = null): array
+    {
+        $params = [
+            'mch_order_no' => $reference,
+            'amount' => (string) $amount,
+            'status' => $status,
+        ];
+
+        $timestamp = (string) time();
+        $token = (string) config('services.monetapay.token');
+
+        ksort($params);
+        $buffer = '';
+        foreach ($params as $key => $value) {
+            $buffer .= $key.'='.$value.'__';
+        }
+        $strMap = substr($buffer, 0, -2);
+
+        $params['sign'] = $sign ?? md5(md5($token.'*|*'.$strMap.'@!@'.$timestamp));
+        $params['timestamp'] = $timestamp;
+
+        $flat = collect($params)->map(fn ($v, $k) => "{$k}={$v}")->implode('__');
+
+        return ['data' => ['en_data' => app(MonetapayService::class)->encryptPayload($flat)]];
     }
 }

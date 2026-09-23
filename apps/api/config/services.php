@@ -97,6 +97,11 @@ return [
         // WhatsApp gateway used to deliver the purchase receipt (bukti pembayaran)
         // as a document message. Credentials are usually set via the admin
         // Integration page (DB-backed) and fall back to these env defaults.
+        //
+        // OFF by default: WhatsApp delivery is part of the future subscription,
+        // so nothing goes out over WhatsApp until it is switched on here. Email
+        // is unaffected. Flipping this to true is the whole re-enable.
+        'enabled' => env('PIWAPI_ENABLED', false),
         'api_url' => env('PIWAPI_API_URL', 'https://piwapi.com/api/send/whatsapp'),
         'account' => env('PIWAPI_ACCOUNT'),
         'secret' => env('PIWAPI_SECRET'),
@@ -185,6 +190,20 @@ return [
         // defaults to on whenever the Hub is enabled; set HUB_PUSH_ORDERS=false
         // to fall back to pull-only without disabling the rest of the Hub.
         'push_orders' => (bool) env('HUB_PUSH_ORDERS', (bool) env('HUB_ENABLED', false)),
+        // The Hub's per-site service plan: which services this site's owner is
+        // subscribed to, at which negotiated price, and which periods are due.
+        // This site turns those into its OWN service_invoices, so the flag is
+        // off by default and switched on one site at a time — the cutover that
+        // actually issues bills, and the one to be able to stop instantly.
+        // Rollback: set false. Nothing new is pulled, nothing new is issued,
+        // and every invoice already issued keeps working exactly as it is.
+        'managed_plan' => (bool) env('HUB_MANAGED_PLAN', false),
+        // How often this site re-pulls from the Hub — catalog, channels, licence
+        // and plan. One minute by default: a change made in the Hub has to reach
+        // the client's site, and the client's bill, while the operator is still
+        // watching. A pull is four cheap GETs; the pokes are unaffected and
+        // remain immediate. Bump it if a deployment would rather be gentler.
+        'sync_interval_minutes' => max(1, (int) env('HUB_SYNC_INTERVAL_MINUTES', 1)),
         // Money-path WRITE channel (approve/reject withdrawals + confirm/reject
         // service invoices FROM the Hub). Off by default and gated by a SEPARATE
         // key from the read key above — a leaked read key must never move money.

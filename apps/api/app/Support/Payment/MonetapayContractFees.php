@@ -22,9 +22,10 @@ namespace App\Support\Payment;
  * captured here as contract reference only; it is NOT yet used in any balance
  * logic (deferred phase).
  *
- * NOTE: `bca_va` is not listed in the Monetapay contract; it is provisionally
- * pinned to the Mandiri rate (Rp 1.900) so audits compare against a value until
- * finance confirms BCA VA's real status/rate with Monetapay.
+ * This table is also the gate the Hub sync reads before letting a Hub-created
+ * channel go live (`gatedActive`), so a code absent here can neither be turned on
+ * nor re-created. BCA VA is absent for that reason: this site's gateway does not
+ * offer it.
  */
 final class MonetapayContractFees
 {
@@ -39,10 +40,6 @@ final class MonetapayContractFees
         'payment_link' => ['flat' => 0, 'percent' => 0.0, 'settlement_days' => null],
 
         // Virtual Account — flat, T+0. (Mandiri is the odd one out at Rp 1.900.)
-        // bca_va is NOT in the Monetapay contract; provisionally pinned to the
-        // Mandiri rate (the higher VA fee, so we never under-charge) until
-        // Monetapay confirms whether BCA VA is offered and at what rate.
-        'bca_va' => ['flat' => 1900, 'percent' => 0.0, 'settlement_days' => 0],
         'bri_va' => ['flat' => 1500, 'percent' => 0.0, 'settlement_days' => 0],
         'bni_va' => ['flat' => 1500, 'percent' => 0.0, 'settlement_days' => 0],
         'mandiri_va' => ['flat' => 1900, 'percent' => 0.0, 'settlement_days' => 0],

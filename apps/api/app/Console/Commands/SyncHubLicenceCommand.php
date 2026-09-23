@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Pulls this site's own licence from the Hub — scheduled every five minutes.
+ * Pulls this site's own licence from the Hub — scheduled every minute.
  *
- * Tighter than the 15-minute catalog sync on purpose: this one decides whether
- * the site serves the public at all. Fifteen minutes of a suspended site still
- * taking orders is the difference between a lever and a suggestion, and the
- * cost of the tighter loop is one GET.
+ * It shares the single Hub tick with the catalog, channels and plan pulls. This
+ * one decides whether the site serves the public at all, so it is the reason the
+ * tick is one minute: a suspended site still taking orders is the difference
+ * between a lever and a suggestion, and the cost of the tight loop is one GET.
  */
 class SyncHubLicenceCommand extends Command
 {

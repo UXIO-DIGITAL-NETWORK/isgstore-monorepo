@@ -55,7 +55,6 @@ interface ProductApiRow {
   published_at?: string | null;
   archived_at?: string | null;
   is_available: boolean;
-  is_price_locked?: boolean;
   is_price_hidden?: boolean;
   price_min?: number | null;
   price_max?: number | null;
@@ -109,7 +108,6 @@ const toProduct = (row: ProductApiRow): Product => ({
   published_at: row.published_at ?? null,
   archived_at: row.archived_at ?? null,
   is_available: Boolean(row.is_available),
-  is_price_locked: Boolean(row.is_price_locked),
   is_price_hidden: Boolean(row.is_price_hidden),
   price_min: row.price_min ?? null,
   price_max: row.price_max ?? null,
@@ -254,10 +252,6 @@ export const productsService = {
 
   setPriceLimit: async (id: string, limits: { price_min: number | null; price_max: number | null }): Promise<void> => {
     await api.post(`${BASE}/${id}/price-limit`, limits);
-  },
-
-  bulkLockPrice: async (ids: string[], locked: boolean): Promise<void> => {
-    await api.post(`${BASE}/bulk/lock-price`, { ids: ids.map(toFk), locked });
   },
 
   bulkShowPrice: async (ids: string[], hidden: boolean): Promise<void> => {

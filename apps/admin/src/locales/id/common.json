@@ -30,7 +30,9 @@
   "dropzone": {
     "prompt": "Tarik & lepas berkas di sini",
     "optimising": "Mengoptimalkan gambar…",
-    "formats": "JPG, JPEG, PNG, WEBP — dioptimalkan otomatis"
+    "formats": "JPG, JPEG, PNG, WEBP — dioptimalkan otomatis",
+    "unsupportedType": "Tipe berkas itu tidak didukung di sini.",
+    "uploading": "Mengunggah…"
   },
   "confirm": {
     "delete": "Hapus",
@@ -41,5 +43,9 @@
   },
   "field": {
     "moreInformation": "Informasi lebih lanjut"
+  },
+  "password": {
+    "show": "Tampilkan password",
+    "hide": "Sembunyikan password"
   }
 }

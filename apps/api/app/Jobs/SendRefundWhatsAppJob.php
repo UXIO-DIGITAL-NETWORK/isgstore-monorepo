@@ -18,9 +18,10 @@ use Throwable;
  * carries a one-time token that must not be re-derivable from a serialized job
  * payload sitting in the `jobs` table longer than the message itself.
  *
- * No-op — not a failure — when PiWAPI is unconfigured; that is an expected
- * state in dev, not an error to retry. Queued with retries so a transient
- * gateway blip does not drop the notification on the first HTTP hiccup.
+ * No-op — not a failure — when PiWAPI is unconfigured or WhatsApp delivery is
+ * switched off (`PIWAPI_ENABLED=false`, the default); both are expected states,
+ * not errors to retry. Queued with retries so a transient gateway blip does not
+ * drop the notification on the first HTTP hiccup.
  */
 class SendRefundWhatsAppJob implements ShouldQueue
 {
@@ -35,7 +36,7 @@ class SendRefundWhatsAppJob implements ShouldQueue
 
     public function handle(PiWapiService $piwapi): void
     {
-        if (! $piwapi->isConfigured()) {
+        if (! $piwapi->canSend()) {
             return;
         }
 

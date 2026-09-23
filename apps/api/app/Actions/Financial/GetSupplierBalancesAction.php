@@ -4,6 +4,7 @@ namespace App\Actions\Financial;
 
 use App\Models\Supplier;
 use App\Services\UxiolabsService;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -32,7 +33,7 @@ class GetSupplierBalancesAction
 
     private function isUxiolabs(Supplier $supplier): bool
     {
-        return strtolower($supplier->name) === 'uxiolabs';
+        return UxiolabsSupplier::isNamed($supplier->name);
     }
 
     private function uxiolabsBalance(): ?float

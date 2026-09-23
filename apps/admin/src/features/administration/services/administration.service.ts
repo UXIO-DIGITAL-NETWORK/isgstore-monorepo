@@ -6,8 +6,12 @@ import type {
   AdminUser,
   AdministrationListParams,
   BalanceAdjustmentInput,
+  BalanceMutationRow,
   PaymentChannel,
+  PointLedgerRow,
   Setting,
+  UserOverview,
+  UserRefundRow,
   UserStatus,
 } from "../types/administration.type";
 
@@ -95,6 +99,56 @@ const toUser = (row: UserApiRow): AdminUser => ({
   created_at: row.created_at,
 });
 
+interface UserOverviewApiRow {
+  user: UserApiRow;
+  stats: UserOverview["stats"];
+  membership: UserOverview["membership"];
+}
+
+interface BalanceMutationApiRow {
+  id: number;
+  type: string;
+  amount: number;
+  balance_before: number;
+  balance_after: number;
+  reference: string | null;
+  description: string | null;
+  created_at: string;
+}
+
+interface PointLedgerApiRow {
+  id: number;
+  type: string;
+  amount: number;
+  points_before: number;
+  points_after: number;
+  reference: string | null;
+  description: string | null;
+  created_at: string;
+}
+
+interface UserRefundApiRow {
+  id: number;
+  refund_number: string;
+  invoice_number: string | null;
+  amount: number;
+  status: string;
+  method: string;
+  created_at: string;
+  refunded_at: string | null;
+}
+
+const toOverview = (row: UserOverviewApiRow): UserOverview => ({
+  user: toUser(row.user),
+  stats: row.stats,
+  membership: row.membership,
+});
+
+// Ids arrive numeric and every table/column is string-typed — see `toRowId`.
+const toBalanceMutation = (row: BalanceMutationApiRow): BalanceMutationRow => ({ ...row, id: toRowId(row.id) });
+const toPointLedger = (row: PointLedgerApiRow): PointLedgerRow => ({ ...row, id: toRowId(row.id) });
+const toUserRefund = (row: UserRefundApiRow): UserRefundRow => ({ ...row, id: toRowId(row.id) });
+
 const toSetting = (row: SettingApiRow): Setting => ({
   id: toRowId(row.id),
   group: row.group,
@@ -150,6 +204,31 @@ export const usersService = {
   getById: async (id: string): Promise<AdminUser> => {
     const response: ApiResponse<UserApiRow> = await api.get(`${API_VERSION}/users/${id}`);
     return toUser(response.data);
+  },
+  /** Aggregates + membership for the detail page's summary. */
+  overview: async (id: string): Promise<UserOverview> => {
+    const response: ApiResponse<UserOverviewApiRow> = await api.get(`${API_VERSION}/users/${id}/overview`);
+    return toOverview(response.data);
+  },
+  balanceMutations: async (
+    id: string,
+    params: AdministrationListParams = {},
+  ): Promise<PaginatedResponse<BalanceMutationRow>> => {
+    const response: ApiResponse<BalanceMutationApiRow[]> = await api.get(
+      `${API_VERSION}/users/${id}/balance-mutations`,
+      { params },
+    );
+    return unwrapPaginated(response, toBalanceMutation);
+  },
+  pointHistory: async (id: string, params: AdministrationListParams = {}): Promise<PaginatedResponse<PointLedgerRow>> => {
+    const response: ApiResponse<PointLedgerApiRow[]> = await api.get(`${API_VERSION}/users/${id}/point-history`, {
+      params,
+    });
+    return unwrapPaginated(response, toPointLedger);
+  },
+  refunds: async (id: string, params: AdministrationListParams = {}): Promise<PaginatedResponse<UserRefundRow>> => {
+    const response: ApiResponse<UserRefundApiRow[]> = await api.get(`${API_VERSION}/users/${id}/refunds`, { params });
+    return unwrapPaginated(response, toUserRefund);
   },
   /**
    * Manual wallet credit/debit — a money-moving action, so a reason is required

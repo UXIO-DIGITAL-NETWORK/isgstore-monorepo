@@ -4,8 +4,9 @@ import { render, act } from "@testing-library/react";
 
 import { routeTree } from "@/routeTree.gen";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { User } from "@/models/user.model";
-import { getBrowserTimezone } from "@/utils/getBrowserTimezone";
+import { PLATFORM_TIMEZONE } from "@/utils/date";
 
 /**
  * Canonical mock of the confirmed staging login user (role_id 1 =
@@ -26,10 +27,10 @@ export function makeUser(overrides: Partial<User> = {}): User {
     // harness would flip every rendered screen back to Indonesian while the
     // assertions still read English.
     locale: "en",
-    // The host zone, not a literal: useTimezoneSync fires whenever the stored
-    // zone differs from the browser's, so a hardcoded value would make every
-    // protected-route test issue an unmocked PATCH on any CI box outside WIB.
-    timezone: getBrowserTimezone(),
+    // The platform's zone: the panel renders WIB on every host, so a fixture
+    // that varied with the CI box would only hide a formatter that still reads
+    // the browser's zone.
+    timezone: PLATFORM_TIMEZONE,
     email_verified_at: "2026-07-10T13:39:19.000000Z",
     created_at: "2026-07-01T00:00:00.000000Z",
     updated_at: "2026-07-10T13:39:19.000000Z",
@@ -59,7 +60,13 @@ export async function renderRoute(initialPath: string) {
   const utils = render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <RouterProvider router={router} />
+        {/* Mirrors main.tsx. Radix's Tooltip.Root throws "`Tooltip` must be used
+            within `TooltipProvider`" without it, so any screen carrying an
+            InfoTooltip — the settings page's labels, for one — would fail to
+            render here rather than in the browser. */}
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>,
   );

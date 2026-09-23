@@ -22,6 +22,14 @@ export interface ProductModel {
    */
   point_percent: number;
   point_flat: number;
+  /**
+   * Slots left today from this SKU's local daily allowance, or null when the
+   * operator set no ceiling. The provider reports no stock of its own, so this
+   * is the site's own quota — see `App\Support\Stock\DailyStockLimit`.
+   */
+  stock_left: number | null;
+  /** Nothing left today: the row still lists, but the order would be refused. */
+  is_sold_out: boolean;
 }
 
 export interface GameProductsResponse {

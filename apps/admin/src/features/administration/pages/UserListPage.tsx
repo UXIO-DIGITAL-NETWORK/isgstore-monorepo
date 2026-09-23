@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Box } from "@/components/common/Box";
 import { DataTable } from "@/components/common/DataTable";
 import { Heading } from "@/components/common/Heading";
+import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -16,14 +17,22 @@ import type { AdminUser } from "../types/administration.type";
 
 const DEFAULT_PAGE_SIZE = 10;
 
+/**
+ * The client's own people. Staff and system accounts (payment-admin,
+ * payment-internal, the Hub system user) also live in `users`, and this list is
+ * not their home.
+ */
+const LISTED_ROLES = ["admin", "member"];
+
 export function UserListPage() {
   const { t } = useTranslation("administration");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
+  // Admin + member only: their whole user base, searched and paged server-side.
   const params = useMemo(
-    () => ({ search: search || undefined, page, per_page: pageSize, role: "admin" }),
+    () => ({ search: search || undefined, page, per_page: pageSize, roles: LISTED_ROLES }),
     [search, page, pageSize],
   );
   const { data, isLoading, isError, refetch } = useUserList(params);
@@ -35,12 +44,12 @@ export function UserListPage() {
         header: t("colUser"),
         cell: ({ row }) => (
           <Box className="flex flex-col">
-            <Text
-              as="span"
-              className="font-medium"
+            <Link
+              href={`/admin/users/${row.original.id}`}
+              className="font-medium hover:underline"
             >
               {row.original.name}
-            </Text>
+            </Link>
             <Text
               variant="muted"
               as="span"

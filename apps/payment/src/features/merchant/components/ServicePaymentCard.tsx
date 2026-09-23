@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { CopyButton } from "@/components/common/CopyButton";
@@ -22,9 +23,20 @@ interface ServicePaymentCardProps {
   /** The bill, for pricing a fresh attempt after this one lapses. */
   amount: number;
   channels: ServicePaymentChannel[];
+  /** A failed load is not the same fact as an empty schedule — see PaymentChannelPicker. */
+  channelsError?: boolean;
   isLoadingChannels?: boolean;
   isReopening?: boolean;
-  onReopen: (channel: ServicePaymentChannel) => void;
+  /**
+   * Opens a fresh attempt.
+   *
+   * Omitted where re-opening from this screen would be wrong — a batch is
+   * re-opened from the bills tab, where the client can also change which bills
+   * are included, since re-opening it blind here would silently re-bill a set
+   * they may have part-paid. When it is omitted the card says where to go
+   * instead of rendering a button that does nothing.
+   */
+  onReopen?: (channel: ServicePaymentChannel) => void;
 }
 
 /**
@@ -34,25 +46,51 @@ interface ServicePaymentCardProps {
  * channel type — one card therefore covers QRIS, a virtual account and an
  * e-wallet, and a method that answers with something new degrades to showing
  * the reference rather than to a blank panel.
+ *
+ * Three states, and the middle one exists because the previous two-state
+ * version labelled a SETTLED payment "already expired": status decides, not
+ * "is it PENDING", so a success never reads as a failure.
  */
 export function ServicePaymentCard({
   payment,
   amount,
   channels,
+  channelsError,
   isLoadingChannels,
   isReopening,
   onReopen,
 }: ServicePaymentCardProps) {
   const [channel, setChannel] = useState<ServicePaymentChannel | null>(null);
+  const { t } = useTranslation("merchant");
   const instructions = payment?.instructions ?? null;
   const qrDataUrl = useQrDataUrl(instructions?.qr_string);
 
-  // A lapsed attempt is not payable, and neither is a page left open past the
-  // window — so the picker is what replaces the instructions in both cases.
-  const { t } = useTranslation("merchant");
-  const lapsed = !payment || payment.status !== "PENDING" || payment.is_expired;
+  if (payment?.status === "PAID") {
+    return (
+      <Box className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6">
+        <Box className="flex items-center gap-2">
+          {/* Icon as well as colour: the state is never carried by hue alone. */}
+          <CheckCircle2
+            aria-hidden="true"
+            className="size-5 shrink-0 text-success"
+          />
+          <Heading level={3}>{t("payment.received")}</Heading>
+        </Box>
+        <Text
+          variant="small"
+          className="text-muted-foreground"
+        >
+          {t("payment.receivedHint", { amount: money(payment.total) })}
+        </Text>
+      </Box>
+    );
+  }
 
-  if (lapsed) {
+  // Payable only while the gateway's own deadline holds. A page left open past
+  // it flips to the re-open state on the next poll.
+  const payable = payment?.status === "PENDING" && !payment.is_expired;
+
+  if (!payable) {
     const adminFee = adminFeeFor(channel, amount);
 
     return (
@@ -62,38 +100,48 @@ export function ServicePaymentCard({
           variant="small"
           className="text-muted-foreground"
         >
-          {payment
-            ? t("payment.lapsed")
-            : t("payment.notOpened")}
+          {payment ? t("payment.lapsed") : t("payment.notOpened")}
         </Text>
 
-        <Box className="flex flex-col gap-3">
-          <Label>{t("payment.method")}</Label>
-          <PaymentChannelPicker
-            channels={channels}
-            selectedId={channel?.id ?? null}
-            onSelect={setChannel}
-            isLoading={isLoadingChannels}
-          />
-        </Box>
+        {onReopen ? (
+          <>
+            <Box className="flex flex-col gap-3">
+              <Label>{t("payment.method")}</Label>
+              <PaymentChannelPicker
+                channels={channels}
+                isError={channelsError}
+                selectedId={channel?.id ?? null}
+                onSelect={setChannel}
+                isLoading={isLoadingChannels}
+              />
+            </Box>
 
-        <Box className="flex flex-col gap-2 border-t border-border pt-4">
-          <Row
-            label={t("payment.adminFee")}
-            value={money(adminFee)}
-          />
-          <Row
-            label={t("payment.total")}
-            value={money(amount + adminFee)}
-          />
-        </Box>
+            <Box className="flex flex-col gap-2 border-t border-border pt-4">
+              <Row
+                label={t("payment.adminFee")}
+                value={money(adminFee)}
+              />
+              <Row
+                label={t("payment.total")}
+                value={money(amount + adminFee)}
+              />
+            </Box>
 
-        <Button
-          disabled={!channel || isReopening}
-          onClick={() => channel && onReopen(channel)}
-        >
-          {isReopening ? t("payment.creating") : t("payment.create")}
-        </Button>
+            <Button
+              disabled={!channel || isReopening}
+              onClick={() => channel && onReopen(channel)}
+            >
+              {isReopening ? t("payment.creating") : t("payment.create")}
+            </Button>
+          </>
+        ) : (
+          <Link
+            href="/app/payment-admin/services?tab=bills"
+            className="w-fit"
+          >
+            <Button variant="outline">{t("payment.reopenFromBills")}</Button>
+          </Link>
+        )}
       </Box>
     );
   }

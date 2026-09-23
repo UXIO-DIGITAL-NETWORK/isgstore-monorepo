@@ -27,7 +27,7 @@ class UxiolabsPoolController extends Controller
                 max(1, (int) $request->query('page', 1)),
             );
         } catch (Throwable $e) {
-            return $this->errorResponse('Gagal mengambil kandidat pool uxiolabs: '.$e->getMessage(), 502);
+            return $this->errorResponse('Gagal mengambil kandidat pool Uxiotopup: '.$e->getMessage(), 502);
         }
 
         return $this->paginatedResponse(

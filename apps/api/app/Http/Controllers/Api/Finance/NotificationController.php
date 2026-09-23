@@ -9,10 +9,17 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 /**
- * The payment-internal team's own notification feed. Every query is scoped to
- * the caller (`$request->user()->id`) before any filter, so one internal user
- * can never read, count, or mark another's fan-out row — the notifications
- * table holds one row per recipient by design.
+ * The signed-in user's own notification feed, whichever panel they are in.
+ *
+ * Every query is scoped to the caller (`$request->user()->id`) before any
+ * filter, so one user can never read, count, or mark another's fan-out row —
+ * the notifications table holds one row per recipient by design. That scoping
+ * is also why the same controller serves three route groups (admin,
+ * payment-internal, payment-admin) rather than one per panel: the group decides
+ * who may ask; it never decides whose rows come back.
+ *
+ * It still lives under `Api\Finance` because moving it would rewrite imports
+ * across the payment app's tests for no behavioural gain.
  */
 class NotificationController extends Controller
 {

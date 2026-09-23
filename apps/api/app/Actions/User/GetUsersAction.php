@@ -39,6 +39,21 @@ class GetUsersAction
             $roleId = Role::whereRaw('LOWER(name) = ?', [$dto->role])->value('id');
             $query->where('role_id', $roleId ?? 0);
         }
+        // Allowlist of roles at once. `LOWER` rather than a plain IN so the same
+        // filter behaves on MySQL and on the SQLite the suite runs against.
+        if (! empty($dto->roles)) {
+            $names = array_map(fn ($name) => strtolower((string) $name), $dto->roles);
+
+            $roleIds = Role::query()
+                ->where(function (Builder $q) use ($names) {
+                    foreach ($names as $name) {
+                        $q->orWhereRaw('LOWER(name) = ?', [$name]);
+                    }
+                })
+                ->pluck('id');
+
+            $query->whereIn('role_id', $roleIds);
+        }
 
         // 3. Filter Range Saldo
         if ($dto->minBalance !== null) {

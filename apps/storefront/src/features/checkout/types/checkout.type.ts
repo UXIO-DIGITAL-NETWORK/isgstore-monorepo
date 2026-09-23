@@ -29,6 +29,10 @@ export interface DiamondPackage {
   pointPercent: number;
   /** Flat points added on top of the percentage. */
   pointFlat: number;
+  /** Slots left today from the SKU's local daily allowance; null = no ceiling. */
+  stockLeft: number | null;
+  /** Sold out for today — selectable on the page, but the order will be refused. */
+  isSoldOut: boolean;
 }
 
 export interface CategoryTab {
@@ -124,6 +128,12 @@ export interface GameReviewsResponse {
 export interface CheckoutPayload {
   product_id: number;
   payment_channel_id: number;
+  /**
+   * Every identifier the game declared, keyed by its own field keys. How many
+   * there are is a data decision — the API validates one rule per key.
+   */
+  order_fields: Record<string, string>;
+  /** The first two identifiers, mirrored for the API's named columns. */
   target_uid: string;
   target_server?: string;
   target_nickname?: string;

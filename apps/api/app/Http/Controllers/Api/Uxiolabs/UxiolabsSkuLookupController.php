@@ -20,11 +20,11 @@ class UxiolabsSkuLookupController extends Controller
                 $request->filled('category_id') ? (int) $request->validated('category_id') : null
             );
         } catch (Exception $e) {
-            return $this->errorResponse('Gagal mengambil price list uxiolabs: '.$e->getMessage(), 502);
+            return $this->errorResponse('Gagal mengambil price list Uxiotopup: '.$e->getMessage(), 502);
         }
 
         if ($preview === null) {
-            return $this->errorResponse('Layanan tidak ditemukan di price list uxiolabs', 404);
+            return $this->errorResponse('Layanan tidak ditemukan di price list Uxiotopup', 404);
         }
 
         return $this->successResponse($preview, 'Layanan ditemukan');

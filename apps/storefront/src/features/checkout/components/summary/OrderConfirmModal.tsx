@@ -17,6 +17,10 @@ interface Props {
   itemLabel: string;
   productName: string;
   price: number;
+  /** Rupiah taken off by the promo code; 0 when none is applied. */
+  promoDiscount?: number;
+  /** Rupiah covered by redeemed loyalty points; 0 when none are applied. */
+  pointsDiscount?: number;
   paymentName?: string;
   /** "Biaya Admin" — the payment method's fee; hidden when 0. */
   adminFee?: number;
@@ -99,6 +103,8 @@ export default function OrderConfirmModal({
   itemLabel,
   productName,
   price,
+  promoDiscount = 0,
+  pointsDiscount = 0,
   paymentName,
   adminFee = 0,
   total,
@@ -107,6 +113,11 @@ export default function OrderConfirmModal({
 }: Props): React.ReactPortal | null {
   const { t, i18n } = useTranslation("checkout");
   const locale = i18n.language;
+
+  // The fee is charged on what is left after both discounts, and a fully
+  // covered order is charged nothing at all — so a fee row here would be a
+  // number the customer never pays.
+  const remaining = Math.max(0, price - promoDiscount - pointsDiscount);
 
   // ESC to close + body scroll-lock
   useEffect(() => {
@@ -177,11 +188,25 @@ export default function OrderConfirmModal({
             value={formatCurrency(price, locale)}
             numeric
           />
+          {promoDiscount > 0 && (
+            <Field
+              label={t("summary.promoDiscount")}
+              value={`- ${formatCurrency(promoDiscount, locale)}`}
+              numeric
+            />
+          )}
+          {pointsDiscount > 0 && (
+            <Field
+              label={t("summary.pointsDiscount")}
+              value={`- ${formatCurrency(pointsDiscount, locale)}`}
+              numeric
+            />
+          )}
           <Field
             label={t("confirmModal.method")}
             value={paymentName ?? "-"}
           />
-          {adminFee > 0 && (
+          {adminFee > 0 && remaining > 0 && (
             <Field
               label={t("confirmModal.adminFee")}
               value={formatCurrency(adminFee, locale)}

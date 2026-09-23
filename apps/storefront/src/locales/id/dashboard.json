@@ -67,14 +67,6 @@
       "hint": "Pilih nominal untuk isi saldo akun anda",
       "placeholder": "Rp 0"
     },
-    "voucher": {
-      "title": "Masukkan Kode Voucher",
-      "subtitle": "Masukkan kode voucher Anda disini",
-      "placeholder": "Contoh: GAME-XXX-XXX",
-      "button": "Klaim Voucher",
-      "note": "Voucher hanya bisa digunakan 1 kali dan tidak dapat diuangkan",
-      "applied": "Voucher berhasil diterapkan!"
-    },
     "payment": {
       "sectionTitle": "PILIH PEMBAYARAN",
       "groups": {
@@ -85,7 +77,6 @@
     },
     "summary": {
       "title": "Ringkasan",
-      "discountLabel": "Discount Voucher ({{percent}}%)",
       "totalLabel": "Total Bayar",
       "submitButton": "Isi Saldo Sekarang"
     },
@@ -180,6 +171,7 @@
       "sectionTitle": "INFORMASI PRIBADI",
       "photoTitle": "Foto Profil",
       "photoUploadButton": "Tambahkan Foto Profil",
+      "uploadingPhoto": "Mengunggah foto…",
       "photoRemoveButton": "Hapus",
       "photoHint": "Format JPG, PNG, atau WEBP — dioptimalkan otomatis",
       "photoNotAnImage": "File harus berupa gambar (JPG, PNG, atau WEBP).",

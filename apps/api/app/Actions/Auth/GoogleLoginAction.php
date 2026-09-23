@@ -12,6 +12,7 @@ use App\Enums\RoleType;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\GoogleTokenVerifier;
+use App\Support\DateTime\Wib;
 use App\Support\Locale\SupportedLocale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -77,7 +78,7 @@ class GoogleLoginAction
                     // default said `id`, so the two ways of creating an account
                     // disagreed about what language the person reads.
                     'locale' => SupportedLocale::fallback(),
-                    'timezone' => $dto->timezone ?? 'Asia/Jakarta',
+                    'timezone' => Wib::TZ,
                 ]);
             }
 
@@ -87,9 +88,10 @@ class GoogleLoginAction
                 $user->google_id = $googleId;
             }
 
-            // Piggyback timezone sync, mirroring LoginAction.
-            if ($dto->timezone !== null && $user->timezone !== $dto->timezone) {
-                $user->timezone = $dto->timezone;
+            // Mirroring LoginAction: one platform wall clock, so the browser's
+            // zone is ignored and any stale value is corrected here.
+            if ($user->timezone !== Wib::TZ) {
+                $user->timezone = Wib::TZ;
             }
 
             if ($user->isDirty()) {

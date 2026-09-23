@@ -30,7 +30,7 @@ const game = (over: Partial<GameDetailModel> = {}): GameDetailModel =>
 const products = (over: Partial<GameProductsResponse> = {}): GameProductsResponse => ({
   groups: ["Diamond"],
   products: [
-    { id: 9, name: "100 Diamonds", code: "ML100", price: 24000, group: "Diamond", sub_category_id: 3, amount: 100, point_percent: 1, point_flat: 5 },
+    { id: 9, name: "100 Diamonds", code: "ML100", price: 24000, group: "Diamond", sub_category_id: 3, amount: 100, point_percent: 1, point_flat: 5, stock_left: null, is_sold_out: false },
   ],
   ...over,
 });
@@ -78,7 +78,7 @@ describe("toDiamondPackages", () => {
     const [pkg] = toDiamondPackages(
       products({
         products: [
-          { id: 12, name: "Weekly Pass", code: "WP", price: 27000, group: "Pass", sub_category_id: 4, amount: null, point_percent: 0, point_flat: 0 },
+          { id: 12, name: "Weekly Pass", code: "WP", price: 27000, group: "Pass", sub_category_id: 4, amount: null, point_percent: 0, point_flat: 0, stock_left: null, is_sold_out: false },
         ],
       }),
     );
@@ -92,6 +92,27 @@ describe("toDiamondPackages", () => {
 
     expect(pkg.pointPercent).toBe(1);
     expect(pkg.pointFlat).toBe(5);
+  });
+
+  /**
+   * Today's allowance is what makes the card say "Habis" and refuse the click.
+   * Null is "no ceiling" — an API that predates the field must not read as sold
+   * out, which would empty the page.
+   */
+  it("reads a missing allowance as no ceiling, and a spent one as sold out", () => {
+    const [unlimited] = toDiamondPackages(products());
+    expect(unlimited.stockLeft).toBeNull();
+    expect(unlimited.isSoldOut).toBe(false);
+
+    const [spent] = toDiamondPackages(
+      products({
+        products: [
+          { id: 13, name: "86 Diamonds", code: "ML86", price: 21000, group: "Diamond", sub_category_id: 3, amount: 86, point_percent: 0, point_flat: 0, stock_left: 0, is_sold_out: true },
+        ],
+      }),
+    );
+    expect(spent.stockLeft).toBe(0);
+    expect(spent.isSoldOut).toBe(true);
   });
 });
 
