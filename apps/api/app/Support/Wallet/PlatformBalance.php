@@ -65,4 +65,25 @@ final class PlatformBalance
     {
         return self::income() - self::internalWithdrawnHold();
     }
+
+    /**
+     * `income` and `available` together, from ONE ledger sum.
+     *
+     * `available` is defined as `income` minus the internal hold, so a caller
+     * that wants both — the Hub's summary pull wants exactly these two, as
+     * `profit_total` and `platform_available` — would otherwise scan the whole
+     * `platform_mutations` ledger twice, every minute. Asking here keeps the
+     * single definition and pays for the scan once.
+     *
+     * @return array{income: int, available: int}
+     */
+    public static function totals(): array
+    {
+        $income = self::income();
+
+        return [
+            'income' => $income,
+            'available' => $income - self::internalWithdrawnHold(),
+        ];
+    }
 }

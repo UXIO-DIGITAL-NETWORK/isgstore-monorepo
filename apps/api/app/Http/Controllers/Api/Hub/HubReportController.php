@@ -3,20 +3,18 @@
 namespace App\Http\Controllers\Api\Hub;
 
 use App\Enums\ServiceInvoiceStatus;
-use App\Enums\TransactionStatus;
 use App\Enums\WithdrawalStatus;
 use App\Http\Controllers\Controller;
 use App\Models\GatewayBalanceSnapshot;
-use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\PlatformMutation;
 use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
-use App\Models\Transaction;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
 use App\Services\UxiolabsService;
+use App\Support\Finance\FinanceTotals;
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Payment\DefaultMerchant;
 use App\Support\Payment\WebsiteSubscriptionStatus;
@@ -59,10 +57,15 @@ class HubReportController extends Controller
         $pending = Withdrawal::where('status', WithdrawalStatus::PENDING);
         $oldestPendingAt = $pending->clone()->min('created_at');
 
+        // `available` is `income` minus the hold, so asking for the two
+        // separately scanned the whole profit ledger twice on every pull. One
+        // call, one scan.
+        $platform = PlatformBalance::totals();
+
         return $this->successResponse([
             'generated_at' => now()->toIso8601String(),
-            'profit_total' => PlatformBalance::income(),
-            'platform_available' => PlatformBalance::available(),
+            'profit_total' => $platform['income'],
+            'platform_available' => $platform['available'],
             'pending_withdrawals_count' => (int) $pending->clone()->count(),
             'pending_withdrawals_amount' => (int) $pending->clone()->sum('amount'),
             'oldest_pending_minutes' => $oldestPendingAt
@@ -93,35 +96,11 @@ class HubReportController extends Controller
             'website_subscription' => WebsiteSubscriptionStatus::resolve(),
             // Finance breakdown so the Hub can render the same headline cards the
             // site's own payment-internal dashboard shows. Additive to this
-            // contract; older sites simply omit these keys.
-            ...$this->financeBreakdown(),
+            // contract; older sites simply omit these keys. Read through
+            // FinanceTotals — the dashboard's own definition — so the two can
+            // never disagree, and cheap enough to run on a one-minute pull.
+            ...FinanceTotals::snapshot(),
         ], 'Site summary');
-    }
-
-    /**
-     * The profit breakdown the payment-internal dashboard shows, computed with
-     * the SAME queries as FinanceDashboardController::index so the Hub can never
-     * disagree with the site panel about the same numbers.
-     *
-     * @return array<string, int>
-     */
-    private function financeBreakdown(): array
-    {
-        // Only paid transactions represent money actually collected — the
-        // ledger-backed saldo settles at PAID; pending/failed rows would overstate.
-        $paid = Transaction::whereNotNull('merchant_id')
-            ->whereIn('status', TransactionStatus::paidStates());
-
-        $paidPayments = fn () => Payment::whereIn('transaction_id', $paid->clone()->select('id'));
-
-        return [
-            'total_admin_fee' => (int) $paid->clone()->sum('amount_fee'),
-            'total_gateway_fee' => (int) $paidPayments()->sum('gateway_fee'),
-            'total_tax' => (int) $paidPayments()->sum('tax_amount'),
-            'total_settled_to_merchants' => (int) $paid->clone()->sum('amount_base'),
-            'total_transactions_count' => (int) Transaction::whereNotNull('merchant_id')->count(),
-            'total_transactions_amount' => (int) $paid->clone()->sum('amount_base'),
-        ];
     }
 
     /** GET /v1/hub/withdrawals — the queue that needs eyes: everything open, plus recent terminal rows. */
