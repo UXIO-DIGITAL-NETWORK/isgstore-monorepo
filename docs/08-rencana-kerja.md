@@ -27,16 +27,21 @@ Banyak situs akan lahir dari cetakan ini (`web-topup-monorepo`), masing-masing b
 
 ## Terverifikasi di mesin pengembang
 
-- `php -l` semua berkas yang diubah; **Pint PASS**.
-- **Resolusi container**: `SupplierGateway` → `UxiolabsService`, `PaymentGateway` → `MonetapayService`; 27 kelas terkait resolve tanpa error; kanal receipt resolve.
-- **Test tanpa DB**: 8 test / 24 assertion (versi + kontrak ketiga seam).
+- **Seluruh suite API hijau**: `php artisan test` → **1317 lulus, 1 skipped, 0 gagal** (4.332 assertion), setelah `pdo_sqlite` dipasang. Ini yang menutupi ketiga refactor jalur uang.
+- **`pint --test` bersih** untuk 1.141 berkas.
+- `php -l` semua berkas yang diubah.
+- **Resolusi container**: `SupplierGateway` → `UxiolabsService`, `PaymentGateway` → `MonetapayService`; kanal receipt resolve.
 - **Workflow**: YAML valid, dan skrip SSH di dalamnya lolos `bash -n`.
 
-## Belum terverifikasi — WAJIB sebelum produksi
+Dua temuan yang muncul saat verifikasi dan sudah dibereskan:
 
-- **Seluruh test ber-DB** (`php artisan test`). Mesin pengembang tidak punya `pdo_sqlite`, jadi tiga refactor terakhir (supplier, gateway, notifikasi) belum diuji perilakunya.
-- **Frontend** (tsc / lint / test) — `node_modules` belum dipasang.
-- **Workflow GitHub** itu sendiri — butuh runner.
+- Mock `MonetapayService` di `IntegrationChannelTest` harus menjawab `balanceCacheKey()`, karena cache-busting kini panggilan **instance** lewat kontrak (dulu statis, jadi Mockery tidak mencegatnya).
+- **Tiga berkas gagal Pint** — `GoogleLoginAction`, `ReverseMerchantSettlementAction`, `MarketingController`. Ini **drift bawaan, juga ada di `isgstore-monorepo`**, jadi CI isgstore kemungkinan sedang merah pada langkah `pint --test`. Sudah dirapikan di cetakan.
+
+## Belum terverifikasi
+
+- **Frontend** (tsc / lint / test) — `node_modules` belum dipasang di mesin ini.
+- **Workflow GitHub** itu sendiri — butuh runner; jalankan lewat PR.
 
 Test yang paling relevan dengan pekerjaan ini: `tests/Feature/Uxiolabs/*`, `TransactionReceiptTest`, `WhatsAppReceiptTest`, `Checkout/*`, `PaymentPage/*`, `Hub/*`, `Monetapay*`, `SiteAvailabilityTest`.
 
@@ -74,7 +79,7 @@ cd apps/<admin|storefront|payment> && npm ci && npx tsc -b --noEmit && npm run l
 ## Peringatan saat mengadopsi
 
 - **Jangan aktifkan model tag di produksi sebelum staging hidup.** Begitu `deploy-prod.yml` bergantung pada tag, `push` ke `main` tidak lagi mendeploy produksi.
-- **Jangan push ke `main` sebelum CI hijau** untuk tiga refactor terakhir: perilakunya belum diuji, dan kegagalannya bisa senyap (receipt tidak terkirim, order tidak diteruskan).
+- **Jangan push ke `main` sebelum CI hijau.** Sisi API sudah terverifikasi lokal (1.317 lulus, Pint bersih); yang belum: frontend (tsc/lint/test) dan workflow CI itu sendiri.
 - Jalankan CI lewat PR dulu; merge ke `main` belakangan.
 
 ## Berkas yang perlu dibaca dulu
