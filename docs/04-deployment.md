@@ -28,6 +28,17 @@ Pemicunya **push tag `v*`**, dan satu tag mendeploy keempat app sekaligus. Caban
 
 ---
 
+## Staging
+
+`deploy-staging.yml` adalah kembaran `deploy-prod.yml`: pemicunya `push` ke `main`, dan `environment: staging` yang menentukan secret mana (host SSH, `DEPLOY_BASE_PATH`, `ENV_FILE`, `VITE_*`) yang dipakai. Langkah-langkahnya sengaja identik dengan produksi — staging yang memakai jalur berbeda tidak membuktikan apa pun tentang produksi.
+
+Dua hal yang wajib benar sebelum staging berguna:
+
+- **`HUB_BASE_URL` menunjuk ke Hub STAGING**, bukan produksi, dan situs staging terdaftar sebagai *site* terpisah di Hub staging dengan kunci sendiri. Situs staging yang menunjuk Hub produksi akan mengotori data kantor pusat dan mengganggu situs lain.
+- **Jangan mengaktifkan model tag di produksi sebelum staging hidup.** Begitu `deploy-prod.yml` bergantung pada tag, `push` ke `main` tidak lagi mendeploy produksi — tanpa staging, tidak ada tempat menguji sebelum memberi tag.
+
+---
+
 ## Migrasi ke monorepo — yang harus disiapkan di server
 
 Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
