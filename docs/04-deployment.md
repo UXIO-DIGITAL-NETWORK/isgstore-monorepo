@@ -32,10 +32,69 @@ Pemicunya **push tag `v*`**, dan satu tag mendeploy keempat app sekaligus. Caban
 
 `deploy-staging.yml` adalah kembaran `deploy-prod.yml`: pemicunya `push` ke `main`, dan `environment: staging` yang menentukan secret mana (host SSH, `DEPLOY_BASE_PATH`, `ENV_FILE`, `VITE_*`) yang dipakai. Langkah-langkahnya sengaja identik dengan produksi — staging yang memakai jalur berbeda tidak membuktikan apa pun tentang produksi.
 
-Dua hal yang wajib benar sebelum staging berguna:
+Staging adalah **deployment terpisah sepenuhnya**: DB, direktori, kunci, domain, cron, dan queue worker sendiri. Berbagi salah satu di antaranya membuat staging berhenti menjadi latihan yang jujur.
 
-- **`HUB_BASE_URL` menunjuk ke Hub STAGING**, bukan produksi, dan situs staging terdaftar sebagai *site* terpisah di Hub staging dengan kunci sendiri. Situs staging yang menunjuk Hub produksi akan mengotori data kantor pusat dan mengganggu situs lain.
-- **Jangan mengaktifkan model tag di produksi sebelum staging hidup.** Begitu `deploy-prod.yml` bergantung pada tag, `push` ke `main` tidak lagi mendeploy produksi — tanpa staging, tidak ada tempat menguji sebelum memberi tag.
+| | Produksi | Staging |
+|---|---|---|
+| API | `api.<domain>` | `api-staging.<domain>` |
+| Storefront / Admin / Payment | `<domain>`, `admin.`, `pay.` | `staging.`, `admin-staging.`, `pay-staging.` |
+| Database | `uxiotopup` | `uxiotopup_staging` |
+| `.env` | environment `production` | environment `staging` |
+| Hub | Hub produksi | **Hub staging** |
+
+### Yang harus berdiri lebih dulu: Hub staging
+
+Situs staging butuh Hub staging, jadi Hub didirikan dulu:
+
+1. **Instance Hub terpisah** (direktori, `DEPLOY_PATH`, vhost sendiri) — boleh di VPS yang sama, tapi jangan berbagi DB atau direktori.
+2. **DB `uxiotopup_hub_staging`** dari `migrate` + seeder, **bukan salinan data produksi**.
+3. **`APP_KEY` sendiri.**
+4. Env Hub staging mengikuti `uxiotopup-hub-api/.env.example`, dengan `APP_ENV=staging`, `FRONTEND_URL` = panel staging, `DISCORD_SEND_OUTSIDE_PRODUCTION=false`, dan `MONETAPAY_IS_PRODUCTION=false`.
+5. **Daftarkan situs staging sebagai *site* terpisah di Hub staging** (`code` mis. `isgstore-staging`, `base_url` = `https://api-staging.<domain>`, `allowed_ips` = IP server situs staging). Kunci yang diterbitkan Hub staging inilah yang dipasang di `.env` situs staging.
+6. **Jawab "serving" untuk situs itu.** Situs yang dikelola Hub gelap secara default; tanpa jawaban "serving", situs staging membalas 503 di semua rute publik dan orang akan mengira staging-nya rusak.
+
+### Env situs staging yang wajib benar
+
+- `APP_ENV=staging`, `APP_URL` = domain staging.
+- **`HUB_BASE_URL` = Hub STAGING**, bukan produksi. Ini yang paling sering salah, dan salahnya paling merusak: situs staging yang menunjuk Hub produksi mengotori data kantor pusat dan mengganggu situs lain.
+- `HUB_ENABLED=true`, `HUB_SITE_API_KEY` = kunci dari Hub staging.
+- `MONETAPAY_IS_PRODUCTION=false`.
+- `STOREFRONT_URL` dan `PAYMENT_PAGE_URL` = domain staging. Kalau dibiarkan kosong atau menunjuk `localhost`, `urls:verify` **menggagalkan deploy** — memang disengaja.
+
+Data awal dari `migrate --seed` (seeder dev), bukan salinan produksi.
+
+### Secret environment `staging` (di GitHub)
+
+| Secret | Isi |
+|---|---|
+| `SSH_HOST`, `SSH_PORT`, `SSH_USERNAME`, `SSH_PRIVATE_KEY` | akses ke server staging |
+| `DEPLOY_BASE_PATH` | base path **staging**, bukan path produksi |
+| `ENV_FILE` | seluruh isi `.env` staging |
+| `VITE_API_BASE_URL` | `https://api-staging.<domain>/api` |
+| `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER` | kanal staging, atau kosong (fallback polling) |
+| `VITE_GOOGLE_CLIENT_ID` | client OAuth staging, atau kosong |
+| `DISCORD_WEBHOOK_LOG_URL` | webhook staging (opsional) |
+
+### Cara memastikan rantainya benar-benar tersambung
+
+1. `php artisan hub:ping` di situs staging → lulus. Gagal berarti `HUB_BASE_URL`, kunci, atau `allowed_ips` salah.
+2. `php artisan hub:status` → tabel konfigurasi + probe live ke Hub.
+3. Situs staging muncul di panel Hub staging, dan `GET /v1/version` menjawab versinya.
+4. `push` ke `main` → **hanya staging yang berubah**, produksi tidak tersentuh.
+
+### Urutan, dan jebakannya
+
+```
+1. Hub staging hidup + site staging terdaftar + licence "serving"
+2. Situs staging hidup, HUB_BASE_URL ke Hub staging, hub:ping lulus
+3. Isi secret environment `staging`, aktifkan deploy-staging.yml
+4. Uji: push ke main -> hanya staging yang berubah
+5. BARU pindahkan produksi ke model tag (rilis = tag)
+```
+
+**Jebakan:** langkah 5 harus terakhir. Begitu `deploy-prod.yml` bergantung pada tag, `push` ke `main` tidak lagi mendeploy produksi — tanpa staging, tidak ada tempat menguji sebelum memberi tag.
+
+**Worker dan cron wajib terpisah.** Bila staging menumpang VPS yang sama, queue worker dan cron staging harus punya direktori sendiri. Worker yang salah membaca tabel `jobs` akan memproses pekerjaan lingkungan lain, dan kegagalannya senyap.
 
 ---
 
