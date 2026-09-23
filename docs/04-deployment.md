@@ -6,12 +6,25 @@ Keempat aplikasi mendarat di **satu server**, di direktori bersebelahan. Sebelum
 
 | App | Cara naik | Tujuan |
 |---|---|---|
-| API | `git pull` + `composer install` + `migrate` di server | `<repo>/apps/api` |
+| API | `git checkout <tag>` + `composer install` + `migrate` di server | `<repo>/apps/api` |
 | Admin | build di CI, `rsync` folder `dist/` | `…/provider/admin` |
 | Storefront | idem | `…/provider/fe` |
 | Payment | idem | `…/provider/payment` |
 
-Pemicunya `push` ke `main`, dengan **path filter** — mengubah storefront tidak memicu build admin.
+Pemicunya **push tag `v*`**, dan satu tag mendeploy keempat app sekaligus. Cabang `main` tidak lagi mendeploy produksi — jalur itu disiapkan untuk staging.
+
+---
+
+## Rilis: tag, stempel, rollback
+
+**Sebuah rilis adalah tag.** `deploy-prod.yml` berjalan saat tag `v*` di-push, dan mendeploy keempat app dalam satu jalan. Alasannya bukan gaya: satu nomor versi harus menunjuk satu keadaan kode yang diketahui, supaya pertanyaan "situs ini versi berapa" punya jawaban, dan supaya rilis yang sama bisa dipasang ulang.
+
+- **Nomor** — tag Semver `vMAJOR.MINOR.PATCH`. MAJOR untuk perubahan yang bisa merusak situs lain (skema DB, kontrak Hub), MINOR untuk fitur, PATCH untuk perbaikan.
+- **Stempel** — deploy menulis `APP_VERSION` (tag), `APP_COMMIT` (commit hasil checkout), dan `APP_UPSTREAM` (dibaca dari `.upstream-version`, bila ada) ke `.env`, **sesudah** `.env` ditulis dari secret. `GET /v1/version` dan `VITE_APP_VERSION` melaporkan nilai yang sama.
+- **Gerbang** — `php artisan hub:ping` dijalankan tepat sebelum `migrate`. Bila `HUB_ENABLED=true` dan Hub tidak terjangkau, deploy berhenti sebelum skema tersentuh. Di deploy standalone (`HUB_ENABLED=false`) perintah ini lulus sendiri.
+- **Rollback** — jalankan workflow `Deploy Production` lewat *Run workflow*, isi `ref` dengan tag lama (mis. `v1.3.0`). Server checkout tag itu dan memasangnya kembali.
+
+**Migrasi harus aditif supaya rollback aman.** Rollback kode tidak membalik migrasi: kalau sebuah rilis menghapus kolom, kode lama akan mencarinya dan gagal. Urutannya: tambah kolom → deploy kode baru → backfill → baru hapus kolom di rilis *berikutnya*.
 
 ---
 
@@ -233,12 +246,17 @@ pun yang memberi CI akses ke server; yang penting kontrolnya ada:
 ## Urutan deploy API, dan kenapa tiap langkah ada
 
 ```
-git pull                    ← gagal di sini membatalkan deploy SEBELUM cache dibuang
+git fetch --tags --force       ← gagal di sini membatalkan deploy SEBELUM apa pun berubah
+git checkout --force <tag>     ← rilis adalah TAG, bukan ujung `main`
 tulis .env dari secret
+stempel APP_VERSION/APP_COMMIT/APP_UPSTREAM ke .env
 composer install --no-dev
+optimize:clear                 ← buang config cache lama, supaya gerbang membaca .env baru
+php artisan hub:ping           ← GAGAL bila Hub tersambung tapi tak terjangkau (standalone: lulus)
 php artisan migrate --force
 php artisan pricing:backfill-plan-prices    ← WAJIB, lihat di bawah
 php artisan pricing:verify                   ← menggagalkan deploy bila menyimpang
+php artisan urls:verify                      ← menggagalkan deploy bila tautan tak bisa dibuka pelanggan
 optimize:clear → config:cache → route:cache
 storage:link
 chown/chmod
@@ -252,8 +270,9 @@ periksa worker RUNNING      ← deploy GAGAL bila tidak
 
 **Backfill harga wajib satu langkah dengan migrasi.** Tanpanya `product_plan_prices` kosong, `PlanPrice::for()` jatuh ke `products.price_member`, dan **setiap member dijual di harga tingkat dasar**. Tidak ada error di mana pun — hanya kebocoran pendapatan. Langkah inilah yang **tidak ada** di pipeline lama dan kini ditambahkan.
 
-**Tiga pemeriksaan yang sengaja menggagalkan deploy.** Ketiganya dulu berakhir `|| true`, dan itulah cara sebuah situs bisa berjalan berhari-hari dengan deploy hijau sementara pesanan berbayar tidak pernah diproses:
+**Empat pemeriksaan yang sengaja menggagalkan deploy.** Beberapa di antaranya dulu berakhir `|| true`, dan itulah cara sebuah situs bisa berjalan berhari-hari dengan deploy hijau sementara pesanan berbayar tidak pernah diproses:
 
+- `hub:ping` gagal → situs tersambung ke Hub tapi Hub tidak terjangkau, jadi seluruh loop pelaporan mati (deploy standalone lulus sendiri).
 - Cron `schedule:run` hilang → 13 perintah terjadwal berhenti diam-diam.
 - Queue worker tidak `RUNNING` → pembayaran berhasil, job parkir di tabel `jobs`, tidak ada yang error.
 - `pricing:verify` menyimpang → harga per paket tidak sinkron.

@@ -1,5 +1,12 @@
 # Deploy produksi untuk keempat aplikasi, dari satu repo.
 #
+# SEBUAH RILIS ADALAH TAG. Workflow ini berjalan saat tag `v*` di-push, dan
+# mendeploy KEEMPAT app sekaligus — itulah yang membuat satu nomor versi berarti
+# satu keadaan kode yang diketahui dan bisa dipasang ulang. Deployment manual
+# (`workflow_dispatch`) menerima `ref`, yang dipakai untuk ROLLBACK: isi tag
+# lama, dan server kembali ke kode itu. Cabang `main` tidak lagi mendeploy
+# produksi — jalur itu untuk staging (lihat deploy-staging.yml).
+#
 # PERUBAHAN DI SISI SERVER YANG DIBUTUHKAN — baca docs/04-deployment.md §Migrasi
 # ke monorepo sebelum menjalankan ini. Sebelumnya server meng-clone empat repo
 # ke empat direktori. Sekarang keempat app berbagi satu induk, secret
@@ -11,57 +18,49 @@ name: Deploy Production
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch: {}
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag yang dideploy. Isi tag lama (mis. v1.3.0) untuk rollback.'
+        required: false
+        default: ''
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-production
   cancel-in-progress: false # deploy tidak boleh dibatalkan di tengah jalan
+
+env:
+  # Rilis yang sedang mendarat: tag yang di-push, atau `ref` saat rollback manual.
+  # Dipakai untuk checkout, untuk stempel di .env, dan untuk stempel build frontend.
+  DEPLOY_REF: ${{ inputs.ref || github.ref_name }}
+  APP_VERSION: ${{ inputs.ref || github.ref_name }}
 
 jobs:
   changes:
-    name: Deteksi app yang berubah
+    # Sebuah tag mendeploy KEEMPAT app sekaligus, jadi daftarnya tetap — tidak ada
+    # path filter di sini. Selain memang itu artinya sebuah rilis, `dorny/
+    # paths-filter` juga tidak punya pembanding yang bermakna pada event tag.
+    name: App yang dideploy
     runs-on: ubuntu-latest
     outputs:
-      api: ${{ steps.filter.outputs.api }}
-      admin: ${{ steps.filter.outputs.admin }}
-      storefront: ${{ steps.filter.outputs.storefront }}
-      payment: ${{ steps.filter.outputs.payment }}
-      frontend: ${{ steps.matrix.outputs.frontend }}
+      api: ${{ steps.all.outputs.api }}
+      admin: ${{ steps.all.outputs.admin }}
+      storefront: ${{ steps.all.outputs.storefront }}
+      payment: ${{ steps.all.outputs.payment }}
+      frontend: ${{ steps.all.outputs.frontend }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            api: ['apps/api/**', '.github/workflows/**']
-            admin: ['apps/admin/**', '.github/workflows/**']
-            storefront: ['apps/storefront/**', '.github/workflows/**']
-            payment: ['apps/payment/**', '.github/workflows/**']
-
-      # `matrix` tidak tersedia di `if:` level job, jadi penyaringan app yang
-      # berubah tidak bisa ditulis di sana. Matriksnya disusun di sini sebagai
-      # JSON, dan job frontend hanya menerima app yang benar-benar berubah.
-      - name: Susun matrix frontend
-        id: matrix
-        env:
-          ADMIN: ${{ steps.filter.outputs.admin }}
-          STOREFRONT: ${{ steps.filter.outputs.storefront }}
-          PAYMENT: ${{ steps.filter.outputs.payment }}
+      - name: Semua app
+        id: all
         run: |
           set -euo pipefail
-          items=''
-          add() { items="${items:+$items,}$1"; }
-          if [ "$ADMIN" = 'true' ]; then
-            add '{"app":"admin","label":"Admin Dashboard"}'
-          fi
-          if [ "$STOREFRONT" = 'true' ]; then
-            add '{"app":"storefront","label":"Storefront"}'
-          fi
-          if [ "$PAYMENT" = 'true' ]; then
-            add '{"app":"payment","label":"Payment Page"}'
-          fi
-          echo "frontend={\"include\":[$items]}" >> "$GITHUB_OUTPUT"
+          {
+            echo 'api=true'
+            echo 'admin=true'
+            echo 'storefront=true'
+            echo 'payment=true'
+            echo 'frontend={"include":[{"app":"admin","label":"Admin Dashboard"},{"app":"storefront","label":"Storefront"},{"app":"payment","label":"Payment Page"}]}'
+          } >> "$GITHUB_OUTPUT"
 
   # ── API ────────────────────────────────────────────────────────────────────
   api-test:
@@ -87,19 +86,23 @@ jobs:
     name: API — deploy
     needs: api-test
     runs-on: ubuntu-latest
+    # Environment `production` menautkan secret-nya (ENV_FILE, DEPLOY_BASE_PATH,
+    # SSH_*) ke deployment ini, dan menjadi tempat memasang required reviewers
+    # bila suatu saat sebuah rilis perlu disetujui manusia.
+    environment: production
     steps:
       - name: Notify Discord — deploy started
         continue-on-error: true
         env:
           DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
           GH_ACTOR: ${{ github.actor }}
-          GH_SHA: ${{ github.sha }}
+          GH_REF: ${{ env.DEPLOY_REF }}
           GH_RUN_ID: ${{ github.run_id }}
           GH_REPO: ${{ github.repository }}
         run: |
           [ -z "$DISCORD_URL" ] && exit 0
           curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"🚀 API Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_SHA:0:7}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372}]}" || true
+            -d "{\"embeds\":[{\"title\":\"🚀 API Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_REF}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372}]}" || true
 
       - name: Execute deployment via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -107,6 +110,8 @@ jobs:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
           DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
           GH_REPOSITORY: ${{ github.repository }}
+          DEPLOY_REF: ${{ env.DEPLOY_REF }}
+          APP_VERSION: ${{ env.APP_VERSION }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -116,7 +121,7 @@ jobs:
           # arahnya server → GitHub, yang ini GitHub Actions → server.
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY
+          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF,APP_VERSION
           script: |
             set -e
             # Satu base path untuk keempat app. Frontend menerima isi dist/ di
@@ -124,6 +129,8 @@ jobs:
             # di $DEPLOY_BASE_PATH/api adalah klon monorepo-nya sendiri dan root
             # nginx api.<domain> menunjuk ke apps/api/public di dalamnya.
             [ -n "$DEPLOY_BASE_PATH" ] || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+            # Tanpa ref yang jelas kita tidak tahu kode mana yang harus mendarat.
+            [ -n "$DEPLOY_REF" ] || { echo "::error::DEPLOY_REF kosong — deploy dibatalkan."; exit 1; }
 
             # Preflight sudo. Langkah 8 dan seterusnya butuh sudo tanpa kata
             # sandi, dan sesi non-interaktif tidak bisa mengetikkannya. Diperiksa
@@ -181,18 +188,32 @@ jobs:
               echo "Setup pertama: clone $GH_REPOSITORY ke $REPO_DIR"
               rm -rf "$REPO_DIR"
               git clone "git@github.com:${GH_REPOSITORY}.git" "$REPO_DIR"
-              git -C "$REPO_DIR" checkout main
             fi
 
-            # 1-2. Tarik kode terbaru. Gagal di sini membatalkan deploy SEBELUM
-            #      cache lama dibuang, jadi situs tetap hidup dengan kode lama.
+            # 1-2. Pindah ke RILIS yang diminta — sebuah TAG, bukan ujung `main`.
+            #      Itulah yang membuat satu nomor versi menunjuk satu keadaan kode
+            #      yang bisa dipasang ulang kapan saja, termasuk untuk rollback
+            #      (deploy ulang tag lama). Gagal di sini membatalkan deploy
+            #      SEBELUM cache lama dibuang, jadi situs tetap hidup dengan kode
+            #      lama.
             cd "$REPO_DIR"
-            git pull origin main || { echo "::error::git pull gagal — deploy dibatalkan."; exit 1; }
+            git fetch --tags --force origin || { echo "::error::git fetch gagal — deploy dibatalkan."; exit 1; }
+            git checkout --force "$DEPLOY_REF" || { echo "::error::ref $DEPLOY_REF tidak ditemukan — deploy dibatalkan."; exit 1; }
 
             cd "$API_DIR"
 
             # 3. Tulis .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
+
+            # 3a. Stempel rilis. Ditulis SETELAH .env supaya apa pun di dalam
+            #     secret ENV_FILE tidak bisa membuat versi berbohong — `GET
+            #     /v1/version` harus menjawab kode yang benar-benar mendarat.
+            #     APP_UPSTREAM opsional: dibaca dari .upstream-version bila situs
+            #     mencatat versi cetakan asalnya.
+            APP_COMMIT="$(git -C "$REPO_DIR" rev-parse --short HEAD)"
+            APP_UPSTREAM="$( [ -f "$REPO_DIR/.upstream-version" ] && tr -d '[:space:]' < "$REPO_DIR/.upstream-version" || true )"
+            sed -i -E '/^(APP_VERSION|APP_COMMIT|APP_UPSTREAM)=/d' .env
+            printf 'APP_VERSION=%s\nAPP_COMMIT=%s\nAPP_UPSTREAM=%s\n' "$APP_VERSION" "$APP_COMMIT" "$APP_UPSTREAM" >> .env
 
             # 3b. Kredensial produksi — APP_KEY, kata sandi database, kunci
             #     gateway — tidak boleh terbaca user lain di server. Umask biasa
@@ -203,6 +224,18 @@ jobs:
 
             # 4. Dependensi produksi
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+            # 4a. Buang cache lama SEBELUM membaca konfigurasi. Tanpa ini
+            #     `config:cache` dari deploy sebelumnya menyajikan env yang lama,
+            #     dan gerbang di bawah memeriksa setelan yang sudah tidak berlaku.
+            php artisan optimize:clear
+
+            # 4b. Gerbang rilis: bila situs ini tersambung ke Hub (HUB_ENABLED)
+            #     dan Hub tidak terjangkau, deploy dihentikan DI SINI — sebelum
+            #     migrasi menyentuh skema. `hub:ping` lulus sendiri di deployment
+            #     standalone (HUB_ENABLED=false), jadi tidak menghalangi situs
+            #     yang memang tidak memakai Hub.
+            php artisan hub:ping || { echo "::error::Hub tidak terjangkau — deploy dibatalkan sebelum migrasi."; exit 1; }
 
             # 5. Migrasi
             php artisan migrate --force
@@ -343,7 +376,7 @@ jobs:
 
             # 16. Ringkasan, supaya satu run deploy bisa dibaca sebagai satu
             #     pernyataan tentang keadaan server sesudahnya.
-            echo "Selesai. Kode & migrasi terpasang, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker supervisor RUNNING."
+            echo "Selesai. Rilis $DEPLOY_REF ($APP_COMMIT) terpasang, migrasi jalan, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker supervisor RUNNING."
 
       - name: Notify Discord — hasil
         if: always()
@@ -351,12 +384,12 @@ jobs:
         env:
           DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
           STATUS: ${{ job.status }}
-          GH_SHA: ${{ github.sha }}
+          GH_REF: ${{ env.DEPLOY_REF }}
         run: |
           [ -z "$DISCORD_URL" ] && exit 0
           if [ "$STATUS" = "success" ]; then T="✅ API Deploy Succeeded"; C=5763719; else T="❌ API Deploy Failed"; C=15548997; fi
           curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_SHA:0:7}**\",\"color\":$C}]}" || true
+            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_REF}**\",\"color\":$C}]}" || true
 
   # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
@@ -366,6 +399,7 @@ jobs:
     # sepenuhnya kalau tidak ada frontend yang berubah.
     if: needs.changes.outputs.frontend != '{"include":[]}'
     runs-on: ubuntu-latest
+    environment: production
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.changes.outputs.frontend) }}
@@ -404,6 +438,9 @@ jobs:
           VITE_PUSHER_APP_CLUSTER: ${{ secrets.VITE_PUSHER_APP_CLUSTER }}
           # Dulu di-hardcode di YAML storefront. Sekarang secret.
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          # Stempel rilis yang sama dengan API, supaya sidebar admin menjawab
+          # versi yang benar-benar terpasang (lihat GET /v1/version).
+          VITE_APP_VERSION: ${{ env.APP_VERSION }}
         run: npm run build
 
       # rsync tetap dijalankan manual, bukan lewat
@@ -468,9 +505,9 @@ jobs:
           DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
           STATUS: ${{ job.status }}
           LABEL: ${{ matrix.label }}
-          GH_SHA: ${{ github.sha }}
+          GH_REF: ${{ env.DEPLOY_REF }}
         run: |
           [ -z "$DISCORD_URL" ] && exit 0
           if [ "$STATUS" = "success" ]; then T="✅ $LABEL Deploy Succeeded"; C=5763719; else T="❌ $LABEL Deploy Failed"; C=15548997; fi
           curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_SHA:0:7}**\",\"color\":$C}]}" || true
+            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_REF}**\",\"color\":$C}]}" || true

@@ -101,9 +101,9 @@ Sisi UI menampilkan stempel yang sama di sidebar admin (`VITE_APP_VERSION`).
 [ ] Isi hiasan: brand, domain, UI, alur
 [ ] Isi pendengar: WA/email/sosmed yang dipakai
 [ ] Isi .env (HUB_BASE_URL, kunci, dsb) — staging dulu, bukan produksi
+[ ] Tulis `.upstream-version` = tag cetakan yang dipakai (deploy membacanya jadi APP_UPSTREAM)
 [ ] Daftarkan di Hub (staging) dan pastikan hub:ping lulus
 [ ] Deploy ke staging, uji, baru produksi (beri tag)
-[ ] Catat APP_UPSTREAM = versi cetakan yang dipakai
 ```
 
 ## Alur rilis
