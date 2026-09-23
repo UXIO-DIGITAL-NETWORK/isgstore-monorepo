@@ -67,6 +67,8 @@ Notifikasi (WhatsApp/email/sosmed) **tidak boleh dipanggil dari dalam dapur**.
 Dapur memancarkan kejadian ("pesanan selesai"), dan pendengar bereaksi. Menambah
 layanan baru berarti menambah satu pendengar — dapur tidak berubah.
 
+Di kode, bentuk pertamanya sudah nyata: **`App\Contracts\ReceiptChannel`** + daftar di `config/notifications.php` (`notifications.receipt`). Tiap kanal membawa **penerima dan penjaga idempotensinya sendiri** (`receipt_sent_at`, `whatsapp_sent_at`), jadi satu kanal diam tidak mematikan yang lain. Menambah WhatsApp/Telegram/SMS = satu kelas kanal + satu baris di daftar itu; `SendTransactionReceiptAction` tidak disentuh. Alur refund (klaim & selesai) menyusul dengan pola yang sama.
+
 ## Aturan emas saat menyentuh dapur
 
 | Jenis perubahan | Aman? | Cara |

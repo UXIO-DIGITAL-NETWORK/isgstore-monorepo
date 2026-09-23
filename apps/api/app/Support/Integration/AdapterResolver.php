@@ -44,4 +44,37 @@ final class AdapterResolver
 
         return $adapter;
     }
+
+    /**
+     * Resolves an ORDERED LIST of adapter classes, validating each against the
+     * contract. Used where a seam is a LIST rather than a single chosen driver —
+     * the channels an order receipt is delivered over, for instance.
+     *
+     * @param  array<int,mixed>  $classes
+     * @return array<int,object>
+     */
+    public static function resolveAll(string $contract, array $classes): array
+    {
+        $resolved = [];
+
+        foreach ($classes as $class) {
+            if (! is_string($class) || ! class_exists($class)) {
+                throw new InvalidArgumentException(
+                    'Adapter ['.(is_string($class) ? $class : gettype($class)).'] tidak ditemukan.'
+                );
+            }
+
+            $adapter = app($class);
+
+            if (! $adapter instanceof $contract) {
+                throw new InvalidArgumentException(
+                    "Adapter [{$class}] tidak mengimplementasikan {$contract}."
+                );
+            }
+
+            $resolved[] = $adapter;
+        }
+
+        return $resolved;
+    }
 }
