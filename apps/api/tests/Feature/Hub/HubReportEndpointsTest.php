@@ -14,9 +14,11 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
+use App\Support\Finance\FinanceTotals;
 use App\Support\Ledger\PlatformLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -161,6 +163,35 @@ class HubReportEndpointsTest extends TestCase
         ]);
     }
 
+    /** One sale with the fee columns the finance breakdown reads. */
+    private function saleWithFees(
+        User $merchant,
+        PaymentChannel $channel,
+        int $base,
+        int $adminFee,
+        int $gatewayFee,
+        int $tax,
+        string $status,
+    ): void {
+        $transaction = Transaction::factory()->create([
+            'merchant_id' => $merchant->id,
+            'payment_channel_id' => $channel->id,
+            'amount_base' => $base,
+            'amount_fee' => $adminFee,
+            'amount_total' => $base + $adminFee,
+            'status' => $status,
+        ]);
+
+        Payment::factory()->create([
+            'transaction_id' => $transaction->id,
+            'payment_channel_id' => $channel->id,
+            'gross_amount' => $base + $adminFee,
+            'gateway_fee' => $gatewayFee,
+            'tax_amount' => $tax,
+            'status' => '3',
+        ]);
+    }
+
     public function test_summary_shape_is_pinned(): void
     {
         PlatformLedger::record(amount: 50000, type: 'markup', reference: 'SEED-1');
@@ -224,6 +255,61 @@ class HubReportEndpointsTest extends TestCase
             ->assertJsonPath('data.gateway_balance', 777000);
 
         Http::assertNothingSent();
+    }
+
+    /**
+     * The finance breakdown the Hub renders is the site dashboard's own numbers.
+     *
+     * Two paid sales and one pending one: only paid rows may feed the fee
+     * totals, while the count is the whole book of merchant transactions —
+     * exactly how the dashboard has always read it.
+     */
+    public function test_summary_reports_the_finance_breakdown_the_dashboard_shows(): void
+    {
+        $channel = PaymentChannel::factory()->create(['channel_code' => 'qris']);
+        $merchant = User::factory()->create([
+            'role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id,
+        ]);
+
+        $this->saleWithFees($merchant, $channel, 100000, 2500, 700, 770, 'PAID');
+        $this->saleWithFees($merchant, $channel, 40000, 1000, 280, 308, 'PAID');
+        // Must not reach any total but the count.
+        $this->saleWithFees($merchant, $channel, 999999, 99999, 99999, 99999, 'PENDING');
+
+        $data = $this->pull('/api/v1/hub/summary')->assertOk()->json('data');
+
+        $this->assertSame(3500, $data['total_admin_fee']);
+        $this->assertSame(980, $data['total_gateway_fee']);
+        $this->assertSame(1078, $data['total_tax']);
+        $this->assertSame(140000, $data['total_settled_to_merchants']);
+        $this->assertSame(3, $data['total_transactions_count']);
+        $this->assertSame(140000, $data['total_transactions_amount']);
+    }
+
+    /**
+     * The finance breakdown must stay THREE queries, whatever it grows to return.
+     *
+     * The cost is pinned, separately from the payload shape, because this is the
+     * block that took the site past the Hub's 15s pull timeout: it ran six
+     * full-history aggregates per pull — two of them an IN list of every paid
+     * transaction id that MySQL materialises before probing `payments` — on an
+     * endpoint the Hub calls every minute. The symptom was silent and one-sided:
+     * `cURL error 28 ... 0 bytes received` on the Hub, nothing in the site's log.
+     *
+     * A count of queries is only a proxy for that cost, but it is the part that
+     * can be pinned without a dataset: a fourth aggregate, or the IN list coming
+     * back, fails here rather than in production a few hundred thousand sales later.
+     */
+    public function test_the_finance_breakdown_costs_three_queries(): void
+    {
+        $queries = 0;
+        DB::listen(function () use (&$queries): void {
+            $queries++;
+        });
+
+        FinanceTotals::snapshot();
+
+        $this->assertLessThanOrEqual(3, $queries, "the finance breakdown issued {$queries} queries");
     }
 
     public function test_withdrawals_lists_open_rows_with_type_discriminator(): void
