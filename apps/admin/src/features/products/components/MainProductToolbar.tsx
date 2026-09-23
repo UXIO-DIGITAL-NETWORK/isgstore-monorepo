@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
-import { Archive, ChevronDown, Eye, ImageIcon, Lock, Plus, RefreshCcw, RefreshCw, Search } from "lucide-react";
+import { Archive, ChevronDown, Eye, ImageIcon, Plus, RefreshCcw, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { Box } from "@/components/common/Box";
@@ -35,7 +35,6 @@ interface MainProductToolbarProps {
   selectedCount: number;
   onBulkUxiolabs: () => void;
   onBulkShowPrice: () => void;
-  onBulkLock: () => void;
   onPublishStateChange: (value?: string) => void;
   onBulkUnpublish: () => void;
   onBulkDelete: () => void;
@@ -68,7 +67,6 @@ export function MainProductToolbar({
   selectedCount,
   onBulkUxiolabs,
   onBulkShowPrice,
-  onBulkLock,
   onPublishStateChange,
   onBulkUnpublish,
   onBulkDelete,
@@ -236,7 +234,6 @@ export function MainProductToolbar({
               },
               { label: t("uxiolabsUpdate"), icon: <RefreshCcw className="size-4" />, onSelect: onBulkUxiolabs },
               { label: t("showPrice"), icon: <Eye className="size-4" />, onSelect: onBulkShowPrice },
-              { label: t("lockPrice"), icon: <Lock className="size-4" />, onSelect: onBulkLock },
               { label: t("unpublish"), icon: <Archive className="size-4" />, onSelect: onBulkUnpublish },
               { label: t("archive"), icon: <Archive className="size-4" />, destructive: true, onSelect: onBulkDelete },
             ]}

@@ -43,6 +43,11 @@ class SupplierProductResource extends JsonResource
             'margins' => $this->legacyMargins(),
             'price_min' => $this->price_min,
             'price_max' => $this->price_max,
+            // The day's selling allowance (null = no ceiling) and what is left of
+            // it — the latter attached per page by `GetSupplierProductsAction`,
+            // which is where the one count for the whole page happens.
+            'daily_order_limit' => $this->daily_order_limit === null ? null : (int) $this->daily_order_limit,
+            'stock_left_today' => $this->stock_left_today === null ? null : (int) $this->stock_left_today,
             'margin_set_at' => $this->margin_set_at,
             // Where this row sits in the pipeline, plus the promote gate. Both come
             // from the model so the admin's badge and the API's 422 can never

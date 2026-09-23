@@ -22,7 +22,8 @@ class ProcessUxiolabsTransactionAction
     public function __construct(
         private readonly UxiolabsService $uxiolabsService,
         private readonly CreateActivityLogAction $logAction,
-        private readonly CustomerNumberFormatter $customerNumberFormatter
+        private readonly CustomerNumberFormatter $customerNumberFormatter,
+        private readonly SendUxiolabsStatusNotificationAction $announce,
     ) {}
 
     public function execute(Transaction $transaction): Transaction
@@ -73,9 +74,15 @@ class ProcessUxiolabsTransactionAction
                 userId: null,
                 ipAddress: '127.0.0.1',
                 userAgent: 'System/UxiolabsWorker',
-                message: "Uxiolabs duplicate idtrx for {$transaction->invoice_number} — order already placed, awaiting callback.",
+                message: "Uxiotopup duplicate idtrx for {$transaction->invoice_number} — order already placed, awaiting callback.",
                 isSystem: true,
             ));
+
+            // Announced like any other handoff: from the channel's point of view
+            // the order is with the supplier. The missing `supplier_trx_id` is
+            // the detail that matters here, and the embed says so in words —
+            // this is the one shape that only the callback can finish.
+            $this->announce->handoff($transaction);
 
             return $transaction;
         }
@@ -101,9 +108,26 @@ class ProcessUxiolabsTransactionAction
             userId: null,
             ipAddress: '127.0.0.1',
             userAgent: 'System/UxiolabsWorker',
-            message: "Uxiolabs order sent for {$transaction->invoice_number}. Status: {$transaction->supplier_status}",
+            message: "Uxiotopup order sent for {$transaction->invoice_number}. Status: {$transaction->supplier_status}",
             isSystem: true,
         ));
+
+        // The handoff itself, and the only place `supplier_trx_id` reaches the
+        // channel. A payment with no handoff behind it is an order that never
+        // left — which is only visible if the handoff is normally there.
+        $this->announce->handoff($transaction);
+
+        // A supplier that answers terminally on the order call (instant SKUs do)
+        // never produces a callback or a poll, so this is the only chance to
+        // report the outcome.
+        if ($mapped !== TransactionStatus::PROCESSING) {
+            $this->announce->statusChanged(
+                $transaction,
+                TransactionStatus::PROCESSING,
+                $mapped,
+                SendUxiolabsStatusNotificationAction::SOURCE_ORDER,
+            );
+        }
 
         // The supplier callback is unreliable, so start the self-rescheduling poll
         // chain (5s → widening) that drives this order to its terminal state. Only

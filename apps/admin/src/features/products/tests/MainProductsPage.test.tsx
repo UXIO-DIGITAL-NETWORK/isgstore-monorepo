@@ -161,9 +161,9 @@ describe("MainProductsPage", () => {
     expect(screen.queryByText("Weekly Diamond Pass (One Week)")).not.toBeInTheDocument();
   });
 
-  // Slot order, not label wording: the three reversible items name whichever
-  // direction would change this row, and this row is active, visible and
-  // unlocked. Their both-ways labelling is covered in MainProductRowActions.
+  // Slot order, not label wording: the two reversible items name whichever
+  // direction would change this row, and this row is active and visible. Their
+  // both-ways labelling is covered in MainProductRowActions.
   it("a row's action menu lists every action in the reference's order", async () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
@@ -171,9 +171,8 @@ describe("MainProductsPage", () => {
     await user.click(await screen.findByRole("button", { name: /Actions for Weekly Diamond Pass \(One Week\)/i }));
     const items = await screen.findAllByRole("menuitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "Uxiolabs Update",
+      "Uxiotopup Update",
       "Hide Price",
-      "Lock Price",
       "Set Price Limit",
       "Unpublish",
       "Edit Product",

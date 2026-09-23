@@ -10,6 +10,5 @@ readonly class GoogleLoginDTO
         // The Google ID token (a JWT) issued to the storefront by Google
         // Identity Services and posted here for server-side verification.
         public string $credential,
-        public ?string $timezone = null,
     ) {}
 }

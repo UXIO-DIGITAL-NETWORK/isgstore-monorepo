@@ -127,4 +127,43 @@ class BackfillPlanPricesTest extends TestCase
 
         $this->artisan('pricing:verify')->assertFailed();
     }
+
+    public function test_the_backfill_reconciles_a_drifted_copy_from_the_plan_row(): void
+    {
+        // What the legacy writers left behind in production: the column and the
+        // row disagree. The copy follows the row, because that is the only
+        // direction that cannot change what a customer is charged — and the one
+        // that lets the deploy gate pass again without editing production data
+        // by hand.
+        $product = Product::factory()->create(['price_modal' => 10000, 'price_member' => 25000]);
+        $this->artisan('pricing:backfill-plan-prices')->assertSuccessful();
+
+        $product->forceFill(['price_member' => 31000])->save();
+        $this->artisan('pricing:verify')->assertFailed();
+
+        $this->artisan('pricing:backfill-plan-prices')->assertSuccessful();
+
+        $this->assertSame(25000, (int) $product->fresh()->price_member);
+        $this->assertSame(
+            25000,
+            (int) ProductPlanPrice::where('product_id', $product->id)
+                ->where('membership_plan_id', DefaultPlan::id())
+                ->value('price'),
+            'Reconciling the copy must not move the price that is billed.',
+        );
+
+        $this->artisan('pricing:verify')->assertSuccessful();
+    }
+
+    public function test_a_dry_run_reconciles_nothing(): void
+    {
+        $product = Product::factory()->create(['price_modal' => 10000, 'price_member' => 25000]);
+        $this->artisan('pricing:backfill-plan-prices')->assertSuccessful();
+
+        $product->forceFill(['price_member' => 31000])->save();
+
+        $this->artisan('pricing:backfill-plan-prices', ['--dry-run' => true])->assertSuccessful();
+
+        $this->assertSame(31000, (int) $product->fresh()->price_member);
+    }
 }

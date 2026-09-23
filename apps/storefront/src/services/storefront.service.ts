@@ -21,6 +21,9 @@ export interface PriceListRow {
    */
   tiers: PriceListTier[];
   status: "active" | "inactive";
+  /** Slots left today (null = no ceiling), and whether there are none. */
+  stock_left: number | null;
+  is_sold_out: boolean;
 }
 
 export interface PriceListTier {
@@ -38,6 +41,25 @@ export interface BannerModel {
   name: string;
   link: string | null;
   image_url: string;
+}
+
+/** One row of `GET /v1/storefront/announcements` — short operational notices. */
+export interface AnnouncementModel {
+  id: number;
+  content: string;
+  image_url: string | null;
+}
+
+/** One row of `GET /v1/storefront/testimonials` — editorial, admin-authored. */
+export interface TestimonialModel {
+  id: number;
+  author: string;
+  title: string | null;
+  avatar_url: string | null;
+  content: string;
+  rating: number | null;
+  game: string | null;
+  is_featured: boolean;
 }
 
 export interface LeaderboardEntryModel {
@@ -77,6 +99,14 @@ export const storefrontService = {
 
   banners: async (): Promise<ApiResponse<BannerModel[]>> => {
     return await api.get(`${API_VERSION}/storefront/banners`);
+  },
+
+  announcements: async (): Promise<ApiResponse<AnnouncementModel[]>> => {
+    return await api.get(`${API_VERSION}/storefront/announcements`);
+  },
+
+  testimonials: async (): Promise<ApiResponse<TestimonialModel[]>> => {
+    return await api.get(`${API_VERSION}/storefront/testimonials`);
   },
 
   leaderboard: async (period: string): Promise<

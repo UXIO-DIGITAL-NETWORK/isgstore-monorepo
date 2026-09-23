@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { CheckCircle2 } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { InstallationProgress } from "@/components/common/InstallationProgress";
@@ -7,6 +8,9 @@ import { SecretValue } from "@/components/common/SecretValue";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Text } from "@/components/common/Text";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { invoiceStatusLabelKey } from "@/lib/invoiceStatus";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 import type { ServiceInstallationDetail } from "@/types/service.type";
@@ -32,14 +36,18 @@ interface MerchantServiceInvoiceDetailPageProps {
  * over.
  *
  * The page polls itself while the bill is open, so a client watching it sees
- * the subscription appear without refreshing.
+ * the subscription appear without refreshing. Three states end this page, and
+ * each one says what it is: still to pay (the card), settled (a confirmation,
+ * because a card that merely vanishes reads as a bug), or dead (expired or
+ * rejected, which the gateway will never settle — so it points at the next
+ * step instead of leaving a dead end).
  */
 export default function MerchantServiceInvoiceDetailPage({ invoiceId }: MerchantServiceInvoiceDetailPageProps) {
   const { data: invoice, isLoading, isError } = useMerchantServiceInvoice(invoiceId);
   const { t } = useTranslation("merchant");
   const subscriptionId = invoice?.subscription?.id;
   const { data: installation, isLoading: loadingInstallation } = useMerchantInstallation(subscriptionId);
-  const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
+  const { data: channels, isLoading: loadingChannels, isError: channelsError } = useServicePaymentChannels();
   const { mutate: reopenPayment, isPending: isReopening } = usePayServiceInvoice();
   const { mutateAsync: reveal } = useRevealDetail();
 
@@ -79,6 +87,8 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
   // Only an open bill is payable; a rejected or expired one is settled with
   // kita, not with the gateway.
   const isPayable = invoice.status === "UNPAID";
+  const isDead = invoice.status === "EXPIRED" || invoice.status === "REJECTED";
+  const statusKey = invoiceStatusLabelKey(invoice.status);
 
   return (
     <Box className="flex max-w-3xl flex-col gap-6">
@@ -95,7 +105,12 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
       <Box className="flex flex-col gap-3 rounded-xl border border-border bg-card p-6">
         <Box className="flex flex-wrap items-center justify-between gap-2">
           <Heading level={2}>{invoice.service_name}</Heading>
-          <StatusBadge status={invoice.status} />
+          {/* Wording, not the raw enum: the client is being billed, not
+              reading our database. */}
+          <StatusBadge
+            status={invoice.status}
+            label={statusKey ? t(statusKey) : undefined}
+          />
         </Box>
         <Text variant="small">
           {t("invoiceDetail.amountForDays", { amount: money(invoice.amount), count: invoice.duration_days })}
@@ -118,6 +133,38 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
         )}
       </Box>
 
+      {isPaid && (
+        // Polite, not assertive: this is good news that arrives with the page
+        // rather than an interruption, so it must not cut off what is being read.
+        <Alert
+          role="status"
+          className="border-success/40"
+        >
+          <CheckCircle2
+            aria-hidden="true"
+            className="text-success"
+          />
+          <AlertTitle>{t("invoiceDetail.paidTitle")}</AlertTitle>
+          <AlertDescription>{t("invoiceDetail.paidDescription")}</AlertDescription>
+        </Alert>
+      )}
+
+      {invoice.status === "EXPIRED" && (
+        <Alert>
+          <AlertTitle>{t("invoiceDetail.expiredTitle")}</AlertTitle>
+          <AlertDescription>{t("invoiceDetail.expiredDescription")}</AlertDescription>
+        </Alert>
+      )}
+
+      {isDead && (
+        <Link
+          href="/app/payment-admin/services"
+          className="w-fit"
+        >
+          <Button variant="outline">{t("invoiceDetail.backToServices")}</Button>
+        </Link>
+      )}
+
       {/* Once paid the instructions are noise, and leaving them up invites a
           second payment. */}
       {isPayable && (
@@ -125,6 +172,7 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
           payment={invoice.payment ?? null}
           amount={invoice.amount}
           channels={channels ?? []}
+          channelsError={channelsError}
           isLoadingChannels={loadingChannels}
           isReopening={isReopening}
           onReopen={(channel) => reopenPayment({ id: invoice.id, paymentChannelId: channel.id })}
@@ -145,7 +193,7 @@ export default function MerchantServiceInvoiceDetailPage({ invoiceId }: Merchant
                 variant="small"
                 className="text-muted-foreground"
               >
-                Kredensial akan muncul di sini setelah instalasi berjalan.
+                {t("invoiceDetail.credentialsPending")}
               </Text>
             ) : (
               <SimpleTable

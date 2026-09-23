@@ -33,14 +33,6 @@ vi.mock("@/lib/axios", () => ({
   },
 }));
 
-// RootLayout mounts TanStackRouterDevtools unconditionally; it's dev-only
-// tooling with no bearing on any test assertion, and something in its jsdom
-// behavior is pathologically slow (tests otherwise finishing in ~150ms take
-// 10-25s with it mounted) — stub it out everywhere.
-vi.mock("@tanstack/router-devtools", () => ({
-  TanStackRouterDevtools: () => null,
-}));
-
 // Recent Node versions ship a native (but non-functional without a backing
 // file) global `localStorage` that shadows jsdom's — the custom ThemeProvider
 // (src/providers/theme-provider.tsx) reads it on mount, so give it a working
@@ -68,8 +60,8 @@ class LocalStorageStub implements Storage {
 }
 Object.defineProperty(window, "localStorage", { value: new LocalStorageStub(), writable: true });
 
-// jsdom doesn't implement ResizeObserver; TanStackRouterDevtools (mounted
-// unconditionally in RootLayout) needs it to exist.
+// jsdom doesn't implement ResizeObserver; Radix primitives construct one when
+// they mount.
 class ResizeObserverStub {
   observe() {}
   unobserve() {}

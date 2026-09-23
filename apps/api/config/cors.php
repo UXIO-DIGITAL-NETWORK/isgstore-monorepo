@@ -20,14 +20,25 @@ return [
     'allowed_methods' => ['*'],
 
     // Restrict to the known frontends (admin, storefront, payment) via a
-    // comma-separated env allowlist. Falls back to '*' only when the var is
-    // unset (local dev), so a deployed API never advertises itself to every
-    // origin. Auth is Bearer-token in a header, not a cookie, so credentials
-    // stay off — but a tight allowlist is still the right default.
-    'allowed_origins' => array_values(array_filter(
-        array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '*'))),
-        fn ($origin) => $origin !== '',
-    )),
+    // comma-separated env allowlist.
+    //
+    // There is deliberately no wildcard fallback in production: an unset var
+    // would otherwise let any origin read every response an authorised caller
+    // can see, and the failure would be silent. An empty list instead breaks
+    // cross-origin calls loudly, which is the direction to be wrong in. Local
+    // dev keeps '*' so a fresh clone works without configuring anything.
+    'allowed_origins' => (function () {
+        $configured = array_values(array_filter(
+            array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', ''))),
+            fn ($origin) => $origin !== '',
+        ));
+
+        if ($configured !== []) {
+            return $configured;
+        }
+
+        return env('APP_ENV') === 'production' ? [] : ['*'];
+    })(),
 
     'allowed_origins_patterns' => [],
 

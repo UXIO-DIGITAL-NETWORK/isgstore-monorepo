@@ -1,20 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 
-import { makeUser } from "@/test/test-utils";
-import { useAuthStore } from "@/store/useAuthStore";
 import { NavbarClock } from "./NavbarClock";
-
-/** Derived, never hardcoded: a literal would depend on the CI host's zone. */
-const expected = (timeZone: string, at: Date) =>
-  new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-    timeZoneName: "short",
-    timeZone,
-  }).format(at);
+import { PLATFORM_TIMEZONE_LABEL } from "@/utils/date";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -23,20 +11,22 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
-  useAuthStore.setState({ user: null });
 });
 
+/**
+ * The assertions are literal WIB times on purpose: a value derived from the
+ * host's zone would pass on a WIB CI box while the panel rendered something
+ * else on a laptop abroad, which is the whole failure this clock now prevents.
+ */
 describe("NavbarClock", () => {
-  it("renders the stored timezone's wall clock, not the browser's", () => {
-    useAuthStore.setState({ user: makeUser({ timezone: "Asia/Jakarta" }) });
+  it("renders the WIB wall clock, with its label", () => {
     render(<NavbarClock />);
 
-    // 10:00Z is 17:00 WIB.
-    expect(screen.getByText(expected("Asia/Jakarta", new Date("2026-09-02T10:00:00Z")))).toBeInTheDocument();
+    // 10:00Z is 17:00 WIB, whatever zone the host is in.
+    expect(screen.getByText(`17:00:00 ${PLATFORM_TIMEZONE_LABEL}`)).toBeInTheDocument();
   });
 
   it("ticks every second", () => {
-    useAuthStore.setState({ user: makeUser({ timezone: "Asia/Jakarta" }) });
     render(<NavbarClock />);
 
     act(() => {
@@ -44,20 +34,6 @@ describe("NavbarClock", () => {
       vi.advanceTimersByTime(2000);
     });
 
-    expect(screen.getByText(expected("Asia/Jakarta", new Date("2026-09-02T10:00:02Z")))).toBeInTheDocument();
-  });
-
-  it("falls back to UTC rather than crashing on an unparseable stored timezone", () => {
-    useAuthStore.setState({ user: makeUser({ timezone: "WIB" }) });
-    render(<NavbarClock />);
-
-    expect(screen.getByText(expected("UTC", new Date("2026-09-02T10:00:00Z")))).toBeInTheDocument();
-  });
-
-  it("renders nothing when there is no signed-in user", () => {
-    useAuthStore.setState({ user: null });
-    const { container } = render(<NavbarClock />);
-
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByText(`17:00:02 ${PLATFORM_TIMEZONE_LABEL}`)).toBeInTheDocument();
   });
 });

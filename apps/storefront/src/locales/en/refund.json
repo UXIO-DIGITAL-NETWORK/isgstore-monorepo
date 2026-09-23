@@ -11,8 +11,8 @@
     "contactPlaceholder": "you@example.com or 08xxxxxxxxxx",
     "button": "Send Claim Link",
     "sending": "Sending...",
-    "hint": "For your security the payout link is sent to the email and WhatsApp number you used at checkout — it is never shown on this page.",
-    "sent": "If those details match an order awaiting a refund, we have sent the claim link to the registered email and WhatsApp. Check your spam folder too."
+    "hint": "For your security the payout link is sent to the email you used at checkout — it is never shown on this page.",
+    "sent": "If those details match an order awaiting a refund, we have sent the claim link to the registered email. Check your spam folder too."
   },
   "claim": {
     "heading": "Refund",
@@ -53,7 +53,7 @@
   },
   "submitted": {
     "heading": "Account details saved",
-    "body": "Thank you. We will transfer to the account above within 1 business day, and you will get a confirmation by email and WhatsApp."
+    "body": "Thank you. We will transfer to the account above within 1 business day, and you will get a confirmation by email."
   },
   "done": {
     "heading": "Your refund has been sent",
@@ -83,7 +83,9 @@
       "email": "Email",
       "phone": "WhatsApp number",
       "password": "Password",
-      "passwordConfirmation": "Repeat password"
+      "passwordConfirmation": "Repeat password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     },
     "submitRegister": "Create Account & Claim",
     "submitAttach": "Claim to This Account",

@@ -42,13 +42,18 @@ const EMPTY_VALUES: CategoryProviderFormValues = { supplierId: "", categoryId: "
 /**
  * Suppliers with a live catalogue integration, lower-cased. Matched on the name
  * because that is how the whole provider pipeline resolves it server-side
- * (`Supplier::where('name', 'Uxiolabs')`), and `suppliers` carries no
+ * (`App\Support\Uxiolabs\UxiolabsSupplier`), and `suppliers` carries no
  * "integrated" flag to key on — `is_system` marks the internal supplier, not this.
+ *
+ * Every spelling that name has ever had is listed, because the name is stored
+ * DATA: the provider is "Uxiotopup" again after a rename, and a build that only
+ * knew the new spelling would filter the select down to nothing — an empty
+ * dropdown, not an error. Add the old spelling here on any future rename.
  *
  * The Provider select offers only these. A second integrated supplier is a
  * one-line addition here, not a rework.
  */
-const INTEGRATED_PROVIDERS = ["uxiolabs"];
+const INTEGRATED_PROVIDERS = ["uxiotopup", "uxiolabs"];
 
 interface CategoryProviderFormDialogProps {
   open: boolean;

@@ -2,18 +2,27 @@
 
 namespace App\DTOs\User;
 
+use App\Support\DateTime\Wib;
+
 readonly class UserDTO
 {
+    /**
+     * No `balance`/`point`: the columns are written only through
+     * WalletLedger/PointLedger, which lock the row and record the movement. An
+     * update that carried them here bypassed both.
+     *
+     * `timezone` is not editable either: the platform displays one wall clock
+     * (WIB) and every report window is bucketed on it, so an account created
+     * with another zone would show a clock that disagrees with its own figures.
+     */
     public function __construct(
         public int $roleId,
         public string $name,
         public string $email,
         public string $phone,
-        public float $balance = 0,
-        public int $point = 0,
         public ?string $password = null,
         public string $locale = 'id',
-        public string $timezone = 'Asia/Jakarta'
+        public string $timezone = Wib::TZ
     ) {}
 
     public static function fromValidated(array $validated): self
@@ -23,11 +32,8 @@ readonly class UserDTO
             name: $validated['name'],
             email: $validated['email'],
             phone: $validated['phone'],
-            balance: (float) ($validated['balance'] ?? 0),
-            point: (int) ($validated['point'] ?? 0),
             password: $validated['password'] ?? null,
             locale: $validated['locale'] ?? 'id',
-            timezone: $validated['timezone'] ?? 'Asia/Jakarta'
         );
     }
 }

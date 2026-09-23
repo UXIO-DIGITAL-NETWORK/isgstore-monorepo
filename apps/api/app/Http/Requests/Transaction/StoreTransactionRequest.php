@@ -5,12 +5,14 @@ namespace App\Http\Requests\Transaction;
 use App\DTOs\Transaction\CreateTransactionDTO;
 use App\Enums\TransactionStatus;
 use App\Http\Requests\Concerns\NormalizesPhoneInput;
+use App\Http\Requests\Transaction\Concerns\ValidatesTransactionIdentifiers;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreTransactionRequest extends FormRequest
 {
     use NormalizesPhoneInput;
+    use ValidatesTransactionIdentifiers;
 
     public function authorize(): bool
     {
@@ -31,8 +33,10 @@ class StoreTransactionRequest extends FormRequest
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             // Canonical E.164, rewritten by prepareForValidation().
             'guest_contact' => ['nullable', 'string', 'max:20', self::E164_RULE],
-            'target_uid' => ['nullable', 'string', 'max:255'],
-            'target_server' => ['nullable', 'string', 'max:255'],
+            // Identifier rules come from this product's own category schema, so
+            // an admin-authored order is held to the same contract as checkout —
+            // see ValidatesTransactionIdentifiers.
+            ...$this->identifierRules(),
             'amount_base' => ['required', 'integer', 'min:0'],
             'amount_fee' => ['sometimes', 'integer', 'min:0'],
             'amount_total' => ['sometimes', 'integer', 'min:0'],
@@ -68,6 +72,7 @@ class StoreTransactionRequest extends FormRequest
             sn: $validated['sn'] ?? null,
             supplierTrxId: $validated['supplier_trx_id'] ?? null,
             supplierStatus: $validated['supplier_status'] ?? null,
+            orderFields: $this->identifierValues(),
         );
     }
 }

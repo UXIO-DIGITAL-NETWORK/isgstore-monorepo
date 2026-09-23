@@ -118,15 +118,24 @@ const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
     }
 
     // Internal links using @tanstack/react-router
+    //
+    // A query string in `href` is split out and handed to the router as
+    // `search`: the router parses `to` as a pathname, so "/x?tab=y" would
+    // otherwise match no route at all. Split here, once, so callers can keep
+    // writing an ordinary href — and a link with no query is untouched.
+    const [pathname, query] = href.split("?");
+    const search = query ? Object.fromEntries(new URLSearchParams(query)) : undefined;
+
     return (
       <RouterLink
         ref={ref}
-        to={href as unknown as string}
+        to={pathname as unknown as string}
         className={className}
         replace={replace}
         onClick={handleClick as unknown as React.MouseEventHandler<HTMLAnchorElement>}
         onMouseEnter={handleMouseEnter as unknown as React.MouseEventHandler<HTMLAnchorElement>}
         {...(restProps as unknown as Record<string, unknown>)}
+        {...(search ? { search } : {})}
       >
         {children}
       </RouterLink>

@@ -29,7 +29,9 @@ describe("two-factor login", () => {
     await renderRoute("/login");
 
     await user.type(await screen.findByLabelText(/email/i), "admin@example.test");
-    await user.type(screen.getByLabelText(/password/i), "secret123");
+    // Exact, not /password/i: the field now carries a "Show password" toggle
+    // beside it, which a loose matcher would also match.
+    await user.type(screen.getByLabelText("Password"), "secret123");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(await screen.findByRole("heading", { name: /Two-factor code/i })).toBeInTheDocument();
@@ -60,7 +62,9 @@ describe("two-factor login", () => {
     await renderRoute("/login");
 
     await user.type(await screen.findByLabelText(/email/i), "admin@example.test");
-    await user.type(screen.getByLabelText(/password/i), "secret123");
+    // Exact, not /password/i: the field now carries a "Show password" toggle
+    // beside it, which a loose matcher would also match.
+    await user.type(screen.getByLabelText("Password"), "secret123");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     await screen.findByRole("heading", { name: /Two-factor code/i });

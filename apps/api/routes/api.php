@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\Finance\ServiceInvoiceController;
 use App\Http\Controllers\Api\Finance\ServiceSubscriptionController;
 use App\Http\Controllers\Api\FinancialController;
 use App\Http\Controllers\Api\Hub\HubActionController;
+use App\Http\Controllers\Api\Hub\HubInstallationController;
 use App\Http\Controllers\Api\Hub\HubReportController;
 use App\Http\Controllers\Api\Hub\HubSyncTriggerController;
 use App\Http\Controllers\Api\IntegrationController;
@@ -364,11 +365,27 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
     // Rendered on every admin page, so it always answers 200.
     Route::get('/website-subscription', [WebsiteSubscriptionController::class, 'show']);
 
+    // In-app notifications for this admin. Same controller as the other two
+    // panels: every query is scoped to `$request->user()->id` before any
+    // filter, so the route group decides who may ask, never whose rows come
+    // back. Admins already had rows written for them (a refund claim raises
+    // one) with no route to read them.
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+
     // CRUD Users
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index']);
         Route::post('/', [UserController::class, 'store']);
         Route::get('/{user}', [UserController::class, 'show']);
+        // The user-detail read side: aggregates plus the threads an operator
+        // follows from one account. Read-only, and admin-gated like the rest.
+        Route::get('/{user}/overview', [UserController::class, 'overview']);
+        Route::get('/{user}/balance-mutations', [UserController::class, 'balanceMutations']);
+        Route::get('/{user}/point-history', [UserController::class, 'pointHistory']);
+        Route::get('/{user}/refunds', [UserController::class, 'refunds']);
         Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
         // Admin moderation + audited wallet adjustment (money-moving, so a
@@ -465,7 +482,6 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
         Route::post('/', [ProductController::class, 'store']);
         // Bulk routes precede the {product} binding so "bulk" is never a model key.
         Route::post('/bulk-create', [ProductController::class, 'bulkCreate']);
-        Route::post('/bulk/lock-price', [ProductController::class, 'bulkLockPrice']);
         Route::post('/bulk/show-price', [ProductController::class, 'bulkShowPrice']);
         Route::post('/bulk/publish', [ProductController::class, 'bulkPublish']);
         Route::post('/bulk/uxiolabs-update', [ProductController::class, 'bulkUxiolabsUpdate']);
@@ -554,7 +570,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
     Route::post('/uxiolabs/products/import', [UxiolabsProductImportController::class, 'import']);
 
     // Uxiolabs Price Change Log — read-only audit trail of what the 5-minute
-    // checker auto-repriced, skipped (locked) or flagged (deactivated / negative margin).
+    // checker auto-repriced or flagged (deactivated / negative margin).
     Route::get('/uxiolabs/price-change-logs', [PriceChangeLogController::class, 'index']);
 
     // Monetapay Admin / Test Tools — inquiries (read-only) + cancel/refund.
@@ -666,6 +682,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
 // id, so the `payment-admin` gate is defence-in-depth, not the only guard.
 Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'abilities:access-api', 'payment-admin'])->group(function () {
     Route::get('/dashboard', [MerchantDashboardController::class, 'index']);
+
+    // The client's own notifications — their subscription, their money. Scoped
+    // to the caller by the controller, which is what keeps one client from
+    // counting another's rows.
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     // Specific routes before the collection so /summary and /export are not
     // swallowed by a wildcard.
     Route::get('/transactions/summary', [MerchantTransactionController::class, 'summary']);
@@ -684,6 +708,17 @@ Route::prefix('v1/payment-admin')->middleware(['auth:sanctum', 'abilities:access
     // The methods a client may settle a bill with. Separate from the admin
     // CRUD at /v1/payment-channels, which is payment-internal only.
     Route::get('/payment-channels', [MerchantServiceInvoiceController::class, 'paymentChannels']);
+    // Everything the client is subscribed to under the Hub's plan, with the
+    // next renewal date and what is outstanding — the "apa yang harus saya
+    // perpanjang" surface.
+    Route::get('/service-plan', [MerchantServiceController::class, 'plan']);
+
+    // Several bills, one Monetapay attempt. The fee is charged once on the sum.
+    Route::post('/service-invoices/pay-batch', [MerchantServiceInvoiceController::class, 'payBatch'])
+        ->middleware('throttle:checkout');
+    // A batch's QR lives on its own page, not on one of the bills it covers.
+    Route::get('/service-payments/{reference}', [MerchantServiceInvoiceController::class, 'showPayment']);
+
     Route::get('/service-invoices', [MerchantServiceInvoiceController::class, 'index']);
     Route::post('/service-invoices', [MerchantServiceInvoiceController::class, 'store'])->middleware('throttle:checkout');
     Route::get('/service-invoices/{serviceInvoice}', [MerchantServiceInvoiceController::class, 'show']);
@@ -808,6 +843,30 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
     // form. Read-only, so the read key alone is the right gate — a site with the
     // write channel off can still be looked at.
     Route::get('/withdrawal-context', [HubReportController::class, 'withdrawalContext']);
+    // What this site's merchant can actually withdraw by OUR sales rules
+    // (settled sales − hold − non-refunded withdrawals), beside what sits in the
+    // platform account. A ledger answer, so no gateway call; additive, so a Hub
+    // that does not know this route simply never asks.
+    Route::get('/balances', [HubReportController::class, 'balances']);
+    // What this site's owner actually holds, per service — so the Hub can answer
+    // "which sites subscribe to X" from real state, not only from what it sold.
+    Route::get('/subscriptions', [HubReportController::class, 'subscriptions']);
+    // How far along kita is on each of this owner's installations: the window,
+    // the checklist driving the progress, and the credentials (masked). Read-only
+    // — the Hub sets progress through the hub-write routes below.
+    Route::get('/installations', [HubReportController::class, 'installations']);
+    // A LIVE sub-merchant balance inquiry, with its own limiter: every call
+    // reaches a real gateway. Deliberately NOT part of /summary — that endpoint
+    // refuses to make a live call because Monetapay's 15s timeout equals the
+    // Hub's pull timeout and would hang every mirror.
+    Route::get('/gateway-balance', [HubReportController::class, 'liveGatewayBalance'])
+        ->middleware('throttle:hub-balance');
+    // A LIVE Uxiotopup (supplier) balance, read with this site's own supplier
+    // key. Separate from /summary for the same reason as the gateway balance
+    // above: /saldo carries a 15s upstream timeout and must never sit inside the
+    // five-minute mirror pull. Its own throttle bucket for the same reason.
+    Route::get('/supplier-balance', [HubReportController::class, 'liveSupplierBalance'])
+        ->middleware('throttle:hub-balance');
 });
 
 // ── Hub money-path WRITE channel ─────────────────────────────────────────────
@@ -819,7 +878,7 @@ Route::prefix('v1/hub')->middleware('hub')->group(function () {
 // ── Hub config-sync trigger ──────────────────────────────────────────────────
 // "Your catalog/fee schedule changed — come and get it." Carries no data and
 // moves no money: the site still fetches everything itself over its own
-// outbound GET to the Hub, this only collapses the wait from 15 minutes to a
+// outbound GET to the Hub, this only collapses the wait from a minute to a
 // second. That is why it sits behind the READ key alone. Requiring the write
 // key would mean a site that accepts the Hub's reports but refuses Hub-driven
 // money movement (HUB_WRITE_ENABLED=false) also loses fast fee updates.
@@ -835,4 +894,18 @@ Route::prefix('v1/hub')->middleware(['hub', 'hub-write', 'throttle:hub-write'])-
     Route::post('/withdrawals/{withdrawal:withdrawal_number}/reject', [HubActionController::class, 'rejectWithdrawal']);
     Route::post('/service-invoices/{serviceInvoice:invoice_number}/confirm', [HubActionController::class, 'confirmInvoice']);
     Route::post('/service-invoices/{serviceInvoice:invoice_number}/reject', [HubActionController::class, 'rejectInvoice']);
+
+    // Installation management, driven from the Hub's Order Service detail. Not
+    // money, but it writes state on this site, so it rides the same two-key
+    // channel rather than widening the read key. Every route binds a row that
+    // already exists — creation belongs to invoice confirmation, not the Hub.
+    Route::put('/installations/{installation}', [HubInstallationController::class, 'updateWindow']);
+    Route::post('/installations/{installation}/steps', [HubInstallationController::class, 'storeStep']);
+    Route::put('/installation-steps/{serviceInstallationStep}', [HubInstallationController::class, 'updateStep']);
+    Route::post('/installation-steps/{serviceInstallationStep}/completion', [HubInstallationController::class, 'setStepCompletion']);
+    Route::delete('/installation-steps/{serviceInstallationStep}', [HubInstallationController::class, 'destroyStep']);
+    Route::post('/installations/{installation}/detail-items', [HubInstallationController::class, 'storeDetail']);
+    Route::put('/installation-details/{serviceInstallationDetail}', [HubInstallationController::class, 'updateDetail']);
+    Route::delete('/installation-details/{serviceInstallationDetail}', [HubInstallationController::class, 'destroyDetail']);
+    Route::post('/installation-details/{serviceInstallationDetail}/reveal', [HubInstallationController::class, 'revealDetail']);
 });

@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { format } from "date-fns";
 import { AlertTriangle } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -7,6 +6,7 @@ import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCurrency } from "@/utils/currency";
+import { formatDateTime } from "@/utils/date";
 import { useRefundDetail } from "../hooks/useRefunds";
 import { RefundMethodBadge, RefundStatusBadge } from "./RefundStatusBadge";
 
@@ -16,8 +16,7 @@ interface RefundDetailDialogProps {
   refundId: string;
 }
 
-const formatDate = (value: string | null | undefined) =>
-  value ? format(new Date(value), "dd MMM yyyy HH:mm") : "—";
+const formatDate = (value: string | null | undefined) => (value ? formatDateTime(value) : "—");
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (

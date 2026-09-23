@@ -6,8 +6,10 @@ namespace App\Console\Commands;
 
 use App\Actions\Service\ActivateServiceSubscriptionAction;
 use App\Enums\ServiceInvoiceStatus;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
 use App\Services\Payment\MonetapayService;
+use App\Support\Ledger\ServiceRevenueLedger;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -176,18 +178,50 @@ class SyncExpiredServicePaymentsCommand extends Command
 
             $locked->update(['status' => 'PAID', 'paid_at' => now()]);
 
-            $invoice = $locked->invoice()->lockForUpdate()->first();
+            // One attempt may have settled several bills. Ascending invoice id
+            // so this and a late callback cannot deadlock each other.
+            $invoiceIds = $locked->items()
+                ->orderBy('service_invoice_id')
+                ->pluck('service_invoice_id');
 
-            if (! $invoice || $invoice->status === ServiceInvoiceStatus::PAID) {
-                return;
+            $billed = 0;
+            $settled = [];
+
+            foreach ($invoiceIds as $invoiceId) {
+                $invoice = ServiceInvoice::whereKey($invoiceId)->lockForUpdate()->first();
+
+                if (! $invoice || $invoice->status === ServiceInvoiceStatus::PAID) {
+                    continue;
+                }
+
+                $invoice->update([
+                    'status' => ServiceInvoiceStatus::PAID,
+                    'verified_at' => now(),
+                ]);
+
+                $this->activateAction->execute($invoice);
+
+                $billed += (int) $invoice->amount;
+                $settled[] = $invoice->invoice_number;
             }
 
-            $invoice->update([
-                'status' => ServiceInvoiceStatus::PAID,
-                'verified_at' => now(),
-            ]);
-
-            $this->activateAction->execute($invoice);
+            // The same credit the webhook books, on the SAME reference — so a
+            // webhook that was merely late finds the attempt already PAID and
+            // returns before crediting, and this sweep cannot book what the
+            // webhook already booked. Without it the client is served and the
+            // revenue never reaches the ledger, where nothing would say so
+            // afterwards: a PAID invoice looks the same either way.
+            //
+            // `$billed` is the sum of the BILLS, never the attempt's `total` —
+            // that includes the channel fee, which buys the gateway's cut and is
+            // not kita's income (see HandleMonetapayCallbackAction).
+            if ($settled !== []) {
+                ServiceRevenueLedger::credit(
+                    amount: $billed,
+                    reference: $locked->reference_id,
+                    description: 'Layanan '.implode(', ', $settled)." ({$locked->reference_id}) — dipulihkan sweep",
+                );
+            }
         });
     }
 }

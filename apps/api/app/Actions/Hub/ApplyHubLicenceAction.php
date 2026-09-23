@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Hub;
 
+use App\Enums\ServiceInvoiceStatus;
 use App\Enums\SubscriptionStatus;
+use App\Jobs\PushLicenceRenewalJob;
+use App\Jobs\SendDiscordActivityJob;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Setting;
 use App\Services\HubClient;
@@ -13,6 +17,7 @@ use App\Support\Payment\WebsiteService;
 use App\Support\SiteLicenceState;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Pulls this site's own licence from the Hub and applies it locally.
@@ -37,7 +42,7 @@ class ApplyHubLicenceAction
 {
     public function __construct(private readonly HubClient $hub) {}
 
-    /** @return array{status: string, suspended: bool, ends_at: string|null, subscription: bool} */
+    /** @return array{status: string, suspended: bool, lifetime: bool, ends_at: string|null, subscription: bool} */
     public function execute(): array
     {
         $block = $this->hub->licence();
@@ -45,24 +50,131 @@ class ApplyHubLicenceAction
         $status = is_string($block['status'] ?? null) ? $block['status'] : 'none';
         $endsAt = ! empty($block['ends_at']) ? Carbon::parse($block['ends_at']) : null;
         $startsAt = ! empty($block['starts_at']) ? Carbon::parse($block['starts_at']) : null;
+        // A licence bought outright. Reported BESIDE `ends_at` (which is null for
+        // one) because on its own a null end date cannot be told apart from "no
+        // term was ever set" — the Hub has the same problem, solved the same way.
+        $lifetime = (bool) ($block['lifetime'] ?? false);
         // `is_serving` is the Hub's own verdict rather than something we
         // recompute: it already folds in de-registration, suspension and the
         // date, and a second opinion here could only ever disagree.
         $serving = (bool) ($block['is_serving'] ?? true);
 
-        DB::transaction(function () use ($block, $status, $endsAt, $startsAt, $serving) {
-            $this->writeGate($block, $status, $endsAt, $serving);
-            $this->writeSubscription($startsAt, $endsAt);
+        // Read BEFORE the write, because this runs every minute and only a real
+        // move is worth a message. See notifyLicenceChanges().
+        $before = $this->readGate();
+
+        DB::transaction(function () use ($block, $status, $endsAt, $startsAt, $serving, $lifetime) {
+            $this->writeGate($block, $status, $endsAt, $serving, $lifetime);
+            $this->writeSubscription($startsAt, $endsAt, $lifetime);
         });
 
         SiteLicenceState::forget();
 
+        $this->notifyLicenceChanges($before, $status, $endsAt, $lifetime, $serving, $block);
+
+        $this->reportUnacknowledgedLicence($block);
+
         return [
             'status' => $status,
             'suspended' => (bool) ($block['suspended'] ?? false),
+            'lifetime' => $lifetime,
             'ends_at' => $endsAt?->toIso8601String(),
-            'subscription' => $endsAt !== null,
+            'subscription' => $lifetime || $endsAt !== null,
         ];
+    }
+
+    /**
+     * The gate as it stands before this sync, so a move can be told from a
+     * no-op. Read from the settings rows rather than the cache: the cache is
+     * what the middleware serves, and it may be a minute behind.
+     *
+     * @return array<string, string>
+     */
+    private function readGate(): array
+    {
+        return Setting::where('group', SiteLicenceState::GROUP)
+            ->whereIn('key', ['status', 'ends_at', 'lifetime', 'is_serving'])
+            ->pluck('value', 'key')
+            ->all();
+    }
+
+    /**
+     * Announce only what actually moved.
+     *
+     * This action runs every minute. Reporting per tick would drown the channel
+     * in the same unchanged facts until nobody reads it — which is the exact
+     * failure the channel was cleaned up to avoid.
+     *
+     * A first sync (no rows yet) stays silent: a fresh deployment coming online
+     * is not news, and the term it inherits is announced by whoever granted it.
+     *
+     * @param  array<string, string>  $before
+     * @param  array<string, mixed>  $block
+     */
+    private function notifyLicenceChanges(array $before, string $status, ?Carbon $endsAt, bool $lifetime, bool $serving, array $block): void
+    {
+        if ($before === []) {
+            return;
+        }
+
+        $newEnds = $endsAt?->toIso8601String() ?? '';
+        $wasLifetime = ($before['lifetime'] ?? '0') === '1';
+
+        $termChanged = (string) ($before['ends_at'] ?? '') !== $newEnds
+            || $wasLifetime !== $lifetime
+            || (string) ($before['status'] ?? '') !== $status;
+
+        if ($termChanged) {
+            SendDiscordActivityJob::licenceTermUpdated($newEnds !== '' ? $newEnds : null, $lifetime, $status);
+        }
+
+        if (array_key_exists('is_serving', $before) && (($before['is_serving'] === '1') !== $serving)) {
+            SendDiscordActivityJob::licenceServingChanged($serving, (string) ($block['suspend_reason'] ?? '') ?: null);
+        }
+    }
+
+    /**
+     * Tell the Hub again about a licence bill it never acknowledged.
+     *
+     * The report is ONE-SHOT: a bill settled while the dispatch was broken — or
+     * while the Hub was permanently unreachable — would otherwise leave a client
+     * who has PAID staring at a dark site, with nothing anywhere reporting a
+     * problem. Re-sending is safe, because the Hub de-dupes on the invoice number
+     * and a redelivery cannot buy a second term.
+     *
+     * It fires ONLY on this exact mismatch: the Hub says we hold no licence at
+     * all, yet we hold a paid bill for one. A LAPSED licence has an end date, so
+     * it never lands here; a site that has never paid has nothing to re-send; and
+     * a lifetime grant carries its own flag. That is what keeps this from being a
+     * push every minute forever.
+     *
+     * @param  array<string, mixed>  $block
+     */
+    private function reportUnacknowledgedLicence(array $block): void
+    {
+        $status = is_string($block['status'] ?? null) ? $block['status'] : 'none';
+
+        if ($status !== 'none' || (bool) ($block['lifetime'] ?? false)) {
+            return;
+        }
+
+        // Found by what the bill IS, not by a service code: a paid bill whose
+        // plan line governs the term. Resolving "my licence service" first would
+        // make the heal depend on the site having already learned that code —
+        // which is exactly what it may not have done yet.
+        $invoice = ServiceInvoice::query()
+            ->where('status', ServiceInvoiceStatus::PAID)
+            ->whereHas('hubPlanItem', fn ($query) => $query->where('governs_licence', true))
+            ->latest('id')
+            ->first();
+
+        if ($invoice !== null) {
+            Log::info('Hub licence unacknowledged — reporting it again', [
+                'invoice_number' => $invoice->invoice_number,
+            ]);
+
+            PushLicenceRenewalJob::maybeDispatch($invoice);
+        }
     }
 
     /**
@@ -71,13 +183,17 @@ class ApplyHubLicenceAction
      *
      * @param  array<string, mixed>  $block
      */
-    private function writeGate(array $block, string $status, ?Carbon $endsAt, bool $serving): void
+    private function writeGate(array $block, string $status, ?Carbon $endsAt, bool $serving, bool $lifetime): void
     {
         $values = [
             'is_serving' => $serving ? '1' : '0',
             'status' => $status,
             'suspend_reason' => (string) ($block['suspend_reason'] ?? ''),
             'ends_at' => $endsAt?->toIso8601String() ?? '',
+            // Stored so the panel can say "Seumur hidup" instead of rendering an
+            // empty date — an empty date reads as "not set up", which is the
+            // opposite of paid up for good.
+            'lifetime' => $lifetime ? '1' : '0',
             'checkout_url' => (string) ($block['checkout_url'] ?? ''),
             'synced_at' => now()->toIso8601String(),
         ];
@@ -87,7 +203,7 @@ class ApplyHubLicenceAction
                 ['group' => SiteLicenceState::GROUP, 'key' => $key],
                 [
                     'value' => $value,
-                    'type' => $key === 'is_serving' ? 'boolean' : 'string',
+                    'type' => in_array($key, ['is_serving', 'lifetime'], true) ? 'boolean' : 'string',
                     'label' => 'Lisensi situs: '.$key,
                     'is_public' => false,
                 ],
@@ -102,13 +218,22 @@ class ApplyHubLicenceAction
      * or no website service in the catalog). A site mid-setup has nothing to
      * show, and inventing a row for a merchant that does not exist would be
      * worse than showing nothing.
+     *
+     * A LIFETIME licence writes `ends_at = null`, and is therefore written even
+     * though there is no date: the null IS the term. Skipping it would leave the
+     * client's own card reading "belum berlangganan" on a site somebody paid for
+     * outright.
      */
-    private function writeSubscription(?Carbon $startsAt, ?Carbon $endsAt): void
+    private function writeSubscription(?Carbon $startsAt, ?Carbon $endsAt, bool $lifetime): void
     {
         $merchantId = DefaultMerchant::id();
         $service = WebsiteService::get();
 
-        if ($endsAt === null || ! $merchantId || ! $service) {
+        if (! $lifetime && $endsAt === null) {
+            return;
+        }
+
+        if (! $merchantId || ! $service) {
             return;
         }
 
@@ -119,7 +244,8 @@ class ApplyHubLicenceAction
                 // The column is nullable for exactly this case.
                 'service_invoice_id' => null,
                 'starts_at' => $startsAt ?? now(),
-                'ends_at' => $endsAt,
+                // NULL is the lifetime sentinel; see the migration.
+                'ends_at' => $lifetime ? null : $endsAt,
                 // Deliberately reset on every sync. `services:expire` flips this
                 // row to EXPIRED overnight once the term lapses — correct while
                 // it is lapsed, and fatal afterwards if a renewal left it that

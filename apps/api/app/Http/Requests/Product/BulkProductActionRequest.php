@@ -6,9 +6,9 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Shared shape for the Main Products bulk actions. `locked`/`hidden`/`active`
- * are only read by the lock/show/status endpoints; the plain actions (delete,
- * uxiolabs-update) ignore them.
+ * Shared shape for the Main Products bulk actions. `hidden`/`active` are only
+ * read by the show/status endpoints; the plain actions (delete, uxiolabs-update)
+ * ignore them.
  */
 class BulkProductActionRequest extends FormRequest
 {
@@ -25,7 +25,6 @@ class BulkProductActionRequest extends FormRequest
         return [
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['integer', 'exists:products,id'],
-            'locked' => ['sometimes', 'boolean'],
             'hidden' => ['sometimes', 'boolean'],
             'active' => ['sometimes', 'boolean'],
         ];

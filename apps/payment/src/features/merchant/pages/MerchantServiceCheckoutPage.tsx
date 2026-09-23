@@ -6,6 +6,7 @@ import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Link } from "@/components/common/Link";
 import { Text } from "@/components/common/Text";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -40,7 +41,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
   const [channel, setChannel] = useState<ServicePaymentChannel | null>(null);
   const navigate = useNavigate();
   const { data: service, isLoading, isError } = useMerchantServiceDetail(serviceId);
-  const { data: channels, isLoading: loadingChannels } = useServicePaymentChannels();
+  const { data: channels, isLoading: loadingChannels, isError: channelsError } = useServicePaymentChannels();
   const { mutate: subscribe, isPending } = useSubscribeService();
 
   if (isLoading) {
@@ -56,7 +57,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
           href="/app/payment-admin/services"
           className="underline"
         >
-          Kembali ke katalog
+          {t("checkout.backToCatalog")}
         </Link>
       </Box>
     );
@@ -87,7 +88,7 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
           href="/app/payment-admin/services"
           className="text-sm text-muted-foreground underline"
         >
-          ← Kembali ke katalog
+          {t("checkout.backToCatalog")}
         </Link>
         <Heading level={1}>{t("checkout.title")}</Heading>
       </Box>
@@ -146,64 +147,69 @@ export default function MerchantServiceCheckoutPage({ serviceId }: MerchantServi
           </Text>
         )}
 
-        {!service.has_open_invoice && (
-          <Box className="flex flex-col gap-3 border-t border-border pt-4">
-            <Label>{t("checkout.method")}</Label>
-            <PaymentChannelPicker
-              channels={channels ?? []}
-              selectedId={channel?.id ?? null}
-              onSelect={setChannel}
-              isLoading={loadingChannels}
-            />
-            <Box className="flex flex-col gap-2 border-t border-border pt-4">
-              <Row
-                label={t("checkout.adminFee")}
-                value={money(adminFee)}
+        {service.has_open_invoice ? (
+          // Not an error, a state: this service cannot be bought twice while a
+          // bill for it is still open. So the panel says what is blocking and
+          // where to resolve it, and the form that could not submit anywhere
+          // (method picker, notes, pay button) is not rendered at all.
+          <Alert role="status">
+            <AlertTitle>{t("checkout.openInvoice")}</AlertTitle>
+            <AlertDescription>
+              <Box className="flex flex-col items-start gap-3">
+                <Text
+                  as="span"
+                  variant="small"
+                >
+                  {t("checkout.openInvoiceHint")}
+                </Text>
+                <Link href={`/app/payment-admin/service-invoices/${service.open_invoice_id}`}>
+                  <Button variant="secondary">{t("checkout.viewInvoice")}</Button>
+                </Link>
+              </Box>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            <Box className="flex flex-col gap-3 border-t border-border pt-4">
+              <Label>{t("checkout.method")}</Label>
+              <PaymentChannelPicker
+                channels={channels ?? []}
+                selectedId={channel?.id ?? null}
+                onSelect={setChannel}
+                isLoading={loadingChannels}
+                isError={channelsError}
               />
-              <Row
-                label={t("checkout.total")}
-                value={money(total)}
+              <Box className="flex flex-col gap-2 border-t border-border pt-4">
+                <Row
+                  label={t("checkout.adminFee")}
+                  value={money(adminFee)}
+                />
+                <Row
+                  label={t("checkout.total")}
+                  value={money(total)}
+                />
+              </Box>
+            </Box>
+
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="checkout-notes">{t("checkout.notes")}</Label>
+              <Textarea
+                id="checkout-notes"
+                rows={2}
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder={t("checkout.notesPlaceholder")}
               />
             </Box>
-          </Box>
-        )}
 
-        <Box className="flex flex-col gap-1.5">
-          <Label htmlFor="checkout-notes">{t("checkout.notes")}</Label>
-          <Textarea
-            id="checkout-notes"
-            rows={2}
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder={t("checkout.notesPlaceholder")}
-          />
-        </Box>
-
-        {service.has_open_invoice ? (
-          <Box className="flex flex-col gap-2">
-            <Text
-              variant="small"
-              className="text-destructive"
+            <Button
+              className="w-full"
+              disabled={isPending || !channel}
+              onClick={pay}
             >
-              {t("checkout.openInvoice")}
-            </Text>
-            <Link href={`/app/payment-admin/service-invoices/${service.open_invoice_id}`}>
-              <Button
-                variant="secondary"
-                className="w-full"
-              >
-                {t("checkout.viewInvoice")}
-              </Button>
-            </Link>
-          </Box>
-        ) : (
-          <Button
-            className="w-full"
-            disabled={isPending || !channel}
-            onClick={pay}
-          >
-            {isPending ? t("checkout.paying") : t("checkout.pay")}
-          </Button>
+              {isPending ? t("checkout.paying") : t("checkout.pay")}
+            </Button>
+          </>
         )}
       </Box>
     </Box>

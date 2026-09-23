@@ -35,7 +35,7 @@ class GetPaymentGatewayBalancesAction
 
             return [[
                 'id' => 'monetapay',
-                'name' => 'Monetapay',
+                'name' => 'Payment Gateway',
                 'active_balance' => null,
                 'held_balance' => null,
                 'raw' => null,
@@ -44,7 +44,7 @@ class GetPaymentGatewayBalancesAction
 
         return [[
             'id' => 'monetapay',
-            'name' => 'Monetapay',
+            'name' => 'Payment Gateway',
             'active_balance' => $this->extractBalance($response, 'current_balance'),
             'held_balance' => $this->extractBalance($response, 'current_freeze'),
             'raw' => $response,

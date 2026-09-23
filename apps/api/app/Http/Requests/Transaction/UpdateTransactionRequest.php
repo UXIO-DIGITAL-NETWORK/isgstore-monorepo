@@ -5,12 +5,14 @@ namespace App\Http\Requests\Transaction;
 use App\DTOs\Transaction\UpdateTransactionDTO;
 use App\Enums\TransactionStatus;
 use App\Http\Requests\Concerns\NormalizesPhoneInput;
+use App\Http\Requests\Transaction\Concerns\ValidatesTransactionIdentifiers;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateTransactionRequest extends FormRequest
 {
     use NormalizesPhoneInput;
+    use ValidatesTransactionIdentifiers;
 
     public function authorize(): bool
     {
@@ -30,8 +32,9 @@ class UpdateTransactionRequest extends FormRequest
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             // Canonical E.164, rewritten by prepareForValidation().
             'guest_contact' => ['nullable', 'string', 'max:20', self::E164_RULE],
-            'target_uid' => ['nullable', 'string', 'max:255'],
-            'target_server' => ['nullable', 'string', 'max:255'],
+            // The schema comes from the transaction's own product: an update
+            // carries no product_id, and that is the game the order is for.
+            ...$this->identifierRules(),
             'amount_base' => ['required', 'integer', 'min:0'],
             'amount_fee' => ['sometimes', 'integer', 'min:0'],
             'amount_total' => ['sometimes', 'integer', 'min:0'],
@@ -66,6 +69,7 @@ class UpdateTransactionRequest extends FormRequest
             sn: $validated['sn'] ?? null,
             supplierTrxId: $validated['supplier_trx_id'] ?? null,
             supplierStatus: $validated['supplier_status'] ?? null,
+            orderFields: $this->identifierValues(),
         );
     }
 }

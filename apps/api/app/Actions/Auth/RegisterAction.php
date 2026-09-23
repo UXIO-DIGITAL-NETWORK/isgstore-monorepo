@@ -11,6 +11,7 @@ use App\Enums\ActivityType;
 use App\Enums\RoleType;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\DateTime\Wib;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -41,7 +42,7 @@ class RegisterAction
                 'phone' => $dto->phone,
                 'password' => $dto->password,   // hashed by the model cast
                 'locale' => $dto->locale ?? config('app.locale'),
-                'timezone' => $dto->timezone ?? 'Asia/Jakarta',
+                'timezone' => Wib::TZ,
             ]);
         });
 

@@ -47,3 +47,16 @@ export const useLatestArticlesQuery = (limit = 3, locale?: string) =>
     queryKey: ["articles", "latest", limit, locale],
     queryFn: () => contentService.articles({ per_page: limit, locale }),
   });
+
+/**
+ * The category pills on the berita page.
+ *
+ * Fetched rather than bundled: the list is editorial data, so a category an
+ * operator adds in the admin panel has to appear without a front-end deploy —
+ * which is exactly what the hardcoded list could not do.
+ */
+export const useArticleCategoriesQuery = () =>
+  useQuery({
+    queryKey: ["articles", "categories"],
+    queryFn: () => contentService.articleCategories(),
+  });

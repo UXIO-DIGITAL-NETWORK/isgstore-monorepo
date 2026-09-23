@@ -70,14 +70,138 @@ describe("administration routes", () => {
     expect(adjustSpy).toHaveBeenCalledWith("1", { amount: 50000, direction: "credit", reason: "compensation" });
   });
 
-  it("Settings groups values and marks the public ones", async () => {
+  it("Settings opens on the first group and marks the public values", async () => {
     await renderRoute("/admin/settings");
 
     expect(await screen.findByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    // General leads the response, so it is the tab the page opens on.
     expect(await screen.findByLabelText("Site Name")).toBeInTheDocument();
-    expect(await screen.findByLabelText("WhatsApp")).toBeInTheDocument();
     // The Public badge is what tells an admin a value reaches the storefront.
     expect((await screen.findAllByText("Public")).length).toBeGreaterThan(0);
+  });
+
+  // The sections are tabs, not a stack of cards: the page has to show one at a
+  // time, and the strip has to reach the ones further down the response.
+  it("Settings shows one section at a time", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+
+    expect(await screen.findByLabelText("Site Name")).toBeInTheDocument();
+    expect(screen.queryByLabelText("WhatsApp")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Contact" }));
+
+    expect(await screen.findByLabelText("WhatsApp")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Site Name")).not.toBeInTheDocument();
+  });
+
+  // An inactive TabsContent is unmounted, so a form that seeded its inputs from
+  // the response would drop whatever the admin had typed the moment they looked
+  // at another tab. The draft has to outlive the panel it was typed into.
+  it("Settings keeps an unsaved edit across a tab switch", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+
+    const siteName = await screen.findByLabelText("Site Name");
+    await user.clear(siteName);
+    await user.type(siteName, "TopupGame Baru");
+
+    await user.click(screen.getByRole("tab", { name: "Contact" }));
+    await screen.findByLabelText("WhatsApp");
+    await user.click(screen.getByRole("tab", { name: "General" }));
+
+    expect(await screen.findByLabelText("Site Name")).toHaveValue("TopupGame Baru");
+  });
+
+  it("Settings explains each section and its settings with info tooltips", async () => {
+    await renderRoute("/admin/settings");
+    await screen.findByLabelText("Site Name");
+
+    // Four on the General tab: one beside the section heading, plus one per
+    // setting in the fixture's general group — Site Name, Maintenance Mode, and
+    // the logo dropzone, which owns its own label and takes the hint as a prop.
+    // A setting with no `help_` key in the locale files renders no icon, which
+    // is what keeps the count tied to the copy rather than to the row count.
+    expect(screen.getAllByRole("button", { name: "More information" })).toHaveLength(4);
+  });
+
+  // The panel and the API deploy separately, so the client repeats the API's
+  // list of groups it does not own. The fixture still sends both, which is the
+  // case this guards: a stale API must not resurrect an editable licence, and a
+  // second "licence" tab would collide with the read-only one.
+  it("Settings leaves out the groups it does not own", async () => {
+    await renderRoute("/admin/settings");
+    await screen.findByLabelText("Site Name");
+
+    expect(screen.queryByRole("tab", { name: "Pricing" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("tab", { name: "Licence" })).toHaveLength(1);
+  });
+
+  it("Settings reports the licence read-only instead of editing it", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+    await screen.findByLabelText("Site Name");
+
+    await user.click(screen.getByRole("tab", { name: "Licence" }));
+
+    // The subscription answer the sidebar card gives, not the `licence` rows:
+    // the Hub owns those and rewrites them every five minutes.
+    expect(await screen.findByText("Expiring soon")).toBeInTheDocument();
+    expect(screen.getByText("9 days")).toBeInTheDocument();
+
+    // Nothing here is a field. An edit would be reverted by the next Hub sync,
+    // and until it was, `is_serving` decides whether the storefront answers.
+    const panel = screen.getByRole("tabpanel");
+    expect(within(panel).queryAllByRole("textbox")).toHaveLength(0);
+    expect(within(panel).queryAllByRole("switch")).toHaveLength(0);
+  });
+
+  it("Settings edits the top-up presets as amounts rather than as raw JSON", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+    await user.click(await screen.findByRole("tab", { name: "Payment" }));
+
+    expect(await screen.findByDisplayValue("10000")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("50000")).toBeInTheDocument();
+    // The rupiah each row means, so the figures are readable at a glance.
+    expect(screen.getByText("Rp 10.000")).toBeInTheDocument();
+    // The stored `[10000,25000,50000]` is nowhere on screen and nowhere to type.
+    expect(screen.queryByDisplayValue("[10000,25000,50000]")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add amount" }));
+    expect(screen.getAllByRole("button", { name: /Remove amount/ })).toHaveLength(4);
+  });
+
+  it("Settings saves the presets back as the JSON the API stores", async () => {
+    const updateSpy = vi.spyOn(settingsService, "update").mockResolvedValue([]);
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+    await user.click(await screen.findByRole("tab", { name: "Payment" }));
+    await screen.findByDisplayValue("10000");
+
+    await user.click(screen.getByRole("button", { name: "Remove amount 3" }));
+    await user.click(screen.getByRole("button", { name: "Save Settings" }));
+
+    const payload = updateSpy.mock.calls[0][0] as Record<string, string>;
+
+    expect(payload.balance_topup_presets).toBe("[10000,25000]");
+    // Built from the tab that is on screen, so a group this form does not own
+    // cannot travel back with it.
+    expect(payload).not.toHaveProperty("is_serving");
+    expect(payload).not.toHaveProperty("default_markup_percent");
+  });
+
+  it("Settings edits the payment expiry window of each method", async () => {
+    const user = userEvent.setup();
+    await renderRoute("/admin/settings");
+    await user.click(await screen.findByRole("tab", { name: "Operational" }));
+
+    // Per method, because they disagree by hours — a virtual account dies in
+    // minutes and a convenience store in a day, so one number cannot drive both.
+    expect(await screen.findByText("Virtual Account")).toBeInTheDocument();
+    expect(screen.getByText("Convenience store")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("15")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("1445")).toBeInTheDocument();
   });
 
   it("a boolean setting renders as a switch, not a text field", async () => {
@@ -91,21 +215,21 @@ describe("administration routes", () => {
   it("an image setting offers a real upload control", async () => {
     await renderRoute("/admin/settings");
 
-    expect(await screen.findByText("Site Logo")).toBeInTheDocument();
+    expect(await screen.findByText("Logo")).toBeInTheDocument();
     expect(screen.queryByText(/images are managed through the upload endpoint/i)).not.toBeInTheDocument();
-    expect(await screen.findByTestId("setting-upload-site_logo")).toBeInTheDocument();
+    expect(await screen.findByTestId("setting-upload-logo")).toBeInTheDocument();
   });
 
   it("uploads an image setting through its own endpoint", async () => {
     const uploadSpy = vi.spyOn(settingsService, "upload");
     await renderRoute("/admin/settings");
 
-    const dropzone = await screen.findByTestId("setting-upload-site_logo");
+    const dropzone = await screen.findByTestId("setting-upload-logo");
     const input = dropzone.querySelector("input[type=file]") as HTMLInputElement;
     const file = new File(["logo"], "logo.png", { type: "image/png" });
     fireEvent.change(input, { target: { files: [file] } });
 
-    await waitFor(() => expect(uploadSpy).toHaveBeenCalledWith("site_logo", expect.any(File)));
+    await waitFor(() => expect(uploadSpy).toHaveBeenCalledWith("logo", expect.any(File)));
   });
 });
 

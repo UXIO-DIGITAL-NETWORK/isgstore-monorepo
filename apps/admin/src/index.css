@@ -3,7 +3,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
+/* The auth shell (login + 2FA enrolment) is a fixed LIGHT surface — white
+   panel, black buttons — even when the app runs dark. Token-based components
+   inside it must therefore resolve to the light palette, or a `text-foreground`
+   heading comes out near-white on that white panel and a `bg-card` box comes
+   out near-black behind dark-on-dark labels. Re-declaring the light values on
+   `.auth-surface` (`AuthLayout`) is the only way to win the cascade back from
+   `.dark`, which sits on <html> and would otherwise be inherited. */
+:root,
+.auth-surface {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

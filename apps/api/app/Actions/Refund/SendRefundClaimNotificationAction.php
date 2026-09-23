@@ -14,8 +14,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Tells a guest their money is waiting and where to claim it, over two
- * independent channels: email and WhatsApp.
+ * Tells a guest their money is waiting and where to claim it, over email and
+ * WhatsApp. WhatsApp is part of the future subscription and ships off, so the
+ * send it queues is a no-op until it is switched on (`PiWapiService::canSend()`);
+ * **email is the only channel that carries a link right now.**
  *
  * The plaintext claim token is a parameter, never read back from the row — the
  * row only holds its hash. That means this action is the *only* place the link

@@ -10,7 +10,6 @@ use App\Models\Service;
 use App\Models\ServiceInstallation;
 use App\Models\ServiceInvoicePayment;
 use App\Models\ServiceSubscription;
-use App\Services\Payment\MonetapayService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -40,35 +39,6 @@ class ServiceInvoiceWebhookTest extends TestCase
         // The signature is computed against the configured token, so it has to
         // be a known value rather than whatever the environment happens to set.
         config(['services.monetapay.token' => 'test-token']);
-    }
-
-    /**
-     * Builds the envelope Monetapay posts: a `__`-delimited key=value string,
-     * signed with the double-MD5 the service verifies, then AES-encrypted.
-     */
-    private function signedPayload(string $reference, int $amount, string $status = '3', ?string $sign = null): array
-    {
-        $params = [
-            'mch_order_no' => $reference,
-            'amount' => (string) $amount,
-            'status' => $status,
-        ];
-
-        $timestamp = (string) time();
-
-        ksort($params);
-        $buffer = '';
-        foreach ($params as $key => $value) {
-            $buffer .= $key.'='.$value.'__';
-        }
-        $strMap = substr($buffer, 0, -2);
-
-        $params['sign'] = $sign ?? md5(md5('test-token'.'*|*'.$strMap.'@!@'.$timestamp));
-        $params['timestamp'] = $timestamp;
-
-        $flat = collect($params)->map(fn ($v, $k) => "{$k}={$v}")->implode('__');
-
-        return ['data' => ['en_data' => app(MonetapayService::class)->encryptPayload($flat)]];
     }
 
     private function sendCallback(array $payload)
@@ -104,11 +74,25 @@ class ServiceInvoiceWebhookTest extends TestCase
         ]);
     }
 
-    /** Platform income (PlatformBalance) must move when a service bill settles. */
-    public function test_a_paid_callback_books_service_revenue_once(): void
+    /**
+     * Platform income (PlatformBalance) must move when a service bill settles —
+     * by the BILL, not by what the client handed over.
+     *
+     * The difference is the channel fee, and it is not kita's income: it buys
+     * the gateway's cut, which Monetapay keeps. `PlatformBalance::income()` is
+     * withdrawable money, so booking the fee there would authorise withdrawing
+     * cash that never arrived. The manual confirm path has always credited
+     * `invoice->amount`; this is the webhook catching up to it.
+     */
+    public function test_a_paid_callback_books_the_bill_as_revenue_once_excluding_the_fee(): void
     {
-        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 250000]), $this->qrisChannel());
+        $channel = $this->qrisChannel(['fee_flat' => 2500, 'fee_percent' => 1]);
+        $invoice = $this->subscribe($this->merchant(), Service::factory()->create(['selling_price' => 250000]), $channel);
         $attempt = ServiceInvoicePayment::firstOrFail();
+
+        // 250.000 + (2.500 + 1%) = 255.000 charged, 250.000 booked.
+        $this->assertSame(5000, (int) $attempt->admin_fee);
+        $this->assertSame(255000, (int) $attempt->total);
 
         $payload = $this->signedPayload($attempt->reference_id, $attempt->total);
         $this->sendCallback($payload)->assertOk();
@@ -122,7 +106,7 @@ class ServiceInvoiceWebhookTest extends TestCase
         $this->assertDatabaseHas('platform_mutations', [
             'type' => 'service_revenue',
             'reference' => $attempt->reference_id,
-            'amount' => $attempt->total,
+            'amount' => 250000,
         ]);
     }
 

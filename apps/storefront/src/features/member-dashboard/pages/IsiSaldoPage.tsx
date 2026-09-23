@@ -4,7 +4,6 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { useIsiSaldo } from "@/features/member-dashboard/hooks/useIsiSaldo";
 import NominalSelector from "@/features/member-dashboard/components/isiSaldo/NominalSelector";
-import VoucherCard from "@/features/member-dashboard/components/isiSaldo/VoucherCard";
 import PaymentSelector from "@/features/member-dashboard/components/isiSaldo/PaymentSelector";
 import SummaryCard from "@/features/member-dashboard/components/isiSaldo/SummaryCard";
 import SaldoCard from "@/features/member-dashboard/components/isiSaldo/SaldoCard";
@@ -20,17 +19,12 @@ export default function IsiSaldoPage(): React.JSX.Element {
     submitError,
     handleSubmit,
     selectedNominal,
-    appliedVoucher,
     selectedPaymentId,
     nominal,
-    discount,
-    total,
     selectedPaymentName,
     handleSelectPreset,
     handleCustomChange,
     handleSelectPayment,
-    applyVoucher,
-    clearVoucher,
   } = useIsiSaldo();
 
   return (
@@ -63,12 +57,6 @@ export default function IsiSaldoPage(): React.JSX.Element {
             onCustomChange={handleCustomChange}
           />
 
-          <VoucherCard
-            appliedVoucher={appliedVoucher}
-            onApplyVoucher={applyVoucher}
-            onClearVoucher={clearVoucher}
-          />
-
           <PaymentSelector
             groups={paymentGroups}
             selectedPaymentId={selectedPaymentId}
@@ -76,10 +64,7 @@ export default function IsiSaldoPage(): React.JSX.Element {
           />
 
           <SummaryCard
-            nominal={nominal}
-            discount={discount}
-            total={total}
-            appliedVoucher={appliedVoucher}
+            total={nominal}
             selectedPaymentName={selectedPaymentName}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}

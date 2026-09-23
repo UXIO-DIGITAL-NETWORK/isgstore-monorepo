@@ -19,10 +19,10 @@ const ALL = "all";
 /**
  * "Price Change Log" — the read-only record of what the 5-minute checker did.
  *
- * Since the checker now auto-reprices live products from the margin rules, this is
- * the admin's window into every change: routine reprices (`applied`), prices left
- * frozen because they were locked, and the rows that need handling — a SKU switched
- * off at the provider (`deactivated`) or a margin gone negative (`negative_margin`).
+ * The checker auto-reprices live products from the margin rules, so this is the
+ * admin's window into every change: routine reprices (`applied`) and the rows that
+ * need handling — a SKU switched off at the provider (`deactivated`) or a margin
+ * gone negative (`negative_margin`).
  */
 export default function PriceChangeLogPage() {
   const { t } = useTranslation("products");

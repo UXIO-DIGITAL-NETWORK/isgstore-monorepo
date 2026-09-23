@@ -71,9 +71,8 @@ export const PRODUCTS: Product[] = [
     ...LIVE,
     status: "active",
     is_available: true,
-    // The one row whose price is locked and hidden — the row menu's Lock/Show
-    // items are toggles, so both states need a fixture.
-    is_price_locked: true,
+    // The one row whose price is hidden — the row menu's Show/Hide item follows
+    // the row's own state, so both directions need a fixture.
     is_price_hidden: true,
     variants: [{ id: "prod-2-var-1", name: "86 Diamonds", ...priced(21500), status: "active" }],
     created_at: "2026-03-10T21:59:00.000Z",

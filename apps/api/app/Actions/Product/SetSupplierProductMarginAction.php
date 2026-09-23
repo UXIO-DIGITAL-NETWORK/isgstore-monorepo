@@ -46,8 +46,10 @@ class SetSupplierProductMarginAction
         ?float $pointPercent = null,
         ?int $pointFlat = null,
         bool $pointsProvided = false,
+        ?int $dailyOrderLimit = null,
+        bool $dailyLimitProvided = false,
     ): SupplierProduct {
-        return DB::transaction(function () use ($supplierProduct, $margins, $priceMin, $priceMax, $limitsProvided, $pointPercent, $pointFlat, $pointsProvided) {
+        return DB::transaction(function () use ($supplierProduct, $margins, $priceMin, $priceMax, $limitsProvided, $pointPercent, $pointFlat, $pointsProvided, $dailyOrderLimit, $dailyLimitProvided) {
             // `margin_set_at` is stamped either way: the promote gate asks
             // "did an admin decide?", and deciding to fall back to the rules is
             // still deciding.
@@ -67,6 +69,13 @@ class SetSupplierProductMarginAction
             if ($pointsProvided) {
                 $attributes['point_percent'] = $pointPercent;
                 $attributes['point_flat'] = $pointFlat;
+            }
+
+            // The day's selling allowance — a local quota, decided in this form
+            // because it is a property of the supply, next to the cost the prices
+            // are derived from. Null clears it back to unlimited.
+            if ($dailyLimitProvided) {
+                $attributes['daily_order_limit'] = $dailyOrderLimit;
             }
 
             $supplierProduct->update($attributes);

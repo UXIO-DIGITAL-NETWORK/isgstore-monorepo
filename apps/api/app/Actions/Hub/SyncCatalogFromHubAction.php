@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Hub;
 
+use App\Enums\ServiceCategory;
 use App\Models\Service;
 use App\Services\HubClient;
 use Illuminate\Support\Facades\DB;
@@ -45,9 +46,27 @@ class SyncCatalogFromHubAction
 
                 $seenCodes[] = $code;
 
+                // The Hub is only supposed to send categories this enum holds,
+                // but this sync runs in ONE transaction: an uncastable value
+                // would throw and take the WHOLE catalog with it, leaving the
+                // site with no services to resolve, every plan line skipped for
+                // an unknown code, and billing stopped with only a log line to
+                // say why. Degrade the row instead — "other" is the honest
+                // bucket, and the alternative costs the whole site its catalog.
+                $category = ServiceCategory::tryFrom((string) ($row['category'] ?? ''));
+
+                if ($category === null) {
+                    Log::warning('Hub catalog row carried a category this site cannot cast', [
+                        'code' => $code,
+                        'category' => $row['category'] ?? null,
+                    ]);
+
+                    $category = ServiceCategory::OTHER;
+                }
+
                 $attributes = [
                     'name' => (string) $row['name'],
-                    'category' => (string) ($row['category'] ?? 'other'),
+                    'category' => $category,
                     'description' => $row['description'] ?? null,
                     'features' => $row['features'] ?? null,
                     'selling_price' => (int) $row['selling_price'],

@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Actions\Uxiolabs\CheckUxiolabsPricesAction;
+use App\Actions\Uxiolabs\SendPriceCheckDiscordReportAction;
 use App\DTOs\Uxiolabs\PriceCheckReportDTO;
-use App\Services\DiscordWebhookService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -12,15 +12,15 @@ use Throwable;
 /**
  * Manual price check (name kept for operator familiarity — the old auto-sync
  * behavior is gone). Delegates to the same checker the 5-minute schedule uses,
- * then sends a full report to Discord.
+ * then sends the same Discord report the schedule does, marked `manual`.
  */
 class SyncUxiolabsProductsCommand extends Command
 {
     protected $signature = 'uxiolabs:sync-products';
 
-    protected $description = 'Cek harga uxiolabs manual: update modal/availability, reprice otomatis produk live dari aturan margin, dan catat price-change log. Harga terkunci dibiarkan; produk tidak dibuat otomatis.';
+    protected $description = 'Cek harga uxiolabs manual: update modal/availability, reprice otomatis produk live dari aturan margin, dan catat price-change log. Produk tidak dibuat otomatis.';
 
-    public function handle(CheckUxiolabsPricesAction $action, DiscordWebhookService $discord): int
+    public function handle(CheckUxiolabsPricesAction $action, SendPriceCheckDiscordReportAction $discord): int
     {
         try {
             $report = $action->execute();
@@ -31,20 +31,30 @@ class SyncUxiolabsProductsCommand extends Command
             return self::FAILURE;
         }
 
+        // Reported before the early return: a hand-run that was skipped because a
+        // scheduled tick held the lock should still say so.
+        $discord->execute($report, SendPriceCheckDiscordReportAction::SOURCE_MANUAL);
+
+        if ($report->skippedReason !== null) {
+            $this->warn($report->skippedReason);
+
+            return self::SUCCESS;
+        }
+
         $this->renderReport($report);
-        $this->sendDiscordReport($discord, $report);
 
         return self::SUCCESS;
     }
 
     private function renderReport(PriceCheckReportDTO $report): void
     {
-        $this->info('Uxiolabs price check');
+        $this->info('Uxiotopup price check');
         $this->table(['Metric', 'Value'], [
             ['Services fetched', $report->totalFetched],
             ['Cost changes', $report->priceChangedCount],
             ['Repriced (applied)', $report->repricedCount],
-            ['Locked (skipped)', $report->lockedCount],
+            ['Unchanged (cost moved, price did not)', $report->unchangedCount],
+            ['Failed (cost updated, price left alone)', $report->failedCount],
             ['Negative margin (logged)', $report->negativeMarginCount],
             ['Deactivated (attention)', $report->deactivatedLoggedCount],
             ['Mappings reactivated', count($report->reactivated)],
@@ -53,52 +63,11 @@ class SyncUxiolabsProductsCommand extends Command
         ]);
 
         foreach ($report->negativeMargin as $row) {
-            $this->warn("  NEGATIVE MARGIN: {$row['product']} ({$row['sku']}) cost {$row['cost']} > member price {$row['price_member']}");
-        }
-    }
-
-    private function sendDiscordReport(DiscordWebhookService $discord, PriceCheckReportDTO $report): void
-    {
-        $fields = [
-            [
-                'name' => 'PREPAID',
-                'value' => "Layanan: {$report->totalFetched} • Modal berubah: {$report->priceChangedCount} • "
-                    ."Reprice: {$report->repricedCount} • Terkunci: {$report->lockedCount} • "
-                    ."Margin negatif: {$report->negativeMarginCount} • "
-                    ."Nonaktif (perlu perhatian): {$report->deactivatedLoggedCount}"
-                    .' • Aktif lagi: '.count($report->reactivated)
-                    ." • Layanan tak dikenal: {$report->unknownCount}",
-                'inline' => false,
-            ],
-        ];
-
-        $needsAttention = $report->negativeMargin !== []
-            || $report->deactivatedLoggedCount > 0;
-
-        if ($report->negativeMargin !== []) {
-            $fields[] = [
-                'name' => '⚠️ Margin negatif — checkout DITOLAK sampai di-reprice',
-                'value' => implode("\n", array_slice(array_map(
-                    fn ($row) => "`{$row['sku']}` {$row['product']}: modal {$row['cost']} > jual {$row['price_member']}",
-                    $report->negativeMargin
-                ), 0, 15)),
-                'inline' => false,
-            ];
+            $this->warn("  NEGATIVE MARGIN: {$row['product']} ({$row['sku']}) cost {$row['cost']} > {$row['tier']} price {$row['price']}");
         }
 
-        if ($report->unknownSkusSample !== []) {
-            $fields[] = [
-                'name' => 'ℹ️ Contoh layanan uxiolabs yang belum ditambahkan',
-                'value' => '`'.implode('`, `', array_slice($report->unknownSkusSample, 0, 20)).'`'
-                    .($report->unknownCount > 20 ? " … total {$report->unknownCount}" : ''),
-                'inline' => false,
-            ];
+        if ($report->failedSkusSample !== []) {
+            $this->error('  REPRICE FAILED (price left at the old cost): '.implode(', ', $report->failedSkusSample));
         }
-
-        $discord->sendEmbed(
-            '[UXIOLABS] 📦 Laporan Cek Harga uxiolabs',
-            $fields,
-            $needsAttention ? DiscordWebhookService::COLOR_ORANGE : DiscordWebhookService::COLOR_GREEN
-        );
     }
 }

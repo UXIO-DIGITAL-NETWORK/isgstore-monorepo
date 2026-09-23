@@ -16,6 +16,15 @@ class MonetapayService
 {
     public const BALANCE_CACHE_KEY = 'monetapay:balance';
 
+    /**
+     * The MAIN-merchant reading, cached apart from the sub-merchant one.
+     *
+     * `balanceCacheKey()` resolves a null sub-merchant to the site's CONFIGURED
+     * sub-merchant, so the two figures cannot share a key — one would overwrite
+     * the other and the panel would show a plausible wrong number.
+     */
+    public const MAIN_BALANCE_CACHE_KEY = 'monetapay:balance:main';
+
     public const BALANCE_CACHE_TTL = 60;
 
     /** Outbound HTTP bounds — a stalled Monetapay must not hang the request/worker indefinitely. */
@@ -546,6 +555,22 @@ class MonetapayService
     }
 
     /**
+     * 5.1 Balance Inquiry for the PARENT (main merchant) account.
+     *
+     * The only difference from inquiryBalance() is `withSubMch: false`: it stops
+     * postSigned() injecting the configured sub-merchant, so the request asks the
+     * gateway for the parent account this site trades under — Uxio's own balance,
+     * not the sub-merchant's. Passing a blank `sub_mch_id` instead would NOT work,
+     * because postSigned would fill it in from config.
+     */
+    public function inquiryMainMerchantBalance(?string $currency = null): array
+    {
+        return $this->postSigned('/v1.0.0/balance', [
+            'currency' => $currency,
+        ], withSubMch: false);
+    }
+
+    /**
      * Balance via a short shared cache. The admin's financial/integration panels
      * (and the 30s integration poll) read this; caching keeps them from hitting
      * Monetapay live on every request — the call that otherwise hangs the server
@@ -584,6 +609,30 @@ class MonetapayService
         $subMchId = $subMchId ?: (string) (IntegrationConfig::for('monetapay')['sub_mch_id'] ?? '');
 
         return self::BALANCE_CACHE_KEY.':'.($subMchId !== '' ? $subMchId : 'main').':'.($currency ?? 'IDR');
+    }
+
+    /**
+     * The main-merchant reading, via the same short cache as the sub-merchant.
+     *
+     * Its own key namespace (`MAIN_BALANCE_CACHE_KEY`), never `balanceCacheKey()`:
+     * that helper folds a null sub-merchant into the CONFIGURED sub-merchant and
+     * would key the parent account's balance under the sub-merchant's id.
+     *
+     * @return array<string,mixed>
+     */
+    public function inquiryMainMerchantBalanceCached(?string $currency = null): array
+    {
+        return Cache::remember(
+            self::mainBalanceCacheKey($currency),
+            self::BALANCE_CACHE_TTL,
+            fn () => $this->inquiryMainMerchantBalance($currency),
+        );
+    }
+
+    /** The main-merchant (parent account) cache key — public so busters forget the same entry. */
+    public static function mainBalanceCacheKey(?string $currency = null): string
+    {
+        return self::MAIN_BALANCE_CACHE_KEY.':'.($currency ?? 'IDR');
     }
 
     /* =====================================================================

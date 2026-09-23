@@ -10,6 +10,8 @@ export interface FlashSaleItemModel {
   product_id: number;
   name: string;
   game: string | null;
+  /** The game's slug — the checkout route takes this, not the item's own id. */
+  game_slug: string | null;
   image_url: string | null;
   sale_price: number;
   original_price: number;

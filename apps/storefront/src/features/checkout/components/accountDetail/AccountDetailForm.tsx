@@ -9,14 +9,16 @@ import type { OrderFormField } from "@/types/models/game.model";
 
 interface Props {
   /**
-   * Declared by the game itself (`GET /v1/games/{slug}`). Field #1 maps to
-   * `target_uid` and field #2 to `target_server` — checkout accepts no others.
+   * Declared by the game itself (`GET /v1/games/{slug}`) — one to five
+   * identifiers, in the order the operator configured them. The first two are
+   * mirrored into the API's `target_uid`/`target_server` columns; all of them
+   * travel as `order_fields`.
    */
   fields: OrderFormField[];
-  values: string[];
-  onValueChange: (index: number, value: string) => void;
-  /** Rule violations per field, index-aligned with `fields`. */
-  errors?: (OrderFormFieldError | null)[];
+  values: Record<string, string>;
+  onValueChange: (key: string, value: string) => void;
+  /** Rule violations by field key; `null` (or absent) means valid. */
+  errors?: Record<string, OrderFormFieldError | null>;
   /** Errors stay hidden until the buyer has actually tried to check out. */
   showErrors?: boolean;
   /** Resolved in-game nickname; the line is hidden while this is null. */
@@ -46,15 +48,15 @@ export default function AccountDetailForm({
 }: Props): React.JSX.Element {
   const { t } = useTranslation("checkout");
 
-  // The account id is the first field; the check needs it filled in.
-  const canCheck = Boolean((values[0] ?? "").trim()) && !isValidatingNickname;
+  // The account id is the first declared field; the check needs it filled in.
+  const canCheck = Boolean((values[fields[0]?.key ?? ""] ?? "").trim()) && !isValidatingNickname;
 
   return (
     <SectionCard stepNumber={1} title={t("accountDetail.title")} gradientBorder>
       <Box className="flex flex-col gap-4">
         {fields.map((field, index) => {
           const fallbackKey = DEFAULT_FIELD_KEYS[index];
-          const error = showErrors ? (errors?.[index] ?? null) : null;
+          const error = showErrors ? (errors?.[field.key] ?? null) : null;
 
           return (
             <Box key={field.key} className="flex flex-col gap-1.5">
@@ -69,8 +71,8 @@ export default function AccountDetailForm({
                 // produced wrong ids that failed at the supplier, after payment.
                 <Box
                   as="select"
-                  value={values[index] ?? ""}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onValueChange(index, e.target.value)}
+                  value={values[field.key] ?? ""}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onValueChange(field.key, e.target.value)}
                   aria-invalid={error ? true : undefined}
                   className={`w-full h-11 rounded-xl border bg-white/[0.03] px-3 font-inter text-[13px] text-white outline-none focus-visible:border-[#C084FC] ${
                     error ? "border-red-400/60" : "border-white/10"
@@ -92,8 +94,8 @@ export default function AccountDetailForm({
                   // strips the leading zeros some supplier ids carry.
                   inputMode={field.type === "number" ? "numeric" : "text"}
                   maxLength={field.max_length ?? undefined}
-                  value={values[index] ?? ""}
-                  onChange={(e) => onValueChange(index, e.target.value)}
+                  value={values[field.key] ?? ""}
+                  onChange={(e) => onValueChange(field.key, e.target.value)}
                   aria-invalid={error ? true : undefined}
                   className={error ? "border-red-400/60" : undefined}
                   placeholder={

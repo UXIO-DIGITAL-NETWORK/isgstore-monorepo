@@ -387,7 +387,7 @@ class MonetapayController extends Controller
         ]);
 
         try {
-            return $this->successResponse($this->cancelAction->execute($params), 'Monetapay cancel sent.');
+            return $this->successResponse($this->cancelAction->execute($params), 'Cancel request sent to the payment gateway.');
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
@@ -407,7 +407,7 @@ class MonetapayController extends Controller
         try {
             return $this->successResponse(
                 $this->refundAction->execute($this->withAppId($validated)),
-                'Monetapay refund sent.'
+                'Refund request sent to the payment gateway.'
             );
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
@@ -446,7 +446,7 @@ class MonetapayController extends Controller
             $code = $response['code'] ?? null;
 
             if ($code !== null && (int) $code !== 0) {
-                return $this->errorResponse($response['message'] ?? 'Monetapay error', 400, $response);
+                return $this->errorResponse($response['message'] ?? 'Payment gateway error', 400, $response);
             }
 
             return $this->successResponse($response);

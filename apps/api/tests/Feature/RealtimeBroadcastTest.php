@@ -12,8 +12,14 @@ use App\Models\Role;
 use App\Models\ServiceInvoice;
 use App\Models\User;
 use App\Models\Withdrawal;
+use Illuminate\Contracts\Broadcasting\Broadcaster;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldRescue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
+use Pusher\PusherException;
 use Tests\TestCase;
 
 /**
@@ -71,6 +77,66 @@ class RealtimeBroadcastTest extends TestCase
 
         $invoice->update(['notes' => 'no status change']);
         Event::assertDispatched(ServiceInvoiceUpdated::class, 2);
+    }
+
+    /**
+     * The bill path is inline end to end: the Hub's poke issues the invoice
+     * inside its own HTTP request and answers with the verdict, so the last leg
+     * must not hand that wait back to a queue worker — which is exactly what a
+     * plain ShouldBroadcast does, by enqueuing a BroadcastEvent job.
+     */
+    public function test_the_invoice_event_broadcasts_inline_rather_than_through_a_worker(): void
+    {
+        $event = new ServiceInvoiceUpdated(new ServiceInvoice);
+
+        $this->assertInstanceOf(ShouldBroadcastNow::class, $event);
+        $this->assertInstanceOf(ShouldRescue::class, $event);
+    }
+
+    /**
+     * The property that matters operationally: a Pusher outage degrades the
+     * merchant's page to its polling fallback, it does NOT fail the request that
+     * issued the bill.
+     *
+     * A broadcaster that always throws stands in for the outage. Reaching the
+     * alert assertion is half the result (nothing propagated), and the alert is
+     * the other half — a silent fallback is how the queued broadcast this
+     * replaces managed to hide a dead worker from everyone.
+     */
+    public function test_a_dead_broadcaster_cannot_fail_the_invoice_it_announces(): void
+    {
+        Broadcast::extend('exploding', fn () => new class implements Broadcaster
+        {
+            public function auth($request) {}
+
+            public function validAuthenticationResponse($request, $result) {}
+
+            public function broadcast(array $channels, $event, array $payload = [])
+            {
+                throw new PusherException('Pusher is unreachable');
+            }
+        });
+
+        Http::fake();
+        config([
+            'broadcasting.default' => 'exploding',
+            'broadcasting.connections.exploding' => ['driver' => 'exploding'],
+            'services.discord.webhook_log_url' => 'https://discord.test/webhook',
+        ]);
+
+        $invoice = ServiceInvoice::factory()->create([
+            'merchant_id' => $this->user()->id,
+            'status' => ServiceInvoiceStatus::UNPAID,
+        ]);
+
+        // The same call the observer makes, minus the after-commit deferral that
+        // this suite's wrapping transaction would hold past the assertion.
+        Broadcast::queue(new ServiceInvoiceUpdated($invoice));
+
+        Http::assertSent(fn ($request) => str_contains(
+            (string) ($request['embeds'][0]['description'] ?? ''),
+            'Push realtime gagal',
+        ));
     }
 
     public function test_notification_broadcasts_on_create(): void

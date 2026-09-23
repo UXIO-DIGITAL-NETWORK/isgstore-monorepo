@@ -19,47 +19,62 @@ const field = (over: Partial<OrderFormField> = {}): OrderFormField => ({
 
 describe("getOrderFormErrors", () => {
   it("flags a required field left empty", () => {
-    expect(getOrderFormErrors([field()], [" "])).toEqual([{ key: "accountDetail.errors.required" }]);
+    expect(getOrderFormErrors([field()], { user_id: " " })).toEqual({
+      user_id: { key: "accountDetail.errors.required" },
+    });
   });
 
   it("skips every rule for an empty optional field", () => {
-    expect(getOrderFormErrors([field({ required: false, min_length: 4 })], [""])).toEqual([null]);
+    expect(getOrderFormErrors([field({ required: false, min_length: 4 })], { user_id: "" })).toEqual({
+      user_id: null,
+    });
   });
 
   it("rejects non-digits in a number field", () => {
-    expect(getOrderFormErrors([field()], ["12ab"])).toEqual([{ key: "accountDetail.errors.numeric" }]);
+    expect(getOrderFormErrors([field()], { user_id: "12ab" })).toEqual({
+      user_id: { key: "accountDetail.errors.numeric" },
+    });
   });
 
   it("keeps leading zeros valid — some supplier ids carry them", () => {
-    expect(getOrderFormErrors([field()], ["0012345"])).toEqual([null]);
+    expect(getOrderFormErrors([field()], { user_id: "0012345" })).toEqual({ user_id: null });
   });
 
   it("reports the declared bound with the length errors", () => {
-    expect(getOrderFormErrors([field({ min_length: 6 })], ["123"])).toEqual([
-      { key: "accountDetail.errors.minLength", values: { length: 6 } },
-    ]);
-    expect(getOrderFormErrors([field({ max_length: 4 })], ["123456"])).toEqual([
-      { key: "accountDetail.errors.maxLength", values: { length: 4 } },
-    ]);
+    expect(getOrderFormErrors([field({ min_length: 6 })], { user_id: "123" })).toEqual({
+      user_id: { key: "accountDetail.errors.minLength", values: { length: 6 } },
+    });
+    expect(getOrderFormErrors([field({ max_length: 4 })], { user_id: "123456" })).toEqual({
+      user_id: { key: "accountDetail.errors.maxLength", values: { length: 4 } },
+    });
   });
 
   it("applies a declared pattern", () => {
-    const zone = field({ type: "text", pattern: "^[0-9]{4}$" });
+    const zone = field({ key: "zone_id", type: "text", pattern: "^[0-9]{4}$" });
 
-    expect(getOrderFormErrors([zone], ["2027"])).toEqual([null]);
-    expect(getOrderFormErrors([zone], ["20"])).toEqual([{ key: "accountDetail.errors.pattern" }]);
+    expect(getOrderFormErrors([zone], { zone_id: "2027" })).toEqual({ zone_id: null });
+    expect(getOrderFormErrors([zone], { zone_id: "20" })).toEqual({
+      zone_id: { key: "accountDetail.errors.pattern" },
+    });
   });
 
   it("ignores a malformed admin-entered pattern instead of failing a valid id", () => {
-    expect(getOrderFormErrors([field({ type: "text", pattern: "([" })], ["63193868"])).toEqual([null]);
+    expect(getOrderFormErrors([field({ type: "text", pattern: "([" })], { user_id: "63193868" })).toEqual({
+      user_id: null,
+    });
   });
 
-  it("stays index-aligned across both fields", () => {
-    const fields = [field(), field({ key: "zone_id", label: "Zone ID" })];
+  it("reports each identifier under its own key, however many the game declares", () => {
+    const fields = [
+      field(),
+      field({ key: "zone_id", label: "Zone ID" }),
+      field({ key: "role_id", label: "Role", required: false }),
+    ];
 
-    expect(getOrderFormErrors(fields, ["63193868", ""])).toEqual([
-      null,
-      { key: "accountDetail.errors.required" },
-    ]);
+    expect(getOrderFormErrors(fields, { user_id: "63193868", zone_id: "", role_id: "7" })).toEqual({
+      user_id: null,
+      zone_id: { key: "accountDetail.errors.required" },
+      role_id: null,
+    });
   });
 });

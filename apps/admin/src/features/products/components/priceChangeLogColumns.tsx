@@ -1,10 +1,10 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
+import { formatDateTime } from "@/utils/date";
 import { PriceChangePairCell } from "./PriceChangePairCell";
 import {
   PRICE_CHANGE_STATUS_LABELS,
@@ -14,6 +14,7 @@ import {
 
 const STATUS_VARIANT: Record<PriceChangeStatus, "secondary" | "outline" | "destructive"> = {
   applied: "secondary",
+  unchanged: "outline",
   locked: "outline",
   deactivated: "destructive",
   negative_margin: "destructive",
@@ -23,7 +24,8 @@ const STATUS_VARIANT: Record<PriceChangeStatus, "secondary" | "outline" | "destr
  * Columns for the Price Change Log. Read-only: this is the record of what the
  * 5-minute checker did, so there are no row actions. The status column carries
  * the whole point — an admin scans it for `deactivated` / `negative_margin` rows
- * that need handling, versus routine `applied` reprices.
+ * that need handling, versus routine `applied` reprices and `unchanged` ones
+ * (the cost moved, the price did not).
  */
 /**
  * A factory, not a module constant: headers are rendered text, so they
@@ -75,7 +77,7 @@ export const priceChangeLogColumnsFor = (t: TFunction<"products">): ColumnDef<Pr
     header: t("colChangedAt"),
     cell: ({ row }) => (
       <Text as="span" className="tabular-nums">
-        {format(new Date(row.original.created_at), "d MMM yyyy, HH.mm")}
+        {formatDateTime(row.original.created_at)}
       </Text>
     ),
   },

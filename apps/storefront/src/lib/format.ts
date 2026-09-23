@@ -8,6 +8,39 @@ function toIntlLocale(locale: string): string {
 }
 
 /**
+ * The platform's wall clock: WIB, UTC+7.
+ *
+ * Every date the storefront renders is formatted in it, never in the visitor's
+ * browser zone — an order's timestamp must read the same to the customer, the
+ * merchant and the admin. The API sends UTC ISO strings; the conversion happens
+ * here, at the edge.
+ */
+export const PLATFORM_TIMEZONE = "Asia/Jakarta";
+
+/** Appended wherever a time of day is shown, so a bare "18:15" is never ambiguous. */
+export const PLATFORM_TIMEZONE_LABEL = "WIB (GMT+7)";
+
+/**
+ * The WIB calendar day for an instant, as `YYYY-MM-DD`.
+ *
+ * Never `toISOString().slice(0, 10)`: that renders the UTC day, which is still
+ * yesterday for the first seven hours of a WIB morning. Assembled from parts
+ * rather than a locale's date order, so it cannot be reordered by ICU.
+ */
+export function wibDay(value: string | Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: PLATFORM_TIMEZONE,
+  }).formatToParts(typeof value === "string" ? new Date(value) : value);
+
+  const field = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+
+  return `${field("year")}-${field("month")}-${field("day")}`;
+}
+
+/**
  * Rupiah, always written as rupiah.
  *
  * **`locale` is accepted but deliberately ignored here** — do not "fix" it.
@@ -51,15 +84,23 @@ export function formatDate(date: string | Date, locale = "id"): string {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: PLATFORM_TIMEZONE,
   }).format(typeof date === "string" ? new Date(date) : date);
 }
 
+/**
+ * Date and time, e.g. "24 Mei 2026, 14.03 WIB (GMT+7)". The zone label rides
+ * along because a bare clock time in an order history is ambiguous.
+ */
 export function formatDateTime(date: string | Date, locale = "id"): string {
-  return new Intl.DateTimeFormat(toIntlLocale(locale), {
+  const rendered = new Intl.DateTimeFormat(toIntlLocale(locale), {
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: PLATFORM_TIMEZONE,
   }).format(typeof date === "string" ? new Date(date) : date);
+
+  return `${rendered} ${PLATFORM_TIMEZONE_LABEL}`;
 }

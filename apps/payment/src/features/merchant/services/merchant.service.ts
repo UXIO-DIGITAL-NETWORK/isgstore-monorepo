@@ -9,7 +9,9 @@ import type {
   MerchantDashboard,
   MerchantMutation,
   Service,
+  ServiceBatchPayment,
   ServiceInvoice,
+  ServicePlanLine,
   ServiceStatusResponse,
   ServiceSubscription,
   Withdrawal,
@@ -60,6 +62,18 @@ export const merchantService = {
     return unwrapList<Withdrawal>(res as unknown as ApiResponse<Record<string, unknown>>);
   },
 
+  /**
+   * One payout, by its human-readable number.
+   *
+   * The list row already carries most of this, but the reasons a client opens
+   * this page — the destination account it is being sent to, why it FAILED, the
+   * transfer proof — are the fields the list has no room for.
+   */
+  withdrawal: async (number: string): Promise<Withdrawal> => {
+    const res: ApiResponse<Withdrawal> = await api.get(`${BASE}/withdrawals/${number}`);
+    return res.data;
+  },
+
   createWithdrawal: async (payload: CreateWithdrawalPayload): Promise<Withdrawal> => {
     const res: ApiResponse<Withdrawal> = await api.post(`${BASE}/withdrawals`, payload);
     return res.data;
@@ -85,32 +99,33 @@ export const merchantService = {
   /**
    * The methods a client may settle a bill with — gateway only, no wallet.
    *
-   * Reuses the public storefront endpoint (same one web-topup-fe calls) so the
-   * payment page works against the deployed backend. That endpoint nests the
-   * list under `data.channels` and — because our caller is authenticated —
-   * includes the `balance` wallet, which cannot pay a service bill, so it is
-   * dropped here. The storefront row omits logo/description/sort_order, none of
-   * which the payment-page picker uses.
+   * Deliberately the payment-admin route, NOT the public storefront one it used
+   * to share. The licence kill switch (`EnsureSiteIsServing`) closes the
+   * storefront globally and leaves `payment-admin/*` open on purpose, so a
+   * client whose term has lapsed can still log in and pay to switch the site
+   * back on. Reading the channel list from the storefront therefore put the
+   * payment page behind the very gate it exists to satisfy: the request came
+   * back 503 with `data.licence`, the picker read it as an empty list, and a
+   * client who owed money was told there was no way to pay.
+   *
+   * Same three types (the wallet is excluded server-side, so no filter here),
+   * with logo and sort order the storefront row does not carry.
    */
   paymentChannels: async (): Promise<ServicePaymentChannel[]> => {
-    const res: ApiResponse<{ channels: StorefrontPaymentChannel[] }> = await api.get(
-      `${API_VERSION}/storefront/payment-channels`,
-    );
+    const res: ApiResponse<StorefrontPaymentChannel[]> = await api.get(`${BASE}/payment-channels`);
 
-    return (res.data.channels ?? [])
-      .filter((channel) => channel.channel_code !== "balance")
-      .map((channel) => ({
-        id: channel.id,
-        payment_type: channel.payment_type,
-        channel_code: channel.channel_code,
-        name: channel.name,
-        logo_url: null,
-        description: null,
-        min_amount: channel.min_amount,
-        fee_flat: channel.fee_flat,
-        fee_percent: channel.fee_percent,
-        sort_order: 0,
-      }));
+    return (res.data ?? []).map((channel) => ({
+      id: channel.id,
+      payment_type: channel.payment_type,
+      channel_code: channel.channel_code,
+      name: channel.name,
+      logo_url: null,
+      description: null,
+      min_amount: channel.min_amount,
+      fee_flat: channel.fee_flat,
+      fee_percent: channel.fee_percent,
+      sort_order: 0,
+    }));
   },
 
   /** Issues the bill and opens its payment in one step. */
@@ -131,6 +146,33 @@ export const merchantService = {
     const res: ApiResponse<ServiceInvoice> = await api.post(`${BASE}/service-invoices/${id}/pay`, {
       payment_channel_id: paymentChannelId,
     });
+    return res.data;
+  },
+
+  /**
+   * What the client is subscribed to and what falls due next — including
+   * periods nobody has paid for yet, which no subscription row can describe.
+   */
+  servicePlan: async (): Promise<ServicePlanLine[]> => {
+    const res: ApiResponse<ServicePlanLine[]> = await api.get(`${BASE}/service-plan`);
+    return res.data;
+  },
+
+  /**
+   * Settle several bills in ONE attempt. The channel fee is charged once on the
+   * sum, not once per bill — so this is cheaper for the client than paying each
+   * separately, and that is the whole point.
+   */
+  payInvoiceBatch: async (invoiceIds: number[], paymentChannelId: number): Promise<ServiceBatchPayment> => {
+    const res: ApiResponse<ServiceBatchPayment> = await api.post(`${BASE}/service-invoices/pay-batch`, {
+      invoice_ids: invoiceIds,
+      payment_channel_id: paymentChannelId,
+    });
+    return res.data;
+  },
+
+  servicePayment: async (reference: string): Promise<ServiceBatchPayment> => {
+    const res: ApiResponse<ServiceBatchPayment> = await api.get(`${BASE}/service-payments/${reference}`);
     return res.data;
   },
 

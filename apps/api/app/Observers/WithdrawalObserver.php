@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Events\WithdrawalStatusUpdated;
+use App\Jobs\SendDiscordActivityJob;
 use App\Models\Withdrawal;
 
 /**
@@ -15,12 +16,18 @@ class WithdrawalObserver
     public function created(Withdrawal $withdrawal): void
     {
         WithdrawalStatusUpdated::dispatch($withdrawal);
+
+        SendDiscordActivityJob::withdrawalCreated($withdrawal);
     }
 
     public function updated(Withdrawal $withdrawal): void
     {
-        if ($withdrawal->wasChanged('status')) {
-            WithdrawalStatusUpdated::dispatch($withdrawal);
+        if (! $withdrawal->wasChanged('status')) {
+            return;
         }
+
+        WithdrawalStatusUpdated::dispatch($withdrawal);
+
+        SendDiscordActivityJob::withdrawalStatusChanged($withdrawal);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Hub;
 
 use App\Actions\Hub\ApplyHubLicenceAction;
+use App\Actions\Hub\ApplyHubPlanAction;
 use App\Actions\Hub\SyncCatalogFromHubAction;
 use App\Actions\Hub\SyncChannelSettingsFromHubAction;
 use App\Http\Controllers\Controller;
@@ -16,7 +17,7 @@ use Throwable;
  * never the change itself — we still pull the catalog and the fee schedule
  * ourselves, with our own key, exactly as the scheduler does. So the worst a
  * caller can achieve here is making us do the thing we were going to do anyway
- * within 15 minutes, which is why the read key alone gates it.
+ * within a minute, which is why the read key alone gates it.
  *
  * Runs INLINE, not queued. It used to dispatch RunHubSyncJob so the Hub's
  * request returned at once, but that made a config change depend on this site's
@@ -42,13 +43,25 @@ class HubSyncTriggerController extends Controller
         SyncChannelSettingsFromHubAction $channels,
         SyncCatalogFromHubAction $catalog,
         ApplyHubLicenceAction $licence,
+        ApplyHubPlanAction $plan,
     ) {
         $validated = $request->validate([
             'targets' => ['sometimes', 'array'],
-            'targets.*' => ['string', 'in:channels,catalog,licence'],
+            // `plan` is accepted but the Hub does not send it yet: an unknown
+            // target 422s this whole request, so every site must be able to
+            // ACCEPT it before any Hub starts sending it. Until then the plan
+            // sync rides along with `licence`, which is the target the Hub
+            // already pokes on exactly the events that change a plan.
+            'targets.*' => ['string', 'in:channels,catalog,licence,plan'],
         ]);
 
         $targets = array_values(array_unique($validated['targets'] ?? ['channels', 'catalog', 'licence']));
+
+        // Reported back on every answer, applied or not: a Hub that asked for a
+        // plan sync has to be able to tell "the site is not armed to issue bills"
+        // from "the site is fine and the bill is on its way". Without it, a poke
+        // against a site with HUB_MANAGED_PLAN off looks like a healthy sync.
+        $planEnabled = (bool) config('services.hub.managed_plan');
 
         $results = [];
 
@@ -63,24 +76,34 @@ class HubSyncTriggerController extends Controller
 
             // The Hub pokes this one the moment an operator suspends or renews,
             // so a client's site comes back within a second of being paid for
-            // rather than at the next five-minute tick.
+            // rather than at the next minute's tick.
             if (in_array('licence', $targets, true)) {
                 $results['licence'] = $licence->execute();
+            }
+
+            // Rides along with `licence` until every site accepts a `plan`
+            // target of its own — a plan change IS a licence-adjacent event, and
+            // the alternative was a poke that 422s on any site a release behind.
+            if ($planEnabled
+                && (in_array('plan', $targets, true) || in_array('licence', $targets, true))) {
+                $results['plan'] = $plan->execute();
             }
         } catch (Throwable $e) {
             Log::error('Hub sync (poked) failed', ['targets' => $targets, 'error' => $e->getMessage()]);
 
             return $this->successResponse([
                 'applied' => false,
+                'plan_enabled' => $planEnabled,
                 'targets' => $targets,
                 'error' => $e->getMessage(),
-            ], 'Sinkronisasi gagal — jadwal 15 menit masih berjalan sebagai cadangan');
+            ], 'Sinkronisasi gagal — jadwal 1 menit masih berjalan sebagai cadangan');
         }
 
         Log::info('Hub sync (poked) applied', ['targets' => $targets]);
 
         return $this->successResponse([
             'applied' => true,
+            'plan_enabled' => $planEnabled,
             'targets' => $targets,
             'results' => $results,
         ], 'Sinkronisasi diterapkan');

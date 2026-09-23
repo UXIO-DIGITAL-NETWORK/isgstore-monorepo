@@ -9,6 +9,7 @@ use App\Models\MembershipPlan;
 use App\Models\Product;
 use App\Support\Membership\DefaultPlan;
 use App\Support\Pricing\PlanPrice;
+use App\Support\Stock\DailyStockLimit;
 use App\Support\Storefront\Catalog;
 use App\Support\Storefront\MediaUrl;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -71,9 +72,18 @@ class ListPriceListAction
         $hiddenPlanId = $plans->count() > 1 ? (int) $plans->last()->id : null;
         $defaultPlanId = (int) ($plans->firstWhere('is_default', true)?->id ?? DefaultPlan::id());
 
-        return $query
-            ->with(['planPrices'])
-            ->paginate($dto->perPage)
+        $paginator = $query
+            ->with([
+                'planPrices',
+                // The day's allowance lives on the active mapping; loaded here so
+                // `remainingFor()` costs one count for the page.
+                'supplierProducts' => fn ($q) => $q->where('is_active', true),
+            ])
+            ->paginate($dto->perPage);
+
+        $stock = DailyStockLimit::remainingFor($paginator->getCollection());
+
+        return $paginator
             ->through(fn (Product $product) => [
                 'id' => $product->id,
                 'service_name' => $product->name,
@@ -85,6 +95,10 @@ class ListPriceListAction
                 'game_logo_url' => MediaUrl::for($product->category?->logo),
                 // The default tier, i.e. what a visitor pays today.
                 'normal_price' => PlanPrice::for($product, null),
+                // Null = no ceiling; 0 = nothing left today. The two mean
+                // different things to the storefront, so they stay distinct.
+                'stock_left' => $stock[(int) $product->id] ?? null,
+                'is_sold_out' => DailyStockLimit::isSoldOut($stock[(int) $product->id] ?? null),
                 'tiers' => $plans->map(fn (MembershipPlan $plan) => [
                     'membership_plan_id' => (int) $plan->id,
                     'plan_code' => $plan->code,

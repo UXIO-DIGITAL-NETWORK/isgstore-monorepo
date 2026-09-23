@@ -6,13 +6,11 @@ import {
   ArchiveRestore,
   Eye,
   EyeOff,
-  Lock,
   MoreVertical,
   Pencil,
   RefreshCcw,
   Rocket,
   SlidersHorizontal,
-  Unlock,
 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -30,7 +28,6 @@ import {
 import {
   useDeleteProducts,
   useUxiolabsUpdateProducts,
-  useLockProducts,
   useRestoreProduct,
   useSetProductPublished,
   useShowProducts,
@@ -44,14 +41,18 @@ interface ProductRowActionsProps {
 
 /**
  * Row menu for the Main Products list, in the reference's order. Each action is
- * wired: Uxiolabs Update / Show Price / Lock Price go through a confirm dialog,
- * Set Price Limit opens its page, and the lifecycle toggle / Edit / Delete are
- * unchanged.
+ * wired: Uxiolabs Update / Show Price go through a confirm dialog, Set Price
+ * Limit opens its page, and the lifecycle toggle / Edit / Delete are unchanged.
  * The single-row paths reuse the bulk hooks with a one-id selection.
  *
- * The three reversible items — publishing, price lock, price visibility — each
- * read the row's own state and offer the direction that would change something.
- * A locked row is offered "Unlock Price"; a live one, "Unpublish".
+ * The two reversible items — publishing and price visibility — each read the
+ * row's own state and offer the direction that would change something. A live
+ * row is offered "Unpublish"; a hidden one, "Show Price".
+ *
+ * A price lock used to sit between them, holding the selling price still while
+ * the supplier's cost moved underneath it. That is what left a product priced
+ * below its cost and made checkout refuse the customer, so it is gone: prices
+ * follow the margin rules, always.
  *
  * Publish replaced Activate. Activate wrote the product's `status` and nothing
  * else, while a product is only sellable when an active supplier mapping backs
@@ -68,21 +69,18 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
-  const [lockOpen, setLockOpen] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
   const [uxiolabsOpen, setUxiolabsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const deleteProducts = useDeleteProducts();
   const setProductPublished = useSetProductPublished();
   const restoreProduct = useRestoreProduct();
-  const lockProducts = useLockProducts();
   const showProducts = useShowProducts();
   const uxiolabsUpdate = useUxiolabsUpdateProducts();
 
   // Each toggle names what the click would do, not what the row currently is.
   const isArchived = product.publish_state === "archived";
   const nextPublished = product.publish_state !== "published";
-  const nextLocked = !product.is_price_locked;
   const nextHidden = !product.is_price_hidden;
 
   return (
@@ -116,10 +114,6 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
               <DropdownMenuItem onSelect={() => setShowOpen(true)}>
                 {nextHidden ? <EyeOff /> : <Eye />}
                 {nextHidden ? "Hide Price" : "Show Price"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setLockOpen(true)}>
-                {nextLocked ? <Lock /> : <Unlock />}
-                {nextLocked ? "Lock Price" : "Unlock Price"}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => navigate({ to: "/admin/products/main/set-price-limit", search: { id: product.id } })}
@@ -186,20 +180,6 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
             : "The price will be visible on the storefront."
         }
         onConfirm={() => showProducts.mutate({ ids: [product.id], hidden: nextHidden })}
-      />
-
-      <DeleteConfirmDialog
-        open={lockOpen}
-        onOpenChange={setLockOpen}
-        icon={nextLocked ? <Lock /> : <Unlock />}
-        confirmLabel={nextLocked ? "Lock" : "Unlock"}
-        title={nextLocked ? "Lock this price?" : "Unlock this price?"}
-        description={
-          nextLocked
-            ? "The supplier sync will stop overwriting this product's price until it is unlocked."
-            : "The supplier sync will resume overwriting this product's price from its cost."
-        }
-        onConfirm={() => lockProducts.mutate({ ids: [product.id], locked: nextLocked })}
       />
 
       {/* Same shared dialog and same mutation as the toolbar's bulk archive —

@@ -18,8 +18,9 @@ use Illuminate\Database\Eloquent\Builder;
  * the token straight back on a match would turn this into an oracle: anyone
  * holding a leaked invoice number could probe email addresses until one
  * answered differently, and the prize is the ability to redirect a refund. The
- * link goes out of band instead — to the email and WhatsApp already on the
- * order — which is the same reasoning `forgot-password` uses in this codebase.
+ * link goes out of band instead — to the email already on the order (and
+ * WhatsApp, once delivery is switched on) — which is the same reasoning
+ * `forgot-password` uses in this codebase.
  *
  * Matching is invoice AND contact, both exact. `TrackOrdersAction` matches
  * invoice OR phone OR email because its output is a harmless projection; this

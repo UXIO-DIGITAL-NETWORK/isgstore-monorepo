@@ -120,24 +120,49 @@ describe("merchantService — services bought from kita", () => {
     });
   });
 
-  it("lists the methods a bill may be settled with from the storefront endpoint, minus the wallet", async () => {
+  it("lists the methods a bill may be settled with, from the route the kill switch leaves open", async () => {
     vi.mocked(api.get).mockResolvedValueOnce(
-      envelope({
-        channels: [
-          { id: 1, name: "QRIS", channel_code: "qris", payment_type: "qris", fee_flat: 0, fee_percent: 0.7, min_amount: 0, balance: null },
-          { id: 9, name: "Saldo", channel_code: "balance", payment_type: "balance", fee_flat: 0, fee_percent: 0, min_amount: 0, balance: 60000 },
-        ],
-      }) as never,
+      envelope([
+        { id: 1, name: "QRIS", channel_code: "qris", payment_type: "qris", fee_flat: 0, fee_percent: 0.7, min_amount: 0 },
+      ]) as never,
     );
 
     const channels = await merchantService.paymentChannels();
 
-    // Reuses the storefront endpoint, unwraps `data.channels`.
-    expect(api.get).toHaveBeenCalledWith("/v1/storefront/payment-channels");
-    // The wallet can't pay a service bill, so it is dropped.
+    // NOT the storefront route: that one is behind the licence kill switch, and
+    // the client who owes money is exactly the client this page is for.
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/payment-channels");
     expect(channels).toHaveLength(1);
     expect(channels[0].channel_code).toBe("qris");
-    expect(channels.some((c) => c.channel_code === "balance")).toBe(false);
+  });
+
+  it("reads the plan, including periods nobody has paid for yet", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope([]) as never);
+
+    await merchantService.servicePlan();
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/service-plan");
+  });
+
+  it("pays several bills in one attempt", async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(
+      envelope({ reference_id: "SRV-20260912-ABCD", invoice_count: 3 }) as never,
+    );
+
+    await merchantService.payInvoiceBatch([9, 10, 11], 2);
+
+    expect(api.post).toHaveBeenCalledWith("/v1/payment-admin/service-invoices/pay-batch", {
+      invoice_ids: [9, 10, 11],
+      payment_channel_id: 2,
+    });
+  });
+
+  it("reads one attempt and the bills it covers", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(envelope({ reference_id: "SRV-1", invoices: [] }) as never);
+
+    await merchantService.servicePayment("SRV-1");
+
+    expect(api.get).toHaveBeenCalledWith("/v1/payment-admin/service-payments/SRV-1");
   });
 
   it("reads the service status page", async () => {

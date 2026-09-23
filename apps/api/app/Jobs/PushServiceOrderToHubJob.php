@@ -15,13 +15,13 @@ use Throwable;
 
 /**
  * Records a merchant's service purchase on the Uxio Hub in real time, so the
- * Hub's order queue is live rather than up to 5 minutes stale.
+ * Hub's order queue is live rather than up to a minute stale.
  *
  * Deliberately a QUEUED, fire-and-forget job: the purchase (and its Monetapay
  * payment) has already committed on this site by the time we dispatch, and a
  * slow or unreachable Hub must never fail or delay it. Retries cover a transient
  * Hub outage; a permanent failure only logs + alerts, because the Hub's own
- * 5-minute pull re-asserts the same row and heals anything the retries missed.
+ * 1-minute pull re-asserts the same row and heals anything the retries missed.
  *
  * The payload is the exact shape of GET /v1/hub/service-orders, and the Hub
  * upserts by invoice_number — so pushing the same invoice again (a status
@@ -75,7 +75,7 @@ class PushServiceOrderToHubJob implements ShouldQueue
     public function failed(Throwable $e): void
     {
         // The purchase is already complete; a failed push is an eventual-
-        // consistency event the 5-minute Hub pull will heal. Never touch the
+        // consistency event the 1-minute Hub pull will heal. Never touch the
         // invoice — only surface it for eyes.
         Log::error('PushServiceOrderToHubJob: all retries exhausted', [
             'invoice_number' => $this->invoice->invoice_number,

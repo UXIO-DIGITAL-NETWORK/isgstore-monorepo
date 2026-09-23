@@ -54,7 +54,78 @@ export interface ServiceInvoice {
   verified_at: string | null;
   /** Present once kita has confirmed payment; the installation hangs off it. */
   subscription?: { id: number; starts_at: string; ends_at: string; status: string } | null;
+  /** `hub_plan` = issued on the Hub's schedule, not raised by the client. */
+  source?: "local" | "hub_plan";
+  /** Settled with kita outside the gateway and recorded by an operator. */
+  settled_offline?: boolean;
+  period_starts_at?: string | null;
+  period_ends_at?: string | null;
   created_at: string;
+}
+
+/**
+ * One line of "what I am subscribed to, and what I must renew".
+ *
+ * Distinct from ServiceSubscription: that row only exists once a period has
+ * been PAID for, so the very thing a client needs to see — a period nobody has
+ * paid yet — is the one thing missing from it.
+ */
+export interface ServicePlanLine {
+  service_code: string;
+  service_name: string;
+  /**
+   * billed   — a recurring period.
+   * one_time — a setup fee: one bill, and paying it opens no subscription.
+   * prepaid  — settled outside the system (never shown as outstanding).
+   */
+  billing_mode: "billed" | "one_time" | "prepaid";
+  amount: number;
+  duration_days: number;
+  /** The one line whose lapse takes the storefront down. */
+  governs_licence: boolean;
+  is_active: boolean;
+  /** Paid up to. Null when nothing has been paid for yet — or when lifetime. */
+  active_until: string | null;
+  /**
+   * Bought outright: paid once, no end date. Its own flag because `active_until`
+   * is null for it too, and null there otherwise means "never paid".
+   */
+  lifetime: boolean;
+  next_period_starts_at: string | null;
+  next_due_at: string | null;
+  outstanding_total: number;
+  outstanding: {
+    id: number;
+    invoice_number: string;
+    amount: number;
+    due_at: string | null;
+    period_starts_at: string | null;
+    period_ends_at: string | null;
+  }[];
+}
+
+/** One Monetapay attempt and every bill it covers. */
+export interface ServiceBatchPayment {
+  reference_id: string;
+  channel: string | null;
+  channel_code: string | null;
+  type: string | null;
+  amount: number;
+  admin_fee: number;
+  total: number;
+  invoice_count: number;
+  status: "PENDING" | "PAID" | "EXPIRED";
+  expires_at: string | null;
+  is_expired: boolean;
+  instructions: ServiceInvoicePayment["instructions"];
+  invoices: {
+    id: number;
+    invoice_number: string;
+    service_name: string;
+    status: string;
+    amount: number;
+    admin_fee: number;
+  }[];
 }
 
 export interface ServiceSubscription {
@@ -62,8 +133,16 @@ export interface ServiceSubscription {
   service?: { id: number; code: string; name: string; category: ServiceCategoryValue };
   merchant?: { id: number; name: string };
   starts_at: string;
-  ends_at: string;
+  /** Null when bought outright — there is no end date to count down to. */
+  ends_at: string | null;
+  /** Always 0 when `lifetime`: there is nothing running out. */
   days_remaining: number;
+  /**
+   * Bought outright: paid once, no end date. Its own flag because `ends_at` is
+   * null for it, and the card would otherwise render "– --" and a red
+   * "0 hari tersisa" on a subscription the client paid for in full.
+   */
+  lifetime: boolean;
   status: string;
   invoice_number?: string | null;
   created_at: string;
@@ -194,9 +273,21 @@ export interface ServiceInvoicePayment {
   channel: string | null;
   channel_code: string | null;
   type: string | null;
+  /** THIS bill's own share of the attempt, never the batch's figures. */
   amount: number;
   admin_fee: number;
   total: number;
+  /**
+   * Set only when the attempt covered several bills. The client paid
+   * `batch.total` once; `amount`/`admin_fee` above are this bill's slice of it.
+   */
+  batch?: {
+    reference_id: string;
+    invoice_count: number;
+    amount: number;
+    admin_fee: number;
+    total: number;
+  } | null;
   status: "PENDING" | "PAID" | "EXPIRED";
   /** Server-declared; never re-derived on the client. */
   expires_at: string | null;

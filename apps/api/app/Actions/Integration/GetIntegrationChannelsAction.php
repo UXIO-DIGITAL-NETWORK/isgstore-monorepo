@@ -5,6 +5,7 @@ namespace App\Actions\Integration;
 use App\Actions\Financial\GetPaymentGatewayBalancesAction;
 use App\Actions\Financial\GetSupplierBalancesAction;
 use App\Support\Integration\IntegrationConfig;
+use App\Support\Uxiolabs\UxiolabsSupplier;
 
 /**
  * Connectivity overview for the Integration page — composes the same
@@ -54,8 +55,12 @@ class GetIntegrationChannelsAction
 
     private function supplierChannels(): array
     {
+        // Matched on the supplier's NAME, which is stored data on a row the whole
+        // pipeline resolves by it — and it has been renamed twice. Recognising
+        // every spelling is what stops a rename from silently dropping the balance
+        // off this card (no error, just an empty figure).
         $uxiolabs = collect($this->supplierBalances->execute())
-            ->first(fn (array $row) => strtolower($row['name']) === 'uxiolabs');
+            ->first(fn (array $row) => UxiolabsSupplier::isNamed($row['name']));
 
         if (! $uxiolabs) {
             return [];

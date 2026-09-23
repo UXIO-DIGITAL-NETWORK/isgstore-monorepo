@@ -39,13 +39,29 @@ export function usePaymentRealtime(): void {
       listen("finance.service-invoices", ".service-invoice.updated", invalidate(["finance", "service-invoices"]));
       listen(`user.${userId}.notifications`, ".notification.created", invalidate(["finance", "notifications"]));
     } else if (role === ROLES.ADMIN) {
-      listen(`merchant.${userId}.withdrawals`, ".withdrawal.updated", invalidate(["merchant", "withdrawals"]));
+      listen(`merchant.${userId}.withdrawals`, ".withdrawal.updated", () => {
+        void queryClient.invalidateQueries({ queryKey: ["merchant", "withdrawals"] });
+        // The detail page is keyed separately (["merchant","withdrawal",number]),
+        // so it needs its own invalidation — a client watching one payout settle
+        // must not have to reload.
+        void queryClient.invalidateQueries({ queryKey: ["merchant", "withdrawal"] });
+        // A payout settling moves the dashboard's balances, which nothing else
+        // in this subscription reports.
+        void queryClient.invalidateQueries({ queryKey: ["merchant", "dashboard"] });
+      });
       listen(`merchant.${userId}.service-invoices`, ".service-invoice.updated", () => {
         // Covers both the list (["merchant","service-invoices"]) and any open
         // detail (["merchant","service-invoice", id]) — the signal carries no id.
         void queryClient.invalidateQueries({ queryKey: ["merchant", "service-invoices"] });
         void queryClient.invalidateQueries({ queryKey: ["merchant", "service-invoice"] });
       });
+      // The client's own feed. The backend has always authorised it
+      // (user.{id}.notifications, self-ownership), and the bell's badge interval
+      // even assumes it — without this subscription a client's badge could sit
+      // two minutes behind a notification that had already arrived.
+      listen(`user.${userId}.notifications`, ".notification.created", () =>
+        queryClient.invalidateQueries({ queryKey: ["finance", "notifications"] }),
+      );
     }
 
     return () => {

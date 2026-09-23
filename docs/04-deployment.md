@@ -242,7 +242,9 @@ php artisan pricing:verify                   ← menggagalkan deploy bila menyim
 optimize:clear → config:cache → route:cache
 storage:link
 chown/chmod
+tulis batas unggah PHP      ← upload_max_filesize 8M, post_max_size 10M
 reload php-fpm              ← tanpa ini OPcache menyajikan bytecode lama
+tulis batas body nginx      ← client_max_body_size 8m di conf.d (konteks `http` saja), lalu `nginx -t`
 pasang cron schedule:run    ← deploy GAGAL bila hilang
 pasang supervisor + queue:restart
 periksa worker RUNNING      ← deploy GAGAL bila tidak
@@ -257,6 +259,32 @@ periksa worker RUNNING      ← deploy GAGAL bila tidak
 - `pricing:verify` menyimpang → harga per paket tidak sinkron.
 
 **Queue worker bukan opsional, dan kegagalannya senyap.** Delapan kelas job bergantung padanya, dan salah satunya menempatkan pesanan pelanggan yang sudah dibayar ke supplier. Supervisor menjalankan **dua** proses: satu tidak cukup, karena order supplier adalah panggilan HTTP keluar yang bisa menahan worker beberapa detik.
+
+**Batas unggah ikut diatur deploy, karena aplikasi sudah menjanjikannya.** Halaman Settings menawarkan logo GIF sampai 5 MB (`SettingController::maxKilobytes()`), dan GIF animasi memang sengaja tidak dikompresi — baik di browser maupun di `ImageOptimizer`, karena GD tidak bisa menulis animated WebP. Tapi tanpa dua langkah di atas, yang berlaku adalah default server: nginx `client_max_body_size 1m` dan PHP `upload_max_filesize 2m`. Keduanya menolak berkas sebelum Laravel sempat memeriksanya, dan yang tertolak justru berkas yang paling besar — GIF animasi. Gejalanya menyesatkan: unggahan gagal, pesannya generik, dan tidak ada satu pun log aplikasi karena permintaannya tidak pernah sampai.
+
+Keduanya ditulis sebagai drop-in (`/etc/php/<versi>/fpm/conf.d/99-uploads.ini` dan `/etc/nginx/conf.d/uploads.conf`), bukan suntingan berkas utama, supaya pembaruan paket tidak menghapusnya.
+
+**`conf.d/uploads.conf` hanya boleh berisi direktif konteks `http`.** `conf.d/*.conf` di-include dari dalam blok `http`, dan `location` tidak sah di sana. Sebuah blok `location` yang pernah ditulis ke berkas ini membuat `nginx -t` gagal dengan `"location" directive is not allowed here` dan menggagalkan deploy. Karena itu header per-lokasi — CSP untuk berkas `.svg` yang diunggah, yang disajikan dari origin API itu sendiri — **tidak** ikut masuk drop-in. Pasang manual di blok `server` vhost API:
+
+```nginx
+# di dalam server { } vhost api.topupgame.id, sebelum location ~ \.php$
+location ~* \.svg$ {
+    add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox" always;
+    add_header X-Content-Type-Options "nosniff" always;
+}
+```
+
+Sebuah SVG bisa membawa `<script>`, dan berkas unggahan disajikan dari origin yang sama dengan tempat kredensial panel dipakai. Policy di atas tetap membuat SVG tampil sebagai gambar, tapi melarangnya menjalankan apa pun.
+
+Kalau `nginx -t` gagal sesudah drop-in ditulis, deploy **membuang berkas itu** sebelum keluar. Ini disengaja: nginx yang konfigurasinya tidak bisa diuji juga tidak bisa di-reload maupun di-restart, jadi berkas buruk yang dibiarkan akan mematikan seluruh situs pada reboot atau perpanjangan sertifikat berikutnya — bukan sekadar menggagalkan satu deploy.
+
+Periksa sesudah deploy:
+
+```bash
+php -i | grep -E 'upload_max_filesize|post_max_size'
+sudo nginx -T | grep client_max_body_size
+sudo nginx -T | grep -c "default-src 'none'"   # 0 = CSP SVG belum dipasang manual
+```
 
 ---
 
@@ -293,7 +321,7 @@ Cron memanggil `schedule:run` tiap menit; sisanya diatur di `apps/api/routes/con
 | Kadensi | Perintah |
 |---|---|
 | tiap 5 menit | `payments:sync-expired`, `service-payments:sync-expired`, `withdrawals:sync-processing`, `uxiolabs:sync-processing`, `queue:health`, `uxiolabs:check-prices` |
-| tiap 15 menit | `hub:sync-catalog`, `hub:sync-channels` — **hanya bila `HUB_ENABLED`** |
+| tiap 1 menit | `hub:sync-catalog`, `hub:sync-channels`, `hub:sync-licence`, `hub:sync-plan` — **hanya bila `HUB_ENABLED`** (`hub:sync-plan` juga butuh `HUB_MANAGED_PLAN`) |
 | harian 00:10 | `memberships:renew` |
 | harian 00:15 | `memberships:expire` |
 | harian 00:20 | `services:expire` |

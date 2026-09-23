@@ -65,6 +65,28 @@ class StoreCheckoutRequest extends FormRequest
             return $rules;
         }
 
+        // Keyed payload — one rule per identifier the game declared, however many
+        // that is. This is the shape the storefront sends.
+        if ($this->has('order_fields')) {
+            $rules['order_fields'] = ['required', 'array'];
+
+            foreach ($schema->fields() as $field) {
+                $rules['order_fields.'.$field->key] = $field->validationRules();
+            }
+
+            return $rules;
+        }
+
+        // Positional payload: what an older storefront build sends. It can only
+        // address the two mirrored columns, so a schema declaring more than two
+        // identifiers must be refused here — where the customer can still fix it —
+        // rather than composed short at fulfilment, after the money moved.
+        if (count($schema->fields()) > count(OrderFormSchema::COLUMNS)) {
+            $rules['order_fields'] = ['required', 'array'];
+
+            return $rules;
+        }
+
         foreach (OrderFormSchema::COLUMNS as $column) {
             $field = $schema->fieldForColumn($column);
 
@@ -91,6 +113,12 @@ class StoreCheckoutRequest extends FormRequest
                     $attributes[$column] = $field->label;
                 }
             }
+
+            // The keyed payload carries a label per declared field, so a game with
+            // more identifiers than columns still reports them by name.
+            foreach ($schema->fields() as $field) {
+                $attributes['order_fields.'.$field->key] = $field->label;
+            }
         }
 
         return $attributes;
@@ -103,6 +131,12 @@ class StoreCheckoutRequest extends FormRequest
             'email.required' => 'Email wajib diisi untuk mengirim bukti pembelian.',
             'email.email' => 'Format email tidak valid.',
             // :attribute resolves to the game's own field label via attributes().
+            'order_fields.required' => 'Data akun wajib diisi.',
+            'order_fields.*.required' => ':attribute wajib diisi.',
+            'order_fields.*.regex' => 'Format :attribute tidak valid.',
+            'order_fields.*.min' => ':attribute minimal :min karakter.',
+            'order_fields.*.max' => ':attribute maksimal :max karakter.',
+            'order_fields.*.in' => ':attribute yang dipilih tidak tersedia.',
             'target_uid.required' => ':attribute wajib diisi.',
             'target_server.required' => ':attribute wajib diisi.',
             'target_uid.regex' => 'Format :attribute tidak valid.',

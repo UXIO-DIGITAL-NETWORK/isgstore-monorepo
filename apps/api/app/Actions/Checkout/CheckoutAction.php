@@ -17,16 +17,19 @@ use App\Models\PaymentChannel;
 use App\Models\Product;
 use App\Models\Promo;
 use App\Models\PromoRedemption;
+use App\Models\SupplierProduct;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Payment\MonetapayService;
 use App\Support\Membership\MembershipResolver;
 use App\Support\Money;
+use App\Support\OrderForm\OrderFormSchema;
 use App\Support\Payment\DefaultMerchant;
 use App\Support\Points\PointLedger;
 use App\Support\Points\PointRules;
 use App\Support\Pricing\PlanPrice;
 use App\Support\Promo\PromoResolver;
+use App\Support\Stock\DailyStockLimit;
 use App\Support\Wallet\WalletLedger;
 use Exception;
 use Illuminate\Support\Facades\Cache;
@@ -51,7 +54,12 @@ class CheckoutAction
         // Cache::add is atomic; the key is released on failure so the customer
         // can retry immediately after a rejected attempt.
         $identity = $dto->userId ?? $dto->guestContact ?? request()?->ip() ?? 'anon';
-        $dedupeKey = 'checkout:dedupe:'.md5($identity.'|'.$dto->productId.'|'.$dto->paymentChannelId.'|'.$dto->targetUid.'|'.$dto->targetServer);
+        // Every identifier takes part: two orders for the same product that differ
+        // only in the third id are not the same order.
+        $identifiers = $dto->orderFields !== []
+            ? implode('|', $dto->orderFields)
+            : $dto->targetUid.'|'.$dto->targetServer;
+        $dedupeKey = 'checkout:dedupe:'.md5($identity.'|'.$dto->productId.'|'.$dto->paymentChannelId.'|'.$identifiers);
 
         if (! Cache::add($dedupeKey, 1, 15)) {
             throw new Exception('Permintaan duplikat terdeteksi. Mohon tunggu beberapa detik sebelum mencoba lagi.');
@@ -78,6 +86,26 @@ class CheckoutAction
         if (! $product->status) {
             throw new Exception('Produk sedang tidak tersedia.');
         }
+
+        // ── The identifiers, in one shape from here on: key ⇒ value ──────────
+        // A game may declare more than the two mirrored columns; that arrives
+        // keyed. The legacy positional pair is widened into the same map, which
+        // is also why its extra fields come out empty — and why the request
+        // refuses that combination for such a game before reaching this point.
+        $schema = OrderFormSchema::forCategory($product->category);
+
+        $targetValues = $dto->orderFields !== []
+            ? ($schema?->bound($dto->orderFields) ?? $dto->orderFields)
+            : ($schema?->valuesFromPositional($dto->targetUid, $dto->targetServer) ?? []);
+
+        // The two mirrored columns still feed the invoice, the receipt, the
+        // WhatsApp message and the member list, so they hold the first two.
+        $uidKey = $schema?->keyAt(0);
+        $serverKey = $schema?->keyAt(1);
+
+        $targetUid = $uidKey !== null ? ($targetValues[$uidKey] ?? '') : $dto->targetUid;
+        $targetServer = trim($serverKey !== null ? ($targetValues[$serverKey] ?? '') : (string) $dto->targetServer);
+        $targetServer = $targetServer !== '' ? $targetServer : null;
 
         $channel = PaymentChannel::where('is_active', true)->findOrFail($dto->paymentChannelId);
 
@@ -114,6 +142,16 @@ class CheckoutAction
             throw new Exception('Transaksi dibatalkan otomatis: harga modal supplier sedang naik.');
         }
 
+        // ── 4a. The day's allowance ──────────────────────────────────────────
+        // A LOCAL quota, not the provider's stock — uxiolabs reports no quantity
+        // and has no availability probe. Checked here so an exhausted SKU fails
+        // before the gateway is called, and again under a row lock inside the
+        // write transaction, which is what actually stops two simultaneous
+        // orders from taking the same last slot.
+        if (DailyStockLimit::isExhausted($product, $activeSupplier)) {
+            throw new Exception(DailyStockLimit::EXHAUSTED_MESSAGE);
+        }
+
         // ── 4b. Promo (resolve only — validate + discount) ───────────────────
         // The quota lock + redemption happens later, inside the write
         // transaction; here we only price the order. Re-resolved rather than
@@ -121,7 +159,7 @@ class CheckoutAction
         $discount = 0;
 
         if ($dto->promoCode) {
-            $result = PromoResolver::resolve($dto->promoCode, $sellingPrice, $user);
+            $result = PromoResolver::resolve($dto->promoCode, $sellingPrice, $user, $product);
 
             if (! $result->valid) {
                 throw new Exception($result->message);
@@ -228,7 +266,7 @@ class CheckoutAction
         // record still carries it.
         $targetNickname = $dto->targetNickname
             ?: ($product->category
-                ? $this->validateGameIdAction->cachedNickname($product->category, (string) $dto->targetUid, $dto->targetServer)
+                ? $this->validateGameIdAction->cachedNickname($product->category, (string) $targetUid, $targetServer)
                 : null);
 
         // ── 7. External gateway call ─────────────────────────────────────────
@@ -336,11 +374,22 @@ class CheckoutAction
 
         DB::transaction(function () use (
             $dto, $user, $product, $channel, $activeSupplier, $invoiceNumber, $referenceId,
-            $targetNickname, $discount, $sellingPrice, $adminFee, $channelFee, $gatewayFee,
+            $targetNickname, $targetValues, $targetUid, $targetServer,
+            $discount, $sellingPrice, $adminFee, $channelFee, $gatewayFee,
             $taxAmount, $taxPercent, $margin, $grossAmount, $callGateway, $gatewayInsideTx,
             $pointsSpent, $pointsSpentAmount, $isExternal,
             &$paymentInstructions, &$pgTransactionId, &$transactionStatus,
         ) {
+            // The day's allowance, authoritatively: the mapping row is locked for
+            // the count, so two checkouts racing for the last slot serialise here
+            // and the loser sees the winner's transaction row — which was inserted
+            // in this same transaction, before either of them commits.
+            $lockedMapping = SupplierProduct::whereKey($activeSupplier->id)->lockForUpdate()->first();
+
+            if (DailyStockLimit::isExhausted($product, $lockedMapping)) {
+                throw new Exception(DailyStockLimit::EXHAUSTED_MESSAGE);
+            }
+
             // Promo: lock the row so two concurrent redemptions cannot both slip
             // past a quota of one, and re-validate under the lock (a slot may
             // have been taken since the pricing resolve above). The pre-computed
@@ -351,7 +400,7 @@ class CheckoutAction
                     ->lockForUpdate()
                     ->first();
 
-                $recheck = PromoResolver::resolve($dto->promoCode, $sellingPrice + $discount, $user);
+                $recheck = PromoResolver::resolve($dto->promoCode, $sellingPrice + $discount, $user, $product);
                 if (! $recheck->valid) {
                     throw new Exception($recheck->message);
                 }
@@ -381,8 +430,11 @@ class CheckoutAction
                 'locale' => $dto->locale ?? $user?->locale ?? 'id',
                 'product_id' => $product->id,
                 'supplier_id' => $activeSupplier->supplier_id,
-                'target_uid' => $dto->targetUid,
-                'target_server' => $dto->targetServer,
+                'target_uid' => $targetUid,
+                'target_server' => $targetServer,
+                // The whole set, so a game with more identifiers than columns is
+                // composed correctly at fulfilment.
+                'target_values' => $targetValues !== [] ? $targetValues : null,
                 'target_nickname' => $targetNickname,
                 'promo_id' => $promo?->id,
                 'amount_base' => $sellingPrice,

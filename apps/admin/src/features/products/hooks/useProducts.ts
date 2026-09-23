@@ -168,21 +168,6 @@ export const useDeleteProducts = () => {
   });
 };
 
-/** Lock/unlock prices against the supplier sync (row `[id]` or bulk). */
-export const useLockProducts = () => {
-  const { t } = useTranslation("products");
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ ids, locked }: { ids: string[]; locked: boolean }) => productsService.bulkLockPrice(ids, locked),
-    onSuccess: (_result, { ids, locked }) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success(`${ids.length === 1 ? "Price" : `${ids.length} prices`} ${locked ? "locked" : "unlocked"}`);
-    },
-    onError: () => toast.error(t("priceLockFailed")),
-  });
-};
-
 /** Show/hide the price on the storefront (row `[id]` or bulk). */
 export const useShowProducts = () => {
   const { t } = useTranslation("products");

@@ -1,10 +1,10 @@
 import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Badge } from "@/components/ui/badge";
+import { formatDateTime } from "@/utils/date";
 import { POOL_STATE_LABELS, type ProviderProduct } from "../types/product.type";
 import { ProductPriceCell } from "./ProductPriceCell";
 import { ProviderRowActions } from "./ProviderRowActions";
@@ -57,7 +57,7 @@ export const managedProviderColumnsFor = (t: TFunction<"products">): ColumnDef<P
     header: t("createdAt"),
     cell: ({ row }) => (
       <Text as="span" className="tabular-nums">
-        {format(new Date(row.original.created_at), "d MMM yyyy, HH.mm")}
+        {formatDateTime(row.original.created_at)}
       </Text>
     ),
   },
@@ -85,6 +85,32 @@ export const managedProviderColumnsFor = (t: TFunction<"products">): ColumnDef<P
             <Badge variant="outline" className="text-muted-foreground">{t("locked")}</Badge>
           )}
           {!p.is_available && <Badge variant="destructive">{t("unavailable")}</Badge>}
+        </Box>
+      );
+    },
+  },
+  {
+    id: "stock",
+    header: t("stockLeftToday"),
+    cell: ({ row }) => {
+      const { daily_order_limit: limit, stock_left_today: left } = row.original;
+
+      // No ceiling — which is every SKU until an admin sets one. A dash keeps a
+      // table full of them quiet.
+      if (limit === null) {
+        return (
+          <Text as="span" variant="small" className="text-muted-foreground">—</Text>
+        );
+      }
+
+      const remaining = left ?? limit;
+
+      return (
+        <Box className="flex items-center gap-1.5">
+          <Text as="span">
+            {remaining} / {limit}
+          </Text>
+          {remaining <= 0 && <Badge variant="destructive">{t("soldOutToday")}</Badge>}
         </Box>
       );
     },

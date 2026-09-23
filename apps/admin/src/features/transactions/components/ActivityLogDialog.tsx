@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { format } from "date-fns";
 import { Bot } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDateTimeSeconds } from "@/utils/date";
 import { initials } from "@/utils/initials";
 import { useTransactionActivityLog } from "../hooks/useTransactions";
 import type { ActivityLogEntry } from "../types/transaction.type";
@@ -167,7 +167,7 @@ export function ActivityLogDialog({ transactionId, open, onOpenChange }: Activit
                     {/* Seconds included: entries for one transaction can land
                         in the same minute, unlike the table's Time column. */}
                     <TableCell className="align-top whitespace-normal text-muted-foreground tabular-nums">
-                      {format(new Date(entry.created_at), "MMM d, HH:mm:ss")}
+                      {formatDateTimeSeconds(entry.created_at)}
                     </TableCell>
                   </TableRow>
                 ))

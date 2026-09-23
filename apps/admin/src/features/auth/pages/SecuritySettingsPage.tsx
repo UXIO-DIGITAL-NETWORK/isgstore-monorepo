@@ -2,11 +2,12 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ShieldCheck, ShieldOff, Smartphone } from "lucide-react";
+import { KeyRound, ShieldCheck, ShieldOff, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
+import { PasswordInput } from "@/components/common/PasswordInput";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,11 @@ const errorMessage = (error: unknown, fallback: string) =>
   (error as AuthApiError)?.response?.data?.message ?? fallback;
 
 /**
- * Account security: which device holds the second factor, and turning it off.
+ * Account security: the password, and which device holds the second factor.
+ *
+ * The password change lives here because this is the only page about the signed-in
+ * admin's own account. It is deliberately not gated behind `users.*` permissions —
+ * it acts on the caller, not on anyone else.
  *
  * Moving an authenticator — a new phone, a colleague handing the account over,
  * an app reinstalled — used to have no answer here at all. The only route was
@@ -40,6 +45,11 @@ export function SecuritySettingsPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
   const [password, setPassword] = useState("");
   const [liveCode, setLiveCode] = useState("");
   const [disablePassword, setDisablePassword] = useState("");
@@ -49,6 +59,52 @@ export function SecuritySettingsPage() {
   const [isMoving, setIsMoving] = useState(false);
 
   const enabled = Boolean(user?.two_factor_enabled);
+
+  const changePassword = useMutation({
+    mutationFn: () =>
+      authService.changePassword({
+        current_password: currentPassword,
+        password: newPassword,
+        password_confirmation: confirmPassword,
+      }),
+    onSuccess: () => {
+      // Neither the old nor the new password belongs in memory a second longer.
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordError(null);
+      toast.success(t("passwordChanged"));
+    },
+    onError: (error) => {
+      // The API re-checks `current_password`; keep it so a single correction is
+      // enough rather than retyping all three.
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordError(errorMessage(error, t("changePasswordFailed")));
+    },
+  });
+
+  /** The API enforces all of this too; saying it here saves a round trip. */
+  const submitPasswordChange = () => {
+    if (newPassword.length < 6) {
+      setPasswordError(t("passwordMinLength"));
+
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t("passwordMismatch"));
+
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError(t("passwordUnchanged"));
+
+      return;
+    }
+
+    setPasswordError(null);
+    changePassword.mutate();
+  };
 
   const rotate = useMutation({
     mutationFn: () => authService.rotateTwoFactor(password, liveCode),
@@ -108,6 +164,77 @@ export function SecuritySettingsPage() {
         <Heading
           level={1}
           variant="section"
+        >{t("securityTitle")}</Heading>
+        <Text variant="muted">{t("securitySubtitle")}</Text>
+      </Box>
+
+      <Box
+        as="form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitPasswordChange();
+        }}
+        className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-6"
+      >
+        <Box className="flex flex-col gap-1">
+          <Text className="font-medium">{t("changePasswordTitle")}</Text>
+          <Text variant="muted">{t("changePasswordSubtitle")}</Text>
+        </Box>
+
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="current-password">{t("currentPassword")}</Label>
+          <PasswordInput
+            id="current-password"
+            autoComplete="current-password"
+            className="rounded-xl"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+          />
+        </Box>
+
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="new-password">{t("newPassword")}</Label>
+          <PasswordInput
+            id="new-password"
+            autoComplete="new-password"
+            className="rounded-xl"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+          />
+        </Box>
+
+        <Box className="flex flex-col gap-1.5">
+          <Label htmlFor="confirm-password">{t("confirmPassword")}</Label>
+          <PasswordInput
+            id="confirm-password"
+            autoComplete="new-password"
+            className="rounded-xl"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+          />
+        </Box>
+
+        {passwordError && <Text className="text-destructive text-sm font-medium">{passwordError}</Text>}
+
+        <Button
+          type="submit"
+          className="w-fit rounded-xl"
+          disabled={
+            changePassword.isPending ||
+            currentPassword.length === 0 ||
+            newPassword.length === 0 ||
+            confirmPassword.length === 0
+          }
+        >
+          <KeyRound className="mr-2 size-4" />
+          {changePassword.isPending ? t("saving") : t("changePasswordAction")}
+        </Button>
+      </Box>
+
+      <Box className="border-border bg-card rounded-2xl border p-6">
+        <Heading
+          level={2}
+          variant="section"
         >{t("twoFactorTitle")}</Heading>
         <Text variant="muted">{t("twoFactorSubtitle")}</Text>
       </Box>
@@ -147,9 +274,9 @@ export function SecuritySettingsPage() {
               <Box className="flex flex-col gap-4">
                 <Box className="flex flex-col gap-1.5">
                   <Label htmlFor="rotate-password">{t("yourPassword")}</Label>
-                  <Input
+                  <PasswordInput
                     id="rotate-password"
-                    type="password"
+                    autoComplete="current-password"
                     className="rounded-xl"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
@@ -214,9 +341,9 @@ export function SecuritySettingsPage() {
             </Box>
             <Box className="flex flex-col gap-1.5">
               <Label htmlFor="disable-password">{t("confirmYourPassword")}</Label>
-              <Input
+              <PasswordInput
                 id="disable-password"
-                type="password"
+                autoComplete="current-password"
                 className="rounded-xl"
                 value={disablePassword}
                 onChange={(event) => setDisablePassword(event.target.value)}

@@ -103,7 +103,6 @@ export interface Product {
    * four-tier fixtures included), which falls back to `variants`. */
   plan_prices?: PlanPricePreview[];
   /** Price controls (bulk feature). `0/null = no limit`. */
-  is_price_locked?: boolean;
   is_price_hidden?: boolean;
   price_min?: number | null;
   price_max?: number | null;
@@ -307,6 +306,13 @@ export interface ProviderProduct {
   /** Selling-price window carried onto the product at promote. 0/null = no limit. */
   price_min: number | null;
   price_max: number | null;
+  /**
+   * The day's selling allowance for this SKU — a LOCAL quota, since the provider
+   * reports no quantity at all. null = no ceiling.
+   */
+  daily_order_limit: number | null;
+  /** Slots left today (null = no ceiling, 0 = nothing left). */
+  stock_left_today: number | null;
   /** Per-tier margin overrides in percent; null = derived from pricing rules.
    * Legacy four-tier view, kept for the provider table. */
   margins: Record<PriceTier, number | null>;
@@ -381,6 +387,12 @@ export interface SetProviderMarginInput {
    * 0 means the SKU earns nothing. */
   point_percent?: number | null;
   point_flat?: number | null;
+  /**
+   * The day's selling allowance for this SKU. Sent only when the form carries
+   * the field; null clears the ceiling back to unlimited, and 0 is a legitimate
+   * "not today".
+   */
+  daily_order_limit?: number | null;
 }
 
 /* ── Provider pool ─────────────────────────────────────────────────────────── */
@@ -498,14 +510,17 @@ export interface BulkCreateProductsResult {
 
 /**
  * What the 5-minute checker did to a mapping. `applied` is the routine auto-reprice;
- * `deactivated` and `negative_margin` are the rows an admin has to act on; `locked`
- * is a heads-up that a frozen price's margin has drifted.
+ * `unchanged` is the cost moving without the price following it; `deactivated` and
+ * `negative_margin` are the rows an admin has to act on. `locked` is history only —
+ * the price lock that produced those rows is gone, so the filter finds old ones and
+ * the checker can never add another.
  */
-export const PRICE_CHANGE_STATUSES = ["applied", "locked", "deactivated", "negative_margin"] as const;
+export const PRICE_CHANGE_STATUSES = ["applied", "unchanged", "locked", "deactivated", "negative_margin"] as const;
 export type PriceChangeStatus = (typeof PRICE_CHANGE_STATUSES)[number];
 
 export const PRICE_CHANGE_STATUS_LABELS: Record<PriceChangeStatus, string> = {
   applied: "Repriced",
+  unchanged: "Unchanged",
   locked: "Locked",
   deactivated: "Deactivated",
   negative_margin: "Negative margin",

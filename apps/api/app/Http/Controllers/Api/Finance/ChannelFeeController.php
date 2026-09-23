@@ -89,7 +89,7 @@ class ChannelFeeController extends Controller
         if ($contract['mismatch']) {
             $expected = $contract['expected'];
             $detail = $expected === null
-                ? "channel '{$paymentChannel->channel_code}' tidak ada di kontrak Monetapay"
+                ? "channel '{$paymentChannel->channel_code}' tidak ada di kontrak payment gateway"
                 : "gateway fee {$paymentChannel->gateway_fee_flat}+{$paymentChannel->gateway_fee_percent}% "
                     ."≠ kontrak {$expected['gateway_fee_flat']}+{$expected['gateway_fee_percent']}%";
 
@@ -103,7 +103,7 @@ class ChannelFeeController extends Controller
             // tuning a fee is one divergence, not one per keystroke.
             $this->discord->sendAlertOnce(
                 "channel-fee:{$paymentChannel->channel_code}",
-                "Fee gateway '{$paymentChannel->name}' menyimpang dari kontrak Monetapay: {$detail}. "
+                "Fee gateway '{$paymentChannel->name}' menyimpang dari kontrak payment gateway: {$detail}. "
                 .'Pastikan ini disengaja (mengikuti perubahan tarif) — kalau tidak, profit akan salah hitung.'
             );
         }
@@ -148,7 +148,7 @@ class ChannelFeeController extends Controller
     private function contractInfo(PaymentChannel $c): array
     {
         if (! MonetapayContractFees::has($c->channel_code)) {
-            // Unlisted channel (e.g. bca_va): no contract row to check against.
+            // Unlisted channel: no contract row to check against.
             return ['mismatch' => true, 'expected' => null];
         }
 

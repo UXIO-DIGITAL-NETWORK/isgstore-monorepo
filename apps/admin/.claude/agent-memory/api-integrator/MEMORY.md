@@ -7,8 +7,8 @@
 - Global entities: `src/types/models/` (migrate `src/models/user.model.ts` here). Provisional (pending API): `Transaction`, `BalanceMovement`, `Game`, `Product`, view-models `DashboardSummary`/`FinanceSummary` (`product_requirements.md §6`).
 
 ## Patterns (reference the shipped auth feature — **real staging HTTP since 2026-07-13**)
-- Service returns the **payload directly** (interceptor unwraps `response.data`): `features/auth/services/auth.service.ts` -> `api.post("/auth/login", data)` typed `Promise<AuthApiResponse>`, param `LoginPayload = LoginFormValues & { timezone: string }`. Timezone is auto-detected (`src/utils/getBrowserTimezone.ts`) and merged in the hook's `mutationFn` — never a form field, `loginSchema` stays `{email,password,remember}`.
-- Mutation hook: `features/auth/hooks/useLogin.ts` -> `useMutation({ mutationFn: (values) => authService.login({...values, timezone: getBrowserTimezone()}), onSuccess: (res, vars) => { setAuth(res.data, vars.remember); navigate({to:"/dashboard"}); } })`. Login `data` is `{ user, access_token, refresh_token }` (confirmed envelope).
+- Service returns the **payload directly** (interceptor unwraps `response.data`): `features/auth/services/auth.service.ts` -> `api.post("/auth/login", data)` typed `Promise<AuthApiResponse>`, param `LoginPayload = LoginFormValues & { timezone: string }`. `timezone` is sent as the platform constant (`PLATFORM_TIMEZONE` from `@/utils/date`) — **not** the browser's zone — and is never a form field, `loginSchema` stays `{email,password,remember}`. The API stores WIB and ignores whatever is sent.
+- Mutation hook: `features/auth/hooks/useLogin.ts` -> `useMutation({ mutationFn: (values) => authService.login({...values, timezone: PLATFORM_TIMEZONE}), onSuccess: (res, vars) => { setAuth(res.data, vars.remember); navigate({to:"/dashboard"}); } })`. Login `data` is `{ user, access_token, refresh_token }` (confirmed envelope).
 - Query hook (new): `useQuery({ queryKey:[...], queryFn: () => service.list(params) })`; server-side tables send `page`/`per_page`/`sort`/`filter[...]`/`search`, type against `PaginatedResponse<T>`.
 
 ## Mock-swap seam (this phase)

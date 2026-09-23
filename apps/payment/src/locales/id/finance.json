@@ -6,7 +6,7 @@
     "totalAdminFee": "Total Biaya Admin",
     "totalAdminFeeCaption": "Biaya admin (fee metode pembayaran) seluruh transaksi",
     "totalGatewayFee": "Total Fee Gateway",
-    "totalGatewayFeeCaption": "Fee Monetapay",
+    "totalGatewayFeeCaption": "Fee payment gateway",
     "totalTax": "Total Pajak",
     "totalTaxCaption": "PPN atas biaya admin seluruh transaksi",
     "settled": "Disetorkan ke Merchant",
@@ -122,7 +122,12 @@
     "loadFailed": "Gagal memuat notifikasi.",
     "loading": "Memuat…",
     "empty": "Belum ada notifikasi",
-    "unread": "Belum dibaca"
+    "unread": "Belum dibaca",
+    "markRead": "Tandai dibaca",
+    "markAll": "Tandai semua dibaca",
+    "filterAll": "Semua",
+    "filterUnread": "Belum dibaca",
+    "emptyDescription": "Notifikasi transaksi client, pembayaran layanan, permintaan penarikan, dan paket yang akan berakhir akan muncul di sini."
   },
   "internalWithdrawals": {
     "title": "Penarikan Internal",
@@ -220,10 +225,10 @@
     "trigger": "Setujui",
     "proofRequired": "Bukti transfer wajib diunggah",
     "titleManual": "Tandai Selesai (Transfer Manual)",
-    "titleMonetapay": "Cairkan via Monetapay",
-    "descriptionManual": "Gunakan ini jika dana sudah ditransfer secara manual di luar Monetapay. Lampirkan bukti transfer.",
-    "descriptionMonetapay": "Dana akan langsung ditransfer ke rekening penerima melalui Monetapay. Aksi ini tidak dapat dibatalkan.",
-    "methodMonetapay": "Monetapay",
+    "titleMonetapay": "Cairkan via payment gateway",
+    "descriptionManual": "Gunakan ini jika dana sudah ditransfer secara manual di luar payment gateway. Lampirkan bukti transfer.",
+    "descriptionMonetapay": "Dana akan langsung ditransfer ke rekening penerima melalui payment gateway. Aksi ini tidak dapat dibatalkan.",
+    "methodMonetapay": "Payment gateway",
     "methodManual": "Transfer manual",
     "merchant": "Merchant",
     "requester": "Diminta oleh",
@@ -235,7 +240,7 @@
     "cancel": "Batal",
     "submitting": "Memproses…",
     "submitManual": "Setujui & Tandai Selesai",
-    "submitMonetapay": "Setujui & Cairkan via Monetapay"
+    "submitMonetapay": "Setujui & Cairkan via payment gateway"
   },
   "rejectInvoice": {
     "trigger": "Tolak",
@@ -248,6 +253,9 @@
     "submitting": "Menyimpan…"
   },
   "notificationBell": {
+    "title": "Notifikasi",
+    "markAll": "Tandai semua dibaca",
+    "viewAll": "Lihat semua",
     "label": "Notifikasi",
     "labelUnread": "Notifikasi, {{count}} belum dibaca",
     "loading": "Memuat…",

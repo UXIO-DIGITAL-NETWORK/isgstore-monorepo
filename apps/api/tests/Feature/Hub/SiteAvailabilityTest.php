@@ -92,6 +92,26 @@ class SiteAvailabilityTest extends TestCase
             ->assertJsonFragment(['message' => 'Masa aktif situs telah berakhir. Perpanjang untuk mengaktifkan kembali.']);
     }
 
+    public function test_a_site_the_hub_has_never_answered_for_is_closed_by_default(): void
+    {
+        // "Never provisioned" is not "allowed". A Hub-managed site that has not
+        // yet landed a licence answer is dark until the Hub first says it may
+        // serve. The setUp() above writes a suspended state; wipe it, and change
+        // nothing else.
+        Setting::where('group', SiteLicenceState::GROUP)->delete();
+        SiteLicenceState::forget();
+
+        $this->getJson('/api/v1/games')
+            ->assertStatus(503)
+            ->assertJsonPath('data.licence.status', 'unknown')
+            ->assertJsonFragment(['message' => 'Situs belum diaktifkan. Hubungi pengelola untuk mengaktifkan.']);
+
+        // The doors that must stay open still do, so the client can reach the
+        // panel where they pay to switch it on.
+        $this->getJson('/api/v1/storefront/settings')->assertOk();
+        $this->getJson('/api/v1/ping')->assertOk();
+    }
+
     // ── Open, and load-bearing ───────────────────────────────────────────────
 
     public function test_the_hub_can_always_reach_in(): void
@@ -217,12 +237,36 @@ class SiteAvailabilityTest extends TestCase
         // test pass.
         sort($exempt);
         $this->assertSame([
+            // Installation management, driven from the Hub. Key-gated (read +
+            // write key) like the money-path relays below, and reachable while a
+            // site is switched off for the same reason: finishing an install is
+            // work on a suspended site too.
+            'DELETE api/v1/hub/installation-details/{serviceInstallationDetail}',
+            'DELETE api/v1/hub/installation-steps/{serviceInstallationStep}',
             'GET api/broadcasting/auth',
             'GET api/v1/health',
+            // What this site's merchant may withdraw by our sales rules. Read-only
+            // and key-gated, and the figure an operator needs while a site is dark
+            // and they are deciding whether to switch it back on.
+            'GET api/v1/hub/balances',
             'GET api/v1/hub/channels',
+            // A live sub-merchant balance reading. Read-only and key-gated like
+            // its neighbours; it asserts nothing the Hub cannot already see, and
+            // a switched-off site's balance is exactly what an operator needs
+            // while deciding whether to switch it back on.
+            'GET api/v1/hub/gateway-balance',
+            // How far along each installation is. Read-only, key-gated — the
+            // same standing as subscriptions/service-orders above.
+            'GET api/v1/hub/installations',
             'GET api/v1/hub/profit',
             'GET api/v1/hub/service-orders',
+            // What this site's owner holds, per service. Same standing.
+            'GET api/v1/hub/subscriptions',
             'GET api/v1/hub/summary',
+            // A live Uxiotopup supplier balance. Same standing as the gateway
+            // reading above: read-only, key-gated, and the number an operator
+            // wants while a site is dark.
+            'GET api/v1/hub/supplier-balance',
             'GET api/v1/hub/withdrawal-context',
             'GET api/v1/hub/withdrawals',
             'GET api/v1/ping',
@@ -245,6 +289,10 @@ class SiteAvailabilityTest extends TestCase
             'POST api/v1/auth/register',
             'POST api/v1/auth/reset-password',
             'POST api/v1/disbursement/merchant/callback',
+            'POST api/v1/hub/installation-details/{serviceInstallationDetail}/reveal',
+            'POST api/v1/hub/installation-steps/{serviceInstallationStep}/completion',
+            'POST api/v1/hub/installations/{installation}/detail-items',
+            'POST api/v1/hub/installations/{installation}/steps',
             'POST api/v1/hub/internal-withdrawals',
             'POST api/v1/hub/service-invoices/{serviceInvoice}/confirm',
             'POST api/v1/hub/service-invoices/{serviceInvoice}/reject',
@@ -260,6 +308,9 @@ class SiteAvailabilityTest extends TestCase
             'POST api/v1/payment/callback',
             'POST api/v1/uxiolabs/callback',
             'POST api/v1/uxiotopup/callback',
+            'PUT api/v1/hub/installation-details/{serviceInstallationDetail}',
+            'PUT api/v1/hub/installation-steps/{serviceInstallationStep}',
+            'PUT api/v1/hub/installations/{installation}',
         ], $exempt);
     }
 }

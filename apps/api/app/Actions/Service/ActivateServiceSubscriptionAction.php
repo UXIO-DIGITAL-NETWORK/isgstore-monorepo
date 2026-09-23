@@ -34,8 +34,28 @@ use Illuminate\Support\Carbon;
  */
 class ActivateServiceSubscriptionAction
 {
-    public function execute(ServiceInvoice $invoice): ServiceSubscription
+    public function execute(ServiceInvoice $invoice): ?ServiceSubscription
     {
+        // A one-time setup fee buys no window, so there is nothing to open and
+        // nothing to renew. It still tells the internal team and still reports
+        // the PAID order to the Hub — both sides must agree the money arrived —
+        // but no subscription and no installation.
+        if ($invoice->isOneTime()) {
+            $this->notify($invoice);
+
+            PushServiceOrderToHubJob::maybeDispatch($invoice);
+
+            // A one-time LICENCE is the exception: paying it is what lights the
+            // site, and the lifetime grant can only reach the Hub from here.
+            // Dispatching unconditionally and letting the job's own gate decide
+            // is deliberate — that gate is the one place that knows a licence
+            // from a setup fee, and duplicating the rule here is how the two
+            // drifted apart and left a paid-for site dark.
+            PushLicenceRenewalJob::maybeDispatch($invoice);
+
+            return null;
+        }
+
         $currentEndsAt = ServiceSubscription::query()
             ->where('merchant_id', $invoice->merchant_id)
             ->where('service_id', $invoice->service_id)
@@ -79,18 +99,7 @@ class ActivateServiceSubscriptionAction
         // Alert the internal team that a client paid a service bill. Both the
         // webhook and the manual confirm converge here, so this fires exactly
         // once per paid invoice regardless of which path settled it.
-        $merchantName = $invoice->merchant?->name ?? "Client #{$invoice->merchant_id}";
-        app(NotifyPaymentInternalAction::class)->execute(
-            type: 'service_payment',
-            title: 'Pembayaran layanan',
-            message: "{$merchantName} membayar {$invoice->service_name} — {$invoice->invoice_number} Rp ".number_format((int) $invoice->amount),
-            data: [
-                'invoice_number' => $invoice->invoice_number,
-                'merchant_id' => $invoice->merchant_id,
-                'service_id' => $invoice->service_id,
-                'amount' => (int) $invoice->amount,
-            ],
-        );
+        $this->notify($invoice);
 
         // The single convergence point for "the client now has this service" —
         // webhook, manual confirm and the recovery sweep all land here — so the
@@ -103,5 +112,23 @@ class ActivateServiceSubscriptionAction
         PushLicenceRenewalJob::maybeDispatch($invoice);
 
         return $subscription;
+    }
+
+    /** Both payment paths announce the same way, and a one-time fee announces too. */
+    private function notify(ServiceInvoice $invoice): void
+    {
+        $merchantName = $invoice->merchant?->name ?? "Client #{$invoice->merchant_id}";
+
+        app(NotifyPaymentInternalAction::class)->execute(
+            type: 'service_payment',
+            title: 'Pembayaran layanan',
+            message: "{$merchantName} membayar {$invoice->service_name} — {$invoice->invoice_number} Rp ".number_format((int) $invoice->amount),
+            data: [
+                'invoice_number' => $invoice->invoice_number,
+                'merchant_id' => $invoice->merchant_id,
+                'service_id' => $invoice->service_id,
+                'amount' => (int) $invoice->amount,
+            ],
+        );
     }
 }

@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
 use App\Events\TransactionStatusUpdated;
+use App\Jobs\SendDiscordActivityJob;
 use App\Models\Transaction;
 use App\Support\Transaction\ProviderStatusPolicy;
 use DomainException;
@@ -76,13 +77,27 @@ class TransactionObserver
     {
         // A new PENDING order should surface live in the admin feed.
         TransactionStatusUpdated::dispatch($transaction);
+
+        SendDiscordActivityJob::transactionCreated($transaction);
     }
 
     public function updated(Transaction $transaction): void
     {
-        if ($transaction->wasChanged('status')) {
-            TransactionStatusUpdated::dispatch($transaction);
+        if (! $transaction->wasChanged('status')) {
+            return;
         }
+
+        TransactionStatusUpdated::dispatch($transaction);
+
+        // Only the two ends the payment callback does NOT already announce.
+        // PAID is covered by the Monetapay notification, and COMPLETED by the
+        // supplier one — repeating either here would put two messages on one
+        // event and make the channel harder, not easier, to read.
+        match ($transaction->status) {
+            TransactionStatus::FAILED_PROVIDER => SendDiscordActivityJob::transactionFailed($transaction),
+            TransactionStatus::REFUNDED => SendDiscordActivityJob::transactionRefunded($transaction),
+            default => null,
+        };
     }
 
     /**

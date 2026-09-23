@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace Tests\Feature\Hub;
 
 use App\Models\GatewayBalanceSnapshot;
+use App\Models\Payment;
 use App\Models\PaymentChannel;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceInvoice;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Services\Payment\MonetapayService;
+use App\Support\Finance\FinanceTotals;
 use App\Support\Ledger\PlatformLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -88,6 +92,106 @@ class HubReportEndpointsTest extends TestCase
         $this->pull('/api/v1/hub/summary')->assertOk();
     }
 
+    /**
+     * /v1/hub/balances answers by OUR sales rules, not by the gateway: settled
+     * sales only, minus the withdrawals that still hold money. The Hub mirrors
+     * the sub-merchant's gateway figure separately — this is the other half, and
+     * the one that says what the merchant may actually take.
+     */
+    public function test_balances_report_the_merchant_figure_by_settlement_rules(): void
+    {
+        config(['services.withdrawal.hold_buffer_days' => 1]);
+
+        $merchant = User::factory()->create([
+            'role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id,
+        ]);
+
+        // QRIS settles T+1; with the 1-day buffer a sale clears after 48h.
+        $this->paidSale($merchant, 'qris', 100000, now()->subDays(3));
+        $this->paidSale($merchant, 'qris', 40000, now()->subHour());
+
+        $data = $this->pull('/api/v1/hub/balances')->assertOk()->json('data');
+
+        $this->assertSame(100000, $data['merchant_available']);
+        $this->assertSame(40000, $data['merchant_held']);
+        $this->assertSame(140000, $data['sales_total']);
+        $this->assertSame(0, $data['withdrawn_hold']);
+        $this->assertSame(1, $data['hold_buffer_days']);
+    }
+
+    public function test_balances_are_unknown_rather_than_zero_without_a_merchant(): void
+    {
+        $data = $this->pull('/api/v1/hub/balances')->assertOk()->json('data');
+
+        // No merchant yet: unknown, never a tidy zero the Hub would draw a
+        // conclusion from.
+        $this->assertNull($data['merchant_available']);
+        $this->assertNull($data['merchant_held']);
+        // The platform's own profit is still a real number.
+        $this->assertSame(0, $data['platform_available']);
+    }
+
+    public function test_balances_requires_the_hub_key(): void
+    {
+        $this->getJson('/api/v1/hub/balances')->assertStatus(403);
+    }
+
+    /** A paid sale on the given channel, with its payment stamped paid at $paidAt. */
+    private function paidSale(User $merchant, string $channelCode, int $amount, \DateTimeInterface $paidAt): void
+    {
+        $channel = PaymentChannel::firstOrCreate(
+            ['channel_code' => $channelCode],
+            PaymentChannel::factory()->make(['channel_code' => $channelCode])->getAttributes(),
+        );
+
+        $transaction = Transaction::factory()->create([
+            'merchant_id' => $merchant->id,
+            'payment_channel_id' => $channel->id,
+            'amount_base' => $amount,
+            'amount_fee' => 0,
+            'amount_total' => $amount,
+            'status' => 'PAID',
+            'created_at' => $paidAt,
+        ]);
+
+        Payment::factory()->create([
+            'transaction_id' => $transaction->id,
+            'payment_channel_id' => $channel->id,
+            'gross_amount' => $amount,
+            'status' => '3',
+            'paid_at' => $paidAt,
+        ]);
+    }
+
+    /** One sale with the fee columns the finance breakdown reads. */
+    private function saleWithFees(
+        User $merchant,
+        PaymentChannel $channel,
+        int $base,
+        int $adminFee,
+        int $gatewayFee,
+        int $tax,
+        string $status,
+    ): void {
+        $transaction = Transaction::factory()->create([
+            'merchant_id' => $merchant->id,
+            'payment_channel_id' => $channel->id,
+            'amount_base' => $base,
+            'amount_fee' => $adminFee,
+            'amount_total' => $base + $adminFee,
+            'status' => $status,
+        ]);
+
+        Payment::factory()->create([
+            'transaction_id' => $transaction->id,
+            'payment_channel_id' => $channel->id,
+            'gross_amount' => $base + $adminFee,
+            'gateway_fee' => $gatewayFee,
+            'tax_amount' => $tax,
+            'status' => '3',
+        ]);
+    }
+
     public function test_summary_shape_is_pinned(): void
     {
         PlatformLedger::record(amount: 50000, type: 'markup', reference: 'SEED-1');
@@ -151,6 +255,61 @@ class HubReportEndpointsTest extends TestCase
             ->assertJsonPath('data.gateway_balance', 777000);
 
         Http::assertNothingSent();
+    }
+
+    /**
+     * The finance breakdown the Hub renders is the site dashboard's own numbers.
+     *
+     * Two paid sales and one pending one: only paid rows may feed the fee
+     * totals, while the count is the whole book of merchant transactions —
+     * exactly how the dashboard has always read it.
+     */
+    public function test_summary_reports_the_finance_breakdown_the_dashboard_shows(): void
+    {
+        $channel = PaymentChannel::factory()->create(['channel_code' => 'qris']);
+        $merchant = User::factory()->create([
+            'role_id' => Role::firstOrCreate(['name' => 'Payment-Admin'])->id,
+        ]);
+
+        $this->saleWithFees($merchant, $channel, 100000, 2500, 700, 770, 'PAID');
+        $this->saleWithFees($merchant, $channel, 40000, 1000, 280, 308, 'PAID');
+        // Must not reach any total but the count.
+        $this->saleWithFees($merchant, $channel, 999999, 99999, 99999, 99999, 'PENDING');
+
+        $data = $this->pull('/api/v1/hub/summary')->assertOk()->json('data');
+
+        $this->assertSame(3500, $data['total_admin_fee']);
+        $this->assertSame(980, $data['total_gateway_fee']);
+        $this->assertSame(1078, $data['total_tax']);
+        $this->assertSame(140000, $data['total_settled_to_merchants']);
+        $this->assertSame(3, $data['total_transactions_count']);
+        $this->assertSame(140000, $data['total_transactions_amount']);
+    }
+
+    /**
+     * The finance breakdown must stay THREE queries, whatever it grows to return.
+     *
+     * The cost is pinned, separately from the payload shape, because this is the
+     * block that took the site past the Hub's 15s pull timeout: it ran six
+     * full-history aggregates per pull — two of them an IN list of every paid
+     * transaction id that MySQL materialises before probing `payments` — on an
+     * endpoint the Hub calls every minute. The symptom was silent and one-sided:
+     * `cURL error 28 ... 0 bytes received` on the Hub, nothing in the site's log.
+     *
+     * A count of queries is only a proxy for that cost, but it is the part that
+     * can be pinned without a dataset: a fourth aggregate, or the IN list coming
+     * back, fails here rather than in production a few hundred thousand sales later.
+     */
+    public function test_the_finance_breakdown_costs_three_queries(): void
+    {
+        $queries = 0;
+        DB::listen(function () use (&$queries): void {
+            $queries++;
+        });
+
+        FinanceTotals::snapshot();
+
+        $this->assertLessThanOrEqual(3, $queries, "the finance breakdown issued {$queries} queries");
     }
 
     public function test_withdrawals_lists_open_rows_with_type_discriminator(): void

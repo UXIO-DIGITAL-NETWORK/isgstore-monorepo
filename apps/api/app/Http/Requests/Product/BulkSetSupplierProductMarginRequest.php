@@ -36,6 +36,9 @@ class BulkSetSupplierProductMarginRequest extends FormRequest
             // global `points` settings, 0 = this SKU earns nothing.
             'point_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'point_flat' => ['nullable', 'integer', 'min:0'],
+            // The day's selling allowance — one number applied to every selected
+            // SKU. Omitted = leave each row's own ceiling alone.
+            'daily_order_limit' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ];
     }
 
@@ -109,5 +112,16 @@ class BulkSetSupplierProductMarginRequest extends FormRequest
     public function pointsProvided(): bool
     {
         return $this->has('point_percent') || $this->has('point_flat');
+    }
+
+    /** Null = no ceiling. See `App\Support\Stock\DailyStockLimit`. */
+    public function dailyOrderLimit(): ?int
+    {
+        return $this->filled('daily_order_limit') ? (int) $this->validated('daily_order_limit') : null;
+    }
+
+    public function dailyLimitProvided(): bool
+    {
+        return $this->has('daily_order_limit');
     }
 }

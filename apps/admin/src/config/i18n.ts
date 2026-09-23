@@ -14,6 +14,7 @@ import idIntegration from "@/locales/id/integration.json";
 import idMarketing from "@/locales/id/marketing.json";
 import idMembership from "@/locales/id/membership.json";
 import idNavbar from "@/locales/id/navbar.json";
+import idNotifications from "@/locales/id/notifications.json";
 import idPricing from "@/locales/id/pricing.json";
 import idProducts from "@/locales/id/products.json";
 import idRefunds from "@/locales/id/refunds.json";
@@ -33,6 +34,7 @@ import enIntegration from "@/locales/en/integration.json";
 import enMarketing from "@/locales/en/marketing.json";
 import enMembership from "@/locales/en/membership.json";
 import enNavbar from "@/locales/en/navbar.json";
+import enNotifications from "@/locales/en/notifications.json";
 import enPricing from "@/locales/en/pricing.json";
 import enProducts from "@/locales/en/products.json";
 import enRefunds from "@/locales/en/refunds.json";
@@ -92,12 +94,12 @@ function initialLocale(): Locale {
  */
 i18n.use(initReactI18next).init({
   resources: {
-    id: { activity: idActivity, administration: idAdministration, auth: idAuth, categories: idCategories, common: idCommon, content: idContent, dashboard: idDashboard, feedback: idFeedback, financial: idFinancial, integration: idIntegration, marketing: idMarketing, membership: idMembership, navbar: idNavbar, pricing: idPricing, products: idProducts, refunds: idRefunds, reports: idReports, transactions: idTransactions },
-    en: { activity: enActivity, administration: enAdministration, auth: enAuth, categories: enCategories, common: enCommon, content: enContent, dashboard: enDashboard, feedback: enFeedback, financial: enFinancial, integration: enIntegration, marketing: enMarketing, membership: enMembership, navbar: enNavbar, pricing: enPricing, products: enProducts, refunds: enRefunds, reports: enReports, transactions: enTransactions },
+    id: { activity: idActivity, administration: idAdministration, auth: idAuth, categories: idCategories, common: idCommon, content: idContent, dashboard: idDashboard, feedback: idFeedback, financial: idFinancial, integration: idIntegration, marketing: idMarketing, membership: idMembership, navbar: idNavbar, notifications: idNotifications, pricing: idPricing, products: idProducts, refunds: idRefunds, reports: idReports, transactions: idTransactions },
+    en: { activity: enActivity, administration: enAdministration, auth: enAuth, categories: enCategories, common: enCommon, content: enContent, dashboard: enDashboard, feedback: enFeedback, financial: enFinancial, integration: enIntegration, marketing: enMarketing, membership: enMembership, navbar: enNavbar, notifications: enNotifications, pricing: enPricing, products: enProducts, refunds: enRefunds, reports: enReports, transactions: enTransactions },
   },
   lng: initialLocale(),
   fallbackLng: DEFAULT_LOCALE,
-  ns: ["activity", "administration", "auth", "categories", "common", "content", "dashboard", "feedback", "financial", "integration", "marketing", "membership", "navbar", "pricing", "products", "refunds", "reports", "transactions"],
+  ns: ["activity", "administration", "auth", "categories", "common", "content", "dashboard", "feedback", "financial", "integration", "marketing", "membership", "navbar", "notifications", "pricing", "products", "refunds", "reports", "transactions"],
   defaultNS: "common",
   interpolation: { escapeValue: false },
 });

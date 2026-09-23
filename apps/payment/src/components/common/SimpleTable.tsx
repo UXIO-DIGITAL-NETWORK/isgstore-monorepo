@@ -76,7 +76,7 @@ export function SimpleTable<T>({
                   variant="small"
                   className="text-destructive"
                 >
-                  Gagal memuat data
+                  {t("table.error")}
                 </Text>
               </TableCell>
             </TableRow>

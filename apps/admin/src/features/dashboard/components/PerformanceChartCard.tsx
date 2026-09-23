@@ -1,7 +1,6 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
-import { format } from "date-fns";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
 import { Box } from "@/components/common/Box";
@@ -15,6 +14,7 @@ import { useChartSeries } from "../hooks/useDashboard";
 import { MONTH_OPTIONS } from "../types/dashboard.type";
 import type { MonthOption } from "../types/dashboard.type";
 import { formatCurrency } from "@/utils/currency";
+import { formatWib } from "@/utils/date";
 
 /** Derived from the canonical list, so the selector can never fall behind it. */
 const MONTH_CHOICES: { value: MonthOption; label: string }[] = MONTH_OPTIONS.map((value) => ({
@@ -42,7 +42,7 @@ export function PerformanceChartCard() {
   const { data, isLoading, isError, refetch } = useChartSeries(month);
 
   const chartData = useMemo(
-    () => (data ?? []).map((point) => ({ ...point, label: format(new Date(point.date), "MMM d") })),
+    () => (data ?? []).map((point) => ({ ...point, label: formatWib(point.date, "d MMM") })),
     [data],
   );
 

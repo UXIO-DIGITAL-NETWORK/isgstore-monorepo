@@ -36,6 +36,13 @@ export type AuthApiResponse = ApiResponse<LoginResult>;
 
 export type VerifyTwoFactorApiResponse = ApiResponse<AuthResponseData>;
 
+/** What `PUT /v1/me/password` expects — `confirmed` compares the two passwords. */
+export interface ChangePasswordInput {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}
+
 export type AuthApiError = {
   response: {
     data: {

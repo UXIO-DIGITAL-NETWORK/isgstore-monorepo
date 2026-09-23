@@ -44,6 +44,62 @@ export interface BalanceAdjustmentInput {
   reason: string;
 }
 
+/** Aggregates + membership for one account, from `GET /v1/users/{id}/overview`. */
+export interface UserOverview {
+  user: AdminUser;
+  stats: {
+    transactions_count: number;
+    /** Settled money only — a PENDING order is not spend. */
+    total_spent: number;
+    refunds_count: number;
+    topups_count: number;
+  };
+  membership: {
+    plan: string | null;
+    status: string;
+    starts_at: string | null;
+    ends_at: string | null;
+    /** NULL `ends_at` — paid once, never expires. */
+    lifetime: boolean;
+  } | null;
+}
+
+/** One movement of an account's wallet. */
+export interface BalanceMutationRow {
+  id: string;
+  type: string;
+  amount: number;
+  balance_before: number;
+  balance_after: number;
+  reference: string | null;
+  description: string | null;
+  created_at: string;
+}
+
+/** One movement of an account's points. */
+export interface PointLedgerRow {
+  id: string;
+  type: string;
+  amount: number;
+  points_before: number;
+  points_after: number;
+  reference: string | null;
+  description: string | null;
+  created_at: string;
+}
+
+/** A refund tied to an account, as the buyer or as the claimant. */
+export interface UserRefundRow {
+  id: string;
+  refund_number: string;
+  invoice_number: string | null;
+  amount: number;
+  status: string;
+  method: string;
+  created_at: string;
+  refunded_at: string | null;
+}
+
 export interface Setting {
   id: string;
   group: string;
@@ -61,6 +117,8 @@ export interface AdministrationListParams {
   search?: string;
   role_id?: string;
   role?: string;
+  /** Allowlist of role names in one request, e.g. the user list's admin+member. */
+  roles?: string[];
   payment_type?: string;
   page?: number;
   per_page?: number;

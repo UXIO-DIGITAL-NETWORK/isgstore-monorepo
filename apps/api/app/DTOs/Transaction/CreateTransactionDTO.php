@@ -22,5 +22,9 @@ readonly class CreateTransactionDTO
         public ?string $sn,
         public ?string $supplierTrxId,
         public ?string $supplierStatus,
+        // Every identifier the product's category declares, keyed by its field
+        // keys and in declaration order. Empty when the category has no schema,
+        // in which case the two mirrored values above are all there is.
+        public array $orderFields = [],
     ) {}
 }

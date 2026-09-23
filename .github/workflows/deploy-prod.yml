@@ -194,6 +194,13 @@ jobs:
             # 3. Tulis .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
 
+            # 3b. Kredensial produksi — APP_KEY, kata sandi database, kunci
+            #     gateway — tidak boleh terbaca user lain di server. Umask biasa
+            #     menghasilkan 0644, dan langkah 8 hanya meng-chmod storage dan
+            #     bootstrap/cache. Lihat docs/04-deployment.md §Catatan keamanan.
+            chmod 640 .env
+            sudo chown "$(id -un):www-data" .env
+
             # 4. Dependensi produksi
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
@@ -228,9 +235,60 @@ jobs:
             sudo chown -R "$(id -un):www-data" "$API_DIR"
             sudo chmod -R 775 "$API_DIR/storage" "$API_DIR/bootstrap/cache"
 
+            # 8a. Batas unggah berkas. Default PHP (upload_max_filesize 2M) lebih
+            #     kecil daripada plafon 5 MB yang dijanjikan halaman Settings
+            #     untuk logo GIF — dan GIF animasi adalah satu-satunya unggahan
+            #     yang sengaja TIDAK dikompresi di browser, jadi justru dialah
+            #     yang pertama tertolak. Tanpa dua baris ini, `max:5120` di
+            #     SettingController tidak pernah bisa tercapai.
+            #     Drop-in, bukan suntingan php.ini utama, supaya pembaruan paket
+            #     tidak menghapusnya.
+            PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+            PHP_CONF_DIR="/etc/php/$PHP_VER/fpm/conf.d"
+            if [ -d "$PHP_CONF_DIR" ]; then
+              printf '%s\n' 'upload_max_filesize=8M' 'post_max_size=10M' \
+                | sudo tee "$PHP_CONF_DIR/99-uploads.ini" >/dev/null
+            else
+              echo "::warning:: $PHP_CONF_DIR tidak ada — batas unggah PHP tidak diatur."
+            fi
+
             # 8b. Reload php-fpm — OPcache akan menyajikan bytecode lama tanpa ini
             FPM=$(systemctl list-units --type=service --state=running 'php*-fpm.service' --no-legend | awk '{print $1}' | head -1)
             if [ -n "$FPM" ]; then sudo systemctl reload "$FPM"; else echo "::warning::php-fpm tidak ditemukan"; fi
+
+            # 8c. Batas badan permintaan nginx. Default-nya 1m, jadi ia menolak
+            #     lebih dulu daripada PHP. Ditulis sebagai drop-in di conf.d/,
+            #     bukan disunting ke vhost: berkas vhost disusun manual per
+            #     situs, dan menebak path-nya berarti deploy bisa mengubah
+            #     berkas yang salah.
+            #
+            #     HANYA direktif konteks-http yang boleh ada di berkas ini.
+            #     conf.d/*.conf di-include dari dalam blok `http`, dan sebuah
+            #     blok `location` di sini membuat `nginx -t` gagal dengan
+            #     "location directive is not allowed here" — pernah terjadi.
+            #     Header per-lokasi (CSP untuk berkas .svg) karena itu tidak
+            #     bisa ditulis di sini; langkahnya ada di docs/04-deployment.md.
+            if command -v nginx >/dev/null; then
+              sudo tee /etc/nginx/conf.d/uploads.conf >/dev/null <<'NGINXCONF'
+            client_max_body_size 8m;
+            NGINXCONF
+              # Kalau berkas ini tetap membuat konfigurasi tidak sah, ia dibuang
+              # sebelum keluar. nginx yang konfigurasinya tidak bisa diuji juga
+              # tidak bisa di-reload maupun di-restart, jadi berkas buruk yang
+              # ditinggal di sini akan mematikan seluruh situs pada reboot atau
+              # perpanjangan sertifikat berikutnya.
+              if ! sudo nginx -t; then
+                sudo rm -f /etc/nginx/conf.d/uploads.conf
+                echo "::error::nginx -t gagal; drop-in uploads.conf dibuang supaya nginx tetap bisa dimuat."
+                exit 1
+              fi
+              sudo systemctl reload nginx
+              # conf.d/ tidak selalu di-include (tergantung paket nginx).
+              # Diperiksa dari konfigurasi yang benar-benar dimuat, supaya
+              # "tidak berlaku" tidak lewat sebagai "beres".
+              sudo nginx -T 2>/dev/null | grep -q 'client_max_body_size 8m' \
+                || echo "::warning::client_max_body_size tidak muncul di nginx -T — setel manual di vhost API."
+            fi
 
             # 9. Cron scheduler — deploy GAGAL bila hilang, karena tanpa ini
             #    13 perintah terjadwal berhenti diam-diam.

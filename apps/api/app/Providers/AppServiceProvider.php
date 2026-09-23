@@ -2,13 +2,17 @@
 
 namespace App\Providers;
 
+use App\Services\DiscordWebhookService;
 use App\Support\Storefront\Catalog;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Pusher\PusherException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +31,34 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
         $this->configureRouteBindings();
+        $this->configureRealtimeAlerts();
+    }
+
+    /**
+     * Make a failed realtime push audible, without making it fatal.
+     *
+     * A push that does not land is a DEGRADED mode, not a lost bill: the
+     * payment page's fallback poll still delivers it seconds later. So the
+     * broadcast itself is rescued (see ServiceInvoiceUpdated's ShouldRescue) and
+     * this only decides what is said about it.
+     *
+     * Silence is the thing to avoid. The queued broadcast this replaces could
+     * fail invisibly — a dead worker meant every merchant's page quietly stopped
+     * updating, and nothing anywhere reported it.
+     *
+     * Chatty is the other thing to avoid: Pusher being down fails EVERY push at
+     * once, so this is deduped to one alert an hour rather than one an invoice.
+     */
+    private function configureRealtimeAlerts(): void
+    {
+        Exceptions::reportable(function (PusherException $e) {
+            Log::warning('Realtime broadcast failed', ['error' => $e->getMessage()]);
+
+            app(DiscordWebhookService::class)->sendAlertOnce(
+                'realtime:broadcast',
+                'Push realtime gagal: '.$e->getMessage().' — klien memakai polling cadangan.'
+            );
+        });
     }
 
     /**
@@ -101,11 +133,29 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(30)->by($request->ip());
         });
 
+        // Discord's own ceiling is roughly thirty messages a minute per webhook.
+        // Every activity notification goes through SendDiscordActivityJob, and
+        // this is what stops a busy hour from turning into a 429 storm that
+        // Discord answers by dropping the messages. One shared budget, because
+        // there is one webhook.
+        RateLimiter::for('discord', function () {
+            return Limit::perMinute(25)->by('activity');
+        });
+
         // Config-sync pokes from the Hub. One caller, and the job behind it is
         // unique-for-60s anyway, so this only has to blunt a loop — a panel
         // save burst of a dozen in a minute is normal and must pass.
         RateLimiter::for('hub-sync', function (Request $request) {
             return Limit::perMinute(12)->by($request->ip());
+        });
+
+        // The Hub asking for a LIVE gateway balance. Every call reaches
+        // Monetapay, whose inquiry takes up to 15 seconds, so this is sized for
+        // an hourly sweep plus an operator pressing "Perbarui" — not for
+        // anything that polls. The figure is cached here for a minute anyway, so
+        // a faster caller would only get the same number back.
+        RateLimiter::for('hub-balance', function (Request $request) {
+            return Limit::perMinute(6)->by($request->ip());
         });
     }
 }

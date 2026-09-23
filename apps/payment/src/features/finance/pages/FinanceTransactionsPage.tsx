@@ -10,8 +10,9 @@ import { RecapDialog } from "@/components/common/RecapDialog";
 import { SimpleTable, type Column } from "@/components/common/SimpleTable";
 import { PaymentStatusBadge, ProviderStatusBadge } from "@/components/common/TransactionStatusBadges";
 import { resolvePaymentStatus, resolveProviderStatus } from "@/lib/transactionStatus";
+import { type TransactionFilterState } from "@/lib/transactionSearch";
 import { Text } from "@/components/common/Text";
-import { TransactionFilters, type TransactionFilterState } from "@/components/common/TransactionFilters";
+import { TransactionFilters } from "@/components/common/TransactionFilters";
 import { TransactionSummaryPills } from "@/components/common/TransactionSummaryPills";
 import { useDebouncedValue } from "@/components/common/useDebouncedValue";
 import {

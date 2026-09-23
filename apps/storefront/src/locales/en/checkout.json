@@ -54,6 +54,7 @@
       "special": "Special Items"
     },
     "unit": "Diamonds",
+    "soldOut": "Sold out",
     "popular": "Best Seller",
     "bonus": "Bonus",
     "instantDelivery": "Instant\nDelivery"
@@ -80,7 +81,7 @@
     "emailHelperNote": "Your purchase receipt will be sent to this email",
     "emailRequired": "Email is required",
     "emailInvalid": "Invalid email format",
-    "receiptNote": "We will send your purchase receipt to the email and WhatsApp number you entered above."
+    "receiptNote": "We will send your purchase receipt to the email address you entered above."
   },
   "promo": {
     "title": "Promo Code",
@@ -128,6 +129,7 @@
     "checkingId": "Checking ID...",
     "instantProcess": "Instant processing time",
     "pointsDiscount": "Point Discount",
+    "promoDiscount": "Promo Discount",
     "pointsEarned": "Points earned",
     "pointsEarnedGuest": "Sign in to earn {{points}} points from this order"
   },

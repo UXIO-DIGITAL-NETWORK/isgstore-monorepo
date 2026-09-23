@@ -17,8 +17,8 @@ class DatabaseSeeder extends Seeder
      *
      * What is seeded is only what the app cannot start without, or what is
      * configuration rather than inventory: roles, three known logins, payment
-     * channels, pricing rules, the Uxiolabs supplier, category types, plus CMS
-     * content and the plans/services catalogues.
+     * channels, pricing rules, the Uxiolabs supplier, category types, plus the
+     * static pages and site settings.
      *
      * The catalogue seeders (Category, SubCategory, ServerCategory,
      * ServerCategoryOption, OrderFormSchema, Product, SupplierCategory,
@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
      * Order still follows the foreign keys:
      * 1. Foundation (roles, category types, suppliers, payment channels, pricing)
      * 2. Users (depends on roles)
-     * 3. CMS content, plans, services
+     * 3. Static pages + settings
      */
     public function run(): void
     {
@@ -46,6 +46,10 @@ class DatabaseSeeder extends Seeder
 
             // === 2. Users ===
             UserSeeder::class,
+            // The one login that skips the second factor (two_factor_exempt).
+            // Its own seeder so a live install can add it without re-running
+            // UserSeeder — which would reset the operator passwords.
+            DeveloperUserSeeder::class,
             // System account for Hub-driven money-path actions (approved_by).
             HubSystemUserSeeder::class,
 
@@ -70,23 +74,30 @@ class DatabaseSeeder extends Seeder
             // ActivityLogSeeder::class,
 
             // === 6. CMS Content ===
-            BannerSeeder::class,
-            AnnouncementSeeder::class,
-
-            // § Content & marketing. FlashSaleSeeder self-disables when there
-            // are no active products, which is now always the case on a fresh
-            // install — it stays in the list for installs that have stock.
-            ArticleSeeder::class,
-            FaqSeeder::class,
+            // Only the STATIC pages and the site's own settings are seeded.
+            // Promos, flash sales and the editorial content — announcements,
+            // articles and their categories, FAQ, testimonials — are the
+            // operator's own listing, not the app's: a fresh install shows those
+            // admin pages EMPTY. Their seeders used to ship sample rows
+            // (HEMAT10, "Flash Sale Mingguan", Admin_Topupgame's articles) that
+            // every install had to delete before publishing anything real.
+            //
+            // § The static pages stay: they carry backing copy the storefront
+            // links to (privacy policy, terms, refund policy).
+            //
+            // § No BannerSeeder either: it seeded ten rows whose image files this
+            // repository never shipped, so the storefront's feed dropped every
+            // one of them. Hero artwork is the operator's to upload.
             PageSeeder::class,
-            TestimonialSeeder::class,
             SettingSeeder::class,
-            PromoSeeder::class,
-            FlashSaleSeeder::class,
 
-            // § Payment-page services kita sells to its clients. After
-            // PaymentChannelSeeder, whose rows Monetapay's service points at.
-            ServiceSeeder::class,
+            // § Payment-page services are deliberately NOT seeded either. The
+            // Hub owns that catalogue now: `hub:sync-catalog`
+            // (SyncCatalogFromHubAction) mirrors it down, matched on `code`, and
+            // the payment page reads whatever the mirror holds. Seeding a copy
+            // here would show a client services their Hub had never published,
+            // and would come back on every fresh install. ServiceSeeder still
+            // exists and still works — it is simply not called.
         ]);
     }
 }

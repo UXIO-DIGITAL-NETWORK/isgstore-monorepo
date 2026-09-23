@@ -6,8 +6,8 @@ import { formatCurrency } from "@/utils/currency";
 
 /**
  * A price/cost change rendered as old → new (whole rupiah). When there is no new
- * value — a locked or deactivated event that did not reprice — only the old value
- * is shown, plainly.
+ * value — a deactivated event, or a historical `locked` one, neither of which
+ * repriced — only the old value is shown, plainly.
  */
 export function PriceChangePairCell({ oldValue, newValue }: { oldValue: number | null; newValue: number | null }) {
   const old = oldValue === null ? "—" : formatCurrency(oldValue, { fractionDigits: 0 });

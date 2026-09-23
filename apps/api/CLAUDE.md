@@ -69,6 +69,7 @@ Route → FormRequest (validation) → Controller (maps DTO) → Action (busines
 2. Resolves User (nullable for guests), Product (with active SupplierProducts eager-loaded, `status` must be true), PaymentChannel.
 3. Price is plan-resolved by `App\Support\Pricing\PlanPrice` — see **Membership-plan pricing**. Guests resolve to the default (free) plan.
 4. Margin guard: aborts if `selling_price - supplier_price < 0`. The price/margin are frozen into the Transaction row at checkout — a later supplier price change (daily sync) is margin variance, not a correctness bug.
+4b. **Daily allowance** (`supplier_products.daily_order_limit`): aborts when the SKU's orders for the current WIB day have reached its ceiling. A LOCAL quota — uxiolabs reports only `aktif`/`nonaktif` and has no availability probe, so there is no provider number to mirror. Checked here so an exhausted SKU fails before the gateway is called, and **again inside the write transaction under `lockForUpdate` on the mapping row**, which is what stops two simultaneous orders taking the same last slot. The count is derived from `transactions` (statuses other than `FAILED_PROVIDER`/`REFUNDED`/`EXPIRED`, since `created_at >= midnight WIB`), never decremented — so a released order frees its slot with no release path to maintain. Storefront rows expose `stock_left` (null = no ceiling, which is NOT the same as 0 = sold out) and `is_sold_out`; see `App\Support\Stock\DailyStockLimit`.
 5. Creates `Transaction` (status: `PENDING`) then `Payment` (status: `'1'`) inside a single `DB::transaction()`.
 6. **Balance path** (`channel_code === 'balance'`): locks the user row FOR UPDATE, debits through `WalletLedger::record(type: 'purchase')` (not a raw `decrement` — a statement showing a refund credit with no matching debit is worse than no statement), marks Payment `'3'`, calls `ProcessUxiolabsTransactionAction` synchronously.
 7. **External path**: calls `MonetapayService::createTransaction()`, returns `qr_string` or `virtual_account` to the client.
@@ -127,7 +128,7 @@ Two rules that keep the guard airtight:
 Every refund ends up in a wallet — the only question is whose, and how soon:
 
 - **Member → wallet, immediately.** `WalletLedger::record(type: 'refund')` — never a raw `increment`, so it lands in `balance_mutations` with before/after figures. `payments.status` and `transactions.status` both go `REFUNDED` in the same transaction, and the merchant settlement is reversed post-commit. Method `balance`, born `COMPLETED`, zero admin actions.
-- **Guest → the claim queue.** Method `balance_claim`, born `WAITING_ACCOUNT`, with a claim link emailed and WhatsApped. There is no account to credit yet: the customer follows the link, creates or signs in to an account, and an admin verifies it before the balance moves.
+- **Guest → the claim queue.** Method `balance_claim`, born `WAITING_ACCOUNT`, with a claim link emailed (and WhatsApped once delivery is switched on — see **WhatsApp delivery is off by default**). There is no account to credit yet: the customer follows the link, creates or signs in to an account, and an admin verifies it before the balance moves.
 - **`manual_transfer` is retired.** No new rows are opened this way, but the ones already open still drain through the same admin queue, so every payout guard must keep handling it. It is legacy, not dead.
 
 **The load-bearing invariant is that `payments.status` flips exactly when the credit happens** — at initiation on the member path, at `complete` on both guest paths. `GetFinancialSummaryAction` and `ReconcileGatewayFeesAction` read that column as cash out, and since unclaimed refunds never expire a row can legitimately sit `SUCCESS` for months. Flipping it at request time would report money that is still in the account.
@@ -188,6 +189,21 @@ Every refund ends up in a wallet — the only question is whose, and how soon:
 `kontak` on the uxiolabs order is left raw — its own fallback is the literal `'0000000000'`, so it is not a format-validated field. The four PiWAPI senders are left alone: E.164 is exactly what they want.
 
 Accepted and documented in the helper: a foreign number typed **bare** (a Singaporean `91234567`, no plus) reads as local. That is inherent to supporting country codes without a picker — an exact collision, not enumeration.
+
+### WhatsApp delivery is off by default
+
+WhatsApp is part of the future subscription, so nothing goes out over it yet:
+`PIWAPI_ENABLED` (default **false**) gates both PiWAPI senders — the purchase
+receipt (`SendTransactionWhatsAppJob`) and the refund notifications
+(`SendRefundWhatsAppJob`). **Email is unaffected and is the only channel right
+now.**
+
+`PiWapiService::canSend()` is the guard every caller must use; it is
+`isEnabled() && isConfigured()`, so a switched-off gateway drops the send
+silently instead of reaching the API — including a job already sitting in the
+queue when the switch flips. `isConfigured()` (credentials present) stays its own
+question on purpose, so the Integration page can still report a reachable gateway
+while delivery is off. Flipping `PIWAPI_ENABLED=true` is the whole re-enable.
 
 ### Membership-plan pricing
 
@@ -337,6 +353,8 @@ Things that are load-bearing and easy to undo:
 
 **Deployment consequence, pinned by `GameCatalogSeedTest`:** every pre-existing admin is refused the panel until they enrol. The way out is always open because `/2fa/setup` and `/2fa/confirm` live outside the admin group.
 
+**One account is exempt, and only one.** `users.two_factor_exempt` — granted by `DeveloperUserSeeder` to `developer@uxiotopup.id` — is a deliberate hole: that login never owes a factor, so the developer can get in when the authenticator is lost. `App\Support\Auth\TwoFactorPolicy::requiredFor()` is the single answer to "does this account owe one", read by the panel gate (`EnsureTwoFactorSatisfied`), the client's navigation signal (`UserResource.two_factor_required`) and the login door (`IssueSessionAction`). Three separate copies is exactly how one of them ends up disagreeing — either bouncing the developer to the setup screen the API has already waved through, or leaving a normal admin with a password alone. `where two_factor_exempt = 1` lists every account that skips the factor.
+
 ### Language (ID/EN)
 
 **`App\Support\Locale\SupportedLocale` is the one definition of which languages exist.** The set
@@ -361,8 +379,11 @@ English defaults — so the language of an error depended on the endpoint. Engli
 `lang/en/validation.php` because the framework ships its own.
 
 **`PATCH /v1/me/locale` is its own endpoint, not a field on `sync-timezone`.** That route's name
-promises one thing, and the two are different kinds of fact: a timezone is detected from the browser
-and synced silently, a language is chosen by a person.
+promises one thing, and the two are different kinds of fact: a language is chosen by a person, while
+the timezone is not a choice at all. The platform runs on one wall clock — WIB — and every panel
+renders it, so `sync-timezone` survives only as a compatibility shim that normalises a stale account
+onto `Support/DateTime/Wib::TZ`. Login, register and the Google path do the same; `users.timezone`
+is stored, never obeyed.
 
 **Still outstanding:** `ApiResponse` and the ~4,000 literals across `app/Http/Controllers` and
 `app/Actions` are untouched, so most `message` fields remain hardcoded and mixed
@@ -399,6 +420,66 @@ that needed a human: a merchant balance that could not be debited.
 re-delivers `processing` while an order is in flight. The gate is on the Discord call
 alone, never on `$notification` — that variable also drives the refund and the receipt,
 both of which must keep running on a redelivery.
+
+**Supplier outcomes go through `SendUxiolabsStatusNotificationAction`, from every path.**
+Monetapay announced every payment it took while fulfilment announced nothing unless the
+callback fired — so the channel read "💳 Pembayaran Diterima" and then went silent,
+whether the customer got their diamonds or the order died upstream. The callback is the
+*unreliable* path (`PollUxiolabsStatusJob` exists because of it), so the one path that
+reported was the one least likely to run. Five call sites now report:
+`ProcessUxiolabsTransactionAction` (`handoff()`, plus a terminal order response),
+`CheckUxiolabsTransactionStatusAction` (poll and admin resend, labelled by `$source`),
+`HandleUxiolabsWebhookAction`, and `ProcessUxiolabsTopup::failed()`.
+
+- **Deduped per transaction per outcome** (`Cache::add`, 24h). Poll and callback race the
+  same transition *by design* — either may be the one that survives — so the guard sits
+  below both rather than in a choice of which to keep. Announcing per writer would double
+  every fulfilment in the channel.
+- **`handoff()` is the only place `supplier_trx_id` reaches the channel**, and it is the
+  key that opens the order on the supplier's dashboard. Its absence behind a payment is
+  itself the signal: an order that never left.
+- Add a new supplier-status call site here, not with a fresh `sendEmbed` — a second embed
+  shape drifts from the Monetapay one, and the two halves of an order's life land in the
+  same channel minutes apart.
+
+**The suite must never inherit a real webhook.** `phpunit.xml` pins
+`DISCORD_WEBHOOK_LOG_URL` empty alongside the other outbound gateways. A developer's
+`.env` holds the live channel URL and the service deliberately lets `testing` through, so
+without that pin every fulfilment test is a would-be post to the channel operators watch.
+
+### In-app notifications
+
+`notifications` is one row per recipient with its own `read_at`, and
+`NotificationController` scopes **every** query to `$request->user()->id`
+before any filter. That scoping is why one controller serves three route
+groups — `v1/notifications` (admin), `v1/payment-internal/notifications`,
+`v1/payment-admin/notifications`: **the group decides who may ask; it never
+decides whose rows come back.** Adding a panel is registering the same four
+routes in its group, not writing a second controller.
+
+The feed shipped internal-only, and the admin bell was a button with no
+handler — while `ClaimRefundWithAccountAction` had been raising
+`refund.claimed` rows addressed to role `admin` since it was written. The rows
+were unread because they were unreadable.
+
+- **Three fan-outs, and the choice between them is about blast radius.**
+  `NotifyPaymentInternalAction` (the kita team), `NotifyRoleAction` (everyone
+  holding a role), `NotifyUserAction` (one named person). A client's bill is
+  always the third: every merchant holds `payment-admin`, so a role fan-out
+  would tell each of them about every other client's billing.
+- **`dedupe_key` is per recipient** (`unique(user_id, dedupe_key)`), and null
+  means "repeat freely". Give the same fact raised for two audiences two
+  namespaces — `subexp:{id}:{n}` and `subexp-merchant:{id}:{n}` — or whichever
+  runs first silences the other.
+- **The expiry windows all start at `now`, so a row two days out matches H-7
+  and H-3 in one run.** The internal team gets both by design, pinned by
+  `PaymentPage\NotificationTest`; the client gets one, at the tightest mark
+  that matches, carrying the **real** day count rather than the mark's name.
+  Do not "fix" the overlap in the query — that is the internal contract.
+- `NotificationCreated` broadcasts on `user.{id}.notifications` (authorised by
+  self-ownership in `routes/channels.php`) and carries **only an id**: the
+  client refetches through the authorised endpoints rather than trusting a
+  socket frame with the contents. Both panels poll as the fallback.
 
 ### Links that leave the building
 
@@ -538,22 +619,27 @@ at request time and freezes `fee`/`nett`.
 
 ## uxiolabs Price Checker & Manual Product Management
 
-Core principle: **supplier cost is fact (auto-updated), selling price auto-follows the configured margin rules unless the admin locks it, products are never auto-created**. Full admin guide: `docs/uxiolabs-product-management.md`.
+Core principle: **supplier cost is fact (auto-updated), selling price auto-follows the configured margin rules, products are never auto-created**. Full admin guide: `docs/uxiolabs-product-management.md`.
 
 ### 5-minute price checker
 
-`uxiolabs:check-prices` (scheduled `everyFiveMinutes` in `routes/console.php`, Discord alert only on failure) runs `CheckUxiolabsPricesAction`:
+`uxiolabs:check-prices` (scheduled `everyFiveMinutes` in `routes/console.php`) runs `CheckUxiolabsPricesAction`:
 
 - Fetches the price list (warming the shared cache `uxiolabs:price-list`, TTL 300s — `UxiolabsService::getPriceListCached()` / `findServiceInPriceList()` read it). `supplier_products.buyer_sku_code` stores the uxiolabs service `id`.
 - Updates `supplier_products` cost/availability via chunked `upsert()` on `(supplier_id, buyer_sku_code)`. Availability = `status === "aktif"`, mirrored into both `buyer_product_status` and `seller_product_status`. Postpaid/pasca is gone — uxiolabs is prepaid-only.
 - **Availability**: unavailable SKUs get `is_active = false` + `sync_deactivated_at` stamp; only stamped rows are ever auto-reactivated, so a manual admin deactivation is never overridden.
-- **Cost changes auto-reprice** a LIVE mapped product (`product_id` set + `is_active`): selling prices are recomputed from the margin rules via `ProductRepricer` (shared with the manual "Uxiolabs Update" so the two never drift), `products.price_modal` follows cost, and a `price_change_logs` row `applied` is written. Pooled rows (no product) are never repriced/logged — their cost still updates and their preview prices move with it.
-- **Locked prices** (`products.is_price_locked`) are NOT repriced — a `locked` log row is written so the admin can review the shifted margin. (NB: read `products.is_price_locked`, not the separate/unsynced `supplier_products.is_price_locked` — known drift, do not "fix" here.)
-- **Needs-attention log rows**: `deactivated` (SKU went inactive at the provider) and `negative_margin` (after markup + `price_max` clamp, member price is still below cost). Everything is append-only — a cost that moves twice leaves two rows; there is no dedupe/acknowledge.
+- **Cost changes auto-reprice** a LIVE mapped product (`product_id` set + `is_active`): selling prices are recomputed from the margin rules via `ProductRepricer` (shared with the manual "Uxiolabs Update" so the two never drift), `products.price_modal` follows cost, and a `price_change_logs` row is written. Pooled rows (no product) are never repriced/logged — their cost still updates and their preview prices move with it.
+- **Nothing freezes a selling price.** `products.is_price_locked` is a leftover column no longer read (the admin "Lock Price" action was removed): a frozen price is what leaves a product selling below cost, and checkout then refuses the customer with *"Transaksi dibatalkan otomatis: harga modal supplier sedang naik."* The margin rules win. NB: the separate `supplier_products.is_price_locked` is a label/filter only and has never affected pricing.
+- **The log states what was written, never what was computed.** `WriteProductPricesAction::fromCost()` returns the prices read back AFTER the write (per plan row, mapped onto the legacy tiers), and the status is derived from the old → new diff: `applied` (something moved), `unchanged` (the cost moved, the price did not), `negative_margin` (a billed tier is under cost), `deactivated`. `repricedCount` counts only rows whose price actually moved.
+- **Needs-attention log rows**: `deactivated` (SKU went inactive at the provider) and `negative_margin`. The latter is evaluated per **plan row** plus any running flash sale — not against `products.price_member` alone, so a VIP/reseller tier under cost is no longer invisible until checkout refuses that one customer. Everything is append-only — a cost that moves twice leaves two rows; there is no dedupe/acknowledge.
+- **One run at a time**: `CheckUxiolabsPricesAction::execute()` takes `Cache::lock('uxiolabs:price-check', 300)`. The scheduled command has `withoutOverlapping`, but the manual console command and `POST /v1/uxiolabs/sync-products` do not — without the lock two overlapping runs each wrote a log row for one real cost change. A skipped run returns a report with `skippedReason` set (the command exits 0 with a warning; the endpoint answers **409**).
+- **Per-row isolation**: each reprice runs in its own savepoint + try/catch. One row that cannot be repriced is counted as `failed` (with `failed_skus_sample`) and left at its old price with NO log row — it no longer rolls back every other product onto the old cost. The end-of-run scan then flags it as `negative_margin` if it is below cost.
 - **Never** creates products (unknown SKUs are only counted/sampled in the report).
-- Report DTO: `PriceCheckReportDTO` (total_fetched, price_changed, repriced, locked, negative_margin_count, deactivated_logged, deactivated/reactivated, negative_margin detail, unknown_count/sample).
+- Report DTO: `PriceCheckReportDTO` (total_fetched, price_changed, repriced, unchanged, failed, negative_margin_count, deactivated_logged, deactivated/reactivated, negative_margin detail `{product,sku,cost,tier,price}`, unknown_count/sample, failed_skus_sample, skipped_reason).
 
-`uxiolabs:sync-products` (name kept; also `POST /v1/uxiolabs/sync-products`) is the **manual** run of the same action with a console table + Discord report — it does not auto-create products.
+`uxiolabs:sync-products` (name kept; also `POST /v1/uxiolabs/sync-products`) is the **manual** run of the same action with a console table — it does not auto-create products.
+
+Both runs post the same Discord report through `SendPriceCheckDiscordReportAction` (title marks the source: `terjadwal` / `manual`; green = nothing to do, orange = margin under cost / SKU switched off / a reprice that could not be written; a skipped run reports as such in blue). The **scheduled** run reports on every tick, 288 messages a day — deliberate, so the checker's log is in the channel rather than only on a crash. Quietening it later is a filter inside that one action, not a change to the commands.
 
 ### Manual product creation
 
@@ -561,7 +647,7 @@ Core principle: **supplier cost is fact (auto-updated), selling price auto-follo
 - `POST /v1/uxiolabs/products` — `CreateUxiolabsProductAction`: creates Product (price_modal = uxiolabs tier cost) + SupplierProduct mapping; admin supplies all 4 selling prices. Business-rule failures throw `App\Exceptions\UxiolabsProductException` → 422.
 - `POST /v1/uxiolabs/products/import` — Excel bulk import (`ImportUxiolabsProductsAction`, PhpSpreadsheet): headers matched by NAME on row 1 (`buyer_sku_code, category_code, name, code, price_member..price_agent, status`), max 500 rows, per-row validation + transaction so bad rows never abort the batch; blank prices default from `PricingService`.
 - `GET /v1/uxiolabs/products/import-template` — generated xlsx (sheet "Produk" + "Petunjuk" with live category codes). **Binary response — intentional deviation from the ApiResponse envelope.**
-- `GET /v1/uxiolabs/price-change-logs` — paginated read-only audit trail of the checker's actions (filters: `status` = applied|locked|deactivated|negative_margin|all, `search` name/sku, `date_from`/`date_to`). Replaces the old manual price-alert acknowledge endpoints.
+- `GET /v1/uxiolabs/price-change-logs` — paginated read-only audit trail of the checker's actions (filters: `status` = applied|unchanged|locked|deactivated|negative_margin|all, `search` name/sku, `date_from`/`date_to`). `locked` is history only — rows written before the price lock was removed; nothing writes one now. Replaces the old manual price-alert acknowledge endpoints.
 
 `products.auto_price` was **dropped** — category is always explicit admin input. `PricingService` + `pricing-rules` CRUD remain for suggested/default prices only (member 20 / vip 15 / reseller 10 / agent 5 % built-in fallback).
 
@@ -775,7 +861,7 @@ default) schedules nothing, calls nowhere, exposes nothing.
   rather than error. Rows the sync writes are flagged `hub_managed`.
 - **The Hub pokes us:** `POST /v1/hub/sync` (middleware `hub` + `throttle:hub-sync`,
   read key only) carries no data — we run the same pulls the scheduler runs, so a
-  Hub edit lands in about a second instead of 15 minutes. Deliberately NOT behind
+  Hub edit lands in about a second instead of a minute. Deliberately NOT behind
   `hub-write`: that gate exists so a leaked read key cannot move money, and
   requiring it here would couple fast fee updates to `HUB_WRITE_ENABLED`.
   **It runs INLINE and answers with `applied`.** It used to queue `RunHubSyncJob`,
@@ -817,7 +903,17 @@ default) schedules nothing, calls nowhere, exposes nothing.
   `WITHDRAWAL_HOLD_BUFFER_DAYS` (default 1). Dashboard exposes
   `saldo_tertahan`. Test fixtures that seed paid sales must backdate
   `created_at` past the longest hold (5 days) or the balance reads 0.
-- BCA VA is deactivated (not in the Monetapay contract; row kept for history).
+- BCA VA is gone from this site — the gateway does not offer it. No seeder row,
+  no `MonetapayContractFees` entry, and `2026_09_22_000002_remove_bca_va_channel`
+  deletes any leftover row (leaving it deactivated instead when transactions or
+  other money paths reference it). Absence from the contract is also what stops
+  `hub:sync-channels` re-creating it.
+- `GET /v1/hub/balances` reports this SITE's merchant figures by our sales rules —
+  `merchant_available` (settled sales − withdraw-hold), `merchant_held`,
+  `sales_total`, `withdrawn_hold` — beside the platform's own
+  `platform_available`. It makes no gateway call (settlement is a ledger
+  question), and the Hub reads a 404 from an older deploy as unknown, never as
+  zero.
 - Monetapay balance cache is keyed per `(sub_mch_id, currency)` —
   `MonetapayService::balanceCacheKey()` is the shared key helper for
   cache-busting callers, and with no argument it resolves the configured
@@ -826,8 +922,9 @@ default) schedules nothing, calls nowhere, exposes nothing.
 
 ### The Hub owns this site's licence (and can switch it off)
 
-`hub:sync-licence` (every **5** minutes, tighter than the 15-minute catalog sync
-because this one decides whether the site serves) pulls `GET /api/v1/sites/licence`
+`hub:sync-licence` (every **1** minute, sharing the single Hub tick with the
+catalog, channel and plan pulls because this one decides whether the site
+serves) pulls `GET /api/v1/sites/licence`
 and `ApplyHubLicenceAction` lands it in two places:
 
 - **The gate** — private `Setting`s in group `licence`, read through
@@ -852,9 +949,12 @@ Rules that are load-bearing:
   (the client has to reach the panel where they pay), the gateway callbacks
   (money in flight, and the path a renewal arrives on), and
   `v1/storefront/settings` (the down-page renders the client's own branding).
-- **An unreachable Hub changes nothing.** The last synced answer stands, so a
-  Hub outage cannot darken five storefronts, and a site that never synced
-  serves. There is deliberately **no amnesty** after N hours of silence — that
+- **Dark by default; an unreachable Hub changes nothing.** A site with no synced
+  answer at all is CLOSED — "never provisioned" is not "allowed" — so a fresh
+  deployment (or one whose key is wrong) answers 503 on every public route until
+  the Hub first says it may serve. After that, the last synced answer STANDS: a
+  Hub outage cannot darken five storefronts, because nothing rewrites the stored
+  answer. There is deliberately **no amnesty** after N hours of silence — that
   would teach a delinquent client that blocking the Hub revives their site.
 - **`services:expire` will flip the hub row to EXPIRED overnight** once the term
   lapses. The sync resets `status` to ACTIVE on renewal; without that a paid-up
@@ -867,9 +967,132 @@ Rules that are load-bearing:
 - **Rollback is `HUB_MANAGED_LICENCE=false`**: the gate goes inert, the sync
   stops writing, and the local subscription rows keep working as before.
 
+### The Hub's service plan (this site issues the bills)
+
+`hub:sync-plan` (every 1 minute, behind **`HUB_MANAGED_PLAN`**, off by default)
+pulls `GET /api/v1/sites/plan` and `ApplyHubPlanAction` turns each published
+period into one of this site's own `service_invoices`. The Hub decides WHAT is
+owed and WHEN it becomes payable; this site issues the bill, collects through its
+own Monetapay sub-merchant, and reports back the way it always did.
+
+- **`service_invoices.billing_mode` decides what paying the bill DOES.**
+  `billed` opens a subscription window as always; `one_time` (a setup fee)
+  settles the bill and stops — no subscription, no installation, and no licence
+  extension, or the client would get a free period out of a fee. Null on rows
+  issued before the column, which were all `billed`.
+- **Licence renewal follows the plan's `governs_licence` flag**, not just the
+  website service code: `PushLicenceRenewalJob` dispatches when the bill's
+  `hub_item_key` names a line the Hub marked as governing (falling back to the
+  service code for a bill with no plan item behind it — a client buying their own
+  subscription). Without that, marking any other service as the governor stored a
+  flag nothing acted on. A `one_time` fee never renews anything.
+- **`service_invoices.hub_item_key` is unique, and that is the whole guarantee.**
+  It names one period of one plan line (`<plan ulid>:<period index>`). Not a date
+  comparison, not a status check — an index, which is why a sync running every
+  minute forever issues exactly one invoice per period, and so does a
+  sync racing itself. NULL on every locally raised bill, and both MySQL and
+  SQLite treat NULLs as distinct, so the "Langganan" flow is untouched.
+- **Bill the Hub's `amount`, never `services.selling_price`.** The plan carries
+  the per-site NEGOTIATED price; billing from the local catalog would silently
+  charge every client who negotiated a price the list price instead, on every
+  renewal, forever. `HubPlanSyncTest` seeds the two differently on purpose.
+- **`services:expire` skips `source = 'hub_plan'`.** A bill a client abandoned
+  should close; one kita issued on a schedule must not, because against a unique
+  key that is a one-way door — the period could never be re-issued and the client
+  would have no way to pay for a service they still hold.
+  `ApplyHubPlanAction::reopenIfStranded()` heals rows closed before that
+  exclusion shipped, and reopens **EXPIRED only**: CANCELLED and REJECTED were
+  decisions somebody made.
+- **A prepaid period NEVER touches a ledger.** `ServiceRevenueLedger` writes
+  `platform_ledger`, which drives `PlatformBalance::available()` — money kita can
+  *withdraw*, and the figure the Hub's reconciliation page compares against the
+  real Monetapay balance. Prepaid money never entered the sub-merchant. It is
+  still counted where that is honest: `summary.paid_service_invoices_this_month`
+  sums PAID `service_invoices.amount`, so the invoice alone is enough.
+- **A prepaid period must not go through `ActivateServiceSubscriptionAction`.**
+  That dispatches `PushLicenceRenewalJob`, which for the website service would
+  ask the Hub to extend the term a SECOND time on top of the one it granted from
+  that very prepaid line at registration — a free year. It would also stack on
+  `MAX(ends_at)` instead of honouring the operator's start date.
+- **`ApplyHubLicenceAction` still owns the `source='hub'` row for the website
+  service, alone.** Its `updateOrCreate` key is scoped by `service_id`, so the
+  plan's rows cannot collide with it — but the plan deliberately writes no
+  subscription for that one code. Two writers would double-count against the
+  `MAX(ends_at)` every reader uses. There is now more than one `source='hub'`
+  row on a site (one per prepaid service); the index was never unique.
+- The poke still arrives as target **`licence`**, not a new `plan` target:
+  `HubSyncTriggerController` validates `targets.*` with an `in:` rule, so an
+  unknown target 422s the WHOLE poke on any site a release behind. `plan` is
+  accepted here already; the Hub may start sending it once every site is past
+  this release.
+- Rollback is `HUB_MANAGED_PLAN=false`: nothing new is pulled, nothing new is
+  issued, and every invoice already issued keeps working.
+- `hub_plan_items` caches what the Hub said. It is what lets the payment page
+  show "what you must renew" with no live Hub call, and what keeps billing
+  working through a Hub outage — which would otherwise quietly mean nobody gets
+  billed while the Hub is down.
+- **The licence line the client sees is not just the subscription lookup.** For
+  the site's OWN licence, `MerchantServiceController::plan()` takes the paid
+  state from the Hub's verdict (`SiteLicenceState`) as well, beside the
+  `ServiceSubscription` rows: the mirror row lands on `DefaultMerchant` +
+  `WebsiteService`, and any mismatch there (service code or merchant) used to
+  make a licence the client had PAID FOR read "Belum pernah dibayar" on the one
+  screen that should confirm it. Keyed on the resolved licence code, so a retired
+  `item_key` still flagged `governs_licence` is not mistaken for it. A `one_time`
+  line carries a numeric `duration_days` (the catalogue default, 365 for the
+  website) but bills once — the payment page shows "Sekali bayar" and never
+  "/365 hari"; only a recurring line has a period.
+
+### One payment, several bills
+
+`service_invoice_payments` may now cover N invoices. The bills stay
+one-per-service — each buys its own period — and the PAYMENT is what spans them
+(`POST /v1/payment-admin/service-invoices/pay-batch`).
+
+- **`service_invoice_payment_items` is the authority**, not
+  `service_invoice_payments.service_invoice_id`, which is nullable and populated
+  only for a single-invoice attempt. Every reader goes through the pivot. The
+  alternative — keeping the FK and letting one invoice be an "anchor" — is a
+  schema that lies: `amount`/`admin_fee`/`total` on the attempt are the BATCH's,
+  and the first query joined on the FK (as `UnifiedTransactionQuery` was) reports
+  the whole batch total against one bill in a screen the client reads.
+- **The channel fee is charged ONCE on the sum.** `fee_flat` per invoice would be
+  a plain overcharge on every batch. Each item's share is apportioned and
+  **stored** when the attempt opens, with the rounding remainder pushed onto the
+  first row, and the action throws if the shares do not sum to the fee exactly.
+  Never recompute a share at read time.
+- **Opening any attempt expires every PENDING attempt that overlaps ANY of its
+  bills.** Two live payables for one bill means the client can pay twice, and
+  there is no refund path for a service invoice anywhere in this app.
+- The callback and `service-payments:sync-expired` both loop the pivot in
+  ascending invoice id, so two concurrent batches sharing a bill queue rather
+  than deadlock.
+- **`ServiceRevenueLedger` is credited ONCE per attempt, for the sum of the
+  BILLS.** One reference keeps it idempotent; N would risk a partial credit
+  behind a crash. The amount changed with this release: the webhook used to
+  credit `attempt->total`, which includes the channel fee — money that buys the
+  gateway's cut and is not withdrawable income — while the manual confirm has
+  always credited `invoice->amount`. The two now agree. Historical rows are not
+  backfilled.
+
+### `GET /v1/hub/gateway-balance` — a live reading, deliberately apart
+
+`HubReportController::gatewayBalance()` (feeding `/summary`) is cache-only and
+must stay that way: Monetapay's inquiry timeout is 15s, the same as the Hub's
+pull timeout, so a live call there hangs every mirror in the fleet.
+`liveGatewayBalance()` is the separate door, with its own `throttle:hub-balance`
+limiter. It uses `inquiryBalanceCached`, so a Hub balance pull WARMS the figure
+`/summary` reads instead of leaving a staler one beside it, and `?force=1` busts
+that entry. It answers **200 with `ok: false`** on failure, never a 5xx — the
+same reasoning as the poke's `applied: false`.
+
+`GET /v1/hub/subscriptions` reports what this site's owner holds per service,
+collapsed to `MAX(ends_at)`. Both routes are in `SiteAvailabilityTest`'s exact
+exempt list.
+
 ### The site's own name, not the Hub's
 
-`hub:sync-catalog` rewrites `services.name` every 15 minutes, so the website
+`hub:sync-catalog` rewrites `services.name` every minute, so the website
 service cannot be renamed locally — it is "Uxiolabs" at the Hub because that is
 what kita sells. But the client's panels are the client's own product.
 `WebsiteService::label()` resolves the display name from

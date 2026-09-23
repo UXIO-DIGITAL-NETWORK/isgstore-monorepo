@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
-import { endOfDay, startOfDay } from "date-fns";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
+import { wibDayRange } from "@/utils/date";
 import { automaticColumnsFor } from "../components/automaticColumns";
 import { ExportButton } from "../components/ExportButton";
 import { RecapButton } from "../components/RecapButton";
@@ -21,11 +21,13 @@ const DEFAULT_PAGE_SIZE = 10;
 export default function AutomaticTransactionsPage() {
   const { t } = useTranslation("transactions");
   const [filters, setFilters] = useState<TransactionFilters>(() => {
-    // Day boundaries, not `new Date().toISOString()` twice — the service
+    // The WIB day's bounds, not the browser's: the server buckets orders by the
+    // same day the panel shows, so "today" has to mean the same thing to both.
+    // Day bounds rather than `new Date().toISOString()` twice — the service
     // compares created_at against these as raw ISO strings, so an identical
     // start/end instant is a zero-width window that matches nothing.
-    const now = new Date();
-    return { startDate: startOfDay(now).toISOString(), endDate: endOfDay(now).toISOString() };
+    const { start, end } = wibDayRange();
+    return { startDate: start, endDate: end };
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);

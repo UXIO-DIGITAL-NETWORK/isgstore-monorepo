@@ -6,6 +6,7 @@ namespace App\Actions\Auth;
 
 use App\Models\User;
 use App\Support\Auth\TwoFactorChallengeToken;
+use App\Support\Auth\TwoFactorPolicy;
 
 /**
  * The one place a login turns into a session.
@@ -20,6 +21,10 @@ use App\Support\Auth\TwoFactorChallengeToken;
  * caller gets a challenge instead. The response deliberately carries nothing
  * else — no user, no email, no role. Returning the account would hand anyone
  * holding a leaked password list a free enumeration and role-disclosure oracle.
+ *
+ * An exempt account (`TwoFactorPolicy`) is never challenged, even if it once
+ * enrolled — the exemption has to hold at the door, not just at the panel gate,
+ * or the developer would be asked for the very code they cannot produce.
  */
 class IssueSessionAction
 {
@@ -34,7 +39,7 @@ class IssueSessionAction
      */
     public function execute(User $user, ?string $ip = null): array
     {
-        if ($user->two_factor_confirmed_at !== null) {
+        if ($user->two_factor_confirmed_at !== null && ! TwoFactorPolicy::isExempt($user)) {
             return [
                 'two_factor_required' => true,
                 'challenge_token' => TwoFactorChallengeToken::issue($user, $ip),

@@ -108,4 +108,27 @@ class UserManagementTest extends TestCase
         $response->assertJsonCount(1, 'data.data');
         $response->assertJsonPath('data.data.0.name', 'Super Admin');
     }
+
+    public function test_roles_filter_keeps_admin_and_member_and_drops_internal_roles(): void
+    {
+        $adminRole = Role::factory()->create(['name' => 'Admin']);
+        $admin = User::factory()->create(['role_id' => $adminRole->id, 'name' => 'Super Admin']);
+        Sanctum::actingAs($admin, ['access-api']);
+
+        $memberRole = Role::factory()->create(['name' => 'Member']);
+        User::factory()->create(['role_id' => $memberRole->id, 'name' => 'Randy Galang']);
+
+        // Staff accounts are real users — just not the client's people.
+        $internalRole = Role::factory()->create(['name' => 'Payment-Internal']);
+        User::factory()->create(['role_id' => $internalRole->id, 'name' => 'Internal Finance']);
+
+        $names = collect(
+            $this->getJson('/api/v1/users?roles[]=admin&roles[]=member')->assertOk()->json('data.data')
+        )->pluck('name');
+
+        $this->assertCount(2, $names);
+        $this->assertTrue($names->contains('Super Admin'));
+        $this->assertTrue($names->contains('Randy Galang'));
+        $this->assertFalse($names->contains('Internal Finance'));
+    }
 }

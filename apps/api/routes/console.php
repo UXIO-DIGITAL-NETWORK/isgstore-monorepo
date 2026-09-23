@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\DiscordWebhookService;
+use App\Support\Hub\HubSyncSchedule;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -52,6 +53,17 @@ Schedule::command('withdrawals:sync-processing')
     ->runInBackground()
     ->onFailure($alertFailure('withdrawals:sync-processing'));
 
+// Settlement-reversal recovery. The reversal runs post-commit, so a crash
+// between a refund's commit and that call leaves the books short with nothing
+// to retry it — and the action deliberately does not mark itself done when the
+// merchant's wallet cannot absorb the debit. Hourly: a shortfall is money, but
+// unlike a paid order it is not time-critical, and each pass is idempotent.
+Schedule::command('refunds:retry-settlement-reversal')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure($alertFailure('refunds:retry-settlement-reversal'));
+
 // Uxiolabs order-status recovery: the supplier callback is unreliable, so each
 // in-flight order runs a self-rescheduling PollUxiolabsStatusJob (5s → widening).
 // This is only the safety net — it re-arms chains that died and alerts orders that
@@ -80,8 +92,11 @@ Schedule::command('queue:health')
     ->onFailure($alertFailure('queue:health'));
 
 // Price checker: updates supplier cost/availability, auto-reprices live products
-// from the margin rules, and records a price-change log. No success/before Discord
-// embeds — 288 runs/day would be spam.
+// from the margin rules, and records a price-change log. The command posts its
+// report to Discord on every tick — 288 messages a day, a deliberate choice so
+// the checker's log is in the channel rather than only on a crash. To quieten it,
+// filter inside SendPriceCheckDiscordReportAction; onFailure stays for a hard
+// crash, which never reaches that report.
 Schedule::command('uxiolabs:check-prices')
     ->everyFiveMinutes()
     ->withoutOverlapping()
@@ -142,24 +157,44 @@ Schedule::command('subscriptions:notify-expiring')
 // Registered only on hub-managed deployments; a standalone site schedules
 // nothing and calls nowhere.
 if (config('services.hub.enabled')) {
+    // ONE definition of the tick, for all four pulls. A change made in the Hub —
+    // a fee, a plan line, a renewal — has to land on the client's site, and on
+    // the client's payment page, while the operator is still looking at it. The
+    // old 15/5-minute split meant a bill could sit unissued for a quarter of an
+    // hour with nothing reporting a problem.
+    $tick = HubSyncSchedule::cronExpression();
+
     Schedule::command('hub:sync-catalog')
-        ->everyFifteenMinutes()
-        ->withoutOverlapping(30)
+        ->cron($tick)
+        // Two minutes, not thirty: at a one-minute cadence a run that overruns —
+        // or a worker killed mid-flight — must cost the next tick, not the next
+        // half hour.
+        ->withoutOverlapping(2)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-catalog'));
 
-    // Five minutes, not fifteen: this one decides whether the site serves the
-    // public, and a suspension that takes a quarter of an hour to bite is a
-    // suggestion rather than a lever.
+    // The licence decides whether the site serves the public at all, so it was
+    // already the tightest of the four; it now simply shares the tick.
     Schedule::command('hub:sync-licence')
-        ->everyFiveMinutes()
-        ->withoutOverlapping()
+        ->cron($tick)
+        ->withoutOverlapping(2)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-licence'));
 
     Schedule::command('hub:sync-channels')
-        ->everyFifteenMinutes()
-        ->withoutOverlapping(30)
+        ->cron($tick)
+        ->withoutOverlapping(2)
         ->runInBackground()
         ->onFailure($alertFailure('hub:sync-channels'));
+
+    // The Hub's service plan, turned into this site's own bills. Behind its own
+    // flag on top of HUB_ENABLED because this one ISSUES INVOICES: the cutover
+    // is per site and must be stoppable in one env change.
+    if (config('services.hub.managed_plan')) {
+        Schedule::command('hub:sync-plan')
+            ->cron($tick)
+            ->withoutOverlapping(2)
+            ->runInBackground()
+            ->onFailure($alertFailure('hub:sync-plan'));
+    }
 }

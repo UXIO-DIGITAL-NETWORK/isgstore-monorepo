@@ -40,7 +40,7 @@ export function ExportButton({ onExport, fileName = "transaksi.csv", disabled }:
   return (
     <Button variant="outline" size="sm" onClick={handleExport} disabled={disabled || loading}>
       {loading ? <Spinner className="size-4" /> : <Download className="size-4" />}
-      Export
+      {t("actions.export")}
     </Button>
   );
 }

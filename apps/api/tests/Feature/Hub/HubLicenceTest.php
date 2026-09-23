@@ -6,16 +6,22 @@ namespace Tests\Feature\Hub;
 
 use App\Actions\Hub\ApplyHubLicenceAction;
 use App\Enums\RoleType;
+use App\Enums\ServiceInvoiceStatus;
 use App\Enums\SubscriptionStatus;
+use App\Jobs\PushLicenceRenewalJob;
+use App\Models\HubPlanItem;
 use App\Models\Role;
 use App\Models\Service;
+use App\Models\ServiceInvoice;
 use App\Models\ServiceSubscription;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\HubClient;
 use App\Support\Payment\WebsiteSubscriptionStatus;
 use App\Support\SiteLicenceState;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
@@ -74,6 +80,12 @@ class HubLicenceTest extends TestCase
                     ? Http::response([], 500)
                     : Http::response(['status' => 'success', 'data' => $this->licence]);
             },
+            // The site→Hub renewal push. Stubbed here so a test that exercises
+            // `handle()` never reaches the network.
+            'hub.test/api/v1/sites/licence-renewal' => Http::response([
+                'status' => 'success',
+                'data' => ['applied' => true],
+            ]),
         ]);
 
         $this->fakeLicence();
@@ -203,10 +215,17 @@ class HubLicenceTest extends TestCase
         $this->assertTrue(SiteLicenceState::isServing());
     }
 
-    public function test_a_site_that_never_synced_serves(): void
+    public function test_a_site_that_never_synced_is_dark_until_the_hub_answers(): void
     {
         // A fresh deployment, or one whose first sync has not run yet. Silence
-        // is not evidence of a lapse.
+        // is not permission: a Hub-managed site is CLOSED until the Hub says it
+        // may serve — "not yet provisioned" is not "allowed".
+        $this->assertFalse(SiteLicenceState::isServing());
+
+        // The Hub's first answer opens it, with nothing else changing.
+        $this->fakeLicence();
+        app(ApplyHubLicenceAction::class)->execute();
+
         $this->assertTrue(SiteLicenceState::isServing());
     }
 
@@ -227,7 +246,7 @@ class HubLicenceTest extends TestCase
 
     public function test_the_label_follows_the_site_not_the_hubs_catalog(): void
     {
-        // hub:sync-catalog rewrites services.name every 15 minutes, so a local
+        // hub:sync-catalog rewrites services.name every minute, so a local
         // rename would not survive. The label comes from the site's identity.
         Setting::create([
             'group' => 'general', 'key' => 'site_name', 'value' => 'TopupGame by Uxiolabs',
@@ -239,5 +258,220 @@ class HubLicenceTest extends TestCase
         $this->assertSame('TopupGame by Uxiolabs', WebsiteSubscriptionStatus::resolve()['service']['name']);
         // The catalog row itself is untouched — it still belongs to the Hub.
         $this->assertSame('Uxiolabs', $this->service->fresh()->name);
+    }
+
+    // ── Bought outright ──────────────────────────────────────────────────────
+
+    /**
+     * A licence bought outright is paid for with no end date, and lands here as
+     * a subscription with none.
+     *
+     * The row still has to be WRITTEN: a null end date on its own is also what
+     * "never subscribed" looks like, and skipping the row would leave a client
+     * who paid in full reading "belum berlangganan" in their own admin.
+     */
+    public function test_a_lifetime_licence_lands_as_a_subscription_with_no_end_date(): void
+    {
+        $this->fakeLicence(['lifetime' => true, 'ends_at' => null, 'days_remaining' => null]);
+
+        $report = app(ApplyHubLicenceAction::class)->execute();
+
+        $this->assertTrue($report['lifetime']);
+        $this->assertTrue($report['subscription']);
+        $this->assertTrue(SiteLicenceState::isLifetime());
+        $this->assertTrue(SiteLicenceState::isServing());
+
+        $row = ServiceSubscription::where('source', 'hub')->firstOrFail();
+        $this->assertNull($row->ends_at);
+        $this->assertTrue($row->isLifetime());
+        $this->assertSame(SubscriptionStatus::ACTIVE, $row->status);
+
+        // And the window-less row is still inside its window: a raw
+        // `ends_at > now()` would have hidden the very subscription the client
+        // paid for.
+        $this->assertSame(1, ServiceSubscription::query()->active()->count());
+    }
+
+    /** The card says "aktif", not "belum berlangganan", on a site paid off in full. */
+    public function test_the_card_reads_a_lifetime_licence_as_active(): void
+    {
+        $this->fakeLicence(['lifetime' => true, 'ends_at' => null, 'days_remaining' => null]);
+        app(ApplyHubLicenceAction::class)->execute();
+
+        $card = WebsiteSubscriptionStatus::resolve();
+
+        $this->assertSame('active', $card['status']);
+        $this->assertTrue($card['lifetime']);
+        $this->assertNull($card['ends_at']);
+        // Nothing to count down to, and nothing to nag about.
+        $this->assertNull($card['days_remaining']);
+    }
+
+    /** The ordinary dated licence is untouched by any of this. */
+    public function test_a_dated_licence_is_not_reported_as_lifetime(): void
+    {
+        app(ApplyHubLicenceAction::class)->execute();
+
+        $this->assertFalse(SiteLicenceState::isLifetime());
+        $this->assertFalse(WebsiteSubscriptionStatus::resolve()['lifetime']);
+        $this->assertNotNull(ServiceSubscription::where('source', 'hub')->firstOrFail()->ends_at);
+    }
+
+    // ── Reporting the payment that bought it ─────────────────────────────────
+
+    /**
+     * A licence bill the Hub never acknowledged is reported again.
+     *
+     * The report is one-shot, so a bill settled while the dispatch was broken —
+     * or while the Hub was permanently unreachable — leaves a client who has PAID
+     * looking at a dark site with nothing anywhere reporting a problem. Re-sending
+     * is safe: the Hub de-dupes on the invoice number, so a redelivery cannot buy
+     * a second term.
+     */
+    public function test_a_paid_licence_the_hub_never_acknowledged_is_reported_again(): void
+    {
+        Queue::fake();
+
+        $this->paidLicenceInvoice();
+
+        // The Hub's answer: this site holds no licence at all.
+        $this->fakeLicence(['status' => 'none', 'ends_at' => null, 'is_serving' => false]);
+
+        app(ApplyHubLicenceAction::class)->execute();
+
+        Queue::assertPushed(PushLicenceRenewalJob::class);
+    }
+
+    /**
+     * A LAPSED licence is not a missing one.
+     *
+     * It has an end date, so the site knows the Hub has heard it — re-sending the
+     * old bill would push at the Hub every minute forever for a client who simply
+     * has not renewed.
+     */
+    public function test_a_lapsed_licence_is_not_reported_again(): void
+    {
+        Queue::fake();
+
+        $this->paidLicenceInvoice();
+
+        $this->fakeLicence([
+            'status' => 'expired',
+            'ends_at' => now()->subDay()->toIso8601String(),
+            'is_serving' => false,
+        ]);
+
+        app(ApplyHubLicenceAction::class)->execute();
+
+        Queue::assertNotPushed(PushLicenceRenewalJob::class);
+    }
+
+    /** The site's own subscription, paid — with the plan line that governs behind it. */
+    private function paidLicenceInvoice(): ServiceInvoice
+    {
+        HubPlanItem::create([
+            'item_key' => '01LIC:0',
+            'plan_uid' => '01LIC',
+            'period_index' => 0,
+            'service_code' => 'uxiolabs',
+            'service_name' => 'Lisensi Situs',
+            'amount' => 12_000_000,
+            'duration_days' => 365,
+            'billing_mode' => 'billed',
+            'governs_licence' => true,
+            'period_starts_at' => now(),
+            'period_ends_at' => now()->addDays(365),
+            'due_at' => now(),
+            'is_active' => true,
+            'synced_at' => now(),
+        ]);
+
+        return ServiceInvoice::factory()->create([
+            'merchant_id' => $this->merchant->id,
+            'service_id' => $this->service->id,
+            'billing_mode' => 'billed',
+            'status' => ServiceInvoiceStatus::PAID,
+            'verified_at' => now(),
+            'hub_item_key' => '01LIC:0',
+        ]);
+    }
+
+    /**
+     * A one-time LICENCE is the one one-time bill that moves the term.
+     *
+     * The one-time gate exists so a setup fee cannot light a site for good; this
+     * is the case it must let through, and it needs BOTH halves — the plan line
+     * governing the term AND the website service — so a one-time fee for
+     * anything else still renews nothing.
+     */
+    public function test_a_paid_one_time_licence_is_reported_as_lifetime(): void
+    {
+        Queue::fake();
+
+        PushLicenceRenewalJob::maybeDispatch($this->oneTimeLicenceInvoice());
+
+        Queue::assertPushed(PushLicenceRenewalJob::class);
+    }
+
+    public function test_a_one_time_fee_that_does_not_govern_the_term_is_not_reported(): void
+    {
+        Queue::fake();
+
+        $this->licenceItem(['governs_licence' => false]);
+
+        PushLicenceRenewalJob::maybeDispatch($this->oneTimeInvoice());
+
+        Queue::assertNotPushed(PushLicenceRenewalJob::class);
+    }
+
+    /** The push carries `lifetime` instead of `days` — the Hub refuses both. */
+    public function test_the_lifetime_push_carries_no_days(): void
+    {
+        $invoice = $this->oneTimeLicenceInvoice();
+
+        (new PushLicenceRenewalJob($invoice))->handle(app(HubClient::class));
+
+        Http::assertSent(fn ($request) => $request['invoice_number'] === $invoice->invoice_number
+            && $request['lifetime'] === true
+            && ! array_key_exists('days', $request->data()));
+    }
+
+    /** A one-time bill for the licence, with the plan line that governs behind it. */
+    private function oneTimeLicenceInvoice(): ServiceInvoice
+    {
+        $this->licenceItem();
+
+        return $this->oneTimeInvoice();
+    }
+
+    private function oneTimeInvoice(): ServiceInvoice
+    {
+        return ServiceInvoice::factory()->create([
+            'merchant_id' => $this->merchant->id,
+            'service_id' => $this->service->id,
+            'billing_mode' => 'one_time',
+            'hub_item_key' => '01LIC:0',
+        ]);
+    }
+
+    /** @param array<string, mixed> $overrides */
+    private function licenceItem(array $overrides = []): HubPlanItem
+    {
+        return HubPlanItem::create(array_merge([
+            'item_key' => '01LIC:0',
+            'plan_uid' => '01LIC',
+            'period_index' => 0,
+            'service_code' => 'uxiolabs',
+            'service_name' => 'Uxiolabs',
+            'amount' => 12_000_000,
+            'duration_days' => 365,
+            'billing_mode' => 'one_time',
+            'governs_licence' => true,
+            'period_starts_at' => now(),
+            'period_ends_at' => now()->addDays(365),
+            'due_at' => now(),
+            'is_active' => true,
+            'synced_at' => now(),
+        ], $overrides));
     }
 }
