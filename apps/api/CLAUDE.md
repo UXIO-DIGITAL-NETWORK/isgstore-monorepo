@@ -541,6 +541,8 @@ Every outbound integration the engine depends on sits behind a **contract**, and
 | `App\Contracts\SupplierGateway` | `SUPPLIER_DRIVER` → `services.supplier.adapters` | `UxiolabsService` |
 | `App\Contracts\PaymentGateway` | `PAYMENT_DRIVER` → `services.payment.adapters` | `MonetapayService` |
 | `App\Contracts\ReceiptChannel` (a LIST, not one choice) | `config/notifications.php` → `notifications.receipt` | email + WhatsApp |
+| `App\Contracts\RefundClaimChannel` (a LIST) | `config/notifications.php` → `notifications.refund_claim` | email + WhatsApp |
+| `App\Contracts\RefundCompletedChannel` (a LIST) | `config/notifications.php` → `notifications.refund_completed` | email + WhatsApp |
 
 `App\Support\Integration\AdapterResolver` resolves each one AND validates it against its contract, failing loudly on an unknown driver or a class that does not implement it — so a misconfiguration stops at resolution rather than on the money path. Adding a supplier, a gateway, or a notification channel therefore means **one class plus one config line**; engine code injects the contract type, never the concrete class. `QueryMonetapayAction` is the deliberate exception: it is a vendor diagnostic console, not engine surface.
 

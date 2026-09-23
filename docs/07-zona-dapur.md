@@ -67,7 +67,20 @@ Notifikasi (WhatsApp/email/sosmed) **tidak boleh dipanggil dari dalam dapur**.
 Dapur memancarkan kejadian ("pesanan selesai"), dan pendengar bereaksi. Menambah
 layanan baru berarti menambah satu pendengar — dapur tidak berubah.
 
-Di kode, bentuk pertamanya sudah nyata: **`App\Contracts\ReceiptChannel`** + daftar di `config/notifications.php` (`notifications.receipt`). Tiap kanal membawa **penerima dan penjaga idempotensinya sendiri** (`receipt_sent_at`, `whatsapp_sent_at`), jadi satu kanal diam tidak mematikan yang lain. Menambah WhatsApp/Telegram/SMS = satu kelas kanal + satu baris di daftar itu; `SendTransactionReceiptAction` tidak disentuh. Alur refund (klaim & selesai) menyusul dengan pola yang sama.
+Di kode, pola ini sudah nyata untuk tiga momen — masing-masing satu daftar di `config/notifications.php`:
+
+| Momen | Kontrak | Daftar config | Kanal bawaan |
+|---|---|---|---|
+| Order selesai (receipt) | `Contracts/ReceiptChannel` | `notifications.receipt` | email, WhatsApp |
+| Klaim refund | `Contracts/RefundClaimChannel` | `notifications.refund_claim` | email, WhatsApp |
+| Refund selesai | `Contracts/RefundCompletedChannel` | `notifications.refund_completed` | email, WhatsApp |
+
+Menambah WhatsApp/Telegram/SMS = **satu kelas kanal + satu baris di daftar itu**; Action-nya tidak disentuh. Dua hal yang sengaja berbeda antar momen:
+
+- **Receipt** — penjaga idempotensi ada **di kanal** (`receipt_sent_at`, `whatsapp_sent_at`), karena tiap kanal punya penerima sendiri: satu bisa sudah mengirim sementara yang lain belum.
+- **Refund** — penjaganya ada **di alur** (`claim_notified_at`): satu refund, satu notifikasi, sebanyak apa pun kanal yang mengantarnya. Penjaga "URL storefront tidak terjangkau" juga di alur, sebelum kanal mana pun berjalan.
+
+Yang **tidak** dijadikan colokan: notifikasi Discord. Itu kanal operasional kita, bukan sesuatu yang diganti per situs.
 
 ## Aturan emas saat menyentuh dapur
 

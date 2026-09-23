@@ -43,8 +43,8 @@ Satu penyimpangan yang disengaja: **`CheckoutController` memvalidasi inline**, b
 | `Models/` | Eloquent | 58 berkas |
 | `Enums/` | Kosakata status | 15 berkas |
 | `Services/` | Klien sistem luar — sekaligus implementasi default tiap colokan | 9 berkas |
-| `Contracts/` | Kontrak colokan: supplier, payment gateway, kanal notifikasi | 4 berkas |
-| `Notifications/Channels/` | Kanal notifikasi receipt (email, WhatsApp) | 2 berkas |
+| `Contracts/` | Kontrak colokan: supplier, payment gateway, tiga momen notifikasi | 6 berkas |
+| `Notifications/Channels/` | Kanal notifikasi (receipt, klaim refund, refund selesai) | 6 berkas |
 | `Jobs/` | Pekerjaan antrean | 7 berkas |
 | `Console/Commands/` | Perintah artisan | 19 berkas |
 
@@ -79,6 +79,8 @@ Yang berbeda antar situs (supplier top-up, payment gateway, kanal notifikasi) **
 | `Contracts/SupplierGateway` | `SUPPLIER_DRIVER` → `services.supplier.adapters` | `UxiolabsService` |
 | `Contracts/PaymentGateway` | `PAYMENT_DRIVER` → `services.payment.adapters` | `MonetapayService` |
 | `Contracts/ReceiptChannel` (berupa **daftar**) | `config/notifications.php` → `notifications.receipt` | email + WhatsApp |
+| `Contracts/RefundClaimChannel` (daftar) | `config/notifications.php` → `notifications.refund_claim` | email + WhatsApp |
+| `Contracts/RefundCompletedChannel` (daftar) | `config/notifications.php` → `notifications.refund_completed` | email + WhatsApp |
 
 `Support/Integration/AdapterResolver` menyelesaikan sekaligus **memvalidasi** tiap adapter terhadap kontraknya, dan gagal keras kalau tidak sesuai — supaya kesalahan ketahuan saat resolusi, bukan di jalur uang. Menambah supplier/gateway/kanal berarti **satu kelas + satu baris config**; kode engine selalu memakai tipe kontrak, bukan kelas konkret. Satu pengecualian yang disengaja: `QueryMonetapayAction` tetap terikat `MonetapayService` karena itu konsol diagnosis vendor, bukan permukaan engine.
 
