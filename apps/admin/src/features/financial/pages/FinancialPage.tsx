@@ -100,34 +100,21 @@ export default function FinancialPage() {
             gateways.map((gateway) => (
               <Box
                 key={gateway.id}
-                className="flex flex-col gap-4 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex items-center gap-3 rounded-xl border border-border p-4"
               >
-                <Box className="flex items-center gap-3">
-                  <Image
-                    src={gateway.logoUrl}
-                    alt={gateway.name}
-                    width={40}
-                    height={40}
-                    className="shrink-0 rounded-xl"
-                  />
-                  <Text
-                    as="span"
-                    className="font-medium text-foreground"
-                  >
-                    {gateway.name}
-                  </Text>
-                </Box>
-
-                <Box className="flex flex-col gap-3 sm:flex-row sm:gap-3">
-                  <Box className="flex items-center justify-between gap-6 rounded-xl bg-muted px-4 py-2">
-                    <Text variant="small">{t("availableBalance")}</Text>
-                    <CopyableAmount value={gateway.activeBalance} />
-                  </Box>
-                  <Box className="flex items-center justify-between gap-6 rounded-xl bg-muted px-4 py-2">
-                    <Text variant="small">{t("heldBalance")}</Text>
-                    <CopyableAmount value={gateway.heldBalance} />
-                  </Box>
-                </Box>
+                <Image
+                  src={gateway.logoUrl}
+                  alt={gateway.name}
+                  width={40}
+                  height={40}
+                  className="shrink-0 rounded-xl"
+                />
+                <Text
+                  as="span"
+                  className="font-medium text-foreground"
+                >
+                  {gateway.name}
+                </Text>
               </Box>
             ))
           )}

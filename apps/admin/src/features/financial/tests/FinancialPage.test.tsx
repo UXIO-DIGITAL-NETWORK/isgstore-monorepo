@@ -14,7 +14,8 @@ import { SUPPLIERS } from "../data/suppliers.data";
  *   Summary page: header + the exact subcopy.
  * - The 3 stat cards render their labels and formatted currency values.
  * - The Payment Gateway section renders its heading + subcopy, and at least
- *   the "UxioPay" row with both "Saldo Aktif"/"Saldo Tertahan" labels.
+ *   the "UxioPay" row — with no balance figures, which the admin panel
+ *   deliberately does not surface for a gateway.
  * - The Supplier section renders its heading + subcopy, and at least one
  *   supplier row.
  * - Clicking a balance amount copies the exact displayed string (incl. "Rp")
@@ -43,16 +44,16 @@ describe("FinancialPage", () => {
     expect((await screen.findAllByText(formatCurrency(SUMMARY_CARDS[0].value))).length).toBeGreaterThan(0);
   });
 
-  it("shows the Payment Gateway section with the UxioPay row and both balance labels", async () => {
+  it("shows the Payment Gateway section with the UxioPay row and no balance figures", async () => {
     await renderRoute("/admin/finance-preview");
 
     expect(await screen.findByRole("heading", { name: "Payment Gateway" })).toBeInTheDocument();
-    expect(screen.getByText("Summary of balances on each payment gateway.")).toBeInTheDocument();
+    expect(screen.getByText("List of configured payment gateways.")).toBeInTheDocument();
 
     const gateway = PAYMENT_GATEWAYS[0];
     expect(await screen.findByText(gateway.name)).toBeInTheDocument();
-    expect(screen.getByText("Saldo Aktif")).toBeInTheDocument();
-    expect(screen.getByText("Saldo Tertahan")).toBeInTheDocument();
+    expect(screen.queryByText("Saldo Aktif")).not.toBeInTheDocument();
+    expect(screen.queryByText("Saldo Tertahan")).not.toBeInTheDocument();
   });
 
   it("shows the Supplier section with at least one supplier row", async () => {
@@ -63,13 +64,14 @@ describe("FinancialPage", () => {
     expect(await screen.findByText(SUPPLIERS[0].name)).toBeInTheDocument();
   });
 
-  it("copies the exact displayed amount when a balance is clicked", async () => {
+  it("copies the exact displayed amount when a supplier balance is clicked", async () => {
     await renderRoute("/admin/finance-preview");
 
-    const gateway = PAYMENT_GATEWAYS[0];
-    // Fixtures always carry a figure; the null case is a supplier with no
-    // balance integration and is covered by CopyableAmount itself.
-    const formatted = formatCurrency(gateway.activeBalance ?? 0);
+    // Payment gateway balances are no longer rendered, so the supplier rows
+    // carry the copy-to-clipboard amounts. Fixtures always carry a figure; the
+    // null case is a supplier with no balance integration and is covered by
+    // CopyableAmount itself.
+    const formatted = formatCurrency(SUPPLIERS[0].balance ?? 0);
     // Every fixture balance is deliberately the same amount (Rp 15.231,89, per
     // the reference), so several copy buttons share this accessible name —
     // any of them copying the exact string is what's under test. fireEvent
