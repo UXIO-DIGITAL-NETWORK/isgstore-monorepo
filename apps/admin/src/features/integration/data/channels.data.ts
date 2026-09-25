@@ -1,10 +1,12 @@
 import type { IntegrationChannel } from "../types/integration.type";
 
 /**
- * 6 channels — 3 supplier, 2 payment_gateway, 1 whatsapp_gateway, 0
+ * 5 channels — 3 supplier, 2 payment_gateway, 0 whatsapp_gateway, 0
  * email_gateway (Email Gateway stays a valid filter category with zero
- * channels, per product_requirements.md §4.4) — 5 connected / 1
- * disconnected, matching the overview stat-card counts.
+ * channels, per product_requirements.md §4.4) — 4 connected / 1
+ * disconnected, matching the overview stat-card counts. PiWAPI/WhatsApp is
+ * send-only with nothing to ping, so the backend does not list it and no
+ * fixture stands in for it.
  *
  * One entry is inferred, not confirmed by any reference (flagged in this
  * build's logs/feature-changes entry too):
@@ -74,17 +76,5 @@ export const CHANNELS: IntegrationChannel[] = [
     last_ping_at: "2026-07-10T05:58:00.000Z",
     created_at: "2025-06-18T00:00:00.000Z",
     updated_at: "2026-07-10T05:58:00.000Z",
-  },
-  {
-    id: "wablas",
-    type: "whatsapp_gateway",
-    name: "Wablas",
-    logo_url: "",
-    currency_config: "Indonesia Rupiah (Rp) IDR - Rp 1",
-    connection_status: "connected",
-    balance: 1250000,
-    last_ping_at: "2026-07-10T08:11:00.000Z",
-    created_at: "2025-02-14T00:00:00.000Z",
-    updated_at: "2026-07-10T08:11:00.000Z",
   },
 ];

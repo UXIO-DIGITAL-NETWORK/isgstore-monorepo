@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useMemo, useState, type ComponentType } from "react";
-import { CreditCard, Globe, Mail, MessageCircle, Plug, Truck, Unplug } from "lucide-react";
+import { CreditCard, Globe, Mail, Plug, Truck, Unplug } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
 import { Heading } from "@/components/common/Heading";
@@ -20,7 +20,6 @@ const CATEGORIES: { value: CategoryFilter; labelKey: string; icon: ComponentType
   { value: "all", labelKey: "all", icon: Globe },
   { value: "supplier", labelKey: "supplier", icon: Truck },
   { value: "payment_gateway", labelKey: "paymentGateway", icon: CreditCard },
-  { value: "whatsapp_gateway", labelKey: "whatsappGateway", icon: MessageCircle },
   { value: "email_gateway", labelKey: "emailGateway", icon: Mail },
 ];
 
@@ -36,7 +35,6 @@ export default function IntegrationPage() {
     const disconnected = channels.filter((channel) => channel.connection_status === "disconnected").length;
     const supplierCount = channels.filter((channel) => channel.type === "supplier").length;
     const paymentCount = channels.filter((channel) => channel.type === "payment_gateway").length;
-    const whatsappCount = channels.filter((channel) => channel.type === "whatsapp_gateway").length;
 
     return [
       {
@@ -45,7 +43,7 @@ export default function IntegrationPage() {
         value: channels.length,
         format: "count",
         icon: Plug,
-        caption: `${supplierCount} Supplier, ${paymentCount} Payment, ${whatsappCount} WhatsApp`,
+        caption: `${supplierCount} Supplier, ${paymentCount} Payment`,
       },
       {
         id: "active-channels",
@@ -81,8 +79,7 @@ export default function IntegrationPage() {
           variant="section"
         >{t("title")}</Heading>
         <Text variant="muted">
-          Manage digital supplier connections, payment gateways, and WhatsApp gateways. Ping status and balances update
-          per channel.
+          Manage digital supplier connections and payment gateways. Ping status and balances update per channel.
         </Text>
       </Box>
 

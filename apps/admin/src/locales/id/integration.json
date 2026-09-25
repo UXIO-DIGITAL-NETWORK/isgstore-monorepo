@@ -7,7 +7,6 @@
   "all": "Semua",
   "supplier": "Supplier",
   "paymentGateway": "Payment Gateway",
-  "whatsappGateway": "WhatsApp Gateway",
   "emailGateway": "Email Gateway",
   "totalChannels": "Total Channel",
   "active": "Aktif",

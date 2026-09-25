@@ -67,20 +67,20 @@ describe("integrationService.getChannels", () => {
  * service no longer returns them directly.
  */
 describe("channel fixtures", () => {
-  it("has 6 channels broken down 3 supplier / 2 payment_gateway / 1 whatsapp_gateway", () => {
-    expect(CHANNELS).toHaveLength(6);
+  it("has 5 channels broken down 3 supplier / 2 payment_gateway / 0 whatsapp_gateway", () => {
+    expect(CHANNELS).toHaveLength(5);
 
     const countByType = (type: string) => CHANNELS.filter((channel) => channel.type === type).length;
     expect(countByType("supplier")).toBe(3);
     expect(countByType("payment_gateway")).toBe(2);
-    expect(countByType("whatsapp_gateway")).toBe(1);
+    expect(countByType("whatsapp_gateway")).toBe(0);
     expect(countByType("email_gateway")).toBe(0);
   });
 
-  it("has 5 connected and 1 disconnected channel", () => {
+  it("has 4 connected and 1 disconnected channel", () => {
     const connected = CHANNELS.filter((channel) => channel.connection_status === "connected").length;
     const disconnected = CHANNELS.filter((channel) => channel.connection_status === "disconnected").length;
-    expect(connected).toBe(5);
+    expect(connected).toBe(4);
     expect(disconnected).toBe(1);
   });
 });

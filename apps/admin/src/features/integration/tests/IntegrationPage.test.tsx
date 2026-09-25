@@ -11,7 +11,7 @@ import { CHANNELS } from "../data/channels.data";
  *   Integration page: header + the exact subcopy.
  * - The 3 overview stat cards render their labels, counts, and plain
  *   captions (this variant has no trend pill).
- * - All 5 category filter options are present, including Email Gateway
+ * - All 4 category filter options are present, including Email Gateway
  *   even though it has zero registered channels.
  * - At least one channel card per non-empty type renders its name plus
  *   both the connection-status badge and the balance badge.
@@ -24,7 +24,7 @@ describe("IntegrationPage", () => {
     expect(await screen.findByRole("heading", { name: "Integration" })).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Manage digital supplier connections, payment gateways, and WhatsApp gateways. Ping status and balances update per channel.",
+        "Manage digital supplier connections and payment gateways. Ping status and balances update per channel.",
       ),
     ).toBeInTheDocument();
   });
@@ -36,23 +36,23 @@ describe("IntegrationPage", () => {
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect((await screen.findAllByText("Disconnected")).length).toBeGreaterThan(0);
 
-    expect((await screen.findAllByText("6")).length).toBeGreaterThan(0);
     expect((await screen.findAllByText("5")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("4")).length).toBeGreaterThan(0);
     expect((await screen.findAllByText("1")).length).toBeGreaterThan(0);
 
-    expect(screen.getByText("3 Supplier, 2 Payment, 1 WhatsApp")).toBeInTheDocument();
+    expect(screen.getByText("3 Supplier, 2 Payment")).toBeInTheDocument();
     expect(screen.getByText("Channels with an active connection (status ping).")).toBeInTheDocument();
     expect(screen.getByText("Registered channels with a lost connection.")).toBeInTheDocument();
   });
 
-  it("shows all 5 category filter options, including Email Gateway with zero channels", async () => {
+  it("shows the 4 category filter options, including Email Gateway with zero channels", async () => {
     await renderRoute("/admin/integration-preview");
 
     expect(await screen.findByRole("tab", { name: "All" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Supplier" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Payment Gateway" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Whatsapp Gateway" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Email Gateway" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Whatsapp Gateway" })).not.toBeInTheDocument();
   });
 
   it("shows at least one channel card per non-empty type with its name and both badges", async () => {
@@ -60,9 +60,8 @@ describe("IntegrationPage", () => {
 
     const supplier = CHANNELS.find((channel) => channel.type === "supplier")!;
     const gateway = CHANNELS.find((channel) => channel.type === "payment_gateway")!;
-    const whatsapp = CHANNELS.find((channel) => channel.type === "whatsapp_gateway")!;
 
-    for (const channel of [supplier, gateway, whatsapp]) {
+    for (const channel of [supplier, gateway]) {
       expect(await screen.findByText(channel.name)).toBeInTheDocument();
     }
 

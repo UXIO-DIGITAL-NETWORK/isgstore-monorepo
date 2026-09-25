@@ -7,7 +7,6 @@
   "all": "All",
   "supplier": "Supplier",
   "paymentGateway": "Payment Gateway",
-  "whatsappGateway": "Whatsapp Gateway",
   "emailGateway": "Email Gateway",
   "totalChannels": "Total Channels",
   "active": "Active",

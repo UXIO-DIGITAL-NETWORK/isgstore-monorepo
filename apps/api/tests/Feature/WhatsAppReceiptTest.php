@@ -130,7 +130,13 @@ class WhatsAppReceiptTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_integration_channels_include_piwapi(): void
+    /**
+     * The admin Integration panel lists probeable channels only. PiWAPI is
+     * send-only — there is no balance to ping — so it is deliberately absent
+     * from the overview, while its credentials stay manageable through
+     * /integration/channels/piwapi (covered by the masking test below).
+     */
+    public function test_integration_channels_omit_piwapi(): void
     {
         $this->configurePiwapi();
         $role = Role::factory()->create(['name' => 'Admin']);
@@ -139,9 +145,7 @@ class WhatsAppReceiptTest extends TestCase
 
         $channels = collect($this->getJson('/api/v1/integration/channels')->assertOk()->json('data'))->keyBy('id');
 
-        $this->assertArrayHasKey('piwapi', $channels);
-        $this->assertSame('whatsapp_gateway', $channels['piwapi']['type']);
-        $this->assertSame('connected', $channels['piwapi']['connection_status']);
+        $this->assertArrayNotHasKey('piwapi', $channels);
     }
 
     public function test_piwapi_credentials_are_readable_and_masked(): void
