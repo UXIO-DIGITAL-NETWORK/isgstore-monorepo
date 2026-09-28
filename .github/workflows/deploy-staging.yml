@@ -221,6 +221,18 @@ jobs:
           # dugaan, dan rsync --delete akan menghapus isinya.
           test -n "$DEPLOY_BASE_PATH" || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
           API_PATH="${DEPLOY_BASE_PATH%/}/api"
+          # Server yang belum dimigrasi masih berbentuk klon monorepo: akar
+          # Laravel-nya ada di $API_PATH/apps/api, dan unggahan pelanggan ikut di
+          # sana. rsync --delete akan menghapusnya, jadi keadaan itu diperiksa DI
+          # SINI — sebelum rsync menyentuh apa pun. Memeriksanya SESUDAH rsync
+          # tidak ada gunanya: pohonnya sudah terhapus lebih dulu, dan yang
+          # tersisa adalah direktori baru tanpa apps/api, yang justru terbaca
+          # "sudah dimigrasi". Migrasinya: docs/04-deployment.md §Migrasi.
+          if ssh -i "$HOME/.ssh/deploy_key" -p "$SSH_PORT" -o BatchMode=yes -o IdentitiesOnly=yes \
+               "$SSH_USERNAME@$SSH_HOST" "test -d '$API_PATH/apps/api'"; then
+            echo "::error::$API_PATH masih berbentuk klon monorepo (ada apps/api) — jalankan migrasi sekali (docs/04-deployment.md §Migrasi) sebelum deploy ini, atau rsync akan menghapus unggahan di dalamnya."
+            exit 1
+          fi
           rsync -avzr --delete \
             --exclude '/.env' \
             --exclude '/storage/app/' \
@@ -291,17 +303,9 @@ jobs:
             # Klon git untuk riwayat. TIDAK dilayani: root nginx menunjuk ke
             # $API_DIR/public, bukan ke sini. Namanya diberi titik supaya tidak
             # terbaca sebagai salah satu app.
+            # Keadaan "belum dimigrasi" sudah diperiksa di langkah rsync,
+            # SEBELUM rsync — memeriksanya di sini sudah terlambat.
             API_REPO="${DEPLOY_BASE_PATH%/}/.api-repo"
-
-            # Server yang belum dimigrasi masih berbentuk klon monorepo: akar
-            # Laravel-nya ada di $API_DIR/apps/api, dan unggahan pelanggan ikut
-            # di sana. Deploy ini meng-rsync artifact ke $API_DIR dengan
-            # --delete, jadi menjalankannya lebih dulu akan MENGHAPUS pohon lama
-            # itu berikut unggahannya. Berhenti sebelum apa pun tersentuh.
-            if [ -d "$API_DIR/apps/api" ]; then
-              echo "::error::$API_DIR masih berbentuk klon monorepo (ada apps/api). Jalankan migrasi sekali di docs/04-deployment.md §Migrasi dulu — deploy ini akan menghapus unggahan di dalamnya."
-              exit 1
-            fi
 
             # 0c. Direktori tujuan keempat app. rsync hanya membuat komponen
             #     TERAKHIR dari sebuah path, bukan seluruh rantainya, jadi

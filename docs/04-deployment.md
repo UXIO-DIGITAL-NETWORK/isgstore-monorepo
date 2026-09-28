@@ -29,6 +29,10 @@ secret `ENV_FILE`), `storage/app` (unggahan pelanggan), `storage/framework`
 `rsync --delete` menghapus apa pun di server yang tidak ada di artifact, jadi
 daftar ini adalah satu-satunya pelindung state runtime — jangan disederhanakan.
 
+`.env` karena itu ada di **`<base>/api/.env`** (mode `640`, milik user deploy),
+bukan lagi di `apps/api/.env`. Kalau berkas itu dicari di jalur lama, ia memang
+sudah tidak ada di sana: seluruh tingkat `apps/` tidak lagi ikut mendarat.
+
 Klon git tetap ada di `<base>/.api-repo`, tetapi **bukan yang dilayani**:
 gunanya hanya riwayat (`git log`, `git tag`), supaya pertanyaan "apa yang
 terpasang di sini" bisa dijawab tanpa membuka GitHub. Klon ini **best-effort** —
