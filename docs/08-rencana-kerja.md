@@ -31,6 +31,7 @@ Banyak situs akan lahir dari cetakan ini (`web-topup-monorepo`), masing-masing b
 | Dokumentasi konsep | Zona, stempel, colokan disebar ke README/02/04/06/07 dan `apps/api/CLAUDE.md`; docs HTML interaktif | `6bd17ed0`, `972286c9` |
 | Higiene | 7 workflow mati dihapus, 9 `.pyc` dilepas + diabaikan, nama env supplier di docs/04 diperbaiki | `a714c309` |
 | Efisiensi deploy | Klon API **sparse** + partial clone — server hanya menerima `apps/api`, bukan seluruh monorepo; plus trusted proxy & penjaga rilis | `64333067` |
+| Deploy API artifact | API naik sebagai artifact CI (`composer install --no-dev` + `rsync`), jadi akar Laravel langsung di `<base>/api` dan nginx root `<base>/api/public`; klon `.api-repo` hanya riwayat | *(belum di-commit)* |
 
 ## Terverifikasi
 

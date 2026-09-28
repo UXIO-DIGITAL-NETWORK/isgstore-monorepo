@@ -33,14 +33,24 @@ Sudah mendarat di `development` (`64333067`), lolos test dan Pint lokal. Yang be
 3. **Efisiensi deploy API**
    - Klon API jadi **sparse** + partial clone: server hanya menerima `apps/api`, bukan seluruh monorepo.
    - Klon lama dipersempit di tempat (tanpa re-clone, jadi `storage` dan `vendor` aman). Butuh git >= 2.25 di server.
+   - **Digantikan** oleh model artifact di bawah: klon sparse tidak lagi menjadi apa yang dilayani.
+
+**Belum di-commit** (ada di working tree, di atas `64333067`):
+
+4. **Deploy API sebagai artifact**
+   - CI membangun artifact — source + `vendor` (`composer install --no-dev`) — lalu `rsync` ke `<base>/api`, sehingga nginx root jadi **`<base>/api/public`** tanpa tingkat `apps/api`.
+   - `.env`, `storage/app`, `storage/framework`, `storage/logs`, `bootstrap/cache`, `public/storage` di-exclude karena hanya ada di server.
+   - `<base>/.api-repo` menyimpan klon git untuk riwayat; best-effort, tidak menahan deploy.
+   - Butuh migrasi server sekali (docs/04 §Migrasi): selamatkan `storage/app`, lalu buang pohon lama.
 
 ## Langkah lanjutan (urut)
 
-1. **Uji hardening di staging** — staging belum pernah berjalan; environment dan servernya belum ada (lihat Peringatan).
-2. **Alat distribusi antar fork** — skrip `upstream-sync.sh` dan aturan folder klien vs folder inti.
-3. **Keputusan runtime config frontend** — `VITE_*` dipanggang saat build; pilih: terima rebuild per environment, atau pindah ke `config.json` runtime.
-4. **Keputusan rilis otomatis** — pakai semantic-release atau tetap manual.
-5. Verifikasi visual `docs/interaktif.html`.
+1. **Commit perubahan model artifact** (workflow + docs), lalu **migrasi server staging sekali** — selamatkan `storage/app` di `<base>/api/apps/api`, buang pohon lama, arahkan root nginx ke `<base>/api/public` (docs/04 §Migrasi).
+2. **Uji hardening + artifact di staging** — staging belum pernah berjalan; environment dan servernya belum ada (lihat Peringatan).
+3. **Alat distribusi antar fork** — skrip `upstream-sync.sh` dan aturan folder klien vs folder inti.
+4. **Keputusan runtime config frontend** — `VITE_*` dipanggang saat build; pilih: terima rebuild per environment, atau pindah ke `config.json` runtime.
+5. **Keputusan rilis otomatis** — pakai semantic-release atau tetap manual.
+6. Verifikasi visual `docs/interaktif.html`.
 
 ## Peringatan
 

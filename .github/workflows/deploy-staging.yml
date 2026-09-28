@@ -22,6 +22,12 @@
 # ke monorepo sebelum menjalankan ini. Server staging butuh secret environment
 # `staging` sendiri (SSH_*, DEPLOY_BASE_PATH, ENV_FILE, VITE_*), dan
 # HUB_BASE_URL yang menunjuk ke Hub STAGING — bukan produksi.
+#
+# API naik sebagai ARTIFACT yang dibangun di sini (source + vendor,
+# `composer install --no-dev`) lalu di-rsync ke $DEPLOY_BASE_PATH/api. Karena
+# artifact sudah berbentuk akar Laravel, root nginx menunjuk LANGSUNG ke
+# $DEPLOY_BASE_PATH/api/public — tidak ada lagi tingkat `apps/api`. Klon git
+# tetap ada di $DEPLOY_BASE_PATH/.api-repo, tetapi hanya untuk riwayat.
 name: Deploy Staging
 
 on:
@@ -121,6 +127,111 @@ jobs:
           curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
             -d "{\"embeds\":[{\"title\":\"🚀 API Staging Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_REF}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372}]}" || true
 
+      # Runner harus memegang kode yang di-build: job ini menjalankan composer
+      # install dan menghitung stempel dari commit. `ref`-nya diambil dari
+      # DEPLOY_REF, bukan dibiarkan default — kalau tidak, deploy manual dengan
+      # ref tertentu akan membangun ujung cabang yang dipilih di UI, yaitu kode
+      # yang BUKAN sedang diuji.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
+
+      # Artifact dibangun DI SINI, bukan di server. Server tidak menjalankan
+      # composer sama sekali, jadi versi dependensi ditentukan commit ini —
+      # bukan keadaan server saat deploy, yang tidak bisa diperiksa siapa pun
+      # dari luar.
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: sqlite3, pdo_sqlite, gd, exif
+          coverage: none
+
+      # `post-autoload-dump` menjalankan `package:discover`, dan itu sudah
+      # terbukti jalan tanpa `.env` — job `api-test` juga meng-install lebih
+      # dulu, baru membuat `.env`. Jadi tak ada `.env` yang perlu dibuat di
+      # sini, dan tak ada APP_KEY CI yang bisa bocor ke server.
+      - name: Build artifact API
+        working-directory: apps/api
+        run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+
+      # Stempel dihitung dari commit yang benar-benar di-build. Server tidak lagi
+      # membaca git untuk ini, karena yang dilayani bukan pohon git.
+      - name: Hitung stempel rilis
+        id: stamp
+        run: |
+          set -euo pipefail
+          echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          if [ -f .upstream-version ]; then
+            echo "upstream=$(tr -d '[:space:]' < .upstream-version)" >> "$GITHUB_OUTPUT"
+          else
+            echo "upstream=" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Pola yang sama dengan job frontend: rinciannya sengaja identik (pin host
+      # key lewat SSH_HOST_KEY, `ssh-keyscan` hanya sebagai mundur) supaya tidak
+      # ada dua kebiasaan berbeda di repo ini.
+      - name: Siapkan kunci SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY" || { echo "::error::secret SSH_PRIVATE_KEY belum diisi"; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$SSH_HOST_KEY" ]; then
+            printf '%s\n' "$SSH_HOST_KEY" >> ~/.ssh/known_hosts
+            echo "Host key dipin dari secret SSH_HOST_KEY."
+          else
+            echo "::warning::SSH_HOST_KEY belum diisi — host key direkam dengan ssh-keyscan, yang mempercayai apa pun yang menjawab saat itu. Isi secret itu untuk menutup celah MITM."
+            ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      # Seluruh akar Laravel disalin, bukan satu subtree, karena artifact memang
+      # sudah berbentuk akar. `--delete` membuat server mencerminkan artifact:
+      # berkas yang dihapus di repo ikut hilang, bukan menumpuk selamanya.
+      #
+      # SETIAP --exclude di bawah adalah state yang HANYA ada di server dan tidak
+      # bisa dibangun ulang. Menghapus salah satunya berarti kehilangan unggahan
+      # pelanggan atau kunci enkripsi, jadi jangan disederhanakan "sekadar rapi".
+      #   /.env              — ditulis dari secret ENV_FILE. CI punya .env
+      #                        sendiri (dari .env.example) dan APP_KEY-nya tidak
+      #                        boleh ikut mendarat di server.
+      #   /storage/app/      — unggahan pelanggan dan artefak SIT.
+      #   /storage/framework/— sesi dan cache; menghapusnya memutus sesi yang
+      #                        sedang berjalan tanpa alasan.
+      #   /storage/logs/     — log; dibiarkan supaya jejak deploy lama terbaca.
+      #   /bootstrap/cache/  — manifest paket & cache config, dihasilkan ulang
+      #                        oleh perintah artisan di langkah berikutnya.
+      #   /public/storage    — symlink yang dibuat `php artisan storage:link`.
+      - name: Deploy API via rsync
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
+        run: |
+          set -euo pipefail
+          # DEPLOY_BASE_PATH kosong membuat API_PATH jatuh ke "/api" — di luar
+          # dugaan, dan rsync --delete akan menghapus isinya.
+          test -n "$DEPLOY_BASE_PATH" || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+          API_PATH="${DEPLOY_BASE_PATH%/}/api"
+          rsync -avzr --delete \
+            --exclude '/.env' \
+            --exclude '/storage/app/' \
+            --exclude '/storage/framework/' \
+            --exclude '/storage/logs/' \
+            --exclude '/bootstrap/cache/' \
+            --exclude '/public/storage' \
+            -e "ssh -i $HOME/.ssh/deploy_key -p $SSH_PORT -o BatchMode=yes -o IdentitiesOnly=yes" \
+            "apps/api/" \
+            "$SSH_USERNAME@$SSH_HOST:$API_PATH"
+
       - name: Execute deployment via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -129,6 +240,10 @@ jobs:
           GH_REPOSITORY: ${{ github.repository }}
           DEPLOY_REF: ${{ env.DEPLOY_REF }}
           APP_VERSION: ${{ env.APP_VERSION }}
+          # Dihitung di CI dari commit yang di-build, bukan dibaca dari git di
+          # server: yang dilaporkan `/v1/version` harus artifact yang mendarat.
+          APP_COMMIT: ${{ steps.stamp.outputs.commit }}
+          APP_UPSTREAM: ${{ steps.stamp.outputs.upstream }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -146,7 +261,7 @@ jobs:
           #   ssh-keyscan -p <port> <host> | ssh-keygen -lf -
           # then store the base64 SHA256 line as SSH_HOST_KEY.
           fingerprint: ${{ secrets.SSH_HOST_KEY }}
-          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF,APP_VERSION
+          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF,APP_VERSION,APP_COMMIT,APP_UPSTREAM
           script: |
             set -e
             # APP_DEBUG wajib mati — termasuk di staging, yang justru lebih
@@ -157,10 +272,10 @@ jobs:
               echo "::error::APP_DEBUG menyala di ENV_FILE — stack trace dan nilai env akan bocor ke klien. Setel APP_DEBUG=false lalu deploy ulang."; exit 1
             fi
             # Satu base path untuk keempat app. Frontend menerima isi dist/ di
-            # $DEPLOY_BASE_PATH/<app>; API bukan hasil build, jadi yang tinggal
-            # di $DEPLOY_BASE_PATH/api adalah klon monorepo-nya — SPARSE, hanya
-            # apps/api — dan root nginx api.<domain> menunjuk ke apps/api/public
-            # di dalamnya.
+            # $DEPLOY_BASE_PATH/<app>; API menerima ARTIFACT yang sudah di-rsync
+            # workflow ini ke $DEPLOY_BASE_PATH/api, jadi direktori itu SUDAH
+            # akar Laravel-nya dan root nginx api-staging.<domain> menunjuk
+            # langsung ke api/public — tidak ada lagi tingkat `apps/api`.
             [ -n "$DEPLOY_BASE_PATH" ] || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
             # Tanpa ref yang jelas kita tidak tahu kode mana yang harus mendarat.
             [ -n "$DEPLOY_REF" ] || { echo "::error::DEPLOY_REF kosong — deploy dibatalkan."; exit 1; }
@@ -172,15 +287,28 @@ jobs:
             # yang tidak pernah di-restart.
             sudo -n true 2>/dev/null || {
               echo "::error::User $(id -un) butuh sudo tanpa kata sandi. Lihat docs/04-deployment.md langkah 10."; exit 1; }
-            REPO_DIR="${DEPLOY_BASE_PATH%/}/api"
-            API_DIR="$REPO_DIR/apps/api"
+            API_DIR="${DEPLOY_BASE_PATH%/}/api"
+            # Klon git untuk riwayat. TIDAK dilayani: root nginx menunjuk ke
+            # $API_DIR/public, bukan ke sini. Namanya diberi titik supaya tidak
+            # terbaca sebagai salah satu app.
+            API_REPO="${DEPLOY_BASE_PATH%/}/.api-repo"
+
+            # Server yang belum dimigrasi masih berbentuk klon monorepo: akar
+            # Laravel-nya ada di $API_DIR/apps/api, dan unggahan pelanggan ikut
+            # di sana. Deploy ini meng-rsync artifact ke $API_DIR dengan
+            # --delete, jadi menjalankannya lebih dulu akan MENGHAPUS pohon lama
+            # itu berikut unggahannya. Berhenti sebelum apa pun tersentuh.
+            if [ -d "$API_DIR/apps/api" ]; then
+              echo "::error::$API_DIR masih berbentuk klon monorepo (ada apps/api). Jalankan migrasi sekali di docs/04-deployment.md §Migrasi dulu — deploy ini akan menghapus unggahan di dalamnya."
+              exit 1
+            fi
 
             # 0c. Direktori tujuan keempat app. rsync hanya membuat komponen
             #     TERAKHIR dari sebuah path, bukan seluruh rantainya, jadi
             #     deploy frontend di server yang masih baru gagal kalau
             #     induknya belum ada. Dibuat di sini supaya tidak ada langkah
             #     manual yang tersisa untuk itu.
-            for D in "$REPO_DIR" "${DEPLOY_BASE_PATH%/}/admin" "${DEPLOY_BASE_PATH%/}/storefront" "${DEPLOY_BASE_PATH%/}/payment"; do
+            for D in "$API_DIR" "${DEPLOY_BASE_PATH%/}/admin" "${DEPLOY_BASE_PATH%/}/storefront" "${DEPLOY_BASE_PATH%/}/payment"; do
               if [ ! -d "$D" ]; then
                 mkdir -p "$D" 2>/dev/null || { sudo mkdir -p "$D"; sudo chown "$(id -un):www-data" "$D"; }
               fi
@@ -212,51 +340,61 @@ jobs:
               '  Port 443' \
               '  User git' >> ~/.ssh/config
 
-            # 0. Bootstrap: clone monorepo saat deploy pertama — SPARSE, hanya
-            #    apps/api yang turun ke working tree. Yang dipakai server dari klon
-            #    ini cuma apps/api (Laravel dijalankan dari source) plus git
-            #    (untuk rollback dan stempel APP_COMMIT) plus .upstream-version di
-            #    root. Source ketiga frontend tidak perlu ada di sini: mereka
-            #    dikirim ke direktori terpisah sebagai hasil build.
-            #    `--filter=blob:none` membuat .git juga lebih kecil (blob diambil
-            #    saat dibutuhkan). URL-nya diturunkan dari repo yang sedang
-            #    menjalankan workflow ($GH_REPOSITORY), bukan ditulis tetap:
-            #    template ini dipakai ulang per situs, dan nama repo yang
-            #    ter-hardcode akan mengkloning kode situs lain tanpa satu pun
-            #    langkah yang gagal.
-            if [ ! -d "$REPO_DIR/.git" ]; then
-              echo "Setup pertama: clone $GH_REPOSITORY ke $REPO_DIR (sparse: apps/api)"
-              rm -rf "$REPO_DIR"
-              git clone --filter=blob:none --sparse "git@github.com:${GH_REPOSITORY}.git" "$REPO_DIR"
+            # 0. Riwayat git. Klonnya TIDAK dilayani dan TIDAK dipakai untuk
+            #    menyalin kode — source di $API_DIR datang dari artifact yang
+            #    di-rsync workflow ini. Gunanya satu: menjawab "apa yang
+            #    terpasang di sini" lewat `git log`, `git tag`, dan perbandingan
+            #    antar rilis, tanpa membuka GitHub.
+            #    `--filter=blob:none` menahan blob sampai diminta sehingga
+            #    klonnya kecil; `--sparse` menahan working tree hanya pada
+            #    apps/api, karena source ketiga frontend tidak ada gunanya di
+            #    sini (mereka mendarat sebagai hasil build di direktorinya
+            #    sendiri).
+            #    URL-nya diturunkan dari repo yang sedang menjalankan workflow
+            #    ($GH_REPOSITORY), bukan ditulis tetap: template ini dipakai
+            #    ulang per situs, dan nama repo yang ter-hardcode akan
+            #    mengkloning kode situs lain tanpa satu pun langkah yang gagal.
+            #    SENGAJA best-effort: yang dilayani adalah artifact, jadi klon
+            #    riwayat yang gagal (git terlalu tua, jaringan) TIDAK boleh
+            #    menahan rilis yang sebenarnya sudah siap. Kegagalannya diberi
+            #    peringatan supaya "tidak ada riwayat" tidak lewat sebagai
+            #    "beres".
+            if [ ! -d "$API_REPO/.git" ]; then
+              echo "Riwayat: clone $GH_REPOSITORY ke $API_REPO (sparse: apps/api)"
+              rm -rf "$API_REPO"
+              git clone --filter=blob:none --sparse "git@github.com:${GH_REPOSITORY}.git" "$API_REPO" \
+                || echo "::warning::git clone untuk riwayat gagal — riwayat tidak tersedia di server ini."
+            fi
+            if [ -d "$API_REPO/.git" ]; then
+              git -C "$API_REPO" sparse-checkout set --cone apps/api \
+                || echo "::warning::sparse-checkout gagal — cek versi git di server (butuh >= 2.25)."
+              git -C "$API_REPO" fetch --tags --force origin \
+                || echo "::warning::git fetch gagal — riwayat mungkin tertinggal."
+              # HEAD klon mengikuti rilis yang mendarat, supaya `git log -1` di
+              # situ menjawab versi yang benar-benar berjalan. Di staging ref-nya
+              # biasanya ujung `main` atau tag rc.
+              git -C "$API_REPO" checkout --force "$DEPLOY_REF" \
+                || echo "::warning::checkout $DEPLOY_REF di klon riwayat gagal."
+            else
+              echo "::warning::Tidak ada klon riwayat di $API_REPO — deploy tetap jalan, tetapi 'git log' tidak bisa dipakai di server ini."
             fi
 
-            cd "$REPO_DIR"
-
-            # 0f. Sparse checkout wajib: working tree hanya memuat apps/api.
-            #     Idempoten — klon lama yang masih penuh ikut dipersempit di sini,
-            #     TANPA re-clone: apps/api/storage (unggahan) dan apps/api/vendor
-            #     tidak ikut git, jadi membuang direktorinya akan menghapusnya.
-            #     Cone mode otomatis menyertakan berkas di root, jadi
-            #     .upstream-version tetap ada untuk stempel APP_UPSTREAM di bawah.
-            GIT_MAJOR_MINOR=$(git --version | awk '{print $3}' | cut -d. -f1,2)
-            awk -v v="$GIT_MAJOR_MINOR" 'BEGIN{split(v,a,"."); if (a[1]*100+a[2] < 225) exit 1}' \
-              || { echo "::error::git $GIT_MAJOR_MINOR di server terlalu tua untuk sparse-checkout (butuh >= 2.25)."; exit 1; }
-            git sparse-checkout set --cone apps/api \
-              || { echo "::error::sparse-checkout gagal — cek versi git di server (butuh >= 2.25)."; exit 1; }
-
-            # 1-2. Pindah ke ref yang diminta — di staging biasanya ujung `main`,
-            #      karena staging memang mengikuti trunk (produksi yang memakai tag).
-            #      Gagal di sini membatalkan deploy SEBELUM cache lama dibuang, jadi
-            #      staging tetap hidup dengan kode lama.
-            git fetch --tags --force origin || { echo "::error::git fetch gagal — deploy dibatalkan."; exit 1; }
-            git checkout --force "$DEPLOY_REF" || { echo "::error::ref $DEPLOY_REF tidak ditemukan — deploy dibatalkan."; exit 1; }
-
-            # 2b. Pastikan sparse benar-benar menghasilkan apps/api. Kalau pola
-            #     atau versi git salah, kegagalannya muncul di sini — bukan
-            #     setengah jalan saat composer install di direktori yang kosong.
-            [ -d "$API_DIR" ] || { echo "::error::apps/api tidak ada setelah checkout — pola sparse-checkout salah?"; exit 1; }
-
             cd "$API_DIR"
+
+            # 0f. Skeleton runtime. Enam path ini SENGAJA tidak ikut rsync (lihat
+            #     langkah "Deploy API via rsync"): .env ditulis dari secret,
+            #     storage menyimpan unggahan dan sesi pelanggan, bootstrap/cache
+            #     dan public/storage dihasilkan di server. Tanpa mkdir ini, server
+            #     yang masih baru tidak punya direktori tempat Laravel menulis.
+            mkdir -p storage/app/public \
+                     storage/framework/cache/data \
+                     storage/framework/sessions \
+                     storage/framework/views \
+                     storage/logs \
+                     bootstrap/cache
+
+            # 1-2. Kode sudah mendarat lewat rsync. Tidak ada checkout dan tidak
+            #      ada composer install di server — vendor ikut di dalam artifact.
 
             # 3. Tulis .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
@@ -264,11 +402,11 @@ jobs:
             # 3a. Stempel rilis. Ditulis SETELAH .env supaya apa pun di dalam
             #     secret ENV_FILE tidak bisa membuat versi berbohong — `GET
             #     /v1/version` harus menjawab kode yang benar-benar mendarat.
-            #     APP_UPSTREAM opsional: dibaca dari .upstream-version di root —
-            #     sparse-checkout cone mode menyertakan berkas root, jadi ia tetap
-            #     ada meski working tree hanya memuat apps/api.
-            APP_COMMIT="$(git -C "$REPO_DIR" rev-parse --short HEAD)"
-            APP_UPSTREAM="$( [ -f "$REPO_DIR/.upstream-version" ] && tr -d '[:space:]' < "$REPO_DIR/.upstream-version" || true )"
+            #     Ketiganya datang dari CI: APP_COMMIT = commit yang di-checkout
+            #     workflow, APP_UPSTREAM = isi .upstream-version di commit itu.
+            #     Sengaja BUKAN dari klon riwayat di server — yang dilaporkan
+            #     harus commit yang benar-benar di-build, bukan pohon riwayat
+            #     yang kebetulan ada di sini.
             sed -i -E '/^(APP_VERSION|APP_COMMIT|APP_UPSTREAM)=/d' .env
             printf 'APP_VERSION=%s\nAPP_COMMIT=%s\nAPP_UPSTREAM=%s\n' "$APP_VERSION" "$APP_COMMIT" "$APP_UPSTREAM" >> .env
 
@@ -279,8 +417,10 @@ jobs:
             chmod 640 .env
             sudo chown "$(id -un):www-data" .env
 
-            # 4. Dependensi produksi
-            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+            # 4. Dependensi produksi sudah ADA di dalam artifact: CI menjalankan
+            #    composer install --no-dev --optimize-autoloader. Tidak ada
+            #    composer install di sini, jadi versi dependensi ditentukan
+            #    commit yang di-build, bukan keadaan server saat deploy.
 
             # 4a. Buang cache lama SEBELUM membaca konfigurasi. Tanpa ini
             #     `config:cache` dari deploy sebelumnya menyajikan env yang lama,
@@ -434,6 +574,12 @@ jobs:
             # 16. Ringkasan, supaya satu run deploy bisa dibaca sebagai satu
             #     pernyataan tentang keadaan server sesudahnya.
             echo "Selesai. Rilis $DEPLOY_REF ($APP_COMMIT) terpasang, migrasi jalan, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker supervisor RUNNING."
+
+      # Kunci privat dan known_hosts tidak boleh tertinggal di runner; dibersihkan
+      # walau deploy gagal di tengah.
+      - name: Bersihkan kunci SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts
 
       - name: Notify Discord — hasil
         if: always()

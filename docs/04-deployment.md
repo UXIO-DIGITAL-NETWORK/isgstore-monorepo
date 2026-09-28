@@ -2,16 +2,39 @@
 
 ## Ringkasan
 
-Keempat aplikasi mendarat di **satu server**, di direktori bersebelahan. Sebelum monorepo, keempatnya di-clone terpisah; sesudahnya, satu repo di-clone dan tiap app hidup di bawah `apps/`.
+Keempat aplikasi mendarat di **satu server**, di direktori bersebelahan. Sebelum monorepo, keempatnya di-clone terpisah di empat repo; sesudahnya satu repo jadi sumbernya — tetapi yang tinggal di server adalah **hasil build** (ketiga frontend) dan **artifact** (API), bukan pohon gitnya.
 
 | App | Cara naik | Tujuan |
 |---|---|---|
-| API | `git checkout <tag>` + `composer install` + `migrate` di server | `<repo>/apps/api` |
+| API | CI membangun artifact (`composer install --no-dev`) lalu `rsync`; `migrate`/cache lewat artisan di server | `<base>/api` |
 | Admin | build di CI, `rsync` folder `dist/` | `…/provider/admin` |
 | Storefront | idem | `…/provider/fe` |
 | Payment | idem | `…/provider/payment` |
 
 Pemicunya **push tag `v*`**, dan satu tag mendeploy keempat app sekaligus. Cabang `main` tidak lagi mendeploy produksi — jalur itu disiapkan untuk staging.
+
+### Bagaimana API naik
+
+API tidak di-clone di server. CI membangun **artifact** — source plus `vendor`
+hasil `composer install --no-dev --optimize-autoloader` — lalu meng-`rsync`-nya ke
+`<base>/api`. Karena itu direktori tersebut **sudah berbentuk akar Laravel**, dan
+root nginx menunjuk langsung ke `<base>/api/public`; tidak ada lagi tingkat
+`apps/api`. Versi dependensi ditentukan commit yang di-build, bukan keadaan
+server saat deploy.
+
+Enam path **tidak ikut tersalin**, karena hanya ada di server dan tidak bisa
+dibangun ulang — semuanya di-exclude eksplisit di workflow: `.env` (ditulis dari
+secret `ENV_FILE`), `storage/app` (unggahan pelanggan), `storage/framework`
+(sesi), `storage/logs`, `bootstrap/cache`, dan symlink `public/storage`.
+`rsync --delete` menghapus apa pun di server yang tidak ada di artifact, jadi
+daftar ini adalah satu-satunya pelindung state runtime — jangan disederhanakan.
+
+Klon git tetap ada di `<base>/.api-repo`, tetapi **bukan yang dilayani**:
+gunanya hanya riwayat (`git log`, `git tag`), supaya pertanyaan "apa yang
+terpasang di sini" bisa dijawab tanpa membuka GitHub. Klon ini **best-effort** —
+kalau gagal (git server terlalu tua, jaringan), deploy tetap jalan dengan
+peringatan. `--filter=blob:none --sparse` membuatnya kecil; hanya `apps/api`
+yang turun ke working tree.
 
 ---
 
@@ -20,9 +43,9 @@ Pemicunya **push tag `v*`**, dan satu tag mendeploy keempat app sekaligus. Caban
 **Sebuah rilis adalah tag.** `deploy-prod.yml` berjalan saat tag `v*` di-push, dan mendeploy keempat app dalam satu jalan. Alasannya bukan gaya: satu nomor versi harus menunjuk satu keadaan kode yang diketahui, supaya pertanyaan "situs ini versi berapa" punya jawaban, dan supaya rilis yang sama bisa dipasang ulang.
 
 - **Nomor** — tag Semver `vMAJOR.MINOR.PATCH`. MAJOR untuk perubahan yang bisa merusak situs lain (skema DB, kontrak Hub), MINOR untuk fitur, PATCH untuk perbaikan.
-- **Stempel** — deploy menulis `APP_VERSION` (tag), `APP_COMMIT` (commit hasil checkout), dan `APP_UPSTREAM` (dibaca dari `.upstream-version`, bila ada) ke `.env`, **sesudah** `.env` ditulis dari secret. `GET /v1/version` dan `VITE_APP_VERSION` melaporkan nilai yang sama.
+- **Stempel** — CI menghitung `APP_COMMIT` (commit yang di-build) dan `APP_UPSTREAM` (isi `.upstream-version` di commit itu), lalu deploy menulis `APP_VERSION` (tag), `APP_COMMIT`, dan `APP_UPSTREAM` ke `.env`, **sesudah** `.env` ditulis dari secret. Sengaja dari CI, bukan dari git di server: yang dilaporkan harus artifact yang benar-benar mendarat. `GET /v1/version` dan `VITE_APP_VERSION` melaporkan nilai yang sama.
 - **Gerbang** — `php artisan hub:ping` dijalankan tepat sebelum `migrate`. Bila `HUB_ENABLED=true` dan Hub tidak terjangkau, deploy berhenti sebelum skema tersentuh. Di deploy standalone (`HUB_ENABLED=false`) perintah ini lulus sendiri.
-- **Rollback** — jalankan workflow `Deploy Production` lewat *Run workflow*, isi `ref` dengan tag lama (mis. `v1.3.0`). Server checkout tag itu dan memasangnya kembali.
+- **Rollback** — jalankan workflow `Deploy Production` lewat *Run workflow*, isi `ref` dengan tag lama (mis. `v1.3.0`). CI membangun ulang artifact **dari tag itu** (termasuk `composer.lock`-nya) dan meng-`rsync`-nya kembali; tidak ada `git checkout` di server. Klon riwayat di `<base>/.api-repo` ikut mundur ke tag itu.
 
 **Migrasi harus aditif supaya rollback aman.** Rollback kode tidak membalik migrasi: kalau sebuah rilis menghapus kolom, kode lama akan mencarinya dan gagal. Urutannya: tambah kolom → deploy kode baru → backfill → baru hapus kolom di rilis *berikutnya*.
 
@@ -102,11 +125,11 @@ Data awal dari `migrate --seed` (seeder dev), bukan salinan produksi.
 
 Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
-1. **Clone monorepo (sparse) ke `<base>/api`** (lihat langkah 6). Deploy juga meng-clone sendiri kalau direktorinya masih kosong — sparse, hanya `apps/api`. Server butuh **git >= 2.25**; versi lebih tua menggagalkan deploy dengan pesan jelas.
-2. **Arahkan ulang root nginx untuk API** dari `…/provider/api/public` ke `<base>/api/apps/api/public`.
-3. **Perbarui path supervisor.** `supervisor/api-prod-worker.conf` menjalankan `php <dir>/artisan queue:work`; `<dir>` harus menunjuk lokasi baru.
+1. **Siapkan `<base>/api` sebagai direktori biasa**, bukan klon. Deploy meng-`rsync` artifact ke sana dan membuatnya sendiri kalau belum ada; satu-satunya isi yang wajib dipertahankan adalah `storage/` (lihat langkah 5).
+2. **Arahkan ulang root nginx untuk API** dari `…/provider/api/public` ke **`<base>/api/public`**.
+3. **Perbarui path supervisor.** `supervisor/api-prod-worker.conf` menjalankan `php <dir>/artisan queue:work`; `<dir>` harus menunjuk lokasi baru, `<base>/api`.
 4. **Perbarui entri cron** `schedule:run` ke path baru.
-5. **Pindahkan berkas yang tidak ikut git**: isi `storage/app/public` (banner, logo kategori, bukti transfer) dan `.env`.
+5. **Pindahkan berkas yang tidak ikut artifact**: isi `storage/app/` (banner, logo kategori, bukti transfer, artefak SIT). `.env` **tidak perlu** dipindahkan — deploy menulisnya ulang dari secret `ENV_FILE`.
 6. **Satukan keempat app di bawah satu induk**, satu subdirektori per app, lalu arahkan ulang `root` tiap vhost ke sana:
 
    | Direktori | Isi | `root` nginx |
@@ -114,13 +137,20 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
    | `<base>/admin` | isi `dist/` | `<base>/admin` — `admin.<domain>` |
    | `<base>/payment` | isi `dist/` | `<base>/payment` — `pay.<domain>` |
    | `<base>/storefront` | isi `dist/` | `<base>/storefront` — `<domain>`, domain utama |
-   | `<base>/api` | **klon monorepo (sparse)** | `<base>/api/apps/api/public` — `api.<domain>` |
+   | `<base>/api` | **artifact dari CI** — akar Laravel langsung | **`<base>/api/public`** — `api.<domain>` |
 
-   `api` adalah satu-satunya yang berbeda isinya: Laravel dijalankan dari source, bukan dari hasil build, jadi yang tinggal di sana adalah klon repo ini — tetapi **sparse**: hanya `apps/api` yang di-materialize ke working tree. Source ketiga frontend tidak ikut (mereka disajikan dari `<base>/<app>` sebagai hasil build). `root` nginx-nya menunjuk ke `apps/api/public` **di dalam** direktori itu, bukan ke direktorinya langsung. Klon sparse ini butuh **git >= 2.25** di server.
+   `api` satu-satunya yang isinya artifact, bukan hasil build frontend: CI mengirim source plus `vendor`, dan `rsync --delete` menjaganya persis seperti di repo. Karena artifact sudah berbentuk akar Laravel, `root` nginx-nya menunjuk ke `public` **di dalam** direktori itu — tanpa tingkat `apps/api` lagi.
 
-   Buat `<base>` dan ketiga direktori frontend lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. `<base>/api` boleh dibiarkan kosong; deploy meng-clone sendiri. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
+   Buat `<base>` dan ketiga direktori frontend lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
 
-   **Server yang sudah punya klon penuh:** deploy berikutnya mempersempitnya di tempat (`git sparse-checkout set --cone apps/api`) — tanpa re-clone, jadi `apps/api/storage` (unggahan) dan `apps/api/vendor` tetap aman. Yang belum mengecil dengan cara itu adalah folder `.git`; untuk itu perlu re-clone manual sekali (di luar alur deploy) yang **mempertahankan** `apps/api/storage` dan `.env`.
+   **Server yang sudah punya klon monorepo di `<base>/api`:** unggahan tinggal di `apps/api/storage`, jadi selamatkan dulu. `.env` dan `vendor` tidak perlu — keduanya ditulis ulang deploy (`.env` dari secret, `vendor` dari artifact):
+   ```bash
+   cd /home/uxioserver1/website-topup-monorepo-template/staging
+   rsync -a api/apps/api/storage/ ./_storage-keep/
+   rm -rf api && mkdir -p api
+   rsync -a ./_storage-keep/ api/storage/ && rm -rf ./_storage-keep
+   ```
+   Klon riwayat tidak perlu dibuat manual — deploy pertama membuat `<base>/.api-repo` sendiri. Dan deploy akan **menolak berjalan** selama `<base>/api/apps/api` masih ada, supaya pohon lama beserta unggahannya tidak terhapus oleh `--delete` sebelum migrasi dikerjakan.
 7. **Tambahkan satu secret baru** di GitHub: `DEPLOY_BASE_PATH`, berisi `<base>` di atas tanpa nama app. Workflow yang menyusun `<base>/<app>`, jadi nama direktori **wajib** sama persis dengan nama folder di `apps/` — `admin`, `storefront`, `payment`, `api`.
 8. **Pindahkan `VITE_GOOGLE_CLIENT_ID` ke secret** — sebelumnya di-hardcode di YAML storefront.
 9. **Pasang deploy key di server.** Server meng-clone lewat SSH, jadi user SSH-nya butuh kunci yang terdaftar di repo:
