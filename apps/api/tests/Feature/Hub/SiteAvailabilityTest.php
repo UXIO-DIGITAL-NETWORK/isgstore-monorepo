@@ -220,7 +220,7 @@ class SiteAvailabilityTest extends TestCase
             }
 
             if (! preg_match(
-                '#^api/(v1/(ping|health|hub/|auth/|payment/callback|monetapay/(va|ewallet|qris)/callback'
+                '#^api/(v1/(ping|health|version|hub/|auth/|payment/callback|monetapay/(va|ewallet|qris)/callback'
                     .'|monetapay/subscription/callback/|uxiolabs/callback|uxiotopup/callback'
                     .'|disbursement/merchant/callback|storefront/settings)|broadcasting/)#',
                 $uri,
@@ -271,6 +271,9 @@ class SiteAvailabilityTest extends TestCase
             'GET api/v1/hub/withdrawals',
             'GET api/v1/ping',
             'GET api/v1/storefront/settings',
+            // The deployment's own version. Open while closed on purpose, so an
+            // operator can read the version of a site the Hub switched off.
+            'GET api/v1/version',
             'POST api/v1/auth/2fa/confirm',
             'POST api/v1/auth/2fa/disable',
             // Same standing as setup/confirm above: still behind

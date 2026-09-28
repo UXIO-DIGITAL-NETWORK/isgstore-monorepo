@@ -3,11 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Actions\Withdrawal\HandleDisbursementCallbackAction;
+use App\Contracts\PaymentGateway;
 use App\DTOs\Withdrawal\DisbursementCallbackDTO;
 use App\Enums\WithdrawalStatus;
 use App\Models\Withdrawal;
 use App\Services\DiscordWebhookService;
-use App\Services\Payment\MonetapayService;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -35,7 +35,7 @@ class SyncProcessingWithdrawalsCommand extends Command
     private const STALE_HOURS = 24;
 
     public function __construct(
-        private readonly MonetapayService $monetapay,
+        private readonly PaymentGateway $monetapay,
         private readonly HandleDisbursementCallbackAction $callbackAction,
         private readonly DiscordWebhookService $discord,
     ) {

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\Payment\Monetapay;
 
 use App\Actions\Withdrawal\HandleDisbursementCallbackAction;
+use App\Contracts\PaymentGateway;
 use App\DTOs\Withdrawal\DisbursementCallbackDTO;
 use App\Http\Controllers\Controller;
-use App\Services\Payment\MonetapayService;
 use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\Request;
@@ -24,7 +24,7 @@ class DisbursementCallbackController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly MonetapayService $monetapayService,
+        private readonly PaymentGateway $monetapayService,
         private readonly HandleDisbursementCallbackAction $action,
     ) {}
 

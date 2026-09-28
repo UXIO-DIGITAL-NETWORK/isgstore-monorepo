@@ -24,6 +24,12 @@ Both return `200` with a tiny JSON body; `/health` also reports request latency 
 - `GET /v1/ping`
 - `GET /v1/health`
 
+### Version
+
+`200` with the release identity: `version`, `commit`, `upstream` (the template release this site forked from), `hub_contract`, and `environment`. **Deliberately open even while the site is switched off** — a dark site's version is what an operator reads while deciding whether to switch it back on.
+
+- `GET /v1/version`
+
 ## Payment Webhooks — Webhook
 
 Inbound callbacks from Monetapay (pay-in, disbursement, subscription) and the uxiolabs supplier. Public routes, throttled per IP — the real gate is the signature / source-IP check inside each handler.

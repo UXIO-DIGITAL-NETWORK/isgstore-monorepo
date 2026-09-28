@@ -32,6 +32,11 @@ php artisan test --filter=CheckoutTest
 # Queue worker (standalone, for production-like local testing)
 php artisan queue:listen --tries=3 --timeout=60
 
+# Hub wiring — hub:status prints a live report; hub:ping exits non-zero when
+# HUB_ENABLED but the Hub is unreachable (this is the deploy gate).
+php artisan hub:status
+php artisan hub:ping
+
 # Migrations
 php artisan migrate
 php artisan migrate:fresh --seed
@@ -528,6 +533,20 @@ The caller is an `admin` but the billing data belongs to the site's `payment-adm
 `SettingController::upload()` scopes allowed formats to the setting's `key`: only `logo` accepts `gif`, with a 5 MB ceiling instead of 2 MB. Both halves matter. `ImageOptimizer` already refuses to re-encode an **animated** GIF (GD cannot write animated WebP; converting keeps one frame), and the admin panel's `imageCompression.ts` has the identical guard — so that file reaches disk uncompressed and is therefore the one most likely to be large. A GIF favicon is unpredictable across browsers and no link-preview scraper animates an OG image, which is why the other keys are unchanged.
 
 ## External Integrations
+
+Every outbound integration the engine depends on sits behind a **contract**, and the implementation is chosen by config — never by editing the engine:
+
+| Contract | Chosen by | Default adapter |
+|---|---|---|
+| `App\Contracts\SupplierGateway` | `SUPPLIER_DRIVER` → `services.supplier.adapters` | `UxiolabsService` |
+| `App\Contracts\PaymentGateway` | `PAYMENT_DRIVER` → `services.payment.adapters` | `MonetapayService` |
+| `App\Contracts\ReceiptChannel` (a LIST, not one choice) | `config/notifications.php` → `notifications.receipt` | email + WhatsApp |
+| `App\Contracts\RefundClaimChannel` (a LIST) | `config/notifications.php` → `notifications.refund_claim` | email + WhatsApp |
+| `App\Contracts\RefundCompletedChannel` (a LIST) | `config/notifications.php` → `notifications.refund_completed` | email + WhatsApp |
+
+`App\Support\Integration\AdapterResolver` resolves each one AND validates it against its contract, failing loudly on an unknown driver or a class that does not implement it — so a misconfiguration stops at resolution rather than on the money path. Adding a supplier, a gateway, or a notification channel therefore means **one class plus one config line**; engine code injects the contract type, never the concrete class. `QueryMonetapayAction` is the deliberate exception: it is a vendor diagnostic console, not engine surface.
+
+Two related pieces of release plumbing: `GET /v1/version` reports `version` / `commit` / `upstream` / `hub_contract` (from `config/version.php`, stamped into `.env` by the deploy) and stays open while a site is dark; and `php artisan hub:ping` exits non-zero when `HUB_ENABLED` but the Hub is unreachable, which is what the deploy gates on.
 
 ### Monetapay (Payment Gateway)
 

@@ -5,10 +5,10 @@ namespace App\Actions\Uxiolabs;
 use App\Actions\Points\GrantTransactionPointsAction;
 use App\Actions\Refund\InitiateRefundAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
+use App\Contracts\SupplierGateway;
 use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
 use App\Models\Transaction;
-use App\Services\UxiolabsService;
 use App\Traits\MapsUxiolabsStatus;
 use Exception;
 
@@ -17,7 +17,7 @@ class CheckUxiolabsTransactionStatusAction
     use MapsUxiolabsStatus;
 
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService,
+        private readonly SupplierGateway $uxiolabsService,
         private readonly InitiateRefundAction $refundAction,
         private readonly SendTransactionReceiptAction $receiptAction,
         private readonly GrantTransactionPointsAction $pointsAction,

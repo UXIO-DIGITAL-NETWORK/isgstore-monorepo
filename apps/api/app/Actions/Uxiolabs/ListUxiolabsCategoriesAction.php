@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Uxiolabs;
 
+use App\Contracts\SupplierGateway;
 use App\Models\SupplierCategory;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 
 /**
@@ -19,7 +19,7 @@ use App\Support\Uxiolabs\UxiolabsSupplier;
 class ListUxiolabsCategoriesAction
 {
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService
+        private readonly SupplierGateway $uxiolabsService
     ) {}
 
     /**
@@ -58,7 +58,7 @@ class ListUxiolabsCategoriesAction
             $groups[$kategori] ??= ['sku_count' => 0, 'available_count' => 0];
             $groups[$kategori]['sku_count']++;
 
-            if (UxiolabsService::isItemActive($item)) {
+            if ($this->uxiolabsService->isItemActive($item)) {
                 $groups[$kategori]['available_count']++;
             }
         }

@@ -4,6 +4,7 @@ namespace App\Actions\Uxiolabs;
 
 use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Pricing\WriteProductPricesAction;
+use App\Contracts\SupplierGateway;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Uxiolabs\CreateUxiolabsProductDTO;
 use App\Exceptions\UxiolabsProductException;
@@ -11,7 +12,6 @@ use App\Models\Product;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
 use App\Services\ProductRepricer;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
 class CreateUxiolabsProductAction
 {
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService,
+        private readonly SupplierGateway $uxiolabsService,
         private readonly PricingService $pricingService,
         private readonly WriteProductPricesAction $writePrices,
         private readonly CreateActivityLogAction $logAction
@@ -65,7 +65,7 @@ class CreateUxiolabsProductAction
         $prices['price_reseller'] = $dto->priceReseller ?? $prices['price_reseller'];
         $prices['price_agent'] = $dto->priceAgent ?? $prices['price_agent'];
 
-        $available = UxiolabsService::isItemActive($item);
+        $available = $this->uxiolabsService->isItemActive($item);
 
         // The same prices, where they are actually billed.
         $planPrices = $this->planPricesFor($cost, $dto);

@@ -22,6 +22,10 @@ const cleanEnv = (value: unknown, fallback = ""): string => {
 export const ENV = {
   API_BASE_URL: cleanEnv(import.meta.env.VITE_API_BASE_URL, "http://localhost:8000/api"),
 
+  // Release stamp, baked at build from the tag it ships (e.g. "v1.4.0"). Empty
+  // on a local build.
+  APP_VERSION: cleanEnv(import.meta.env.VITE_APP_VERSION),
+
   // Pusher (hosted, pusher.com) — powers live invoice/member status. Left empty
   // until credentials are provisioned; the app then falls back to polling.
   // Mirror these with the backend's PUSHER_APP_KEY / PUSHER_APP_CLUSTER.
