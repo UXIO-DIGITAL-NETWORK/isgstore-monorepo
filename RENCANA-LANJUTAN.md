@@ -35,9 +35,10 @@ Sudah mendarat di `development` (`64333067`, lalu `520126e9`), lolos test dan Pi
    - Klon lama dipersempit di tempat (tanpa re-clone, jadi `storage` dan `vendor` aman). Butuh git >= 2.25 di server.
    - **Digantikan** oleh model artifact di bawah: klon sparse tidak lagi menjadi apa yang dilayani.
 
-4. **Deploy API sebagai artifact** (`520126e9`)
+4. **Deploy API sebagai artifact** (`520126e9`, `645c8aeb`, lalu perubahan vendor yang belum di-commit)
    - CI membangun artifact — source + `vendor` (`composer install --no-dev`) — lalu `rsync` ke `<base>/api`, sehingga nginx root jadi **`<base>/api/public`** tanpa tingkat `apps/api`.
    - `.env`, `storage/app`, `storage/framework`, `storage/logs`, `bootstrap/cache`, `public/storage` di-exclude karena hanya ada di server.
+   - **Vendor hanya dikirim bila `composer.lock` berubah** (311 MB / 46.321 berkas); penanda `<base>/.api-vendor-hash` dibandingkan sebelum rsync, dan `vendor/autoload.php` diperiksa supaya vendor yang hilang tidak dilewati.
    - `<base>/.api-repo` menyimpan klon git untuk riwayat; best-effort, tidak menahan deploy.
    - Butuh migrasi server sekali (docs/04 §Migrasi): selamatkan `storage/app`, lalu buang pohon lama.
 

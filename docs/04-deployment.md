@@ -33,6 +33,17 @@ daftar ini adalah satu-satunya pelindung state runtime — jangan disederhanakan
 bukan lagi di `apps/api/.env`. Kalau berkas itu dicari di jalur lama, ia memang
 sudah tidak ada di sana: seluruh tingkat `apps/` tidak lagi ikut mendarat.
 
+`vendor/` diperlakukan khusus, karena ia **46.321 berkas / 311 MB** dan
+`composer install` di CI membangunnya ulang setiap run — mtime-nya selalu baru,
+jadi saringan cepat rsync (ukuran + mtime) tidak pernah cocok dan seluruh isinya
+terkirim ulang tiap deploy. Karena itu vendor hanya dikirim **ketika
+`composer.lock` berubah**: CI menaruh hash lock + versi PHP sebagai penanda di
+`<base>/.api-vendor-hash`, **di luar** direktori yang dilayani (kalau di dalam,
+`--delete` akan menghapusnya tiap kali sehingga perbandingannya selalu gagal).
+Penanda yang cocok saja tidak cukup — `vendor/autoload.php` juga diperiksa di
+server, supaya vendor yang hilang tidak dilewati dan meninggalkan situs tanpa
+dependensi. Penanda baru ditulis setelah rsync sukses.
+
 Klon git tetap ada di `<base>/.api-repo`, tetapi **bukan yang dilayani**:
 gunanya hanya riwayat (`git log`, `git tag`), supaya pertanyaan "apa yang
 terpasang di sini" bisa dijawab tanpa membuka GitHub. Klon ini **best-effort** —
