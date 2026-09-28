@@ -35,10 +35,10 @@ Sudah mendarat di `development` (`64333067`, lalu `520126e9`), lolos test dan Pi
    - Klon lama dipersempit di tempat (tanpa re-clone, jadi `storage` dan `vendor` aman). Butuh git >= 2.25 di server.
    - **Digantikan** oleh model artifact di bawah: klon sparse tidak lagi menjadi apa yang dilayani.
 
-4. **Deploy API sebagai artifact** (`520126e9`, `645c8aeb`, `81ac794e`)
-   - CI membangun artifact — source + `vendor` (`composer install --no-dev`) — lalu `rsync` ke `<base>/api`, sehingga nginx root jadi **`<base>/api/public`** tanpa tingkat `apps/api`.
-   - `.env`, `storage/app`, `storage/framework`, `storage/logs`, `bootstrap/cache`, `public/storage` di-exclude karena hanya ada di server.
-   - **Vendor hanya dikirim bila `composer.lock` berubah** (311 MB / 46.321 berkas); penanda `<base>/.api-vendor-hash` dibandingkan sebelum rsync, dan `vendor/autoload.php` diperiksa supaya vendor yang hilang tidak dilewati.
+4. **Deploy API sebagai source, dependensi di server** (`520126e9`, `645c8aeb`, `81ac794e`, lalu perubahan vendor yang belum di-commit)
+   - CI meng-`rsync` **source** ke `<base>/api`, sehingga nginx root jadi **`<base>/api/public`** tanpa tingkat `apps/api`.
+   - `.env`, `vendor`, `storage/app`, `storage/framework`, `storage/logs`, `bootstrap/cache`, `public/storage` di-exclude karena hanya ada di server.
+   - **`vendor` (311 MB / 46.321 berkas) tidak pernah dikirim**: `composer install --no-dev` jalan di server dari `composer.lock`. Server perlu `composer` + akses packagist. Exclude `/vendor/` wajib, kalau tidak `--delete` menghapusnya.
    - `<base>/.api-repo` menyimpan klon git untuk riwayat; best-effort, tidak menahan deploy.
    - Butuh migrasi server sekali (docs/04 §Migrasi): selamatkan `storage/app`, lalu buang pohon lama.
 

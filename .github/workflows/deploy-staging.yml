@@ -23,11 +23,14 @@
 # `staging` sendiri (SSH_*, DEPLOY_BASE_PATH, ENV_FILE, VITE_*), dan
 # HUB_BASE_URL yang menunjuk ke Hub STAGING — bukan produksi.
 #
-# API naik sebagai ARTIFACT yang dibangun di sini (source + vendor,
-# `composer install --no-dev`) lalu di-rsync ke $DEPLOY_BASE_PATH/api. Karena
-# artifact sudah berbentuk akar Laravel, root nginx menunjuk LANGSUNG ke
-# $DEPLOY_BASE_PATH/api/public — tidak ada lagi tingkat `apps/api`. Klon git
-# tetap ada di $DEPLOY_BASE_PATH/.api-repo, tetapi hanya untuk riwayat.
+# API di-rsync sebagai SOURCE ke $DEPLOY_BASE_PATH/api, dan dependensinya
+# dipasang DI SERVER oleh `composer install --no-dev`. Vendor sengaja tidak
+# dikirim: isinya 311 MB / 46.321 berkas, dan mengirimnya setiap deploy membuat
+# langkah rsync lambat tanpa memberi apa pun — composer tetap menentukan versi
+# dari composer.lock yang ikut terkirim. Karena source itu sudah berbentuk akar
+# Laravel, root nginx menunjuk LANGSUNG ke $DEPLOY_BASE_PATH/api/public — tidak
+# ada lagi tingkat `apps/api`. Klon git tetap ada di $DEPLOY_BASE_PATH/.api-repo,
+# tetapi hanya untuk riwayat.
 name: Deploy Staging
 
 on:
@@ -127,33 +130,18 @@ jobs:
           curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
             -d "{\"embeds\":[{\"title\":\"🚀 API Staging Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_REF}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372}]}" || true
 
-      # Runner harus memegang kode yang di-build: job ini menjalankan composer
-      # install dan menghitung stempel dari commit. `ref`-nya diambil dari
-      # DEPLOY_REF, bukan dibiarkan default — kalau tidak, deploy manual dengan
-      # ref tertentu akan membangun ujung cabang yang dipilih di UI, yaitu kode
-      # yang BUKAN sedang diuji.
+      # Runner harus memegang kode yang dideploy: stempel dihitung dari commit.
+      # `ref`-nya diambil dari DEPLOY_REF, bukan dibiarkan default — kalau tidak,
+      # deploy manual dengan ref tertentu akan membangun ujung cabang yang dipilih
+      # di UI, yaitu kode yang BUKAN sedang diuji.
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.DEPLOY_REF }}
 
-      # Artifact dibangun DI SINI, bukan di server. Server tidak menjalankan
-      # composer sama sekali, jadi versi dependensi ditentukan commit ini —
-      # bukan keadaan server saat deploy, yang tidak bisa diperiksa siapa pun
-      # dari luar.
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: sqlite3, pdo_sqlite, gd, exif
-          coverage: none
-
-      # `post-autoload-dump` menjalankan `package:discover`, dan itu sudah
-      # terbukti jalan tanpa `.env` — job `api-test` juga meng-install lebih
-      # dulu, baru membuat `.env`. Jadi tak ada `.env` yang perlu dibuat di
-      # sini, dan tak ada APP_KEY CI yang bisa bocor ke server.
-      - name: Build artifact API
-        working-directory: apps/api
-        run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+      # Tidak ada `composer install` di sini, dan tidak ada langkah build lain.
+      # CI mengirim source apa adanya; dependensi dipasang di server. Itu
+      # memindahkan satu-satunya bagian deploy yang berat (vendor, 311 MB /
+      # 46.321 berkas) ke tempat yang tidak perlu menyeberangi jaringan.
 
       # Stempel dihitung dari commit yang benar-benar di-build. Server tidak lagi
       # membaca git untuk ini, karena yang dilayani bukan pohon git.
@@ -233,49 +221,20 @@ jobs:
             echo "::error::$API_PATH masih berbentuk klon monorepo (ada apps/api) — jalankan migrasi sekali (docs/04-deployment.md §Migrasi) sebelum deploy ini, atau rsync akan menghapus unggahan di dalamnya."
             exit 1
           fi
-          # vendor/ = 46.321 berkas / 311 MB, dan `composer install` di CI
-          # membangunnya ULANG setiap run. Mtime-nya karena itu selalu baru,
-          # saringan cepat rsync (ukuran + mtime) tidak pernah cocok, dan
-          # seluruh isinya terkirim ulang tiap deploy. Itulah yang membuat
-          # langkah ini lama — bukan bandwidth, melainkan 46 ribu berkas.
+          # vendor/ TIDAK PERNAH dikirim. Isinya 311 MB / 46.321 berkas, dan
+          # itulah satu-satunya bagian deploy ini yang berat — memindahkannya
+          # menyeberangi jaringan tiap rilis tidak memberi apa pun, sedangkan
+          # `composer install` di server menentukan versi yang sama dari
+          # composer.lock yang ikut terkirim.
           #
-          # Jadi vendor hanya ikut dikirim ketika composer.lock berubah.
-          # Penandanya disimpan DI LUAR $API_PATH: kalau di dalam, ia tidak ada
-          # di artifact dan `--delete` akan menghapusnya tiap kali, sehingga
-          # perbandingannya selalu gagal dan vendor selalu terkirim.
-          VENDOR_MARKER="${DEPLOY_BASE_PATH%/}/.api-vendor-hash"
-          # Di-hash lewat PHP, bukan `sha256sum`: PHP sudah pasti ada di runner
-          # ini (langkah "Setup PHP"), sedangkan sha256sum menambah satu
-          # ketergantungan yang tidak perlu — dan hash-nya jadi bisa diuji di
-          # mesin developer. Versi PHP ikut masuk ke kunci karena vendor yang
-          # dibangun untuk 8.4 tidak otomatis benar untuk 8.3.
-          [ -f apps/api/composer.lock ] || { echo "::error::apps/api/composer.lock tidak ada — versi dependensi tidak bisa dipastikan."; exit 1; }
-          VENDOR_HASH="$(php -r 'printf("%s-php%d.%d", substr(hash_file("sha256", "apps/api/composer.lock"), 0, 16), PHP_MAJOR_VERSION, PHP_MINOR_VERSION);')"
-          REMOTE_VENDOR_HASH="$(ssh -i "$HOME/.ssh/deploy_key" -p "$SSH_PORT" -o BatchMode=yes -o IdentitiesOnly=yes \
-            "$SSH_USERNAME@$SSH_HOST" "cat '$VENDOR_MARKER' 2>/dev/null || true" | tr -d '[:space:]')"
-
-          # vendor/autoload.php diperiksa terpisah: penanda yang cocok tetapi
-          # vendor yang tidak ada (dihapus manual, disk baru) akan melewati
-          # pengiriman dan meninggalkan situs tanpa dependensi sama sekali.
-          VENDOR_PRESENT=no
-          if ssh -i "$HOME/.ssh/deploy_key" -p "$SSH_PORT" -o BatchMode=yes -o IdentitiesOnly=yes \
-               "$SSH_USERNAME@$SSH_HOST" "test -f '$API_PATH/vendor/autoload.php'"; then
-            VENDOR_PRESENT=yes
-          fi
-
-          VENDOR_EXCLUDE=""
-          if [ "$VENDOR_HASH" = "$REMOTE_VENDOR_HASH" ] && [ "$VENDOR_PRESENT" = yes ]; then
-            echo "composer.lock tidak berubah ($VENDOR_HASH) dan vendor ada — vendor dilewati."
-            VENDOR_EXCLUDE="--exclude=/vendor/"
-          else
-            echo "vendor ikut dikirim (server: '${REMOTE_VENDOR_HASH:-kosong}' -> $VENDOR_HASH; vendor ada: $VENDOR_PRESENT)."
-          fi
-
-          # `-a` sudah termasuk `-r`; `-v` dibuang karena 46 ribu barisnya
-          # menjejali log tanpa memberi tahu apa pun yang `--stats` tidak
-          # ringkas.
+          # Exclude-nya WAJIB, bukan penghematan: artifact tidak lagi memuat
+          # vendor, jadi tanpa baris ini `--delete` akan menghapus vendor yang
+          # sudah ada di server dan meninggalkan situs tanpa dependensi.
+          #
+          # `-v` sengaja tidak dipakai: dengan ~1.600 berkas pun ia menjejali
+          # log tanpa memberi tahu apa pun yang `--stats` tidak ringkas.
           rsync -az --delete --stats \
-            $VENDOR_EXCLUDE \
+            --exclude '/vendor/' \
             --exclude '/.env' \
             --exclude '/storage/app/' \
             --exclude '/storage/framework/' \
@@ -285,12 +244,6 @@ jobs:
             -e "ssh -i $HOME/.ssh/deploy_key -p $SSH_PORT -o BatchMode=yes -o IdentitiesOnly=yes" \
             "apps/api/" \
             "$SSH_USERNAME@$SSH_HOST:$API_PATH"
-
-          # Dicatat SETELAH rsync sukses. Kalau pengiriman gagal di tengah,
-          # penanda lama tetap berlaku sehingga percobaan berikutnya mengirim
-          # ulang vendor, bukan melewatinya dengan isi yang belum utuh.
-          ssh -i "$HOME/.ssh/deploy_key" -p "$SSH_PORT" -o BatchMode=yes -o IdentitiesOnly=yes \
-            "$SSH_USERNAME@$SSH_HOST" "printf '%s\n' '$VENDOR_HASH' > '$VENDOR_MARKER'"
 
       - name: Execute deployment via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -433,10 +386,11 @@ jobs:
 
             cd "$API_DIR"
 
-            # 0f. Skeleton runtime. Enam path ini SENGAJA tidak ikut rsync (lihat
+            # 0f. Skeleton runtime. Tujuh path ini SENGAJA tidak ikut rsync (lihat
             #     langkah "Deploy API via rsync"): .env ditulis dari secret,
-            #     storage menyimpan unggahan dan sesi pelanggan, bootstrap/cache
-            #     dan public/storage dihasilkan di server. Tanpa mkdir ini, server
+            #     vendor dipasang composer install di langkah 4, storage
+            #     menyimpan unggahan dan sesi pelanggan, bootstrap/cache dan
+            #     public/storage dihasilkan di server. Tanpa mkdir ini, server
             #     yang masih baru tidak punya direktori tempat Laravel menulis.
             mkdir -p storage/app/public \
                      storage/framework/cache/data \
@@ -469,10 +423,16 @@ jobs:
             chmod 640 .env
             sudo chown "$(id -un):www-data" .env
 
-            # 4. Dependensi produksi sudah ADA di dalam artifact: CI menjalankan
-            #    composer install --no-dev --optimize-autoloader. Tidak ada
-            #    composer install di sini, jadi versi dependensi ditentukan
-            #    commit yang di-build, bukan keadaan server saat deploy.
+            # 4. Dependensi produksi. Dipasang DI SINI, bukan dikirim dari CI:
+            #    vendor 311 MB / 46.321 berkas, dan memindahkannya menyeberangi
+            #    jaringan tiap rilis membuat langkah rsync lambat tanpa memberi
+            #    apa pun. Versinya tetap ditentukan rilis ini — composer.lock
+            #    ikut terkirim, dan `install` (bukan `update`) tidak pernah
+            #    menyimpang darinya.
+            command -v composer >/dev/null || {
+              echo "::error::composer tidak ada di server staging. Pasang dulu (docs/04-deployment.md) — dependensi API dipasang di sini, bukan dikirim CI."; exit 1; }
+            composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader \
+              || { echo "::error::composer install gagal — pastikan server staging bisa menjangkau packagist, lalu deploy ulang."; exit 1; }
 
             # 4a. Buang cache lama SEBELUM membaca konfigurasi. Tanpa ini
             #     `config:cache` dari deploy sebelumnya menyajikan env yang lama,

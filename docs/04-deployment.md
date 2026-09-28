@@ -6,7 +6,7 @@ Keempat aplikasi mendarat di **satu server**, di direktori bersebelahan. Sebelum
 
 | App | Cara naik | Tujuan |
 |---|---|---|
-| API | CI membangun artifact (`composer install --no-dev`) lalu `rsync`; `migrate`/cache lewat artisan di server | `<base>/api` |
+| API | `rsync` source dari CI; `composer install --no-dev` + `migrate`/cache lewat artisan di server | `<base>/api` |
 | Admin | build di CI, `rsync` folder `dist/` | `…/provider/admin` |
 | Storefront | idem | `…/provider/fe` |
 | Payment | idem | `…/provider/payment` |
@@ -15,34 +15,36 @@ Pemicunya **push tag `v*`**, dan satu tag mendeploy keempat app sekaligus. Caban
 
 ### Bagaimana API naik
 
-API tidak di-clone di server. CI membangun **artifact** — source plus `vendor`
-hasil `composer install --no-dev --optimize-autoloader` — lalu meng-`rsync`-nya ke
-`<base>/api`. Karena itu direktori tersebut **sudah berbentuk akar Laravel**, dan
-root nginx menunjuk langsung ke `<base>/api/public`; tidak ada lagi tingkat
-`apps/api`. Versi dependensi ditentukan commit yang di-build, bukan keadaan
-server saat deploy.
+API tidak di-clone di server. CI meng-`rsync` **source**-nya ke `<base>/api`, dan
+`composer install` di server yang memasang dependensinya. Karena source itu sudah
+berbentuk akar Laravel, root nginx menunjuk langsung ke `<base>/api/public`;
+tidak ada lagi tingkat `apps/api`. Versi dependensi tetap ditentukan rilis ini —
+`composer.lock` ikut terkirim, dan `install` (bukan `update`) tidak pernah
+menyimpang darinya.
 
-Enam path **tidak ikut tersalin**, karena hanya ada di server dan tidak bisa
+Tujuh path **tidak ikut tersalin**, karena hanya ada di server dan tidak bisa
 dibangun ulang — semuanya di-exclude eksplisit di workflow: `.env` (ditulis dari
-secret `ENV_FILE`), `storage/app` (unggahan pelanggan), `storage/framework`
+secret `ENV_FILE`), `vendor` (dipasang `composer install` di server), `storage/app`
+(unggahan pelanggan), `storage/framework`
 (sesi), `storage/logs`, `bootstrap/cache`, dan symlink `public/storage`.
-`rsync --delete` menghapus apa pun di server yang tidak ada di artifact, jadi
+`rsync --delete` menghapus apa pun di server yang tidak ada di source, jadi
 daftar ini adalah satu-satunya pelindung state runtime — jangan disederhanakan.
 
 `.env` karena itu ada di **`<base>/api/.env`** (mode `640`, milik user deploy),
 bukan lagi di `apps/api/.env`. Kalau berkas itu dicari di jalur lama, ia memang
 sudah tidak ada di sana: seluruh tingkat `apps/` tidak lagi ikut mendarat.
 
-`vendor/` diperlakukan khusus, karena ia **46.321 berkas / 311 MB** dan
-`composer install` di CI membangunnya ulang setiap run — mtime-nya selalu baru,
-jadi saringan cepat rsync (ukuran + mtime) tidak pernah cocok dan seluruh isinya
-terkirim ulang tiap deploy. Karena itu vendor hanya dikirim **ketika
-`composer.lock` berubah**: CI menaruh hash lock + versi PHP sebagai penanda di
-`<base>/.api-vendor-hash`, **di luar** direktori yang dilayani (kalau di dalam,
-`--delete` akan menghapusnya tiap kali sehingga perbandingannya selalu gagal).
-Penanda yang cocok saja tidak cukup — `vendor/autoload.php` juga diperiksa di
-server, supaya vendor yang hilang tidak dilewati dan meninggalkan situs tanpa
-dependensi. Penanda baru ditulis setelah rsync sukses.
+`vendor/` **tidak pernah dikirim**. Isinya 46.321 berkas / 311 MB, dan
+memindahkannya menyeberangi jaringan tiap rilis tidak memberi apa pun:
+`composer install --no-dev` di server menentukan versi yang sama dari
+`composer.lock` yang ikut terkirim. Karena itu exclude `/vendor/` bersifat
+**wajib**, bukan penghematan — artifact tidak lagi memuat vendor, jadi tanpa
+exclude itu `rsync --delete` akan menghapus vendor yang sudah ada di server dan
+meninggalkan situs tanpa dependensi sama sekali.
+
+Konsekuensinya server perlu **`composer` terpasang** dan bisa menjangkau
+packagist; deploy berhenti dengan pesan jelas kalau salah satunya tidak
+terpenuhi, sebelum migrasi menyentuh skema.
 
 Klon git tetap ada di `<base>/.api-repo`, tetapi **bukan yang dilayani**:
 gunanya hanya riwayat (`git log`, `git tag`), supaya pertanyaan "apa yang
@@ -60,7 +62,7 @@ yang turun ke working tree.
 - **Nomor** — tag Semver `vMAJOR.MINOR.PATCH`. MAJOR untuk perubahan yang bisa merusak situs lain (skema DB, kontrak Hub), MINOR untuk fitur, PATCH untuk perbaikan.
 - **Stempel** — CI menghitung `APP_COMMIT` (commit yang di-build) dan `APP_UPSTREAM` (isi `.upstream-version` di commit itu), lalu deploy menulis `APP_VERSION` (tag), `APP_COMMIT`, dan `APP_UPSTREAM` ke `.env`, **sesudah** `.env` ditulis dari secret. Sengaja dari CI, bukan dari git di server: yang dilaporkan harus artifact yang benar-benar mendarat. `GET /v1/version` dan `VITE_APP_VERSION` melaporkan nilai yang sama.
 - **Gerbang** — `php artisan hub:ping` dijalankan tepat sebelum `migrate`. Bila `HUB_ENABLED=true` dan Hub tidak terjangkau, deploy berhenti sebelum skema tersentuh. Di deploy standalone (`HUB_ENABLED=false`) perintah ini lulus sendiri.
-- **Rollback** — jalankan workflow `Deploy Production` lewat *Run workflow*, isi `ref` dengan tag lama (mis. `v1.3.0`). CI membangun ulang artifact **dari tag itu** (termasuk `composer.lock`-nya) dan meng-`rsync`-nya kembali; tidak ada `git checkout` di server. Klon riwayat di `<base>/.api-repo` ikut mundur ke tag itu.
+- **Rollback** — jalankan workflow `Deploy Production` lewat *Run workflow*, isi `ref` dengan tag lama (mis. `v1.3.0`). CI mengirim source tag itu, dan server memasang dependensinya dari `composer.lock` tag tersebut; tidak ada `git checkout` di server. Klon riwayat di `<base>/.api-repo` ikut mundur ke tag itu.
 
 **Migrasi harus aditif supaya rollback aman.** Rollback kode tidak membalik migrasi: kalau sebuah rilis menghapus kolom, kode lama akan mencarinya dan gagal. Urutannya: tambah kolom → deploy kode baru → backfill → baru hapus kolom di rilis *berikutnya*.
 
@@ -152,13 +154,13 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
    | `<base>/admin` | isi `dist/` | `<base>/admin` — `admin.<domain>` |
    | `<base>/payment` | isi `dist/` | `<base>/payment` — `pay.<domain>` |
    | `<base>/storefront` | isi `dist/` | `<base>/storefront` — `<domain>`, domain utama |
-   | `<base>/api` | **artifact dari CI** — akar Laravel langsung | **`<base>/api/public`** — `api.<domain>` |
+   | `<base>/api` | **source dari CI** + `vendor` dari composer — akar Laravel langsung | **`<base>/api/public`** — `api.<domain>` |
 
-   `api` satu-satunya yang isinya artifact, bukan hasil build frontend: CI mengirim source plus `vendor`, dan `rsync --delete` menjaganya persis seperti di repo. Karena artifact sudah berbentuk akar Laravel, `root` nginx-nya menunjuk ke `public` **di dalam** direktori itu — tanpa tingkat `apps/api` lagi.
+   `api` satu-satunya yang isinya source, bukan hasil build frontend: CI mengirim source-nya, dan server memasang `vendor` lewat `composer install`. Karena source itu sudah berbentuk akar Laravel, `root` nginx-nya menunjuk ke `public` **di dalam** direktori itu — tanpa tingkat `apps/api` lagi.
 
    Buat `<base>` dan ketiga direktori frontend lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
 
-   **Server yang sudah punya klon monorepo di `<base>/api`:** unggahan tinggal di `apps/api/storage`, jadi selamatkan dulu. `.env` dan `vendor` tidak perlu — keduanya ditulis ulang deploy (`.env` dari secret, `vendor` dari artifact):
+   **Server yang sudah punya klon monorepo di `<base>/api`:** unggahan tinggal di `apps/api/storage`, jadi selamatkan dulu. `.env` dan `vendor` tidak perlu — `.env` ditulis ulang dari secret, `vendor` dipasang ulang `composer install`:
    ```bash
    cd /home/uxioserver1/website-topup-monorepo-template/staging
    rsync -a api/apps/api/storage/ ./_storage-keep/
@@ -363,11 +365,10 @@ pun yang memberi CI akses ke server; yang penting kontrolnya ada:
 ## Urutan deploy API, dan kenapa tiap langkah ada
 
 ```
-git fetch --tags --force       ← gagal di sini membatalkan deploy SEBELUM apa pun berubah
-git checkout --force <tag>     ← rilis adalah TAG, bukan ujung `main`
+rsync source dari CI            ← SEBELUM ini, langkah rsync menolak jalan bila server belum dimigrasi
 tulis .env dari secret
 stempel APP_VERSION/APP_COMMIT/APP_UPSTREAM ke .env
-composer install --no-dev
+composer install --no-dev       ← vendor dipasang DI SERVER, tidak pernah dikirim
 optimize:clear                 ← buang config cache lama, supaya gerbang membaca .env baru
 php artisan hub:ping           ← GAGAL bila Hub tersambung tapi tak terjangkau (standalone: lulus)
 php artisan migrate --force

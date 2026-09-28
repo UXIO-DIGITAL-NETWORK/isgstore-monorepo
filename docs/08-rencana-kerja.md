@@ -31,8 +31,8 @@ Banyak situs akan lahir dari cetakan ini (`web-topup-monorepo`), masing-masing b
 | Dokumentasi konsep | Zona, stempel, colokan disebar ke README/02/04/06/07 dan `apps/api/CLAUDE.md`; docs HTML interaktif | `6bd17ed0`, `972286c9` |
 | Higiene | 7 workflow mati dihapus, 9 `.pyc` dilepas + diabaikan, nama env supplier di docs/04 diperbaiki | `a714c309` |
 | Efisiensi deploy | Klon API **sparse** + partial clone — server hanya menerima `apps/api`, bukan seluruh monorepo; plus trusted proxy & penjaga rilis | `64333067` |
-| Deploy API artifact | API naik sebagai artifact CI (`composer install --no-dev` + `rsync`), jadi akar Laravel langsung di `<base>/api` dan nginx root `<base>/api/public`; klon `.api-repo` hanya riwayat | `520126e9`, `645c8aeb` |
-| Vendor hemat transfer | `vendor/` (311 MB / 46.321 berkas) hanya dikirim bila `composer.lock` berubah; penanda `<base>/.api-vendor-hash` dibandingkan sebelum rsync, `-v` dibuang | `81ac794e` |
+| Deploy API source | API di-`rsync` sebagai source ke `<base>/api` (akar Laravel langsung, nginx root `<base>/api/public`); dependensi dipasang di server; klon `.api-repo` hanya riwayat | `520126e9`, `645c8aeb` |
+| Vendor di server | `vendor/` (311 MB / 46.321 berkas) tidak pernah dikirim — `composer install --no-dev` jalan di server dari `composer.lock`; exclude `/vendor/` wajib supaya `--delete` tidak menghapusnya. Menggantikan pendekatan penanda hash | `81ac794e`, *(belum di-commit)* |
 
 ## Terverifikasi
 
