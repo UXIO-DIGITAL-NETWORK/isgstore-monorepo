@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Actions\Service\ActivateServiceSubscriptionAction;
+use App\Contracts\PaymentGateway;
 use App\Enums\ServiceInvoiceStatus;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
-use App\Services\Payment\MonetapayService;
 use App\Support\Ledger\ServiceRevenueLedger;
 use Exception;
 use Illuminate\Console\Command;
@@ -41,7 +41,7 @@ class SyncExpiredServicePaymentsCommand extends Command
     private const PENDING_STATUSES = ['pending', 'processing', 'waiting', '0', ''];
 
     public function __construct(
-        private readonly MonetapayService $monetapay,
+        private readonly PaymentGateway $monetapay,
         private readonly ActivateServiceSubscriptionAction $activateAction,
     ) {
         parent::__construct();

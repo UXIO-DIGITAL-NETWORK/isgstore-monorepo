@@ -1,67 +1,85 @@
 # Deploy produksi untuk keempat aplikasi, dari satu repo.
 #
+# SEBUAH RILIS ADALAH TAG. Workflow ini berjalan saat tag RILIS (v1.2.3)
+# di-push, dan mendeploy KEEMPAT app sekaligus — itulah yang membuat satu nomor
+# versi berarti satu keadaan kode yang diketahui dan bisa dipasang ulang.
+# Tag pra-rilis (v1.2.3-rc.1) TIDAK masuk ke sini; itu jalur staging.
+# Deployment manual (`workflow_dispatch`) menerima `ref`, yang dipakai untuk
+# ROLLBACK: isi tag lama, dan server kembali ke kode itu. Cabang `main` tidak
+# lagi mendeploy produksi — jalur itu untuk staging (lihat deploy-staging.yml).
+#
 # PERUBAHAN DI SISI SERVER YANG DIBUTUHKAN — baca docs/04-deployment.md §Migrasi
 # ke monorepo sebelum menjalankan ini. Sebelumnya server meng-clone empat repo
 # ke empat direktori. Sekarang keempat app berbagi satu induk, secret
 # DEPLOY_BASE_PATH: frontend menerima isi dist/ di $DEPLOY_BASE_PATH/<app>,
-# sedangkan monorepo-nya sendiri di-clone ke $DEPLOY_BASE_PATH/api dan API
-# dilayani dari apps/api/public di dalamnya — jadi root nginx keempat vhost
-# harus diarahkan ulang.
+# sedangkan API di-rsync sebagai SOURCE ke $DEPLOY_BASE_PATH/api, dan
+# dependensinya dipasang DI SERVER oleh `composer install --no-dev`.
+# Vendor sengaja tidak dikirim: isinya 311 MB / 46.321 berkas, dan mengirimnya
+# setiap deploy membuat langkah rsync lambat tanpa memberi apa pun — composer
+# tetap menentukan versi dari composer.lock yang ikut terkirim. Karena source
+# itu sudah berbentuk akar Laravel, root nginx api.<domain> menunjuk LANGSUNG ke
+# $DEPLOY_BASE_PATH/api/public — tidak ada lagi tingkat `apps/api`. Klon git
+# tetap ada di $DEPLOY_BASE_PATH/.api-repo, tetapi hanya untuk riwayat: yang
+# dilayani adalah source, bukan pohon git.
 name: Deploy Production
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch: {}
+    # Pola ini sengaja TIDAK cocok pada tag pra-rilis: setelah `[0-9]+` ia
+    # menuntut sebuah titik, sedangkan v1.3.0-rc.1 punya tanda hubung di situ.
+    # Dengan `v*` yang longgar, satu tag rc akan memicu produksi DAN staging
+    # sekaligus — sabuk pengaman di job memang menahannya, tapi hasilnya run
+    # produksi yang gagal, dan itu kebisingan yang menyesatkan.
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag yang dideploy. Isi tag lama (mis. v1.3.0) untuk rollback.'
+        required: false
+        default: ''
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-production
   cancel-in-progress: false # deploy tidak boleh dibatalkan di tengah jalan
+
+env:
+  # Rilis yang sedang mendarat: tag yang di-push, atau `ref` saat rollback manual.
+  # Dipakai untuk checkout, untuk stempel di .env, dan untuk stempel build frontend.
+  DEPLOY_REF: ${{ inputs.ref || github.ref_name }}
+  APP_VERSION: ${{ inputs.ref || github.ref_name }}
+
+# Nothing here writes to the repository. Without this block every job inherits
+# the default token, which CAN push — so a compromised step in any of the
+# third-party actions below would inherit the right to push to the repo it is
+# deploying. Read-only is all this pipeline needs.
+permissions:
+  contents: read
 
 jobs:
   changes:
-    name: Deteksi app yang berubah
+    # Sebuah tag mendeploy KEEMPAT app sekaligus, jadi daftarnya tetap — tidak ada
+    # path filter di sini. Selain memang itu artinya sebuah rilis, `dorny/
+    # paths-filter` juga tidak punya pembanding yang bermakna pada event tag.
+    name: App yang dideploy
     runs-on: ubuntu-latest
     outputs:
-      api: ${{ steps.filter.outputs.api }}
-      admin: ${{ steps.filter.outputs.admin }}
-      storefront: ${{ steps.filter.outputs.storefront }}
-      payment: ${{ steps.filter.outputs.payment }}
-      frontend: ${{ steps.matrix.outputs.frontend }}
+      api: ${{ steps.all.outputs.api }}
+      admin: ${{ steps.all.outputs.admin }}
+      storefront: ${{ steps.all.outputs.storefront }}
+      payment: ${{ steps.all.outputs.payment }}
+      frontend: ${{ steps.all.outputs.frontend }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            api: ['apps/api/**', '.github/workflows/**']
-            admin: ['apps/admin/**', '.github/workflows/**']
-            storefront: ['apps/storefront/**', '.github/workflows/**']
-            payment: ['apps/payment/**', '.github/workflows/**']
-
-      # `matrix` tidak tersedia di `if:` level job, jadi penyaringan app yang
-      # berubah tidak bisa ditulis di sana. Matriksnya disusun di sini sebagai
-      # JSON, dan job frontend hanya menerima app yang benar-benar berubah.
-      - name: Susun matrix frontend
-        id: matrix
-        env:
-          ADMIN: ${{ steps.filter.outputs.admin }}
-          STOREFRONT: ${{ steps.filter.outputs.storefront }}
-          PAYMENT: ${{ steps.filter.outputs.payment }}
+      - name: Semua app
+        id: all
         run: |
           set -euo pipefail
-          items=''
-          add() { items="${items:+$items,}$1"; }
-          if [ "$ADMIN" = 'true' ]; then
-            add '{"app":"admin","label":"Admin Dashboard"}'
-          fi
-          if [ "$STOREFRONT" = 'true' ]; then
-            add '{"app":"storefront","label":"Storefront"}'
-          fi
-          if [ "$PAYMENT" = 'true' ]; then
-            add '{"app":"payment","label":"Payment Page"}'
-          fi
-          echo "frontend={\"include\":[$items]}" >> "$GITHUB_OUTPUT"
+          {
+            echo 'api=true'
+            echo 'admin=true'
+            echo 'storefront=true'
+            echo 'payment=true'
+            echo 'frontend={"include":[{"app":"admin","label":"Admin Dashboard"},{"app":"storefront","label":"Storefront"},{"app":"payment","label":"Payment Page"}]}'
+          } >> "$GITHUB_OUTPUT"
 
   # ── API ────────────────────────────────────────────────────────────────────
   api-test:
@@ -87,26 +105,162 @@ jobs:
     name: API — deploy
     needs: api-test
     runs-on: ubuntu-latest
+    # Environment `production` menautkan secret-nya (ENV_FILE, DEPLOY_BASE_PATH,
+    # SSH_*) ke deployment ini, dan menjadi tempat memasang required reviewers
+    # bila suatu saat sebuah rilis perlu disetujui manusia.
+    environment: production
     steps:
+      # Sabuk pengaman pra-rilis, sebelum apa pun yang lain. Pola pemicu di atas
+      # (`v[0-9]+.[0-9]+.[0-9]+`) sudah menolak tag rc, tapi salah kirim rc ke
+      # produksi tidak bisa ditarik kembali — jadi diperiksa sekali lagi di sini,
+      # dan sekali lagi di dalam skrip deploy di server.
+      - name: Tolak tag pra-rilis
+        run: |
+          case "${DEPLOY_REF}" in
+            *-*) echo "::error::${DEPLOY_REF} adalah tag pra-rilis — itu untuk staging, bukan produksi."; exit 1 ;;
+          esac
+
       - name: Notify Discord — deploy started
         continue-on-error: true
         env:
           DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
           GH_ACTOR: ${{ github.actor }}
-          GH_SHA: ${{ github.sha }}
+          GH_REF: ${{ env.DEPLOY_REF }}
           GH_RUN_ID: ${{ github.run_id }}
           GH_REPO: ${{ github.repository }}
         run: |
           [ -z "$DISCORD_URL" ] && exit 0
           curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"🚀 API Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_SHA:0:7}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372}]}" || true
+            -d "{\"embeds\":[{\"title\":\"🚀 API Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_REF}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372}]}" || true
+
+      # Runner harus memegang kode yang dideploy: stempel dihitung dari commit.
+      # `ref`-nya diambil dari DEPLOY_REF, bukan dibiarkan default — kalau tidak,
+      # rollback lewat *Run workflow* (ref = tag lama) akan membangun ujung
+      # cabang yang dipilih di UI, yaitu kode yang BUKAN sedang dipulihkan.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
+
+      # Tidak ada `composer install` di sini, dan tidak ada langkah build lain.
+      # CI mengirim source apa adanya; dependensi dipasang di server. Itu
+      # memindahkan satu-satunya bagian deploy yang berat (vendor, 311 MB /
+      # 46.321 berkas) ke tempat yang tidak perlu menyeberangi jaringan.
+
+      # Stempel dihitung dari commit yang benar-benar di-build. Server tidak lagi
+      # membaca git untuk ini, karena yang dilayani bukan pohon git.
+      - name: Hitung stempel rilis
+        id: stamp
+        run: |
+          set -euo pipefail
+          echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          if [ -f .upstream-version ]; then
+            echo "upstream=$(tr -d '[:space:]' < .upstream-version)" >> "$GITHUB_OUTPUT"
+          else
+            echo "upstream=" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Pola yang sama dengan job frontend: rinciannya sengaja identik (pin host
+      # key lewat SSH_HOST_KEY, `ssh-keyscan` hanya sebagai mundur) supaya tidak
+      # ada dua kebiasaan berbeda di repo ini.
+      - name: Siapkan kunci SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY" || { echo "::error::secret SSH_PRIVATE_KEY belum diisi"; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$SSH_HOST_KEY" ]; then
+            printf '%s\n' "$SSH_HOST_KEY" >> ~/.ssh/known_hosts
+            echo "Host key dipin dari secret SSH_HOST_KEY."
+          else
+            echo "::warning::SSH_HOST_KEY belum diisi — host key direkam dengan ssh-keyscan, yang mempercayai apa pun yang menjawab saat itu. Isi secret itu untuk menutup celah MITM."
+            ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      # Seluruh akar Laravel disalin, bukan satu subtree, karena artifact memang
+      # sudah berbentuk akar. `--delete` membuat server mencerminkan artifact:
+      # berkas yang dihapus di repo ikut hilang, bukan menumpuk selamanya.
+      #
+      # SETIAP --exclude di bawah adalah state yang HANYA ada di server dan tidak
+      # bisa dibangun ulang. Menghapus salah satunya berarti kehilangan unggahan
+      # pelanggan atau kunci enkripsi, jadi jangan disederhanakan "sekadar rapi".
+      #   /.env              — ditulis dari secret ENV_FILE. CI punya .env
+      #                        sendiri (dari .env.example) dan APP_KEY-nya tidak
+      #                        boleh ikut mendarat di server.
+      #   /storage/app/      — unggahan pelanggan dan artefak SIT.
+      #   /storage/framework/— sesi dan cache; menghapusnya memutus sesi yang
+      #                        sedang berjalan tanpa alasan.
+      #   /storage/logs/     — log; dibiarkan supaya jejak deploy lama terbaca.
+      #   /bootstrap/cache/  — manifest paket & cache config, dihasilkan ulang
+      #                        oleh perintah artisan di langkah berikutnya.
+      #   /public/storage    — symlink yang dibuat `php artisan storage:link`.
+      - name: Deploy API via rsync
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
+        run: |
+          set -euo pipefail
+          # DEPLOY_BASE_PATH kosong membuat API_PATH jatuh ke "/api" — di luar
+          # dugaan, dan rsync --delete akan menghapus isinya.
+          test -n "$DEPLOY_BASE_PATH" || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+          API_PATH="${DEPLOY_BASE_PATH%/}/api"
+          # Server yang belum dimigrasi masih berbentuk klon monorepo: akar
+          # Laravel-nya ada di $API_PATH/apps/api, dan unggahan pelanggan ikut di
+          # sana. rsync --delete akan menghapusnya, jadi keadaan itu diperiksa DI
+          # SINI — sebelum rsync menyentuh apa pun. Memeriksanya SESUDAH rsync
+          # tidak ada gunanya: pohonnya sudah terhapus lebih dulu, dan yang
+          # tersisa adalah direktori baru tanpa apps/api, yang justru terbaca
+          # "sudah dimigrasi". Migrasinya: docs/04-deployment.md §Migrasi.
+          if ssh -i "$HOME/.ssh/deploy_key" -p "$SSH_PORT" -o BatchMode=yes -o IdentitiesOnly=yes \
+               "$SSH_USERNAME@$SSH_HOST" "test -d '$API_PATH/apps/api'"; then
+            echo "::error::$API_PATH masih berbentuk klon monorepo (ada apps/api) — jalankan migrasi sekali (docs/04-deployment.md §Migrasi) sebelum deploy ini, atau rsync akan menghapus unggahan di dalamnya."
+            exit 1
+          fi
+          # vendor/ TIDAK PERNAH dikirim. Isinya 311 MB / 46.321 berkas, dan
+          # itulah satu-satunya bagian deploy ini yang berat — memindahkannya
+          # menyeberangi jaringan tiap rilis tidak memberi apa pun, sedangkan
+          # `composer install` di server menentukan versi yang sama dari
+          # composer.lock yang ikut terkirim.
+          #
+          # Exclude-nya WAJIB, bukan penghematan: artifact tidak lagi memuat
+          # vendor, jadi tanpa baris ini `--delete` akan menghapus vendor yang
+          # sudah ada di server dan meninggalkan situs tanpa dependensi.
+          #
+          # `-v` sengaja tidak dipakai: dengan ~1.600 berkas pun ia menjejali
+          # log tanpa memberi tahu apa pun yang `--stats` tidak ringkas.
+          rsync -az --delete --stats \
+            --exclude '/vendor/' \
+            --exclude '/.env' \
+            --exclude '/storage/app/' \
+            --exclude '/storage/framework/' \
+            --exclude '/storage/logs/' \
+            --exclude '/bootstrap/cache/' \
+            --exclude '/public/storage' \
+            -e "ssh -i $HOME/.ssh/deploy_key -p $SSH_PORT -o BatchMode=yes -o IdentitiesOnly=yes" \
+            "apps/api/" \
+            "$SSH_USERNAME@$SSH_HOST:$API_PATH"
 
       - name: Execute deployment via SSH
+        timeout-minutes: 35
         uses: appleboy/ssh-action@v1.0.3
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
           DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
           GH_REPOSITORY: ${{ github.repository }}
+          DEPLOY_REF: ${{ env.DEPLOY_REF }}
+          APP_VERSION: ${{ env.APP_VERSION }}
+          # Dihitung di CI dari commit yang di-build, bukan dibaca dari git di
+          # server: yang dilaporkan `/v1/version` harus artifact yang mendarat.
+          APP_COMMIT: ${{ steps.stamp.outputs.commit }}
+          APP_UPSTREAM: ${{ steps.stamp.outputs.upstream }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -116,14 +270,42 @@ jobs:
           # arahnya server → GitHub, yang ini GitHub Actions → server.
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY
+          # Pins the VPS host key WHEN THE SECRET EXISTS, and behaves exactly as
+          # before when it does not — an empty fingerprint is a no-op for this
+          # action. Without a pin the action trusts whatever answers, so anyone
+          # with a network position could impersonate the box and harvest
+          # ENV_FILE, which is every credential this site owns. Generate it with
+          #   ssh-keyscan -p <port> <host> | ssh-keygen -lf -
+          # then store the base64 SHA256 line as SSH_HOST_KEY.
+          fingerprint: ${{ secrets.SSH_HOST_KEY }}
+          command_timeout: 30m
+          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF,APP_VERSION,APP_COMMIT,APP_UPSTREAM
           script: |
             set -e
+            # Sabuk pengaman pra-rilis, lapis ketiga. Sebelum .env ditulis dan
+            # sebelum migrasi menyentuh skema.
+            [ -n "$DEPLOY_REF" ] || { echo "::error::DEPLOY_REF kosong — deploy dibatalkan."; exit 1; }
+            case "$DEPLOY_REF" in
+              *-*) echo "::error::$DEPLOY_REF adalah tag pra-rilis — itu untuk staging, bukan produksi."; exit 1 ;;
+            esac
+
+            # APP_DEBUG wajib mati. Dengan ia menyala, Laravel merender setiap
+            # throwable yang tak tertangkap sebagai JSON berisi stack trace dan
+            # nilai yang ada di scope — path berkas, binding query, isi env —
+            # langsung ke siapa pun yang meminta. Satu karakter salah di dalam
+            # ENV_FILE adalah seluruh bedanya, jadi diperiksa, bukan dipercaya.
+            if echo "$ENV_FILE_CONTENT" | grep -qE '^APP_DEBUG=(true|1|on)'; then
+              echo "::error::APP_DEBUG menyala di ENV_FILE — stack trace dan nilai env akan bocor ke klien. Setel APP_DEBUG=false lalu deploy ulang."; exit 1
+            fi
+
             # Satu base path untuk keempat app. Frontend menerima isi dist/ di
-            # $DEPLOY_BASE_PATH/<app>; API bukan hasil build, jadi yang tinggal
-            # di $DEPLOY_BASE_PATH/api adalah klon monorepo-nya sendiri dan root
-            # nginx api.<domain> menunjuk ke apps/api/public di dalamnya.
+            # $DEPLOY_BASE_PATH/<app>; API menerima ARTIFACT yang sudah di-rsync
+            # workflow ini ke $DEPLOY_BASE_PATH/api, jadi direktori itu SUDAH
+            # akar Laravel-nya dan root nginx api.<domain> menunjuk langsung ke
+            # api/public — tidak ada lagi tingkat `apps/api`.
             [ -n "$DEPLOY_BASE_PATH" ] || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+            # Tanpa ref yang jelas kita tidak tahu kode mana yang harus mendarat.
+            [ -n "$DEPLOY_REF" ] || { echo "::error::DEPLOY_REF kosong — deploy dibatalkan."; exit 1; }
 
             # Preflight sudo. Langkah 8 dan seterusnya butuh sudo tanpa kata
             # sandi, dan sesi non-interaktif tidak bisa mengetikkannya. Diperiksa
@@ -132,15 +314,20 @@ jobs:
             # yang tidak pernah di-restart.
             sudo -n true 2>/dev/null || {
               echo "::error::User $(id -un) butuh sudo tanpa kata sandi. Lihat docs/04-deployment.md langkah 10."; exit 1; }
-            REPO_DIR="${DEPLOY_BASE_PATH%/}/api"
-            API_DIR="$REPO_DIR/apps/api"
+            API_DIR="${DEPLOY_BASE_PATH%/}/api"
+            # Klon git untuk riwayat. TIDAK dilayani: root nginx menunjuk ke
+            # $API_DIR/public, bukan ke sini. Namanya diberi titik supaya tidak
+            # terbaca sebagai salah satu app.
+            # Keadaan "belum dimigrasi" sudah diperiksa di langkah rsync,
+            # SEBELUM rsync — memeriksanya di sini sudah terlambat.
+            API_REPO="${DEPLOY_BASE_PATH%/}/.api-repo"
 
             # 0c. Direktori tujuan keempat app. rsync hanya membuat komponen
             #     TERAKHIR dari sebuah path, bukan seluruh rantainya, jadi
             #     deploy frontend di server yang masih baru gagal kalau
             #     induknya belum ada. Dibuat di sini supaya tidak ada langkah
             #     manual yang tersisa untuk itu.
-            for D in "$REPO_DIR" "${DEPLOY_BASE_PATH%/}/admin" "${DEPLOY_BASE_PATH%/}/storefront" "${DEPLOY_BASE_PATH%/}/payment"; do
+            for D in "$API_DIR" "${DEPLOY_BASE_PATH%/}/admin" "${DEPLOY_BASE_PATH%/}/storefront" "${DEPLOY_BASE_PATH%/}/payment"; do
               if [ ! -d "$D" ]; then
                 mkdir -p "$D" 2>/dev/null || { sudo mkdir -p "$D"; sudo chown "$(id -un):www-data" "$D"; }
               fi
@@ -172,27 +359,75 @@ jobs:
               '  Port 443' \
               '  User git' >> ~/.ssh/config
 
-            # 0. Bootstrap: clone monorepo saat deploy pertama.
+            # 0. Riwayat git. Klonnya TIDAK dilayani dan TIDAK dipakai untuk
+            #    menyalin kode — source di $API_DIR datang dari artifact yang
+            #    di-rsync workflow ini. Gunanya satu: menjawab "apa yang
+            #    terpasang di sini" lewat `git log`, `git tag`, dan perbandingan
+            #    antar rilis, tanpa membuka GitHub.
+            #    `--filter=blob:none` menahan blob sampai diminta sehingga
+            #    klonnya kecil; `--sparse` menahan working tree hanya pada
+            #    apps/api, karena source ketiga frontend tidak ada gunanya di
+            #    sini (mereka mendarat sebagai hasil build di direktorinya
+            #    sendiri).
             #    URL-nya diturunkan dari repo yang sedang menjalankan workflow
             #    ($GH_REPOSITORY), bukan ditulis tetap: template ini dipakai
-            #    ulang per situs, dan nama repo yang ter-hardcode akan mengkloning
-            #    kode situs lain tanpa satu pun langkah yang gagal.
-            if [ ! -d "$REPO_DIR/.git" ]; then
-              echo "Setup pertama: clone $GH_REPOSITORY ke $REPO_DIR"
-              rm -rf "$REPO_DIR"
-              git clone "git@github.com:${GH_REPOSITORY}.git" "$REPO_DIR"
-              git -C "$REPO_DIR" checkout main
+            #    ulang per situs, dan nama repo yang ter-hardcode akan
+            #    mengkloning kode situs lain tanpa satu pun langkah yang gagal.
+            #    SENGAJA best-effort: yang dilayani adalah artifact, jadi klon
+            #    riwayat yang gagal (git terlalu tua, jaringan) TIDAK boleh
+            #    menahan rilis yang sebenarnya sudah siap. Kegagalannya diberi
+            #    peringatan supaya "tidak ada riwayat" tidak lewat sebagai
+            #    "beres".
+            if [ ! -d "$API_REPO/.git" ]; then
+              echo "Riwayat: clone $GH_REPOSITORY ke $API_REPO (sparse: apps/api)"
+              rm -rf "$API_REPO"
+              git clone --filter=blob:none --sparse "git@github.com:${GH_REPOSITORY}.git" "$API_REPO" \
+                || echo "::warning::git clone untuk riwayat gagal — riwayat tidak tersedia di server ini."
             fi
-
-            # 1-2. Tarik kode terbaru. Gagal di sini membatalkan deploy SEBELUM
-            #      cache lama dibuang, jadi situs tetap hidup dengan kode lama.
-            cd "$REPO_DIR"
-            git pull origin main || { echo "::error::git pull gagal — deploy dibatalkan."; exit 1; }
+            if [ -d "$API_REPO/.git" ]; then
+              git -C "$API_REPO" sparse-checkout set --cone apps/api \
+                || echo "::warning::sparse-checkout gagal — cek versi git di server (butuh >= 2.25)."
+              git -C "$API_REPO" fetch --tags --force origin \
+                || echo "::warning::git fetch gagal — riwayat mungkin tertinggal."
+              # HEAD klon mengikuti rilis yang mendarat, supaya `git log -1` di
+              # situ menjawab versi yang benar-benar berjalan.
+              git -C "$API_REPO" checkout --force "$DEPLOY_REF" \
+                || echo "::warning::checkout $DEPLOY_REF di klon riwayat gagal."
+            else
+              echo "::warning::Tidak ada klon riwayat di $API_REPO — deploy tetap jalan, tetapi 'git log' tidak bisa dipakai di server ini."
+            fi
 
             cd "$API_DIR"
 
+            # 0f. Skeleton runtime. Tujuh path ini SENGAJA tidak ikut rsync (lihat
+            #     langkah "Deploy API via rsync"): .env ditulis dari secret,
+            #     vendor dipasang composer install di langkah 4, storage
+            #     menyimpan unggahan dan sesi pelanggan, bootstrap/cache dan
+            #     public/storage dihasilkan di server. Tanpa mkdir ini, server
+            #     yang masih baru tidak punya direktori tempat Laravel menulis.
+            mkdir -p storage/app/public \
+                     storage/framework/cache/data \
+                     storage/framework/sessions \
+                     storage/framework/views \
+                     storage/logs \
+                     bootstrap/cache
+
+            # 1-2. Kode sudah mendarat lewat rsync. Tidak ada checkout dan tidak
+            #      ada composer install di server — vendor ikut di dalam artifact.
+
             # 3. Tulis .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
+
+            # 3a. Stempel rilis. Ditulis SETELAH .env supaya apa pun di dalam
+            #     secret ENV_FILE tidak bisa membuat versi berbohong — `GET
+            #     /v1/version` harus menjawab kode yang benar-benar mendarat.
+            #     Ketiganya datang dari CI: APP_COMMIT = commit yang di-checkout
+            #     workflow, APP_UPSTREAM = isi .upstream-version di commit itu.
+            #     Sengaja BUKAN dari klon riwayat di server — yang dilaporkan
+            #     harus commit yang benar-benar di-build, bukan pohon riwayat
+            #     yang kebetulan ada di sini.
+            sed -i -E '/^(APP_VERSION|APP_COMMIT|APP_UPSTREAM)=/d' .env
+            printf 'APP_VERSION=%s\nAPP_COMMIT=%s\nAPP_UPSTREAM=%s\n' "$APP_VERSION" "$APP_COMMIT" "$APP_UPSTREAM" >> .env
 
             # 3b. Kredensial produksi — APP_KEY, kata sandi database, kunci
             #     gateway — tidak boleh terbaca user lain di server. Umask biasa
@@ -201,8 +436,28 @@ jobs:
             chmod 640 .env
             sudo chown "$(id -un):www-data" .env
 
-            # 4. Dependensi produksi
-            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+            # 4. Dependensi produksi. Dipasang DI SINI, bukan dikirim dari CI:
+            #    vendor 311 MB / 46.321 berkas, dan memindahkannya menyeberangi
+            #    jaringan tiap rilis membuat langkah rsync lambat tanpa memberi
+            #    apa pun. Versinya tetap ditentukan rilis ini — composer.lock
+            #    ikut terkirim, dan `install` (bukan `update`) tidak pernah
+            #    menyimpang darinya.
+            command -v composer >/dev/null || {
+              echo "::error::composer tidak ada di server. Pasang dulu (docs/04-deployment.md) — dependensi API dipasang di sini, bukan dikirim CI."; exit 1; }
+            composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader \
+              || { echo "::error::composer install gagal — pastikan server bisa menjangkau packagist, lalu deploy ulang."; exit 1; }
+
+            # 4a. Buang cache lama SEBELUM membaca konfigurasi. Tanpa ini
+            #     `config:cache` dari deploy sebelumnya menyajikan env yang lama,
+            #     dan gerbang di bawah memeriksa setelan yang sudah tidak berlaku.
+            php artisan optimize:clear
+
+            # 4b. Gerbang rilis: bila situs ini tersambung ke Hub (HUB_ENABLED)
+            #     dan Hub tidak terjangkau, deploy dihentikan DI SINI — sebelum
+            #     migrasi menyentuh skema. `hub:ping` lulus sendiri di deployment
+            #     standalone (HUB_ENABLED=false), jadi tidak menghalangi situs
+            #     yang memang tidak memakai Hub.
+            php artisan hub:ping || { echo "::error::Hub tidak terjangkau — deploy dibatalkan sebelum migrasi."; exit 1; }
 
             # 5. Migrasi
             php artisan migrate --force
@@ -343,7 +598,13 @@ jobs:
 
             # 16. Ringkasan, supaya satu run deploy bisa dibaca sebagai satu
             #     pernyataan tentang keadaan server sesudahnya.
-            echo "Selesai. Kode & migrasi terpasang, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker supervisor RUNNING."
+            echo "Selesai. Rilis $DEPLOY_REF ($APP_COMMIT) terpasang, migrasi jalan, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker supervisor RUNNING."
+
+      # Kunci privat dan known_hosts tidak boleh tertinggal di runner; dibersihkan
+      # walau deploy gagal di tengah.
+      - name: Bersihkan kunci SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts
 
       - name: Notify Discord — hasil
         if: always()
@@ -351,12 +612,12 @@ jobs:
         env:
           DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
           STATUS: ${{ job.status }}
-          GH_SHA: ${{ github.sha }}
+          GH_REF: ${{ env.DEPLOY_REF }}
         run: |
           [ -z "$DISCORD_URL" ] && exit 0
           if [ "$STATUS" = "success" ]; then T="✅ API Deploy Succeeded"; C=5763719; else T="❌ API Deploy Failed"; C=15548997; fi
           curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_SHA:0:7}**\",\"color\":$C}]}" || true
+            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_REF}**\",\"color\":$C}]}" || true
 
   # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
@@ -366,10 +627,19 @@ jobs:
     # sepenuhnya kalau tidak ada frontend yang berubah.
     if: needs.changes.outputs.frontend != '{"include":[]}'
     runs-on: ubuntu-latest
+    environment: production
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.changes.outputs.frontend) }}
     steps:
+      # Sabuk pengaman pra-rilis: meng-rsync build rc ke direktori frontend
+      # produksi sama merusaknya dengan mendeploy API rc.
+      - name: Tolak tag pra-rilis
+        run: |
+          case "${DEPLOY_REF}" in
+            *-*) echo "::error::${DEPLOY_REF} adalah tag pra-rilis — itu untuk staging, bukan produksi."; exit 1 ;;
+          esac
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -404,6 +674,9 @@ jobs:
           VITE_PUSHER_APP_CLUSTER: ${{ secrets.VITE_PUSHER_APP_CLUSTER }}
           # Dulu di-hardcode di YAML storefront. Sekarang secret.
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          # Stempel rilis yang sama dengan API, supaya sidebar admin menjawab
+          # versi yang benar-benar terpasang (lihat GET /v1/version).
+          VITE_APP_VERSION: ${{ env.APP_VERSION }}
         run: npm run build
 
       # rsync tetap dijalankan manual, bukan lewat
@@ -415,6 +688,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
         run: |
           set -euo pipefail
           test -n "$SSH_PRIVATE_KEY" || { echo "::error::secret SSH_PRIVATE_KEY belum diisi"; exit 1; }
@@ -423,12 +697,21 @@ jobs:
           # daftar proses runner.
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Merekam host key lebih dulu, supaya rsync tidak perlu dijalankan
-          # dengan StrictHostKeyChecking=no. Batasnya: ssh-keyscan mempercayai
-          # apa pun yang menjawab saat itu, jadi ini BUKAN perlindungan
-          # terhadap server palsu — lihat docs/04-deployment.md §Catatan
-          # keamanan.
-          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # Isi SSH_HOST_KEY (keluaran `ssh-keyscan -p <port> <host> |
+          # ssh-keygen -lf -`) untuk memaku host key server: tanpa itu rsync
+          # tidak perlu dijalankan dengan StrictHostKeyChecking=no, tapi
+          # ssh-keyscan mempercayai apa pun yang menjawab saat itu — jadi ia
+          # merapikan bentuk perintahnya, BUKAN melindungi dari server palsu.
+          # Selama secret itu kosong, batasnya masih seperti yang tertulis di
+          # docs/04-deployment.md §Catatan Keamanan; dengan secret itu terisi,
+          # celahnya tertutup.
+          if [ -n "$SSH_HOST_KEY" ]; then
+            printf '%s\n' "$SSH_HOST_KEY" >> ~/.ssh/known_hosts
+            echo "Host key dipin dari secret SSH_HOST_KEY."
+          else
+            echo "::warning::SSH_HOST_KEY belum diisi — host key direkam dengan ssh-keyscan, yang mempercayai apa pun yang menjawab saat itu. Isi secret itu untuk menutup celah MITM."
+            ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
           chmod 600 ~/.ssh/known_hosts
 
       - name: Deploy via rsync
@@ -468,9 +751,9 @@ jobs:
           DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
           STATUS: ${{ job.status }}
           LABEL: ${{ matrix.label }}
-          GH_SHA: ${{ github.sha }}
+          GH_REF: ${{ env.DEPLOY_REF }}
         run: |
           [ -z "$DISCORD_URL" ] && exit 0
           if [ "$STATUS" = "success" ]; then T="✅ $LABEL Deploy Succeeded"; C=5763719; else T="❌ $LABEL Deploy Failed"; C=15548997; fi
           curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_SHA:0:7}**\",\"color\":$C}]}" || true
+            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_REF}**\",\"color\":$C}]}" || true

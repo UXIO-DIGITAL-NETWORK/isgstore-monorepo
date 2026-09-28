@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\Payment\Monetapay;
 
 use App\Actions\Payment\Monetapay\HandleMonetapayCallbackAction;
+use App\Contracts\PaymentGateway;
 use App\DTOs\Payment\Monetapay\MonetapayCallbackDTO;
 use App\Http\Controllers\Controller;
-use App\Services\Payment\MonetapayService;
 use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\Request;
@@ -16,7 +16,7 @@ class MonetapayCallbackController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly MonetapayService $monetapayService,
+        private readonly PaymentGateway $monetapayService,
         private readonly HandleMonetapayCallbackAction $action
     ) {}
 

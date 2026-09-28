@@ -63,9 +63,9 @@ class MonetapayBalanceCacheTest extends TestCase
 
         // The public key helper points at the same entry the service wrote —
         // this is what PingIntegrationChannelAction relies on to force-refresh.
-        $this->assertTrue(Cache::has(MonetapayService::balanceCacheKey('SUB-A')));
+        $this->assertTrue(Cache::has(app(MonetapayService::class)->balanceCacheKey('SUB-A')));
 
-        Cache::forget(MonetapayService::balanceCacheKey('SUB-A'));
-        $this->assertFalse(Cache::has(MonetapayService::balanceCacheKey('SUB-A')));
+        Cache::forget(app(MonetapayService::class)->balanceCacheKey('SUB-A'));
+        $this->assertFalse(Cache::has(app(MonetapayService::class)->balanceCacheKey('SUB-A')));
     }
 }

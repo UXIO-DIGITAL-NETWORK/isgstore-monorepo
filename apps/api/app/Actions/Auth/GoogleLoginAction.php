@@ -62,7 +62,7 @@ class GoogleLoginAction
         $name = (string) ($payload['name'] ?? $email);
         $picture = $payload['picture'] ?? null;
 
-        $user = DB::transaction(function () use ($googleId, $email, $name, $picture, $dto) {
+        $user = DB::transaction(function () use ($googleId, $email, $name, $picture) {
             $user = User::where('google_id', $googleId)->first()
                 ?? User::where('email', $email)->first();
 

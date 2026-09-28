@@ -104,7 +104,7 @@ class HubPlanReportEndpointsTest extends TestCase
 
         // The SAME entry /summary reads: a Hub balance pull warms that figure
         // rather than leaving it stale beside a fresher one.
-        $this->assertNotNull(Cache::get(MonetapayService::balanceCacheKey()));
+        $this->assertNotNull(Cache::get(app(MonetapayService::class)->balanceCacheKey()));
     }
 
     public function test_the_main_merchant_balance_is_read_separately_from_the_sub_merchant(): void
@@ -126,10 +126,10 @@ class HubPlanReportEndpointsTest extends TestCase
 
         // ...and the main reading warms its OWN entry, never the sub-merchant's.
         $this->assertNotSame(
-            MonetapayService::balanceCacheKey(),
-            MonetapayService::mainBalanceCacheKey(),
+            app(MonetapayService::class)->balanceCacheKey(),
+            app(MonetapayService::class)->mainBalanceCacheKey(),
         );
-        $this->assertNotNull(Cache::get(MonetapayService::mainBalanceCacheKey()));
+        $this->assertNotNull(Cache::get(app(MonetapayService::class)->mainBalanceCacheKey()));
     }
 
     public function test_a_main_merchant_failure_does_not_fail_the_sub_merchant_reading(): void

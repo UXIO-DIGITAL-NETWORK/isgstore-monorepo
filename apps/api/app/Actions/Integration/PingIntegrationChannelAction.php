@@ -2,7 +2,7 @@
 
 namespace App\Actions\Integration;
 
-use App\Services\Payment\MonetapayService;
+use App\Contracts\PaymentGateway;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -24,7 +24,7 @@ class PingIntegrationChannelAction
         // per (sub-merchant, currency); the integration panel reads the
         // main-merchant entry, so that's the one to forget.
         match ($provider) {
-            'monetapay' => Cache::forget(MonetapayService::balanceCacheKey()),
+            'monetapay' => Cache::forget(app(PaymentGateway::class)->balanceCacheKey()),
             'uxiolabs' => Cache::forget('uxiolabs:balance'),
             default => null,
         };

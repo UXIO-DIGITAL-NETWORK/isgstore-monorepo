@@ -104,6 +104,7 @@ use App\Http\Controllers\Api\Uxiolabs\UxiolabsSkuLookupController;
 use App\Http\Controllers\Api\Uxiolabs\UxiolabsSyncController;
 use App\Http\Controllers\Api\Uxiolabs\UxiolabsTransactionStatusController;
 use App\Http\Controllers\Api\Uxiolabs\WebhookUxiolabsController;
+use App\Http\Controllers\Api\VersionController;
 use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -121,6 +122,12 @@ Route::prefix('v1')->group(function () {
         'message' => 'ok',
         'ping_ms' => (int) round((microtime(true) - LARAVEL_START) * 1000),
     ]));
+
+    // What this deployment is running — version, commit, the template release
+    // it came from, and the Hub contract it speaks. Read by the Hub and by an
+    // operator; see VersionController for why it stays open while the site is
+    // switched off.
+    Route::get('/version', VersionController::class);
 
     // Payment Webhooks (No Auth Required) — throttled per IP; the real gate is
     // signature verification inside each controller.

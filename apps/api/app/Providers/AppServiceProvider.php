@@ -2,9 +2,14 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGateway;
+use App\Contracts\SupplierGateway;
 use App\Services\DiscordWebhookService;
+use App\Support\Integration\PaymentManager;
+use App\Support\Integration\SupplierManager;
 use App\Support\Storefront\Catalog;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +26,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // The supplier seam. The transaction engine depends on the contract;
+        // which adapter answers it is a config decision (SUPPLIER_DRIVER), so a
+        // site on a different top-up supplier adds one adapter class and changes
+        // one line — it never edits the engine.
+        $this->app->bind(SupplierGateway::class, fn () => SupplierManager::make());
+
+        // The same seam for the payment gateway: which adapter charges and
+        // pays out is a config decision (PAYMENT_DRIVER), not a code decision.
+        $this->app->bind(PaymentGateway::class, fn () => PaymentManager::make());
     }
 
     /**
@@ -29,6 +42,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Which proxies' X-Forwarded-* headers we believe. Unset means trust
+        // none, which is the safe default — and the reason HUB_ALLOWED_IPS and
+        // the uxiolabs webhook's IP allowlist start rejecting every legitimate
+        // call once the site sits behind nginx or a load balancer. See
+        // config/app.php.
+        //
+        // Done here rather than in bootstrap/app.php because that middleware
+        // callback runs before the config repository is bound.
+        $trusted = config('app.trusted_proxies');
+
+        if (is_string($trusted) && $trusted !== '') {
+            TrustProxies::at(
+                $trusted === '*' ? '*' : array_map('trim', explode(',', $trusted))
+            );
+        }
+
         $this->configureRateLimiting();
         $this->configureRouteBindings();
         $this->configureRealtimeAlerts();

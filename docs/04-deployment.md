@@ -2,16 +2,139 @@
 
 ## Ringkasan
 
-Keempat aplikasi mendarat di **satu server**, di direktori bersebelahan. Sebelum monorepo, keempatnya di-clone terpisah; sesudahnya, satu repo di-clone dan tiap app hidup di bawah `apps/`.
+Keempat aplikasi mendarat di **satu server**, di direktori bersebelahan. Sebelum monorepo, keempatnya di-clone terpisah di empat repo; sesudahnya satu repo jadi sumbernya — tetapi yang tinggal di server adalah **hasil build** (ketiga frontend) dan **source** (API, dependensinya dipasang di server), bukan pohon gitnya.
 
 | App | Cara naik | Tujuan |
 |---|---|---|
-| API | `git pull` + `composer install` + `migrate` di server | `<repo>/apps/api` |
+| API | `rsync` source dari CI; `composer install --no-dev` + `migrate`/cache lewat artisan di server | `<base>/api` |
 | Admin | build di CI, `rsync` folder `dist/` | `…/provider/admin` |
 | Storefront | idem | `…/provider/fe` |
 | Payment | idem | `…/provider/payment` |
 
-Pemicunya `push` ke `main`, dengan **path filter** — mengubah storefront tidak memicu build admin.
+Pemicunya **push tag `v*`**, dan satu tag mendeploy keempat app sekaligus. Cabang `main` tidak lagi mendeploy produksi — jalur itu disiapkan untuk staging.
+
+### Bagaimana API naik
+
+API tidak di-clone di server. CI meng-`rsync` **source**-nya ke `<base>/api`, dan
+`composer install` di server yang memasang dependensinya. Karena source itu sudah
+berbentuk akar Laravel, root nginx menunjuk langsung ke `<base>/api/public`;
+tidak ada lagi tingkat `apps/api`. Versi dependensi tetap ditentukan rilis ini —
+`composer.lock` ikut terkirim, dan `install` (bukan `update`) tidak pernah
+menyimpang darinya.
+
+Tujuh path **tidak ikut tersalin**, karena hanya ada di server dan tidak bisa
+dibangun ulang — semuanya di-exclude eksplisit di workflow: `.env` (ditulis dari
+secret `ENV_FILE`), `vendor` (dipasang `composer install` di server), `storage/app`
+(unggahan pelanggan), `storage/framework`
+(sesi), `storage/logs`, `bootstrap/cache`, dan symlink `public/storage`.
+`rsync --delete` menghapus apa pun di server yang tidak ada di source, jadi
+daftar ini adalah satu-satunya pelindung state runtime — jangan disederhanakan.
+
+`.env` karena itu ada di **`<base>/api/.env`** (mode `640`, milik user deploy),
+bukan lagi di `apps/api/.env`. Kalau berkas itu dicari di jalur lama, ia memang
+sudah tidak ada di sana: seluruh tingkat `apps/` tidak lagi ikut mendarat.
+
+`vendor/` **tidak pernah dikirim**. Isinya 46.321 berkas / 311 MB, dan
+memindahkannya menyeberangi jaringan tiap rilis tidak memberi apa pun:
+`composer install --no-dev` di server menentukan versi yang sama dari
+`composer.lock` yang ikut terkirim. Karena itu exclude `/vendor/` bersifat
+**wajib**, bukan penghematan — source tidak lagi memuat vendor, jadi tanpa
+exclude itu `rsync --delete` akan menghapus vendor yang sudah ada di server dan
+meninggalkan situs tanpa dependensi sama sekali.
+
+Konsekuensinya server perlu **`composer` terpasang** dan bisa menjangkau
+packagist; deploy berhenti dengan pesan jelas kalau salah satunya tidak
+terpenuhi, sebelum migrasi menyentuh skema.
+
+Klon git tetap ada di `<base>/.api-repo`, tetapi **bukan yang dilayani**:
+gunanya hanya riwayat (`git log`, `git tag`), supaya pertanyaan "apa yang
+terpasang di sini" bisa dijawab tanpa membuka GitHub. Klon ini **best-effort** —
+kalau gagal (git server terlalu tua, jaringan), deploy tetap jalan dengan
+peringatan. `--filter=blob:none --sparse` membuatnya kecil; hanya `apps/api`
+yang turun ke working tree.
+
+---
+
+## Rilis: tag, stempel, rollback
+
+**Sebuah rilis adalah tag.** `deploy-prod.yml` berjalan saat tag `v*` di-push, dan mendeploy keempat app dalam satu jalan. Alasannya bukan gaya: satu nomor versi harus menunjuk satu keadaan kode yang diketahui, supaya pertanyaan "situs ini versi berapa" punya jawaban, dan supaya rilis yang sama bisa dipasang ulang.
+
+- **Nomor** — tag Semver `vMAJOR.MINOR.PATCH`. MAJOR untuk perubahan yang bisa merusak situs lain (skema DB, kontrak Hub), MINOR untuk fitur, PATCH untuk perbaikan.
+- **Stempel** — CI menghitung `APP_COMMIT` (commit yang di-build) dan `APP_UPSTREAM` (isi `.upstream-version` di commit itu), lalu deploy menulis `APP_VERSION` (tag), `APP_COMMIT`, dan `APP_UPSTREAM` ke `.env`, **sesudah** `.env` ditulis dari secret. Sengaja dari CI, bukan dari git di server: yang dilaporkan harus kode yang benar-benar mendarat. `GET /v1/version` dan `VITE_APP_VERSION` melaporkan nilai yang sama.
+- **Gerbang** — `php artisan hub:ping` dijalankan tepat sebelum `migrate`. Bila `HUB_ENABLED=true` dan Hub tidak terjangkau, deploy berhenti sebelum skema tersentuh. Di deploy standalone (`HUB_ENABLED=false`) perintah ini lulus sendiri.
+- **Rollback** — jalankan workflow `Deploy Production` lewat *Run workflow*, isi `ref` dengan tag lama (mis. `v1.3.0`). CI mengirim source tag itu, dan server memasang dependensinya dari `composer.lock` tag tersebut; tidak ada `git checkout` di server. Klon riwayat di `<base>/.api-repo` ikut mundur ke tag itu.
+
+**Migrasi harus aditif supaya rollback aman.** Rollback kode tidak membalik migrasi: kalau sebuah rilis menghapus kolom, kode lama akan mencarinya dan gagal. Urutannya: tambah kolom → deploy kode baru → backfill → baru hapus kolom di rilis *berikutnya*.
+
+---
+
+## Staging
+
+`deploy-staging.yml` adalah kembaran `deploy-prod.yml`: pemicunya `push` ke `main`, dan `environment: staging` yang menentukan secret mana (host SSH, `DEPLOY_BASE_PATH`, `ENV_FILE`, `VITE_*`) yang dipakai. Langkah-langkahnya sengaja identik dengan produksi — staging yang memakai jalur berbeda tidak membuktikan apa pun tentang produksi.
+
+Staging adalah **deployment terpisah sepenuhnya**: DB, direktori, kunci, domain, cron, dan queue worker sendiri. Berbagi salah satu di antaranya membuat staging berhenti menjadi latihan yang jujur.
+
+| | Produksi | Staging |
+|---|---|---|
+| API | `api.<domain>` | `api-staging.<domain>` |
+| Storefront / Admin / Payment | `<domain>`, `admin.`, `pay.` | `staging.`, `admin-staging.`, `pay-staging.` |
+| Database | `uxiotopup` | `uxiotopup_staging` |
+| `.env` | environment `production` | environment `staging` |
+| Hub | Hub produksi | **Hub staging** |
+
+### Yang harus berdiri lebih dulu: Hub staging
+
+Situs staging butuh Hub staging, jadi Hub didirikan dulu:
+
+1. **Instance Hub terpisah** (direktori, `DEPLOY_PATH`, vhost sendiri) — boleh di VPS yang sama, tapi jangan berbagi DB atau direktori.
+2. **DB `uxiotopup_hub_staging`** dari `migrate` + seeder, **bukan salinan data produksi**.
+3. **`APP_KEY` sendiri.**
+4. Env Hub staging mengikuti `uxiotopup-hub-api/.env.example`, dengan `APP_ENV=staging`, `FRONTEND_URL` = panel staging, `DISCORD_SEND_OUTSIDE_PRODUCTION=false`, dan `MONETAPAY_IS_PRODUCTION=false`.
+5. **Daftarkan situs staging sebagai *site* terpisah di Hub staging** (`code` mis. `isgstore-staging`, `base_url` = `https://api-staging.<domain>`, `allowed_ips` = IP server situs staging). Kunci yang diterbitkan Hub staging inilah yang dipasang di `.env` situs staging.
+6. **Jawab "serving" untuk situs itu.** Situs yang dikelola Hub gelap secara default; tanpa jawaban "serving", situs staging membalas 503 di semua rute publik dan orang akan mengira staging-nya rusak.
+
+### Env situs staging yang wajib benar
+
+- `APP_ENV=staging`, `APP_URL` = domain staging.
+- **`HUB_BASE_URL` = Hub STAGING**, bukan produksi. Ini yang paling sering salah, dan salahnya paling merusak: situs staging yang menunjuk Hub produksi mengotori data kantor pusat dan mengganggu situs lain.
+- `HUB_ENABLED=true`, `HUB_SITE_API_KEY` = kunci dari Hub staging.
+- `MONETAPAY_IS_PRODUCTION=false`.
+- `STOREFRONT_URL` dan `PAYMENT_PAGE_URL` = domain staging. Kalau dibiarkan kosong atau menunjuk `localhost`, `urls:verify` **menggagalkan deploy** — memang disengaja.
+
+Data awal dari `migrate --seed` (seeder dev), bukan salinan produksi.
+
+### Secret environment `staging` (di GitHub)
+
+| Secret | Isi |
+|---|---|
+| `SSH_HOST`, `SSH_PORT`, `SSH_USERNAME`, `SSH_PRIVATE_KEY` | akses ke server staging |
+| `DEPLOY_BASE_PATH` | base path **staging**, bukan path produksi |
+| `ENV_FILE` | seluruh isi `.env` staging |
+| `VITE_API_BASE_URL` | `https://api-staging.<domain>/api` |
+| `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER` | kanal staging, atau kosong (fallback polling) |
+| `VITE_GOOGLE_CLIENT_ID` | client OAuth staging, atau kosong |
+| `DISCORD_WEBHOOK_LOG_URL` | webhook staging (opsional) |
+
+### Cara memastikan rantainya benar-benar tersambung
+
+1. `php artisan hub:ping` di situs staging → lulus. Gagal berarti `HUB_BASE_URL`, kunci, atau `allowed_ips` salah.
+2. `php artisan hub:status` → tabel konfigurasi + probe live ke Hub.
+3. Situs staging muncul di panel Hub staging, dan `GET /v1/version` menjawab versinya.
+4. `push` ke `main` → **hanya staging yang berubah**, produksi tidak tersentuh.
+
+### Urutan, dan jebakannya
+
+```
+1. Hub staging hidup + site staging terdaftar + licence "serving"
+2. Situs staging hidup, HUB_BASE_URL ke Hub staging, hub:ping lulus
+3. Isi secret environment `staging`, aktifkan deploy-staging.yml
+4. Uji: push ke main -> hanya staging yang berubah
+5. BARU pindahkan produksi ke model tag (rilis = tag)
+```
+
+**Jebakan:** langkah 5 harus terakhir. Begitu `deploy-prod.yml` bergantung pada tag, `push` ke `main` tidak lagi mendeploy produksi — tanpa staging, tidak ada tempat menguji sebelum memberi tag.
+
+**Worker dan cron wajib terpisah.** Bila staging menumpang VPS yang sama, queue worker dan cron staging harus punya direktori sendiri. Worker yang salah membaca tabel `jobs` akan memproses pekerjaan lingkungan lain, dan kegagalannya senyap.
 
 ---
 
@@ -19,11 +142,11 @@ Pemicunya `push` ke `main`, dengan **path filter** — mengubah storefront tidak
 
 Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
-1. **Clone monorepo** ke `<base>/api` (lihat langkah 6). Deploy juga meng-clone sendiri kalau direktorinya masih kosong.
-2. **Arahkan ulang root nginx untuk API** dari `…/provider/api/public` ke `<base>/api/apps/api/public`.
-3. **Perbarui path supervisor.** `supervisor/api-prod-worker.conf` menjalankan `php <dir>/artisan queue:work`; `<dir>` harus menunjuk lokasi baru.
+1. **Siapkan `<base>/api` sebagai direktori biasa**, bukan klon. Deploy meng-`rsync` source ke sana dan membuatnya sendiri kalau belum ada; satu-satunya isi yang wajib dipertahankan adalah `storage/` (lihat langkah 5).
+2. **Arahkan ulang root nginx untuk API** dari `…/provider/api/public` ke **`<base>/api/public`**.
+3. **Perbarui path supervisor.** `supervisor/api-prod-worker.conf` menjalankan `php <dir>/artisan queue:work`; `<dir>` harus menunjuk lokasi baru, `<base>/api`.
 4. **Perbarui entri cron** `schedule:run` ke path baru.
-5. **Pindahkan berkas yang tidak ikut git**: isi `storage/app/public` (banner, logo kategori, bukti transfer) dan `.env`.
+5. **Pindahkan berkas yang tidak ikut terkirim**: isi `storage/app/` (banner, logo kategori, bukti transfer, artefak SIT). `.env` **tidak perlu** dipindahkan — deploy menulisnya ulang dari secret `ENV_FILE`. Pastikan juga **`composer` terpasang** di server, karena dependensi API dipasang di sana.
 6. **Satukan keempat app di bawah satu induk**, satu subdirektori per app, lalu arahkan ulang `root` tiap vhost ke sana:
 
    | Direktori | Isi | `root` nginx |
@@ -31,11 +154,20 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
    | `<base>/admin` | isi `dist/` | `<base>/admin` — `admin.<domain>` |
    | `<base>/payment` | isi `dist/` | `<base>/payment` — `pay.<domain>` |
    | `<base>/storefront` | isi `dist/` | `<base>/storefront` — `<domain>`, domain utama |
-   | `<base>/api` | **klon monorepo** | `<base>/api/apps/api/public` — `api.<domain>` |
+   | `<base>/api` | **source dari CI** + `vendor` dari composer — akar Laravel langsung | **`<base>/api/public`** — `api.<domain>` |
 
-   `api` adalah satu-satunya yang berbeda isinya: Laravel dijalankan dari source, bukan dari hasil build, jadi yang tinggal di sana adalah repo ini seutuhnya — dan `root` nginx-nya menunjuk ke `apps/api/public` **di dalam** direktori itu, bukan ke direktorinya langsung.
+   `api` satu-satunya yang isinya source, bukan hasil build frontend: CI mengirim source-nya, dan server memasang `vendor` lewat `composer install`. Karena source itu sudah berbentuk akar Laravel, `root` nginx-nya menunjuk ke `public` **di dalam** direktori itu — tanpa tingkat `apps/api` lagi.
 
-   Buat `<base>` dan ketiga direktori frontend lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. `<base>/api` boleh dibiarkan kosong; deploy meng-clone sendiri. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
+   Buat `<base>` dan ketiga direktori frontend lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
+
+   **Server yang sudah punya klon monorepo di `<base>/api`:** unggahan tinggal di `apps/api/storage`, jadi selamatkan dulu. `.env` dan `vendor` tidak perlu — `.env` ditulis ulang dari secret, `vendor` dipasang ulang `composer install`:
+   ```bash
+   cd /home/uxioserver1/website-topup-monorepo-template/staging
+   rsync -a api/apps/api/storage/ ./_storage-keep/
+   rm -rf api && mkdir -p api
+   rsync -a ./_storage-keep/ api/storage/ && rm -rf ./_storage-keep
+   ```
+   Klon riwayat tidak perlu dibuat manual — deploy pertama membuat `<base>/.api-repo` sendiri. Dan deploy akan **menolak berjalan** selama `<base>/api/apps/api` masih ada, supaya pohon lama beserta unggahannya tidak terhapus oleh `--delete` sebelum migrasi dikerjakan.
 7. **Tambahkan satu secret baru** di GitHub: `DEPLOY_BASE_PATH`, berisi `<base>` di atas tanpa nama app. Workflow yang menyusun `<base>/<app>`, jadi nama direktori **wajib** sama persis dengan nama folder di `apps/` — `admin`, `storefront`, `payment`, `api`.
 8. **Pindahkan `VITE_GOOGLE_CLIENT_ID` ke secret** — sebelumnya di-hardcode di YAML storefront.
 9. **Pasang deploy key di server.** Server meng-clone lewat SSH, jadi user SSH-nya butuh kunci yang terdaftar di repo:
@@ -233,12 +365,16 @@ pun yang memberi CI akses ke server; yang penting kontrolnya ada:
 ## Urutan deploy API, dan kenapa tiap langkah ada
 
 ```
-git pull                    ← gagal di sini membatalkan deploy SEBELUM cache dibuang
+rsync source dari CI            ← SEBELUM ini, langkah rsync menolak jalan bila server belum dimigrasi
 tulis .env dari secret
-composer install --no-dev
+stempel APP_VERSION/APP_COMMIT/APP_UPSTREAM ke .env
+composer install --no-dev       ← vendor dipasang DI SERVER, tidak pernah dikirim
+optimize:clear                 ← buang config cache lama, supaya gerbang membaca .env baru
+php artisan hub:ping           ← GAGAL bila Hub tersambung tapi tak terjangkau (standalone: lulus)
 php artisan migrate --force
 php artisan pricing:backfill-plan-prices    ← WAJIB, lihat di bawah
 php artisan pricing:verify                   ← menggagalkan deploy bila menyimpang
+php artisan urls:verify                      ← menggagalkan deploy bila tautan tak bisa dibuka pelanggan
 optimize:clear → config:cache → route:cache
 storage:link
 chown/chmod
@@ -252,8 +388,9 @@ periksa worker RUNNING      ← deploy GAGAL bila tidak
 
 **Backfill harga wajib satu langkah dengan migrasi.** Tanpanya `product_plan_prices` kosong, `PlanPrice::for()` jatuh ke `products.price_member`, dan **setiap member dijual di harga tingkat dasar**. Tidak ada error di mana pun — hanya kebocoran pendapatan. Langkah inilah yang **tidak ada** di pipeline lama dan kini ditambahkan.
 
-**Tiga pemeriksaan yang sengaja menggagalkan deploy.** Ketiganya dulu berakhir `|| true`, dan itulah cara sebuah situs bisa berjalan berhari-hari dengan deploy hijau sementara pesanan berbayar tidak pernah diproses:
+**Empat pemeriksaan yang sengaja menggagalkan deploy.** Beberapa di antaranya dulu berakhir `|| true`, dan itulah cara sebuah situs bisa berjalan berhari-hari dengan deploy hijau sementara pesanan berbayar tidak pernah diproses:
 
+- `hub:ping` gagal → situs tersambung ke Hub tapi Hub tidak terjangkau, jadi seluruh loop pelaporan mati (deploy standalone lulus sendiri).
 - Cron `schedule:run` hilang → 13 perintah terjadwal berhenti diam-diam.
 - Queue worker tidak `RUNNING` → pembayaran berhasil, job parkir di tabel `jobs`, tidak ada yang error.
 - `pricing:verify` menyimpang → harga per paket tidak sinkron.
@@ -296,13 +433,17 @@ Kunci di luar bawaan Laravel, dikelompokkan menurut fungsinya:
 
 > Tiga identitas yang **jangan dicampur**: `mch_id` adalah identitas merchant, `collection_app_id` untuk jalur pemasukan, `disbursement_app_id` untuk jalur pembayaran keluar. `collection_app_id` **tidak punya nilai cadangan** — kalau tidak diisi, panggilan pemasukan ditandatangani dengan `app_id` kosong.
 
-**Supplier (Uxiolabs)** — `UXIOLABS_API_KEY`, `UXIOLABS_BASE_URL`, `UXIOLABS_CALLBACK_URL`, `UXIOLABS_PRICE_TIER`, `UXIOLABS_CALLBACK_IP`.
+**Supplier (Uxiotopup)** — `UXIOTOPUP_API_KEY`, `UXIOTOPUP_BASE_URL`, `UXIOTOPUP_CALLBACK_URL`, `UXIOTOPUP_PRICE_TIER`, `UXIOTOPUP_CALLBACK_IP`.
 
-> ⚠️ **Kunci-kunci ini dulu bernama `UXIOTOPUP_*` dan sudah diganti nama, tanpa nilai cadangan.** Kalau `.env` produksi masih memakai nama lama, `UXIOLABS_API_KEY` terbaca kosong dan **setiap pesanan gagal di supplier**. Kecuali kuncinya tersimpan lewat halaman Integration di panel admin — kredensial dari basis data menimpa `.env`, dan migrasi `2026_09_04_000001` sudah mengganti nama baris itu. **Periksa yang mana yang berlaku di server Anda sebelum deploy.**
+> ⚠️ **Nama kunci ini pernah berputar arah.** Providernya sempat dinamai "Uxiolabs" sehingga kuncinya ikut menjadi `UXIOLABS_*`, lalu dikembalikan ke "Uxiotopup". Yang berlaku **sekarang** adalah `UXIOTOPUP_*` — itu yang dibaca `config/services.php` dan yang ada di `.env.example`. Nama `UXIOLABS_*` **tidak** dibaca: `.env` produksi yang masih memakainya akan terbaca kosong dan **setiap pesanan gagal di supplier**. Yang benar-benar berlaku di server bisa diperiksa dari halaman Integration di panel admin, karena kredensial dari basis data menimpa `.env`. **Pastikan `.env` memakai `UXIOTOPUP_*` sebelum deploy.**
 
 **Penarikan dana** — `WITHDRAWAL_FEE_FLAT` (1500), `WITHDRAWAL_FEE_PERCENT` (11), `WITHDRAWAL_MIN_AMOUNT` (10000), `WITHDRAWAL_HOLD_BUFFER_DAYS` (1).
 
-**Uxio Hub** — `HUB_ENABLED` (default `false` = mandiri, tidak ada yang dijadwalkan), `HUB_SITE_API_KEY`, `HUB_BASE_URL`, `HUB_ALLOWED_IPS`, `HUB_MANAGED_CATALOG`, `HUB_MANAGED_CHANNELS`, `HUB_PUSH_ORDERS`, `HUB_WRITE_ENABLED`, `HUB_WRITE_API_KEY`.
+**Uxio Hub** — `HUB_ENABLED` (default `false` = mandiri, tidak ada yang dijadwalkan), `HUB_SITE_API_KEY`, `HUB_BASE_URL`, `HUB_ALLOWED_IPS`, `HUB_MANAGED_CATALOG`, `HUB_MANAGED_CHANNELS`, `HUB_MANAGED_LICENCE`, `HUB_MANAGED_PLAN`, `HUB_PUSH_ORDERS`, `HUB_SYNC_INTERVAL_MINUTES`, `HUB_WRITE_ENABLED`, `HUB_WRITE_API_KEY`, `HUB_CONTRACT_VERSION`.
+
+**Colokan integrasi** — `SUPPLIER_DRIVER` (default `uxiolabs`) dan `PAYMENT_DRIVER` (default `monetapay`) memilih adapter mana yang dipakai situs ini; daftar adapter-nya di `config/services.php`. Lihat [07 — Zona](07-zona-dapur.md).
+
+**Stempel rilis** — `APP_VERSION`, `APP_COMMIT`, `APP_UPSTREAM`, ditulis deploy sendiri dari tag (lihat [§Rilis](#rilis-tag-stempel-rollback)); jangan diisi manual di secret `ENV_FILE`, karena akan ditimpa.
 
 > `HUB_PUSH_ORDERS` **jangan diisi kosong** — nilai kosong terbaca sebagai `false` dan mematikan dorongan pesanan secara diam-diam. Biarkan tidak ada sama sekali agar mengikuti `HUB_ENABLED`.
 

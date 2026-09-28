@@ -21,3 +21,7 @@ build/
 .phpunit.result.cache
 coverage/
 *.tsbuildinfo
+
+# Python bytecode (artefak skrip skill/agen — jangan di-commit)
+__pycache__/
+*.pyc
