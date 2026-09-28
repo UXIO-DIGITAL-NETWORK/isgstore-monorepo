@@ -249,6 +249,7 @@ jobs:
             "$SSH_USERNAME@$SSH_HOST:$API_PATH"
 
       - name: Execute deployment via SSH
+        timeout-minutes: 35
         uses: appleboy/ssh-action@v1.0.3
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
@@ -277,6 +278,7 @@ jobs:
           #   ssh-keyscan -p <port> <host> | ssh-keygen -lf -
           # then store the base64 SHA256 line as SSH_HOST_KEY.
           fingerprint: ${{ secrets.SSH_HOST_KEY }}
+          command_timeout: 30m
           envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF,APP_VERSION,APP_COMMIT,APP_UPSTREAM
           script: |
             set -e
