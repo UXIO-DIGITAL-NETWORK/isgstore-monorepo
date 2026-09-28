@@ -32,7 +32,7 @@ Banyak situs akan lahir dari cetakan ini (`web-topup-monorepo`), masing-masing b
 | Higiene | 7 workflow mati dihapus, 9 `.pyc` dilepas + diabaikan, nama env supplier di docs/04 diperbaiki | `a714c309` |
 | Efisiensi deploy | Klon API **sparse** + partial clone — server hanya menerima `apps/api`, bukan seluruh monorepo; plus trusted proxy & penjaga rilis | `64333067` |
 | Deploy API source | API di-`rsync` sebagai source ke `<base>/api` (akar Laravel langsung, nginx root `<base>/api/public`); dependensi dipasang di server; klon `.api-repo` hanya riwayat | `520126e9`, `645c8aeb` |
-| Vendor di server | `vendor/` (311 MB / 46.321 berkas) tidak pernah dikirim — `composer install --no-dev` jalan di server dari `composer.lock`; exclude `/vendor/` wajib supaya `--delete` tidak menghapusnya. Menggantikan pendekatan penanda hash | `81ac794e`, *(belum di-commit)* |
+| Vendor di server | `vendor/` (311 MB / 46.321 berkas) tidak pernah dikirim — `composer install --no-dev` jalan di server dari `composer.lock`; exclude `/vendor/` wajib supaya `--delete` tidak menghapusnya. Menggantikan pendekatan penanda hash | `81ac794e`, `8af30807` |
 
 ## Terverifikasi
 

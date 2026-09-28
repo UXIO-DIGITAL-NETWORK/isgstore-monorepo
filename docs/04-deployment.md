@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Keempat aplikasi mendarat di **satu server**, di direktori bersebelahan. Sebelum monorepo, keempatnya di-clone terpisah di empat repo; sesudahnya satu repo jadi sumbernya — tetapi yang tinggal di server adalah **hasil build** (ketiga frontend) dan **artifact** (API), bukan pohon gitnya.
+Keempat aplikasi mendarat di **satu server**, di direktori bersebelahan. Sebelum monorepo, keempatnya di-clone terpisah di empat repo; sesudahnya satu repo jadi sumbernya — tetapi yang tinggal di server adalah **hasil build** (ketiga frontend) dan **source** (API, dependensinya dipasang di server), bukan pohon gitnya.
 
 | App | Cara naik | Tujuan |
 |---|---|---|
@@ -38,7 +38,7 @@ sudah tidak ada di sana: seluruh tingkat `apps/` tidak lagi ikut mendarat.
 memindahkannya menyeberangi jaringan tiap rilis tidak memberi apa pun:
 `composer install --no-dev` di server menentukan versi yang sama dari
 `composer.lock` yang ikut terkirim. Karena itu exclude `/vendor/` bersifat
-**wajib**, bukan penghematan — artifact tidak lagi memuat vendor, jadi tanpa
+**wajib**, bukan penghematan — source tidak lagi memuat vendor, jadi tanpa
 exclude itu `rsync --delete` akan menghapus vendor yang sudah ada di server dan
 meninggalkan situs tanpa dependensi sama sekali.
 
@@ -60,7 +60,7 @@ yang turun ke working tree.
 **Sebuah rilis adalah tag.** `deploy-prod.yml` berjalan saat tag `v*` di-push, dan mendeploy keempat app dalam satu jalan. Alasannya bukan gaya: satu nomor versi harus menunjuk satu keadaan kode yang diketahui, supaya pertanyaan "situs ini versi berapa" punya jawaban, dan supaya rilis yang sama bisa dipasang ulang.
 
 - **Nomor** — tag Semver `vMAJOR.MINOR.PATCH`. MAJOR untuk perubahan yang bisa merusak situs lain (skema DB, kontrak Hub), MINOR untuk fitur, PATCH untuk perbaikan.
-- **Stempel** — CI menghitung `APP_COMMIT` (commit yang di-build) dan `APP_UPSTREAM` (isi `.upstream-version` di commit itu), lalu deploy menulis `APP_VERSION` (tag), `APP_COMMIT`, dan `APP_UPSTREAM` ke `.env`, **sesudah** `.env` ditulis dari secret. Sengaja dari CI, bukan dari git di server: yang dilaporkan harus artifact yang benar-benar mendarat. `GET /v1/version` dan `VITE_APP_VERSION` melaporkan nilai yang sama.
+- **Stempel** — CI menghitung `APP_COMMIT` (commit yang di-build) dan `APP_UPSTREAM` (isi `.upstream-version` di commit itu), lalu deploy menulis `APP_VERSION` (tag), `APP_COMMIT`, dan `APP_UPSTREAM` ke `.env`, **sesudah** `.env` ditulis dari secret. Sengaja dari CI, bukan dari git di server: yang dilaporkan harus kode yang benar-benar mendarat. `GET /v1/version` dan `VITE_APP_VERSION` melaporkan nilai yang sama.
 - **Gerbang** — `php artisan hub:ping` dijalankan tepat sebelum `migrate`. Bila `HUB_ENABLED=true` dan Hub tidak terjangkau, deploy berhenti sebelum skema tersentuh. Di deploy standalone (`HUB_ENABLED=false`) perintah ini lulus sendiri.
 - **Rollback** — jalankan workflow `Deploy Production` lewat *Run workflow*, isi `ref` dengan tag lama (mis. `v1.3.0`). CI mengirim source tag itu, dan server memasang dependensinya dari `composer.lock` tag tersebut; tidak ada `git checkout` di server. Klon riwayat di `<base>/.api-repo` ikut mundur ke tag itu.
 
@@ -142,11 +142,11 @@ Data awal dari `migrate --seed` (seeder dev), bukan salinan produksi.
 
 Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
-1. **Siapkan `<base>/api` sebagai direktori biasa**, bukan klon. Deploy meng-`rsync` artifact ke sana dan membuatnya sendiri kalau belum ada; satu-satunya isi yang wajib dipertahankan adalah `storage/` (lihat langkah 5).
+1. **Siapkan `<base>/api` sebagai direktori biasa**, bukan klon. Deploy meng-`rsync` source ke sana dan membuatnya sendiri kalau belum ada; satu-satunya isi yang wajib dipertahankan adalah `storage/` (lihat langkah 5).
 2. **Arahkan ulang root nginx untuk API** dari `…/provider/api/public` ke **`<base>/api/public`**.
 3. **Perbarui path supervisor.** `supervisor/api-prod-worker.conf` menjalankan `php <dir>/artisan queue:work`; `<dir>` harus menunjuk lokasi baru, `<base>/api`.
 4. **Perbarui entri cron** `schedule:run` ke path baru.
-5. **Pindahkan berkas yang tidak ikut artifact**: isi `storage/app/` (banner, logo kategori, bukti transfer, artefak SIT). `.env` **tidak perlu** dipindahkan — deploy menulisnya ulang dari secret `ENV_FILE`.
+5. **Pindahkan berkas yang tidak ikut terkirim**: isi `storage/app/` (banner, logo kategori, bukti transfer, artefak SIT). `.env` **tidak perlu** dipindahkan — deploy menulisnya ulang dari secret `ENV_FILE`. Pastikan juga **`composer` terpasang** di server, karena dependensi API dipasang di sana.
 6. **Satukan keempat app di bawah satu induk**, satu subdirektori per app, lalu arahkan ulang `root` tiap vhost ke sana:
 
    | Direktori | Isi | `root` nginx |

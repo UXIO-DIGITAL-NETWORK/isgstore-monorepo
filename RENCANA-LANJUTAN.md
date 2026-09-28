@@ -5,7 +5,7 @@ Handover singkat. Status lengkap ada di [`docs/08-rencana-kerja.md`](docs/08-ren
 ## Posisi sekarang
 
 - Branch kerja: **`development`** (sudah dipush ke `origin`). **`main` belum disentuh.**
-- Working tree **bersih**. Hardening deploy + trusted proxy (`64333067`) dan deploy API sebagai artifact (`520126e9`) sudah di-commit.
+- Working tree **bersih**. Hardening deploy + trusted proxy (`64333067`), deploy API sebagai source (`520126e9`, `645c8aeb`, `81ac794e`, `8af30807`) sudah di-commit.
 - CI GitHub hijau di `development`: API test + Pint, admin, storefront, payment.
 - API lokal: 1319 lulus, 1 skipped, 0 gagal. `pint --test` bersih.
 
@@ -33,9 +33,9 @@ Sudah mendarat di `development` (`64333067`, lalu `520126e9`), lolos test dan Pi
 3. **Efisiensi deploy API**
    - Klon API jadi **sparse** + partial clone: server hanya menerima `apps/api`, bukan seluruh monorepo.
    - Klon lama dipersempit di tempat (tanpa re-clone, jadi `storage` dan `vendor` aman). Butuh git >= 2.25 di server.
-   - **Digantikan** oleh model artifact di bawah: klon sparse tidak lagi menjadi apa yang dilayani.
+   - **Digantikan** oleh model source + dependensi di server (butir 4): klon sparse tidak lagi menjadi apa yang dilayani.
 
-4. **Deploy API sebagai source, dependensi di server** (`520126e9`, `645c8aeb`, `81ac794e`, lalu perubahan vendor yang belum di-commit)
+4. **Deploy API sebagai source, dependensi di server** (`520126e9`, `645c8aeb`, `81ac794e`, `8af30807`)
    - CI meng-`rsync` **source** ke `<base>/api`, sehingga nginx root jadi **`<base>/api/public`** tanpa tingkat `apps/api`.
    - `.env`, `vendor`, `storage/app`, `storage/framework`, `storage/logs`, `bootstrap/cache`, `public/storage` di-exclude karena hanya ada di server.
    - **`vendor` (311 MB / 46.321 berkas) tidak pernah dikirim**: `composer install --no-dev` jalan di server dari `composer.lock`. Server perlu `composer` + akses packagist. Exclude `/vendor/` wajib, kalau tidak `--delete` menghapusnya.
@@ -44,8 +44,8 @@ Sudah mendarat di `development` (`64333067`, lalu `520126e9`), lolos test dan Pi
 
 ## Langkah lanjutan (urut)
 
-1. **Commit perubahan model artifact** (workflow + docs), lalu **migrasi server staging sekali** — selamatkan `storage/app` di `<base>/api/apps/api`, buang pohon lama, arahkan root nginx ke `<base>/api/public` (docs/04 §Migrasi).
-2. **Uji hardening + artifact di staging** — staging belum pernah berjalan; environment dan servernya belum ada (lihat Peringatan).
+1. **Commit perubahan model deploy API** (workflow + docs), lalu **migrasi server staging sekali** — selamatkan `storage/app` di `<base>/api/apps/api`, buang pohon lama, arahkan root nginx ke `<base>/api/public` (docs/04 §Migrasi). Pastikan `composer` ada di server.
+2. **Uji hardening + deploy API di staging** — staging belum pernah berjalan; environment dan servernya belum ada (lihat Peringatan).
 3. **Alat distribusi antar fork** — skrip `upstream-sync.sh` dan aturan folder klien vs folder inti.
 4. **Keputusan runtime config frontend** — `VITE_*` dipanggang saat build; pilih: terima rebuild per environment, atau pindah ke `config.json` runtime.
 5. **Keputusan rilis otomatis** — pakai semantic-release atau tetap manual.
