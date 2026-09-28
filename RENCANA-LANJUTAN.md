@@ -5,7 +5,7 @@ Handover singkat. Status lengkap ada di [`docs/08-rencana-kerja.md`](docs/08-ren
 ## Posisi sekarang
 
 - Branch kerja: **`development`** (sudah dipush ke `origin`). **`main` belum disentuh.**
-- Working tree **bersih**. Hardening deploy + trusted proxy sudah di-commit (`64333067`).
+- Working tree **bersih**. Hardening deploy + trusted proxy (`64333067`) dan deploy API sebagai artifact (`520126e9`) sudah di-commit.
 - CI GitHub hijau di `development`: API test + Pint, admin, storefront, payment.
 - API lokal: 1319 lulus, 1 skipped, 0 gagal. `pint --test` bersih.
 
@@ -20,7 +20,7 @@ Handover singkat. Status lengkap ada di [`docs/08-rencana-kerja.md`](docs/08-ren
 
 ## Sudah di-commit, menunggu diuji di staging
 
-Sudah mendarat di `development` (`64333067`), lolos test dan Pint lokal. Yang belum adalah pengujiannya di staging:
+Sudah mendarat di `development` (`64333067`, lalu `520126e9`), lolos test dan Pint lokal. Yang belum adalah pengujiannya di staging:
 
 1. **Hardening deploy**
    - `deploy-prod.yml` hanya jalan dari tag rilis `vX.Y.Z`, tolak tag rc di beberapa lapisan.
@@ -35,9 +35,7 @@ Sudah mendarat di `development` (`64333067`), lolos test dan Pint lokal. Yang be
    - Klon lama dipersempit di tempat (tanpa re-clone, jadi `storage` dan `vendor` aman). Butuh git >= 2.25 di server.
    - **Digantikan** oleh model artifact di bawah: klon sparse tidak lagi menjadi apa yang dilayani.
 
-**Belum di-commit** (ada di working tree, di atas `64333067`):
-
-4. **Deploy API sebagai artifact**
+4. **Deploy API sebagai artifact** (`520126e9`)
    - CI membangun artifact — source + `vendor` (`composer install --no-dev`) — lalu `rsync` ke `<base>/api`, sehingga nginx root jadi **`<base>/api/public`** tanpa tingkat `apps/api`.
    - `.env`, `storage/app`, `storage/framework`, `storage/logs`, `bootstrap/cache`, `public/storage` di-exclude karena hanya ada di server.
    - `<base>/.api-repo` menyimpan klon git untuk riwayat; best-effort, tidak menahan deploy.
