@@ -1,10 +1,16 @@
 # Deploy staging untuk keempat aplikasi, dari satu repo.
 #
-# KEMBARAN dari deploy-prod.yml. Bedanya HANYA tiga hal: pemicu (`main`, bukan
-# tag), concurrency group, dan `environment` — yang menentukan secret mana (host
-# SSH, base path, ENV_FILE) yang dipakai. Seluruh langkah di dalamnya SENGAJA
-# identik dengan produksi: staging yang tidak memakai jalur deploy yang sama
-# dengan produksi tidak membuktikan apa pun tentang produksi.
+# KEMBARAN dari deploy-prod.yml. Bedanya HANYA tiga hal: pemicu (`main` dan tag
+# pra-rilis, bukan tag rilis), concurrency group, dan `environment` — yang
+# menentukan secret mana (host SSH, base path, ENV_FILE) yang dipakai. Seluruh
+# langkah di dalamnya SENGAJA identik dengan produksi: staging yang tidak
+# memakai jalur deploy yang sama dengan produksi tidak membuktikan apa pun
+# tentang produksi.
+#
+# Dua pemicu, dua peran: `main` membuat trunk selalu hidup di suatu tempat, dan
+# tag pra-rilis (v1.2.3-rc.1) membuat ada kandidat bernama yang bisa diuji lalu
+# DIPROMOSIKAN — tag rilis v1.2.3 dibuat di commit yang sama, bukan di ujung
+# main yang sudah maju.
 #
 # Jaga kedua berkas tetap sinkron. Setiap perubahan di deploy-prod.yml harus ikut
 # ke sini, kalau tidak staging berhenti mencerminkan produksi. Bila keduanya
@@ -21,10 +27,12 @@ name: Deploy Staging
 on:
   push:
     branches: [main]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'   # kandidat bernama: v1.2.3-rc.1
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Cabang/commit yang dideploy ke staging (mis. sebuah branch fitur).'
+        description: 'Tag rc atau cabang yang dideploy ke staging (mis. v1.2.3-rc.1).'
         required: false
         default: ''
 
@@ -37,6 +45,13 @@ env:
   # Dipakai untuk checkout, untuk stempel di .env, dan untuk stempel build frontend.
   DEPLOY_REF: ${{ inputs.ref || github.ref_name }}
   APP_VERSION: ${{ inputs.ref || github.ref_name }}
+
+# Nothing here writes to the repository. Without this block every job inherits
+# the default token, which CAN push — so a compromised step in any of the
+# third-party actions below would inherit the right to push to the repo it is
+# deploying. Read-only is all this pipeline needs.
+permissions:
+  contents: read
 
 jobs:
   changes:
@@ -123,13 +138,29 @@ jobs:
           # arahnya server → GitHub, yang ini GitHub Actions → server.
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          # Pins the VPS host key WHEN THE SECRET EXISTS, and behaves exactly as
+          # before when it does not — an empty fingerprint is a no-op for this
+          # action. Without a pin the action trusts whatever answers, so anyone
+          # with a network position could impersonate the box and harvest
+          # ENV_FILE, which is every credential this site owns. Generate it with
+          #   ssh-keyscan -p <port> <host> | ssh-keygen -lf -
+          # then store the base64 SHA256 line as SSH_HOST_KEY.
+          fingerprint: ${{ secrets.SSH_HOST_KEY }}
           envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF,APP_VERSION
           script: |
             set -e
+            # APP_DEBUG wajib mati — termasuk di staging, yang justru lebih
+            # sering dibuka orang. Laravel merender throwable tak tertangkap
+            # sebagai JSON berisi stack trace dan nilai di scope, jadi satu
+            # karakter salah di ENV_FILE membocorkannya ke siapa pun.
+            if echo "$ENV_FILE_CONTENT" | grep -qE '^APP_DEBUG=(true|1|on)'; then
+              echo "::error::APP_DEBUG menyala di ENV_FILE — stack trace dan nilai env akan bocor ke klien. Setel APP_DEBUG=false lalu deploy ulang."; exit 1
+            fi
             # Satu base path untuk keempat app. Frontend menerima isi dist/ di
             # $DEPLOY_BASE_PATH/<app>; API bukan hasil build, jadi yang tinggal
-            # di $DEPLOY_BASE_PATH/api adalah klon monorepo-nya sendiri dan root
-            # nginx api.<domain> menunjuk ke apps/api/public di dalamnya.
+            # di $DEPLOY_BASE_PATH/api adalah klon monorepo-nya — SPARSE, hanya
+            # apps/api — dan root nginx api.<domain> menunjuk ke apps/api/public
+            # di dalamnya.
             [ -n "$DEPLOY_BASE_PATH" ] || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
             # Tanpa ref yang jelas kita tidak tahu kode mana yang harus mendarat.
             [ -n "$DEPLOY_REF" ] || { echo "::error::DEPLOY_REF kosong — deploy dibatalkan."; exit 1; }
@@ -181,24 +212,49 @@ jobs:
               '  Port 443' \
               '  User git' >> ~/.ssh/config
 
-            # 0. Bootstrap: clone monorepo saat deploy pertama.
-            #    URL-nya diturunkan dari repo yang sedang menjalankan workflow
-            #    ($GH_REPOSITORY), bukan ditulis tetap: template ini dipakai
-            #    ulang per situs, dan nama repo yang ter-hardcode akan mengkloning
-            #    kode situs lain tanpa satu pun langkah yang gagal.
+            # 0. Bootstrap: clone monorepo saat deploy pertama — SPARSE, hanya
+            #    apps/api yang turun ke working tree. Yang dipakai server dari klon
+            #    ini cuma apps/api (Laravel dijalankan dari source) plus git
+            #    (untuk rollback dan stempel APP_COMMIT) plus .upstream-version di
+            #    root. Source ketiga frontend tidak perlu ada di sini: mereka
+            #    dikirim ke direktori terpisah sebagai hasil build.
+            #    `--filter=blob:none` membuat .git juga lebih kecil (blob diambil
+            #    saat dibutuhkan). URL-nya diturunkan dari repo yang sedang
+            #    menjalankan workflow ($GH_REPOSITORY), bukan ditulis tetap:
+            #    template ini dipakai ulang per situs, dan nama repo yang
+            #    ter-hardcode akan mengkloning kode situs lain tanpa satu pun
+            #    langkah yang gagal.
             if [ ! -d "$REPO_DIR/.git" ]; then
-              echo "Setup pertama: clone $GH_REPOSITORY ke $REPO_DIR"
+              echo "Setup pertama: clone $GH_REPOSITORY ke $REPO_DIR (sparse: apps/api)"
               rm -rf "$REPO_DIR"
-              git clone "git@github.com:${GH_REPOSITORY}.git" "$REPO_DIR"
+              git clone --filter=blob:none --sparse "git@github.com:${GH_REPOSITORY}.git" "$REPO_DIR"
             fi
+
+            cd "$REPO_DIR"
+
+            # 0f. Sparse checkout wajib: working tree hanya memuat apps/api.
+            #     Idempoten — klon lama yang masih penuh ikut dipersempit di sini,
+            #     TANPA re-clone: apps/api/storage (unggahan) dan apps/api/vendor
+            #     tidak ikut git, jadi membuang direktorinya akan menghapusnya.
+            #     Cone mode otomatis menyertakan berkas di root, jadi
+            #     .upstream-version tetap ada untuk stempel APP_UPSTREAM di bawah.
+            GIT_MAJOR_MINOR=$(git --version | awk '{print $3}' | cut -d. -f1,2)
+            awk -v v="$GIT_MAJOR_MINOR" 'BEGIN{split(v,a,"."); if (a[1]*100+a[2] < 225) exit 1}' \
+              || { echo "::error::git $GIT_MAJOR_MINOR di server terlalu tua untuk sparse-checkout (butuh >= 2.25)."; exit 1; }
+            git sparse-checkout set --cone apps/api \
+              || { echo "::error::sparse-checkout gagal — cek versi git di server (butuh >= 2.25)."; exit 1; }
 
             # 1-2. Pindah ke ref yang diminta — di staging biasanya ujung `main`,
             #      karena staging memang mengikuti trunk (produksi yang memakai tag).
             #      Gagal di sini membatalkan deploy SEBELUM cache lama dibuang, jadi
             #      staging tetap hidup dengan kode lama.
-            cd "$REPO_DIR"
             git fetch --tags --force origin || { echo "::error::git fetch gagal — deploy dibatalkan."; exit 1; }
             git checkout --force "$DEPLOY_REF" || { echo "::error::ref $DEPLOY_REF tidak ditemukan — deploy dibatalkan."; exit 1; }
+
+            # 2b. Pastikan sparse benar-benar menghasilkan apps/api. Kalau pola
+            #     atau versi git salah, kegagalannya muncul di sini — bukan
+            #     setengah jalan saat composer install di direktori yang kosong.
+            [ -d "$API_DIR" ] || { echo "::error::apps/api tidak ada setelah checkout — pola sparse-checkout salah?"; exit 1; }
 
             cd "$API_DIR"
 
@@ -208,8 +264,9 @@ jobs:
             # 3a. Stempel rilis. Ditulis SETELAH .env supaya apa pun di dalam
             #     secret ENV_FILE tidak bisa membuat versi berbohong — `GET
             #     /v1/version` harus menjawab kode yang benar-benar mendarat.
-            #     APP_UPSTREAM opsional: dibaca dari .upstream-version bila situs
-            #     mencatat versi cetakan asalnya.
+            #     APP_UPSTREAM opsional: dibaca dari .upstream-version di root —
+            #     sparse-checkout cone mode menyertakan berkas root, jadi ia tetap
+            #     ada meski working tree hanya memuat apps/api.
             APP_COMMIT="$(git -C "$REPO_DIR" rev-parse --short HEAD)"
             APP_UPSTREAM="$( [ -f "$REPO_DIR/.upstream-version" ] && tr -d '[:space:]' < "$REPO_DIR/.upstream-version" || true )"
             sed -i -E '/^(APP_VERSION|APP_COMMIT|APP_UPSTREAM)=/d' .env
@@ -452,6 +509,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
         run: |
           set -euo pipefail
           test -n "$SSH_PRIVATE_KEY" || { echo "::error::secret SSH_PRIVATE_KEY belum diisi"; exit 1; }
@@ -460,12 +518,18 @@ jobs:
           # daftar proses runner.
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Merekam host key lebih dulu, supaya rsync tidak perlu dijalankan
-          # dengan StrictHostKeyChecking=no. Batasnya: ssh-keyscan mempercayai
-          # apa pun yang menjawab saat itu, jadi ini BUKAN perlindungan
-          # terhadap server palsu — lihat docs/04-deployment.md §Catatan
-          # keamanan.
-          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # Isi SSH_HOST_KEY (keluaran `ssh-keyscan -p <port> <host> |
+          # ssh-keygen -lf -`) untuk memaku host key server: tanpa itu rsync
+          # tidak perlu dijalankan dengan StrictHostKeyChecking=no, tapi
+          # ssh-keyscan mempercayai apa pun yang menjawab saat itu — jadi ia
+          # merapikan bentuk perintahnya, BUKAN melindungi dari server palsu.
+          if [ -n "$SSH_HOST_KEY" ]; then
+            printf '%s\n' "$SSH_HOST_KEY" >> ~/.ssh/known_hosts
+            echo "Host key dipin dari secret SSH_HOST_KEY."
+          else
+            echo "::warning::SSH_HOST_KEY belum diisi — host key direkam dengan ssh-keyscan, yang mempercayai apa pun yang menjawab saat itu. Isi secret itu untuk menutup celah MITM."
+            ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
           chmod 600 ~/.ssh/known_hosts
 
       - name: Deploy via rsync

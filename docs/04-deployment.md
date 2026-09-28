@@ -102,7 +102,7 @@ Data awal dari `migrate --seed` (seeder dev), bukan salinan produksi.
 
 Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
-1. **Clone monorepo** ke `<base>/api` (lihat langkah 6). Deploy juga meng-clone sendiri kalau direktorinya masih kosong.
+1. **Clone monorepo (sparse) ke `<base>/api`** (lihat langkah 6). Deploy juga meng-clone sendiri kalau direktorinya masih kosong — sparse, hanya `apps/api`. Server butuh **git >= 2.25**; versi lebih tua menggagalkan deploy dengan pesan jelas.
 2. **Arahkan ulang root nginx untuk API** dari `…/provider/api/public` ke `<base>/api/apps/api/public`.
 3. **Perbarui path supervisor.** `supervisor/api-prod-worker.conf` menjalankan `php <dir>/artisan queue:work`; `<dir>` harus menunjuk lokasi baru.
 4. **Perbarui entri cron** `schedule:run` ke path baru.
@@ -114,11 +114,13 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
    | `<base>/admin` | isi `dist/` | `<base>/admin` — `admin.<domain>` |
    | `<base>/payment` | isi `dist/` | `<base>/payment` — `pay.<domain>` |
    | `<base>/storefront` | isi `dist/` | `<base>/storefront` — `<domain>`, domain utama |
-   | `<base>/api` | **klon monorepo** | `<base>/api/apps/api/public` — `api.<domain>` |
+   | `<base>/api` | **klon monorepo (sparse)** | `<base>/api/apps/api/public` — `api.<domain>` |
 
-   `api` adalah satu-satunya yang berbeda isinya: Laravel dijalankan dari source, bukan dari hasil build, jadi yang tinggal di sana adalah repo ini seutuhnya — dan `root` nginx-nya menunjuk ke `apps/api/public` **di dalam** direktori itu, bukan ke direktorinya langsung.
+   `api` adalah satu-satunya yang berbeda isinya: Laravel dijalankan dari source, bukan dari hasil build, jadi yang tinggal di sana adalah klon repo ini — tetapi **sparse**: hanya `apps/api` yang di-materialize ke working tree. Source ketiga frontend tidak ikut (mereka disajikan dari `<base>/<app>` sebagai hasil build). `root` nginx-nya menunjuk ke `apps/api/public` **di dalam** direktori itu, bukan ke direktorinya langsung. Klon sparse ini butuh **git >= 2.25** di server.
 
    Buat `<base>` dan ketiga direktori frontend lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. `<base>/api` boleh dibiarkan kosong; deploy meng-clone sendiri. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
+
+   **Server yang sudah punya klon penuh:** deploy berikutnya mempersempitnya di tempat (`git sparse-checkout set --cone apps/api`) — tanpa re-clone, jadi `apps/api/storage` (unggahan) dan `apps/api/vendor` tetap aman. Yang belum mengecil dengan cara itu adalah folder `.git`; untuk itu perlu re-clone manual sekali (di luar alur deploy) yang **mempertahankan** `apps/api/storage` dan `.env`.
 7. **Tambahkan satu secret baru** di GitHub: `DEPLOY_BASE_PATH`, berisi `<base>` di atas tanpa nama app. Workflow yang menyusun `<base>/<app>`, jadi nama direktori **wajib** sama persis dengan nama folder di `apps/` — `admin`, `storefront`, `payment`, `api`.
 8. **Pindahkan `VITE_GOOGLE_CLIENT_ID` ke secret** — sebelumnya di-hardcode di YAML storefront.
 9. **Pasang deploy key di server.** Server meng-clone lewat SSH, jadi user SSH-nya butuh kunci yang terdaftar di repo:

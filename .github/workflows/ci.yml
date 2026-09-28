@@ -16,6 +16,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Tests and linters only — nothing here needs to write to the repo.
+permissions:
+  contents: read
+
 jobs:
   changes:
     name: Deteksi app yang berubah

@@ -33,6 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
         attributes: ['prefix' => 'api', 'middleware' => ['auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trusted proxies are wired in AppServiceProvider::boot() instead: this
+        // callback runs before the config repository is bound, so reading
+        // config() here throws. See config/app.php for what the value means.
         $middleware->throttleApi();
         // The one globally appended middleware in this app. It is global, not
         // per-group, so a public route added later is closed by default rather
