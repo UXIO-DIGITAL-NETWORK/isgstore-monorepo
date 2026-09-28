@@ -5,7 +5,7 @@ Handover singkat. Status lengkap ada di [`docs/08-rencana-kerja.md`](docs/08-ren
 ## Posisi sekarang
 
 - Branch kerja: **`development`** (sudah dipush ke `origin`). **`main` belum disentuh.**
-- Ada perubahan **belum di-commit** di working tree: hardening deploy + trusted proxy.
+- Working tree **bersih**. Hardening deploy + trusted proxy sudah di-commit (`64333067`).
 - CI GitHub hijau di `development`: API test + Pint, admin, storefront, payment.
 - API lokal: 1319 lulus, 1 skipped, 0 gagal. `pint --test` bersih.
 
@@ -18,9 +18,9 @@ Handover singkat. Status lengkap ada di [`docs/08-rencana-kerja.md`](docs/08-ren
 - Dokumentasi: zona, colokan, rilis, dan docs HTML interaktif.
 - Higiene: hapus workflow mati, bersihkan `.pyc`, perbaiki nama env di docs.
 
-## Sudah dikerjakan, tapi belum di-commit
+## Sudah di-commit, menunggu diuji di staging
 
-Perubahan ini ada di working tree, tinggal dicek lalu commit:
+Sudah mendarat di `development` (`64333067`), lolos test dan Pint lokal. Yang belum adalah pengujiannya di staging:
 
 1. **Hardening deploy**
    - `deploy-prod.yml` hanya jalan dari tag rilis `vX.Y.Z`, tolak tag rc di beberapa lapisan.
@@ -36,7 +36,7 @@ Perubahan ini ada di working tree, tinggal dicek lalu commit:
 
 ## Langkah lanjutan (urut)
 
-1. **Commit perubahan di working tree** — hardening deploy + trusted proxy.
+1. **Uji hardening di staging** — staging belum pernah berjalan; environment dan servernya belum ada (lihat Peringatan).
 2. **Alat distribusi antar fork** — skrip `upstream-sync.sh` dan aturan folder klien vs folder inti.
 3. **Keputusan runtime config frontend** — `VITE_*` dipanggang saat build; pilih: terima rebuild per environment, atau pindah ke `config.json` runtime.
 4. **Keputusan rilis otomatis** — pakai semantic-release atau tetap manual.
