@@ -47,7 +47,7 @@ export function SiteLogo({
     <>
       <Box
         className={cn(
-          "rounded-full bg-linear-to-br from-violet-600 to-blue-500 flex items-center justify-center shrink-0",
+          "rounded-full bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(39,53,15)] flex items-center justify-center shrink-0",
           className,
         )}
       >
@@ -69,7 +69,7 @@ export function SiteLogo({
               ISG
               <Text
                 as="span"
-                className={cn("text-[#9234EA] font-outfit font-black", textClassName)}
+                className={cn("text-[rgb(208,201,129)] font-outfit font-black", textClassName)}
               >
                 STORE
               </Text>

@@ -20,7 +20,7 @@ const CONFIG: Record<
 > = {
   totalActivity: {
     icon: <ClipboardList className="w-5 h-5" />,
-    iconBg: "bg-[#3B82F6]/10",
+    iconBg: "bg-[#60A5FA]/10",
     iconColor: "text-[#60A5FA]",
     cardBg: "",
     cardBorder: "",
@@ -41,10 +41,10 @@ const CONFIG: Record<
   },
   dataChange: {
     icon: <UserCog className="w-5 h-5" />,
-    iconBg: "bg-[#9234EA]/10",
-    iconColor: "text-[#C084FC]",
-    cardBg: "bg-[#100B1A]",
-    cardBorder: "border-[#9234EA]/20",
+    iconBg: "bg-[rgb(208,201,129)]/10",
+    iconColor: "text-[rgb(208,201,129)]",
+    cardBg: "bg-[rgb(26,34,16)]",
+    cardBorder: "border-[rgb(208,201,129)]/20",
   },
 };
 
@@ -52,7 +52,7 @@ const VALUE_COLOR: Record<ActivityStat["key"], string> = {
   totalActivity: "text-white",
   loginSuccess: "text-[#34D399]",
   transaction: "text-[#FBBF24]",
-  dataChange: "text-[#C084FC]",
+  dataChange: "text-[rgb(208,201,129)]",
 };
 
 interface Props {
@@ -118,11 +118,11 @@ export default function ActivityStatCard({ stat, className }: Props): React.JSX.
     </Box>
   );
 
-  /* totalActivity — gradient border + dark navy (same neutral pattern as StatCard) */
+  /* totalActivity — gradient border + dark forest (same neutral pattern as StatCard) */
   if (stat.key === "totalActivity") {
     return (
-      <Box className={cn("p-[1px] rounded-2xl bg-linear-to-br from-[#3B82F6] to-[#9234EA]", className)}>
-        <Box className="bg-[#0C0E1A] rounded-[15px] p-4 flex items-center h-full">
+      <Box className={cn("p-[1px] rounded-2xl bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(208,201,129)]", className)}>
+        <Box className="bg-[rgb(14,20,10)] rounded-[15px] p-4 flex items-center h-full">
           {cardContent}
         </Box>
       </Box>

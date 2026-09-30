@@ -69,7 +69,7 @@ export default function ActivityLogPage(): React.JSX.Element {
       <Box className="flex items-start justify-between gap-4 flex-wrap">
         <Box className="flex flex-col gap-1">
           <Box className="flex items-center gap-3">
-            <Box className="w-1 h-7 rounded-full bg-linear-to-b from-[#3B82F6] to-[#9234EA]" />
+            <Box className="w-1 h-7 rounded-full bg-linear-to-b from-[rgb(67,86,32)] to-[rgb(208,201,129)]" />
             <Box
               as="h2"
               className="font-outfit font-bold text-[22px] text-white uppercase tracking-wide leading-tight"
@@ -105,7 +105,7 @@ export default function ActivityLogPage(): React.JSX.Element {
 
       {/* ── "AKTIVITAS AKUN ANDA" section heading ── */}
       <Box className="flex items-center gap-3">
-        <Box className="w-1 h-5 rounded-full bg-linear-to-b from-[#3B82F6] to-[#9234EA]" />
+        <Box className="w-1 h-5 rounded-full bg-linear-to-b from-[rgb(67,86,32)] to-[rgb(208,201,129)]" />
         <Text
           as="span"
           className="text-[13px] font-outfit font-bold text-white/70 uppercase tracking-widest leading-none"

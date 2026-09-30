@@ -288,7 +288,7 @@ export default function CheckoutPage(): React.JSX.Element {
   };
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       {/* Header banner unit — full-width background, content stays at max-w-6xl */}

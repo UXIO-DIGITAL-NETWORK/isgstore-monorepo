@@ -36,7 +36,7 @@ export default function TopUpGame(): React.JSX.Element {
         {/* Section heading */}
         <Box className="flex flex-col gap-2.5 mb-6">
           <Box className="flex items-center gap-2">
-            <Box className="w-1 h-5 rounded-full bg-[#3B82F6] shrink-0" />
+            <Box className="w-1 h-5 rounded-full bg-[rgb(67,86,32)] shrink-0" />
             <Heading
               as="h2"
               level={4}
@@ -70,7 +70,7 @@ export default function TopUpGame(): React.JSX.Element {
         <Box className="flex justify-center">
           <Link
             href={`/${locale}/daftar-harga`}
-            className="flex items-center gap-2 px-8 py-3 rounded-full border border-[#9333EA] text-[#9333EA] text-[13px] font-semibold font-outfit uppercase tracking-widest hover:bg-[#9333EA]/10 active:bg-[#9333EA]/20 transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-8 py-3 rounded-full border border-[rgb(208,201,129)] text-[rgb(208,201,129)] text-[13px] font-semibold font-outfit uppercase tracking-widest hover:bg-[rgb(208,201,129)]/10 active:bg-[rgb(208,201,129)]/20 transition-colors cursor-pointer"
           >
             {t("topUpGame.showMore")}
             <ChevronDown className="w-4 h-4 shrink-0" />

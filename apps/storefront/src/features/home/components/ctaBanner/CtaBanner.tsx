@@ -6,7 +6,7 @@ import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Image } from "@/components/common/Image";
 import { Link } from "@/components/common/Link";
-import ctaBg from "@/assets/images/CTA/CTA_1.png";
+import ctaBg from "@/assets/images/CTA/CTA_3.jpeg";
 import ctaMascot from "@/assets/images/CTA/CTA_2.png";
 
 export default function CtaBanner(): React.JSX.Element {
@@ -61,7 +61,7 @@ export default function CtaBanner(): React.JSX.Element {
               <Box className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <Link
                   href={`/${locale}/register`}
-                  className="h-13 md:h-16.5 px-8 md:px-10 rounded-full bg-white font-inter font-bold text-[16px] md:text-[18px] text-[#0A0A0C] cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap flex items-center justify-center"
+                  className="h-13 md:h-16.5 px-8 md:px-10 rounded-full bg-white font-inter font-bold text-[16px] md:text-[18px] text-[rgb(0,0,0)] cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap flex items-center justify-center"
                 >
                   {t("cta.register")}
                 </Link>

@@ -20,7 +20,7 @@ export default function TrackOrderHelpBanner(): React.JSX.Element {
             {t("help.bodyPrefix")}{" "}
             <Link
               href="#"
-              className="text-[#9234EA] hover:text-[#C084FC] transition-colors underline underline-offset-2"
+              className="text-[rgb(208,201,129)] hover:text-[rgb(208,201,129)] transition-colors underline underline-offset-2"
             >
               {t("help.customerCare")}
             </Link>{" "}

@@ -25,7 +25,7 @@ export default function Testimoni(): React.JSX.Element {
       <Box className="max-w-6xl mx-auto px-4 md:px-8 flex flex-col gap-6">
         <Box className="flex flex-col gap-1.5">
           <Box className="flex items-center gap-2.5">
-            <Quote className="h-5 w-5 shrink-0 text-violet-lavender" />
+            <Quote className="h-5 w-5 shrink-0 text-highlight" />
             <Box
               as="h2"
               className="font-outfit text-2xl font-bold uppercase tracking-wide text-white"

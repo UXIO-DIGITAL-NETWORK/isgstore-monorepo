@@ -22,7 +22,7 @@ type Props = {
  * Interactive game search bar.
  *
  * - Focused & empty → "Pencarian Populer" row of portrait cards.
- * - While typing → live-filtered result rows with violet hover highlight.
+ * - While typing → live-filtered result rows with gold hover highlight.
  * - Click-outside or Escape → closes.
  */
 export function SearchBar({ className }: Props): React.JSX.Element {
@@ -62,7 +62,7 @@ export function SearchBar({ className }: Props): React.JSX.Element {
           "text-sm text-white placeholder:text-white/30 font-inter",
           "outline-none transition-all",
           open
-            ? "bg-white/8 border-[#C084FC]/60"
+            ? "bg-white/8 border-[rgb(208,201,129)]/60"
             : "border-white/8 focus:bg-white/8 focus:border-white/20"
         )}
       />
@@ -70,7 +70,7 @@ export function SearchBar({ className }: Props): React.JSX.Element {
 
       {/* ── Dropdown panel ── */}
       {open && (
-        <Box className="absolute left-0 right-0 top-full mt-2 z-[60] bg-[#18182A] border border-white/10 rounded-2xl shadow-glow-violet overflow-hidden">
+        <Box className="absolute left-0 right-0 top-full mt-2 z-[60] bg-[rgb(26,34,16)] border border-white/10 rounded-2xl shadow-glow-accent overflow-hidden">
           {!isSearching ? (
             /* ── Popular games row (mockup #1) ── */
             <Box className="p-4">

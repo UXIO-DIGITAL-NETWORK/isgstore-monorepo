@@ -64,18 +64,18 @@ export default function CustomerReviews({ reviews, summary }: Props): React.JSX.
           as="button"
           type="button"
           onClick={() => setShowAll((prev) => !prev)}
-          className="w-full py-3.5 rounded-full border border-[rgba(147,51,234,0.55)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(147,51,234,0.08)] active:bg-[rgba(147,51,234,0.12)] transition-colors cursor-pointer outline-none flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-full border border-[rgba(208,201,129,0.55)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(208,201,129,0.08)] active:bg-[rgba(208,201,129,0.12)] transition-colors cursor-pointer outline-none flex items-center justify-center gap-2"
         >
           <Text
             as="span"
-            className="font-outfit font-semibold text-[12px] uppercase tracking-[1px] leading-none text-[#9234EA]"
+            className="font-outfit font-semibold text-[12px] uppercase tracking-[1px] leading-none text-[rgb(208,201,129)]"
           >
             {showAll ? t("reviews.hide") : t("reviews.seeAll")}
           </Text>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
               d={showAll ? "M15 18L9 12L15 6" : "M9 18L15 12L9 6"}
-              stroke="#9234EA"
+              stroke="rgb(208,201,129)"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"

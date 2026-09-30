@@ -24,7 +24,7 @@ export default function LeaderboardTableRow({ entry, index }: Props): React.JSX.
       className={cn(
         `grid ${TABLE_GRID_COLS} items-center w-full px-5 py-3.5`,
         "border-b border-white/5 last:border-0",
-        isEven ? "bg-transparent" : "bg-[#0D0718]/40"
+        isEven ? "bg-transparent" : "bg-[rgb(14,20,10)]/40"
       )}
     >
       {/* Rank number */}

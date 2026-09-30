@@ -11,7 +11,7 @@ const pillVariants = cva(
     variants: {
       status: {
         success: "bg-[#0EA42E]/20 text-[#0EA42E]",
-        process: "bg-[#9234EA]/20 text-[#C084FC]",
+        process: "bg-[rgb(208,201,129)]/20 text-[rgb(208,201,129)]",
         failed: "bg-[#EF4444]/20 text-[#EF4444]",
       },
     },

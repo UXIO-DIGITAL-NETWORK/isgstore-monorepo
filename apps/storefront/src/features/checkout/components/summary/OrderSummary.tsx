@@ -105,11 +105,11 @@ export default function OrderSummary({
   };
 
   return (
-    <Box className="rounded-2xl border border-dotted border-[rgba(147,51,234,0.5)] bg-[#0D1117] overflow-hidden">
+    <Box className="rounded-2xl border border-dotted border-[rgba(208,201,129,0.5)] bg-[rgb(14,20,10)] overflow-hidden">
       {/* Package info row */}
       <Box className="px-4 py-4 flex items-center gap-3">
         {/* Portrait game thumbnail */}
-        <Box className="w-[60px] h-[75px] rounded-xl overflow-hidden shrink-0 border border-violet-75/30 shadow-glow-violet">
+        <Box className="w-[60px] h-[75px] rounded-xl overflow-hidden shrink-0 border border-accent/30 shadow-glow-accent">
           <img src={gameThumbnail} alt={gameName} className="w-full h-full object-cover" />
         </Box>
 
@@ -171,12 +171,12 @@ export default function OrderSummary({
 
       {/* Points this order earns — the same base the API grants on. */}
       {earnedPoints > 0 && (
-        <Box className="mx-4 mb-3 rounded-xl border border-[rgba(147,51,234,0.35)] bg-[rgba(147,51,234,0.12)] px-3 py-2 flex items-center justify-between gap-3">
-          <Text as="span" className="font-inter text-[12px] text-violet-lavender/80 leading-snug">
+        <Box className="mx-4 mb-3 rounded-xl border border-[rgba(208,201,129,0.35)] bg-[rgba(208,201,129,0.12)] px-3 py-2 flex items-center justify-between gap-3">
+          <Text as="span" className="font-inter text-[12px] text-highlight/80 leading-snug">
             {isGuest ? t("summary.pointsEarnedGuest", { points: formatNumber(earnedPoints, locale) }) : t("summary.pointsEarned")}
           </Text>
           {!isGuest && (
-            <Text as="span" className="font-plex font-bold text-[14px] text-violet-lavender leading-none whitespace-nowrap">
+            <Text as="span" className="font-plex font-bold text-[14px] text-highlight leading-none whitespace-nowrap">
               +{formatNumber(earnedPoints, locale)}
             </Text>
           )}

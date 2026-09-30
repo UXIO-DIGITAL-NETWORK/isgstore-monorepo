@@ -42,7 +42,7 @@ export default function BalanceHistoryCard(): React.JSX.Element {
   };
 
   return (
-    <Box className="rounded-2xl border border-white/10 bg-[#0D1117] p-5 flex flex-col gap-4">
+    <Box className="rounded-2xl border border-white/10 bg-[rgb(14,20,10)] p-5 flex flex-col gap-4">
       <Text as="p" className="font-outfit font-bold text-[15px] text-white">
         {t("balanceHistory.title")}
       </Text>

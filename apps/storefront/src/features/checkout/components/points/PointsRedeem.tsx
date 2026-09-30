@@ -74,7 +74,7 @@ export default function PointsRedeem({
           <>
             <Box
               as="label"
-              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 cursor-pointer hover:border-[#3B82F6]/40 transition-colors"
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 cursor-pointer hover:border-[rgb(67,86,32)]/40 transition-colors"
             >
               <Checkbox
                 checked={checked}
@@ -83,7 +83,7 @@ export default function PointsRedeem({
                 disabled={max <= 0}
                 onChange={(e) => onToggle(e.target.checked)}
               />
-              <Coins className="w-4 h-4 text-[#C084FC] shrink-0" />
+              <Coins className="w-4 h-4 text-[rgb(208,201,129)] shrink-0" />
               <Text as="span" className="font-inter text-[12px] text-white/80 leading-snug">
                 {t("points.useAll", {
                   points: formatNumber(max, locale),

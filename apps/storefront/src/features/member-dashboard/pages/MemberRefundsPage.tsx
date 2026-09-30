@@ -45,7 +45,7 @@ export default function MemberRefundsPage(): React.JSX.Element {
       )}
 
       {!isLoading && refunds.length === 0 && (
-        <Box className="rounded-2xl border border-white/10 bg-[#0D1117] px-4 py-10">
+        <Box className="rounded-2xl border border-white/10 bg-[rgb(14,20,10)] px-4 py-10">
           <Text as="p" className="font-inter text-[13px] text-white/45 text-center">
             {t("myRefunds.empty")}
           </Text>
@@ -55,7 +55,7 @@ export default function MemberRefundsPage(): React.JSX.Element {
       {refunds.map((refund) => (
         <Box
           key={refund.refund_number}
-          className="rounded-2xl border border-white/10 bg-[#0D1117] p-4 md:p-5 flex flex-col gap-3"
+          className="rounded-2xl border border-white/10 bg-[rgb(14,20,10)] p-4 md:p-5 flex flex-col gap-3"
         >
           <Box className="flex items-start justify-between gap-3">
             <Box className="flex flex-col gap-0.5 min-w-0">

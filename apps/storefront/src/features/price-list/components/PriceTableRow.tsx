@@ -30,7 +30,7 @@ export default function PriceTableRow({ item, index, gridTemplate }: Props): Rea
         className={cn(
           "hidden md:grid items-center w-full px-5 py-3.5",
           "border-b border-white/5 last:border-0",
-          isEven ? "bg-transparent" : "bg-[#0D0718]/40",
+          isEven ? "bg-transparent" : "bg-[rgb(14,20,10)]/40",
         )}
         style={{ gridTemplateColumns: gridTemplate }}
       >
@@ -102,7 +102,7 @@ export default function PriceTableRow({ item, index, gridTemplate }: Props): Rea
         className={cn(
           "md:hidden flex flex-col gap-2.5 w-full px-4 py-4",
           "border-b border-white/5 last:border-0",
-          isEven ? "bg-transparent" : "bg-[#0D0718]/40",
+          isEven ? "bg-transparent" : "bg-[rgb(14,20,10)]/40",
         )}
       >
         {/* Game + Status row */}
@@ -114,7 +114,7 @@ export default function PriceTableRow({ item, index, gridTemplate }: Props): Rea
               className="w-6 h-6 rounded-md object-contain flex-shrink-0"
             />
             <Box className="flex flex-col gap-0.5 min-w-0">
-              <Text as="span" className="font-dmsans font-bold text-[12px] text-purple-300/80 leading-none truncate">
+              <Text as="span" className="font-dmsans font-bold text-[12px] text-[rgb(208,201,129)]/80 leading-none truncate">
                 {item.gameName}
               </Text>
               <Text as="span" className="font-inter text-[10px] text-white/40 leading-none truncate">

@@ -42,7 +42,7 @@ export default function PopularGames(): React.JSX.Element {
         {/* Section header */}
         <Box className="flex flex-col gap-2.5 mb-6">
           <Box className="flex items-center gap-2">
-            <Box className="w-1 h-5 rounded-full bg-[#3B82F6] shrink-0" />
+            <Box className="w-1 h-5 rounded-full bg-[rgb(67,86,32)] shrink-0" />
             <Heading
               as="h2"
               level={4}
@@ -75,7 +75,7 @@ export default function PopularGames(): React.JSX.Element {
           {/* Right-edge decorative fade */}
           <Box
             aria-hidden
-            className="absolute inset-y-0 right-0 w-26.25 pointer-events-none bg-linear-to-r from-transparent to-[#0A0A0C]"
+            className="absolute inset-y-0 right-0 w-26.25 pointer-events-none bg-linear-to-r from-transparent to-[rgb(0,0,0)]"
           />
         </Box>
 

@@ -87,7 +87,7 @@ export default function ClaimAccountCard({ token, amount, contact, locale, onCla
     ) : null;
 
   return (
-    <Box className="rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] p-6 md:p-8 flex flex-col gap-5">
+    <Box className="rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgb(14,20,10)] p-6 md:p-8 flex flex-col gap-5">
       <Box className="flex flex-col gap-1">
         <Text as="p" className="font-outfit font-semibold text-[15px] text-white">
           {t("account.heading", { amount: formatCurrency(amount, i18n.language) })}
@@ -120,7 +120,7 @@ export default function ClaimAccountCard({ token, amount, contact, locale, onCla
           onClick={() => setMode("register")}
           className={`flex-1 rounded-full py-2 px-4 font-outfit font-bold text-[12px] transition-colors ${
             mode === "register"
-              ? "bg-[#3B82F6]/20 border border-[#3B82F6]/60 text-white"
+              ? "bg-[rgb(67,86,32)]/20 border border-[rgb(67,86,32)]/60 text-white"
               : "border border-white/10 text-white/55 hover:bg-white/5"
           }`}
         >
@@ -132,7 +132,7 @@ export default function ClaimAccountCard({ token, amount, contact, locale, onCla
           onClick={() => setMode("signin")}
           className={`flex-1 rounded-full py-2 px-4 font-outfit font-bold text-[12px] transition-colors ${
             mode === "signin"
-              ? "bg-[#3B82F6]/20 border border-[#3B82F6]/60 text-white"
+              ? "bg-[rgb(67,86,32)]/20 border border-[rgb(67,86,32)]/60 text-white"
               : "border border-white/10 text-white/55 hover:bg-white/5"
           }`}
         >
@@ -250,7 +250,7 @@ export default function ClaimAccountCard({ token, amount, contact, locale, onCla
               it here would mean asking for a resend to start over. */}
           <Link
             href={`/${locale}/login?redirect=${encodeURIComponent(`/${locale}/refund?token=${token}`)}`}
-            className="w-full flex items-center justify-center gap-2 rounded-[50px] border border-[#3B82F6]/60 bg-[#3B82F6]/10 py-3 px-4 font-outfit font-bold text-[13px] text-white hover:bg-[#3B82F6]/20 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-[50px] border border-[rgb(67,86,32)]/60 bg-[rgb(67,86,32)]/10 py-3 px-4 font-outfit font-bold text-[13px] text-white hover:bg-[rgb(67,86,32)]/20 transition-colors"
           >
             <LogIn className="w-4 h-4 shrink-0" />
             {t("account.goToLogin")}

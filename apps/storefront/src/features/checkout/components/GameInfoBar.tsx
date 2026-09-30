@@ -17,7 +17,7 @@ export default function GameInfoBar({ game }: Props): React.JSX.Element {
     <Box className="w-full bg-gradient-product-header border-t border-white/6">
       <Box className="relative max-w-6xl mx-auto px-4 md:px-8 py-5 md:pl-56">
         {/* Portrait game card — overlaps upward into the banner image, now bigger */}
-        <Box className="hidden md:block absolute left-4 md:left-8 top-36 md:-top-20 w-27 md:w-39 aspect-3/4 rounded-2xl overflow-hidden border border-violet-75/40 shadow-glow-violet z-10">
+        <Box className="hidden md:block absolute left-4 md:left-8 top-36 md:-top-20 w-27 md:w-39 aspect-3/4 rounded-2xl overflow-hidden border border-accent/40 shadow-glow-accent z-10">
           <img
             src={game.thumbnail}
             alt={game.name}
@@ -45,7 +45,7 @@ export default function GameInfoBar({ game }: Props): React.JSX.Element {
           {/* Single merged trust badge pill with 3 items separated by dots */}
           <Box className="inline-flex items-center gap-0 mt-1 px-2 rounded-full border border-white/10 bg-white/4 overflow-hidden w-fit">
             <Box className="flex items-center gap-1.5 px-3 py-1.5">
-              <Zap size={13} className="text-violet-75 shrink-0" strokeWidth={2.2} />
+              <Zap size={13} className="text-accent shrink-0" strokeWidth={2.2} />
               <Text
                 as="span"
                 className="font-outfit text-[11px] font-semibold uppercase tracking-wide text-white/65 leading-none whitespace-nowrap"
@@ -57,7 +57,7 @@ export default function GameInfoBar({ game }: Props): React.JSX.Element {
             <Box as="span" className="w-px h-4 bg-white/10 shrink-0" />
 
             <Box className="flex items-center gap-1.5 px-3 py-1.5">
-              <ShieldCheck size={13} className="text-violet-75 shrink-0" strokeWidth={2.2} />
+              <ShieldCheck size={13} className="text-accent shrink-0" strokeWidth={2.2} />
               <Text
                 as="span"
                 className="font-outfit text-[11px] font-semibold uppercase tracking-wide text-white/65 leading-none whitespace-nowrap"
@@ -69,7 +69,7 @@ export default function GameInfoBar({ game }: Props): React.JSX.Element {
             <Box as="span" className="w-px h-4 bg-white/10 shrink-0" />
 
             <Box className="flex items-center gap-1.5 px-3 py-1.5">
-              <BadgeCheck size={13} className="text-violet-75 shrink-0" strokeWidth={2.2} />
+              <BadgeCheck size={13} className="text-accent shrink-0" strokeWidth={2.2} />
               <Text
                 as="span"
                 className="font-outfit text-[11px] font-semibold uppercase tracking-wide text-white/65 leading-none whitespace-nowrap"

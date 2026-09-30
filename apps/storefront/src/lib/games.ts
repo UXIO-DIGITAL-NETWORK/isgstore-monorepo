@@ -9,7 +9,7 @@ import type { GameModel } from "@/types/models/game.model";
  * `/checkout/{id}` and the checkout route is addressed by slug.
  *
  * `borderColor` alternates by position. It has no server-side meaning — it is
- * the grid's existing azure/violet rhythm, preserved so a data-driven list
+ * the grid's existing green/gold rhythm, preserved so a data-driven list
  * looks identical to the hand-written one it replaces.
  */
 export function toGame(model: GameModel, index: number): Game {
@@ -22,7 +22,7 @@ export function toGame(model: GameModel, index: number): Game {
     // alone rather than a wrong stand-in logo over someone else's artwork.
     logoImage: model.logo_url ?? null,
     category: normaliseCategory(model.category_type?.name),
-    borderColor: index % 2 === 0 ? "azure" : "violet",
+    borderColor: index % 2 === 0 ? "green" : "gold",
   };
 }
 

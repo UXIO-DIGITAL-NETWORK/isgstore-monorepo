@@ -12,7 +12,7 @@ export default function PaymentInstructionsCard(): React.JSX.Element {
   const steps = t("instructions.steps", { returnObjects: true }) as string[];
 
   return (
-    <Box className="rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] overflow-hidden">
+    <Box className="rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgb(14,20,10)] overflow-hidden">
       {/* Header — clickable toggle */}
       <Box
         as="button"
@@ -42,7 +42,7 @@ export default function PaymentInstructionsCard(): React.JSX.Element {
               <Box key={i} as="li" className="flex items-start gap-2">
                 <Text
                   as="span"
-                  className="font-plex font-bold text-[12px] text-violet-75 leading-none mt-0.5 shrink-0 w-4 text-right"
+                  className="font-plex font-bold text-[12px] text-accent leading-none mt-0.5 shrink-0 w-4 text-right"
                 >
                   {i + 1}.
                 </Text>

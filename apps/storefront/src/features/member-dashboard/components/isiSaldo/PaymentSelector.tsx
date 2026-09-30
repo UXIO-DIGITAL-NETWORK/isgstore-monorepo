@@ -50,19 +50,19 @@ export default function PaymentSelector({
                 className={cn(
                   "w-full flex items-center justify-between px-3 py-2.5 cursor-pointer outline-none transition-colors",
                   isExpanded
-                    ? "bg-[rgba(147,51,234,0.1)]"
+                    ? "bg-[rgba(208,201,129,0.1)]"
                     : "bg-white/[0.02] hover:bg-white/[0.04]",
                 )}
               >
                 <Box className="flex items-center gap-2">
                   {hasSelected && (
-                    <Box className="w-2 h-2 rounded-full bg-[#9234EA] shrink-0" />
+                    <Box className="w-2 h-2 rounded-full bg-[rgb(208,201,129)] shrink-0" />
                   )}
                   <Text
                     as="span"
                     className={cn(
                       "font-outfit font-medium text-[13px] leading-none",
-                      hasSelected ? "text-[#C084FC]" : "text-white/80",
+                      hasSelected ? "text-[rgb(208,201,129)]" : "text-white/80",
                     )}
                   >
                     {t(`isiSaldo.payment.groups.${group.type}`)}

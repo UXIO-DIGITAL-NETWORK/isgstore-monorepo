@@ -9,7 +9,7 @@ export default function MembershipUpgradeBanner(): React.JSX.Element {
   return (
     <Box className="flex items-center gap-3 mb-5">
       {/* Accent bar */}
-      <Box className="w-1 h-8 rounded-full bg-linear-to-b from-[#3B82F6] to-[#9234EA] shrink-0" />
+      <Box className="w-1 h-8 rounded-full bg-linear-to-b from-[rgb(67,86,32)] to-[rgb(208,201,129)] shrink-0" />
 
       <Box className="flex flex-col gap-0.5">
         <Box

@@ -25,7 +25,7 @@ export default function ArtikelTerbaru(): React.JSX.Element {
         {/* Section heading */}
         <Box className="flex flex-col items-center gap-3 mb-12">
           <Box className="flex flex-wrap items-center justify-center gap-4">
-            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
+            <Box className="w-8 h-0.5 rounded-full bg-[rgb(67,86,32)] shrink-0 hidden sm:block" />
             <Heading
               as="h2"
               level={3}
@@ -33,7 +33,7 @@ export default function ArtikelTerbaru(): React.JSX.Element {
             >
               {t("artikel.title")}
             </Heading>
-            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
+            <Box className="w-8 h-0.5 rounded-full bg-[rgb(67,86,32)] shrink-0 hidden sm:block" />
           </Box>
           <Text as="p" className="font-inter font-normal text-[15px] leading-5 text-[#697282]">
             {t("artikel.subtitle")}
@@ -55,15 +55,15 @@ export default function ArtikelTerbaru(): React.JSX.Element {
         <Box className="flex justify-center mt-10">
           <Link
             href={`/${locale}/berita`}
-            className="flex items-center gap-2.5 px-8 h-11.5 rounded-full bg-transparent border border-[#9333EA] cursor-pointer no-underline"
+            className="flex items-center gap-2.5 px-8 h-11.5 rounded-full bg-transparent border border-[rgb(208,201,129)] cursor-pointer no-underline"
           >
             <Text
               as="span"
-              className="font-inter font-bold text-[12px] leading-none tracking-[1.2px] text-[#9333EA] uppercase"
+              className="font-inter font-bold text-[12px] leading-none tracking-[1.2px] text-[rgb(208,201,129)] uppercase"
             >
               {t("artikel.viewAll")}
             </Text>
-            <ChevronDown className="w-4 h-4 text-[#9333EA]" />
+            <ChevronDown className="w-4 h-4 text-[rgb(208,201,129)]" />
           </Link>
         </Box>
 

@@ -47,7 +47,7 @@ export default function TablePagination({ page, totalPages, onChange }: Props): 
           className={cn(
             "w-8 h-8 flex items-center justify-center rounded-full text-[12px] font-plex font-bold leading-none transition-all cursor-pointer",
             p === page
-              ? "bg-[#9234EA] text-white"
+              ? "bg-[rgb(208,201,129)] text-white"
               : "bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/8",
           )}
         >

@@ -51,7 +51,7 @@ export default function InvoicePage(): React.JSX.Element {
       : null;
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       {/* Hero + countdown — centered, full-width */}

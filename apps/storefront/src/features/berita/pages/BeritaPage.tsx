@@ -25,7 +25,7 @@ export default function BeritaPage(): React.JSX.Element {
   } = useBerita();
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       <Box className="max-w-6xl mx-auto px-4 md:px-8 py-12 flex flex-col gap-8">

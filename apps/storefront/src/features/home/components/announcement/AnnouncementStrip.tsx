@@ -29,10 +29,10 @@ export default function AnnouncementStrip(): React.JSX.Element {
         <Box
           as="section"
           aria-label={t("announcement.title")}
-          className="flex flex-col gap-3 rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[rgba(147,51,234,0.08)] px-4 py-3.5"
+          className="flex flex-col gap-3 rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgba(208,201,129,0.08)] px-4 py-3.5"
         >
           <Box className="flex items-center gap-2">
-            <Megaphone className="h-4 w-4 shrink-0 text-violet-lavender" />
+            <Megaphone className="h-4 w-4 shrink-0 text-highlight" />
             <Text as="span" className="font-outfit text-[13px] font-semibold text-white">
               {t("announcement.title")}
             </Text>

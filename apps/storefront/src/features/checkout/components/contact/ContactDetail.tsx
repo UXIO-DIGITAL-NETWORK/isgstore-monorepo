@@ -95,9 +95,9 @@ export default function ContactDetail({ whatsapp, onWhatsappChange, email, onEma
         </Box>
 
         {/* Receipt info box */}
-        <Box className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[#9333EA]/50 bg-[#9333EA]/10">
-          <Text as="span" className="text-[#C084FC] text-[14px] leading-none shrink-0">ⓘ</Text>
-          <Text as="span" className="font-inter text-[12px] text-[#C084FC] leading-relaxed">
+        <Box className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[rgb(208,201,129)]/50 bg-[rgb(208,201,129)]/10">
+          <Text as="span" className="text-[rgb(208,201,129)] text-[14px] leading-none shrink-0">ⓘ</Text>
+          <Text as="span" className="font-inter text-[12px] text-[rgb(208,201,129)] leading-relaxed">
             {t("contact.receiptNote")}
           </Text>
         </Box>

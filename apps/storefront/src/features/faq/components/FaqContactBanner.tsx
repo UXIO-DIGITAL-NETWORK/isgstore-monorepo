@@ -11,7 +11,7 @@ export default function FaqContactBanner(): React.JSX.Element {
 
   return (
     <Box
-      className="relative rounded-2xl overflow-hidden border border-[rgba(147,51,234,0.35)]"
+      className="relative rounded-2xl overflow-hidden border border-[rgba(208,201,129,0.35)]"
       style={{
         backgroundImage: `url(${bgCtaCheckout})`,
         backgroundSize: "cover",
@@ -19,7 +19,7 @@ export default function FaqContactBanner(): React.JSX.Element {
       }}
     >
       {/* Dark overlay */}
-      <Box className="absolute inset-0 bg-[#0A0A0C]/60" />
+      <Box className="absolute inset-0 bg-[rgb(0,0,0)]/60" />
 
       {/* Content */}
       <Box className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 px-6 md:px-10 py-8 md:py-10">

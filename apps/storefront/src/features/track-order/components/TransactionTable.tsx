@@ -26,7 +26,7 @@ export default function TransactionTable({ rows }: Props): React.JSX.Element {
   return (
     <Box className="rounded-2xl overflow-hidden border border-white/8">
       {/* ── Desktop column header (md+) ── */}
-      <Box className={`hidden md:grid ${TABLE_GRID_COLS} px-5 py-3.5 bg-[#3A1D6E]`}>
+      <Box className={`hidden md:grid ${TABLE_GRID_COLS} px-5 py-3.5 bg-[rgb(39,53,15)]`}>
         {HEADER_COLS.map((col) => (
           <Text
             key={col.key}
@@ -39,7 +39,7 @@ export default function TransactionTable({ rows }: Props): React.JSX.Element {
       </Box>
 
       {/* ── Mobile column header (< md) ── */}
-      <Box className="md:hidden grid grid-cols-2 px-4 py-3 bg-[#3A1D6E]">
+      <Box className="md:hidden grid grid-cols-2 px-4 py-3 bg-[rgb(39,53,15)]">
         <Text as="span" className="font-outfit font-semibold text-[12px] text-white leading-none">
           {t("table.invoice")}
         </Text>

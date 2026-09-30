@@ -67,14 +67,14 @@ export default function FlashSale(): React.JSX.Element {
         <Box
           className="rounded-2xl overflow-hidden"
           style={{
-            background: "rgba(147, 51, 234, 0.05)",
-            border: "1px solid rgba(147, 51, 234, 0.5)",
+            background: "rgba(208,201,129,0.05)",
+            border: "1px solid rgba(208,201,129,0.5)",
           }}
         >
           {/* Header */}
           <Box
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4"
-            style={{ background: "rgba(146, 52, 234, 0.1)" }}
+            style={{ background: "rgba(208,201,129,0.1)" }}
           >
             <Box>
               <Box className="flex items-center gap-2.5 mb-1.5">
@@ -93,7 +93,7 @@ export default function FlashSale(): React.JSX.Element {
               className="flex items-center gap-2 px-4 py-3 shrink-0 rounded-xl"
               style={{
                 background: "rgba(0, 0, 0, 0.2)",
-                border: "1px solid rgba(147, 51, 234, 0.2)",
+                border: "1px solid rgba(208,201,129,0.2)",
               }}
             >
               <TimerBox value={hours} />
@@ -105,7 +105,7 @@ export default function FlashSale(): React.JSX.Element {
           </Box>
 
           {/* Divider */}
-          <Box style={{ height: "1px", background: "rgba(146, 52, 234, 0.5)" }} />
+          <Box style={{ height: "1px", background: "rgba(208,201,129,0.5)" }} />
 
           {/* Card body */}
           <Box className="p-5">

@@ -30,7 +30,7 @@ export default function StaticPagePage(): React.JSX.Element {
   const page = data?.data;
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       <Box className="max-w-6xl mx-auto px-4 md:px-8 pb-20">
@@ -61,7 +61,7 @@ export default function StaticPagePage(): React.JSX.Element {
               </Box>
 
               {/* Gradient underline accent — same mark the policy page uses. */}
-              <Box className="w-16 h-[3px] rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] mt-3 mb-2" />
+              <Box className="w-16 h-[3px] rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] mt-3 mb-2" />
 
               {page.updated_at && (
                 <Text as="p" className="font-inter text-[13px] text-white/40 mt-3 leading-none">

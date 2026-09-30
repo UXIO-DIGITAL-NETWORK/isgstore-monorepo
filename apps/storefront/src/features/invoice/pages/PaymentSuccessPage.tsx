@@ -36,7 +36,7 @@ export default function PaymentSuccessPage(): React.JSX.Element {
 
   if (!order) {
     return (
-      <Box className="min-h-dvh bg-[#0A0A0C]">
+      <Box className="min-h-dvh bg-[rgb(0,0,0)]">
         <Navbar />
         <Box className="flex flex-col items-center gap-6 px-4 py-20">
           <PaymentSuccessHero />
@@ -47,7 +47,7 @@ export default function PaymentSuccessPage(): React.JSX.Element {
   }
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       {/* Hero — centered, full-width */}

@@ -74,7 +74,7 @@ function InfoCard({
   children: React.ReactNode;
 }) {
   return (
-    <Box className="rounded-2xl border border-[rgba(147,51,234,0.5)] bg-[rgba(88,28,135,0.35)] overflow-hidden">
+    <Box className="rounded-2xl border border-[rgba(208,201,129,0.5)] bg-[rgba(39,53,15,0.35)] overflow-hidden">
       {/* Card header */}
       <Box className="flex items-center gap-3 px-4 pt-4 pb-3">
         <Box className="w-6 h-px bg-white/40 shrink-0" />
@@ -147,14 +147,14 @@ export default function OrderConfirmModal({
     >
       {/* Gradient border wrapper — stop click propagation so backdrop click doesn't fire */}
       <Box
-        className="w-full max-w-md p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9333EA] shadow-glow-violet"
+        className="w-full max-w-md p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-glow-accent"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         <Box
           role="dialog"
           aria-modal="true"
           aria-label={t("confirmModal.title")}
-          className="rounded-[15px] bg-[rgba(42,4,98,0.82)] p-6 flex flex-col gap-5"
+          className="rounded-[15px] bg-[rgba(14,20,10,0.82)] p-6 flex flex-col gap-5"
         >
         {/* Header */}
         <Box className="flex flex-col gap-2">
@@ -228,7 +228,7 @@ export default function OrderConfirmModal({
             (isGuest ? (
               // Points land on an account, and a guest order has none — say so
               // here rather than let the buyer expect points that never arrive.
-              <Text as="span" className="font-inter text-[12px] text-violet-lavender/70 leading-snug">
+              <Text as="span" className="font-inter text-[12px] text-highlight/70 leading-snug">
                 {t("summary.pointsEarnedGuest", { points: formatNumber(pointsEarned, locale) })}
               </Text>
             ) : (

@@ -10,7 +10,7 @@ const pillVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-white font-semibold shadow-glow-violet",
+        true: "bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] text-white font-semibold shadow-glow-accent",
         false:
           "bg-white/[0.06] border border-white/10 text-white/60 hover:bg-white/10 hover:text-white/90",
       },

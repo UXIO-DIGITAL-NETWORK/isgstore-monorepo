@@ -26,7 +26,7 @@ export function SearchPopularCard({ game, onClose }: Props): React.JSX.Element {
       className="shrink-0 w-34 flex flex-col gap-2 outline-none group cursor-pointer"
     >
       {/* Portrait art card */}
-      <Box className="w-full aspect-3/4 rounded-xl overflow-hidden relative bg-[#0C0C16]">
+      <Box className="w-full aspect-3/4 rounded-xl overflow-hidden relative bg-[rgb(14,20,10)]">
         {/* Background art */}
         <Image
           src={game.bgImage}
@@ -51,7 +51,7 @@ export function SearchPopularCard({ game, onClose }: Props): React.JSX.Element {
         )}
 
         {/* Region pill — gradient border */}
-        <Box className="absolute inset-x-2 bottom-2 p-px rounded-md bg-linear-to-r from-[#9333EA] to-[#3B82F6]">
+        <Box className="absolute inset-x-2 bottom-2 p-px rounded-md bg-linear-to-r from-[rgb(208,201,129)] to-[rgb(67,86,32)]">
           <Box className="rounded-[5px] bg-[#080814]/90 h-7 flex items-center justify-center">
             <Text
               as="span"

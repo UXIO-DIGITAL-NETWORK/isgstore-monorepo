@@ -57,7 +57,7 @@ export default function PayoutDetailsForm({ onSubmit, isPending }: Props): React
   );
 
   return (
-    <Box className="rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] p-6 md:p-8">
+    <Box className="rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgb(14,20,10)] p-6 md:p-8">
       <Box
         as="form"
         onSubmit={(e: FormEvent) => {
@@ -82,7 +82,7 @@ export default function PayoutDetailsForm({ onSubmit, isPending }: Props): React
           <select
             id="payout-bank"
             {...register("bank_code")}
-            className="w-full bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white text-sm font-inter outline-none focus:border-[#3B82F6]/60 transition-all"
+            className="w-full bg-[rgb(14,20,10)] border border-white/10 rounded-full px-4 py-2.5 text-white text-sm font-inter outline-none focus:border-[rgb(67,86,32)]/60 transition-all"
           >
             <option value="">{t("form.bankPlaceholder")}</option>
             {banks.map((bank) => (

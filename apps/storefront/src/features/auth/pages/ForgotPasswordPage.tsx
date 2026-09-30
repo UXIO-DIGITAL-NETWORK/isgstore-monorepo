@@ -13,7 +13,7 @@ import { useForgotPassword } from "../hooks/useForgotPassword";
 import type { ApiError } from "@/types/api.type";
 
 const inputClass =
-  "w-full bg-white/6 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#C084FC] focus:bg-white/8 transition-all";
+  "w-full bg-white/6 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[rgb(208,201,129)] focus:bg-white/8 transition-all";
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation("auth");
@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
           as="button"
           type="submit"
           disabled={isPending}
-          className="w-full flex items-center justify-center py-3 px-4 bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary text-white text-[15px] font-bold font-outfit rounded-full border-0 disabled:opacity-70 cursor-pointer hover:opacity-90 transition-opacity"
+          className="w-full flex items-center justify-center py-3 px-4 bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary text-white text-[15px] font-bold font-outfit rounded-full border-0 disabled:opacity-70 cursor-pointer hover:opacity-90 transition-opacity"
         >
           {isPending ? t("forgotPassword.loading") : t("forgotPassword.submit")}
         </Box>
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
       <Text className="block text-center text-sm text-white/50 mt-6">
         <Link
           href={`/${locale ?? "id"}/login`}
-          className="text-[#3B82F6] font-bold hover:underline transition-colors"
+          className="text-[rgb(208,201,129)] font-bold hover:underline transition-colors"
         >
           {t("forgotPassword.backToLogin")}
         </Link>

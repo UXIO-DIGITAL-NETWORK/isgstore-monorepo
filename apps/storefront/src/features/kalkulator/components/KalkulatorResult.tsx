@@ -17,7 +17,7 @@ export default function KalkulatorResult({
   if (!result) return null;
 
   return (
-    <Box className="rounded-2xl border border-[#9333EA]/30 bg-[#0B051D]/60 shadow-glow-violet p-6 md:p-8 flex flex-col items-center gap-5 text-center">
+    <Box className="rounded-2xl border border-[rgb(208,201,129)]/30 bg-[rgb(14,20,10)]/60 shadow-glow-accent p-6 md:p-8 flex flex-col items-center gap-5 text-center">
       {/* ── Section title ── */}
       <Text as="p" className="font-inter text-[14px] text-white/60 uppercase tracking-wider">
         {t("result.title")}
@@ -36,7 +36,7 @@ export default function KalkulatorResult({
             </Text>
             <Text
               as="span"
-              className="font-outfit font-semibold text-[22px] text-[#9333EA]"
+              className="font-outfit font-semibold text-[22px] text-[rgb(208,201,129)]"
             >
               {t("result.matchSuffix")}
             </Text>
@@ -67,7 +67,7 @@ export default function KalkulatorResult({
 
       {/* ── Target WR badge ── */}
       <Box className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-5 py-3">
-        <Box className="text-[#9333EA]">
+        <Box className="text-[rgb(208,201,129)]">
           <Target size={24} />
         </Box>
         <Box className="flex flex-col items-start">

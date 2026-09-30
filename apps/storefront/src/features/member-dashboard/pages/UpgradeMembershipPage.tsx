@@ -32,7 +32,7 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
       {/* Page header */}
       <Box className="flex flex-col gap-1">
         <Box className="flex items-center gap-3">
-          <Box className="w-1 h-5 rounded-full bg-[#3B82F6] shrink-0" />
+          <Box className="w-1 h-5 rounded-full bg-[rgb(67,86,32)] shrink-0" />
           <Text
             as="span"
             className="font-outfit font-bold text-[22px] uppercase tracking-[-0.3px] text-white leading-none"

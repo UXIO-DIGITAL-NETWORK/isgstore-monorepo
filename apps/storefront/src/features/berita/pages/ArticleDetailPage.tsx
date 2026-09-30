@@ -26,7 +26,7 @@ export default function ArticleDetailPage(): React.JSX.Element {
   // request to settle — otherwise every visit flashes it before the content.
   if (!article && isLoading) {
     return (
-      <Box className="min-h-dvh bg-[#0A0A0C]">
+      <Box className="min-h-dvh bg-[rgb(0,0,0)]">
         <Navbar />
         <Box className="max-w-3xl mx-auto px-4 md:px-8 py-24 flex items-center justify-center">
           <Text as="p" className="font-inter text-[15px] text-white/40">
@@ -40,7 +40,7 @@ export default function ArticleDetailPage(): React.JSX.Element {
 
   if (!article) {
     return (
-      <Box className="min-h-dvh bg-[#0A0A0C]">
+      <Box className="min-h-dvh bg-[rgb(0,0,0)]">
         <Navbar />
         <Box className="max-w-3xl mx-auto px-4 md:px-8 py-24 flex items-center justify-center">
           <Text as="p" className="font-inter text-[15px] text-white/40">
@@ -53,7 +53,7 @@ export default function ArticleDetailPage(): React.JSX.Element {
   }
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       {/* ── Article content (narrow column) ── */}

@@ -48,7 +48,7 @@ export default function RefundClaimPage(): React.JSX.Element {
   const current = submit.data?.data ?? claim;
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       <Box className="flex flex-col items-center px-4">

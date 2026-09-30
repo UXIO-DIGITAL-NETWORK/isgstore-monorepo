@@ -18,7 +18,7 @@ import { useGoogleLogin } from "../hooks/useGoogleLogin";
 import type { ApiError } from "@/types/api.type";
 
 const inputClass =
-  "w-full bg-white/6 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#C084FC] focus:bg-white/8 transition-all";
+  "w-full bg-white/6 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[rgb(208,201,129)] focus:bg-white/8 transition-all";
 
 export default function LoginPage() {
   const { t } = useTranslation("auth");
@@ -123,7 +123,7 @@ export default function LoginPage() {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setValue("remember", e.target.checked)
               }
-              className="w-4 h-4 accent-[#9234EA] cursor-pointer"
+              className="w-4 h-4 accent-[rgb(208,201,129)] cursor-pointer"
             />
             <Box as="label" htmlFor="remember" className="text-sm text-white/70 font-inter cursor-pointer select-none">
               {t("login.rememberMe")}
@@ -131,7 +131,7 @@ export default function LoginPage() {
           </Box>
           <Link
             href={`/${locale ?? "id"}/forgot-password`}
-            className="text-sm text-[#3B82F6] hover:text-[#60A5FA] transition-colors font-inter"
+            className="text-sm text-[rgb(208,201,129)] hover:text-[rgb(247,246,198)] transition-colors font-inter"
           >
             {t("login.forgotPassword")}
           </Link>
@@ -142,7 +142,7 @@ export default function LoginPage() {
           as="button"
           type="submit"
           disabled={isPending}
-          className="w-full flex items-center justify-center py-3 px-4 bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary text-white text-[15px] font-bold font-outfit rounded-full border-0 disabled:opacity-70 cursor-pointer hover:opacity-90 transition-opacity"
+          className="w-full flex items-center justify-center py-3 px-4 bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary text-white text-[15px] font-bold font-outfit rounded-full border-0 disabled:opacity-70 cursor-pointer hover:opacity-90 transition-opacity"
         >
           {isPending ? t("login.loading") : t("login.submit")}
         </Box>
@@ -185,7 +185,7 @@ export default function LoginPage() {
         {t("login.noAccount")}{" "}
         <Link
           href={`/${locale ?? "id"}/register`}
-          className="text-[#3B82F6] font-bold hover:underline transition-colors"
+          className="text-[rgb(208,201,129)] font-bold hover:underline transition-colors"
         >
           {t("login.registerLink")}
         </Link>
