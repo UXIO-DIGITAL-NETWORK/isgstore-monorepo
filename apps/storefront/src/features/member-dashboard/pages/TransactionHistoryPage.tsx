@@ -8,6 +8,9 @@ import {
   XCircle,
 } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
 import { useTransactionHistory } from "@/features/member-dashboard/hooks/useTransactionHistory";
@@ -67,7 +70,7 @@ const STATUS_FILTERS: {
 
 export default function TransactionHistoryPage(): React.JSX.Element {
   const { t } = useTranslation("dashboard");
-  const allRows = useTransactionHistory();
+  const { rows: allRows, query } = useTransactionHistory();
   // Live-refresh the history as the member's orders change status.
   useMemberTransactionsRealtime();
 
@@ -201,7 +204,21 @@ export default function TransactionHistoryPage(): React.JSX.Element {
 
       {/* Table + pagination wrapper */}
       <Box className="rounded-2xl border border-white/10 overflow-hidden">
-        <TransactionHistoryTable rows={pageRows} />
+        {query.isError ? (
+          <Box className="p-4">
+            <ErrorState variant="inline" onRetry={() => void query.refetch()} />
+          </Box>
+        ) : query.isPending ? (
+          <Box aria-busy="true" className="flex flex-col gap-2 p-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton key={index} className="h-14 w-full rounded-xl" />
+            ))}
+          </Box>
+        ) : pageRows.length === 0 ? (
+          <EmptyState compact title={t("transactionHistory.noTransactions")} />
+        ) : (
+          <TransactionHistoryTable rows={pageRows} />
+        )}
         <TablePagination page={page} totalPages={totalPages} onChange={setPage} />
       </Box>
     </Box>

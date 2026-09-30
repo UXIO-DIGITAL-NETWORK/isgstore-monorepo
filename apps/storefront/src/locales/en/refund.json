@@ -30,6 +30,7 @@
     "subtitle": "Double-check the details. We transfer to this account within 1 business day.",
     "bank": "Bank or e-wallet",
     "bankPlaceholder": "Select a destination",
+    "noBanks": "No destination banks or e-wallets are available yet.",
     "accountNumber": "Account number",
     "accountPhone": "E-wallet phone number",
     "accountName": "Account holder name",

@@ -3,6 +3,10 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Gift, X } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { QueryState } from "@/components/common/QueryState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
 import { formatCurrency } from "@/lib/format";
@@ -28,9 +32,9 @@ export default function VoucherModal({
   const [code, setCode] = useState("");
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const { data: promosResponse } = usePublicPromosQuery();
+  const promosQuery = usePublicPromosQuery();
   const validatePromo = useValidatePromoMutation();
-  const promos = promosResponse?.data ?? [];
+  const promos = promosQuery.data?.data ?? [];
 
   const handleApply = (candidate: string) => {
     const trimmed = candidate.trim().toUpperCase();
@@ -152,45 +156,55 @@ export default function VoucherModal({
             <Text as="span" className="font-outfit font-bold text-[11px] tracking-[1px] text-white/40 uppercase leading-none">
               {t("promo.modal.availableTitle")}
             </Text>
-            {promos.length === 0 ? (
-              <Box className="rounded-2xl border border-dashed border-white/15 px-4 py-6 flex items-center justify-center text-center">
-                <Text as="span" className="font-inter text-[13px] text-white/40">
-                  {t("promo.modal.empty")}
-                </Text>
-              </Box>
-            ) : (
-              promos.map((promo) => (
-                <Box
-                  key={promo.id}
-                  as="button"
-                  type="button"
-                  onClick={() => {
-                    setCode(promo.code);
-                    handleApply(promo.code);
-                  }}
-                  className="w-full rounded-2xl border border-white/15 hover:border-[rgb(67,86,32)]/60 px-4 py-3 flex flex-col gap-1 text-left transition-colors cursor-pointer"
-                >
-                  <Box className="flex items-center justify-between gap-3">
-                    <Text as="span" className="font-outfit font-bold text-[13px] text-white tracking-wider">
-                      {promo.code}
-                    </Text>
-                    <Text as="span" className="font-plex font-bold text-[13px] text-[#0EA42E]">
-                      {promo.type === "percentage"
-                        ? `-${promo.value}%`
-                        : `-${formatCurrency(promo.value)}`}
-                    </Text>
-                  </Box>
-                  <Text as="span" className="font-inter text-[12px] text-white/50 leading-relaxed">
-                    {promo.description ?? promo.name}
-                  </Text>
-                  {promo.min_purchase > 0 && (
-                    <Text as="span" className="font-inter text-[11px] text-white/35">
-                      {t("promo.modal.minPurchase", { amount: formatCurrency(promo.min_purchase) })}
-                    </Text>
-                  )}
+            <QueryState
+              query={promosQuery}
+              skeleton={
+                <Box className="flex flex-col gap-2">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <Skeleton key={index} className="h-20 w-full rounded-2xl" />
+                  ))}
                 </Box>
-              ))
-            )}
+              }
+              isEmpty={(response) => (response.data ?? []).length === 0}
+              empty={<EmptyState compact title={t("promo.modal.empty")} />}
+              error={<ErrorState variant="inline" onRetry={() => void promosQuery.refetch()} />}
+            >
+              {() => (
+                <>
+                  {promos.map((promo) => (
+                    <Box
+                      key={promo.id}
+                      as="button"
+                      type="button"
+                      onClick={() => {
+                        setCode(promo.code);
+                        handleApply(promo.code);
+                      }}
+                      className="w-full rounded-2xl border border-white/15 hover:border-[rgb(67,86,32)]/60 px-4 py-3 flex flex-col gap-1 text-left transition-colors cursor-pointer"
+                    >
+                      <Box className="flex items-center justify-between gap-3">
+                        <Text as="span" className="font-outfit font-bold text-[13px] text-white tracking-wider">
+                          {promo.code}
+                        </Text>
+                        <Text as="span" className="font-plex font-bold text-[13px] text-[#0EA42E]">
+                          {promo.type === "percentage"
+                            ? `-${promo.value}%`
+                            : `-${formatCurrency(promo.value)}`}
+                        </Text>
+                      </Box>
+                      <Text as="span" className="font-inter text-[12px] text-white/50 leading-relaxed">
+                        {promo.description ?? promo.name}
+                      </Text>
+                      {promo.min_purchase > 0 && (
+                        <Text as="span" className="font-inter text-[11px] text-white/35">
+                          {t("promo.modal.minPurchase", { amount: formatCurrency(promo.min_purchase) })}
+                        </Text>
+                      )}
+                    </Box>
+                  ))}
+                </>
+              )}
+            </QueryState>
           </Box>
         </Box>
       </Box>

@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { QueryState } from "@/components/common/QueryState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Link } from "@/components/common/Link";
@@ -12,11 +15,21 @@ import ArticleCard from "./fragments/ArticleCard";
 
 const LATEST_COUNT = 3;
 
+function ArtikelSkeleton(): React.JSX.Element {
+  return (
+    <Box aria-busy="true" className="flex flex-col md:flex-row gap-6">
+      {Array.from({ length: LATEST_COUNT }).map((_, index) => (
+        <Skeleton key={index} className="h-72 sm:h-96 md:h-115 flex-1 rounded-2xl" />
+      ))}
+    </Box>
+  );
+}
+
 export default function ArtikelTerbaru(): React.JSX.Element {
   const { t } = useTranslation("home");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
-  const { data } = useLatestArticlesQuery(LATEST_COUNT, locale);
-  const articles = (data?.data.data ?? []).map((model) => toHomeArticle(model, locale));
+  const query = useLatestArticlesQuery(LATEST_COUNT, locale);
+  const articles = (query.data?.data.data ?? []).map((model) => toHomeArticle(model, locale));
 
   return (
     <Box as="section" className="w-full py-16 md:py-20">
@@ -40,16 +53,31 @@ export default function ArtikelTerbaru(): React.JSX.Element {
           </Text>
         </Box>
 
-        {/* 3-card flex row */}
-        <Box className="flex flex-col md:flex-row gap-6">
-          {articles.map((article, index) => (
-            <ArticleCard
-              key={article.id}
-              article={article}
-              isFeatured={index === 0}
+        <QueryState
+          query={query}
+          skeleton={<ArtikelSkeleton />}
+          isEmpty={(response) => response.data.data.length === 0}
+          empty={
+            <EmptyState
+              compact
+              title={t("artikel.empty.title")}
+              description={t("artikel.empty.description")}
             />
-          ))}
-        </Box>
+          }
+        >
+          {() => (
+            /* 3-card flex row */
+            <Box className="flex flex-col md:flex-row gap-6">
+              {articles.map((article, index) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  isFeatured={index === 0}
+                />
+              ))}
+            </Box>
+          )}
+        </QueryState>
 
         {/* CTA button */}
         <Box className="flex justify-center mt-10">

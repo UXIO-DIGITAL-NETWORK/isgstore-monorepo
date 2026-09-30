@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { Megaphone } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { ErrorState } from "@/components/common/ErrorState";
+import { QueryState } from "@/components/common/QueryState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { useAnnouncements } from "@/features/home/hooks/useAnnouncements";
 
@@ -15,50 +18,61 @@ import { useAnnouncements } from "@/features/home/hooks/useAnnouncements";
  *
  * Nothing is rendered when there is nothing published, and no copy is bundled
  * as a fallback — an announcement is a statement of fact, so inventing one
- * would be worse than showing nothing.
+ * would be worse than showing nothing. A *failure* is different: it gets a
+ * retry-able banner, because a notice that silently did not load is a notice
+ * the customer never saw.
  */
 export default function AnnouncementStrip(): React.JSX.Element {
   const { t } = useTranslation("home");
-  const announcements = useAnnouncements();
+  const query = useAnnouncements();
 
-  if (announcements.length === 0) return <></>;
+  // A successful-but-empty response hides the strip entirely.
+  if (query.isSuccess && (query.data?.length ?? 0) === 0) return <></>;
 
   return (
     <Box className="w-full pt-4">
       <Box className="max-w-6xl mx-auto px-4 md:px-8">
-        <Box
-          as="section"
-          aria-label={t("announcement.title")}
-          className="flex flex-col gap-3 rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgba(208,201,129,0.08)] px-4 py-3.5"
+        <QueryState
+          query={query}
+          skeleton={<Skeleton shape="card" className="h-20 w-full" />}
+          error={<ErrorState variant="inline" onRetry={() => void query.refetch()} />}
         >
-          <Box className="flex items-center gap-2">
-            <Megaphone className="h-4 w-4 shrink-0 text-highlight" />
-            <Text as="span" className="font-outfit text-[13px] font-semibold text-white">
-              {t("announcement.title")}
-            </Text>
-          </Box>
-
-          <Box className="flex flex-col divide-y divide-white/5">
-            {announcements.map((announcement) => (
-              <Box key={announcement.id} className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
-                {announcement.image_url && (
-                  <img
-                    src={announcement.image_url}
-                    alt=""
-                    loading="lazy"
-                    className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                  />
-                )}
-                <Text
-                  as="p"
-                  className="font-inter text-[13px] leading-relaxed text-white/70 whitespace-pre-line"
-                >
-                  {announcement.content}
+          {(announcements) => (
+            <Box
+              as="section"
+              aria-label={t("announcement.title")}
+              className="flex flex-col gap-3 rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgba(208,201,129,0.08)] px-4 py-3.5"
+            >
+              <Box className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4 shrink-0 text-highlight" />
+                <Text as="span" className="font-outfit text-[13px] font-semibold text-white">
+                  {t("announcement.title")}
                 </Text>
               </Box>
-            ))}
-          </Box>
-        </Box>
+
+              <Box className="flex flex-col divide-y divide-white/5">
+                {announcements.map((announcement) => (
+                  <Box key={announcement.id} className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
+                    {announcement.image_url && (
+                      <img
+                        src={announcement.image_url}
+                        alt=""
+                        loading="lazy"
+                        className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                      />
+                    )}
+                    <Text
+                      as="p"
+                      className="font-inter text-[13px] leading-relaxed text-white/70 whitespace-pre-line"
+                    >
+                      {announcement.content}
+                    </Text>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )}
+        </QueryState>
       </Box>
     </Box>
   );

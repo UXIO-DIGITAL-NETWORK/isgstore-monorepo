@@ -1,6 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { useIntegrasi } from "@/features/member-dashboard/hooks/useIntegrasi";
 import ApiKeyCard from "@/features/member-dashboard/components/integrasi/ApiKeyCard";
@@ -26,7 +29,10 @@ export default function IntegrasiPage(): React.JSX.Element {
     addIp,
     removeIp,
     isMutatingWhitelist,
+    query,
   } = useIntegrasi();
+
+  const hasCredential = (query.data?.data.credentials.length ?? 0) > 0;
 
   return (
     <Box className="flex flex-col gap-6">
@@ -47,31 +53,43 @@ export default function IntegrasiPage(): React.JSX.Element {
       </Box>
 
       {/* Section cards — single column */}
-      <Box className="flex flex-col gap-5">
-        <ApiKeyCard
-          apiKey={apiKey}
-          isKeyVisible={isKeyVisible}
-          onToggleVisibility={toggleKeyVisibility}
-          onRegenerate={regenerateKey}
-          loading={isRegenerating}
-        />
+      {query.isError ? (
+        <ErrorState onRetry={() => void query.refetch()} />
+      ) : query.isPending ? (
+        <Box aria-busy="true" className="flex flex-col gap-5">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-40 w-full rounded-2xl" />
+          ))}
+        </Box>
+      ) : !hasCredential ? (
+        <EmptyState title={t("integrasi.empty")} />
+      ) : (
+        <Box className="flex flex-col gap-5">
+          <ApiKeyCard
+            apiKey={apiKey}
+            isKeyVisible={isKeyVisible}
+            onToggleVisibility={toggleKeyVisibility}
+            onRegenerate={regenerateKey}
+            loading={isRegenerating}
+          />
 
-        <CallbackUrlCard
-          callbackUrl={callbackUrl}
-          onChangeUrl={setCallbackUrl}
-          onSubmit={submitCallback}
-          loading={isSavingCallback}
-        />
+          <CallbackUrlCard
+            callbackUrl={callbackUrl}
+            onChangeUrl={setCallbackUrl}
+            onSubmit={submitCallback}
+            loading={isSavingCallback}
+          />
 
-        <WhitelistIpCard
-          whitelistIps={whitelistIps}
-          ipDraft={ipDraft}
-          onChangeDraft={setIpDraft}
-          onAddIp={addIp}
-          onRemoveIp={removeIp}
-          loading={isMutatingWhitelist}
-        />
-      </Box>
+          <WhitelistIpCard
+            whitelistIps={whitelistIps}
+            ipDraft={ipDraft}
+            onChangeDraft={setIpDraft}
+            onAddIp={addIp}
+            onRemoveIp={removeIp}
+            loading={isMutatingWhitelist}
+          />
+        </Box>
+      )}
     </Box>
   );
 }

@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { QueryState } from "@/components/common/QueryState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
 import SectionCard from "@/features/checkout/components/SectionCard";
+import { usePaymentChannelsQuery } from "@/features/checkout/hooks/useCheckoutQueries";
 import MemberCreditsCard from "./fragments/MemberCreditsCard";
 import PaymentLogoChip from "./fragments/PaymentLogoChip";
 import type { PaymentGroup, MemberCredits, PaymentGroupType } from "@/features/checkout/types/checkout.type";
@@ -14,6 +18,19 @@ interface Props {
   memberCredits: MemberCredits | null;
   selectedPaymentId: string | null;
   onSelectPayment: (id: string) => void;
+  /** The payment-channels request, for the loading / error / empty states. */
+  query: ReturnType<typeof usePaymentChannelsQuery>;
+}
+
+function PaymentSkeleton(): React.JSX.Element {
+  return (
+    <Box aria-busy="true" className="flex flex-col gap-2">
+      <Skeleton className="h-16 w-full rounded-xl" />
+      {Array.from({ length: 3 }).map((_, index) => (
+        <Skeleton key={index} className="h-12 w-full rounded-xl" />
+      ))}
+    </Box>
+  );
 }
 
 export default function PaymentMethods({
@@ -21,6 +38,7 @@ export default function PaymentMethods({
   memberCredits,
   selectedPaymentId,
   onSelectPayment,
+  query,
 }: Props): React.JSX.Element {
   const { t } = useTranslation("checkout");
 
@@ -35,84 +53,101 @@ export default function PaymentMethods({
 
   return (
     <SectionCard stepNumber={3} title={t("payment.title")} gradientBorder>
-      <Box className="flex flex-col gap-2">
-        {/* Member Credits block — hidden for guests, who cannot pay from a
-            wallet they don't have. */}
-        {memberCredits && (
-          <MemberCreditsCard
-            credits={memberCredits}
-            isSelected={selectedPaymentId === memberCredits.id}
-            onSelect={onSelectPayment}
+      <QueryState
+        query={query}
+        skeleton={<PaymentSkeleton />}
+        // Only "no channels at all" is empty; a member wallet with no groups is
+        // still something to show.
+        isEmpty={() => groups.length === 0 && !memberCredits}
+        empty={
+          <EmptyState
+            compact
+            title={t("payment.empty.title")}
+            description={t("payment.empty.description")}
           />
-        )}
+        }
+      >
+        {() => (
+          <Box className="flex flex-col gap-2">
+            {/* Member Credits block — hidden for guests, who cannot pay from a
+                wallet they don't have. */}
+            {memberCredits && (
+              <MemberCreditsCard
+                credits={memberCredits}
+                isSelected={selectedPaymentId === memberCredits.id}
+                onSelect={onSelectPayment}
+              />
+            )}
 
-        {/* Payment method groups */}
-        {groups.map((group) => {
-          const isExpanded = !collapsedGroups[group.type];
-          const hasSelected = group.options.some((o) => o.id === selectedPaymentId);
+            {/* Payment method groups */}
+            {groups.map((group) => {
+              const isExpanded = !collapsedGroups[group.type];
+              const hasSelected = group.options.some((o) => o.id === selectedPaymentId);
 
-          return (
-            <Box
-              key={group.type}
-              className="rounded-xl border border-white/8 overflow-hidden"
-            >
-              {/* Group header */}
-              <Box
-                as="button"
-                type="button"
-                onClick={() => toggleGroup(group.type)}
-                className={cn(
-                  "w-full flex items-center justify-between px-3 py-2.5 cursor-pointer outline-none transition-colors",
-                  isExpanded ? "bg-[rgba(208,201,129,0.1)]" : "bg-white/[0.02] hover:bg-white/[0.04]",
-                )}
-              >
-                <Box className="flex items-center gap-2">
-                  {hasSelected && (
-                    <Box className="w-2 h-2 rounded-full bg-[rgb(208,201,129)] shrink-0" />
-                  )}
-                  <Text
-                    as="span"
+              return (
+                <Box
+                  key={group.type}
+                  className="rounded-xl border border-white/8 overflow-hidden"
+                >
+                  {/* Group header */}
+                  <Box
+                    as="button"
+                    type="button"
+                    onClick={() => toggleGroup(group.type)}
                     className={cn(
-                      "font-outfit font-medium text-[13px] leading-none",
-                      hasSelected ? "text-[rgb(208,201,129)]" : "text-white/80",
+                      "w-full flex items-center justify-between px-3 py-2.5 cursor-pointer outline-none transition-colors",
+                      isExpanded ? "bg-[rgba(208,201,129,0.1)]" : "bg-white/[0.02] hover:bg-white/[0.04]",
                     )}
                   >
-                    {/* Known groups keep their translation; a new payment type
-                        added server-side falls back to the API's own label. */}
-                    {t(`payment.groups.${group.type}`, { defaultValue: group.label })}
-                  </Text>
-                </Box>
+                    <Box className="flex items-center gap-2">
+                      {hasSelected && (
+                        <Box className="w-2 h-2 rounded-full bg-[rgb(208,201,129)] shrink-0" />
+                      )}
+                      <Text
+                        as="span"
+                        className={cn(
+                          "font-outfit font-medium text-[13px] leading-none",
+                          hasSelected ? "text-[rgb(208,201,129)]" : "text-white/80",
+                        )}
+                      >
+                        {/* Known groups keep their translation; a new payment type
+                            added server-side falls back to the API's own label. */}
+                        {t(`payment.groups.${group.type}`, { defaultValue: group.label })}
+                      </Text>
+                    </Box>
 
-                {/* Chevron */}
-                <Box
-                  className={cn(
-                    "w-4 h-4 flex items-center justify-center transition-transform duration-200",
-                    isExpanded ? "rotate-180" : "rotate-0",
+                    {/* Chevron */}
+                    <Box
+                      className={cn(
+                        "w-4 h-4 flex items-center justify-center transition-transform duration-200",
+                        isExpanded ? "rotate-180" : "rotate-0",
+                      )}
+                    >
+                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+                        <path d="M1 1l4 4 4-4" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </Box>
+                  </Box>
+
+                  {/* Logo chips row */}
+                  {isExpanded && (
+                    <Box className="flex flex-wrap gap-2 p-3 border-t border-white/6 bg-[rgba(0,0,0,0.15)]">
+                      {group.options.map((option) => (
+                        <PaymentLogoChip
+                          key={option.id}
+                          option={option}
+                          isSelected={selectedPaymentId === option.id}
+                          onSelect={onSelectPayment}
+                        />
+                      ))}
+                    </Box>
                   )}
-                >
-                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
-                    <path d="M1 1l4 4 4-4" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
                 </Box>
-              </Box>
-
-              {/* Logo chips row */}
-              {isExpanded && (
-                <Box className="flex flex-wrap gap-2 p-3 border-t border-white/6 bg-[rgba(0,0,0,0.15)]">
-                  {group.options.map((option) => (
-                    <PaymentLogoChip
-                      key={option.id}
-                      option={option}
-                      isSelected={selectedPaymentId === option.id}
-                      onSelect={onSelectPayment}
-                    />
-                  ))}
-                </Box>
-              )}
-            </Box>
-          );
-        })}
-      </Box>
+              );
+            })}
+          </Box>
+        )}
+      </QueryState>
     </SectionCard>
   );
 }

@@ -6,6 +6,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useParams } from "@tanstack/react-router";
 
 import { Box } from "@/components/common/Box";
+import { ErrorState } from "@/components/common/ErrorState";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Link } from "@/components/common/Link";
@@ -58,8 +59,8 @@ export default function RegisterPage() {
 
       {/* API Error */}
       {apiErrorMessage && (
-        <Box className="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl mb-5">
-          <Text className="font-medium text-red-400 text-sm">{apiErrorMessage}</Text>
+        <Box className="mb-5">
+          <ErrorState variant="inline" title={apiErrorMessage} description="" />
         </Box>
       )}
 

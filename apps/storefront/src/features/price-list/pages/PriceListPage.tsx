@@ -22,6 +22,7 @@ export default function PriceListPage(): React.JSX.Element {
     setCurrentPage,
     totalPages,
     onQueryChange,
+    query,
   } = usePriceList();
 
   return (
@@ -52,7 +53,12 @@ export default function PriceListPage(): React.JSX.Element {
             />
 
             {/* Price table */}
-            <PriceTable rows={pagedRows} />
+            <PriceTable
+              rows={pagedRows}
+              isPending={query.isPending}
+              isError={query.isError}
+              onRetry={() => void query.refetch()}
+            />
 
             {/* Pagination */}
             <PriceTablePagination

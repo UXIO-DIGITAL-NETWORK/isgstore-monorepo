@@ -2,9 +2,11 @@ import React from "react";
 import { useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
 import { Heading } from "@/components/common/Heading";
-import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 import Breadcrumb from "@/features/berita/components/Breadcrumb";
@@ -14,24 +16,48 @@ import ShareBar from "@/features/berita/components/ShareBar";
 import RelatedArticles from "@/features/berita/components/RelatedArticles";
 import { useArticleDetail } from "@/features/berita/hooks/useArticleDetail";
 
+function ArticleSkeleton(): React.JSX.Element {
+  return (
+    <Box aria-busy="true" className="max-w-3xl mx-auto px-4 md:px-8 py-10 flex flex-col gap-6">
+      <Skeleton className="h-4 w-40" />
+      <Skeleton className="h-9 w-5/6" />
+      <Skeleton className="h-4 w-52" />
+      <Skeleton className="aspect-video w-full rounded-2xl" />
+      <Box className="flex flex-col gap-3">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+      </Box>
+    </Box>
+  );
+}
+
 export default function ArticleDetailPage(): React.JSX.Element {
   const { slug = "", locale = "id" } = useParams({ strict: false }) as {
     slug?: string;
     locale?: string;
   };
   const { t } = useTranslation("berita");
-  const { article, related, sections, isLoading } = useArticleDetail(slug);
+  const { article, related, sections, query } = useArticleDetail(slug);
 
-  // The article now arrives asynchronously, so "not found" must wait for the
-  // request to settle — otherwise every visit flashes it before the content.
-  if (!article && isLoading) {
+  // The article arrives asynchronously, so "not found" must wait for the request
+  // to settle — otherwise every visit flashes it before the content.
+  if (query.isPending && query.fetchStatus !== "idle") {
     return (
       <Box className="min-h-dvh bg-[rgb(0,0,0)]">
         <Navbar />
-        <Box className="max-w-3xl mx-auto px-4 md:px-8 py-24 flex items-center justify-center">
-          <Text as="p" className="font-inter text-[15px] text-white/40">
-            {t("detail.loading")}
-          </Text>
+        <ArticleSkeleton />
+        <Footer />
+      </Box>
+    );
+  }
+
+  if (query.isError) {
+    return (
+      <Box className="min-h-dvh bg-[rgb(0,0,0)]">
+        <Navbar />
+        <Box className="max-w-3xl mx-auto px-4 md:px-8 py-24">
+          <ErrorState onRetry={() => void query.refetch()} />
         </Box>
         <Footer />
       </Box>
@@ -42,10 +68,8 @@ export default function ArticleDetailPage(): React.JSX.Element {
     return (
       <Box className="min-h-dvh bg-[rgb(0,0,0)]">
         <Navbar />
-        <Box className="max-w-3xl mx-auto px-4 md:px-8 py-24 flex items-center justify-center">
-          <Text as="p" className="font-inter text-[15px] text-white/40">
-            {t("detail.notFound")}
-          </Text>
+        <Box className="max-w-3xl mx-auto px-4 md:px-8 py-24">
+          <EmptyState title={t("detail.notFound")} />
         </Box>
         <Footer />
       </Box>

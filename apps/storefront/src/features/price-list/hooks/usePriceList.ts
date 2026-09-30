@@ -35,7 +35,7 @@ export function usePriceList() {
   const [sortOption, setSortOption] = useState<SortOption>("default");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data } = useQuery({
+  const query = useQuery({
     queryKey: ["price-list", debouncedQuery, activeGameId, sortOption, currentPage],
     queryFn: async () => {
       const response = await storefrontService.priceList({
@@ -53,6 +53,8 @@ export function usePriceList() {
     // doesn't blank the table.
     placeholderData: keepPreviousData,
   });
+
+  const data = query.data;
 
   const pagedRows = useMemo<PriceListItem[]>(
     () =>
@@ -107,5 +109,7 @@ export function usePriceList() {
     totalPages: Math.max(1, data?.meta.last_page ?? 1),
     /** Called when the search field value changes, to reset pagination */
     onQueryChange: handleSetQuery,
+    /** The raw query, for the table's loading / error / empty states. */
+    query,
   };
 }

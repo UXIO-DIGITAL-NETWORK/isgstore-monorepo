@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
 import type { PaymentGroup, PaymentGroupType } from "@/features/member-dashboard/types/isiSaldo.type";
@@ -11,12 +14,18 @@ interface Props {
   groups: PaymentGroup[];
   selectedPaymentId: string | null;
   onSelectPayment: (id: string) => void;
+  isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }
 
 export default function PaymentSelector({
   groups,
   selectedPaymentId,
   onSelectPayment,
+  isLoading = false,
+  isError = false,
+  onRetry,
 }: Props): React.JSX.Element {
   const { t } = useTranslation("dashboard");
 
@@ -33,7 +42,18 @@ export default function PaymentSelector({
   return (
     <SectionCard stepNumber={2} title={t("isiSaldo.payment.sectionTitle")}>
       <Box className="flex flex-col gap-2">
-        {groups.map((group) => {
+        {isError ? (
+          <ErrorState variant="inline" onRetry={onRetry} />
+        ) : isLoading ? (
+          <Box aria-busy="true" className="flex flex-col gap-2">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-12 w-full rounded-xl" />
+            ))}
+          </Box>
+        ) : groups.length === 0 ? (
+          <EmptyState compact title={t("isiSaldo.payment.empty")} />
+        ) : (
+          groups.map((group) => {
           const isExpanded = expandedGroups[group.type];
           const hasSelected = group.options.some((o) => o.id === selectedPaymentId);
 
@@ -103,7 +123,8 @@ export default function PaymentSelector({
               )}
             </Box>
           );
-        })}
+        })
+        )}
       </Box>
     </SectionCard>
   );

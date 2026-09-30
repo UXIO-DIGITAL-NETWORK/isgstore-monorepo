@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
 import { cn } from "@/lib/utils";
@@ -18,12 +21,13 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
   const { t } = useTranslation("priceList");
   const [categorySearch, setCategorySearch] = useState("");
 
-  const { data: games } = useGamesQuery();
+  const gamesQuery = useGamesQuery();
+  const games = gamesQuery.data ?? [];
 
   // This search only narrows the row of cards already on screen, so it filters
   // client-side rather than issuing a request per keystroke.
   const needle = categorySearch.toLowerCase();
-  const filteredGames: Game[] = (games ?? []).filter(
+  const filteredGames: Game[] = games.filter(
     (g) => g.title.toLowerCase().includes(needle) || g.region.toLowerCase().includes(needle),
   );
 
@@ -61,6 +65,17 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
       </Box>
 
       {/* ── Game cards row — same style as Top Up Game section on homepage ── */}
+      {gamesQuery.isError ? (
+        <ErrorState variant="inline" onRetry={() => void gamesQuery.refetch()} />
+      ) : gamesQuery.isPending ? (
+        <Box aria-busy="true" className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="aspect-3/4 w-[130px] shrink-0 rounded-xl" />
+          ))}
+        </Box>
+      ) : filteredGames.length === 0 ? (
+        <EmptyState compact title={t("category.noResults")} />
+      ) : (
       <Box className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
         {filteredGames.map((game) => {
           const isActive = activeGameId === game.id;
@@ -124,13 +139,8 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
             </Box>
           );
         })}
-
-        {filteredGames.length === 0 && (
-          <Text as="p" className="font-inter text-[13px] text-white/40 py-4">
-            {t("category.noResults")}
-          </Text>
-        )}
       </Box>
+      )}
 
       {/* ── Scroll progress bar (decorative) ── */}
       <Box className="mt-2 h-[3px] rounded-full bg-white/8 overflow-hidden">

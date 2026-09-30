@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Clock, Wallet } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { memberRefundService } from "@/features/member-dashboard/services/refund.service";
@@ -20,12 +23,12 @@ import { memberRefundService } from "@/features/member-dashboard/services/refund
 export default function MemberRefundsPage(): React.JSX.Element {
   const { t, i18n } = useTranslation("refund");
 
-  const { data, isLoading } = useQuery({
+  const refundsQuery = useQuery({
     queryKey: ["me", "refunds"],
     queryFn: async () => (await memberRefundService.list()).data?.data ?? [],
   });
 
-  const refunds = data ?? [];
+  const refunds = refundsQuery.data ?? [];
 
   return (
     <Box className="flex flex-col gap-5">
@@ -38,21 +41,18 @@ export default function MemberRefundsPage(): React.JSX.Element {
         </Text>
       </Box>
 
-      {isLoading && (
-        <Text as="p" className="font-inter text-[13px] text-white/55 py-8 text-center">
-          {t("claim.loading")}
-        </Text>
-      )}
-
-      {!isLoading && refunds.length === 0 && (
-        <Box className="rounded-2xl border border-white/10 bg-[rgb(14,20,10)] px-4 py-10">
-          <Text as="p" className="font-inter text-[13px] text-white/45 text-center">
-            {t("myRefunds.empty")}
-          </Text>
+      {refundsQuery.isError ? (
+        <ErrorState onRetry={() => void refundsQuery.refetch()} />
+      ) : refundsQuery.isPending ? (
+        <Box aria-busy="true" className="flex flex-col gap-3">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Skeleton key={index} className="h-36 w-full rounded-2xl" />
+          ))}
         </Box>
-      )}
-
-      {refunds.map((refund) => (
+      ) : refunds.length === 0 ? (
+        <EmptyState compact title={t("myRefunds.empty")} />
+      ) : (
+        refunds.map((refund) => (
         <Box
           key={refund.refund_number}
           className="rounded-2xl border border-white/10 bg-[rgb(14,20,10)] p-4 md:p-5 flex flex-col gap-3"
@@ -105,7 +105,8 @@ export default function MemberRefundsPage(): React.JSX.Element {
             </Text>
           )}
         </Box>
-      ))}
+        ))
+      )}
     </Box>
   );
 }

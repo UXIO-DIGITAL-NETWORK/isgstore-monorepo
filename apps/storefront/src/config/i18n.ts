@@ -20,6 +20,7 @@ import idFaq from "@/locales/id/faq.json";
 import idLeaderboard from "@/locales/id/leaderboard.json";
 import idPrivacyPolicy from "@/locales/id/privacyPolicy.json";
 import idRefund from "@/locales/id/refund.json";
+import idStates from "@/locales/id/states.json";
 
 import enCommon from "@/locales/en/common.json";
 import enAuth from "@/locales/en/auth.json";
@@ -39,6 +40,7 @@ import enFaq from "@/locales/en/faq.json";
 import enLeaderboard from "@/locales/en/leaderboard.json";
 import enPrivacyPolicy from "@/locales/en/privacyPolicy.json";
 import enRefund from "@/locales/en/refund.json";
+import enStates from "@/locales/en/states.json";
 
 i18n
   .use(LanguageDetector)
@@ -64,6 +66,7 @@ i18n
         leaderboard: idLeaderboard,
         privacyPolicy: idPrivacyPolicy,
         refund: idRefund,
+        states: idStates,
       },
       en: {
         common: enCommon,
@@ -84,13 +87,14 @@ i18n
         leaderboard: enLeaderboard,
         privacyPolicy: enPrivacyPolicy,
         refund: enRefund,
+        states: enStates,
       },
     },
     lng: "id",
     fallbackLng: "id",
     supportedLngs: ["id", "en"],
     defaultNS: "common",
-    ns: ["common", "auth", "home", "checkout", "invoice", "dashboard", "admin", "errors", "trackOrder", "priceList", "berita", "kalkulator", "zodiac", "magicWheel", "faq", "leaderboard", "privacyPolicy", "refund"],
+    ns: ["common", "auth", "home", "checkout", "invoice", "dashboard", "admin", "errors", "trackOrder", "priceList", "berita", "kalkulator", "zodiac", "magicWheel", "faq", "leaderboard", "privacyPolicy", "refund", "states"],
     interpolation: {
       escapeValue: false,
     },

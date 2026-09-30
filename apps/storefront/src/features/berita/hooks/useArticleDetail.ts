@@ -11,6 +11,8 @@ export interface UseArticleDetailReturn {
   /** This article's own body, replacing the shared placeholder constant. */
   sections: ArticleSection[];
   isLoading: boolean;
+  /** The raw query, for the page's loading / error / not-found states. */
+  query: ReturnType<typeof useArticleDetailQuery>;
 }
 
 /**
@@ -20,7 +22,8 @@ export interface UseArticleDetailReturn {
  */
 export function useArticleDetail(slug: string): UseArticleDetailReturn {
   const { locale } = useParams({ strict: false }) as { locale?: string };
-  const { data, isLoading } = useArticleDetailQuery(slug, locale);
+  const query = useArticleDetailQuery(slug, locale);
+  const { data, isLoading } = query;
 
   const detail = data?.data;
 
@@ -39,5 +42,6 @@ export function useArticleDetail(slug: string): UseArticleDetailReturn {
     related,
     sections: detail?.article.body_sections ?? [],
     isLoading,
+    query,
   };
 }

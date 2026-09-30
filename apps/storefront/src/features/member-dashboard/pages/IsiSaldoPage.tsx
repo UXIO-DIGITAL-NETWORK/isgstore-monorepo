@@ -25,6 +25,7 @@ export default function IsiSaldoPage(): React.JSX.Element {
     handleSelectPreset,
     handleCustomChange,
     handleSelectPayment,
+    paymentQuery,
   } = useIsiSaldo();
 
   return (
@@ -61,6 +62,9 @@ export default function IsiSaldoPage(): React.JSX.Element {
             groups={paymentGroups}
             selectedPaymentId={selectedPaymentId}
             onSelectPayment={handleSelectPayment}
+            isLoading={paymentQuery.isPending}
+            isError={paymentQuery.isError}
+            onRetry={() => void paymentQuery.refetch()}
           />
 
           <SummaryCard

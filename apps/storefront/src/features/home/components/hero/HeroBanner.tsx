@@ -3,9 +3,11 @@ import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Image } from "@/components/common/Image";
 import { Link } from "@/components/common/Link";
+import { Skeleton } from "@/components/common/Skeleton";
 import { GAP_PX, SIDE_VISIBLE } from "@/features/home/constants/heroBanner";
 import { useHeroCarousel } from "@/features/home/hooks/useHeroCarousel";
 import { bannerHref } from "@/features/home/lib/bannerHref";
+import { BANNERS } from "@/features/home/data/heroBanner.data";
 import BannerNavArrow from "./fragments/BannerNavArrow";
 import CarouselDots from "./fragments/CarouselDots";
 import { useHeroBanners } from "@/features/home/hooks/useHeroBanners";
@@ -58,9 +60,22 @@ function SlideImage({
 
 export default function HeroBanner(): React.JSX.Element {
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
-  const banners = useHeroBanners();
+  const query = useHeroBanners();
+  // The bundled artwork stands in whenever the request has failed or come back
+  // empty, so the hero is never a hole in the page.
+  const banners = query.data ?? BANNERS;
   const { current, containerWidth, trackRef, hasPeek, slideWidth, goTo } = useHeroCarousel(banners.length);
   const isMobile = containerWidth > 0 && containerWidth < 768;
+
+  if (query.isPending && query.fetchStatus !== "idle") {
+    return (
+      <Box aria-busy="true" className="w-full pt-4 pb-5 md:pt-8 md:pb-9">
+        <Box className="max-w-6xl mx-auto md:px-8">
+          <Skeleton className="aspect-video w-full md:aspect-13/4 md:rounded-2xl" />
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box className="w-full pt-4 pb-5 md:pt-8 md:pb-9">

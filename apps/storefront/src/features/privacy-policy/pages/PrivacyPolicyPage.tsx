@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { usePageQuery } from "@/hooks/useContentQuery";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
@@ -16,7 +17,8 @@ const PAGE_SLUG = "kebijakan-privasi";
 export default function PrivacyPolicyPage(): React.JSX.Element {
   const { t } = useTranslation("privacyPolicy");
   const { locale = "id" } = useParams({ strict: false }) as { locale?: string };
-  const { data } = usePageQuery(PAGE_SLUG, locale);
+  const pageQuery = usePageQuery(PAGE_SLUG, locale);
+  const data = pageQuery.data;
 
   // The bundled copy stands in until the request lands and stays if it fails —
   // a policy page must never render blank.
@@ -34,28 +36,39 @@ export default function PrivacyPolicyPage(): React.JSX.Element {
         {/* Page title + accent */}
         <PrivacyPolicyHeader />
 
-        {/* Intro paragraphs */}
-        <Box className="flex flex-col gap-4">
-          {intro.map((paragraph, idx) => (
-            <Text
-              key={idx}
-              as="p"
-              className="font-inter text-[14px] md:text-[15px] text-white/55 leading-[1.85]"
-            >
-              {paragraph}
-            </Text>
-          ))}
-        </Box>
+        {pageQuery.isPending && pageQuery.fetchStatus !== "idle" ? (
+          <Box aria-busy="true" className="flex flex-col gap-4 pt-4">
+            <Skeleton className="h-8 w-2/3" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/5" />
+          </Box>
+        ) : (
+          <>
+            {/* Intro paragraphs */}
+            <Box className="flex flex-col gap-4">
+              {intro.map((paragraph, idx) => (
+                <Text
+                  key={idx}
+                  as="p"
+                  className="font-inter text-[14px] md:text-[15px] text-white/55 leading-[1.85]"
+                >
+                  {paragraph}
+                </Text>
+              ))}
+            </Box>
 
-        {/* Content sections */}
-        {sections.map((section) => (
-          <StaticPageSection
-            key={section.heading}
-            heading={section.heading}
-            paragraphs={section.paragraphs}
-            bullets={section.bullets}
-          />
-        ))}
+            {/* Content sections */}
+            {sections.map((section) => (
+              <StaticPageSection
+                key={section.heading}
+                heading={section.heading}
+                paragraphs={section.paragraphs}
+                bullets={section.bullets}
+              />
+            ))}
+          </>
+        )}
       </Box>
 
       <Footer />

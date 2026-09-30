@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Coins } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Checkbox } from "@/components/ui/Checkbox";
 import SectionCard from "@/features/checkout/components/SectionCard";
@@ -21,6 +22,8 @@ interface Props {
   onToggle: (checked: boolean) => void;
   /** False when the member's plan already buys a discount. */
   allowed: boolean;
+  /** Shown while the balance is still being fetched (members only). */
+  isLoading?: boolean;
 }
 
 /**
@@ -44,9 +47,20 @@ export default function PointsRedeem({
   checked,
   onToggle,
   allowed,
+  isLoading,
 }: Props): React.JSX.Element | null {
   const { t, i18n } = useTranslation("checkout");
   const locale = i18n.language;
+
+  // A guest never fires the balance request, so `isLoading` is false for them
+  // and this resolves to the null fallback below.
+  if (isLoading) {
+    return (
+      <SectionCard stepNumber={stepNumber} title={t("points.title")} gradientBorder>
+        <Skeleton className="h-16 w-full rounded-xl" />
+      </SectionCard>
+    );
+  }
 
   // A guest has no balance, and a member with none has nothing to offer.
   if (balance === null || balance <= 0) return null;

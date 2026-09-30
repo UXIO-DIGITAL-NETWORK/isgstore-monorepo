@@ -7,16 +7,24 @@ import type { TransactionHistoryRow } from "@/features/member-dashboard/types/da
 /** One page holds the whole table; the panel filters and sorts client-side. */
 const PER_PAGE = 100;
 
-export function useTransactionHistory(): TransactionHistoryRow[] {
+/**
+ * The member's own transaction history.
+ *
+ * Returns the query alongside the mapped rows so the page can render a table
+ * skeleton, an error with retry, and an empty state instead of an empty tbody.
+ */
+export function useTransactionHistory() {
   // Realtime (useMemberTransactionsRealtime) drives updates; only poll as a
   // safety net while the socket is down, otherwise not at all.
   const connected = useEchoConnected();
 
-  const { data } = useQuery({
+  const query = useQuery({
     queryKey: ["member", "transactions"],
     queryFn: async () => (await memberService.transactions({ per_page: PER_PAGE })).data,
     refetchInterval: connected ? false : 30_000,
   });
 
-  return asArray(data?.data).map(toHistoryRow);
+  const rows: TransactionHistoryRow[] = asArray(query.data?.data).map(toHistoryRow);
+
+  return { rows, query };
 }

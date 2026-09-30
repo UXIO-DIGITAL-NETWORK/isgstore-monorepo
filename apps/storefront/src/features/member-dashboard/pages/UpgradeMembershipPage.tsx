@@ -25,6 +25,8 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
     handleSelectPlan,
     handleSelectPayment,
     handleSubmit,
+    plansQuery,
+    paymentQuery,
   } = useUpgradeMembership();
 
   return (
@@ -51,6 +53,9 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
           plans={plans}
           selectedPlanId={selectedPlanId}
           onSelectPlan={handleSelectPlan}
+          isLoading={plansQuery.isPending}
+          isError={plansQuery.isError}
+          onRetry={() => void plansQuery.refetch()}
         />
 
         <PaymentSelector
@@ -58,6 +63,9 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
           creditsBalance={creditsBalance}
           selectedPaymentId={selectedPaymentId}
           onSelectPayment={handleSelectPayment}
+          isLoading={paymentQuery.isPending}
+          isError={paymentQuery.isError}
+          onRetry={() => void paymentQuery.refetch()}
         />
 
         <SummaryCard

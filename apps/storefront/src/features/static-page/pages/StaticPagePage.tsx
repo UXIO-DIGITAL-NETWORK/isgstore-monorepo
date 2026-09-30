@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "@tanstack/react-router";
 
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
@@ -25,31 +28,29 @@ import { formatDate } from "@/lib/format";
 export default function StaticPagePage(): React.JSX.Element {
   const { t } = useTranslation("common");
   const { locale = "id", slug = "" } = useParams({ strict: false }) as { locale?: string; slug?: string };
-  const { data, isPending } = usePageQuery(slug, locale);
+  const pageQuery = usePageQuery(slug, locale);
 
-  const page = data?.data;
+  const page = pageQuery.data?.data;
+  const isInitialLoading = pageQuery.isPending && pageQuery.fetchStatus !== "idle";
 
   return (
     <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       <Box className="max-w-6xl mx-auto px-4 md:px-8 pb-20">
-        {isPending ? (
-          <Text as="p" className="pt-16 font-inter text-[14px] text-white/40">
-            {t("a11y.loading")}
-          </Text>
-        ) : !page ? (
-          <Box className="pt-16 flex flex-col gap-3">
-            <Box
-              as="h1"
-              className="font-outfit font-bold text-[28px] md:text-[34px] text-white leading-tight"
-            >
-              {t("notFound.title")}
-            </Box>
-            <Text as="p" className="font-inter text-[14px] md:text-[15px] text-white/55 leading-[1.85]">
-              {t("notFound.description")}
-            </Text>
+        {isInitialLoading ? (
+          <Box aria-busy="true" className="pt-12 flex flex-col gap-4">
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/5" />
           </Box>
+        ) : pageQuery.isError ? (
+          <Box className="pt-12">
+            <ErrorState onRetry={() => void pageQuery.refetch()} />
+          </Box>
+        ) : !page ? (
+          <EmptyState title={t("notFound.title")} description={t("notFound.description")} />
         ) : (
           <>
             <Box className="pt-12 pb-8">

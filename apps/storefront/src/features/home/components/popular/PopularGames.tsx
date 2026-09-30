@@ -1,6 +1,9 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { QueryState } from "@/components/common/QueryState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { POPULAR_BADGES } from "@/features/home/data/popularGames.data";
@@ -11,16 +14,26 @@ import PopularGameCard from "./fragments/PopularGameCard";
 /** How many games the rail shows before it starts scrolling. */
 const RAIL_SIZE = 6;
 
+function PopularRailSkeleton(): React.JSX.Element {
+  return (
+    <Box aria-busy="true" className="flex gap-5 overflow-hidden">
+      {Array.from({ length: RAIL_SIZE }).map((_, index) => (
+        <Skeleton key={index} className="h-76 w-60 shrink-0" />
+      ))}
+    </Box>
+  );
+}
+
 export default function PopularGames(): React.JSX.Element {
   const { t } = useTranslation("home");
 
   // Ordered by completed orders server-side, so "popular" reflects real sales
   // rather than a hand-picked list.
-  const { data: games } = useGamesQuery({ sort: "popular", perPage: RAIL_SIZE });
+  const query = useGamesQuery({ sort: "popular", perPage: RAIL_SIZE });
 
   const popularGames = useMemo<PopularGame[]>(
     () =>
-      (games ?? []).map((game, index) => ({
+      (query.data ?? []).map((game, index) => ({
         id: game.id,
         title: game.title,
         region: game.region,
@@ -30,7 +43,7 @@ export default function PopularGames(): React.JSX.Element {
         // existing alternating pattern is preserved by position.
         badge: POPULAR_BADGES[index % POPULAR_BADGES.length],
       })),
-    [games],
+    [query.data],
   );
 
   const lastIndex = popularGames.length - 1;
@@ -56,28 +69,43 @@ export default function PopularGames(): React.JSX.Element {
           </Text>
         </Box>
 
-        {/* Scroll row with right-edge fade overlay */}
-        <Box className="relative">
-          <Box
-            className="flex gap-5 overflow-x-auto no-scrollbar"
-            aria-label={t("popular.ariaList")}
-          >
-            {popularGames.map((game, index) => (
-              <PopularGameCard
-                key={game.id}
-                game={game}
-                isFeatured={index === 0}
-                tintVariant={index === 0 || index === lastIndex ? "edge" : "middle"}
-              />
-            ))}
-          </Box>
+        <QueryState
+          query={query}
+          skeleton={<PopularRailSkeleton />}
+          isEmpty={(games) => games.length === 0}
+          empty={
+            <EmptyState
+              compact
+              title={t("popular.empty.title")}
+              description={t("popular.empty.description")}
+            />
+          }
+        >
+          {() => (
+            /* Scroll row with right-edge fade overlay */
+            <Box className="relative">
+              <Box
+                className="flex gap-5 overflow-x-auto no-scrollbar"
+                aria-label={t("popular.ariaList")}
+              >
+                {popularGames.map((game, index) => (
+                  <PopularGameCard
+                    key={game.id}
+                    game={game}
+                    isFeatured={index === 0}
+                    tintVariant={index === 0 || index === lastIndex ? "edge" : "middle"}
+                  />
+                ))}
+              </Box>
 
-          {/* Right-edge decorative fade */}
-          <Box
-            aria-hidden
-            className="absolute inset-y-0 right-0 w-26.25 pointer-events-none bg-linear-to-r from-transparent to-[rgb(0,0,0)]"
-          />
-        </Box>
+              {/* Right-edge decorative fade */}
+              <Box
+                aria-hidden
+                className="absolute inset-y-0 right-0 w-26.25 pointer-events-none bg-linear-to-r from-transparent to-[rgb(0,0,0)]"
+              />
+            </Box>
+          )}
+        </QueryState>
 
       </Box>
     </Box>
