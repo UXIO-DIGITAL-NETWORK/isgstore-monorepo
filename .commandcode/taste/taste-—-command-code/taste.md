@@ -2,6 +2,8 @@
 - Prefers a plan-first workflow: for non-trivial changes, produce a plan and wait for explicit approval before executing any edits ("planning first ... then after I approved, you execute"). Confidence: 0.8
 - Wants the agent to surface and ask clarifying questions when requirements are ambiguous rather than assuming ("just ask me if there is any question"). Confidence: 0.7
 - Prefers commits to stay local by default: commit the changes but do not push to the remote or create branches unless explicitly told to ("commit all the changes but dont push or make any branches for now"). Confidence: 0.55
+- Expects git workflow to follow the team's checked-in SOP document (e.g. `sop_it_department_v2.0.html`): when asked to branch/commit, use the SOP's exact branch-name format `dev-[role]-[nama-fitur]-[tanggal]` (features) or `mtc-...` (maintenance) rather than ad-hoc branch names, and reference the SOP file to confirm the format. Confidence: 0.7
+- Keeps local reference documents (e.g. the SOP HTML) out of the repository: exclude them from commits and add them to `.gitignore` so they stay on disk but never enter version control. Confidence: 0.7
 - Prefers full-scope rollouts: apply a systemic change across the entire app at once (every page/route) rather than piloting it on a subset first. Confidence: 0.6
 - Prefers colors written in `rgb()` format rather than hex codes. Confidence: 0.6
 - In the storefront React app, raw `<div>`/`<p>`/`<h1>` are disallowed by lint — use the project's `Box`/`Text`/`Heading` primitives instead. Confidence: 0.6
