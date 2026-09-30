@@ -1,0 +1,13 @@
+# Taste — Command Code
+- Prefers a plan-first workflow: for non-trivial changes, produce a plan and wait for explicit approval before executing any edits ("planning first ... then after I approved, you execute"). Confidence: 0.8
+- Wants the agent to surface and ask clarifying questions when requirements are ambiguous rather than assuming ("just ask me if there is any question"). Confidence: 0.7
+- Prefers commits to stay local by default: commit the changes but do not push to the remote or create branches unless explicitly told to ("commit all the changes but dont push or make any branches for now"). Confidence: 0.55
+- Prefers full-scope rollouts: apply a systemic change across the entire app at once (every page/route) rather than piloting it on a subset first. Confidence: 0.6
+- Prefers colors written in `rgb()` format rather than hex codes. Confidence: 0.6
+- In the storefront React app, raw `<div>`/`<p>`/`<h1>` are disallowed by lint — use the project's `Box`/`Text`/`Heading` primitives instead. Confidence: 0.6
+- Every new user-facing string must be added to both locales (id and en) and registered in the i18n config, including the namespace list. Confidence: 0.6
+- Every page/section that fetches data should render dedicated interactive components for all data states (loading, empty, error) instead of bare text or missing fallbacks. Confidence: 0.75
+- Loading states should be skeletons shaped like the real content (per section), not a lone centered spinner. Confidence: 0.65
+- Prefers one generic, reusable state wrapper over repeating bespoke loading/empty/error JSX at each call site (least boilerplate, shared defaults). Confidence: 0.6
+- Wants app-wide safety nets in addition to in-page states: a root error boundary plus router-level default error/pending fallbacks for route load failures and render crashes. Confidence: 0.6
+- Does not want empty states filled with invented content: optional/editorial sections stay hidden on genuine empty responses, bundled fallbacks are kept, while failures still surface a retryable error. Confidence: 0.6
