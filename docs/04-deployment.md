@@ -398,8 +398,8 @@ chown/chmod
 tulis batas unggah PHP      ← upload_max_filesize 8M, post_max_size 10M
 reload php-fpm              ← tanpa ini OPcache menyajikan bytecode lama
 tulis batas body nginx      ← client_max_body_size 8m di conf.d (konteks `http` saja), lalu `nginx -t`
-pasang cron schedule:run    ← deploy GAGAL bila hilang
-pasang supervisor + queue:restart
+pasang cron schedule:run    ← di-scope ke API_DIR ini; deploy GAGAL bila hilang
+pasang supervisor + queue:restart   ← satu program per environment: api-<slot>-worker
 periksa worker RUNNING      ← deploy GAGAL bila tidak
 ```
 
@@ -413,6 +413,11 @@ periksa worker RUNNING      ← deploy GAGAL bila tidak
 - `pricing:verify` menyimpang → harga per paket tidak sinkron.
 
 **Queue worker bukan opsional, dan kegagalannya senyap.** Delapan kelas job bergantung padanya, dan salah satunya menempatkan pesanan pelanggan yang sudah dibayar ke supplier. Supervisor menjalankan **dua** proses: satu tidak cukup, karena order supplier adalah panggilan HTTP keluar yang bisa menahan worker beberapa detik.
+
+**Satu program supervisor per environment.** Produksi dan staging berbagi satu server (dan satu user deploy), jadi nama program **wajib unik**: deploy menulis `/etc/supervisor/conf.d/api-<slot>-worker.conf` dengan `[program:api-<slot>-worker]`, di mana `<slot>` = `production` atau `staging` (dari `DEPLOY_SLOT` di workflow). Tanpa pemisahan ini, deploy staging akan menulis ulang conf yang sama dan memindahkan worker milik produksi ke path staging — produksi berhenti memproses order berbayar tanpa satu pun error. Dua hal yang menyertainya:
+
+- **Entri cron juga di-scope.** Filternya `grep -vF "cd $API_DIR && php artisan schedule:run"` — menyaring pola umum akan menghapus entri environment lain dari crontab bersama.
+- **Bersihkan program lama sekali.** Berkas pra-pemisahan `/etc/supervisor/conf.d/api-prod-worker.conf` dibuang deploy (setelah program baru jalan), supaya produksi tidak punya dua worker untuk `API_DIR` yang sama.
 
 **Batas unggah ikut diatur deploy, karena aplikasi sudah menjanjikannya.** Halaman Settings menawarkan logo GIF sampai 5 MB (`SettingController::maxKilobytes()`), dan GIF animasi memang sengaja tidak dikompresi — baik di browser maupun di `ImageOptimizer`, karena GD tidak bisa menulis animated WebP. Tapi tanpa dua langkah di atas, yang berlaku adalah default server: nginx `client_max_body_size 1m` dan PHP `upload_max_filesize 2m`. Keduanya menolak berkas sebelum Laravel sempat memeriksanya, dan yang tertolak justru berkas yang paling besar — GIF animasi. Gejalanya menyesatkan: unggahan gagal, pesannya generik, dan tidak ada satu pun log aplikasi karena permintaannya tidak pernah sampai.
 

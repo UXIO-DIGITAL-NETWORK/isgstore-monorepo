@@ -37,6 +37,10 @@ env:
   # Rilis yang sedang mendarat: tag yang di-push, atau `ref` saat rollback manual.
   DEPLOY_REF: ${{ inputs.ref || github.ref_name }}
   APP_VERSION: ${{ inputs.ref || github.ref_name }}
+  # Slot per environment. Dipakai menamai program supervisor (api-<slot>-worker)
+  # dan berkasnya, supaya produksi dan staging di server yang sama tidak saling
+  # menimpa worker.
+  DEPLOY_SLOT: staging
 
 # Nothing here writes to the repository. Read-only is all this pipeline needs.
 permissions:
@@ -127,6 +131,7 @@ jobs:
           DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
           GH_REPOSITORY: ${{ github.repository }}
           DEPLOY_REF: ${{ env.DEPLOY_REF }}
+          DEPLOY_SLOT: ${{ env.DEPLOY_SLOT }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -136,7 +141,7 @@ jobs:
           # arahnya server → GitHub, yang ini GitHub Actions → server.
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF
+          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF,DEPLOY_SLOT
           script: |
             set -e
             # Satu base path untuk keempat app. Frontend menerima isi dist/ di
@@ -348,37 +353,61 @@ jobs:
             # sempat dijalankan. `crontab -` lalu menerima nol byte, menerimanya
             # tanpa mengeluh, dan memasang crontab KOSONG: entri lama ikut
             # terhapus dan yang baru tidak pernah masuk.
-            { crontab -l 2>/dev/null | grep -vF "artisan schedule:run" || true; echo "$CRON_ENTRY"; } | crontab -
-            crontab -l | grep -qF "artisan schedule:run" || { echo "::error::Entri cron scheduler tidak terpasang."; exit 1; }
+            #
+            # DI-SCOPE ke $API_DIR. Satu crontab dipakai bersama produksi dan
+            # staging di server yang sama; menyaring pola umum
+            # ("artisan schedule:run") akan ikut menghapus entri environment
+            # lain, sehingga jadwal situs itu berhenti tanpa suara.
+            { crontab -l 2>/dev/null | grep -vF "cd $API_DIR && php artisan schedule:run" || true; echo "$CRON_ENTRY"; } | crontab -
+            crontab -l | grep -qF "cd $API_DIR && php artisan schedule:run" || { echo "::error::Entri cron scheduler tidak terpasang."; exit 1; }
             systemctl is-active --quiet "$CRON_SVC" || {
               echo "::error::Daemon $CRON_SVC tidak berjalan — entri terpasang tapi tidak akan pernah dieksekusi."; exit 1; }
 
             # 10-13. Supervisor untuk queue worker
+            #
+            # SATU program per environment ($DEPLOY_SLOT). Produksi dan staging
+            # bisa berbagi server + user deploy, dan supervisor menuntut nama
+            # program unik; tanpa slot, deploy kedua menulis ulang conf yang sama
+            # dan memindahkan worker milik yang pertama — situs itu berhenti
+            # memproses order berbayar tanpa satu pun error.
+            SLOT="${DEPLOY_SLOT:?DEPLOY_SLOT kosong: tidak bisa menamai worker tanpa slot.}"
+            WORKER_NAME="api-${SLOT}-worker"
+            WORKER_CONF="/etc/supervisor/conf.d/${WORKER_NAME}.conf"
             command -v supervisorctl >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y supervisor; }
             sudo systemctl enable --now supervisor
             sudo mkdir -p /etc/supervisor/conf.d
             # Conf-nya template: path worker mengikuti $API_DIR, bukan nilai
             # yang ditulis tetap di dalam berkas. Tanpa ini worker menunjuk ke
             # direktori pra-monorepo dan langkah 15 menggagalkan deploy.
-            sed -e "s|__API_DIR__|$API_DIR|g" -e "s|__DEPLOY_USER__|$(id -un)|g" \
-              "$API_DIR/supervisor/api-prod-worker.conf" \
-              | sudo tee /etc/supervisor/conf.d/api-prod-worker.conf >/dev/null
+            sed -e "s|__API_DIR__|$API_DIR|g" -e "s|__DEPLOY_USER__|$(id -un)|g" -e "s|__SLOT__|$SLOT|g" \
+              "$API_DIR/supervisor/api-worker.conf" \
+              | sudo tee "$WORKER_CONF" >/dev/null
             sudo supervisorctl reread && sudo supervisorctl update
 
+            # 13b. Buang program lama TANPA slot (dari sebelum pemisahan ini).
+            #      Selama berkasnya masih ada, produksi punya DUA program untuk
+            #      API_DIR yang sama. Dihapus SETELAH yang baru jalan supaya
+            #      tidak ada jendela tanpa worker.
+            LEGACY_CONF="/etc/supervisor/conf.d/api-prod-worker.conf"
+            if sudo ls "$LEGACY_CONF" >/dev/null 2>&1 && [ "$LEGACY_CONF" != "$WORKER_CONF" ]; then
+              sudo rm -f "$LEGACY_CONF"
+              sudo supervisorctl reread && sudo supervisorctl update
+            fi
+
             # 14. Restart worker
-            sudo supervisorctl start api-prod-worker:* || true
+            sudo supervisorctl start "$WORKER_NAME":* || true
             php artisan queue:restart
 
             # 15. Worker WAJIB berjalan. Kalau tidak, pembayaran masuk tapi
             #     pesanan tidak pernah dikirim ke supplier — dan tidak ada
             #     yang error di mana pun.
             sleep 5
-            sudo supervisorctl status api-prod-worker:* | grep -q RUNNING || {
+            sudo supervisorctl status "$WORKER_NAME":* | grep -q RUNNING || {
               echo "::error::Queue worker TIDAK berjalan. Order berbayar tidak akan diproses."; exit 1; }
 
             # 16. Ringkasan, supaya satu run deploy bisa dibaca sebagai satu
             #     pernyataan tentang keadaan server sesudahnya.
-            echo "Selesai. Kode & migrasi terpasang, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker supervisor RUNNING."
+            echo "Selesai. Kode & migrasi terpasang, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker $WORKER_NAME RUNNING."
 
       - name: Notify Discord — hasil
         if: always()
