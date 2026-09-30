@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dokumentasi Website Topup</title>
+<meta name="robots" content="noindex">
+<style>
+
+:root{
+  --bg:#f7f7f5; --panel:#ffffff; --ink:#1c1c1a; --muted:#6b6b66; --line:#e3e3dd;
+  --accent:#7a3ff2; --accent-soft:#f0e9ff; --code-bg:#f2f1ee; --mark:#ffe9a8;
+  --radius:12px; --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+:root[data-theme="dark"]{
+  --bg:#141413; --panel:#1c1c1a; --ink:#ececea; --muted:#a1a19a; --line:#2f2f2c;
+  --accent:#b79bff; --accent-soft:#2a2340; --code-bg:#232320; --mark:#5a4a12;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:15.5px; line-height:1.7; -webkit-text-size-adjust:100%;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Topbar */
+.topbar{
+  position:sticky; top:0; z-index:30; display:flex; gap:10px; align-items:center;
+  padding:10px 16px; background:color-mix(in srgb, var(--panel) 88%, transparent);
+  backdrop-filter:saturate(160%) blur(8px); border-bottom:1px solid var(--line);
+}
+.brand{font-weight:700; letter-spacing:-.01em; color:var(--ink)}
+.brand span{color:var(--muted); font-weight:500}
+.icon-btn{
+  border:1px solid var(--line); background:var(--panel); color:var(--ink);
+  border-radius:10px; width:36px; height:36px; font-size:16px; cursor:pointer; line-height:1;
+}
+.icon-btn:hover{border-color:var(--accent)}
+#menu{display:none}
+.search{position:relative; margin-left:auto; flex:0 1 380px; display:flex; align-items:center}
+.search input{
+  width:100%; padding:9px 36px 9px 12px; border-radius:10px; border:1px solid var(--line);
+  background:var(--bg); color:var(--ink); font:inherit; font-size:14px;
+}
+.search input:focus{outline:2px solid var(--accent-soft); border-color:var(--accent)}
+#clear{position:absolute; right:4px; width:28px; height:28px; border:0; background:transparent}
+
+/* Layout */
+.layout{display:grid; grid-template-columns:320px minmax(0,1fr); gap:0; align-items:start}
+#nav{
+  position:sticky; top:57px; height:calc(100vh - 57px); overflow:auto; padding:16px 12px 48px;
+  border-right:1px solid var(--line); background:var(--panel);
+}
+.nav-hint{color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.08em; margin:6px 8px 12px}
+.nav-doc{margin:0 0 10px; padding:4px 0; border-radius:var(--radius)}
+.nav-doc.active{background:var(--accent-soft)}
+.nav-title{display:block; padding:6px 10px; font-weight:650; color:var(--ink); font-size:14px}
+.nav-toc{display:flex; flex-direction:column}
+.toc-link{padding:3px 10px 3px 22px; font-size:13px; color:var(--muted); border-left:2px solid transparent; margin-left:10px}
+.toc-link.lvl3{padding-left:34px; font-size:12.5px}
+.toc-link:hover{color:var(--ink); text-decoration:none}
+.toc-link.current{color:var(--accent); border-left-color:var(--accent); font-weight:600}
+
+#content{max-width:920px; padding:28px 40px 120px; min-width:0}
+.doc{padding-bottom:48px; margin-bottom:48px; border-bottom:1px solid var(--line)}
+.doc:last-child{border-bottom:0}
+
+/* Isi */
+h1,h2,h3,h4{line-height:1.3; letter-spacing:-.01em; scroll-margin-top:76px; position:relative}
+h1{font-size:1.9em; margin:.2em 0 .6em; padding-bottom:.3em; border-bottom:1px solid var(--line)}
+h2{font-size:1.4em; margin:1.8em 0 .5em}
+h3{font-size:1.12em; margin:1.6em 0 .4em; color:var(--muted); text-transform:none}
+h4{font-size:1em; margin:1.3em 0 .3em}
+p{margin:.7em 0}
+.anchor{opacity:0; margin-left:.4em; font-weight:400; color:var(--muted); font-size:.8em}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor,h4:hover .anchor{opacity:1}
+ul,ol{margin:.6em 0 .6em 1.3em; padding:0}
+li{margin:.25em 0}
+li>ul,li>ol{margin:.2em 0 .2em 1.1em}
+code{background:var(--code-bg); padding:.15em .4em; border-radius:6px; font-family:var(--mono); font-size:.88em}
+pre{background:var(--code-bg); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; overflow:auto; margin:1em 0}
+pre code{background:none; padding:0; font-size:12.8px; line-height:1.6; white-space:pre}
+blockquote{margin:1em 0; padding:.6em 1em; border-left:3px solid var(--accent); background:var(--accent-soft); border-radius:0 var(--radius) var(--radius) 0}
+blockquote p{margin:0}
+hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+.table-wrap{overflow-x:auto; margin:1em 0}
+table{border-collapse:collapse; width:100%; font-size:13.6px}
+th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top}
+th{background:var(--code-bg); font-weight:650}
+tbody tr:nth-child(even){background:color-mix(in srgb, var(--code-bg) 45%, transparent)}
+img{max-width:100%}
+mark{background:var(--mark); color:inherit; border-radius:3px; padding:0 .1em}
+.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%{background:var(--accent-soft)}100%{background:transparent}}
+
+/* Hasil pencarian */
+#results{display:flex; flex-direction:column; gap:4px}
+.hit{
+  text-align:left; border:1px solid transparent; background:transparent; color:var(--ink);
+  border-radius:10px; padding:8px 10px; cursor:pointer; font:inherit; font-size:13px;
+  display:flex; flex-direction:column; gap:2px;
+}
+.hit:hover,.hit:focus{border-color:var(--accent); outline:none; background:var(--accent-soft)}
+.hit-doc{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); font-weight:650}
+.hit-path{font-size:11px; color:var(--muted)}
+.hit-text{color:var(--ink); font-size:12.6px; line-height:1.5}
+
+@media (max-width:960px){
+  #menu{display:inline-flex; align-items:center; justify-content:center}
+  .layout{grid-template-columns:1fr}
+  #nav{position:fixed; inset:57px auto 0 0; width:300px; transform:translateX(-102%); transition:transform .2s ease; z-index:25}
+  body.nav-open #nav{transform:none; box-shadow:0 10px 40px rgba(0,0,0,.18)}
+  #content{padding:20px 18px 100px}
+}
+@media print{
+  .topbar,#nav{display:none} .layout{grid-template-columns:1fr} #content{max-width:none; padding:0}
+  .doc{page-break-after:always; border:0}
+}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <button id="menu" class="icon-btn" aria-label="Buka daftar isi">☰</button>
+  <a class="brand" href="#doc-indeks">Website Topup <span>· dokumentasi</span></a>
+  <div class="search">
+    <input id="q" type="search" placeholder="Cari…  (tekan / atau Ctrl+K)" autocomplete="off" spellcheck="false" aria-label="Cari dokumentasi">
+    <button id="clear" class="icon-btn" aria-label="Bersihkan" hidden>×</button>
+  </div>
+  <button id="theme" class="icon-btn" aria-label="Ganti tema">◐</button>
+</header>
+
+<div class="layout">
+  <nav id="nav" aria-label="Daftar isi">
+    <div id="results" hidden></div>
+    <div id="nav-list">
+      <p class="nav-hint">10 dokumen · diperbarui 2026-09-28</p>
+      <div class="nav-doc" data-doc="doc-indeks"><a class="nav-title" href="#doc-indeks">Indeks dokumentasi</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-indeks--dokumentasi-website-topup" data-doc="doc-indeks">Dokumentasi Website Topup</a><a class="toc-link lvl2" href="#doc-indeks--urutan-acuan-bila-dokumen-bertentangan" data-doc="doc-indeks">Urutan acuan bila dokumen bertentangan</a><a class="toc-link lvl2" href="#doc-indeks--dokumen-lama-yang-sudah-kedaluwarsa" data-doc="doc-indeks">Dokumen lama yang sudah kedaluwarsa</a><a class="toc-link lvl2" href="#doc-indeks--yang-bukan-bagian-dari-sistem-ini" data-doc="doc-indeks">Yang bukan bagian dari sistem ini</a></div></div>
+<div class="nav-doc" data-doc="doc-readme"><a class="nav-title" href="#doc-readme">README monorepo</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-readme--website-topup-monorepo" data-doc="doc-readme">Website Topup — Monorepo</a><a class="toc-link lvl2" href="#doc-readme--mulai" data-doc="doc-readme">Mulai</a><a class="toc-link lvl2" href="#doc-readme--perintah-dari-akar" data-doc="doc-readme">Perintah dari akar</a><a class="toc-link lvl2" href="#doc-readme--dokumentasi" data-doc="doc-readme">Dokumentasi</a><a class="toc-link lvl2" href="#doc-readme--cetakan-situs-klien" data-doc="doc-readme">Cetakan &amp; situs klien</a><a class="toc-link lvl2" href="#doc-readme--rilis-versi" data-doc="doc-readme">Rilis &amp; versi</a><a class="toc-link lvl2" href="#doc-readme--kenapa-satu-repo" data-doc="doc-readme">Kenapa satu repo</a><a class="toc-link lvl2" href="#doc-readme--yang-tidak-ada-di-sini" data-doc="doc-readme">Yang tidak ada di sini</a></div></div>
+<div class="nav-doc" data-doc="doc-01"><a class="nav-title" href="#doc-01">01 — Alur website</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-01--alur-website-topup" data-doc="doc-01">Alur Website Topup</a><a class="toc-link lvl2" href="#doc-01--1-alur-beli-dari-pilih-game-sampai-diamond-masuk" data-doc="doc-01">1. Alur beli — dari pilih game sampai diamond masuk</a><a class="toc-link lvl2" href="#doc-01--2-mesin-status-transaksi" data-doc="doc-01">2. Mesin status transaksi</a><a class="toc-link lvl2" href="#doc-01--3-pengembalian-dana" data-doc="doc-01">3. Pengembalian dana</a><a class="toc-link lvl2" href="#doc-01--4-poin" data-doc="doc-01">4. Poin</a><a class="toc-link lvl2" href="#doc-01--5-membership" data-doc="doc-01">5. Membership</a><a class="toc-link lvl2" href="#doc-01--6-uxiolabs-pay-penagihan-dan-penarikan-dana" data-doc="doc-01">6. Uxiolabs Pay — penagihan dan penarikan dana</a></div></div>
+<div class="nav-doc" data-doc="doc-02"><a class="nav-title" href="#doc-02">02 — Arsitektur kode</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-02--arsitektur-kode-dan-berkas" data-doc="doc-02">Arsitektur Kode dan Berkas</a><a class="toc-link lvl2" href="#doc-02--api-pipeline-yang-wajib-diikuti" data-doc="doc-02">API — pipeline yang wajib diikuti</a><a class="toc-link lvl3" href="#doc-02--peta-app" data-doc="doc-02">Peta app/</a><a class="toc-link lvl3" href="#doc-02--support-tempat-aturan-bisnis-yang-harus-punya-satu-implementasi" data-doc="doc-02">Support/ — tempat aturan bisnis yang harus punya satu implementasi</a><a class="toc-link lvl3" href="#doc-02--colokan-kontrak-driver" data-doc="doc-02">Colokan — kontrak + driver</a><a class="toc-link lvl3" href="#doc-02--stempel-rilis" data-doc="doc-02">Stempel rilis</a><a class="toc-link lvl2" href="#doc-02--frontend-tiga-aplikasi-satu-pola" data-doc="doc-02">Frontend — tiga aplikasi, satu pola</a><a class="toc-link lvl3" href="#doc-02--struktur-per-fitur" data-doc="doc-02">Struktur per-fitur</a><a class="toc-link lvl3" href="#doc-02--irisan-fitur-tiap-app" data-doc="doc-02">Irisan fitur tiap app</a><a class="toc-link lvl3" href="#doc-02--perbedaan-yang-perlu-diketahui" data-doc="doc-02">Perbedaan yang perlu diketahui</a><a class="toc-link lvl3" href="#doc-02--zona-waktu-satu-jam-dinding-untuk-seluruh-platform" data-doc="doc-02">Zona waktu: satu jam dinding untuk seluruh platform</a><a class="toc-link lvl2" href="#doc-02--kode-yang-masih-terduplikasi" data-doc="doc-02">Kode yang masih terduplikasi</a></div></div>
+<div class="nav-doc" data-doc="doc-03"><a class="nav-title" href="#doc-03">03 — Referensi API</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-03--referensi-api" data-doc="doc-03">Referensi API</a><a class="toc-link lvl2" href="#doc-03--bentuk-jawaban" data-doc="doc-03">Bentuk jawaban</a><a class="toc-link lvl2" href="#doc-03--delapan-tingkat-akses" data-doc="doc-03">Delapan tingkat akses</a><a class="toc-link lvl3" href="#doc-03--1-publik" data-doc="doc-03">1. Publik</a><a class="toc-link lvl3" href="#doc-03--2-member" data-doc="doc-03">2. Member</a><a class="toc-link lvl3" href="#doc-03--3-admin" data-doc="doc-03">3. Admin</a><a class="toc-link lvl3" href="#doc-03--4-5-halaman-pembayaran" data-doc="doc-03">4–5. Halaman pembayaran</a><a class="toc-link lvl3" href="#doc-03--6-8-hub" data-doc="doc-03">6–8. Hub</a><a class="toc-link lvl2" href="#doc-03--ability-token-dan-kenapa-itu-ada" data-doc="doc-03">Ability token — dan kenapa itu ada</a><a class="toc-link lvl2" href="#doc-03--pembatas-laju" data-doc="doc-03">Pembatas laju</a><a class="toc-link lvl2" href="#doc-03--spesifikasi-per-domain" data-doc="doc-03">Spesifikasi per domain</a></div></div>
+<div class="nav-doc" data-doc="doc-04"><a class="nav-title" href="#doc-04">04 — Deployment</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-04--deployment" data-doc="doc-04">Deployment</a><a class="toc-link lvl2" href="#doc-04--ringkasan" data-doc="doc-04">Ringkasan</a><a class="toc-link lvl3" href="#doc-04--bagaimana-api-naik" data-doc="doc-04">Bagaimana API naik</a><a class="toc-link lvl2" href="#doc-04--rilis-tag-stempel-rollback" data-doc="doc-04">Rilis: tag, stempel, rollback</a><a class="toc-link lvl2" href="#doc-04--staging" data-doc="doc-04">Staging</a><a class="toc-link lvl3" href="#doc-04--yang-harus-berdiri-lebih-dulu-hub-staging" data-doc="doc-04">Yang harus berdiri lebih dulu: Hub staging</a><a class="toc-link lvl3" href="#doc-04--env-situs-staging-yang-wajib-benar" data-doc="doc-04">Env situs staging yang wajib benar</a><a class="toc-link lvl3" href="#doc-04--secret-environment-staging-di-github" data-doc="doc-04">Secret environment staging (di GitHub)</a><a class="toc-link lvl3" href="#doc-04--cara-memastikan-rantainya-benar-benar-tersambung" data-doc="doc-04">Cara memastikan rantainya benar-benar tersambung</a><a class="toc-link lvl3" href="#doc-04--urutan-dan-jebakannya" data-doc="doc-04">Urutan, dan jebakannya</a><a class="toc-link lvl2" href="#doc-04--migrasi-ke-monorepo-yang-harus-disiapkan-di-server" data-doc="doc-04">Migrasi ke monorepo — yang harus disiapkan di server</a><a class="toc-link lvl2" href="#doc-04--secret-github" data-doc="doc-04">Secret GitHub</a><a class="toc-link lvl3" href="#doc-04--catatan-tentang-autentikasi-ssh" data-doc="doc-04">Catatan tentang autentikasi SSH</a><a class="toc-link lvl2" href="#doc-04--catatan-keamanan" data-doc="doc-04">Catatan keamanan</a><a class="toc-link lvl3" href="#doc-04--sudo-tanpa-kata-sandi-bukan-titik-lemahnya" data-doc="doc-04">Sudo tanpa kata sandi bukan titik lemahnya</a><a class="toc-link lvl3" href="#doc-04--autentikasi-ssh-ci-sudah-pakai-kunci-sisanya-di-sisi-server" data-doc="doc-04">Autentikasi SSH: CI sudah pakai kunci, sisanya di sisi server</a><a class="toc-link lvl3" href="#doc-04--akses-push-ke-main-sama-dengan-root-di-server" data-doc="doc-04">Akses push ke main sama dengan root di server</a><a class="toc-link lvl3" href="#doc-04--dua-hal-yang-masih-terbuka-di-deploy-prod-yml" data-doc="doc-04">Dua hal yang masih terbuka di deploy-prod.yml</a><a class="toc-link lvl2" href="#doc-04--urutan-deploy-api-dan-kenapa-tiap-langkah-ada" data-doc="doc-04">Urutan deploy API, dan kenapa tiap langkah ada</a><a class="toc-link lvl2" href="#doc-04--konfigurasi-env" data-doc="doc-04">Konfigurasi .env</a><a class="toc-link lvl2" href="#doc-04--perintah-terjadwal" data-doc="doc-04">Perintah terjadwal</a><a class="toc-link lvl2" href="#doc-04--runbook-tiga-masalah-yang-sudah-pernah-terjadi" data-doc="doc-04">Runbook — tiga masalah yang sudah pernah terjadi</a><a class="toc-link lvl3" href="#doc-04--1-migrasi-berhenti-errno-1553-di-pricingrules" data-doc="doc-04">1. Migrasi berhenti: errno 1553 di pricingrules</a><a class="toc-link lvl3" href="#doc-04--2-migrasi-berhenti-aturan-harga-bentrok" data-doc="doc-04">2. Migrasi berhenti: aturan harga bentrok</a><a class="toc-link lvl3" href="#doc-04--3-admin-terkunci-setelah-2fa-menyala" data-doc="doc-04">3. Admin terkunci setelah 2FA menyala</a><a class="toc-link lvl2" href="#doc-04--catatan-tentang-dependensi" data-doc="doc-04">Catatan tentang dependensi</a></div></div>
+<div class="nav-doc" data-doc="doc-05"><a class="nav-title" href="#doc-05">05 — Basis data</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-05--basis-data" data-doc="doc-05">Basis Data</a><a class="toc-link lvl2" href="#doc-05--relasi-inti" data-doc="doc-05">Relasi inti</a><a class="toc-link lvl2" href="#doc-05--kolom-uang-di-transactions" data-doc="doc-05">Kolom uang di transactions</a><a class="toc-link lvl2" href="#doc-05--tiga-tarif-di-paymentchannels" data-doc="doc-05">Tiga tarif di paymentchannels</a><a class="toc-link lvl2" href="#doc-05--harga-per-paket-membership" data-doc="doc-05">Harga per paket membership</a><a class="toc-link lvl2" href="#doc-05--dua-siklus-status" data-doc="doc-05">Dua siklus status</a><a class="toc-link lvl2" href="#doc-05--buku-besar" data-doc="doc-05">Buku besar</a></div></div>
+<div class="nav-doc" data-doc="doc-06"><a class="nav-title" href="#doc-06">06 — Referensi rute API</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-06--referensi-rute-api" data-doc="doc-06">Referensi Rute API</a><a class="toc-link lvl2" href="#doc-06--system-public" data-doc="doc-06">System — Public</a><a class="toc-link lvl3" href="#doc-06--health-checks" data-doc="doc-06">Health checks</a><a class="toc-link lvl3" href="#doc-06--version" data-doc="doc-06">Version</a><a class="toc-link lvl2" href="#doc-06--payment-webhooks-webhook" data-doc="doc-06">Payment Webhooks — Webhook</a><a class="toc-link lvl3" href="#doc-06--monetapay-pay-in" data-doc="doc-06">Monetapay pay-in</a><a class="toc-link lvl3" href="#doc-06--monetapay-lifecycle" data-doc="doc-06">Monetapay lifecycle</a><a class="toc-link lvl3" href="#doc-06--uxiolabs-supplier" data-doc="doc-06">Uxiolabs supplier</a><a class="toc-link lvl2" href="#doc-06--storefront-public" data-doc="doc-06">Storefront — Public</a><a class="toc-link lvl3" href="#doc-06--catalog" data-doc="doc-06">Catalog</a><a class="toc-link lvl3" href="#doc-06--checkout-receipts" data-doc="doc-06">Checkout &amp; receipts</a><a class="toc-link lvl3" href="#doc-06--content-marketing" data-doc="doc-06">Content &amp; marketing</a><a class="toc-link lvl2" href="#doc-06--authentication-public" data-doc="doc-06">Authentication — Public</a><a class="toc-link lvl3" href="#doc-06--sessions-recovery" data-doc="doc-06">Sessions &amp; recovery</a><a class="toc-link lvl2" href="#doc-06--member-self-service-authenticated" data-doc="doc-06">Member Self-Service — Authenticated</a><a class="toc-link lvl3" href="#doc-06--profile-activity" data-doc="doc-06">Profile &amp; activity</a><a class="toc-link lvl3" href="#doc-06--wallet-membership" data-doc="doc-06">Wallet &amp; membership</a><a class="toc-link lvl3" href="#doc-06--integration-credentials" data-doc="doc-06">Integration credentials</a><a class="toc-link lvl2" href="#doc-06--admin-management-admin" data-doc="doc-06">Admin Management — Admin</a><a class="toc-link lvl3" href="#doc-06--users-overview" data-doc="doc-06">Users &amp; overview</a><a class="toc-link lvl3" href="#doc-06--master-data" data-doc="doc-06">Master data</a><a class="toc-link lvl3" href="#doc-06--uxiolabs-tools" data-doc="doc-06">Uxiolabs tools</a><a class="toc-link lvl3" href="#doc-06--monetapay-operator" data-doc="doc-06">Monetapay operator</a><a class="toc-link lvl3" href="#doc-06--transactions-payments" data-doc="doc-06">Transactions &amp; payments</a><a class="toc-link lvl3" href="#doc-06--content-marketing-2" data-doc="doc-06">Content &amp; marketing</a><a class="toc-link lvl2" href="#doc-06--payment-page-merchant-merchant" data-doc="doc-06">Payment Page · Merchant — Merchant</a><a class="toc-link lvl3" href="#doc-06--dashboard-money" data-doc="doc-06">Dashboard &amp; money</a><a class="toc-link lvl3" href="#doc-06--services-invoices" data-doc="doc-06">Services &amp; invoices</a><a class="toc-link lvl3" href="#doc-06--installation-status" data-doc="doc-06">Installation &amp; status</a><a class="toc-link lvl2" href="#doc-06--payment-page-internal-internal" data-doc="doc-06">Payment Page · Internal — Internal</a><a class="toc-link lvl3" href="#doc-06--overview-withdrawals" data-doc="doc-06">Overview &amp; withdrawals</a><a class="toc-link lvl3" href="#doc-06--channels-services" data-doc="doc-06">Channels &amp; services</a><a class="toc-link lvl3" href="#doc-06--installation-incidents" data-doc="doc-06">Installation &amp; incidents</a><a class="toc-link lvl2" href="#doc-06--uxio-hub-hub" data-doc="doc-06">Uxio Hub — Hub</a><a class="toc-link lvl3" href="#doc-06--reporting-contract" data-doc="doc-06">Reporting contract</a></div></div>
+<div class="nav-doc" data-doc="doc-07"><a class="nav-title" href="#doc-07">07 — Zona: dapur &amp; colokan</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-07--07-zona-dapur-colokan-pendengar-hiasan" data-doc="doc-07">07 — Zona: dapur, colokan, pendengar, hiasan</a><a class="toc-link lvl2" href="#doc-07--peta-zona" data-doc="doc-07">Peta zona</a><a class="toc-link lvl2" href="#doc-07--sebelum-mengubah-apa-pun-satu-pertanyaan" data-doc="doc-07">Sebelum mengubah apa pun: satu pertanyaan</a><a class="toc-link lvl2" href="#doc-07--colokan-dapur-tahu-bentuk-bukan-merek" data-doc="doc-07">Colokan: dapur tahu &quot;bentuk&quot;, bukan &quot;merek&quot;</a><a class="toc-link lvl2" href="#doc-07--pendengar-dapur-berteriak-siapa-pun-boleh-mendengar" data-doc="doc-07">Pendengar: dapur berteriak, siapa pun boleh mendengar</a><a class="toc-link lvl2" href="#doc-07--aturan-emas-saat-menyentuh-dapur" data-doc="doc-07">Aturan emas saat menyentuh dapur</a><a class="toc-link lvl2" href="#doc-07--stempel-versi" data-doc="doc-07">Stempel versi</a><a class="toc-link lvl2" href="#doc-07--checklist-situs-baru" data-doc="doc-07">Checklist situs baru</a><a class="toc-link lvl2" href="#doc-07--alur-rilis" data-doc="doc-07">Alur rilis</a></div></div>
+<div class="nav-doc" data-doc="doc-08"><a class="nav-title" href="#doc-08">08 — Rencana kerja &amp; status</a><div class="nav-toc"><a class="toc-link lvl1" href="#doc-08--08-rencana-kerja-status" data-doc="doc-08">08 — Rencana Kerja &amp; Status</a><a class="toc-link lvl2" href="#doc-08--tujuan" data-doc="doc-08">Tujuan</a><a class="toc-link lvl2" href="#doc-08--keputusan-yang-mengikat" data-doc="doc-08">Keputusan yang mengikat</a><a class="toc-link lvl2" href="#doc-08--status-selesai-di-branch-development" data-doc="doc-08">Status: selesai (di branch development)</a><a class="toc-link lvl2" href="#doc-08--terverifikasi" data-doc="doc-08">Terverifikasi</a><a class="toc-link lvl2" href="#doc-08--cara-menguji" data-doc="doc-08">Cara menguji</a><a class="toc-link lvl2" href="#doc-08--cara-menambah-colokan-untuk-developer-situs" data-doc="doc-08">Cara menambah colokan (untuk developer situs)</a><a class="toc-link lvl2" href="#doc-08--belum-dikerjakan" data-doc="doc-08">Belum dikerjakan</a><a class="toc-link lvl2" href="#doc-08--peringatan-saat-mengadopsi" data-doc="doc-08">Peringatan saat mengadopsi</a><a class="toc-link lvl2" href="#doc-08--berkas-yang-perlu-dibaca-dulu" data-doc="doc-08">Berkas yang perlu dibaca dulu</a></div></div>
+    </div>
+  </nav>
+
+  <main id="content">
+    <section class="doc" id="doc-indeks" data-title="Indeks dokumentasi"><h1 id="doc-indeks--dokumentasi-website-topup">Dokumentasi Website Topup<a class="anchor" href="#doc-indeks--dokumentasi-website-topup" aria-label="Tautan ke bagian ini">#</a></h1>
+<p>Delapan dokumen. Tujuh yang pertama ditulis dari kode yang benar-benar ada di repo ini per 7 September 2026; yang kedelapan adalah catatan status pekerjaan.</p>
+<p>Bisa dibaca di dua tempat: langsung di GitHub, atau sebagai halaman web di <strong><a href="https://uxio-digital-network.github.io/web-topup-monorepo/" target="_blank" rel="noopener">https://uxio-digital-network.github.io/web-topup-monorepo/</a></strong> — diagram alurnya ikut terender di kedua tempat.</p>
+<div class="table-wrap"><table><thead><tr><th>Dokumen</th><th>Untuk menjawab</th></tr></thead><tbody><tr><td><a href="#doc-01">01 — Alur website</a></td><td>Apa yang terjadi ketika pelanggan memesan, membayar, gagal, atau minta uangnya kembali</td></tr><tr><td><a href="#doc-02">02 — Arsitektur kode</a></td><td>Di mana sebuah kode seharusnya ditulis, dan kenapa di situ</td></tr><tr><td><a href="#doc-03">03 — Referensi API</a></td><td>Endpoint apa saja yang ada, siapa yang boleh memanggilnya</td></tr><tr><td><a href="#doc-04">04 — Deployment</a></td><td>Cara menaikkan ke produksi tanpa merusak apa pun</td></tr><tr><td><a href="#doc-05">05 — Basis data</a></td><td>Arti tiap kolom uang, dan relasi antar tabel</td></tr><tr><td><a href="#doc-06">06 — Referensi rute API</a></td><td>Peta 152 endpoint per grup rute. Dulu dilayani publik di <code>GET /</code></td></tr><tr><td><a href="#doc-07">07 — Zona: dapur, colokan, pendengar, hiasan</a></td><td>Bagian mana yang wajib sama di semua situs, mana yang bebas, dan di mana sebuah perubahan harus dikerjakan</td></tr><tr><td><a href="#doc-08">08 — Rencana kerja &amp; status</a></td><td>Apa yang sudah dikerjakan, apa yang belum, cara mengujinya, dan cara menambah colokan</td></tr></tbody></table></div>
+<p><strong>Versi HTML interaktif</strong>: <a href="interaktif.html"><code>interaktif.html</code></a> — satu berkas mandiri (bisa dibuka lewat <code>file://</code>, tanpa server), berisi seluruh dokumen di halaman ini, plus sidebar dan pencarian (<code>/</code> atau <code>Ctrl+K</code>). Dibangun dari Markdown oleh <a href="build-interaktif.py"><code>build-interaktif.py</code></a>; jalankan <code>python3 docs/build-interaktif.py</code> setelah mengubah dokumen.</p>
+<h2 id="doc-indeks--urutan-acuan-bila-dokumen-bertentangan">Urutan acuan bila dokumen bertentangan<a class="anchor" href="#doc-indeks--urutan-acuan-bila-dokumen-bertentangan" aria-label="Tautan ke bagian ini">#</a></h2>
+<ol><li><strong>Kode</strong> — selalu menang.</li><li><strong><code>apps/*/CLAUDE.md</code></strong> — dokumen paling terawat di repo ini; <code>apps/api/CLAUDE.md</code> (69 KB) praktis adalah dokumen arsitektur API.</li><li><strong><code>docs/</code> ini</strong> — ringkasan lintas-aplikasi.</li><li><strong><code>apps/api/docs/api/*-spec.md</code></strong> — spesifikasi endpoint per domain.</li></ol>
+<h2 id="doc-indeks--dokumen-lama-yang-sudah-kedaluwarsa">Dokumen lama yang sudah kedaluwarsa<a class="anchor" href="#doc-indeks--dokumen-lama-yang-sudah-kedaluwarsa" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Ketiganya masih ada di repo karena ikut terbawa riwayat, tapi <strong>jangan dijadikan acuan</strong>:</p>
+<ul><li><code>apps/api/README.md</code> — masih berjudul "Template API - Headless API Engine", sisa dari templat awal.</li><li><code>apps/api/artifacts/monetapay_digiflazz_integration_overview.md</code> — menyebut Laravel 11, PHP 8.2, dan <strong>Digiflazz</strong>, padahal supplier sudah pindah ke Uxiolabs sejak Agustus 2026.</li><li><code>apps/api/docs/artifacts/payment-and-supplier-flow.md</code> — isinya sebagian besar masih berlaku, tapi headernya menyebut Laravel 11.</li></ul>
+<h2 id="doc-indeks--yang-bukan-bagian-dari-sistem-ini">Yang bukan bagian dari sistem ini<a class="anchor" href="#doc-indeks--yang-bukan-bagian-dari-sistem-ini" aria-label="Tautan ke bagian ini">#</a></h2>
+<p><code>uxiotopup-hub</code> dan <code>uxiotopup-hub-api</code> <strong>sengaja tidak ikut</strong> ke monorepo ini. Hub adalah pusat kendali lintas-situs: ia mengawasi banyak deployment sekaligus, hidup di server sendiri, dan punya siklus rilis sendiri. Empat aplikasi di sini adalah <strong>satu situs</strong> yang di-deploy per klien.</p>
+<p>Sisi situs dari integrasi Hub tetap ada di <code>apps/api</code> (endpoint <code>/v1/hub/*</code>, perintah <code>hub:sync-*</code>), dan didokumentasikan di <a href="#doc-03">03 — Referensi API</a>.</p></section>
+<section class="doc" id="doc-readme" data-title="README monorepo"><h1 id="doc-readme--website-topup-monorepo">Website Topup — Monorepo<a class="anchor" href="#doc-readme--website-topup-monorepo" aria-label="Tautan ke bagian ini">#</a></h1>
+<p>Platform top-up game: satu API Laravel dan tiga frontend React, dalam satu repositori.</p>
+<div class="table-wrap"><table><thead><tr><th>Direktori</th><th>Aplikasi</th><th>Stack</th></tr></thead><tbody><tr><td><code>apps/api</code></td><td>API — melayani ketiga frontend</td><td>Laravel 13 · PHP 8.4 · MySQL</td></tr><tr><td><code>apps/admin</code></td><td>Panel admin</td><td>React 19 · Vite 7 · Tailwind v4</td></tr><tr><td><code>apps/storefront</code></td><td>Etalase pelanggan</td><td>React 19 · i18n (id/en)</td></tr><tr><td><code>apps/payment</code></td><td>Uxiolabs Pay — penagihan &amp; penarikan dana</td><td>React 19</td></tr></tbody></table></div>
+<h2 id="doc-readme--mulai">Mulai<a class="anchor" href="#doc-readme--mulai" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code class="language-bash"># API
+cd apps/api
+composer install
+cp .env.example .env &amp;&amp; php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+
+# Frontend — tiap app punya lockfile sendiri
+npm run install:all      # dari akar: npm ci untuk ketiganya
+npm run dev:storefront   # atau dev:admin / dev:payment</code></pre>
+<h2 id="doc-readme--perintah-dari-akar">Perintah dari akar<a class="anchor" href="#doc-readme--perintah-dari-akar" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code class="language-bash">npm run build            # build ketiga frontend
+npm run test             # test ketiga frontend
+npm run lint
+npm run test:admin       # satu app saja</code></pre>
+<p>API punya perintahnya sendiri:</p>
+<pre><code class="language-bash">cd apps/api
+composer run test        # 1.016 test
+./vendor/bin/pint        # format</code></pre>
+<h2 id="doc-readme--dokumentasi">Dokumentasi<a class="anchor" href="#doc-readme--dokumentasi" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Baca <a href="docs/"><code>docs/</code></a> — alur website, arsitektur kode, referensi API, deployment, dan basis data. Mulai dari <a href="#doc-indeks"><code>docs/README.md</code></a>.</p>
+<p>Tiap app juga membawa <code>CLAUDE.md</code>-nya sendiri; <code>apps/api/CLAUDE.md</code> adalah dokumen paling rinci di repo ini.</p>
+<h2 id="doc-readme--cetakan-situs-klien">Cetakan &amp; situs klien<a class="anchor" href="#doc-readme--cetakan-situs-klien" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Repo ini adalah <strong>cetakan</strong>: setiap situs klien lahir dari sini, dan setiap perbaikan <strong>dapur</strong> (engine transaksi + integrasi Hub) juga lahir di sini. Yang berbeda antar situs — UI, alur, provider top-up, payment gateway, kanal notifikasi — hidup sebagai <strong>colokan</strong> (kontrak + driver), bukan sebagai cabang kode di dalam engine. Aturannya di <a href="#doc-07"><code>docs/07-zona-dapur.md</code></a>; status pekerjaannya di <a href="#doc-08"><code>docs/08-rencana-kerja.md</code></a>.</p>
+<h2 id="doc-readme--rilis-versi">Rilis &amp; versi<a class="anchor" href="#doc-readme--rilis-versi" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Rilis adalah <strong>tag</strong> <code>vX.Y.Z</code>: <code>push</code> ke <code>main</code> <strong>tidak</strong> mendeploy produksi (itu jalur staging). Setiap deploy menstempel versi ke <code>.env</code>, dan identitasnya bisa dibaca dari <code>GET /v1/version</code> serta sidebar admin (<code>VITE_APP_VERSION</code>). Rollback = jalankan workflow deploy dengan tag lama. Cara, urutan, dan penyiapan staging ada di <a href="#doc-04"><code>docs/04-deployment.md</code></a>.</p>
+<h2 id="doc-readme--kenapa-satu-repo">Kenapa satu repo<a class="anchor" href="#doc-readme--kenapa-satu-repo" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Keempat aplikasi memakai backend yang sama dan mendarat di server yang sama. Dari 46 hari kerja sejak Juli 2026, <strong>33 hari menyentuh lebih dari satu repo</strong> — hanya 13 hari yang benar-benar satu aplikasi saja. Memisahkannya berarti satu perubahan butuh empat PR, empat CI, dan empat deploy yang tidak pernah menguji kontrak di antara mereka.</p>
+<h2 id="doc-readme--yang-tidak-ada-di-sini">Yang tidak ada di sini<a class="anchor" href="#doc-readme--yang-tidak-ada-di-sini" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Uxio Hub (<code>uxiotopup-hub</code>, <code>uxiotopup-hub-api</code>) tetap terpisah — beda server, beda siklus rilis, dan mengawasi banyak situs sekaligus. Sisi situs dari integrasinya ada di <code>apps/api</code> (<code>/v1/hub/*</code>).</p></section>
+<section class="doc" id="doc-01" data-title="01 — Alur website"><h1 id="doc-01--alur-website-topup">Alur Website Topup<a class="anchor" href="#doc-01--alur-website-topup" aria-label="Tautan ke bagian ini">#</a></h1>
+<p>Empat aplikasi, satu sistem:</p>
+<div class="table-wrap"><table><thead><tr><th>Aplikasi</th><th>Siapa penggunanya</th><th>Letak</th></tr></thead><tbody><tr><td><strong>Storefront</strong></td><td>Pelanggan — beli diamond, cek pesanan, klaim refund</td><td><code>apps/storefront</code></td></tr><tr><td><strong>Panel admin</strong></td><td>Tim internal — produk, harga, transaksi, laporan</td><td><code>apps/admin</code></td></tr><tr><td><strong>Uxiolabs Pay</strong></td><td>Klien pemilik situs (<code>payment-admin</code>) dan tim keuangan (<code>payment-internal</code>)</td><td><code>apps/payment</code></td></tr><tr><td><strong>API</strong></td><td>Melayani ketiganya</td><td><code>apps/api</code></td></tr></tbody></table></div>
+<hr>
+<h2 id="doc-01--1-alur-beli-dari-pilih-game-sampai-diamond-masuk">1. Alur beli — dari pilih game sampai diamond masuk<a class="anchor" href="#doc-01--1-alur-beli-dari-pilih-game-sampai-diamond-masuk" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code class="language-mermaid">flowchart TD
+    A[Pelanggan pilih game &amp; nominal] --&gt; B[Isi User ID / Server ID]
+    B --&gt; C{Game punya cek nickname?}
+    C --&gt;|ya| D[POST /games/id/validate-id]
+    C --&gt;|tidak| E[Pilih metode bayar]
+    D --&gt; E
+    E --&gt; F[Opsional: kode promo &amp; tukar poin]
+    F --&gt; G[POST /v1/checkout]
+    G --&gt; H{Bayar pakai saldo?}
+    H --&gt;|ya| I[Saldo dipotong, langsung diproses]
+    H --&gt;|tidak| J[Monetapay terbitkan QRIS / VA]
+    J --&gt; K[Pelanggan bayar]
+    K --&gt; L[Callback Monetapay masuk]
+    I --&gt; M[Order dikirim ke Uxiolabs]
+    L --&gt; M
+    M --&gt; N{Supplier berhasil?}
+    N --&gt;|ya| O[COMPLETED — poin masuk, struk dikirim]
+    N --&gt;|tidak| P[FAILED_PROVIDER — refund dibuka]</code></pre>
+<p><strong>Yang perlu diketahui tentang harga.</strong> Harga yang dibayar bukan dari kolom tetap, melainkan hasil <code>PlanPrice::for(produk, pengguna)</code> — harga per <strong>paket membership</strong>. Tamu dan member tanpa langganan memakai paket bawaan (Basic). Urutannya di <code>CheckoutAction</code>:</p>
+<pre><code>harga paket membership
+  − diskon promo
+  − nilai rupiah poin yang ditebus
+  = amount_base            ← yang disimpan di baris transaksi
+  + biaya admin channel    ← dihitung dari harga SETELAH potongan
+  = total yang dibayar</code></pre>
+<p>Dua akibat yang sering mengejutkan:</p>
+<ul><li><strong>Pesanan yang lunas seluruhnya dengan poin membayar Rp 0</strong>, jadi tidak dikirim ke gateway mana pun — dan batas minimum channel dilewati. Baris <code>payments</code> tetap ditulis dengan nilai nol, karena tanpa itu pesanan tersebut tidak akan pernah bisa direfund.</li><li><strong>Biaya admin dihitung setelah potongan</strong>, bukan dari harga asli. Pelanggan membayar biaya atas apa yang benar-benar ditagihkan.</li></ul>
+<p><strong>Penjaga margin.</strong> Checkout dibatalkan bila <code>harga jual − harga supplier &lt; 0</code>. Harga dan margin <strong>dibekukan</strong> ke baris transaksi saat checkout, jadi perubahan harga supplier keesokan harinya adalah selisih margin, bukan kesalahan hitung.</p>
+<hr>
+<h2 id="doc-01--2-mesin-status-transaksi">2. Mesin status transaksi<a class="anchor" href="#doc-01--2-mesin-status-transaksi" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code>PENDING ──► PAID ──► PROCESSING ──► COMPLETED
+   │                      │
+   │                      └──► FAILED_PROVIDER ──► REFUNDED
+   └──► EXPIRED</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Status</th><th>Artinya</th></tr></thead><tbody><tr><td><code>PENDING</code></td><td>Menunggu pembayaran</td></tr><tr><td><code>PAID</code></td><td>Sudah dibayar, belum diteruskan ke supplier</td></tr><tr><td><code>PROCESSING</code></td><td>Supplier sedang memproses</td></tr><tr><td><code>COMPLETED</code></td><td>Diamond sudah masuk</td></tr><tr><td><code>EXPIRED</code></td><td>Jendela pembayaran habis — <strong>pelanggan tidak pernah membayar</strong></td></tr><tr><td><code>FAILED_PROVIDER</code></td><td><strong>Pelanggan sudah membayar</strong>, supplier yang gagal</td></tr><tr><td><code>REFUNDED</code></td><td>Uang sudah kembali</td></tr></tbody></table></div>
+<p><strong><code>REFUNDED</code> bersifat final.</strong> Supplier bisa mengirim <code>cancel</code> lalu <code>success</code> belakangan; tanpa penjaga, keberhasilan yang telat akan mengubah pesanan yang sudah direfund menjadi <code>COMPLETED</code> setelah uangnya dikembalikan.</p>
+<p><strong>Dua siklus, bukan satu.</strong> <code>transactions.status</code> menjawab dua pertanyaan sekaligus — apakah pelanggan sudah bayar, dan apakah supplier sudah kirim — sehingga <code>PROCESSING</code> tidak bisa membedakan "supplier sedang memproses" dari "worker antrean belum jalan". Karena itu ada <code>transactions.provider_status</code> yang <strong>hanya</strong> menyimpan sisi supplier, dengan tiga keadaan yang tidak bisa diungkapkan status utama:</p>
+<ul><li><code>REJECTED</code> — supplier menolak secara eksplisit. Tidak layak diulang.</li><li><code>UNDELIVERED</code> — percobaan habis tanpa jawaban. <strong>Layak diulang manual.</strong></li><li><code>UNCONFIRMED</code> — supplier menerima order tapi kita tidak memegang ID-nya, jadi tidak bisa dipantau.</li></ul>
+<hr>
+<h2 id="doc-01--3-pengembalian-dana">3. Pengembalian dana<a class="anchor" href="#doc-01--3-pengembalian-dana" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Tidak ada refund otomatis lewat gateway. Semua refund berakhir di sebuah dompet — pertanyaannya hanya dompet siapa, dan secepat apa.</p>
+<pre><code class="language-mermaid">flowchart TD
+    A[Pembayaran berhasil, supplier gagal] --&gt; B{Pemesan punya akun?}
+    B --&gt;|Member| C[Saldo langsung ditambah]
+    C --&gt; D[COMPLETED — tanpa campur tangan admin]
+    B --&gt;|Tamu| E[WAITING_ACCOUNT]
+    E --&gt; F[Tautan klaim dikirim via email]
+    F --&gt; G[Pelanggan buat akun / masuk]
+    G --&gt; H[PENDING — masuk antrean admin]
+    H --&gt; I[Admin verifikasi klaim]
+    I --&gt;|cocok| J[COMPLETED — saldo ditambah]
+    I --&gt;|tidak cocok| K[Klaim ditolak, tautan baru dikirim ke kontak pesanan]
+    K --&gt; E</code></pre>
+<p><strong>Kenapa tamu harus membuat akun.</strong> Tidak ada tempat menaruh saldo tanpa akun. Dan tautan klaim <strong>tidak pernah</strong> dikirim lewat halaman invoice — nomor invoice saja tidak membuktikan kepemilikan, sehingga siapa pun yang melihat tangkapan layar bisa mengambil uangnya. Tautan selalu dikirim ulang ke kontak yang tercatat pada pesanan.</p>
+<p><strong>Dua penguncian.</strong> Token klaim hanya disimpan sebagai hash SHA-256, berlaku 30 hari, dan <strong>dihanguskan sekali pakai</strong>. Selain itu email atau nomor telepon akun pengklaim wajib cocok dengan kontak pesanan, dan nilai yang cocok itu <strong>dibekukan</strong> ke baris refund — akun bisa saja mengganti emailnya sebelum admin memeriksa.</p>
+<p><strong>Dua jenis penolakan, sengaja dipisah.</strong> Menolak <em>refund</em>-nya menutup perkara (ternyata pesanan berhasil). Menolak <em>klaim</em>-nya hanya menolak akunnya: pengklaim dilepas, penghitung penolakan naik, status kembali ke <code>WAITING_ACCOUNT</code>, dan tautan baru dikirim <strong>ke kontak pesanan, bukan ke akun yang baru saja ditolak</strong>. Menggabungkan keduanya akan mengubur refund pembeli asli selamanya, karena satu transaksi hanya boleh punya satu baris refund.</p>
+<p><strong>SLA 2×24 jam kerja</strong>, dihitung sejak <strong>klaim</strong>, bukan sejak refund dibuka — selama belum diklaim, yang ditunggu adalah pelanggan. Akhir pekan dan hari libur di <code>config/refund.php</code> dilewati.</p>
+<p><strong><code>transactions.user_id</code> tidak pernah ditulis ulang saat klaim.</strong> Kolom itu menggerakkan atribusi merchant dan seluruh laporan; mengalihkannya akan memindahkan penjualan tamu ke riwayat seorang member untuk periode ketika akunnya belum ada. Akibatnya pesanan gagal itu <strong>tidak muncul</strong> di riwayat pesanan member — kreditnya terlihat di mutasi saldo dan di halaman "Pengembalian Dana".</p>
+<hr>
+<h2 id="doc-01--4-poin">4. Poin<a class="anchor" href="#doc-01--4-poin" aria-label="Tautan ke bagian ini">#</a></h2>
+<p><strong>Didapat hanya saat <code>COMPLETED</code></strong> — pembayaran lunas <em>dan</em> supplier sudah kirim. Pesanan gagal tidak pernah menghasilkan poin yang harus ditarik kembali.</p>
+<p>Rumusnya <code>ceil(amount_base × persen / 100) + nominal_tetap</code>, dengan aturan per produk dan aturan global sebagai cadangan supaya SKU baru tidak diam-diam tidak bernilai. Pembulatan ke <strong>atas</strong> — satu-satunya tempat di sistem ini yang membulatkan ke arah yang menguntungkan pelanggan.</p>
+<p><strong>Ditukar</strong> di checkout, setelah promo dan sebelum biaya admin. Poin <strong>tidak diambil dari margin</strong>: promo adalah platform memakan marginnya sendiri, sedangkan poin sudah dibayar tunai pada pesanan sebelumnya — uangnya sudah ada di kas. Karena itu penggunaannya dicatat di kolom sendiri (<code>points_spent</code>, <code>points_spent_amount</code>) supaya keuangan bisa menghitung biaya programnya.</p>
+<p><strong>Tamu tidak mendapat poin sama sekali.</strong> Storefront menampilkan ajakan masuk, bukan angka.</p>
+<p><strong>Saat refund</strong>, poin kembali sebagai poin dan sisa rupiahnya sebagai saldo. Mengonversinya akan mengubah pembelian yang sengaja digagalkan menjadi cara mencairkan poin.</p>
+<hr>
+<h2 id="doc-01--5-membership">5. Membership<a class="anchor" href="#doc-01--5-membership" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Paket membership adalah <strong>tingkatan harga</strong>, bukan lagi cara membeli role. Dulu sebuah paket memberi <code>role_id</code> dan harga dicocokkan ke salah satu dari empat kolom tetap — yang berarti platform terkunci di empat tingkatan selamanya.</p>
+<ul><li><strong>Basic</strong> adalah paket bawaan, dibuat oleh migrasi, berharga nol. Setiap akun tanpa langganan jatuh ke sini.</li><li>Berlangganan menulis <code>users.membership_plan_id</code> dan <strong>tidak menyentuh <code>role_id</code></strong>. Role hanya menjaga akses admin dan halaman pembayaran.</li><li><strong>Perpanjangan otomatis</strong> memotong saldo saat masa berlaku habis, dan menulis langganan <strong>penerus</strong> yang dimulai persis saat yang lama berakhir. Dilewati bila saldo kurang, paket dinonaktifkan, atau <strong>harganya naik lebih dari 20%</strong> dari yang pelanggan setujui.</li></ul>
+<hr>
+<h2 id="doc-01--6-uxiolabs-pay-penagihan-dan-penarikan-dana">6. Uxiolabs Pay — penagihan dan penarikan dana<a class="anchor" href="#doc-01--6-uxiolabs-pay-penagihan-dan-penarikan-dana" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Dua peran, dan keduanya sengaja dipisah tegas:</p>
+<ul><li><strong><code>payment-admin</code></strong> — klien pemilik situs. Melihat tagihan layanan, membayarnya, dan menarik hasil penjualannya.</li><li><strong><code>payment-internal</code></strong> — tim keuangan Uxio. Menyetujui penarikan, menerbitkan tagihan, mengatur tarif channel.</li></ul>
+<p><strong>Penarikan dana dua tahap.</strong> Merchant mengajukan → seluruh nominal langsung <strong>ditahan</strong> dari saldonya, biaya dibekukan → internal menyetujui → disbursement dikirim ke Monetapay. Hasil akhirnya asinkron lewat callback; sampai callback datang, statusnya <code>PROCESSING</code> dan biayanya <strong>belum</strong> dibukukan.</p>
+<p><strong>Saldo tertahan.</strong> Penjualan baru bisa ditarik setelah melewati jendela settlement channel-nya plus satu hari penyangga. Itu sebabnya dashboard merchant memisahkan "saldo tersedia" dari "saldo tertahan".</p>
+<p><strong>Penagihan layanan.</strong> Tagihan (<code>service_invoices</code>) dan pembayarannya (<code>service_invoice_payments</code>) adalah dua baris berbeda — satu baris pembayaran per percobaan. Sengaja dipisah karena tagihan hidup lebih lama daripada pembayarannya: virtual account kedaluwarsa dalam 600 detik sementara jatuh temponya tiga hari lagi, jadi membuka ulang pembayaran adalah hal biasa, bukan kasus tepi.</p>
+<p><strong>Saldo merchant tidak bisa dipakai membayar tagihan.</strong> Itu uang yang Uxio <em>hutang</em> ke merchant, bukan cara merchant membayar Uxio.</p></section>
+<section class="doc" id="doc-02" data-title="02 — Arsitektur kode"><h1 id="doc-02--arsitektur-kode-dan-berkas">Arsitektur Kode dan Berkas<a class="anchor" href="#doc-02--arsitektur-kode-dan-berkas" aria-label="Tautan ke bagian ini">#</a></h1>
+<pre><code>uxiotopup-monorepo/
+├── apps/
+│   ├── api/          Laravel 13 · PHP 8.4 · pemilik seluruh migrasi
+│   ├── admin/        React 19 · panel admin
+│   ├── storefront/   React 19 · etalase pelanggan
+│   └── payment/      React 19 · Uxiolabs Pay
+├── docs/             dokumen ini
+├── .github/workflows/ satu CI + satu deploy, dengan path filter
+└── package.json      skrip lintas-app</code></pre>
+<p>Tiap app tetap membawa <code>CLAUDE.md</code>-nya sendiri. <strong>Jangan dipindah ke akar</strong> — Claude Code membaca berkas terdekat dengan yang sedang dikerjakan, jadi menyatukannya justru menghilangkan konteks.</p>
+<hr>
+<h2 id="doc-02--api-pipeline-yang-wajib-diikuti">API — pipeline yang wajib diikuti<a class="anchor" href="#doc-02--api-pipeline-yang-wajib-diikuti" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code>Route → FormRequest (validasi) → Controller (bangun DTO) → Action (logika) → ApiResponse</code></pre>
+<ul><li><strong>Controller adalah router murni.</strong> Memvalidasi, membangun DTO, memanggil satu Action, mengembalikan hasil. Tidak ada kueri, tidak ada percabangan, tidak ada logika bisnis.</li><li><strong>Action memegang semua logika.</strong> Satu Action = satu tugas. Menerima DTO, berjalan di dalam <code>DB::transaction()</code> bila mengubah keadaan.</li><li><strong>DTO adalah <code>readonly</code> value object</strong> — satu-satunya hal yang berpindah dari Controller ke Action.</li><li><strong>Trait <code>ApiResponse</code></strong> menyeragamkan bentuk jawaban: <code>{status, code, message, data}</code>. Semua <code>index()</code> berpaginasi memakai <code>paginatedResponse()</code> sehingga seluruh endpoint daftar punya bentuk yang sama.</li></ul>
+<p>Satu penyimpangan yang disengaja: <strong><code>CheckoutController</code> memvalidasi inline</strong>, bukan lewat FormRequest, karena aturan <code>guest_contact</code> bersifat dinamis — wajib untuk tamu, opsional untuk member.</p>
+<h3 id="doc-02--peta-app">Peta <code>app/</code><a class="anchor" href="#doc-02--peta-app" aria-label="Tautan ke bagian ini">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Direktori</th><th>Isi</th><th>Ukuran</th></tr></thead><tbody><tr><td><code>Actions/</code></td><td>Seluruh logika bisnis, dikelompokkan per domain</td><td>~256 berkas, 43 domain</td></tr><tr><td><code>DTOs/</code></td><td>Masukan tiap Action</td><td>~76 berkas</td></tr><tr><td><code>Http/Requests/</code></td><td>Validasi</td><td>~110 berkas</td></tr><tr><td><code>Http/Controllers/Api/</code></td><td>Router murni</td><td>14 + 18 subdirektori</td></tr><tr><td><code>Http/Resources/</code></td><td>Pembentuk keluaran</td><td>~40 berkas</td></tr><tr><td><code>Http/Middleware/</code></td><td>7 penjaga akses</td><td>7 berkas</td></tr><tr><td><code>Support/</code></td><td>Helper domain murni, tanpa DB</td><td>~45 berkas, 19 subdirektori</td></tr><tr><td><code>Models/</code></td><td>Eloquent</td><td>58 berkas</td></tr><tr><td><code>Enums/</code></td><td>Kosakata status</td><td>15 berkas</td></tr><tr><td><code>Services/</code></td><td>Klien sistem luar — sekaligus implementasi default tiap colokan</td><td>9 berkas</td></tr><tr><td><code>Contracts/</code></td><td>Kontrak colokan: supplier, payment gateway, tiga momen notifikasi</td><td>6 berkas</td></tr><tr><td><code>Notifications/Channels/</code></td><td>Kanal notifikasi (receipt, klaim refund, refund selesai)</td><td>6 berkas</td></tr><tr><td><code>Jobs/</code></td><td>Pekerjaan antrean</td><td>7 berkas</td></tr><tr><td><code>Console/Commands/</code></td><td>Perintah artisan</td><td>19 berkas</td></tr></tbody></table></div>
+<p>Domain terbesar di <code>Actions/</code>: <strong>Product</strong> (21), <strong>Uxiolabs</strong> (15), <strong>Transaction</strong> (13), <strong>Refund</strong> (12), <strong>Storefront</strong> (10).</p>
+<h3 id="doc-02--support-tempat-aturan-bisnis-yang-harus-punya-satu-implementasi"><code>Support/</code> — tempat aturan bisnis yang harus punya satu implementasi<a class="anchor" href="#doc-02--support-tempat-aturan-bisnis-yang-harus-punya-satu-implementasi" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Bagian ini paling layak dibaca lebih dulu, karena di sinilah aturan yang <em>tidak boleh</em> punya dua versi:</p>
+<div class="table-wrap"><table><thead><tr><th>Berkas</th><th>Menjaga</th></tr></thead><tbody><tr><td><code>Support/Money.php</code></td><td>Satu-satunya format rupiah yang dilihat pelanggan</td></tr><tr><td><code>Support/Phone.php</code></td><td>Bentuk kanonik E.164, dan daftar ejaan lama untuk pencarian</td></tr><tr><td><code>Support/Pricing/PlanPrice.php</code></td><td>Harga yang dikutip = harga yang ditagih</td></tr><tr><td><code>Support/Points/PointLedger.php</code></td><td>Satu-satunya yang menggerakkan <code>users.point</code></td></tr><tr><td><code>Support/Points/PointRules.php</code></td><td>Rumus poin, dipakai bersama oleh grant dan storefront</td></tr><tr><td><code>Support/Wallet/WalletLedger.php</code></td><td>Satu-satunya yang menggerakkan saldo</td></tr><tr><td><code>Support/Refund/RefundSla.php</code></td><td>Hitungan 2×24 jam kerja</td></tr><tr><td><code>Support/Report/PeriodResolver.php</code></td><td>Batas periode laporan, dihitung di zona dinding platform (WIB)</td></tr><tr><td><code>Support/DateTime/Wib.php</code></td><td>Satu-satunya zona dinding platform untuk tanggal yang dirender server (PDF, email, notifikasi)</td></tr><tr><td><code>Support/Auth/{Base32,Totp}.php</code></td><td>TOTP RFC 6238, ditulis sendiri, dikunci vektor uji RFC</td></tr><tr><td><code>Support/Transaction/ProviderStatusPolicy.php</code></td><td>Matriks <code>status</code> ↔ <code>provider_status</code></td></tr></tbody></table></div>
+<p>Aturannya sederhana: <strong>kalau sebuah angka menyangkut uang, ia hanya boleh dihitung di satu tempat.</strong> Buku besar poin dan saldo menolak menjadi negatif, mengunci baris selama baca-ubah-tulis, dan mencatat nilai sebelum/sesudah di tiap entri.</p>
+<h3 id="doc-02--colokan-kontrak-driver">Colokan — kontrak + driver<a class="anchor" href="#doc-02--colokan-kontrak-driver" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Yang berbeda antar situs (supplier top-up, payment gateway, kanal notifikasi) <strong>tidak boleh</strong> mengubah engine. Semuanya lewat kontrak, dan implementasinya dipilih dari config:</p>
+<div class="table-wrap"><table><thead><tr><th>Kontrak</th><th>Dipilih oleh</th><th>Implementasi default</th></tr></thead><tbody><tr><td><code>Contracts/SupplierGateway</code></td><td><code>SUPPLIER_DRIVER</code> → <code>services.supplier.adapters</code></td><td><code>UxiolabsService</code></td></tr><tr><td><code>Contracts/PaymentGateway</code></td><td><code>PAYMENT_DRIVER</code> → <code>services.payment.adapters</code></td><td><code>MonetapayService</code></td></tr><tr><td><code>Contracts/ReceiptChannel</code> (berupa <strong>daftar</strong>)</td><td><code>config/notifications.php</code> → <code>notifications.receipt</code></td><td>email + WhatsApp</td></tr><tr><td><code>Contracts/RefundClaimChannel</code> (daftar)</td><td><code>config/notifications.php</code> → <code>notifications.refund_claim</code></td><td>email + WhatsApp</td></tr><tr><td><code>Contracts/RefundCompletedChannel</code> (daftar)</td><td><code>config/notifications.php</code> → <code>notifications.refund_completed</code></td><td>email + WhatsApp</td></tr></tbody></table></div>
+<p><code>Support/Integration/AdapterResolver</code> menyelesaikan sekaligus <strong>memvalidasi</strong> tiap adapter terhadap kontraknya, dan gagal keras kalau tidak sesuai — supaya kesalahan ketahuan saat resolusi, bukan di jalur uang. Menambah supplier/gateway/kanal berarti <strong>satu kelas + satu baris config</strong>; kode engine selalu memakai tipe kontrak, bukan kelas konkret. Satu pengecualian yang disengaja: <code>QueryMonetapayAction</code> tetap terikat <code>MonetapayService</code> karena itu konsol diagnosis vendor, bukan permukaan engine.</p>
+<p>Aturan lengkapnya, termasuk apa yang boleh dan tidak boleh difork, ada di <a href="#doc-07">07 — Zona</a>.</p>
+<h3 id="doc-02--stempel-rilis">Stempel rilis<a class="anchor" href="#doc-02--stempel-rilis" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><code>GET /v1/version</code> menjawab versi yang benar-benar berjalan: <code>version</code> (tag), <code>commit</code>, <code>upstream</code> (rilis cetakan asal), dan <code>hub_contract</code> — dibaca dari <code>config/version.php</code>, yang diisi deploy dari <code>.env</code>. Nilai yang sama tampil di sidebar admin lewat <code>VITE_APP_VERSION</code>. Rute ini <strong>sengaja tetap terbuka</strong> saat situs dinonaktifkan. Rilis, rollback, dan staging: <a href="#doc-04">04 — Deployment</a>.</p>
+<hr>
+<h2 id="doc-02--frontend-tiga-aplikasi-satu-pola">Frontend — tiga aplikasi, satu pola<a class="anchor" href="#doc-02--frontend-tiga-aplikasi-satu-pola" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Ketiganya memakai stack yang sama, dengan <strong>nol perbedaan versi</strong> pada dependensi bersama: React 19, Vite 7, Tailwind v4, TanStack Router/Query/Table, zustand, React Hook Form + zod, axios, Vitest.</p>
+<h3 id="doc-02--struktur-per-fitur">Struktur per-fitur<a class="anchor" href="#doc-02--struktur-per-fitur" aria-label="Tautan ke bagian ini">#</a></h3>
+<pre><code>src/
+├── features/&lt;nama&gt;/     satu irisan fitur, terisolasi
+│   ├── components/
+│   ├── hooks/           useQuery / useMutation
+│   ├── services/        pemanggilan API + pemetaan
+│   ├── types/
+│   └── pages/
+├── components/{ui,common}/   shadcn + primitif sendiri
+├── routes/              registri saja, komponen diimpor dari features
+├── lib/                 axios, utils
+└── store/               zustand</code></pre>
+<p><strong>Aturan isolasi:</strong> satu <code>features/*</code> tidak boleh mengimpor dari <code>features/*</code> yang lain. Kode bersama diangkat ke <code>components/common</code>, <code>lib</code>, atau <code>utils</code>.</p>
+<p><strong>Routing hanya registri.</strong> Berkas di <code>src/routes/</code> cuma merangkai <code>createFileRoute</code> dengan komponen dari <code>features/</code>. Penjaga akses (<code>requireAuth</code>, <code>requireGuest</code>, <code>requirePermission</code>) dipanggil di <code>beforeLoad</code>, tidak pernah di dalam komponen. <code>routeTree.gen.ts</code> dihasilkan otomatis — jangan disunting tangan.</p>
+<h3 id="doc-02--irisan-fitur-tiap-app">Irisan fitur tiap app<a class="anchor" href="#doc-02--irisan-fitur-tiap-app" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><strong><code>apps/admin</code></strong> (16): <code>activity</code>, <code>administration</code>, <code>auth</code>, <code>categories</code>, <code>content</code>, <code>dashboard</code>, <code>feedback</code>, <code>financial</code>, <code>integration</code>, <code>marketing</code>, <code>membership</code>, <code>pricing</code>, <code>products</code>, <code>refunds</code>, <code>reports</code>, <code>transactions</code>.</p>
+<p><strong><code>apps/storefront</code></strong> (15): <code>auth</code>, <code>berita</code>, <code>checkout</code>, <code>faq</code>, <code>home</code>, <code>invoice</code>, <code>kalkulator</code>, <code>leaderboard</code>, <code>magic-wheel</code>, <code>member-dashboard</code>, <code>price-list</code>, <code>privacy-policy</code>, <code>refund</code>, <code>track-order</code>, <code>zodiac</code>.</p>
+<p><strong><code>apps/payment</code></strong> (4): <code>auth</code>, <code>dashboard</code>, <code>finance</code>, <code>merchant</code>.</p>
+<h3 id="doc-02--perbedaan-yang-perlu-diketahui">Perbedaan yang perlu diketahui<a class="anchor" href="#doc-02--perbedaan-yang-perlu-diketahui" aria-label="Tautan ke bagian ini">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th></th><th>admin</th><th>storefront</th><th>payment</th></tr></thead><tbody><tr><td>Test</td><td>jsdom + Testing Library</td><td><strong><code>environment: "node"</code></strong>, hanya <code>.ts</code></td><td>jsdom + Testing Library</td></tr><tr><td>i18n</td><td>i18next, <strong>selesai</strong> &amp;mdash; pilihan di <code>users.locale</code></td><td>i18next, URL berawalan locale</td><td>i18next, <strong>selesai</strong> &amp;mdash; pilihan di <code>users.locale</code></td></tr><tr><td>UI tambahan</td><td>—</td><td>HeroUI</td><td>—</td></tr><tr><td>Zona waktu test</td><td>—</td><td>—</td><td><strong>dipatok <code>Asia/Jakarta</code></strong></td></tr></tbody></table></div>
+<p>Dua di antaranya menyimpan jebakan nyata:</p>
+<ul><li><strong>Vitest storefront memakai <code>include: ["src/**/*.test.ts"]</code></strong> — berkas <code>.tsx</code> <strong>tidak pernah dijalankan</strong>. Karena itu logika yang perlu diuji harus tinggal di <code>lib/*.ts</code>, bukan di komponen. Pola ini sudah dipakai <code>checkout/lib/points.ts</code> dan <code>invoice/lib/pointsRow.ts</code>.</li><li><strong><code>apps/payment/vitest.config.ts</code> menyetel <code>process.env.TZ</code> di ruang lingkup modul.</strong> Kalau ketiga suite pernah digabung jadi satu proses, setelan itu bocor dan mengubah perenderan tanggal di dua app lainnya.</li></ul>
+<h3 id="doc-02--zona-waktu-satu-jam-dinding-untuk-seluruh-platform">Zona waktu: satu jam dinding untuk seluruh platform<a class="anchor" href="#doc-02--zona-waktu-satu-jam-dinding-untuk-seluruh-platform" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><strong>WIB (Asia/Jakarta, GMT+7), dan itu bukan preferensi pengguna.</strong> Aturannya:</p>
+<ul><li><strong>Penyimpanan tetap UTC.</strong> <code>config('app.timezone')</code> di kedua API tidak diubah; kolom <code>timestamp</code> tetap UTC dan JSON tetap ISO-8601 UTC. Mengubah app tz akan menggeser cara tiap instant ditulis dan dibandingkan.</li><li><strong>Konversi hanya di batas tampilan.</strong> Frontend memformat di <code>Asia/Jakarta</code> lewat modul tanggal kanonik tiap app (<code>utils/date.ts</code>, <code>lib/format.ts</code>), dan tiap tampilan yang memuat jam menyematkan label <code>WIB (GMT+7)</code>. Tanggal-saja dihitung pada hari WIB, tanpa label.</li><li><strong><code>users.timezone</code> tidak lagi menentukan apa pun.</strong> Nilainya dinormalkan ke <code>Asia/Jakarta</code> (login, register, Google, <code>sync-timezone</code>, dan migrasi satu kali), sehingga jam di layar dan batas hari laporan selalu sepakat.</li><li><strong>Tes tidak boleh bergantung pada zona host.</strong> Ekspektasi ditulis sebagai waktu literal, dan suite dijalankan juga dengan <code>TZ</code> non-WIB — kalau hasilnya berubah, masih ada formatter yang membaca zona browser.</li></ul>
+<hr>
+<h2 id="doc-02--kode-yang-masih-terduplikasi">Kode yang masih terduplikasi<a class="anchor" href="#doc-02--kode-yang-masih-terduplikasi" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Belum disatukan, dan itu <strong>disengaja</strong> — monorepo ini adalah pemindahan, bukan refactor. Peta duplikasinya:</p>
+<p><strong>Identik byte-per-byte</strong> (aman diangkat kapan saja): 49 dari 52 primitif shadcn antara admin dan payment; 12 komponen <code>common/</code>; <code>lib/echo.ts</code> (tiga salinan); <code>cn</code> di <code>lib/utils.ts</code>; <code>types/api.type.ts</code> (admin ↔ payment); <code>utils/initials.ts</code>; <code>test/apiEnvelope.ts</code>; <code>lib/imageCompression.ts</code> (admin ↔ storefront).</p>
+<p><strong>Mirip tapi berbeda — justru ini yang berbahaya:</strong></p>
+<div class="table-wrap"><table><thead><tr><th>Berkas</th><th>Masalahnya</th></tr></thead><tbody><tr><td><code>lib/apiMappers.ts</code></td><td>Versi admin sudah dikeraskan untuk tiga bentuk paginator; versi payment masih naif dan <strong>membawa bug yang admin sudah perbaiki</strong></td></tr><tr><td><code>utils/date.ts</code> vs <code>lib/format.ts</code></td><td><code>formatDate</code>/<code>formatDateTime</code> bernama sama tapi implementasinya beda — menyatukan sembarangan akan <strong>mengubah tampilan tanggal</strong> di storefront</td></tr><tr><td><code>store/useAuthStore.ts</code></td><td>Storefront berbeda bentuk: tanda tangan aksinya posisional, tanpa <code>permissions</code>, dan tidak menyimpan user di cookie</td></tr><tr><td><code>components/common/{Text,Heading,Container}.tsx</code></td><td>Versi storefront membawa gaya etalase yang di-hardcode; API-nya bisa dibagi, gayanya tidak</td></tr></tbody></table></div>
+<p>Urutan penyatuan yang disarankan bila nanti dikerjakan: <code>@uxio/ui</code> (paling murah, ~60 berkas) → <code>@uxio/api</code> → <code>@uxio/format</code> → <code>@uxio/auth</code> (paling sulit, harus menyeragamkan model peran lebih dulu).</p></section>
+<section class="doc" id="doc-03" data-title="03 — Referensi API"><h1 id="doc-03--referensi-api">Referensi API<a class="anchor" href="#doc-03--referensi-api" aria-label="Tautan ke bagian ini">#</a></h1>
+<p>Semua endpoint berada di bawah <code>/api/v1</code>. Sekitar <strong>345 rute</strong>, dibagi jadi delapan tingkat akses di <code>apps/api/routes/api.php</code>.</p>
+<h2 id="doc-03--bentuk-jawaban">Bentuk jawaban<a class="anchor" href="#doc-03--bentuk-jawaban" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Setiap endpoint memakai trait <code>ApiResponse</code>:</p>
+<pre><code class="language-json">{ &quot;status&quot;: &quot;success&quot;, &quot;code&quot;: 200, &quot;message&quot;: &quot;...&quot;, &quot;data&quot;: { } }</code></pre>
+<p>Daftar berpaginasi selalu membungkus dengan bentuk yang sama:</p>
+<pre><code class="language-json">{ &quot;status&quot;: &quot;success&quot;, &quot;code&quot;: 200, &quot;message&quot;: &quot;...&quot;,
+  &quot;data&quot;: { &quot;data&quot;: [...], &quot;links&quot;: {...}, &quot;meta&quot;: {...} } }</code></pre>
+<p>Kegagalan validasi selalu <code>{"status":"fail","code":422,"message":"...","errors":{...}}</code>. Bentuk itu juga yang dirender <code>bootstrap/app.php</code> untuk setiap <code>ValidationException</code>, jadi 422 yang ditulis tangan di controller tidak boleh menyimpang darinya.</p>
+<hr>
+<h2 id="doc-03--delapan-tingkat-akses">Delapan tingkat akses<a class="anchor" href="#doc-03--delapan-tingkat-akses" aria-label="Tautan ke bagian ini">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Prefix</th><th>Middleware</th><th>Rute</th><th>Untuk</th></tr></thead><tbody><tr><td>1</td><td><code>v1</code></td><td>—</td><td>~55</td><td>Publik: storefront, checkout, callback gateway</td></tr><tr><td>2</td><td><code>v1</code></td><td><code>auth:sanctum</code>, <code>abilities:access-api</code></td><td>~24</td><td>Member yang masuk</td></tr><tr><td>3</td><td><code>v1</code></td><td>+ <code>admin</code>, <code>two-factor</code></td><td>~187</td><td>Back-office</td></tr><tr><td>4</td><td><code>v1/payment-admin</code></td><td>+ <code>payment-admin</code></td><td>~19</td><td>Klien pemilik situs</td></tr><tr><td>5</td><td><code>v1/payment-internal</code></td><td>+ <code>payment-internal</code></td><td>~48</td><td>Keuangan Uxio</td></tr><tr><td>6</td><td><code>v1/hub</code></td><td><code>hub</code></td><td>6</td><td>Hub menarik laporan</td></tr><tr><td>7</td><td><code>v1/hub</code></td><td><code>hub</code>, <code>throttle:hub-sync</code></td><td>1</td><td>Hub memicu sinkronisasi</td></tr><tr><td>8</td><td><code>v1/hub</code></td><td><code>hub</code>, <code>hub-write</code></td><td>5</td><td>Hub menyentuh uang</td></tr></tbody></table></div>
+<h3 id="doc-03--1-publik">1. Publik<a class="anchor" href="#doc-03--1-publik" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Storefront pelanggan plus callback gateway. Endpoint yang paling sering dipakai:</p>
+<div class="table-wrap"><table><thead><tr><th>Endpoint</th><th>Catatan</th></tr></thead><tbody><tr><td><code>GET /games</code>, <code>GET /games/{game}</code></td><td><code>{game}</code> bisa slug, kode, atau id</td></tr><tr><td><code>GET /games/{game}/products</code></td><td>Sudah berharga sesuai paket membership pemanggil</td></tr><tr><td><code>POST /games/{game}/validate-id</code></td><td><strong>Selalu 200.</strong> Provider mati pun menjawab <code>{nickname: null}</code> — 4xx di sini akan terbaca sebagai form pesanan yang rusak</td></tr><tr><td><code>POST /checkout</code></td><td><code>throttle:checkout</code> (10/menit)</td></tr><tr><td><code>GET /invoices/{invoiceNumber}</code></td><td>Di-polling tiap 5 detik sampai status final</td></tr><tr><td><code>GET /orders/track?query=</code></td><td>Nomor invoice atau nomor telepon persis</td></tr><tr><td><code>POST /refund-claims/*</code></td><td><code>throttle:refund-claim</code> (6/menit)</td></tr><tr><td><code>POST /payment/callback</code>, <code>/uxiolabs/callback</code></td><td><code>throttle:webhooks</code> (120/menit)</td></tr><tr><td><code>GET /storefront/{banners,announcements,leaderboard}</code></td><td><strong>Berprefix <code>storefront</code> dengan sengaja</strong> — <code>/v1/banners</code> sudah dipakai rute admin, dan koleksi rute Laravel dikunci pada metode+URI, sehingga rute publik dengan path sama akan diam-diam menggantikan rute admin</td></tr></tbody></table></div>
+<p><strong>Jangan pernah melebarkan proyeksi publik.</strong> <code>ShowInvoiceAction</code>, <code>TrackOrdersAction</code>, dan <code>ListMemberTransactionsAction</code> menyusun array-nya <strong>field demi field</strong>, bukan menyerialisasi model — supaya <code>guest_contact</code>, <code>margin</code>, <code>price_modal</code>, dan id supplier tidak bisa bocor karena kelalaian. Ada test yang menjaga ini.</p>
+<h3 id="doc-03--2-member">2. Member<a class="anchor" href="#doc-03--2-member" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><code>GET /user</code>, <code>PATCH /users/sync-timezone</code>, dan seluruh <code>/v1/me/*</code>: profil, kata sandi, dashboard, transaksi, poin, refund, log aktivitas, penilaian.</p>
+<p>Setiap kueri <strong>dibatasi ke <code>user_id</code> lebih dulu, sebelum filter apa pun</strong>, sehingga tidak ada kombinasi filter yang bisa melebarkannya ke baris pelanggan lain.</p>
+<h3 id="doc-03--3-admin">3. Admin<a class="anchor" href="#doc-03--3-admin" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Bagian terbesar: pengguna, kategori, produk, supplier, transaksi, refund, harga, membership, konten, laporan, integrasi.</p>
+<p><strong>Semuanya berada di balik <code>two-factor</code>.</strong> Admin yang belum mendaftarkan authenticator mendapat 403 dengan <code>data.code = two_factor_setup_required</code>, dan panel mengarahkannya ke halaman pendaftaran. Rute <code>/2fa/setup</code> dan <code>/2fa/confirm</code> sengaja <strong>di luar</strong> grup ini — kalau tidak, admin yang sedang mendaftar tidak akan pernah bisa mencapainya.</p>
+<h3 id="doc-03--4-5-halaman-pembayaran">4–5. Halaman pembayaran<a class="anchor" href="#doc-03--4-5-halaman-pembayaran" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><code>payment-admin</code> adalah klien; <code>payment-internal</code> adalah tim keuangan Uxio. Keduanya dipisah tegas di seluruh sistem.</p>
+<h3 id="doc-03--6-8-hub">6–8. Hub<a class="anchor" href="#doc-03--6-8-hub" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Dijaga <code>X-Hub-Key</code>, mati total bila tidak ada kunci yang dikonfigurasi. <strong>Kontrak baca bersifat aditif saja</strong> — situs berjalan di versi yang berbeda-beda, jadi field boleh ditambah tapi tidak boleh diganti nama atau dihapus.</p>
+<p>Jalur tulis butuh <strong>kunci kedua</strong> plus <code>HUB_WRITE_ENABLED</code>. Pemisahan ini ada supaya kunci baca yang bocor tidak bisa menggerakkan uang.</p>
+<hr>
+<h2 id="doc-03--ability-token-dan-kenapa-itu-ada">Ability token — dan kenapa itu ada<a class="anchor" href="#doc-03--ability-token-dan-kenapa-itu-ada" aria-label="Tautan ke bagian ini">#</a></h2>
+<p><strong><code>abilities:access-api</code> wajib ada di setiap grup terlindungi, termasuk yang dibuat nanti.</strong></p>
+<p><code>auth:sanctum</code> sendirian menerima <strong>token apa pun</strong> yang belum kedaluwarsa, tanpa peduli untuk apa token itu diterbitkan. Tanpa pemeriksaan ability, <code>refresh_token</code> berumur 30 hari — yang disimpan panel admin di cookie terbaca JavaScript dan bertahan melewati penggantian kata sandi — adalah sesi API penuh.</p>
+<p><code>Sanctum::actingAs($user)</code> bawaannya <strong>tanpa ability sama sekali</strong>, jadi test wajib menuliskan <code>['access-api']</code>. <code>tests/Feature/Auth/TokenAbilityTest.php</code> yang menjaga semuanya.</p>
+<h2 id="doc-03--pembatas-laju">Pembatas laju<a class="anchor" href="#doc-03--pembatas-laju" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Delapan, didefinisikan di <code>AppServiceProvider</code>:</p>
+<div class="table-wrap"><table><thead><tr><th>Limiter</th><th>Batas</th><th>Dipakai</th></tr></thead><tbody><tr><td><code>api</code></td><td>120/menit</td><td>global</td></tr><tr><td><code>checkout</code></td><td>10/menit</td><td>checkout, lacak pesanan</td></tr><tr><td><code>webhooks</code></td><td>120/menit per IP</td><td>seluruh callback</td></tr><tr><td><code>login</code></td><td>5/menit per <strong>email|IP</strong> + plafon per IP</td><td>login, daftar, lupa &amp; reset kata sandi</td></tr><tr><td><code>two-factor</code></td><td>dikunci pada hash token tantangan</td><td>verifikasi 2FA</td></tr><tr><td><code>refund-claim</code></td><td>6/menit</td><td>klaim refund</td></tr><tr><td><code>hub-sync</code>, <code>hub-write</code></td><td>—</td><td>endpoint Hub</td></tr></tbody></table></div>
+<p><code>login</code> dikunci pada <strong>email|IP</strong>, bukan IP saja: satu bucket per IP berarti lima orang yang login dari satu kantor mengunci pemulihan kata sandi untuk semua orang di alamat itu.</p>
+<hr>
+<h2 id="doc-03--spesifikasi-per-domain">Spesifikasi per domain<a class="anchor" href="#doc-03--spesifikasi-per-domain" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Empat dokumen lebih rinci ada di <code>apps/api/docs/api/</code>: <code>category-master-data-spec.md</code>, <code>cms-spec.md</code>, <code>supplier-product-spec.md</code>, <code>transactions-payments-spec.md</code>.</p>
+<p>Koleksi Postman: <code>apps/api/uxio-topup-api-v2.postman_collection.json</code>.</p></section>
+<section class="doc" id="doc-04" data-title="04 — Deployment"><h1 id="doc-04--deployment">Deployment<a class="anchor" href="#doc-04--deployment" aria-label="Tautan ke bagian ini">#</a></h1>
+<h2 id="doc-04--ringkasan">Ringkasan<a class="anchor" href="#doc-04--ringkasan" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Keempat aplikasi mendarat di <strong>satu server</strong>, di direktori bersebelahan. Sebelum monorepo, keempatnya di-clone terpisah di empat repo; sesudahnya satu repo jadi sumbernya — tetapi yang tinggal di server adalah <strong>hasil build</strong> (ketiga frontend) dan <strong>source</strong> (API, dependensinya dipasang di server), bukan pohon gitnya.</p>
+<div class="table-wrap"><table><thead><tr><th>App</th><th>Cara naik</th><th>Tujuan</th></tr></thead><tbody><tr><td>API</td><td><code>rsync</code> source dari CI; <code>composer install --no-dev</code> + <code>migrate</code>/cache lewat artisan di server</td><td><code>&lt;base&gt;/api</code></td></tr><tr><td>Admin</td><td>build di CI, <code>rsync</code> folder <code>dist/</code></td><td><code>…/provider/admin</code></td></tr><tr><td>Storefront</td><td>idem</td><td><code>…/provider/fe</code></td></tr><tr><td>Payment</td><td>idem</td><td><code>…/provider/payment</code></td></tr></tbody></table></div>
+<p>Pemicunya <strong>push tag <code>v*</code></strong>, dan satu tag mendeploy keempat app sekaligus. Cabang <code>main</code> tidak lagi mendeploy produksi — jalur itu disiapkan untuk staging.</p>
+<h3 id="doc-04--bagaimana-api-naik">Bagaimana API naik<a class="anchor" href="#doc-04--bagaimana-api-naik" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>API tidak di-clone di server. CI meng-<code>rsync</code> <strong>source</strong>-nya ke <code>&lt;base&gt;/api</code>, dan <code>composer install</code> di server yang memasang dependensinya. Karena source itu sudah berbentuk akar Laravel, root nginx menunjuk langsung ke <code>&lt;base&gt;/api/public</code>; tidak ada lagi tingkat <code>apps/api</code>. Versi dependensi tetap ditentukan rilis ini — <code>composer.lock</code> ikut terkirim, dan <code>install</code> (bukan <code>update</code>) tidak pernah menyimpang darinya.</p>
+<p>Tujuh path <strong>tidak ikut tersalin</strong>, karena hanya ada di server dan tidak bisa dibangun ulang — semuanya di-exclude eksplisit di workflow: <code>.env</code> (ditulis dari secret <code>ENV_FILE</code>), <code>vendor</code> (dipasang <code>composer install</code> di server), <code>storage/app</code> (unggahan pelanggan), <code>storage/framework</code> (sesi), <code>storage/logs</code>, <code>bootstrap/cache</code>, dan symlink <code>public/storage</code>. <code>rsync --delete</code> menghapus apa pun di server yang tidak ada di source, jadi daftar ini adalah satu-satunya pelindung state runtime — jangan disederhanakan.</p>
+<p><code>.env</code> karena itu ada di <strong><code>&lt;base&gt;/api/.env</code></strong> (mode <code>640</code>, milik user deploy), bukan lagi di <code>apps/api/.env</code>. Kalau berkas itu dicari di jalur lama, ia memang sudah tidak ada di sana: seluruh tingkat <code>apps/</code> tidak lagi ikut mendarat.</p>
+<p><code>vendor/</code> <strong>tidak pernah dikirim</strong>. Isinya 46.321 berkas / 311 MB, dan memindahkannya menyeberangi jaringan tiap rilis tidak memberi apa pun: <code>composer install --no-dev</code> di server menentukan versi yang sama dari <code>composer.lock</code> yang ikut terkirim. Karena itu exclude <code>/vendor/</code> bersifat <strong>wajib</strong>, bukan penghematan — source tidak lagi memuat vendor, jadi tanpa exclude itu <code>rsync --delete</code> akan menghapus vendor yang sudah ada di server dan meninggalkan situs tanpa dependensi sama sekali.</p>
+<p>Konsekuensinya server perlu <strong><code>composer</code> terpasang</strong> dan bisa menjangkau packagist; deploy berhenti dengan pesan jelas kalau salah satunya tidak terpenuhi, sebelum migrasi menyentuh skema.</p>
+<p>Klon git tetap ada di <code>&lt;base&gt;/.api-repo</code>, tetapi <strong>bukan yang dilayani</strong>: gunanya hanya riwayat (<code>git log</code>, <code>git tag</code>), supaya pertanyaan "apa yang terpasang di sini" bisa dijawab tanpa membuka GitHub. Klon ini <strong>best-effort</strong> — kalau gagal (git server terlalu tua, jaringan), deploy tetap jalan dengan peringatan. <code>--filter=blob:none --sparse</code> membuatnya kecil; hanya <code>apps/api</code> yang turun ke working tree.</p>
+<hr>
+<h2 id="doc-04--rilis-tag-stempel-rollback">Rilis: tag, stempel, rollback<a class="anchor" href="#doc-04--rilis-tag-stempel-rollback" aria-label="Tautan ke bagian ini">#</a></h2>
+<p><strong>Sebuah rilis adalah tag.</strong> <code>deploy-prod.yml</code> berjalan saat tag <code>v*</code> di-push, dan mendeploy keempat app dalam satu jalan. Alasannya bukan gaya: satu nomor versi harus menunjuk satu keadaan kode yang diketahui, supaya pertanyaan "situs ini versi berapa" punya jawaban, dan supaya rilis yang sama bisa dipasang ulang.</p>
+<ul><li><strong>Nomor</strong> — tag Semver <code>vMAJOR.MINOR.PATCH</code>. MAJOR untuk perubahan yang bisa merusak situs lain (skema DB, kontrak Hub), MINOR untuk fitur, PATCH untuk perbaikan.</li><li><strong>Stempel</strong> — CI menghitung <code>APP_COMMIT</code> (commit yang di-build) dan <code>APP_UPSTREAM</code> (isi <code>.upstream-version</code> di commit itu), lalu deploy menulis <code>APP_VERSION</code> (tag), <code>APP_COMMIT</code>, dan <code>APP_UPSTREAM</code> ke <code>.env</code>, <strong>sesudah</strong> <code>.env</code> ditulis dari secret. Sengaja dari CI, bukan dari git di server: yang dilaporkan harus kode yang benar-benar mendarat. <code>GET /v1/version</code> dan <code>VITE_APP_VERSION</code> melaporkan nilai yang sama.</li><li><strong>Gerbang</strong> — <code>php artisan hub:ping</code> dijalankan tepat sebelum <code>migrate</code>. Bila <code>HUB_ENABLED=true</code> dan Hub tidak terjangkau, deploy berhenti sebelum skema tersentuh. Di deploy standalone (<code>HUB_ENABLED=false</code>) perintah ini lulus sendiri.</li><li><strong>Rollback</strong> — jalankan workflow <code>Deploy Production</code> lewat <em>Run workflow</em>, isi <code>ref</code> dengan tag lama (mis. <code>v1.3.0</code>). CI mengirim source tag itu, dan server memasang dependensinya dari <code>composer.lock</code> tag tersebut; tidak ada <code>git checkout</code> di server. Klon riwayat di <code>&lt;base&gt;/.api-repo</code> ikut mundur ke tag itu.</li></ul>
+<p><strong>Migrasi harus aditif supaya rollback aman.</strong> Rollback kode tidak membalik migrasi: kalau sebuah rilis menghapus kolom, kode lama akan mencarinya dan gagal. Urutannya: tambah kolom → deploy kode baru → backfill → baru hapus kolom di rilis <em>berikutnya</em>.</p>
+<hr>
+<h2 id="doc-04--staging">Staging<a class="anchor" href="#doc-04--staging" aria-label="Tautan ke bagian ini">#</a></h2>
+<p><code>deploy-staging.yml</code> adalah kembaran <code>deploy-prod.yml</code>: pemicunya <code>push</code> ke <code>main</code>, dan <code>environment: staging</code> yang menentukan secret mana (host SSH, <code>DEPLOY_BASE_PATH</code>, <code>ENV_FILE</code>, <code>VITE_*</code>) yang dipakai. Langkah-langkahnya sengaja identik dengan produksi — staging yang memakai jalur berbeda tidak membuktikan apa pun tentang produksi.</p>
+<p>Staging adalah <strong>deployment terpisah sepenuhnya</strong>: DB, direktori, kunci, domain, cron, dan queue worker sendiri. Berbagi salah satu di antaranya membuat staging berhenti menjadi latihan yang jujur.</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>Produksi</th><th>Staging</th></tr></thead><tbody><tr><td>API</td><td><code>api.&lt;domain&gt;</code></td><td><code>api-staging.&lt;domain&gt;</code></td></tr><tr><td>Storefront / Admin / Payment</td><td><code>&lt;domain&gt;</code>, <code>admin.</code>, <code>pay.</code></td><td><code>staging.</code>, <code>admin-staging.</code>, <code>pay-staging.</code></td></tr><tr><td>Database</td><td><code>uxiotopup</code></td><td><code>uxiotopup_staging</code></td></tr><tr><td><code>.env</code></td><td>environment <code>production</code></td><td>environment <code>staging</code></td></tr><tr><td>Hub</td><td>Hub produksi</td><td><strong>Hub staging</strong></td></tr></tbody></table></div>
+<h3 id="doc-04--yang-harus-berdiri-lebih-dulu-hub-staging">Yang harus berdiri lebih dulu: Hub staging<a class="anchor" href="#doc-04--yang-harus-berdiri-lebih-dulu-hub-staging" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Situs staging butuh Hub staging, jadi Hub didirikan dulu:</p>
+<ol><li><strong>Instance Hub terpisah</strong> (direktori, <code>DEPLOY_PATH</code>, vhost sendiri) — boleh di VPS yang sama, tapi jangan berbagi DB atau direktori.</li><li><strong>DB <code>uxiotopup_hub_staging</code></strong> dari <code>migrate</code> + seeder, <strong>bukan salinan data produksi</strong>.</li><li><strong><code>APP_KEY</code> sendiri.</strong></li><li>Env Hub staging mengikuti <code>uxiotopup-hub-api/.env.example</code>, dengan <code>APP_ENV=staging</code>, <code>FRONTEND_URL</code> = panel staging, <code>DISCORD_SEND_OUTSIDE_PRODUCTION=false</code>, dan <code>MONETAPAY_IS_PRODUCTION=false</code>.</li><li><strong>Daftarkan situs staging sebagai <em>site</em> terpisah di Hub staging</strong> (<code>code</code> mis. <code>isgstore-staging</code>, <code>base_url</code> = <code>https://api-staging.&lt;domain&gt;</code>, <code>allowed_ips</code> = IP server situs staging). Kunci yang diterbitkan Hub staging inilah yang dipasang di <code>.env</code> situs staging.</li><li><strong>Jawab "serving" untuk situs itu.</strong> Situs yang dikelola Hub gelap secara default; tanpa jawaban "serving", situs staging membalas 503 di semua rute publik dan orang akan mengira staging-nya rusak.</li></ol>
+<h3 id="doc-04--env-situs-staging-yang-wajib-benar">Env situs staging yang wajib benar<a class="anchor" href="#doc-04--env-situs-staging-yang-wajib-benar" aria-label="Tautan ke bagian ini">#</a></h3>
+<ul><li><code>APP_ENV=staging</code>, <code>APP_URL</code> = domain staging.</li><li><strong><code>HUB_BASE_URL</code> = Hub STAGING</strong>, bukan produksi. Ini yang paling sering salah, dan salahnya paling merusak: situs staging yang menunjuk Hub produksi mengotori data kantor pusat dan mengganggu situs lain.</li><li><code>HUB_ENABLED=true</code>, <code>HUB_SITE_API_KEY</code> = kunci dari Hub staging.</li><li><code>MONETAPAY_IS_PRODUCTION=false</code>.</li><li><code>STOREFRONT_URL</code> dan <code>PAYMENT_PAGE_URL</code> = domain staging. Kalau dibiarkan kosong atau menunjuk <code>localhost</code>, <code>urls:verify</code> <strong>menggagalkan deploy</strong> — memang disengaja.</li></ul>
+<p>Data awal dari <code>migrate --seed</code> (seeder dev), bukan salinan produksi.</p>
+<h3 id="doc-04--secret-environment-staging-di-github">Secret environment <code>staging</code> (di GitHub)<a class="anchor" href="#doc-04--secret-environment-staging-di-github" aria-label="Tautan ke bagian ini">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Secret</th><th>Isi</th></tr></thead><tbody><tr><td><code>SSH_HOST</code>, <code>SSH_PORT</code>, <code>SSH_USERNAME</code>, <code>SSH_PRIVATE_KEY</code></td><td>akses ke server staging</td></tr><tr><td><code>DEPLOY_BASE_PATH</code></td><td>base path <strong>staging</strong>, bukan path produksi</td></tr><tr><td><code>ENV_FILE</code></td><td>seluruh isi <code>.env</code> staging</td></tr><tr><td><code>VITE_API_BASE_URL</code></td><td><code>https://api-staging.&lt;domain&gt;/api</code></td></tr><tr><td><code>VITE_PUSHER_APP_KEY</code>, <code>VITE_PUSHER_APP_CLUSTER</code></td><td>kanal staging, atau kosong (fallback polling)</td></tr><tr><td><code>VITE_GOOGLE_CLIENT_ID</code></td><td>client OAuth staging, atau kosong</td></tr><tr><td><code>DISCORD_WEBHOOK_LOG_URL</code></td><td>webhook staging (opsional)</td></tr></tbody></table></div>
+<h3 id="doc-04--cara-memastikan-rantainya-benar-benar-tersambung">Cara memastikan rantainya benar-benar tersambung<a class="anchor" href="#doc-04--cara-memastikan-rantainya-benar-benar-tersambung" aria-label="Tautan ke bagian ini">#</a></h3>
+<ol><li><code>php artisan hub:ping</code> di situs staging → lulus. Gagal berarti <code>HUB_BASE_URL</code>, kunci, atau <code>allowed_ips</code> salah.</li><li><code>php artisan hub:status</code> → tabel konfigurasi + probe live ke Hub.</li><li>Situs staging muncul di panel Hub staging, dan <code>GET /v1/version</code> menjawab versinya.</li><li><code>push</code> ke <code>main</code> → <strong>hanya staging yang berubah</strong>, produksi tidak tersentuh.</li></ol>
+<h3 id="doc-04--urutan-dan-jebakannya">Urutan, dan jebakannya<a class="anchor" href="#doc-04--urutan-dan-jebakannya" aria-label="Tautan ke bagian ini">#</a></h3>
+<pre><code>1. Hub staging hidup + site staging terdaftar + licence &quot;serving&quot;
+2. Situs staging hidup, HUB_BASE_URL ke Hub staging, hub:ping lulus
+3. Isi secret environment `staging`, aktifkan deploy-staging.yml
+4. Uji: push ke main -&gt; hanya staging yang berubah
+5. BARU pindahkan produksi ke model tag (rilis = tag)</code></pre>
+<p><strong>Jebakan:</strong> langkah 5 harus terakhir. Begitu <code>deploy-prod.yml</code> bergantung pada tag, <code>push</code> ke <code>main</code> tidak lagi mendeploy produksi — tanpa staging, tidak ada tempat menguji sebelum memberi tag.</p>
+<p><strong>Worker dan cron wajib terpisah.</strong> Bila staging menumpang VPS yang sama, queue worker dan cron staging harus punya direktori sendiri. Worker yang salah membaca tabel <code>jobs</code> akan memproses pekerjaan lingkungan lain, dan kegagalannya senyap.</p>
+<hr>
+<h2 id="doc-04--migrasi-ke-monorepo-yang-harus-disiapkan-di-server">Migrasi ke monorepo — yang harus disiapkan di server<a class="anchor" href="#doc-04--migrasi-ke-monorepo-yang-harus-disiapkan-di-server" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Ini <strong>sekali saja</strong>, dan harus dilakukan sebelum deploy pertama dari repo ini.</p>
+<ol><li><strong>Siapkan <code>&lt;base&gt;/api</code> sebagai direktori biasa</strong>, bukan klon. Deploy meng-<code>rsync</code> source ke sana dan membuatnya sendiri kalau belum ada; satu-satunya isi yang wajib dipertahankan adalah <code>storage/</code> (lihat langkah 5).</li><li><strong>Arahkan ulang root nginx untuk API</strong> dari <code>…/provider/api/public</code> ke <strong><code>&lt;base&gt;/api/public</code></strong>.</li><li><strong>Perbarui path supervisor.</strong> <code>supervisor/api-prod-worker.conf</code> menjalankan <code>php &lt;dir&gt;/artisan queue:work</code>; <code>&lt;dir&gt;</code> harus menunjuk lokasi baru, <code>&lt;base&gt;/api</code>.</li><li><strong>Perbarui entri cron</strong> <code>schedule:run</code> ke path baru.</li><li><strong>Pindahkan berkas yang tidak ikut terkirim</strong>: isi <code>storage/app/</code> (banner, logo kategori, bukti transfer, artefak SIT). <code>.env</code> <strong>tidak perlu</strong> dipindahkan — deploy menulisnya ulang dari secret <code>ENV_FILE</code>. Pastikan juga <strong><code>composer</code> terpasang</strong> di server, karena dependensi API dipasang di sana.</li><li><strong>Satukan keempat app di bawah satu induk</strong>, satu subdirektori per app, lalu arahkan ulang <code>root</code> tiap vhost ke sana:</li></ol>
+<div class="table-wrap"><table><thead><tr><th>Direktori</th><th>Isi</th><th><code>root</code> nginx</th></tr></thead><tbody><tr><td><code>&lt;base&gt;/admin</code></td><td>isi <code>dist/</code></td><td><code>&lt;base&gt;/admin</code> — <code>admin.&lt;domain&gt;</code></td></tr><tr><td><code>&lt;base&gt;/payment</code></td><td>isi <code>dist/</code></td><td><code>&lt;base&gt;/payment</code> — <code>pay.&lt;domain&gt;</code></td></tr><tr><td><code>&lt;base&gt;/storefront</code></td><td>isi <code>dist/</code></td><td><code>&lt;base&gt;/storefront</code> — <code>&lt;domain&gt;</code>, domain utama</td></tr><tr><td><code>&lt;base&gt;/api</code></td><td><strong>source dari CI</strong> + <code>vendor</code> dari composer — akar Laravel langsung</td><td><strong><code>&lt;base&gt;/api/public</code></strong> — <code>api.&lt;domain&gt;</code></td></tr></tbody></table></div>
+<p><code>api</code> satu-satunya yang isinya source, bukan hasil build frontend: CI mengirim source-nya, dan server memasang <code>vendor</code> lewat <code>composer install</code>. Karena source itu sudah berbentuk akar Laravel, <code>root</code> nginx-nya menunjuk ke <code>public</code> <strong>di dalam</strong> direktori itu — tanpa tingkat <code>apps/api</code> lagi.</p>
+<p>Buat <code>&lt;base&gt;</code> dan ketiga direktori frontend lebih dulu (<code>mkdir -p</code>) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. Setelah <code>root</code> diedit: <code>nginx -t &amp;&amp; systemctl reload nginx</code>.</p>
+<p><strong>Server yang sudah punya klon monorepo di <code>&lt;base&gt;/api</code>:</strong> unggahan tinggal di <code>apps/api/storage</code>, jadi selamatkan dulu. <code>.env</code> dan <code>vendor</code> tidak perlu — <code>.env</code> ditulis ulang dari secret, <code>vendor</code> dipasang ulang <code>composer install</code>:</p>
+<pre><code class="language-bash">cd /home/uxioserver1/website-topup-monorepo-template/staging
+rsync -a api/apps/api/storage/ ./_storage-keep/
+rm -rf api &amp;&amp; mkdir -p api
+rsync -a ./_storage-keep/ api/storage/ &amp;&amp; rm -rf ./_storage-keep</code></pre>
+<p>Klon riwayat tidak perlu dibuat manual — deploy pertama membuat <code>&lt;base&gt;/.api-repo</code> sendiri. Dan deploy akan <strong>menolak berjalan</strong> selama <code>&lt;base&gt;/api/apps/api</code> masih ada, supaya pohon lama beserta unggahannya tidak terhapus oleh <code>--delete</code> sebelum migrasi dikerjakan.</p>
+<ol><li><strong>Tambahkan satu secret baru</strong> di GitHub: <code>DEPLOY_BASE_PATH</code>, berisi <code>&lt;base&gt;</code> di atas tanpa nama app. Workflow yang menyusun <code>&lt;base&gt;/&lt;app&gt;</code>, jadi nama direktori <strong>wajib</strong> sama persis dengan nama folder di <code>apps/</code> — <code>admin</code>, <code>storefront</code>, <code>payment</code>, <code>api</code>.</li><li><strong>Pindahkan <code>VITE_GOOGLE_CLIENT_ID</code> ke secret</strong> — sebelumnya di-hardcode di YAML storefront.</li><li><strong>Pasang deploy key di server.</strong> Server meng-clone lewat SSH, jadi user SSH-nya butuh kunci yang terdaftar di repo:</li></ol>
+<pre><code>ssh-keygen -t ed25519 -C &quot;deploy@&lt;domain&gt;&quot; -f ~/.ssh/id_ed25519 -N &#x27;&#x27;
+cat ~/.ssh/id_ed25519.pub</code></pre>
+<p>Tempel isinya ke <strong>Settings → Deploy keys → Add deploy key</strong> di repo (read-only cukup — deploy tidak pernah push). Uji dengan <code>ssh -T git@github.com</code>; jawaban "successfully authenticated" berarti beres.</p>
+<p>Host key GitHub tidak perlu disiapkan manual — deploy menuliskannya ke <code>known_hosts</code> sendiri, dan juga memasang <code>~/.ssh/config</code> yang melewatkan <code>github.com</code> ke <code>ssh.github.com:443</code>. Port 22 keluar diblokir di server ini; tanpa jalur 443 itu <code>git pull</code> menggantung sampai <em>Connection timed out</em>. Uji dengan <code>ssh -T git@github.com</code> — kalau menjawab "successfully authenticated", keduanya beres sekaligus.</p>
+<ol><li><strong>Beri user SSH sudo tanpa kata sandi.</strong> Deploy memakai <code>sudo</code> untuk <code>chown</code>, reload php-fpm, dan seluruh pengelolaan supervisor. Sesi non-interaktif tidak bisa mengetik kata sandi, jadi tanpa ini deploy berhenti di preflight dengan <em>"User … butuh sudo tanpa kata sandi"</em> — sebelum <code>.env</code> ditulis dan migrasi dijalankan, jadi tidak ada deploy setengah jadi yang perlu dibereskan.</li></ol>
+<p>Periksa: <code>sudo -n true &amp;&amp; echo OK</code>. Kalau belum, buat berkas drop-in — <strong>selalu lewat <code>visudo</code></strong>, karena sintaks yang salah di sudoers bisa mengunci Anda dari sudo sepenuhnya:</p>
+<pre><code class="language-bash">sudo visudo -f /etc/sudoers.d/deploy</code></pre>
+<p>Isinya satu baris (ganti <code>&lt;SSH_USERNAME&gt;</code> dengan isi <code>SSH_USERNAME</code> Anda — kalau nama user-nya salah, gejalanya identik dengan tidak punya sudo sama sekali):</p>
+<pre><code>&lt;SSH_USERNAME&gt; ALL=(root) NOPASSWD: ALL</code></pre>
+<p>Lalu <code>sudo chmod 0440 /etc/sudoers.d/deploy</code>, dan periksa ulang dengan <code>sudo -n true &amp;&amp; echo OK</code>.</p>
+<p><strong>Kenapa <code>ALL</code>, bukan daftar perintah terbatas?</strong> Karena untuk akun deploy murni daftar terbatas tidak menambah keamanan yang berarti — alasannya di <a href="#catatan-keamanan">§Catatan keamanan</a>. Kalau user itu memang dipakai untuk hal lain juga sehingga harus dibatasi, daftarnya seperti ini:</p>
+<pre><code>&lt;SSH_USERNAME&gt; ALL=(root) NOPASSWD: /usr/bin/true, /usr/bin/chown, /usr/bin/chmod, \
+  /usr/bin/tee /etc/supervisor/conf.d/api-prod-worker.conf, \
+  /usr/bin/mkdir -p /etc/supervisor/conf.d, \
+  /usr/bin/supervisorctl, /usr/bin/systemctl, \
+  /usr/bin/apt-get</code></pre>
+<p>Dua hal yang membuat daftar semacam ini gagal, dan keduanya gagal dengan pesan yang menyesatkan:</p>
+<ul><li><strong><code>true</code> wajib ikut terdaftar.</strong> Preflight di <code>deploy-prod.yml</code> menjalankan <code>sudo -n true</code>, dan sudoers menolak perintah yang tidak ada di daftar. Tanpa entri itu deploy tetap berhenti di preflight walaupun <code>chown</code>, <code>supervisorctl</code>, dan sisanya sudah diizinkan.</li><li><strong>Path harus persis seperti yang dijalankan.</strong> Pastikan dengan <code>command -v true chown chmod tee mkdir supervisorctl systemctl apt-get</code>. Di Debian/Ubuntu modern <code>/bin</code> hanyalah symlink ke <code>/usr/bin</code>, dan sudoers <strong>tidak</strong> mengikuti symlink — <code>/bin/chown</code> di sudoers tidak cocok dengan <code>/usr/bin/chown</code> yang benar-benar dieksekusi.</li></ul>
+<ol><li><strong>Pasang kunci SSH untuk GitHub Actions.</strong> Deploy masuk ke server dengan kunci, bukan kata sandi. Ini kunci <strong>kedua</strong>, dan arahnya berlawanan dengan langkah 9: yang di langkah 9 dipakai <em>server</em> untuk menarik dari GitHub, yang ini dipakai <em>GitHub Actions</em> untuk masuk ke server. Jangan pakai ulang kunci yang sama untuk keduanya.</li></ol>
+<p>Buat pasangannya <strong>di mesin Anda</strong>, bukan di server — privat-nya tidak boleh pernah tinggal di server:</p>
+<pre><code class="language-bash">ssh-keygen -t ed25519 -C &quot;github-actions@&lt;domain&gt;&quot; -f ~/.ssh/github_actions_deploy -N &#x27;&#x27;</code></pre>
+<p>Pasang yang publik ke user deploy di server. Ini langkah terakhir yang masih memerlukan kata sandi user tersebut:</p>
+<pre><code class="language-bash">ssh-copy-id -i ~/.ssh/github_actions_deploy.pub -p &lt;SSH_PORT&gt; &lt;SSH_USERNAME&gt;@&lt;SSH_HOST&gt;</code></pre>
+<p>Uji dari mesin Anda — harus masuk tanpa ditanya apa pun:</p>
+<pre><code class="language-bash">ssh -i ~/.ssh/github_actions_deploy -o IdentitiesOnly=yes -p &lt;SSH_PORT&gt; &lt;SSH_USERNAME&gt;@&lt;SSH_HOST&gt; &#x27;echo OK&#x27;</code></pre>
+<p>Lalu tempel <strong>seluruh isi berkas privat</strong> ke secret <code>SSH_PRIVATE_KEY</code> — <code>cat ~/.ssh/github_actions_deploy</code>, termasuk baris <code>-----BEGIN…</code>, <code>-----END…</code>, dan baris kosong di akhirnya. Kunci yang terpotong adalah penyebab paling sering dari <code>Permission denied (publickey)</code> di langkah ini.</p>
+<ol><li><strong>Matikan autentikasi kata sandi</strong> — setelah satu deploy dengan kunci benar-benar berhasil, dan setelah memastikan Anda masih punya jalan masuk lain (sesi SSH yang sedang terbuka, atau konsol VPS dari panel penyedia). Di <code>/etc/ssh/sshd_config</code>:</li></ol>
+<pre><code>PasswordAuthentication no</code></pre>
+<p>Lalu <code>sudo sshd -t &amp;&amp; sudo systemctl reload ssh</code>. Urutannya penting: <code>sshd -t</code> hanya memeriksa sintaks, bukan apakah kunci Anda benar-benar terpasang, jadi mematikan kata sandi sebelum kunci terbukti jalan bisa mengunci Anda dari server sendiri. Sekalian batasi <code>AllowUsers &lt;SSH_USERNAME&gt;</code> dan pasang <code>fail2ban</code>; lihat <a href="#catatan-keamanan">§Catatan keamanan</a>.</p>
+<h2 id="doc-04--secret-github">Secret GitHub<a class="anchor" href="#doc-04--secret-github" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Sebelas secret, <strong>sepuluh di antaranya wajib</strong>. Dipasang di <strong>Settings → Secrets and variables → Actions → New repository secret</strong>.</p>
+<p>Daftar ini lengkap: tidak ada nilai lain yang dibaca <code>deploy-prod.yml</code> maupun <code>ci.yml</code>. Untuk membuktikannya kembali setelah repo berubah:</p>
+<pre><code class="language-bash">grep -oh &#x27;secrets\.[A-Z_0-9]*&#x27; .github/workflows/*.yml | sort -u</code></pre>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Secret</th><th>Wajib</th><th>Dipakai</th><th>Isi / contoh</th></tr></thead><tbody><tr><td>1</td><td><code>SSH_HOST</code></td><td>✅</td><td>API + 3 frontend</td><td>IP atau hostname server. <code>203.0.113.10</code></td></tr><tr><td>2</td><td><code>SSH_PORT</code></td><td>✅</td><td>API + 3 frontend</td><td>Port sshd. <code>22</code></td></tr><tr><td>3</td><td><code>SSH_USERNAME</code></td><td>✅</td><td>API + 3 frontend</td><td>User SSH, pemilik direktori deploy. <code>deployer</code></td></tr><tr><td>4</td><td><code>SSH_PRIVATE_KEY</code></td><td>✅</td><td>API + 3 frontend</td><td><strong>Seluruh isi</strong> kunci privat OpenSSH dari langkah 11, <code>-----BEGIN…</code> sampai <code>-----END…</code>. Pasangan publiknya ada di <code>authorized_keys</code> server. Bukan deploy key langkah 9 — lihat catatan di bawah</td></tr><tr><td>5</td><td><code>DEPLOY_BASE_PATH</code></td><td>✅</td><td>API + 3 frontend</td><td>Induk keempat app, <strong>tanpa</strong> nama app. <code>/home/&lt;SSH_USERNAME&gt;/&lt;nama-situs&gt;/dist</code></td></tr><tr><td>6</td><td><code>ENV_FILE</code></td><td>✅</td><td>API</td><td><strong>Seluruh isi <code>.env</code> produksi</strong>, bukan satu nilai. Ditulis ulang ke server tiap deploy — server bukan sumber kebenarannya, secret ini yang jadi sumber</td></tr><tr><td>7</td><td><code>VITE_API_BASE_URL</code></td><td>✅</td><td>3 frontend</td><td>Base URL API, dipakai ketiganya. <code>https://api.contoh.id</code></td></tr><tr><td>8</td><td><code>VITE_PUSHER_APP_KEY</code></td><td>✅</td><td>3 frontend</td><td>Key Pusher</td></tr><tr><td>9</td><td><code>VITE_PUSHER_APP_CLUSTER</code></td><td>✅</td><td>3 frontend</td><td>Cluster Pusher. <code>ap1</code></td></tr><tr><td>10</td><td><code>VITE_GOOGLE_CLIENT_ID</code></td><td>✅</td><td>3 frontend</td><td>OAuth client ID Google. Dulu di-hardcode di YAML storefront</td></tr><tr><td>11</td><td><code>DISCORD_WEBHOOK_LOG_URL</code></td><td>—</td><td>API + 3 frontend</td><td>Opsional. Kosong = notifikasi dilewati, deploy tetap jalan</td></tr></tbody></table></div>
+<p>Beberapa hal yang tidak terlihat dari tabel dan pernah memakan waktu:</p>
+<ul><li><strong>Nomor 1–4 dibaca dua jalur berbeda.</strong> API memakainya lewat <code>appleboy/ssh-action</code>; ketiga frontend lewat <code>rsync</code> manual dengan kunci yang ditulis ke <code>~/.ssh/deploy_key</code> di runner. Satu nilai salah menggagalkan keempatnya.</li><li><strong>Nomor 7–10 adalah variabel <em>build-time</em>.</strong> Vite memanggangnya ke dalam bundle, jadi mengubahnya di server tidak berpengaruh apa pun — harus diubah di sini lalu di-deploy ulang.</li><li><strong>Nomor 6 ditimpa tiap deploy.</strong> Mengedit <code>.env</code> langsung di server akan hilang pada deploy berikutnya tanpa peringatan.</li><li><strong>Tidak ada secret untuk akses Git.</strong> Server meng-clone dengan deploy key miliknya sendiri (langkah 9 di atas), bukan dengan kredensial dari sini.</li></ul>
+<h3 id="doc-04--catatan-tentang-autentikasi-ssh">Catatan tentang autentikasi SSH<a class="anchor" href="#doc-04--catatan-tentang-autentikasi-ssh" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Deploy masuk ke server dengan kunci privat (<code>SSH_PRIVATE_KEY</code>), bukan kata sandi. Tiga hal yang perlu diketahui:</p>
+<ul><li><strong>Ada dua kunci berbeda dan arahnya berlawanan.</strong> Langkah 9 memasang deploy key milik <em>server</em>, supaya server bisa <code>git clone</code> dari GitHub. Langkah 11 memasang kunci milik <em>GitHub Actions</em>, supaya Actions bisa masuk ke server. Menukar keduanya adalah kekeliruan yang paling mudah terjadi di sini, dan gejalanya sama persis: <code>Permission denied (publickey)</code>.</li><li><strong><code>rsync</code> tetap dijalankan manual</strong>, walaupun <code>burnett01/rsync-deployments</code> sekarang sudah bisa dipakai. Alasannya bukan lagi soal autentikasi, melainkan supaya penyiapan <code>known_hosts</code> tetap terlihat di <code>deploy-prod.yml</code> — action itu mengurusnya sendiri, di luar jangkauan berkas ini. Kunci ditulis ke <code>~/.ssh/deploy_key</code> lewat variabel (argumen baris perintah terbaca di daftar proses runner) dan dihapus di langkah <code>Bersihkan kunci SSH</code> yang berjalan <code>if: always()</code>.</li><li><strong>Host key server direkam lebih dulu</strong> dengan <code>ssh-keyscan</code>, supaya <code>rsync</code> tidak perlu dijalankan dengan <code>StrictHostKeyChecking=no</code>. Ketahui batasnya: <code>ssh-keyscan</code> mempercayai apa pun yang menjawab saat itu juga, jadi ini merapikan bentuk perintahnya — bukan perlindungan terhadap server palsu — dan tiap run mempercayai ulang dari nol. Bandingkan dengan job API, yang menuliskan host key GitHub secara tetap justru karena alasan ini. Untuk benar-benar menutupnya, simpan host key server sebagai secret (mis. <code>SSH_HOST_KEY</code>) dan tulis langsung ke <code>known_hosts</code>.</li></ul>
+<p><code>rsync</code> dijalankan dengan <code>BatchMode=yes</code>, jadi kunci yang salah gagal seketika alih-alih menggantung menunggu prompt sampai job timeout, dan <code>IdentitiesOnly=yes</code>, supaya hanya <code>deploy_key</code> yang ditawarkan.</p>
+<p>Sampai langkah 1–4 selesai, <strong>jangan</strong> jalankan deploy dari repo ini.</p>
+<hr>
+<h2 id="doc-04--catatan-keamanan">Catatan keamanan<a class="anchor" href="#doc-04--catatan-keamanan" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Empat hal yang perlu diketahui siapa pun yang menyentuh deploy ini, diurutkan dari yang paling berdampak.</p>
+<h3 id="doc-04--sudo-tanpa-kata-sandi-bukan-titik-lemahnya">Sudo tanpa kata sandi bukan titik lemahnya<a class="anchor" href="#doc-04--sudo-tanpa-kata-sandi-bukan-titik-lemahnya" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Daftar <code>NOPASSWD</code> yang dibatasi terasa lebih aman daripada <code>ALL</code>, tapi di kasus ini tidak: perintah yang memang dibutuhkan script sudah setara akses root satu sama lain.</p>
+<div class="table-wrap"><table><thead><tr><th>Diizinkan</th><th>Jalan pintas ke root</th></tr></thead><tbody><tr><td><code>systemctl</code></td><td>membuat lalu menyalakan unit apa pun sebagai root</td></tr><tr><td><code>apt-get</code></td><td><code>-o APT::Update::Pre-Invoke::=…</code>, atau paket dengan skrip <code>postinst</code></td></tr><tr><td><code>chown</code> / <code>chmod</code> dengan argumen bebas</td><td>mengambil alih <code>/etc/sudoers.d</code>, membuka <code>/etc/shadow</code></td></tr><tr><td><code>tee</code> ke conf supervisor</td><td>supervisord berjalan sebagai root; <code>user=root</code> di conf menjalankan apa pun</td></tr></tbody></table></div>
+<p>Jadi memperketat daftarnya menaikkan effort penyerang beberapa detik, sementara ia rutin mematahkan deploy setiap kali script berubah. Batas keamanan yang sesungguhnya bukan isi sudoers, melainkan <strong>siapa yang bisa memicu <code>sudo</code> itu</strong> — dua bagian berikutnya.</p>
+<h3 id="doc-04--autentikasi-ssh-ci-sudah-pakai-kunci-sisanya-di-sisi-server">Autentikasi SSH: CI sudah pakai kunci, sisanya di sisi server<a class="anchor" href="#doc-04--autentikasi-ssh-ci-sudah-pakai-kunci-sisanya-di-sisi-server" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Deploy dulu memakai kata sandi, yang berarti satu kata sandi tertebak sama dengan root produksi — dan sshd yang terbuka ke internet menerima percobaan brute force tanpa henti. Sejak deploy memakai <code>SSH_PRIVATE_KEY</code>, jalur itu tertutup dari sisi CI. Yang masih harus dikerjakan di server:</p>
+<ul><li><strong><code>PasswordAuthentication no</code></strong> (langkah 12). Selama masih <code>yes</code>, memindahkan CI ke kunci belum menutup apa pun — pintunya tetap terbuka bagi penebak, dan user itu sekarang punya root tanpa kata sandi.</li><li><strong><code>AllowUsers &lt;user-deploy&gt;</code></strong> dan <strong><code>fail2ban</code></strong>, supaya sisa permukaan yang memang harus terbuka tidak dibiarkan bebas.</li><li><strong>Kunci deploy belum dibatasi ke satu perintah.</strong> <code>command=</code> di <code>authorized_keys</code> bisa menguncinya, tapi isi script deploy ikut berubah tiap kali workflow berubah, jadi belum dipasang. <code>from=</code> tidak bisa dipakai: alamat runner GitHub berubah-ubah.</li></ul>
+<h3 id="doc-04--akses-push-ke-main-sama-dengan-root-di-server">Akses push ke <code>main</code> sama dengan root di server<a class="anchor" href="#doc-04--akses-push-ke-main-sama-dengan-root-di-server" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><code>deploy-prod.yml</code> ikut dalam path filter-nya sendiri, dan blok <code>script:</code>-nya berjalan dengan sudo tanpa kata sandi. Siapa pun yang bisa push atau merge ke <code>main</code> karena itu bisa menjalankan perintah apa pun sebagai root di server produksi, sekaligus membaca seluruh secret. Ini berlaku pada desain deploy mana pun yang memberi CI akses ke server; yang penting kontrolnya ada:</p>
+<ul><li><strong>Branch protection</strong> di <code>main</code>: wajib lewat PR, minimal satu review, tanpa force-push.</li><li><strong>GitHub Environment</strong> <code>production</code> dengan <em>required reviewers</em>, dipasang sebagai <code>environment:</code> di job <code>api-deploy</code> dan <code>frontend</code>, dengan secret dipindahkan ke environment itu — sehingga tidak ada workflow lain di repo ini yang bisa membacanya.</li></ul>
+<h3 id="doc-04--dua-hal-yang-masih-terbuka-di-deploy-prod-yml">Dua hal yang masih terbuka di <code>deploy-prod.yml</code><a class="anchor" href="#doc-04--dua-hal-yang-masih-terbuka-di-deploy-prod-yml" aria-label="Tautan ke bagian ini">#</a></h3>
+<ul><li><strong><code>.env</code> ditulis dengan permission default.</strong> Langkah 3 (<code>echo "$ENV_FILE_CONTENT" &gt; .env</code>) menghasilkan mode 644 pada umask biasa, sehingga kredensial database, <code>APP_KEY</code>, dan kunci gateway pembayaran terbaca oleh setiap user di server — langkah 8 hanya meng-<code>chmod</code> <code>storage</code> dan <code>bootstrap/cache</code>. Perbaikannya satu baris tepat setelah penulisan: <code>chmod 640 .env &amp;&amp; sudo chown "$(id -un):www-data" .env</code>.</li><li><strong><code>ssh-keyscan</code> di job frontend tidak menutup MITM.</strong> Lihat <a href="#catatan-tentang-autentikasi-ssh">§Catatan tentang autentikasi SSH</a>.</li></ul>
+<hr>
+<h2 id="doc-04--urutan-deploy-api-dan-kenapa-tiap-langkah-ada">Urutan deploy API, dan kenapa tiap langkah ada<a class="anchor" href="#doc-04--urutan-deploy-api-dan-kenapa-tiap-langkah-ada" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code>rsync source dari CI            ← SEBELUM ini, langkah rsync menolak jalan bila server belum dimigrasi
+tulis .env dari secret
+stempel APP_VERSION/APP_COMMIT/APP_UPSTREAM ke .env
+composer install --no-dev       ← vendor dipasang DI SERVER, tidak pernah dikirim
+optimize:clear                 ← buang config cache lama, supaya gerbang membaca .env baru
+php artisan hub:ping           ← GAGAL bila Hub tersambung tapi tak terjangkau (standalone: lulus)
+php artisan migrate --force
+php artisan pricing:backfill-plan-prices    ← WAJIB, lihat di bawah
+php artisan pricing:verify                   ← menggagalkan deploy bila menyimpang
+php artisan urls:verify                      ← menggagalkan deploy bila tautan tak bisa dibuka pelanggan
+optimize:clear → config:cache → route:cache
+storage:link
+chown/chmod
+tulis batas unggah PHP      ← upload_max_filesize 8M, post_max_size 10M
+reload php-fpm              ← tanpa ini OPcache menyajikan bytecode lama
+tulis batas body nginx      ← client_max_body_size 8m di conf.d (konteks `http` saja), lalu `nginx -t`
+pasang cron schedule:run    ← deploy GAGAL bila hilang
+pasang supervisor + queue:restart
+periksa worker RUNNING      ← deploy GAGAL bila tidak</code></pre>
+<p><strong>Backfill harga wajib satu langkah dengan migrasi.</strong> Tanpanya <code>product_plan_prices</code> kosong, <code>PlanPrice::for()</code> jatuh ke <code>products.price_member</code>, dan <strong>setiap member dijual di harga tingkat dasar</strong>. Tidak ada error di mana pun — hanya kebocoran pendapatan. Langkah inilah yang <strong>tidak ada</strong> di pipeline lama dan kini ditambahkan.</p>
+<p><strong>Empat pemeriksaan yang sengaja menggagalkan deploy.</strong> Beberapa di antaranya dulu berakhir <code>|| true</code>, dan itulah cara sebuah situs bisa berjalan berhari-hari dengan deploy hijau sementara pesanan berbayar tidak pernah diproses:</p>
+<ul><li><code>hub:ping</code> gagal → situs tersambung ke Hub tapi Hub tidak terjangkau, jadi seluruh loop pelaporan mati (deploy standalone lulus sendiri).</li><li>Cron <code>schedule:run</code> hilang → 13 perintah terjadwal berhenti diam-diam.</li><li>Queue worker tidak <code>RUNNING</code> → pembayaran berhasil, job parkir di tabel <code>jobs</code>, tidak ada yang error.</li><li><code>pricing:verify</code> menyimpang → harga per paket tidak sinkron.</li></ul>
+<p><strong>Queue worker bukan opsional, dan kegagalannya senyap.</strong> Delapan kelas job bergantung padanya, dan salah satunya menempatkan pesanan pelanggan yang sudah dibayar ke supplier. Supervisor menjalankan <strong>dua</strong> proses: satu tidak cukup, karena order supplier adalah panggilan HTTP keluar yang bisa menahan worker beberapa detik.</p>
+<p><strong>Batas unggah ikut diatur deploy, karena aplikasi sudah menjanjikannya.</strong> Halaman Settings menawarkan logo GIF sampai 5 MB (<code>SettingController::maxKilobytes()</code>), dan GIF animasi memang sengaja tidak dikompresi — baik di browser maupun di <code>ImageOptimizer</code>, karena GD tidak bisa menulis animated WebP. Tapi tanpa dua langkah di atas, yang berlaku adalah default server: nginx <code>client_max_body_size 1m</code> dan PHP <code>upload_max_filesize 2m</code>. Keduanya menolak berkas sebelum Laravel sempat memeriksanya, dan yang tertolak justru berkas yang paling besar — GIF animasi. Gejalanya menyesatkan: unggahan gagal, pesannya generik, dan tidak ada satu pun log aplikasi karena permintaannya tidak pernah sampai.</p>
+<p>Keduanya ditulis sebagai drop-in (<code>/etc/php/&lt;versi&gt;/fpm/conf.d/99-uploads.ini</code> dan <code>/etc/nginx/conf.d/uploads.conf</code>), bukan suntingan berkas utama, supaya pembaruan paket tidak menghapusnya.</p>
+<p><strong><code>conf.d/uploads.conf</code> hanya boleh berisi direktif konteks <code>http</code>.</strong> <code>conf.d/*.conf</code> di-include dari dalam blok <code>http</code>, dan <code>location</code> tidak sah di sana. Sebuah blok <code>location</code> yang pernah ditulis ke berkas ini membuat <code>nginx -t</code> gagal dengan <code>"location" directive is not allowed here</code> dan menggagalkan deploy. Karena itu header per-lokasi — CSP untuk berkas <code>.svg</code> yang diunggah, yang disajikan dari origin API itu sendiri — <strong>tidak</strong> ikut masuk drop-in. Pasang manual di blok <code>server</code> vhost API:</p>
+<pre><code class="language-nginx"># di dalam server { } vhost api.topupgame.id, sebelum location ~ \.php$
+location ~* \.svg$ {
+    add_header Content-Security-Policy &quot;default-src &#x27;none&#x27;; style-src &#x27;unsafe-inline&#x27;; sandbox&quot; always;
+    add_header X-Content-Type-Options &quot;nosniff&quot; always;
+}</code></pre>
+<p>Sebuah SVG bisa membawa <code>&lt;script&gt;</code>, dan berkas unggahan disajikan dari origin yang sama dengan tempat kredensial panel dipakai. Policy di atas tetap membuat SVG tampil sebagai gambar, tapi melarangnya menjalankan apa pun.</p>
+<p>Kalau <code>nginx -t</code> gagal sesudah drop-in ditulis, deploy <strong>membuang berkas itu</strong> sebelum keluar. Ini disengaja: nginx yang konfigurasinya tidak bisa diuji juga tidak bisa di-reload maupun di-restart, jadi berkas buruk yang dibiarkan akan mematikan seluruh situs pada reboot atau perpanjangan sertifikat berikutnya — bukan sekadar menggagalkan satu deploy.</p>
+<p>Periksa sesudah deploy:</p>
+<pre><code class="language-bash">php -i | grep -E &#x27;upload_max_filesize|post_max_size&#x27;
+sudo nginx -T | grep client_max_body_size
+sudo nginx -T | grep -c &quot;default-src &#x27;none&#x27;&quot;   # 0 = CSP SVG belum dipasang manual</code></pre>
+<hr>
+<h2 id="doc-04--konfigurasi-env">Konfigurasi <code>.env</code><a class="anchor" href="#doc-04--konfigurasi-env" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Kunci di luar bawaan Laravel, dikelompokkan menurut fungsinya:</p>
+<p><strong>Gateway pembayaran (Monetapay)</strong> — <code>MONETAPAY_MCH_ID</code>, <code>MONETAPAY_COLLECTION_APP_ID</code>, <code>MONETAPAY_DISBURSEMENT_APP_ID</code>, <code>MONETAPAY_PARTNER_KEY</code>, <code>MONETAPAY_TOKEN</code>, <code>MONETAPAY_AES_KEY</code>, <code>MONETAPAY_AES_IV</code>, <code>MONETAPAY_IS_PRODUCTION</code>, <code>MONETAPAY_SUCCESS_REDIRECT_URL</code>, <code>MONETAPAY_FAILED_REDIRECT_URL</code>, plus lima varian <code>MONETAPAY_DISBURSEMENT_*</code>.</p>
+<blockquote>Tiga identitas yang <strong>jangan dicampur</strong>: <code>mch_id</code> adalah identitas merchant, <code>collection_app_id</code> untuk jalur pemasukan, <code>disbursement_app_id</code> untuk jalur pembayaran keluar. <code>collection_app_id</code> <strong>tidak punya nilai cadangan</strong> — kalau tidak diisi, panggilan pemasukan ditandatangani dengan <code>app_id</code> kosong.</blockquote>
+<p><strong>Supplier (Uxiotopup)</strong> — <code>UXIOTOPUP_API_KEY</code>, <code>UXIOTOPUP_BASE_URL</code>, <code>UXIOTOPUP_CALLBACK_URL</code>, <code>UXIOTOPUP_PRICE_TIER</code>, <code>UXIOTOPUP_CALLBACK_IP</code>.</p>
+<blockquote>⚠️ <strong>Nama kunci ini pernah berputar arah.</strong> Providernya sempat dinamai "Uxiolabs" sehingga kuncinya ikut menjadi <code>UXIOLABS_*</code>, lalu dikembalikan ke "Uxiotopup". Yang berlaku <strong>sekarang</strong> adalah <code>UXIOTOPUP_*</code> — itu yang dibaca <code>config/services.php</code> dan yang ada di <code>.env.example</code>. Nama <code>UXIOLABS_*</code> <strong>tidak</strong> dibaca: <code>.env</code> produksi yang masih memakainya akan terbaca kosong dan <strong>setiap pesanan gagal di supplier</strong>. Yang benar-benar berlaku di server bisa diperiksa dari halaman Integration di panel admin, karena kredensial dari basis data menimpa <code>.env</code>. <strong>Pastikan <code>.env</code> memakai <code>UXIOTOPUP_*</code> sebelum deploy.</strong></blockquote>
+<p><strong>Penarikan dana</strong> — <code>WITHDRAWAL_FEE_FLAT</code> (1500), <code>WITHDRAWAL_FEE_PERCENT</code> (11), <code>WITHDRAWAL_MIN_AMOUNT</code> (10000), <code>WITHDRAWAL_HOLD_BUFFER_DAYS</code> (1).</p>
+<p><strong>Uxio Hub</strong> — <code>HUB_ENABLED</code> (default <code>false</code> = mandiri, tidak ada yang dijadwalkan), <code>HUB_SITE_API_KEY</code>, <code>HUB_BASE_URL</code>, <code>HUB_ALLOWED_IPS</code>, <code>HUB_MANAGED_CATALOG</code>, <code>HUB_MANAGED_CHANNELS</code>, <code>HUB_MANAGED_LICENCE</code>, <code>HUB_MANAGED_PLAN</code>, <code>HUB_PUSH_ORDERS</code>, <code>HUB_SYNC_INTERVAL_MINUTES</code>, <code>HUB_WRITE_ENABLED</code>, <code>HUB_WRITE_API_KEY</code>, <code>HUB_CONTRACT_VERSION</code>.</p>
+<p><strong>Colokan integrasi</strong> — <code>SUPPLIER_DRIVER</code> (default <code>uxiolabs</code>) dan <code>PAYMENT_DRIVER</code> (default <code>monetapay</code>) memilih adapter mana yang dipakai situs ini; daftar adapter-nya di <code>config/services.php</code>. Lihat <a href="#doc-07">07 — Zona</a>.</p>
+<p><strong>Stempel rilis</strong> — <code>APP_VERSION</code>, <code>APP_COMMIT</code>, <code>APP_UPSTREAM</code>, ditulis deploy sendiri dari tag (lihat <a href="#rilis-tag-stempel-rollback">§Rilis</a>); jangan diisi manual di secret <code>ENV_FILE</code>, karena akan ditimpa.</p>
+<blockquote><code>HUB_PUSH_ORDERS</code> <strong>jangan diisi kosong</strong> — nilai kosong terbaca sebagai <code>false</code> dan mematikan dorongan pesanan secara diam-diam. Biarkan tidak ada sama sekali agar mengikuti <code>HUB_ENABLED</code>.</blockquote>
+<p><strong>Lain-lain</strong> — <code>PAYMENT_PAGE_URL</code>, <code>STOREFRONT_URL</code>, <code>STOREFRONT_BRAND</code>, <code>STOREFRONT_DEFAULT_COUNTRY_CODE</code> (62), <code>SERVICE_INVOICE_DUE_DAYS</code>, <code>GOOGLE_CLIENT_ID</code>, <code>DISCORD_WEBHOOK_LOG_URL</code>, <code>PIWAPI_*</code> (WhatsApp), <code>IMAGE_*</code>, <code>REFUND_HOLIDAYS</code>, <code>CORS_ALLOWED_ORIGINS</code>.</p>
+<p><strong>Frontend</strong> — hanya empat, semuanya berawalan <code>VITE_</code>: <code>VITE_API_BASE_URL</code>, <code>VITE_PUSHER_APP_KEY</code>, <code>VITE_PUSHER_APP_CLUSTER</code>, dan <code>VITE_GOOGLE_CLIENT_ID</code> (storefront saja).</p>
+<blockquote>Ketiga app memakai <strong>nama yang sama</strong> untuk <code>VITE_API_BASE_URL</code>. Karena itu tiap app menyimpan <code>.env</code>-nya sendiri dan Vite selalu dijalankan dengan root app-nya — satu <code>.env</code> di akar akan menyuapkan base URL yang sama ke ketiganya.</blockquote>
+<hr>
+<h2 id="doc-04--perintah-terjadwal">Perintah terjadwal<a class="anchor" href="#doc-04--perintah-terjadwal" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Cron memanggil <code>schedule:run</code> tiap menit; sisanya diatur di <code>apps/api/routes/console.php</code>. Setiap perintah memakai <code>withoutOverlapping()</code> dan mengabarkan kegagalannya ke Discord.</p>
+<div class="table-wrap"><table><thead><tr><th>Kadensi</th><th>Perintah</th></tr></thead><tbody><tr><td>tiap 5 menit</td><td><code>payments:sync-expired</code>, <code>service-payments:sync-expired</code>, <code>withdrawals:sync-processing</code>, <code>uxiolabs:sync-processing</code>, <code>queue:health</code>, <code>uxiolabs:check-prices</code></td></tr><tr><td>tiap 1 menit</td><td><code>hub:sync-catalog</code>, <code>hub:sync-channels</code>, <code>hub:sync-licence</code>, <code>hub:sync-plan</code> — <strong>hanya bila <code>HUB_ENABLED</code></strong> (<code>hub:sync-plan</code> juga butuh <code>HUB_MANAGED_PLAN</code>)</td></tr><tr><td>harian 00:10</td><td><code>memberships:renew</code></td></tr><tr><td>harian 00:15</td><td><code>memberships:expire</code></td></tr><tr><td>harian 00:20</td><td><code>services:expire</code></td></tr><tr><td>harian 01:00</td><td><code>monetapay:reconcile-fees</code></td></tr><tr><td>harian 08:00</td><td><code>subscriptions:notify-expiring</code></td></tr></tbody></table></div>
+<p><code>memberships:renew</code> sengaja berjalan <strong>sebelum</strong> <code>memberships:expire</code>, tapi keduanya <strong>tidak bergantung pada urutan itu</strong>: perpanjangan menulis langganan penerus, sehingga pemeriksaan <code>$stillCovered</code> di perintah kedua hanya menutup baris lama. Itu jauh lebih kokoh daripada mengandalkan jeda lima menit.</p>
+<p>Perintah manual (tidak terjadwal): <code>pricing:backfill-plan-prices</code>, <code>pricing:verify</code>, <code>two-factor:disable {email}</code>, <code>uxiolabs:sync-products</code>, <code>monetapay:sit</code>.</p>
+<hr>
+<h2 id="doc-04--runbook-tiga-masalah-yang-sudah-pernah-terjadi">Runbook — tiga masalah yang sudah pernah terjadi<a class="anchor" href="#doc-04--runbook-tiga-masalah-yang-sudah-pernah-terjadi" aria-label="Tautan ke bagian ini">#</a></h2>
+<h3 id="doc-04--1-migrasi-berhenti-errno-1553-di-pricingrules">1. Migrasi berhenti: <code>errno 1553</code> di <code>pricing_rules</code><a class="anchor" href="#doc-04--1-migrasi-berhenti-errno-1553-di-pricingrules" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><strong>Gejala:</strong> <code>Cannot drop index 'pricing_rules_category_id_role_unique': needed in a foreign key constraint</code>.</p>
+<p><strong>Sebab:</strong> InnoDB menolak menghapus indeks yang masih menopang sebuah foreign key. Sudah diperbaiki — indeks pengganti kini dibuat lebih dulu. Kalau deploy lama sempat berhenti di sini, migrasinya sekarang bisa dijalankan ulang dan akan melanjutkan sendiri dari kondisi setengah jadi.</p>
+<h3 id="doc-04--2-migrasi-berhenti-aturan-harga-bentrok">2. Migrasi berhenti: aturan harga bentrok<a class="anchor" href="#doc-04--2-migrasi-berhenti-aturan-harga-bentrok" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><strong>Gejala:</strong> <code>Cannot key pricing rules on membership plan: several roles translated onto the same plan within one category…</code></p>
+<p><strong>Sebab:</strong> migrasi hanya membuat paket <strong>Basic</strong>. Role <code>vip</code>, <code>reseller</code>, <code>agent</code> tidak punya paket sendiri, jadi semuanya jatuh ke Basic dan bentrok di indeks unik baru.</p>
+<p><strong>Periksa sebelum deploy:</strong></p>
+<pre><code class="language-sql">SELECT category_id, COUNT(*) AS aturan, GROUP_CONCAT(role) AS roles
+  FROM pricing_rules GROUP BY category_id HAVING COUNT(*) &gt; 1;
+SELECT id, name, role_id FROM membership_plans;</code></pre>
+<p>Kalau kueri pertama ada isinya dan kueri kedua hanya berisi Basic, migrasi <strong>pasti</strong> berhenti. Gabungkan atau hapus aturan yang berlebih, lalu ulangi. Berhentinya disengaja: menghapus aturan harga secara otomatis berarti mengubah harga tanpa sepengetahuan siapa pun.</p>
+<h3 id="doc-04--3-admin-terkunci-setelah-2fa-menyala">3. Admin terkunci setelah 2FA menyala<a class="anchor" href="#doc-04--3-admin-terkunci-setelah-2fa-menyala" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><strong>Gejala:</strong> admin yang sudah ada tidak bisa masuk panel.</p>
+<p><strong>Sebab:</strong> disengaja — 2FA wajib untuk role admin. Jalan keluarnya selalu terbuka karena <code>/2fa/setup</code> dan <code>/2fa/confirm</code> ada di luar grup admin.</p>
+<p><strong>Kalau benar-benar terkunci:</strong> <code>php artisan two-factor:disable {email}</code> di server.</p>
+<blockquote>Tidak ada kode pemulihan di rilis ini, dan itu keputusan sadar: tim adminnya kecil dan punya akses shell. Itu berhenti berlaku begitu 2FA diperluas ke <code>payment-admin</code> — klien tanpa akses shell — jadi kode pemulihan harus dikirim di rilis <strong>itu</strong>.</blockquote>
+<blockquote><code>two_factor_secret</code> memakai cast <code>encrypted</code>. <strong>Memutar <code>APP_KEY</code> akan mematikan setiap authenticator yang terdaftar.</strong></blockquote>
+<hr>
+<h2 id="doc-04--catatan-tentang-dependensi">Catatan tentang dependensi<a class="anchor" href="#doc-04--catatan-tentang-dependensi" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Tiap app menyimpan <code>package-lock.json</code> sendiri dan dipasang dengan <code>npm ci</code>, bukan lewat npm workspaces yang di-hoist.</p>
+<p>Alasannya diuji, bukan diasumsikan: memakai workspaces berarti membuang ketiga lockfile, dan <code>npm install</code> segar menaikkan <strong>35 dari 57 dependensi langsung</strong> — axios 1.13→1.20, react-hook-form 7.71→7.87, zod 4.3→4.5, TanStack Router 1.162→1.170. <code>eslint-plugin-react-hooks</code> 7.0.1→7.1.1 menyalakan aturan baru dan <strong>mematahkan lint di ketiga app</strong>. Itu upgrade dependensi yang menyamar sebagai migrasi.</p>
+<p>Kalau nanti ingin memakai workspaces demi <code>node_modules</code> bersama (600 MB alih-alih 1,6 GB), kerjakan sebagai perubahan tersendiri dengan keputusan upgrade yang ditinjau. Nama paket sudah dibedakan (<code>@uxio/admin</code>, <code>@uxio/storefront</code>, <code>@uxio/payment</code>), jadi tidak ada pekerjaan tambahan di sisi itu.</p></section>
+<section class="doc" id="doc-05" data-title="05 — Basis data"><h1 id="doc-05--basis-data">Basis Data<a class="anchor" href="#doc-05--basis-data" aria-label="Tautan ke bagian ini">#</a></h1>
+<p>88 migrasi, 58 model. Bagian ini hanya memuat yang paling sering disalahpahami.</p>
+<h2 id="doc-05--relasi-inti">Relasi inti<a class="anchor" href="#doc-05--relasi-inti" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code>users (boleh null) ──── transactions ──── payments ──── payment_channels
+                              │
+                        products ──── supplier_products ──── suppliers
+                              │              │
+                      product_plan_prices  price_change_logs
+                              │
+                      membership_plans</code></pre>
+<ul><li><strong><code>transactions.user_id</code> boleh null</strong> — checkout tamu didukung penuh.</li><li><strong><code>transactions.guest_contact</code></strong> menyimpan nomor WhatsApp tamu, dalam bentuk kanonik E.164.</li><li><strong><code>transactions.product_id</code> NOT NULL</strong>, tapi relasi <code>product()</code> memakai <code>withTrashed()</code> — produk yang diarsipkan harus tetap bisa dipanggil, atau riwayat yang justru dilindungi oleh pengarsipan itu jadi rusak.</li></ul>
+<h2 id="doc-05--kolom-uang-di-transactions">Kolom uang di <code>transactions</code><a class="anchor" href="#doc-05--kolom-uang-di-transactions" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Ini yang paling sering keliru dibaca:</p>
+<div class="table-wrap"><table><thead><tr><th>Kolom</th><th>Artinya</th></tr></thead><tbody><tr><td><code>amount_base</code></td><td>Harga produk <strong>setelah</strong> diskon promo <strong>dan setelah</strong> potongan poin. Ini basis perhitungan poin</td></tr><tr><td><code>discount_amount</code></td><td>Nilai diskon promo</td></tr><tr><td><code>points_spent</code> / <code>points_spent_amount</code></td><td>Poin yang ditebus dan nilai rupiahnya</td></tr><tr><td><code>channel_fee</code></td><td>"Biaya Admin" yang dibayar pelanggan</td></tr><tr><td><code>amount_fee</code></td><td>Salinan gabungan, untuk kompatibilitas lama</td></tr><tr><td><code>admin_markup</code></td><td><strong>Selalu 0.</strong> Dipertahankan agar baris lama tetap bisa direkonstruksi</td></tr><tr><td><code>tax_amount</code> / <code>tax_percent</code></td><td>PPN atas biaya channel. <strong>Beban Uxio, tidak ditambahkan ke tagihan pelanggan</strong></td></tr><tr><td><code>amount_total</code></td><td>Yang benar-benar dibayar: <code>amount_base + channel_fee</code></td></tr><tr><td><code>margin</code></td><td>Dibekukan saat checkout</td></tr><tr><td><code>points_earned</code></td><td>Ditulis hanya saat <code>COMPLETED</code></td></tr></tbody></table></div>
+<p>Ringkasnya: <strong>pelanggan membayar <code>amount_base + channel_fee</code>; Uxio menyimpan <code>channel_fee − gateway_fee − tax_amount</code>.</strong></p>
+<blockquote><strong><code>amount_base</code> sudah bersih dari poin.</strong> Ini pernah menimbulkan bug uang: kode pemberian poin mengurangkan <code>points_spent_amount</code> sekali lagi, sehingga pesanan yang memakai poin mendapat poin lebih sedikit — dan pesanan yang separuhnya dibayar poin tidak mendapat poin sama sekali. Diperbaiki 7 September 2026; jangan kurangkan poin dua kali.</blockquote>
+<h2 id="doc-05--tiga-tarif-di-paymentchannels">Tiga tarif di <code>payment_channels</code><a class="anchor" href="#doc-05--tiga-tarif-di-paymentchannels" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Ketiganya <strong>dibekukan ke baris transaksi saat checkout</strong>, jadi perubahan tarif tidak pernah menulis ulang pesanan yang sudah dibukukan.</p>
+<div class="table-wrap"><table><thead><tr><th>Tarif</th><th>Untuk</th></tr></thead><tbody><tr><td><code>fee_flat</code> + <code>fee_percent</code></td><td>Biaya admin yang dilihat pelanggan</td></tr><tr><td><code>gateway_fee_flat</code> + <code>gateway_fee_percent</code></td><td>Potongan Monetapay, dicatat di <code>payments.gateway_fee</code></td></tr><tr><td><code>tax_percent</code></td><td>PPN atas biaya admin saja</td></tr></tbody></table></div>
+<h2 id="doc-05--harga-per-paket-membership">Harga per paket membership<a class="anchor" href="#doc-05--harga-per-paket-membership" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code>harga modal supplier
+  + product_plan_prices.margin_percent (bila ditulis admin)   → menang atas semuanya
+  + pricing_rules: (kategori, plan) → (NULL, plan) → (kategori, NULL) → (NULL, NULL)
+  + products.price_min / price_max (penjepit)
+  → product_plan_prices  (+ salinan ke products.price_member)</code></pre>
+<p><strong><code>products.price_member</code> adalah salinan denormalisasi</strong> dari harga paket bawaan. Enam kueri mengurutkan dan menyaring dengannya, jadi mengubahnya menjadi join akan menghabiskan indeks tanpa manfaat. Harganya satu-satunya penulis adalah <code>WritePlanPricesAction</code>, dan <code>pricing:verify</code> yang membuktikan tidak ada penulis kedua.</p>
+<p><strong><code>PlanPrice::for()</code> punya rung terakhir yang merupakan alarm, bukan fitur:</strong> kalau tidak ada baris <code>product_plan_prices</code> sama sekali, ia jatuh ke <code>price_member</code> sambil menulis peringatan di log. Itu berarti <code>pricing:backfill-plan-prices</code> belum pernah dijalankan, dan <strong>setiap member sedang dijual di harga tingkat dasar.</strong> Tidak ada yang error — hanya kebocoran pendapatan yang senyap.</p>
+<h2 id="doc-05--dua-siklus-status">Dua siklus status<a class="anchor" href="#doc-05--dua-siklus-status" aria-label="Tautan ke bagian ini">#</a></h2>
+<ul><li><strong><code>transactions.status</code></strong> — satu-satunya pengambil keputusan. Setiap penjaga status final, <code>RefundEligibility</code>, dan <code>AdminRetryTransactionAction</code> membacanya.</li><li><strong><code>transactions.provider_status</code></strong> — hanya untuk tampilan dan filter. <strong>Tidak boleh dibaca oleh penjaga mana pun.</strong></li></ul>
+<p><code>ProviderStatusPolicy</code> yang memegang matriksnya, dan <code>TransactionObserver::saving()</code> menerapkannya ke setiap penyimpanan — jadi penulis yang hanya menyentuh <code>status</code> tetap mendapat nilai yang benar. Dua aturan yang menjaganya tetap rapat:</p>
+<ol><li><strong>Jangan pernah <code>saveQuietly()</code> perubahan <code>status</code></strong> — itu melewati observer, satu-satunya celah yang tersisa.</li><li><strong><code>REFUNDED</code> mempertahankan nilai provider sebelumnya</strong>, tidak menimpanya. Refund mencatat uang kembali, bukan apakah supplier berhasil kirim — tanpa aturan ini, "supplier gagal lalu direfund" dan "supplier berhasil lalu direfund sebagai itikad baik" jadi tak terbedakan.</li></ol>
+<h2 id="doc-05--buku-besar">Buku besar<a class="anchor" href="#doc-05--buku-besar" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Tiga tabel yang <strong>hanya boleh disentuh lewat satu kelas</strong>:</p>
+<div class="table-wrap"><table><thead><tr><th>Tabel</th><th>Penulis tunggal</th><th>Menolak</th></tr></thead><tbody><tr><td><code>balance_mutations</code></td><td><code>WalletLedger</code></td><td>saldo negatif</td></tr><tr><td><code>point_ledger</code></td><td><code>PointLedger</code></td><td>poin negatif</td></tr><tr><td><code>platform_ledger</code></td><td><code>PlatformLedger</code></td><td>—</td></tr></tbody></table></div>
+<p>Ketiganya mengunci baris selama baca-ubah-tulis dan mencatat nilai sebelum/sesudah. Alasannya sama: laporan yang menunjukkan kredit refund tanpa debit pasangannya lebih buruk daripada tidak ada laporan sama sekali.</p>
+<p><strong>Kunci keunikan yang menjaga "tepat sekali":</strong> <code>point_ledger (transaction_id, type)</code> dan <code>refund_requests.transaction_id</code>. Pemeriksaan awal di dalam Action hanyalah jalur cepat — indeks itulah jaminannya.</p></section>
+<section class="doc" id="doc-06" data-title="06 — Referensi rute API"><h1 id="doc-06--referensi-rute-api">Referensi Rute API<a class="anchor" href="#doc-06--referensi-rute-api" aria-label="Tautan ke bagian ini">#</a></h1>
+<p>Dulu halaman ini dilayani aplikasi di <code>GET /</code> (<code>resources/views/api-landing.blade.php</code>) — terbuka untuk publik di <code>api.&lt;domain&gt;</code>, memuat peta lengkap rute admin, payment-internal, dan Hub. Sekarang tempatnya di sini: dokumentasi tidak perlu dilayani proses produksi, dan repo ini private.</p>
+<p><code>GET /</code> pada API kini hanya menjawab nama dan versi dari <code>.env</code>.</p>
+<p>Semua rute berprefiks <code>/api</code>, jadi <code>/v1/ping</code> di bawah ini adalah <code>https://api.&lt;domain&gt;/api/v1/ping</code>. Sumber kebenarannya tetap <code>apps/api/routes/api.php</code>; berkas ini peta bacaannya.</p>
+<hr>
+<h2 id="doc-06--system-public">System — Public<a class="anchor" href="#doc-06--system-public" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Liveness probes for load balancers and uptime monitors — no auth, no side effects.</p>
+<h3 id="doc-06--health-checks">Health checks<a class="anchor" href="#doc-06--health-checks" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Both return <code>200</code> with a tiny JSON body; <code>/health</code> also reports request latency in ms.</p>
+<ul><li><code>GET /v1/ping</code></li><li><code>GET /v1/health</code></li></ul>
+<h3 id="doc-06--version">Version<a class="anchor" href="#doc-06--version" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><code>200</code> with the release identity: <code>version</code>, <code>commit</code>, <code>upstream</code> (the template release this site forked from), <code>hub_contract</code>, and <code>environment</code>. <strong>Deliberately open even while the site is switched off</strong> — a dark site's version is what an operator reads while deciding whether to switch it back on.</p>
+<ul><li><code>GET /v1/version</code></li></ul>
+<h2 id="doc-06--payment-webhooks-webhook">Payment Webhooks — Webhook<a class="anchor" href="#doc-06--payment-webhooks-webhook" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Inbound callbacks from Monetapay (pay-in, disbursement, subscription) and the uxiolabs supplier. Public routes, throttled per IP — the real gate is the signature / source-IP check inside each handler.</p>
+<h3 id="doc-06--monetapay-pay-in">Monetapay pay-in<a class="anchor" href="#doc-06--monetapay-pay-in" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Double-MD5 signed. Point the VA / e-wallet / QRIS callback URL at any of these — same decrypt + verify + dispatch flow.</p>
+<ul><li><code>POST /v1/payment/callback</code></li><li><code>POST /v1/monetapay/va/callback</code></li><li><code>POST /v1/monetapay/ewallet/callback</code></li><li><code>POST /v1/monetapay/qris/callback</code></li></ul>
+<h3 id="doc-06--monetapay-lifecycle">Monetapay lifecycle<a class="anchor" href="#doc-06--monetapay-lifecycle" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Disbursement result drives a withdrawal to SETTLED / FAILED; subscription events drive activation cycles.</p>
+<ul><li><code>POST /v1/disbursement/merchant/callback</code></li><li><code>POST /v1/monetapay/subscription/callback/active</code></li><li><code>POST /v1/monetapay/subscription/callback/deduct/before</code></li><li><code>POST /v1/monetapay/subscription/callback/deduct/after</code></li></ul>
+<h3 id="doc-06--uxiolabs-supplier">Uxiolabs supplier<a class="anchor" href="#doc-06--uxiolabs-supplier" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Order fulfilment result. Authenticated by source IP (no signature) — finalises the transaction to COMPLETED / FAILED_PROVIDER.</p>
+<ul><li><code>POST /v1/uxiolabs/callback</code></li></ul>
+<h2 id="doc-06--storefront-public">Storefront — Public<a class="anchor" href="#doc-06--storefront-public" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>The customer-facing catalog and checkout consumed by the React SPA. Anonymous, but each handler reads the bearer token when present, so a signed-in member is quoted their own tier price. Projections are deliberately narrow — <code>margin</code>, <code>price_modal</code> and supplier ids never leak.</p>
+<h3 id="doc-06--catalog">Catalog<a class="anchor" href="#doc-06--catalog" aria-label="Tautan ke bagian ini">#</a></h3>
+<p><code>{game}</code> resolves by slug, code or id. Prices run through the same role ladder checkout charges.</p>
+<ul><li><code>GET /v1/games</code></li><li><code>GET /v1/games/{game}</code></li><li><code>GET /v1/games/{game}</code></li><li><code>GET /v1/games/{game}</code></li><li><code>POST /v1/games/{game}</code></li><li><code>GET /v1/price-list</code></li></ul>
+<h3 id="doc-06--checkout-receipts">Checkout &amp; receipts<a class="anchor" href="#doc-06--checkout-receipts" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Checkout is public (guest or member). Invoices are polled every 5s; order tracking takes an invoice number or phone.</p>
+<ul><li><code>POST /v1/checkout</code></li><li><code>GET /v1/invoices/{invoiceNumber}</code></li><li><code>GET /v1/invoices/{invoiceNumber}</code></li><li><code>GET /v1/orders/track</code></li><li><code>POST /v1/transactions/{invoiceNumber}</code></li></ul>
+<h3 id="doc-06--content-marketing">Content &amp; marketing<a class="anchor" href="#doc-06--content-marketing" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Prefixed <code>/storefront</code> on purpose — the admin group already owns the un-prefixed paths.</p>
+<ul><li><code>GET /v1/storefront/banners</code></li><li><code>GET /v1/storefront/announcements</code></li><li><code>GET /v1/storefront/leaderboard</code></li><li><code>GET /v1/storefront/articles</code></li><li><code>GET /v1/storefront/faqs</code></li><li><code>GET /v1/storefront/testimonials</code></li><li><code>GET /v1/storefront/settings</code></li><li><code>GET /v1/storefront/pages/{slug}</code></li><li><code>GET /v1/storefront/payment-channels</code></li><li><code>GET /v1/storefront/flash-sale</code></li><li><code>GET /v1/storefront/promos</code></li><li><code>POST /v1/storefront/promos/validate</code></li><li><code>GET /v1/storefront/membership-plans</code></li></ul>
+<h2 id="doc-06--authentication-public">Authentication — Public<a class="anchor" href="#doc-06--authentication-public" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Sanctum token issue and account recovery. Registration always assigns the MEMBER role — role is never settable from the body. <code>forgot-password</code> gives the same response whether or not the email exists (no enumeration).</p>
+<h3 id="doc-06--sessions-recovery">Sessions &amp; recovery<a class="anchor" href="#doc-06--sessions-recovery" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>All throttled per IP. <code>logout</code> requires a valid bearer token; <code>reset-password</code> revokes every existing token.</p>
+<ul><li><code>POST /v1/auth/login</code></li><li><code>POST /v1/auth/google</code></li><li><code>POST /v1/auth/register</code></li><li><code>POST /v1/auth/refresh</code></li><li><code>POST /v1/auth/forgot-password</code></li><li><code>POST /v1/auth/reset-password</code></li><li><code>POST /v1/auth/logout</code></li></ul>
+<h2 id="doc-06--member-self-service-authenticated">Member Self-Service — Authenticated<a class="anchor" href="#doc-06--member-self-service-authenticated" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Everything a signed-in customer can see or change about themselves under <code>/v1/me</code>. Every query is scoped to the caller's <code>user_id</code> before any filter, so no filter combination can reach another customer's rows.</p>
+<h3 id="doc-06--profile-activity">Profile &amp; activity<a class="anchor" href="#doc-06--profile-activity" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Current user, timezone sync, dashboard, order history and the per-order rating.</p>
+<ul><li><code>GET /v1/user</code></li><li><code>PATCH /v1/users/sync-timezone</code></li><li><code>GET /v1/me</code></li><li><code>PUT /v1/me</code></li><li><code>PUT /v1/me/password</code></li><li><code>GET /v1/me/dashboard</code></li><li><code>GET /v1/me/transactions</code></li><li><code>POST /v1/me/transactions/{invoiceNumber}</code></li><li><code>GET /v1/me/activity-logs</code></li></ul>
+<h3 id="doc-06--wallet-membership">Wallet &amp; membership<a class="anchor" href="#doc-06--wallet-membership" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Balance top-ups open a real payment (throttled like checkout), plus loyalty-tier subscription.</p>
+<ul><li><code>GET /v1/me/topups</code></li><li><code>POST /v1/me/topups</code></li><li><code>GET /v1/me/topups/{reference}</code></li><li><code>GET /v1/me/balance-mutations</code></li><li><code>GET /v1/me/membership</code></li><li><code>POST /v1/me/membership/subscribe</code></li></ul>
+<h3 id="doc-06--integration-credentials">Integration credentials<a class="anchor" href="#doc-06--integration-credentials" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Personal API keys for members who resell through their own systems.</p>
+<ul><li><code>GET /v1/me/api-credentials</code></li><li><code>POST /v1/me/api-credentials</code></li><li><code>PUT /v1/me/api-credentials/{id}</code></li><li><code>POST /v1/me/api-credentials/{id}</code></li><li><code>DEL /v1/me/api-credentials/{id}</code></li></ul>
+<h2 id="doc-06--admin-management-admin">Admin Management — Admin<a class="anchor" href="#doc-06--admin-management-admin" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>The back-office CRUD — <code>auth:sanctum</code> + the <code>admin</code> role gate. Catalog, pricing, content, the uxiolabs price checker and the Monetapay operator tools all live here.</p>
+<h3 id="doc-06--users-overview">Users &amp; overview<a class="anchor" href="#doc-06--users-overview" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>User CRUD with audited wallet adjustments, plus dashboard, financial and reporting aggregates.</p>
+<ul><li><code>GET /v1/users</code></li><li><code>POST /v1/users/{user}</code></li><li><code>GET /v1/dashboard/stats</code></li><li><code>GET /v1/dashboard/performance</code></li><li><code>GET /v1/financial/summary</code></li><li><code>GET /v1/reports/summary</code></li><li><code>GET /v1/activity-logs</code></li><li><code>GET /v1/integration/channels</code></li></ul>
+<h3 id="doc-06--master-data">Master data<a class="anchor" href="#doc-06--master-data" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Category taxonomy, suppliers and the product / supplier-product catalog (with bulk pipelines).</p>
+<ul><li><code>GET /v1/category-types</code></li><li><code>GET /v1/categories</code></li><li><code>GET /v1/sub-categories</code></li><li><code>GET /v1/server-categories</code></li><li><code>GET /v1/suppliers</code></li><li><code>GET /v1/products</code></li><li><code>POST /v1/products/bulk-create</code></li><li><code>GET /v1/supplier-products</code></li><li><code>POST /v1/supplier-products/bulk/promote-publish</code></li><li><code>GET /v1/pricing-rules</code></li></ul>
+<h3 id="doc-06--uxiolabs-tools">Uxiolabs tools<a class="anchor" href="#doc-06--uxiolabs-tools" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Supplier balance, the manual price sync, pooled-SKU onboarding and the auto-repricer audit trail.</p>
+<ul><li><code>GET /v1/uxiolabs/balance</code></li><li><code>POST /v1/uxiolabs/sync-products</code></li><li><code>GET /v1/uxiolabs/price-list</code></li><li><code>GET /v1/uxiolabs/pool-candidates</code></li><li><code>GET /v1/uxiolabs/sku-preview</code></li><li><code>POST /v1/uxiolabs/products</code></li><li><code>POST /v1/uxiolabs/products/import</code></li><li><code>GET /v1/uxiolabs/price-change-logs</code></li></ul>
+<h3 id="doc-06--monetapay-operator">Monetapay operator<a class="anchor" href="#doc-06--monetapay-operator" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Read-only inquiries mirroring the Monetapay spec, plus state-changing cancel / refund.</p>
+<ul><li><code>POST /v1/monetapay/balance</code></li><li><code>POST /v1/monetapay/payin/query</code></li><li><code>POST /v1/monetapay/disbursement/create</code></li><li><code>POST /v1/monetapay/disbursement/query</code></li><li><code>POST /v1/monetapay/inquiry-account</code></li><li><code>POST /v1/monetapay/cancel</code></li><li><code>POST /v1/monetapay/refund</code></li></ul>
+<h3 id="doc-06--transactions-payments">Transactions &amp; payments<a class="anchor" href="#doc-06--transactions-payments" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Full transaction lifecycle control — export, recap, manual review, refund, retry and callback replay.</p>
+<ul><li><code>GET /v1/transactions</code></li><li><code>GET /v1/transactions/export</code></li><li><code>POST /v1/transactions/{id}</code></li><li><code>POST /v1/transactions/{id}</code></li><li><code>POST /v1/transactions/{id}</code></li><li><code>GET /v1/payments</code></li><li><code>GET /v1/ratings</code></li><li><code>GET /v1/point-histories</code></li></ul>
+<h3 id="doc-06--content-marketing-2">Content &amp; marketing<a class="anchor" href="#doc-06--content-marketing-2" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>CMS resources plus the storefront's banners, announcements, flash sales and promos.</p>
+<ul><li><code>GET /v1/articles</code></li><li><code>GET /v1/faqs</code></li><li><code>GET /v1/pages</code></li><li><code>GET /v1/testimonials</code></li><li><code>GET /v1/banners</code></li><li><code>GET /v1/announcements</code></li><li><code>GET /v1/flash-sales</code></li><li><code>GET /v1/promos</code></li><li><code>GET /v1/membership-plans</code></li><li><code>GET /v1/payment-channels</code></li><li><code>GET /v1/settings</code></li></ul>
+<h2 id="doc-06--payment-page-merchant-merchant">Payment Page · Merchant — Merchant<a class="anchor" href="#doc-06--payment-page-merchant-merchant" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>The client's own view under <code>/v1/payment-admin</code> (<code>payment-admin</code> role). Every handler additionally scopes to the caller's id, so the role gate is defence-in-depth. A merchant sees its own sales, requests withdrawals and pays for the services it subscribes to.</p>
+<h3 id="doc-06--dashboard-money">Dashboard &amp; money<a class="anchor" href="#doc-06--dashboard-money" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Sales, mutations, and the two-stage withdrawal request (holding period applies).</p>
+<ul><li><code>GET /v1/payment-admin/dashboard</code></li><li><code>GET /v1/payment-admin/transactions</code></li><li><code>GET /v1/payment-admin/transactions/summary</code></li><li><code>GET /v1/payment-admin/mutations</code></li><li><code>GET /v1/payment-admin/withdrawals</code></li><li><code>POST /v1/payment-admin/withdrawals</code></li></ul>
+<h3 id="doc-06--services-invoices">Services &amp; invoices<a class="anchor" href="#doc-06--services-invoices" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Browse the catalog kita sells, view subscriptions and settle bills — a bill can always be re-paid until due.</p>
+<ul><li><code>GET /v1/payment-admin/services</code></li><li><code>GET /v1/payment-admin/service-subscriptions</code></li><li><code>GET /v1/payment-admin/payment-channels</code></li><li><code>GET /v1/payment-admin/service-invoices</code></li><li><code>POST /v1/payment-admin/service-invoices</code></li><li><code>POST /v1/payment-admin/service-invoices/{id}</code></li></ul>
+<h3 id="doc-06--installation-status">Installation &amp; status<a class="anchor" href="#doc-06--installation-status" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Read-only view of kita's setup work; <code>reveal</code> is POST so credentials aren't proxy-cached.</p>
+<ul><li><code>GET /v1/payment-admin/service-subscriptions/{id}</code></li><li><code>POST /v1/payment-admin/installation-details/{id}</code></li><li><code>GET /v1/payment-admin/service-status</code></li></ul>
+<h2 id="doc-06--payment-page-internal-internal">Payment Page · Internal — Internal<a class="anchor" href="#doc-06--payment-page-internal-internal" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Kita's cross-merchant view under <code>/v1/payment-internal</code> (<code>payment-internal</code> role): every merchant's data, withdrawal verification, per-channel fee settings, the service catalog it sells and the installation work behind each subscription.</p>
+<h3 id="doc-06--overview-withdrawals">Overview &amp; withdrawals<a class="anchor" href="#doc-06--overview-withdrawals" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Cross-merchant dashboard, notifications, and the approve / reject leg of every payout.</p>
+<ul><li><code>GET /v1/payment-internal/dashboard</code></li><li><code>GET /v1/payment-internal/notifications</code></li><li><code>GET /v1/payment-internal/merchants</code></li><li><code>GET /v1/payment-internal/transactions</code></li><li><code>GET /v1/payment-internal/withdrawals</code></li><li><code>POST /v1/payment-internal/withdrawals/{id}</code></li><li><code>POST /v1/payment-internal/withdrawals/{id}</code></li><li><code>GET /v1/payment-internal/platform-balance</code></li></ul>
+<h3 id="doc-06--channels-services">Channels &amp; services<a class="anchor" href="#doc-06--channels-services" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Per-method fees (the "Biaya Admin"), the service catalog, subscriptions and manual bill verification.</p>
+<ul><li><code>GET /v1/payment-internal/channels</code></li><li><code>PUT /v1/payment-internal/channels/{id}</code></li><li><code>GET /v1/payment-internal/services</code></li><li><code>GET /v1/payment-internal/service-invoices</code></li><li><code>POST /v1/payment-internal/service-invoices/{id}</code></li><li><code>GET /v1/payment-internal/service-subscriptions</code></li></ul>
+<h3 id="doc-06--installation-incidents">Installation &amp; incidents<a class="anchor" href="#doc-06--installation-incidents" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>The install window, milestone checklist and stored credentials, plus the incidents driving the status page.</p>
+<ul><li><code>GET /v1/payment-internal/service-subscriptions/{id}</code></li><li><code>POST /v1/payment-internal/installations/{id}</code></li><li><code>POST /v1/payment-internal/installations/{id}</code></li><li><code>GET /v1/payment-internal/incidents</code></li></ul>
+<h2 id="doc-06--uxio-hub-hub">Uxio Hub — Hub<a class="anchor" href="#doc-06--uxio-hub-hub" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Read-only summaries the central Uxio Hub pulls on a schedule. Gated by <code>X-Hub-Key</code> (+ optional IP allowlist) — dead when no key is configured, so a standalone deployment exposes nothing. Additive-only contract: fields may be added, never renamed or removed.</p>
+<h3 id="doc-06--reporting-contract">Reporting contract<a class="anchor" href="#doc-06--reporting-contract" aria-label="Tautan ke bagian ini">#</a></h3>
+<p>Consolidated per-site figures the Hub aggregates across every deployment.</p>
+<ul><li><code>GET /v1/hub/summary</code></li><li><code>GET /v1/hub/withdrawals</code></li><li><code>GET /v1/hub/service-orders</code></li><li><code>GET /v1/hub/profit</code></li><li><code>GET /v1/hub/channels</code></li></ul></section>
+<section class="doc" id="doc-07" data-title="07 — Zona: dapur &amp; colokan"><h1 id="doc-07--07-zona-dapur-colokan-pendengar-hiasan">07 — Zona: dapur, colokan, pendengar, hiasan<a class="anchor" href="#doc-07--07-zona-dapur-colokan-pendengar-hiasan" aria-label="Tautan ke bagian ini">#</a></h1>
+<p>Dokumen ini menjawab satu pertanyaan yang menentukan biaya merawat banyak situs: <strong>bagian mana yang wajib sama di semua situs, dan bagian mana yang bebas?</strong></p>
+<p>Situs di-deploy per klien, dan tiap klien boleh beda — UI, halaman, alur, provider top-up, payment gateway, layanan tambahan. Tapi ada satu lapisan yang <strong>tidak boleh beda</strong>: transaksi dan cara situs melapor ke Uxio Hub. Kalau lapisan itu berbeda-beda, setiap perbaikan harus dikerjakan ulang di tiap situs.</p>
+<p>Istilah di bawah dipakai sebagai kosakata bersama. Pakai kata yang sama saat berdiskusi agar tidak ada yang menebak-nebak.</p>
+<h2 id="doc-07--peta-zona">Peta zona<a class="anchor" href="#doc-07--peta-zona" aria-label="Tautan ke bagian ini">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Zona</th><th>Isi</th><th>Aturan</th></tr></thead><tbody><tr><td><strong>Dapur</strong></td><td>engine transaksi &amp; aturan bisnis, cara lapor ke Hub (<code>/v1/hub/*</code>, <code>HubClient</code>), integrasi payment inti</td><td><strong>Wajib sama.</strong> Perubahan hanya lewat cetakan (<code>web-topup-monorepo</code>).</td></tr><tr><td><strong>Colokan</strong></td><td>provider top-up, payment gateway</td><td><strong>Boleh beda</strong> per situs, tapi wajib ikut bentuk standar (lihat bawah).</td></tr><tr><td><strong>Pendengar</strong></td><td>WhatsApp, email, sosmed, Discord</td><td><strong>Boleh beda.</strong> Hanya mendengarkan "pengeras suara" (event).</td></tr><tr><td><strong>Hiasan</strong></td><td>UI, halaman, alur tampilan, brand, domain, konten/i18n</td><td><strong>Bebas.</strong> Kerjakan langsung di situs.</td></tr></tbody></table></div>
+<h2 id="doc-07--sebelum-mengubah-apa-pun-satu-pertanyaan">Sebelum mengubah apa pun: satu pertanyaan<a class="anchor" href="#doc-07--sebelum-mengubah-apa-pun-satu-pertanyaan" aria-label="Tautan ke bagian ini">#</a></h2>
+<blockquote><strong>Ini dapur atau isian?</strong></blockquote>
+<p>Jawabannya menentukan <strong>di mana</strong> perubahan dikerjakan — bukan sekadar rapi, tapi supaya perbaikan sampai ke semua situs yang membutuhkannya.</p>
+<div class="table-wrap"><table><thead><tr><th>Perubahan</th><th>Cukup di situs itu</th><th>Wajib dari cetakan → semua situs</th></tr></thead><tbody><tr><td>Bug transaksi / cara lapor Hub</td><td></td><td>✓</td></tr><tr><td>Perbaikan keamanan</td><td></td><td>✓</td></tr><tr><td>Perbaikan halaman template (dipakai semua situs)</td><td></td><td>✓</td></tr><tr><td>Tambah titik sambungan baru</td><td></td><td>✓</td></tr><tr><td>Ganti provider top-up satu klien</td><td>✓</td><td></td></tr><tr><td>Tambah WhatsApp/email/sosmed satu klien</td><td>✓</td><td></td></tr><tr><td>Ubah UI/branding/alur satu klien</td><td>✓</td><td></td></tr></tbody></table></div>
+<p>Aturan praktis: kalau perbaikan itu <strong>relevan untuk lebih dari satu situs</strong>, dia bukan milik satu situs — kerjakan di cetakan.</p>
+<h2 id="doc-07--colokan-dapur-tahu-bentuk-bukan-merek">Colokan: dapur tahu "bentuk", bukan "merek"<a class="anchor" href="#doc-07--colokan-dapur-tahu-bentuk-bukan-merek" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Provider dan payment gateway berbeda-beda, dan itu <strong>tidak boleh</strong> mengubah dapur. Dapur tidak pernah mengetahui nama provider; dapur hanya tahu bentuk data yang dipertukarkan.</p>
+<ul><li>Perbedaan provider (kode produk, field khusus, alur status) tinggal <strong>di dalam colokan</strong>, bukan di dapur.</li><li>Data khusus yang tidak dimengerti dapur ditaruh di <strong>kantong serbaguna</strong> (field opsional yang diteruskan apa adanya), bukan ditanam sebagai kolom di dapur.</li><li><strong>Dilarang</strong> menulis percabangan <code>if (provider == 'A') ... else if (provider == 'B')</code> di dalam dapur. Kalau itu muncul, tarik ke colokan.</li></ul>
+<p>Di kode, colokan sudah nyata untuk <strong>kedua</strong> integrasi uang:</p>
+<ul><li><strong>Supplier</strong> — <code>App\Contracts\SupplierGateway</code>, dipilih <code>SupplierManager</code> dari <code>services.supplier.driver</code> (<code>SUPPLIER_DRIVER</code>). Sinyal "order sudah ada di supplier" ikut jadi kontrak (<code>SupplierDuplicateOrderException</code>), bukan nama milik satu supplier.</li><li><strong>Payment gateway</strong> — <code>App\Contracts\PaymentGateway</code> (subset yang dipakai engine: charge, payout, reversal, inquiry status, saldo, verifikasi callback), dipilih <code>PaymentManager</code> dari <code>services.payment.driver</code> (<code>PAYMENT_DRIVER</code>).</li></ul>
+<p>Menambah supplier atau gateway = <strong>satu kelas adapter + satu baris di <code>config/services.php</code></strong>; engine transaksi tidak disentuh. Driver tak dikenal <strong>gagal keras</strong> saat resolusi (<code>AdapterResolver</code>), bukan nanti di jalur uang.</p>
+<p>Satu batas yang disengaja: <strong>alat diagnosis milik satu vendor</strong> — mis. <code>QueryMonetapayAction</code> beserta ~30 inquiry manual — tetap terikat ke <code>MonetapayService</code>. Itu konsol operator milik gateway tertentu, bukan permukaan engine, jadi tidak dipaksa masuk kontrak.</p>
+<h2 id="doc-07--pendengar-dapur-berteriak-siapa-pun-boleh-mendengar">Pendengar: dapur berteriak, siapa pun boleh mendengar<a class="anchor" href="#doc-07--pendengar-dapur-berteriak-siapa-pun-boleh-mendengar" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Notifikasi (WhatsApp/email/sosmed) <strong>tidak boleh dipanggil dari dalam dapur</strong>. Dapur memancarkan kejadian ("pesanan selesai"), dan pendengar bereaksi. Menambah layanan baru berarti menambah satu pendengar — dapur tidak berubah.</p>
+<p>Di kode, pola ini sudah nyata untuk tiga momen — masing-masing satu daftar di <code>config/notifications.php</code>:</p>
+<div class="table-wrap"><table><thead><tr><th>Momen</th><th>Kontrak</th><th>Daftar config</th><th>Kanal bawaan</th></tr></thead><tbody><tr><td>Order selesai (receipt)</td><td><code>Contracts/ReceiptChannel</code></td><td><code>notifications.receipt</code></td><td>email, WhatsApp</td></tr><tr><td>Klaim refund</td><td><code>Contracts/RefundClaimChannel</code></td><td><code>notifications.refund_claim</code></td><td>email, WhatsApp</td></tr><tr><td>Refund selesai</td><td><code>Contracts/RefundCompletedChannel</code></td><td><code>notifications.refund_completed</code></td><td>email, WhatsApp</td></tr></tbody></table></div>
+<p>Menambah WhatsApp/Telegram/SMS = <strong>satu kelas kanal + satu baris di daftar itu</strong>; Action-nya tidak disentuh. Dua hal yang sengaja berbeda antar momen:</p>
+<ul><li><strong>Receipt</strong> — penjaga idempotensi ada <strong>di kanal</strong> (<code>receipt_sent_at</code>, <code>whatsapp_sent_at</code>), karena tiap kanal punya penerima sendiri: satu bisa sudah mengirim sementara yang lain belum.</li><li><strong>Refund</strong> — penjaganya ada <strong>di alur</strong> (<code>claim_notified_at</code>): satu refund, satu notifikasi, sebanyak apa pun kanal yang mengantarnya. Penjaga "URL storefront tidak terjangkau" juga di alur, sebelum kanal mana pun berjalan.</li></ul>
+<p>Yang <strong>tidak</strong> dijadikan colokan: notifikasi Discord. Itu kanal operasional kita, bukan sesuatu yang diganti per situs.</p>
+<h2 id="doc-07--aturan-emas-saat-menyentuh-dapur">Aturan emas saat menyentuh dapur<a class="anchor" href="#doc-07--aturan-emas-saat-menyentuh-dapur" aria-label="Tautan ke bagian ini">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Jenis perubahan</th><th>Aman?</th><th>Cara</th></tr></thead><tbody><tr><td><strong>Menambah</strong> hal baru</td><td>Aman</td><td>tambahkan sebagai pilihan <strong>opsional</strong>, jangan ubah yang lama</td></tr><tr><td><strong>Mengubah</strong> hal lama</td><td><strong>Bahaya</strong></td><td>sediakan jalan baru <strong>berdampingan</strong>, jangan buang yang lama</td></tr><tr><td><strong>Menghapus</strong></td><td>Bahaya</td><td>baru setelah <strong>tidak ada</strong> situs yang memakainya</td></tr></tbody></table></div>
+<p>Jangan mengganti kunci pintu — <strong>tambahkan pintu baru di sebelahnya</strong>. Situs versi lama tetap bisa masuk sampai semua siap pindah.</p>
+<h2 id="doc-07--stempel-versi">Stempel versi<a class="anchor" href="#doc-07--stempel-versi" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Setiap deploy diberi nomor rilis. Halaman <code>GET /v1/version</code> mengembalikan:</p>
+<pre><code class="language-json">{
+  &quot;version&quot;: &quot;v1.4.0&quot;,
+  &quot;commit&quot;: &quot;abcdef1&quot;,
+  &quot;upstream&quot;: &quot;v1.3.2&quot;,
+  &quot;hub_contract&quot;: &quot;v1&quot;,
+  &quot;environment&quot;: &quot;production&quot;
+}</code></pre>
+<ul><li><code>version</code> / <code>commit</code> diisi deploy dari tag dan commit (<code>APP_VERSION</code>, <code>APP_COMMIT</code>). Kosong berarti deploy tidak diberi stempel — itu sinyal, bukan nilai default.</li><li><code>upstream</code> mencatat rilis cetakan asal situs ini (<code>APP_UPSTREAM</code>), supaya keterlambatan dari cetakan terlihat tanpa membandingkan dua repo.</li><li>Rute ini <strong>sengaja terbuka</strong> walau situs sedang dinonaktifkan, supaya versi situs yang gelap pun bisa dibaca saat mengambil keputusan.</li></ul>
+<p>Sisi UI menampilkan stempel yang sama di sidebar admin (<code>VITE_APP_VERSION</code>).</p>
+<h2 id="doc-07--checklist-situs-baru">Checklist situs baru<a class="anchor" href="#doc-07--checklist-situs-baru" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code>[ ] Ambil kode dari cetakan (web-topup-monorepo), bukan dari situs klien lain
+[ ] Isi colokan: provider top-up &amp; payment gateway (lewat bentuk standar)
+[ ] Isi hiasan: brand, domain, UI, alur
+[ ] Isi pendengar: WA/email/sosmed yang dipakai
+[ ] Isi .env (HUB_BASE_URL, kunci, dsb) — staging dulu, bukan produksi
+[ ] Tulis `.upstream-version` = tag cetakan yang dipakai (deploy membacanya jadi APP_UPSTREAM)
+[ ] Daftarkan di Hub (staging) dan pastikan hub:ping lulus
+[ ] Deploy ke staging, uji, baru produksi (beri tag)</code></pre>
+<h2 id="doc-07--alur-rilis">Alur rilis<a class="anchor" href="#doc-07--alur-rilis" aria-label="Tautan ke bagian ini">#</a></h2>
+<ul><li><strong>Perubahan dapur</strong> → dikerjakan di cetakan → beri versi → tiap situs menariknya → staging masing-masing → produksi.</li><li><strong>Perubahan isian</strong> → dikerjakan di situs itu saja → staging situs itu → produksi.</li></ul>
+<p>Kunci kalimatnya: <strong>dapur jangan pernah mengetahui merek. Update jadi murah bukan karena disiplin saat update, tapi karena cetakan punya titik sambungan yang tepat.</strong></p></section>
+<section class="doc" id="doc-08" data-title="08 — Rencana kerja &amp; status"><h1 id="doc-08--08-rencana-kerja-status">08 — Rencana Kerja &amp; Status<a class="anchor" href="#doc-08--08-rencana-kerja-status" aria-label="Tautan ke bagian ini">#</a></h1>
+<p>Dokumen ini <strong>status pekerjaan</strong>, bukan deskripsi kode. Aturan yang mengikat ada di <a href="#doc-07">07 — Zona</a>; cara menaikkan ke server ada di <a href="#doc-04">04 — Deployment</a>.</p>
+<p>Semua pekerjaan ada di branch <strong><code>development</code></strong> (sudah dipush). <code>main</code> <strong>belum disentuh</strong>.</p>
+<h2 id="doc-08--tujuan">Tujuan<a class="anchor" href="#doc-08--tujuan" aria-label="Tautan ke bagian ini">#</a></h2>
+<p>Banyak situs akan lahir dari cetakan ini (<code>web-topup-monorepo</code>), masing-masing berbeda di UI, alur, provider top-up, payment gateway, dan kanal notifikasi — sementara <strong>dapur</strong> (engine transaksi + cara lapor ke Hub) tetap sama. Supaya perbedaan itu tidak merusak dapur, dan supaya perbaikan dapur cukup dikerjakan sekali, semua perbedaan dipindah ke <strong>colokan</strong> (adapter + satu baris config).</p>
+<h2 id="doc-08--keputusan-yang-mengikat">Keputusan yang mengikat<a class="anchor" href="#doc-08--keputusan-yang-mengikat" aria-label="Tautan ke bagian ini">#</a></h2>
+<ul><li><strong>Satu induk</strong>: <code>web-topup-monorepo</code> = cetakan (semua perbaikan dapur lahir di sini); <code>isgstore-monorepo</code> = klien pertama. Jangan ada dua induk.</li><li><strong>Rilis adalah tag</strong> (<code>vMAJOR.MINOR.PATCH</code>). <code>push</code> ke <code>main</code> tidak mendeploy produksi.</li><li><strong>Staging terpisah penuh</strong>: DB, direktori, kunci, domain, cron, worker sendiri; <code>HUB_BASE_URL</code> menunjuk Hub <strong>staging</strong>.</li><li><strong>Dapur jangan difork.</strong> Provider/gateway/notifikasi pelanggan lewat colokan; jangan menanam percabangan vendor di engine.</li><li><strong>Notifikasi internal kita bukan colokan.</strong> Discord adalah kanal operasional Uxio, bukan sesuatu yang diganti per situs — jadi sengaja <strong>tidak</strong> dijadikan pendengar yang bisa ditukar.</li></ul>
+<h2 id="doc-08--status-selesai-di-branch-development">Status: selesai (di branch <code>development</code>)<a class="anchor" href="#doc-08--status-selesai-di-branch-development" aria-label="Tautan ke bagian ini">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Area</th><th>Isi</th><th>Commit</th></tr></thead><tbody><tr><td>Rekonsiliasi</td><td>Cetakan digabung isgstore per 23 Sep; merek klien dinetralkan</td><td><code>40be523e</code></td></tr><tr><td>Versi &amp; penjaga</td><td><code>GET /v1/version</code>, stempel <code>APP_VERSION</code>/<code>APP_COMMIT</code>/<code>APP_UPSTREAM</code>, <code>VITE_APP_VERSION</code>, perintah <code>hub:ping</code></td><td><code>3a3168a7</code></td></tr><tr><td>Pipeline rilis</td><td><code>deploy-prod.yml</code> dipicu tag, deploy 4 app, gerbang <code>hub:ping</code>, rollback via <code>ref</code>, <code>environment: production</code></td><td><code>5904f858</code></td></tr><tr><td>Staging</td><td><code>deploy-staging.yml</code> (kembaran prod) + runbook di docs/04</td><td><code>1b2d2dbf</code>, <code>d9b60aa2</code></td></tr><tr><td>Colokan supplier</td><td><code>SupplierGateway</code> + <code>SupplierManager</code> + migrasi 13 titik</td><td><code>3397cb66</code></td></tr><tr><td>Colokan gateway</td><td><code>PaymentGateway</code> + <code>PaymentManager</code> + <code>AdapterResolver</code>, migrasi 15 titik</td><td><code>dbbfeb8f</code></td></tr><tr><td>Kanal receipt</td><td><code>ReceiptChannel</code> + daftar <code>notifications.receipt</code></td><td><code>e0bdd721</code></td></tr><tr><td>Kanal refund</td><td><code>RefundClaimChannel</code> + <code>RefundCompletedChannel</code> + dua daftarnya</td><td><code>10de41da</code></td></tr><tr><td>Dokumentasi konsep</td><td>Zona, stempel, colokan disebar ke README/02/04/06/07 dan <code>apps/api/CLAUDE.md</code>; docs HTML interaktif</td><td><code>6bd17ed0</code>, <code>972286c9</code></td></tr><tr><td>Higiene</td><td>7 workflow mati dihapus, 9 <code>.pyc</code> dilepas + diabaikan, nama env supplier di docs/04 diperbaiki</td><td><code>a714c309</code></td></tr><tr><td>Efisiensi deploy</td><td>Klon API <strong>sparse</strong> + partial clone — server hanya menerima <code>apps/api</code>, bukan seluruh monorepo; plus trusted proxy &amp; penjaga rilis</td><td><code>64333067</code></td></tr><tr><td>Deploy API source</td><td>API di-<code>rsync</code> sebagai source ke <code>&lt;base&gt;/api</code> (akar Laravel langsung, nginx root <code>&lt;base&gt;/api/public</code>); dependensi dipasang di server; klon <code>.api-repo</code> hanya riwayat</td><td><code>520126e9</code>, <code>645c8aeb</code></td></tr><tr><td>Vendor di server</td><td><code>vendor/</code> (311 MB / 46.321 berkas) tidak pernah dikirim — <code>composer install --no-dev</code> jalan di server dari <code>composer.lock</code>; exclude <code>/vendor/</code> wajib supaya <code>--delete</code> tidak menghapusnya. Menggantikan pendekatan penanda hash</td><td><code>81ac794e</code>, <code>8af30807</code></td></tr></tbody></table></div>
+<h2 id="doc-08--terverifikasi">Terverifikasi<a class="anchor" href="#doc-08--terverifikasi" aria-label="Tautan ke bagian ini">#</a></h2>
+<ul><li><strong>CI GitHub hijau</strong> pada branch <code>development</code>: keempat job lulus — <code>API — test + Pint</code>, <code>admin</code>, <code>storefront</code>, <code>payment</code> (lint + typecheck + test). Ini menutupi sisi frontend, yang tidak bisa dijalankan di mesin pengembang.</li><li><strong>Suite API lokal</strong>: <code>php artisan test</code> → <strong>1319 lulus, 1 skipped, 0 gagal</strong>; <strong><code>pint --test</code> bersih</strong> untuk 1.148 berkas.</li><li><strong>Resolusi container</strong>: <code>SupplierGateway</code> → <code>UxiolabsService</code>, <code>PaymentGateway</code> → <code>MonetapayService</code>, enam kanal notifikasi resolve.</li><li><strong>Workflow</strong>: YAML valid, skrip SSH lolos <code>bash -n</code>; <code>docs/interaktif.html</code> struktur tag seimbang dan JS-nya lolos <code>node --check</code>.</li></ul>
+<p>Temuan yang muncul saat verifikasi dan sudah dibereskan:</p>
+<ul><li>Mock <code>MonetapayService</code> di <code>IntegrationChannelTest</code> harus menjawab <code>balanceCacheKey()</code>, karena cache-busting kini panggilan <strong>instance</strong> lewat kontrak (dulu statis, jadi Mockery tidak mencegatnya).</li><li><strong>Tiga berkas gagal Pint</strong> — <code>GoogleLoginAction</code>, <code>ReverseMerchantSettlementAction</code>, <code>MarketingController</code>. Ini <strong>drift bawaan, juga ada di <code>isgstore-monorepo</code></strong>, jadi CI isgstore kemungkinan sedang merah pada langkah <code>pint --test</code>. Dirapikan di cetakan.</li><li><strong><code>docs/04</code> menyesatkan</strong>: menyuruh <code>UXIOLABS_*</code> padahal kode memakai <code>UXIOTOPUP_*</code>. Kalau diikuti, setiap pesanan gagal di supplier. Sudah diperbaiki.</li></ul>
+<h2 id="doc-08--cara-menguji">Cara menguji<a class="anchor" href="#doc-08--cara-menguji" aria-label="Tautan ke bagian ini">#</a></h2>
+<pre><code class="language-bash"># API (lokal, sekali pasang driver sqlite)
+sudo apt-get install -y php8.4-sqlite3
+cd apps/api &amp;&amp; composer install &amp;&amp; php artisan test &amp;&amp; ./vendor/bin/pint --test
+
+# Frontend (per app)
+cd apps/&lt;admin|storefront|payment&gt; &amp;&amp; npm ci &amp;&amp; npx tsc -b --noEmit &amp;&amp; npm run lint &amp;&amp; npm run test</code></pre>
+<h2 id="doc-08--cara-menambah-colokan-untuk-developer-situs">Cara menambah colokan (untuk developer situs)<a class="anchor" href="#doc-08--cara-menambah-colokan-untuk-developer-situs" aria-label="Tautan ke bagian ini">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Yang ditambah</th><th>Yang dibuat</th><th>Yang didaftarkan</th></tr></thead><tbody><tr><td>Supplier top-up</td><td>kelas <code>implements SupplierGateway</code></td><td><code>config/services.php</code> → <code>supplier.adapters</code>, lalu <code>SUPPLIER_DRIVER=nama</code></td></tr><tr><td>Payment gateway</td><td>kelas <code>implements PaymentGateway</code></td><td><code>config/services.php</code> → <code>payment.adapters</code>, lalu <code>PAYMENT_DRIVER=nama</code></td></tr><tr><td>Kanal notifikasi</td><td>kelas <code>implements ReceiptChannel</code> / <code>RefundClaimChannel</code> / <code>RefundCompletedChannel</code></td><td><code>config/notifications.php</code> → <code>notifications.receipt</code> / <code>refund_claim</code> / <code>refund_completed</code></td></tr></tbody></table></div>
+<p>Engine tidak disentuh di ketiga kasus. Driver/kelas yang tidak sesuai kontrak <strong>gagal keras</strong> saat resolusi (<code>AdapterResolver</code>), bukan di jalur uang.</p>
+<h2 id="doc-08--belum-dikerjakan">Belum dikerjakan<a class="anchor" href="#doc-08--belum-dikerjakan" aria-label="Tautan ke bagian ini">#</a></h2>
+<ul><li><strong>Alat distribusi antar fork</strong> — skrip <code>upstream-sync</code> (menarik rilis cetakan ke repo klien), aturan tertulis folder klien vs folder inti, dan checklist rilis cetakan. Ini bagian yang membuat "update mengalir ke banyak situs" jadi rutin, bukan manual.</li><li><strong>Rilis otomatis dengan semantic-release</strong> — <strong>ditunda dengan sengaja</strong>: menambahkannya berarti menaruh dependensi npm di root template (yang belum punya lockfile) dan workflow yang mulai membuat tag begitu masuk <code>main</code>; belum bisa divalidasi di mesin ini. Untuk sekarang rilis cetakan masih manual (merge ke <code>main</code>, tag, tulis catatan rilis).</li><li><strong>Runtime config frontend</strong> — <code>VITE_*</code> masih dipanggang saat build, jadi artifact staging dan produksi tidak identik. Keputusannya belum diambil (terima rebuild per environment, atau pindahkan ke <code>config.json</code> runtime).</li><li><strong>Server</strong>: mendirikan Hub staging + situs staging, mengisi secret environment <code>staging</code> — langkahnya di <a href="#doc-04">04 — Deployment §Staging</a>.</li><li><strong>Repo Hub</strong>: <code>deploy-staging.yml</code> untuk <code>uxiotopup-hub</code> dan <code>uxiotopup-hub-api</code>.</li><li><strong>Sisi Hub</strong>: versioning kontrak (header <code>X-Site-Version</code>, kolom <code>contract_version</code> di <code>sites</code>, <code>HUB_MIN_CONTRACT_VERSION</code>, contract test, kolom versi di panel).</li><li><strong>Adopsi ke isgstore</strong>: merge dari <code>development</code>, jalankan CI di sana, dan perbaiki drift Pint-nya.</li></ul>
+<h2 id="doc-08--peringatan-saat-mengadopsi">Peringatan saat mengadopsi<a class="anchor" href="#doc-08--peringatan-saat-mengadopsi" aria-label="Tautan ke bagian ini">#</a></h2>
+<ul><li><strong>Jangan aktifkan model tag di produksi sebelum staging hidup.</strong> Begitu <code>deploy-prod.yml</code> bergantung pada tag, <code>push</code> ke <code>main</code> tidak lagi mendeploy produksi.</li><li><strong>Jangan merge <code>development</code> ke <code>main</code> sebelum CI hijau</strong> dan sebelum keputusan adopsi di atas diambil.</li><li><strong><code>isgstore-monorepo</code> belum menerima apa pun</strong> dari pekerjaan ini; ia masih berjalan seperti sebelumnya.</li></ul>
+<h2 id="doc-08--berkas-yang-perlu-dibaca-dulu">Berkas yang perlu dibaca dulu<a class="anchor" href="#doc-08--berkas-yang-perlu-dibaca-dulu" aria-label="Tautan ke bagian ini">#</a></h2>
+<ol><li><a href="#doc-07">07 — Zona</a> — aturan dapur/colokan/pendengar/hiasan.</li><li><a href="#doc-04">04 — Deployment</a> — rilis, rollback, penyiapan staging.</li><li><code>CLAUDE.md</code> di akar dan di <code>apps/*</code> — konvensi yang mengikat per aplikasi.</li></ol></section>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var q = document.getElementById("q");
+  var clearBtn = document.getElementById("clear");
+  var results = document.getElementById("results");
+  var navList = document.getElementById("nav-list");
+  var nav = document.getElementById("nav");
+  var content = document.getElementById("content");
+  var flashTimer = null;
+
+  /* ── Index pencarian: dibangun dari DOM, bukan dari berkas terpisah ── */
+  var UNITS = [];
+  var heads = content.querySelectorAll("h1, h2, h3, h4");
+  var currentDoc = "";
+  var currentTitle = "";
+  var currentHeading = "";
+  var currentId = "";
+
+  var all = content.querySelectorAll("section.doc");
+  all.forEach(function (doc) {
+    currentDoc = doc.dataset.title || "";
+    var walker = document.createTreeWalker(doc, NodeFilter.SHOW_ELEMENT, null);
+    var node = doc;
+    var stack = [];
+    (function visit(el) {
+      var kids = el.children;
+      for (var i = 0; i < kids.length; i++) {
+        var child = kids[i];
+        var tag = child.tagName.toLowerCase();
+        if (/^h[1-4]$/.test(tag)) {
+          stack = stack.slice(0, parseInt(tag[1], 10) - 1);
+          stack[parseInt(tag[1], 10) - 1] = child.textContent.replace("#", "").trim();
+          UNITS.push({ el: child, doc: currentDoc, path: stack.filter(Boolean).join(" › "), text: child.textContent.replace("#", "").trim(), kind: "judul" });
+        } else if (tag === "p" || tag === "li" || tag === "tr" || tag === "blockquote") {
+          var t = child.textContent.replace(/\s+/g, " ").trim();
+          if (t) UNITS.push({ el: child, doc: currentDoc, path: stack.filter(Boolean).join(" › "), text: t, kind: "" });
+        }
+        if (child.children.length) visit(child);
+      }
+    })(doc);
+  });
+
+  /* ── Pencarian ── */
+  function norm(s) {
+    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+  var NORM = UNITS.map(function (u) { return norm(u.text); });
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; });
+  }
+
+  function snippet(text, needle) {
+    var i = norm(text).indexOf(needle);
+    if (i < 0) return escapeHtml(text.slice(0, 160));
+    var from = Math.max(0, i - 60);
+    var to = Math.min(text.length, i + needle.length + 110);
+    var pre = (from > 0 ? "… " : "") + text.slice(from, i);
+    var mid = text.slice(i, i + needle.length);
+    var post = text.slice(i + needle.length, to) + (to < text.length ? " …" : "");
+    return escapeHtml(pre) + "<mark>" + escapeHtml(mid) + "</mark>" + escapeHtml(post);
+  }
+
+  function runSearch(term) {
+    var needle = norm(term.trim());
+    if (needle.length < 2) {
+      results.hidden = true;
+      results.innerHTML = "";
+      navList.hidden = false;
+      unhighlight();
+      return;
+    }
+
+    var hits = [];
+    for (var i = 0; i < UNITS.length && hits.length < 60; i++) {
+      var at = NORM[i].indexOf(needle);
+      if (at < 0) continue;
+      hits.push({ u: UNITS[i], at: at, weight: (UNITS[i].kind === "judul" ? 0 : 1) * 1000 + at });
+    }
+    hits.sort(function (a, b) { return a.weight - b.weight; });
+
+    navList.hidden = true;
+    results.hidden = false;
+    results.innerHTML =
+      '<p class="nav-hint">' + hits.length + " hasil" + (hits.length === 60 ? "+" : "") + "</p>" +
+      hits.map(function (h, idx) {
+        return (
+          '<button class="hit" data-unit="' + UNITS.indexOf(h.u) + '"' + (idx === 0 ? ' data-first="1"' : "") + ">" +
+          '<span class="hit-doc">' + escapeHtml(h.u.doc) + "</span>" +
+          '<span class="hit-path">' + escapeHtml(h.u.path || "") + "</span>" +
+          '<span class="hit-text">' + snippet(h.u.text, needle) + "</span>" +
+          "</button>"
+        );
+      }).join("");
+  }
+
+  function goTo(unitIndex) {
+    var u = UNITS[unitIndex];
+    if (!u) return;
+    u.el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (u.el.tagName.match(/^H[1-4]$/)) {
+      history.replaceState(null, "", "#" + u.el.id);
+    }
+    if (flashTimer) clearTimeout(flashTimer);
+    u.el.classList.add("flash");
+    flashTimer = setTimeout(function () { u.el.classList.remove("flash"); }, 1600);
+  }
+
+  function unhighlight() {
+    content.querySelectorAll("mark.ms").forEach(function (m) {
+      var parent = m.parentNode;
+      parent.replaceChild(document.createTextNode(m.textContent), m);
+      parent.normalize();
+    });
+  }
+
+  /* Sorot seluruh kecocokan di dokumen yang sedang tampil. */
+  function highlight(term) {
+    unhighlight();
+    var needle = term.trim();
+    if (needle.length < 2) return;
+    var rx = new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    var walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        if (node.parentNode.closest("pre, code, mark")) return NodeFilter.FILTER_REJECT;
+        return rx.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    var targets = [];
+    while (walker.nextNode()) targets.push(walker.currentNode);
+    targets.forEach(function (node) {
+      var frag = document.createDocumentFragment();
+      var rest = node.nodeValue;
+      var m;
+      rx.lastIndex = 0;
+      var last = 0;
+      while ((m = rx.exec(rest)) !== null) {
+        frag.appendChild(document.createTextNode(rest.slice(last, m.index)));
+        var mark = document.createElement("mark");
+        mark.className = "ms";
+        mark.textContent = m[0];
+        frag.appendChild(mark);
+        last = m.index + m[0].length;
+        if (m[0].length === 0) break;
+      }
+      frag.appendChild(document.createTextNode(rest.slice(last)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+
+  var debounce = null;
+  q.addEventListener("input", function () {
+    clearBtn.hidden = !q.value;
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(function () {
+      runSearch(q.value);
+      highlight(q.value);
+    }, 120);
+  });
+
+  q.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { q.value = ""; q.dispatchEvent(new Event("input")); q.blur(); }
+    if (e.key === "Enter") {
+      var first = results.querySelector('[data-first="1"]');
+      if (first) goTo(parseInt(first.dataset.unit, 10));
+    }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      var hits = Array.prototype.slice.call(results.querySelectorAll(".hit"));
+      if (!hits.length) return;
+      e.preventDefault();
+      var idx = hits.indexOf(document.activeElement);
+      var next = e.key === "ArrowDown" ? idx + 1 : idx - 1;
+      if (next < 0) next = hits.length - 1;
+      if (next >= hits.length) next = 0;
+      hits[next].focus();
+    }
+  });
+
+  results.addEventListener("click", function (e) {
+    var btn = e.target.closest(".hit");
+    if (btn) goTo(parseInt(btn.dataset.unit, 10));
+  });
+
+  clearBtn.addEventListener("click", function () {
+    q.value = "";
+    q.dispatchEvent(new Event("input"));
+    q.focus();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "/" && document.activeElement !== q) { e.preventDefault(); q.focus(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); q.focus(); q.select(); }
+  });
+
+  /* ── Tema ── */
+  var root = document.documentElement;
+  var saved = null;
+  try { saved = localStorage.getItem("docs-theme"); } catch (err) {}
+  function applyTheme(t) {
+    root.dataset.theme = t;
+    try { localStorage.setItem("docs-theme", t); } catch (err) {}
+  }
+  if (saved) applyTheme(saved);
+  document.getElementById("theme").addEventListener("click", function () {
+    applyTheme(root.dataset.theme === "dark" ? "light" : "dark");
+  });
+
+  /* ── Navigasi ── */
+  document.getElementById("menu").addEventListener("click", function () {
+    document.body.classList.toggle("nav-open");
+  });
+
+  nav.addEventListener("click", function (e) {
+    if (e.target.closest("a")) {
+      document.body.classList.remove("nav-open");
+    }
+  });
+
+  /* Sorot dokumen yang sedang dilihat. */
+  var seen = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      document.querySelectorAll(".nav-doc").forEach(function (d) {
+        d.classList.toggle("active", d.dataset.doc === entry.target.id);
+      });
+    });
+  }, { rootMargin: "-10% 0px -80% 0px" });
+  all.forEach(function (d) { seen.observe(d); });
+
+  if (location.hash) {
+    var target = document.querySelector(location.hash.replace(/[^\w-]/g, ""));
+    if (target) target.scrollIntoView();
+  }
+
+  var last = "";
+  window.addEventListener("scroll", function () {
+    var links = content.querySelectorAll("h1, h2, h3");
+    var active = "";
+    for (var i = 0; i < links.length; i++) {
+      var el = links[i];
+      if (el.getBoundingClientRect().top < 120) active = el.id;
+    }
+    if (active === last) return;
+    last = active;
+    document.querySelectorAll(".toc-link").forEach(function (a) {
+      a.classList.toggle("current", a.getAttribute("href") === "#" + active);
+    });
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@ namespace App\Actions\Uxiolabs;
 
 use App\Actions\Log\CreateActivityLogAction;
 use App\Actions\Pricing\WriteProductPricesAction;
+use App\Contracts\SupplierGateway;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Uxiolabs\PriceCheckReportDTO;
 use App\Enums\PriceChangeLogStatus;
@@ -12,7 +13,6 @@ use App\Models\PriceChangeLog;
 use App\Models\Product;
 use App\Models\SupplierProduct;
 use App\Models\SupplierSkuSighting;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -72,7 +72,7 @@ class CheckUxiolabsPricesAction
     private const RUN_LOCK_SECONDS = 300;
 
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService,
+        private readonly SupplierGateway $uxiolabsService,
         private readonly CreateActivityLogAction $logAction,
         private readonly WriteProductPricesAction $writePrices,
     ) {}
@@ -98,9 +98,9 @@ class CheckUxiolabsPricesAction
         // shared cache so service preview / manual add / import reuse this list.
         $items = $this->uxiolabsService->getPriceList();
         Cache::put(
-            UxiolabsService::PRICE_LIST_CACHE_KEY,
+            $this->uxiolabsService->priceListCacheKey(),
             $items,
-            UxiolabsService::PRICE_LIST_CACHE_TTL
+            $this->uxiolabsService->priceListCacheTtl()
         );
 
         $supplier = UxiolabsSupplier::modelOrFail();
@@ -175,7 +175,7 @@ class CheckUxiolabsPricesAction
             }
 
             $cost = $this->uxiolabsService->costFor($item);
-            $available = UxiolabsService::isItemActive($item);
+            $available = $this->uxiolabsService->isItemActive($item);
 
             $costChanged = (int) $existing->price !== $cost;
             $wasActive = (bool) $existing->is_active;

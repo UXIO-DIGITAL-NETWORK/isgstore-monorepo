@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Contracts\SupplierDuplicateOrderException;
 use Exception;
 
 /**
@@ -10,7 +11,7 @@ use Exception;
  * NOT a failure: the caller must keep the transaction PROCESSING and let the
  * callback finalise it, because /status cannot look an order up by idtrx.
  */
-class UxiolabsDuplicateOrderException extends Exception
+class UxiolabsDuplicateOrderException extends Exception implements SupplierDuplicateOrderException
 {
     public function __construct(public readonly string $idtrx, string $message = 'idtrx sudah ada')
     {

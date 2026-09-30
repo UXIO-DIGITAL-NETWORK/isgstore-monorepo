@@ -2,10 +2,10 @@
 
 namespace App\Actions\Uxiolabs;
 
+use App\Contracts\SupplierGateway;
 use App\Models\Product;
 use App\Models\SupplierProduct;
 use App\Services\PricingService;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 
 /**
@@ -15,7 +15,7 @@ use App\Support\Uxiolabs\UxiolabsSupplier;
 class LookupUxiolabsSkuAction
 {
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService,
+        private readonly SupplierGateway $uxiolabsService,
         private readonly PricingService $pricingService
     ) {}
 
@@ -46,7 +46,7 @@ class LookupUxiolabsSkuAction
             'name' => (string) ($item['nama_layanan'] ?? ''),
             'category' => (string) ($item['kategori'] ?? ''),
             'cost' => $cost,
-            'available' => UxiolabsService::isItemActive($item),
+            'available' => $this->uxiolabsService->isItemActive($item),
             'already_mapped' => $alreadyMapped,
             'existing_product' => $existingProduct,
             'suggested_prices' => $this->pricingService->computePrices($cost, $categoryId),

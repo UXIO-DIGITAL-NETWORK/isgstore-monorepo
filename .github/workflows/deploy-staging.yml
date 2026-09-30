@@ -1,0 +1,520 @@
+# Deploy staging untuk keempat aplikasi, dari satu repo.
+#
+# KEMBARAN deploy-prod.yml. Bedanya HANYA tiga hal: pemicu (tag PRA-RILIS, bukan
+# tag rilis), concurrency group, dan `environment` — yang menentukan secret mana
+# (DEPLOY_BASE_PATH, ENV_FILE, VITE_*) yang dipakai. Seluruh langkah di dalamnya
+# SENGAJA identik dengan produksi: staging yang memakai jalur deploy berbeda
+# tidak membuktikan apa pun tentang produksi.
+#
+# Kandidat bernama: v1.2.3-rc.1. Setelah diuji, tag rilis v1.2.3 dibuat di commit
+# yang SAMA lalu dipromosikan ke produksi (lihat deploy-prod.yml). `main` tidak
+# mendeploy apa pun — hanya CI.
+#
+# Server staging butuh secret environment `staging` sendiri (DEPLOY_BASE_PATH,
+# ENV_FILE, VITE_*), dan `HUB_BASE_URL` yang menunjuk ke Hub STAGING — bukan
+# produksi. `SSH_*` ada di level repo karena server-nya sama, hanya path yang beda.
+#
+# PERUBAHAN DI SISI SERVER YANG DIBUTUHKAN — baca docs/04-deployment.md §Migrasi
+# ke monorepo sebelum menjalankan ini.
+name: Deploy Staging
+
+on:
+  push:
+    # Hanya tag pra-rilis (v1.2.3-rc.1). Tag rilis stabil TIDAK masuk ke sini —
+    # itu jalur produksi (deploy-prod.yml).
+    tags: ['v[0-9]+.[0-9]+.[0-9]+-*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag pra-rilis (mis. v1.2.3-rc.1) yang dideploy ulang.'
+        required: true
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false # deploy tidak boleh dibatalkan di tengah jalan
+
+env:
+  # Rilis yang sedang mendarat: tag yang di-push, atau `ref` saat rollback manual.
+  DEPLOY_REF: ${{ inputs.ref || github.ref_name }}
+  APP_VERSION: ${{ inputs.ref || github.ref_name }}
+
+# Nothing here writes to the repository. Read-only is all this pipeline needs.
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    # Sebuah tag mendeploy KEEMPAT app sekaligus, jadi daftarnya tetap — tidak ada
+    # path filter di sini. `dorny/paths-filter` juga tidak punya pembanding yang
+    # bermakna pada event tag.
+    name: App yang dideploy
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.all.outputs.api }}
+      admin: ${{ steps.all.outputs.admin }}
+      storefront: ${{ steps.all.outputs.storefront }}
+      payment: ${{ steps.all.outputs.payment }}
+      frontend: ${{ steps.all.outputs.frontend }}
+    steps:
+      - name: Semua app
+        id: all
+        run: |
+          set -euo pipefail
+          {
+            echo 'api=true'
+            echo 'admin=true'
+            echo 'storefront=true'
+            echo 'payment=true'
+            echo 'frontend={"include":[{"app":"admin","label":"Admin Dashboard"},{"app":"storefront","label":"Storefront"},{"app":"payment","label":"Payment Page"}]}'
+          } >> "$GITHUB_OUTPUT"
+
+  # ── API ────────────────────────────────────────────────────────────────────
+  api-test:
+    name: API — test
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: sqlite3, pdo_sqlite, gd, exif
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test
+
+  api-deploy:
+    name: API — deploy
+    needs: api-test
+    runs-on: ubuntu-latest
+    # Environment `staging` menautkan secret-nya (ENV_FILE, DEPLOY_BASE_PATH) ke
+    # job ini. `SSH_*` ada di level repo karena dipakai bersama produksi — job
+    # ber-`environment:` tetap membacanya sebagai fallback.
+    environment: staging
+    steps:
+      # Staging hanya menerima tag PRA-RILIS. Tag rilis stabil adalah jalur
+      # produksi, jadi menolaknya di sini mencegah build produksi mendarat di
+      # staging.
+      - name: Tolak tag rilis stabil
+        run: |
+          case "${DEPLOY_REF}" in
+            *-*) : ;;
+            *) echo "::error::${DEPLOY_REF} adalah tag rilis stabil — itu untuk produksi, bukan staging."; exit 1 ;;
+          esac
+
+      - name: Notify Discord — deploy started
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"🚀 API Deploy Started\",\"description\":\"**${GH_ACTOR}** deploying **${GH_SHA:0:7}**\nhttps://github.com/${GH_REPO}/actions/runs/${GH_RUN_ID}\",\"color\":16705372}]}" || true
+
+      - name: Execute deployment via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
+          DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
+          GH_REPOSITORY: ${{ github.repository }}
+          DEPLOY_REF: ${{ env.DEPLOY_REF }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          # Autentikasi kunci, bukan kata sandi. Privat-nya di secret
+          # SSH_PRIVATE_KEY, publiknya di ~/.ssh/authorized_keys user deploy.
+          # BUKAN kunci yang sama dengan deploy key di langkah 9 doc: yang itu
+          # arahnya server → GitHub, yang ini GitHub Actions → server.
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF
+          script: |
+            set -e
+            # Satu base path untuk keempat app. Frontend menerima isi dist/ di
+            # $DEPLOY_BASE_PATH/<app>; API bukan hasil build, jadi yang tinggal
+            # di $DEPLOY_BASE_PATH/api adalah klon monorepo-nya sendiri dan root
+            # nginx api.<domain> menunjuk ke apps/api/public di dalamnya.
+            [ -n "$DEPLOY_BASE_PATH" ] || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+
+            # Preflight sudo. Langkah 8 dan seterusnya butuh sudo tanpa kata
+            # sandi, dan sesi non-interaktif tidak bisa mengetikkannya. Diperiksa
+            # DI SINI, sebelum .env ditulis dan migrasi dijalankan — kegagalan di
+            # tengah meninggalkan database yang sudah termigrasi dengan worker
+            # yang tidak pernah di-restart.
+            sudo -n true 2>/dev/null || {
+              echo "::error::User $(id -un) butuh sudo tanpa kata sandi. Lihat docs/04-deployment.md langkah 10."; exit 1; }
+            REPO_DIR="${DEPLOY_BASE_PATH%/}/api"
+            API_DIR="$REPO_DIR/apps/api"
+
+            # 0c. Direktori tujuan keempat app. rsync hanya membuat komponen
+            #     TERAKHIR dari sebuah path, bukan seluruh rantainya, jadi
+            #     deploy frontend di server yang masih baru gagal kalau
+            #     induknya belum ada. Dibuat di sini supaya tidak ada langkah
+            #     manual yang tersisa untuk itu.
+            for D in "$REPO_DIR" "${DEPLOY_BASE_PATH%/}/admin" "${DEPLOY_BASE_PATH%/}/storefront" "${DEPLOY_BASE_PATH%/}/payment"; do
+              if [ ! -d "$D" ]; then
+                mkdir -p "$D" 2>/dev/null || { sudo mkdir -p "$D"; sudo chown "$(id -un):www-data" "$D"; }
+              fi
+            done
+
+            # 0a. Percayai host key GitHub. Tanpa ini `git clone`/`git pull`
+            #     non-interaktif mati dengan "Host key verification failed" —
+            #     tidak ada yang bisa menjawab prompt konfirmasi SSH.
+            #     Kuncinya ditulis tetap, bukan hasil `ssh-keyscan`: keyscan
+            #     mempercayai apa pun yang menjawab, sehingga justru membuang
+            #     perlindungan yang membuat verifikasi host key ada gunanya.
+            mkdir -p ~/.ssh && chmod 700 ~/.ssh
+            GH_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl'
+            touch ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts
+            for H in "github.com" "[ssh.github.com]:443"; do
+              grep -qxF "$H $GH_KEY" ~/.ssh/known_hosts || echo "$H $GH_KEY" >> ~/.ssh/known_hosts
+            done
+
+            # 0b. Lewatkan Git ke SSH-over-443 milik GitHub. Port 22 keluar
+            #     diblokir di server ini — gejalanya "Connection timed out",
+            #     bukan penolakan, jadi Git menggantung sampai batas waktu.
+            #     ssh.github.com:443 adalah endpoint resmi GitHub untuk itu,
+            #     dan kunci hostnya sama, jadi deploy key yang sama tetap
+            #     dipakai tanpa perubahan apa pun di sisi GitHub.
+            touch ~/.ssh/config && chmod 600 ~/.ssh/config
+            grep -q '^Host github.com$' ~/.ssh/config || printf '%s\n' \
+              'Host github.com' \
+              '  Hostname ssh.github.com' \
+              '  Port 443' \
+              '  User git' >> ~/.ssh/config
+
+            # 0. Bootstrap: clone monorepo saat deploy pertama.
+            #    URL-nya diturunkan dari repo yang sedang menjalankan workflow
+            #    ($GH_REPOSITORY), bukan ditulis tetap: template ini dipakai
+            #    ulang per situs, dan nama repo yang ter-hardcode akan mengkloning
+            #    kode situs lain tanpa satu pun langkah yang gagal.
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              echo "Setup pertama: clone $GH_REPOSITORY ke $REPO_DIR"
+              rm -rf "$REPO_DIR"
+              git clone "git@github.com:${GH_REPOSITORY}.git" "$REPO_DIR"
+              git -C "$REPO_DIR" checkout main
+            fi
+
+            # 1-2. Checkout RILIS yang diminta (tag), bukan ujung `main`. Inilah
+            #      yang membuat rollback berarti: mengisi `ref` dengan tag lama
+            #      mengembalikan server ke kode itu. Gagal di sini membatalkan
+            #      deploy SEBELUM cache lama dibuang, jadi situs tetap hidup
+            #      dengan kode lama.
+            [ -n "$DEPLOY_REF" ] || { echo "::error::DEPLOY_REF kosong — tag rilis tidak diketahui."; exit 1; }
+            cd "$REPO_DIR"
+            git fetch --tags --prune origin || { echo "::error::git fetch gagal — deploy dibatalkan."; exit 1; }
+            git checkout --force "$DEPLOY_REF" || { echo "::error::ref $DEPLOY_REF tidak ditemukan — deploy dibatalkan."; exit 1; }
+
+            cd "$API_DIR"
+
+            # 3. Tulis .env dari GitHub Secrets
+            echo "$ENV_FILE_CONTENT" > .env
+
+            # 3a. Stempel rilis. Ditulis SETELAH .env supaya apa pun di dalam
+            #     secret ENV_FILE tidak bisa membuat versi berbohong — `GET
+            #     /v1/version` harus menjawab kode yang benar-benar mendarat.
+            #     APP_COMMIT dihitung dari HEAD yang baru di-checkout (tag rilis
+            #     ini), APP_UPSTREAM dari `.upstream-version` di commit itu.
+            APP_COMMIT=$(git -C "$REPO_DIR" rev-parse --short HEAD)
+            APP_UPSTREAM=$([ -f "$REPO_DIR/.upstream-version" ] && tr -d '[:space:]' < "$REPO_DIR/.upstream-version" || echo "")
+            sed -i -E '/^(APP_VERSION|APP_COMMIT|APP_UPSTREAM)=/d' .env
+            printf 'APP_VERSION=%s\nAPP_COMMIT=%s\nAPP_UPSTREAM=%s\n' "$DEPLOY_REF" "$APP_COMMIT" "$APP_UPSTREAM" >> .env
+
+            # 3b. Kredensial produksi — APP_KEY, kata sandi database, kunci
+            #     gateway — tidak boleh terbaca user lain di server. Umask biasa
+            #     menghasilkan 0644, dan langkah 8 hanya meng-chmod storage dan
+            #     bootstrap/cache. Lihat docs/04-deployment.md §Catatan keamanan.
+            chmod 640 .env
+            sudo chown "$(id -un):www-data" .env
+
+            # 4. Dependensi produksi
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+            # 5. Migrasi
+            php artisan migrate --force
+
+            # 5b. Harga per membership plan WAJIB di-backfill satu langkah dengan
+            #     migrasi. Tanpa ini `product_plan_prices` kosong dan setiap member
+            #     dijual di harga tingkat dasar — tidak ada error, hanya kebocoran
+            #     pendapatan yang senyap. `pricing:verify` menggagalkan deploy bila
+            #     hasilnya menyimpang. Ini yang HILANG di pipeline lama.
+            php artisan pricing:backfill-plan-prices
+            php artisan pricing:verify || { echo "::error::Harga per plan menyimpang setelah backfill."; exit 1; }
+
+            # 5c. Setiap tautan yang bisa kita kirim ke pelanggan harus mengarah
+            #     ke domain yang benar-benar bisa mereka buka. Tanpa cek ini,
+            #     `STOREFRONT_URL` yang tidak diset dulu jatuh ke dev server dan
+            #     mengirim `http://localhost:5173/...` sebagai tautan klaim
+            #     pengembalian dana — terkirim "sukses", tak bisa diklaim siapa pun,
+            #     dan tak ada satu pun yang mencatat ada yang salah.
+            php artisan urls:verify || { echo "::error::URL publik menunjuk ke alamat yang tidak bisa dibuka pelanggan."; exit 1; }
+
+            # 6. Cache konfigurasi & rute
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+
+            # 7. Symlink storage publik
+            php artisan storage:link || true
+
+            # 8. Permission
+            sudo chown -R "$(id -un):www-data" "$API_DIR"
+            sudo chmod -R 775 "$API_DIR/storage" "$API_DIR/bootstrap/cache"
+
+            # 8a. Batas unggah berkas. Default PHP (upload_max_filesize 2M) lebih
+            #     kecil daripada plafon 5 MB yang dijanjikan halaman Settings
+            #     untuk logo GIF — dan GIF animasi adalah satu-satunya unggahan
+            #     yang sengaja TIDAK dikompresi di browser, jadi justru dialah
+            #     yang pertama tertolak. Tanpa dua baris ini, `max:5120` di
+            #     SettingController tidak pernah bisa tercapai.
+            #     Drop-in, bukan suntingan php.ini utama, supaya pembaruan paket
+            #     tidak menghapusnya.
+            PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+            PHP_CONF_DIR="/etc/php/$PHP_VER/fpm/conf.d"
+            if [ -d "$PHP_CONF_DIR" ]; then
+              printf '%s\n' 'upload_max_filesize=8M' 'post_max_size=10M' \
+                | sudo tee "$PHP_CONF_DIR/99-uploads.ini" >/dev/null
+            else
+              echo "::warning:: $PHP_CONF_DIR tidak ada — batas unggah PHP tidak diatur."
+            fi
+
+            # 8b. Reload php-fpm — OPcache akan menyajikan bytecode lama tanpa ini
+            FPM=$(systemctl list-units --type=service --state=running 'php*-fpm.service' --no-legend | awk '{print $1}' | head -1)
+            if [ -n "$FPM" ]; then sudo systemctl reload "$FPM"; else echo "::warning::php-fpm tidak ditemukan"; fi
+
+            # 8c. Batas badan permintaan nginx. Default-nya 1m, jadi ia menolak
+            #     lebih dulu daripada PHP. Ditulis sebagai drop-in di conf.d/,
+            #     bukan disunting ke vhost: berkas vhost disusun manual per
+            #     situs, dan menebak path-nya berarti deploy bisa mengubah
+            #     berkas yang salah.
+            #
+            #     HANYA direktif konteks-http yang boleh ada di berkas ini.
+            #     conf.d/*.conf di-include dari dalam blok `http`, dan sebuah
+            #     blok `location` di sini membuat `nginx -t` gagal dengan
+            #     "location directive is not allowed here" — pernah terjadi.
+            #     Header per-lokasi (CSP untuk berkas .svg) karena itu tidak
+            #     bisa ditulis di sini; langkahnya ada di docs/04-deployment.md.
+            if command -v nginx >/dev/null; then
+              sudo tee /etc/nginx/conf.d/uploads.conf >/dev/null <<'NGINXCONF'
+            client_max_body_size 8m;
+            NGINXCONF
+              # Kalau berkas ini tetap membuat konfigurasi tidak sah, ia dibuang
+              # sebelum keluar. nginx yang konfigurasinya tidak bisa diuji juga
+              # tidak bisa di-reload maupun di-restart, jadi berkas buruk yang
+              # ditinggal di sini akan mematikan seluruh situs pada reboot atau
+              # perpanjangan sertifikat berikutnya.
+              if ! sudo nginx -t; then
+                sudo rm -f /etc/nginx/conf.d/uploads.conf
+                echo "::error::nginx -t gagal; drop-in uploads.conf dibuang supaya nginx tetap bisa dimuat."
+                exit 1
+              fi
+              sudo systemctl reload nginx
+              # conf.d/ tidak selalu di-include (tergantung paket nginx).
+              # Diperiksa dari konfigurasi yang benar-benar dimuat, supaya
+              # "tidak berlaku" tidak lewat sebagai "beres".
+              sudo nginx -T 2>/dev/null | grep -q 'client_max_body_size 8m' \
+                || echo "::warning::client_max_body_size tidak muncul di nginx -T — setel manual di vhost API."
+            fi
+
+            # 9. Cron scheduler — deploy GAGAL bila hilang, karena tanpa ini
+            #    13 perintah terjadwal berhenti diam-diam.
+            #
+            #    Ada DUA hal terpisah di sini dan dua-duanya wajib: ENTRI di
+            #    crontab user, dan DAEMON cron yang membacanya. Entri tanpa
+            #    daemon adalah kegagalan paling senyap di berkas ini —
+            #    `crontab -l` memperlihatkan barisnya dengan rapi, dan tidak
+            #    satu pun pernah dieksekusi.
+            command -v crontab >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y cron; }
+            # Debian/Ubuntu menamainya cron.service, RHEL crond.service.
+            # `|| true` supaya pola yang tidak cocok tidak menjatuhkan deploy
+            # di tengah pipeline — pesan errornya ada di baris berikutnya.
+            CRON_SVC=$(systemctl list-unit-files --no-legend 'cron.service' 'crond.service' 2>/dev/null | awk '{print $1}' | head -1 || true)
+            [ -n "$CRON_SVC" ] || { echo "::error::Unit systemd untuk cron tidak ditemukan meski paketnya terpasang."; exit 1; }
+            sudo systemctl enable --now "$CRON_SVC"
+            CRON_ENTRY="* * * * * cd $API_DIR && php artisan schedule:run >> /dev/null 2>&1"
+            # `|| true` di sini bukan hiasan. Kalau `grep -v` tidak menyisakan
+            # apa-apa — crontab masih kosong, atau isinya HANYA baris
+            # schedule:run lama yang memang sedang disaring — grep keluar
+            # dengan status 1, dan `set -e` membunuh subshell sebelum `echo`
+            # sempat dijalankan. `crontab -` lalu menerima nol byte, menerimanya
+            # tanpa mengeluh, dan memasang crontab KOSONG: entri lama ikut
+            # terhapus dan yang baru tidak pernah masuk.
+            { crontab -l 2>/dev/null | grep -vF "artisan schedule:run" || true; echo "$CRON_ENTRY"; } | crontab -
+            crontab -l | grep -qF "artisan schedule:run" || { echo "::error::Entri cron scheduler tidak terpasang."; exit 1; }
+            systemctl is-active --quiet "$CRON_SVC" || {
+              echo "::error::Daemon $CRON_SVC tidak berjalan — entri terpasang tapi tidak akan pernah dieksekusi."; exit 1; }
+
+            # 10-13. Supervisor untuk queue worker
+            command -v supervisorctl >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y supervisor; }
+            sudo systemctl enable --now supervisor
+            sudo mkdir -p /etc/supervisor/conf.d
+            # Conf-nya template: path worker mengikuti $API_DIR, bukan nilai
+            # yang ditulis tetap di dalam berkas. Tanpa ini worker menunjuk ke
+            # direktori pra-monorepo dan langkah 15 menggagalkan deploy.
+            sed -e "s|__API_DIR__|$API_DIR|g" -e "s|__DEPLOY_USER__|$(id -un)|g" \
+              "$API_DIR/supervisor/api-prod-worker.conf" \
+              | sudo tee /etc/supervisor/conf.d/api-prod-worker.conf >/dev/null
+            sudo supervisorctl reread && sudo supervisorctl update
+
+            # 14. Restart worker
+            sudo supervisorctl start api-prod-worker:* || true
+            php artisan queue:restart
+
+            # 15. Worker WAJIB berjalan. Kalau tidak, pembayaran masuk tapi
+            #     pesanan tidak pernah dikirim ke supplier — dan tidak ada
+            #     yang error di mana pun.
+            sleep 5
+            sudo supervisorctl status api-prod-worker:* | grep -q RUNNING || {
+              echo "::error::Queue worker TIDAK berjalan. Order berbayar tidak akan diproses."; exit 1; }
+
+            # 16. Ringkasan, supaya satu run deploy bisa dibaca sebagai satu
+            #     pernyataan tentang keadaan server sesudahnya.
+            echo "Selesai. Kode & migrasi terpasang, cache dibangun, cron ($CRON_SVC) aktif dengan entri scheduler, worker supervisor RUNNING."
+
+      - name: Notify Discord — hasil
+        if: always()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          STATUS: ${{ job.status }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          if [ "$STATUS" = "success" ]; then T="✅ API Deploy Succeeded"; C=5763719; else T="❌ API Deploy Failed"; C=15548997; fi
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_SHA:0:7}**\",\"color\":$C}]}" || true
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    name: ${{ matrix.label }} — build + deploy
+    needs: changes
+    # Matriks kosong membuat GitHub menolak workflow, jadi job-nya dilewati
+    # sepenuhnya kalau tidak ada frontend yang berubah.
+    if: needs.changes.outputs.frontend != '{"include":[]}'
+    runs-on: ubuntu-latest
+    # Sama seperti API: secret frontend (VITE_*, DEPLOY_BASE_PATH) hidup di
+    # environment `staging`.
+    environment: staging
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.changes.outputs.frontend) }}
+    steps:
+      # Checkout tag rilis, bukan ujung `main`.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/${{ matrix.app }}/package-lock.json
+
+      - name: Install
+        working-directory: apps/${{ matrix.app }}
+        run: npm ci
+
+      # Lint dan typecheck dijalankan untuk KETIGA app sebelum deploy. Di pipeline
+      # lama hanya storefront yang menjalankan lint, dan tidak satu pun menjalankan
+      # typecheck — dua app bisa mendarat di produksi dengan error TypeScript.
+      - name: Typecheck
+        working-directory: apps/${{ matrix.app }}
+        run: npx tsc -b --noEmit
+
+      - name: Lint
+        working-directory: apps/${{ matrix.app }}
+        run: npm run lint
+
+      - name: Test
+        working-directory: apps/${{ matrix.app }}
+        run: npm run test
+
+      - name: Build
+        working-directory: apps/${{ matrix.app }}
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_PUSHER_APP_KEY: ${{ secrets.VITE_PUSHER_APP_KEY }}
+          VITE_PUSHER_APP_CLUSTER: ${{ secrets.VITE_PUSHER_APP_CLUSTER }}
+          # Dulu di-hardcode di YAML storefront. Sekarang secret.
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          # Stempel rilis yang sama dengan API, supaya sidebar admin menjawab
+          # versi yang benar-benar terpasang (lihat GET /v1/version).
+          VITE_APP_VERSION: ${{ env.APP_VERSION }}
+        run: npm run build
+
+      # rsync tetap dijalankan manual, bukan lewat
+      # burnett01/rsync-deployments, supaya penyiapan known_hosts tetap
+      # terlihat di langkah tersendiri di bawah — action itu mengurusnya
+      # sendiri, di luar jangkauan berkas ini.
+      - name: Siapkan kunci SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY" || { echo "::error::secret SSH_PRIVATE_KEY belum diisi"; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          # Lewat variabel, bukan argumen baris perintah: argumen terbaca di
+          # daftar proses runner.
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Merekam host key lebih dulu, supaya rsync tidak perlu dijalankan
+          # dengan StrictHostKeyChecking=no. Batasnya: ssh-keyscan mempercayai
+          # apa pun yang menjawab saat itu, jadi ini BUKAN perlindungan
+          # terhadap server palsu — lihat docs/04-deployment.md §Catatan
+          # keamanan.
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy via rsync
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          # Satu base path, subdirektori per app. Root nginx tiap vhost
+          # (subdomain admin/payment, domain utama untuk storefront) menunjuk
+          # ke $DEPLOY_BASE_PATH/<app>.
+          DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
+          APP: ${{ matrix.app }}
+        run: |
+          set -euo pipefail
+          # rsync --delete menghapus apa pun di tujuan yang tidak ada di dist/,
+          # jadi base path yang kosong akan mengarahkannya ke "/<app>".
+          test -n "$DEPLOY_BASE_PATH" || { echo "::error::secret DEPLOY_BASE_PATH belum diisi"; exit 1; }
+          DEPLOY_PATH="${DEPLOY_BASE_PATH%/}/$APP"
+          test -d "apps/$APP/dist" || { echo "::error::apps/$APP/dist tidak ada — build gagal?"; exit 1; }
+          # BatchMode=yes: tidak ada lagi yang perlu diketik, jadi prompt apa
+          # pun berarti kunci ditolak — lebih baik gagal seketika daripada
+          # menggantung sampai job timeout. IdentitiesOnly=yes: pakai
+          # deploy_key saja, jangan menawarkan kunci lain milik runner.
+          rsync -avzr --delete \
+            -e "ssh -i $HOME/.ssh/deploy_key -p $SSH_PORT -o BatchMode=yes -o IdentitiesOnly=yes" \
+            "apps/$APP/dist/" \
+            "$SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH"
+
+      - name: Bersihkan kunci SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      - name: Notify Discord — hasil
+        if: always()
+        continue-on-error: true
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_WEBHOOK_LOG_URL }}
+          STATUS: ${{ job.status }}
+          LABEL: ${{ matrix.label }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          [ -z "$DISCORD_URL" ] && exit 0
+          if [ "$STATUS" = "success" ]; then T="✅ $LABEL Deploy Succeeded"; C=5763719; else T="❌ $LABEL Deploy Failed"; C=15548997; fi
+          curl -sf -o /dev/null -X POST "$DISCORD_URL" -H "Content-Type: application/json" \
+            -d "{\"embeds\":[{\"title\":\"$T\",\"description\":\"**${GH_SHA:0:7}**\",\"color\":$C}]}" || true
