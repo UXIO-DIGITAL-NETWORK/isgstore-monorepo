@@ -20,6 +20,18 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      // Local dev talks to the hosted API. Requests are same-origin to Vite and
+      // forwarded server-side, which sidesteps the API's CORS allowlist that
+      // does not include localhost. Set VITE_API_BASE_URL=/api in .env.local.
+      "/api": {
+        target: "https://api.isgstore.id",
+        changeOrigin: true,
+        secure: true,
+      },
+    },
     watch: {
       // Prevent Vite from triggering HMR when TanStack Router rewrites routeTree.gen.ts,
       // which would cause an infinite regeneration loop.
