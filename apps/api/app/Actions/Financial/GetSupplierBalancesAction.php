@@ -2,8 +2,8 @@
 
 namespace App\Actions\Financial;
 
+use App\Contracts\SupplierGateway;
 use App\Models\Supplier;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
  */
 class GetSupplierBalancesAction
 {
-    public function __construct(private readonly UxiolabsService $uxiolabsService) {}
+    public function __construct(private readonly SupplierGateway $uxiolabsService) {}
 
     public function execute(): array
     {

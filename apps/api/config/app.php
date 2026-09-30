@@ -107,6 +107,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trusted Proxies
+    |--------------------------------------------------------------------------
+    |
+    | Which proxies' X-Forwarded-* headers we believe. Unset means "trust none",
+    | which is the safe default and the honest one on a box addressed directly.
+    |
+    | Set it once the site sits behind nginx or a load balancer. Without it
+    | $request->ip() is the PROXY's address, so two things quietly stop working:
+    | HUB_ALLOWED_IPS rejects every legitimate Hub pull, and every
+    | `->by($request->ip())` rate limit collapses all callers onto one bucket.
+    | The uxiolabs webhook's IP allowlist has the same dependency. Comma-separated
+    | IPs/CIDRs, or `*` for a proxy we control whose address moves. Never `*` on
+    | a host reachable directly: a caller could then spoof X-Forwarded-For past
+    | every one of those controls.
+    |
+    */
+
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |

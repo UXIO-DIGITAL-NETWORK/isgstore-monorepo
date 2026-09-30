@@ -1,5 +1,12 @@
 # Deploy produksi untuk keempat aplikasi, dari satu repo.
 #
+# SEBUAH RILIS ADALAH TAG. Workflow ini berjalan saat tag rilis (v1.2.3) di-push,
+# dan TIDAK pada tag pra-rilis (v1.2.3-rc.1): pola di bawah menuntut sebuah titik
+# setelah nomor, sedangkan tag rc punya tanda hubung di situ. Cabang `main` tidak
+# lagi mendeploy produksi — jalur itu milik staging (lihat deploy-staging.yml).
+# Rollback: jalankan lewat `workflow_dispatch`, isi `ref` dengan tag stabil
+# terakhir; server checkout ulang tag itu.
+#
 # PERUBAHAN DI SISI SERVER YANG DIBUTUHKAN — baca docs/04-deployment.md §Migrasi
 # ke monorepo sebelum menjalankan ini. Sebelumnya server meng-clone empat repo
 # ke empat direktori. Sekarang keempat app berbagi satu induk, secret
@@ -11,57 +18,53 @@ name: Deploy Production
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch: {}
+    # Pola ini sengaja TIDAK cocok pada tag pra-rilis: setelah `[0-9]+` ia
+    # menuntut sebuah titik, sedangkan v1.3.0-rc.1 punya tanda hubung di situ.
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag yang dideploy. Isi tag lama (mis. v1.0.0) untuk rollback.'
+        required: true
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-production
   cancel-in-progress: false # deploy tidak boleh dibatalkan di tengah jalan
+
+env:
+  # Rilis yang sedang mendarat: tag yang di-push, atau `ref` saat rollback manual.
+  DEPLOY_REF: ${{ inputs.ref || github.ref_name }}
+  APP_VERSION: ${{ inputs.ref || github.ref_name }}
+
+# Nothing here writes to the repository. Read-only is all this pipeline needs.
+permissions:
+  contents: read
 
 jobs:
   changes:
-    name: Deteksi app yang berubah
+    # Sebuah tag mendeploy KEEMPAT app sekaligus, jadi daftarnya tetap — tidak ada
+    # path filter di sini. `dorny/paths-filter` juga tidak punya pembanding yang
+    # bermakna pada event tag.
+    name: App yang dideploy
     runs-on: ubuntu-latest
     outputs:
-      api: ${{ steps.filter.outputs.api }}
-      admin: ${{ steps.filter.outputs.admin }}
-      storefront: ${{ steps.filter.outputs.storefront }}
-      payment: ${{ steps.filter.outputs.payment }}
-      frontend: ${{ steps.matrix.outputs.frontend }}
+      api: ${{ steps.all.outputs.api }}
+      admin: ${{ steps.all.outputs.admin }}
+      storefront: ${{ steps.all.outputs.storefront }}
+      payment: ${{ steps.all.outputs.payment }}
+      frontend: ${{ steps.all.outputs.frontend }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            api: ['apps/api/**', '.github/workflows/**']
-            admin: ['apps/admin/**', '.github/workflows/**']
-            storefront: ['apps/storefront/**', '.github/workflows/**']
-            payment: ['apps/payment/**', '.github/workflows/**']
-
-      # `matrix` tidak tersedia di `if:` level job, jadi penyaringan app yang
-      # berubah tidak bisa ditulis di sana. Matriksnya disusun di sini sebagai
-      # JSON, dan job frontend hanya menerima app yang benar-benar berubah.
-      - name: Susun matrix frontend
-        id: matrix
-        env:
-          ADMIN: ${{ steps.filter.outputs.admin }}
-          STOREFRONT: ${{ steps.filter.outputs.storefront }}
-          PAYMENT: ${{ steps.filter.outputs.payment }}
+      - name: Semua app
+        id: all
         run: |
           set -euo pipefail
-          items=''
-          add() { items="${items:+$items,}$1"; }
-          if [ "$ADMIN" = 'true' ]; then
-            add '{"app":"admin","label":"Admin Dashboard"}'
-          fi
-          if [ "$STOREFRONT" = 'true' ]; then
-            add '{"app":"storefront","label":"Storefront"}'
-          fi
-          if [ "$PAYMENT" = 'true' ]; then
-            add '{"app":"payment","label":"Payment Page"}'
-          fi
-          echo "frontend={\"include\":[$items]}" >> "$GITHUB_OUTPUT"
+          {
+            echo 'api=true'
+            echo 'admin=true'
+            echo 'storefront=true'
+            echo 'payment=true'
+            echo 'frontend={"include":[{"app":"admin","label":"Admin Dashboard"},{"app":"storefront","label":"Storefront"},{"app":"payment","label":"Payment Page"}]}'
+          } >> "$GITHUB_OUTPUT"
 
   # ── API ────────────────────────────────────────────────────────────────────
   api-test:
@@ -87,7 +90,20 @@ jobs:
     name: API — deploy
     needs: api-test
     runs-on: ubuntu-latest
+    # Environment `production` menautkan secret-nya (ENV_FILE, DEPLOY_BASE_PATH)
+    # ke job ini. `SSH_*` ada di level repo karena dipakai bersama staging —
+    # job ber-`environment:` tetap membacanya sebagai fallback.
+    environment: production
     steps:
+      # Sabuk pengaman pra-rilis. Pola pemicu di atas sudah menolak tag rc, tapi
+      # salah kirim rc ke produksi tidak bisa ditarik kembali — jadi diperiksa
+      # sekali lagi di sini.
+      - name: Tolak tag pra-rilis
+        run: |
+          case "${DEPLOY_REF}" in
+            *-*) echo "::error::${DEPLOY_REF} adalah tag pra-rilis — itu untuk staging, bukan produksi."; exit 1 ;;
+          esac
+
       - name: Notify Discord — deploy started
         continue-on-error: true
         env:
@@ -107,6 +123,7 @@ jobs:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
           DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
           GH_REPOSITORY: ${{ github.repository }}
+          DEPLOY_REF: ${{ env.DEPLOY_REF }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -116,7 +133,7 @@ jobs:
           # arahnya server → GitHub, yang ini GitHub Actions → server.
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY
+          envs: ENV_FILE_CONTENT,DEPLOY_BASE_PATH,GH_REPOSITORY,DEPLOY_REF
           script: |
             set -e
             # Satu base path untuk keempat app. Frontend menerima isi dist/ di
@@ -184,15 +201,30 @@ jobs:
               git -C "$REPO_DIR" checkout main
             fi
 
-            # 1-2. Tarik kode terbaru. Gagal di sini membatalkan deploy SEBELUM
-            #      cache lama dibuang, jadi situs tetap hidup dengan kode lama.
+            # 1-2. Checkout RILIS yang diminta (tag), bukan ujung `main`. Inilah
+            #      yang membuat rollback berarti: mengisi `ref` dengan tag lama
+            #      mengembalikan server ke kode itu. Gagal di sini membatalkan
+            #      deploy SEBELUM cache lama dibuang, jadi situs tetap hidup
+            #      dengan kode lama.
+            [ -n "$DEPLOY_REF" ] || { echo "::error::DEPLOY_REF kosong — tag rilis tidak diketahui."; exit 1; }
             cd "$REPO_DIR"
-            git pull origin main || { echo "::error::git pull gagal — deploy dibatalkan."; exit 1; }
+            git fetch --tags --prune origin || { echo "::error::git fetch gagal — deploy dibatalkan."; exit 1; }
+            git checkout --force "$DEPLOY_REF" || { echo "::error::ref $DEPLOY_REF tidak ditemukan — deploy dibatalkan."; exit 1; }
 
             cd "$API_DIR"
 
             # 3. Tulis .env dari GitHub Secrets
             echo "$ENV_FILE_CONTENT" > .env
+
+            # 3a. Stempel rilis. Ditulis SETELAH .env supaya apa pun di dalam
+            #     secret ENV_FILE tidak bisa membuat versi berbohong — `GET
+            #     /v1/version` harus menjawab kode yang benar-benar mendarat.
+            #     APP_COMMIT dihitung dari HEAD yang baru di-checkout (tag rilis
+            #     ini), APP_UPSTREAM dari `.upstream-version` di commit itu.
+            APP_COMMIT=$(git -C "$REPO_DIR" rev-parse --short HEAD)
+            APP_UPSTREAM=$([ -f "$REPO_DIR/.upstream-version" ] && tr -d '[:space:]' < "$REPO_DIR/.upstream-version" || echo "")
+            sed -i -E '/^(APP_VERSION|APP_COMMIT|APP_UPSTREAM)=/d' .env
+            printf 'APP_VERSION=%s\nAPP_COMMIT=%s\nAPP_UPSTREAM=%s\n' "$DEPLOY_REF" "$APP_COMMIT" "$APP_UPSTREAM" >> .env
 
             # 3b. Kredensial produksi — APP_KEY, kata sandi database, kunci
             #     gateway — tidak boleh terbaca user lain di server. Umask biasa
@@ -366,11 +398,17 @@ jobs:
     # sepenuhnya kalau tidak ada frontend yang berubah.
     if: needs.changes.outputs.frontend != '{"include":[]}'
     runs-on: ubuntu-latest
+    # Sama seperti API: secret frontend (VITE_*, DEPLOY_BASE_PATH) hidup di
+    # environment `production`.
+    environment: production
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.changes.outputs.frontend) }}
     steps:
+      # Checkout tag rilis, bukan ujung `main`.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -404,6 +442,9 @@ jobs:
           VITE_PUSHER_APP_CLUSTER: ${{ secrets.VITE_PUSHER_APP_CLUSTER }}
           # Dulu di-hardcode di YAML storefront. Sekarang secret.
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          # Stempel rilis yang sama dengan API, supaya sidebar admin menjawab
+          # versi yang benar-benar terpasang (lihat GET /v1/version).
+          VITE_APP_VERSION: ${{ env.APP_VERSION }}
         run: npm run build
 
       # rsync tetap dijalankan manual, bukan lewat

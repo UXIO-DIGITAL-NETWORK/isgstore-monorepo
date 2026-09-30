@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions\Uxiolabs;
 
+use App\Contracts\SupplierGateway;
 use App\Models\SupplierCategory;
 use App\Models\SupplierProduct;
 use App\Models\SupplierSkuSighting;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\PriceListRow;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -29,7 +29,7 @@ use Illuminate\Support\Collection;
 class ListUxiolabsPoolCandidatesAction
 {
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService
+        private readonly SupplierGateway $uxiolabsService
     ) {}
 
     /**

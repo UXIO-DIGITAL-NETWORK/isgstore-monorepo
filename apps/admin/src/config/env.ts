@@ -15,6 +15,11 @@ const cleanEnv = (value: unknown, fallback = ""): string => {
 export const ENV = {
   API_BASE_URL: cleanEnv(import.meta.env.VITE_API_BASE_URL, "http://localhost:8000/api"),
 
+  // Release stamp, baked at build from the tag it ships (e.g. "v1.4.0"). Empty
+  // on a local build; the sidebar stamp then renders nothing rather than a
+  // version that means nothing.
+  APP_VERSION: cleanEnv(import.meta.env.VITE_APP_VERSION),
+
   // Pusher (hosted, pusher.com) — powers the live transactions feed. Empty until
   // provisioned; the table then falls back to slow polling. Mirror these with the
   // backend's PUSHER_APP_KEY / PUSHER_APP_CLUSTER.

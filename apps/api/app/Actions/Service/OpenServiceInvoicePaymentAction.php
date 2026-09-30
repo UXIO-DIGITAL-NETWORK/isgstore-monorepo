@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Actions\Service;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Contracts\PaymentGateway;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\ServiceInvoiceStatus;
 use App\Models\PaymentChannel;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceInvoicePayment;
 use App\Models\ServiceInvoicePaymentItem;
-use App\Services\Payment\MonetapayService;
 use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -47,7 +47,7 @@ class OpenServiceInvoicePaymentAction
     public const MAX_INVOICES = 20;
 
     public function __construct(
-        private readonly MonetapayService $monetapayService,
+        private readonly PaymentGateway $monetapayService,
         private readonly CreateActivityLogAction $activityLogAction,
     ) {}
 

@@ -56,7 +56,7 @@ class HubReportEndpointsTest extends TestCase
         // warming a shape of our own here would let a reader/writer mismatch
         // pass this test while the Hub reads nothing in production.
         Cache::put(
-            MonetapayService::balanceCacheKey(),
+            app(MonetapayService::class)->balanceCacheKey(),
             ['code' => 0, 'data' => ['current_balance' => (string) $balance]],
             300,
         );

@@ -166,8 +166,8 @@ class MonetapaySubMerchantTest extends TestCase
         // The key an omitted argument resolves to is the sub-merchant's, so the
         // finance panel's read and a ping's cache-bust hit the same entry.
         $this->assertSame(
-            MonetapayService::balanceCacheKey(self::SUB),
-            MonetapayService::balanceCacheKey(),
+            app(MonetapayService::class)->balanceCacheKey(self::SUB),
+            app(MonetapayService::class)->balanceCacheKey(),
         );
 
         $service->inquiryBalance();
@@ -186,6 +186,6 @@ class MonetapaySubMerchantTest extends TestCase
         // `sub_mch_id=` would break the signature outright. Absent is the only
         // safe representation of "main merchant".
         $this->assertArrayNotHasKey('sub_mch_id', $this->sentParams($service));
-        $this->assertStringEndsWith(':main:IDR', MonetapayService::balanceCacheKey());
+        $this->assertStringEndsWith(':main:IDR', app(MonetapayService::class)->balanceCacheKey());
     }
 }

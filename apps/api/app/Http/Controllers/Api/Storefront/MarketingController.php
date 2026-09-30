@@ -9,6 +9,8 @@ use App\Models\FlashSale;
 use App\Models\FlashSaleItem;
 use App\Models\Product;
 use App\Models\Promo;
+use App\Models\User;
+use App\Support\Pricing\PlanPrice;
 use App\Support\Promo\PromoResolver;
 use App\Support\Storefront\MediaUrl;
 use App\Traits\ApiResponse;
@@ -143,11 +145,11 @@ class MarketingController extends Controller
      * resolver checkout uses — so a code quoted against a flash-sale price is
      * quoted against the price on the invoice.
      */
-    private function productPrice(?int $productId, ?\App\Models\User $user): int
+    private function productPrice(?int $productId, ?User $user): int
     {
         $product = $this->productFor($productId);
 
-        return $product ? \App\Support\Pricing\PlanPrice::for($product, $user) : 0;
+        return $product ? PlanPrice::for($product, $user) : 0;
     }
 
     private function productFor(?int $productId): ?Product

@@ -3,14 +3,14 @@
 namespace App\Actions\Uxiolabs;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Contracts\SupplierDuplicateOrderException;
+use App\Contracts\SupplierGateway;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\ProviderStatus;
 use App\Enums\TransactionStatus;
-use App\Exceptions\UxiolabsDuplicateOrderException;
 use App\Jobs\PollUxiolabsStatusJob;
 use App\Models\Transaction;
 use App\Services\CustomerNumberFormatter;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\StatusPollSchedule;
 use App\Traits\MapsUxiolabsStatus;
 use Exception;
@@ -20,7 +20,7 @@ class ProcessUxiolabsTransactionAction
     use MapsUxiolabsStatus;
 
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService,
+        private readonly SupplierGateway $uxiolabsService,
         private readonly CreateActivityLogAction $logAction,
         private readonly CustomerNumberFormatter $customerNumberFormatter,
         private readonly SendUxiolabsStatusNotificationAction $announce,
@@ -55,7 +55,7 @@ class ProcessUxiolabsTransactionAction
                 $kontak,
                 $transaction->invoice_number // used as uxiolabs idtrx
             );
-        } catch (UxiolabsDuplicateOrderException $e) {
+        } catch (SupplierDuplicateOrderException $e) {
             // A previous attempt (whose response we lost) already placed this
             // order. Settle to PROCESSING and let the callback finalise it —
             // rethrowing would re-order forever and failed() would refund a

@@ -8,6 +8,7 @@ use App\Actions\Settlement\SettleMerchantTransactionAction;
 use App\Actions\Storefront\ValidateGameIdAction;
 use App\Actions\Transaction\SendTransactionReceiptAction;
 use App\Actions\Uxiolabs\ProcessUxiolabsTransactionAction;
+use App\Contracts\PaymentGateway;
 use App\DTOs\Checkout\CheckoutDTO;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Enums\PaymentStatus;
@@ -20,7 +21,6 @@ use App\Models\PromoRedemption;
 use App\Models\SupplierProduct;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Services\Payment\MonetapayService;
 use App\Support\Membership\MembershipResolver;
 use App\Support\Money;
 use App\Support\OrderForm\OrderFormSchema;
@@ -41,7 +41,7 @@ class CheckoutAction
     public function __construct(
         private readonly ProcessUxiolabsTransactionAction $uxiolabsAction,
         private readonly CreateActivityLogAction $logAction,
-        private readonly MonetapayService $monetapayService,
+        private readonly PaymentGateway $monetapayService,
         private readonly SendTransactionReceiptAction $sendReceiptAction,
         private readonly SettleMerchantTransactionAction $settleAction,
         private readonly ValidateGameIdAction $validateGameIdAction

@@ -2,8 +2,8 @@
 
 namespace App\Actions\Integration;
 
+use App\Contracts\PaymentGateway;
 use App\Models\IntegrationCredential;
-use App\Services\Payment\MonetapayService;
 use App\Support\Integration\IntegrationConfig;
 use Illuminate\Support\Facades\Cache;
 
@@ -64,7 +64,7 @@ class UpdateIntegrationCredentialAction
         // so an edited sub_mch_id busts the NEW entry — the one the next read
         // will look in.
         match ($provider) {
-            'monetapay' => Cache::forget(MonetapayService::balanceCacheKey()),
+            'monetapay' => Cache::forget(app(PaymentGateway::class)->balanceCacheKey()),
             'uxiolabs' => Cache::forget('uxiolabs:balance'),
             default => null,
         };

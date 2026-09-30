@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Uxiolabs;
 
-use App\Services\UxiolabsService;
+use App\Contracts\SupplierGateway;
 use Illuminate\Support\Str;
 
 /**
@@ -21,7 +21,7 @@ final class PriceListRow
      * @param  array<string,mixed>  $item
      * @return array<string,mixed>
      */
-    public static function normalise(array $item, UxiolabsService $service, bool $alreadyMapped): array
+    public static function normalise(array $item, SupplierGateway $service, bool $alreadyMapped): array
     {
         return [
             // buyer_sku_code carries the uxiolabs service id end-to-end.
@@ -33,7 +33,7 @@ final class PriceListRow
             'harga_gold' => (int) ($item['harga_gold'] ?? 0),
             'harga_silver' => (int) ($item['harga_silver'] ?? 0),
             'harga_pro' => (int) ($item['harga_pro'] ?? 0),
-            'available' => UxiolabsService::isItemActive($item),
+            'available' => $service->isItemActive($item),
             'already_mapped' => $alreadyMapped,
         ];
     }
