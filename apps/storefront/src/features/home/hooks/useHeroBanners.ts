@@ -8,21 +8,22 @@ import type { HeroBannerItem } from "@/features/home/types/heroBanner.type";
  *
  * The fallback is deliberate: the hero is the first thing above the fold, and
  * a storefront whose banners have not been uploaded yet should still look
- * finished rather than showing an empty carousel.
+ * finished rather than showing an empty carousel. `select` applies it on a
+ * successful-but-empty response; the caller applies it again on failure, so the
+ * hero always has something to show.
+ *
+ * Returns the query so the banner can render a skeleton on first load.
  */
-export function useHeroBanners(): HeroBannerItem[] {
-  const { data } = useQuery({
+export function useHeroBanners() {
+  return useQuery({
     queryKey: ["banners"],
-    queryFn: async () => {
-      const response = await storefrontService.banners();
-      return response.data.map<HeroBannerItem>((banner) => ({
+    queryFn: async () =>
+      (await storefrontService.banners()).data.map<HeroBannerItem>((banner) => ({
         src: banner.image_url,
         alt: banner.name,
         link: banner.link,
-      }));
-    },
+      })),
+    select: (data) => (data && data.length > 0 ? data : BANNERS),
     staleTime: 5 * 60 * 1000,
   });
-
-  return data && data.length > 0 ? data : BANNERS;
 }

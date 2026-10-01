@@ -102,11 +102,11 @@ export default function ShareBar({ title }: Props): React.JSX.Element {
         onClick={handleCopy}
         className={cn(
           btnBase,
-          copied && "bg-[#9234EA]/20 border-[#9234EA]/40",
+          copied && "bg-[rgb(208,201,129)]/20 border-[rgb(208,201,129)]/40",
         )}
       >
         {copied ? (
-          <Check className="w-4.5 h-4.5 text-[#9234EA]" />
+          <Check className="w-4.5 h-4.5 text-[rgb(208,201,129)]" />
         ) : (
           <Copy className="w-4.5 h-4.5 text-white" />
         )}
@@ -114,7 +114,7 @@ export default function ShareBar({ title }: Props): React.JSX.Element {
 
       {/* Copied feedback label */}
       {copied && (
-        <Text as="span" className="font-inter text-[12px] text-[#9234EA] select-none">
+        <Text as="span" className="font-inter text-[12px] text-[rgb(208,201,129)] select-none">
           {t("shareLabels.copied")}
         </Text>
       )}

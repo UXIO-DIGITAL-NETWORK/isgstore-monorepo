@@ -44,8 +44,8 @@ export default function ActivityLogFilterBar({ onApply, onReset }: Props): React
 
   return (
     // Gradient border wrapper — consistent with InvoiceSearchCard / HistoryFilterPanel
-    <Box className="p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9234EA]">
-      <Box className="bg-[#0C0E1A] rounded-[15px] p-5 flex flex-col gap-5">
+    <Box className="p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+      <Box className="bg-[rgb(14,20,10)] rounded-[15px] p-5 flex flex-col gap-5">
         {/* 3-column filter row */}
         <Box className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* ── Tanggal ── */}
@@ -56,7 +56,7 @@ export default function ActivityLogFilterBar({ onApply, onReset }: Props): React
             >
               {t("activityLog.filter.dateLabel")}
             </Text>
-            <Box className="flex items-center gap-2 bg-[#080A14] border border-white/10 rounded-xl px-4 py-3">
+            <Box className="flex items-center gap-2 bg-[rgb(14,20,10)] border border-white/10 rounded-xl px-4 py-3">
               <Calendar className="w-4 h-4 text-white/40 shrink-0" />
               <Box
                 as="input"
@@ -101,7 +101,7 @@ export default function ActivityLogFilterBar({ onApply, onReset }: Props): React
                     status: e.target.value as ActivityLogFilterValues["status"],
                   }))
                 }
-                className="w-full appearance-none bg-[#080A14] border border-white/10 rounded-xl px-4 py-3 pr-10 text-[13px] font-inter text-white outline-none focus:border-[#3B82F6]/50 transition-colors cursor-pointer"
+                className="w-full appearance-none bg-[rgb(14,20,10)] border border-white/10 rounded-xl px-4 py-3 pr-10 text-[13px] font-inter text-white outline-none focus:border-[rgb(67,86,32)]/50 transition-colors cursor-pointer"
               >
                 <option value="all">{t("activityLog.filter.allActions")}</option>
                 {ACTIVITY_TYPES.map((type) => (
@@ -131,7 +131,7 @@ export default function ActivityLogFilterBar({ onApply, onReset }: Props): React
                   setDraft((prev) => ({ ...prev, ip: e.target.value }))
                 }
                 placeholder={t("activityLog.filter.ipPlaceholder")}
-                className="w-full bg-[#080A14] border border-white/10 rounded-xl px-4 py-3 pl-10 text-[13px] font-inter text-white placeholder:text-white/30 outline-none focus:border-[#3B82F6]/50 transition-colors"
+                className="w-full bg-[rgb(14,20,10)] border border-white/10 rounded-xl px-4 py-3 pl-10 text-[13px] font-inter text-white placeholder:text-white/30 outline-none focus:border-[rgb(67,86,32)]/50 transition-colors"
               />
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
             </Box>
@@ -156,7 +156,7 @@ export default function ActivityLogFilterBar({ onApply, onReset }: Props): React
             as="button"
             type="button"
             onClick={handleApply}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-[13px] font-outfit font-bold text-white hover:opacity-90 transition-opacity cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] text-[13px] font-outfit font-bold text-white hover:opacity-90 transition-opacity cursor-pointer"
           >
             {t("activityLog.filter.apply")}
           </Box>

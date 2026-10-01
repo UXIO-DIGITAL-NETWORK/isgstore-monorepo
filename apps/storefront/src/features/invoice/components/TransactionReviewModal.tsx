@@ -122,14 +122,14 @@ export default function TransactionReviewModal({
     >
       {/* Gradient border wrapper */}
       <Box
-        className="w-full max-w-md p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9333EA] shadow-glow-violet"
+        className="w-full max-w-md p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-glow-accent"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         <Box
           role="dialog"
           aria-modal="true"
           aria-label={t("review.title")}
-          className="rounded-[15px] bg-[rgba(42,4,98,0.82)] p-6 flex flex-col gap-5"
+          className="rounded-[15px] bg-[rgba(14,20,10,0.82)] p-6 flex flex-col gap-5"
         >
           {/* Header */}
           <Box className="flex flex-col gap-2">
@@ -194,7 +194,7 @@ export default function TransactionReviewModal({
                     className={cn(
                       "rounded-full px-4 py-1.5 text-[13px] font-inter border cursor-pointer transition-colors",
                       isActive
-                        ? "border-[#C084FC] bg-[rgba(147,51,234,0.25)] text-white"
+                        ? "border-[rgb(208,201,129)] bg-[rgba(208,201,129,0.25)] text-white"
                         : "border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:text-white",
                     )}
                   >
@@ -213,7 +213,7 @@ export default function TransactionReviewModal({
               setComment(e.target.value)
             }
             placeholder={t("review.placeholder")}
-            className="w-full rounded-xl border border-white/10 bg-white/5 p-3 font-inter text-[13px] text-white placeholder:text-white/35 resize-none min-h-[96px] focus:outline-none focus:border-[rgba(147,51,234,0.6)] transition-colors"
+            className="w-full rounded-xl border border-white/10 bg-white/5 p-3 font-inter text-[13px] text-white placeholder:text-white/35 resize-none min-h-[96px] focus:outline-none focus:border-[rgba(208,201,129,0.6)] transition-colors"
           />
 
           {/* Action buttons */}

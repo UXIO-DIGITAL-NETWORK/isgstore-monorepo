@@ -20,7 +20,7 @@ export default function MagicWheelResult({
   };
 
   return (
-    <Box className="rounded-2xl border border-white/10 bg-[#0B051D]/40 p-6 flex flex-col items-center gap-4 text-center">
+    <Box className="rounded-2xl border border-white/10 bg-[rgb(14,20,10)]/40 p-6 flex flex-col items-center gap-4 text-center">
       <Text as="p" className="font-inter text-[14px] text-white/60">
         {t("result.title")}
       </Text>
@@ -41,7 +41,7 @@ export default function MagicWheelResult({
           </Text>
           <Text
             as="span"
-            className="font-outfit font-semibold text-[18px] text-[#9333EA]"
+            className="font-outfit font-semibold text-[18px] text-[rgb(208,201,129)]"
           >
             {t("result.unit")}
           </Text>

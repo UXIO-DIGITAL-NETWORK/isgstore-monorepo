@@ -33,7 +33,7 @@ export function Navbar(): React.JSX.Element {
   };
 
   return (
-    <Box className="w-full bg-[#0A0A0C] sticky top-0 z-50">
+    <Box className="w-full bg-[rgb(0,0,0)] sticky top-0 z-50">
       {/* ── Top tier ── */}
       <Box className="w-full">
         <Box className="max-w-6xl mx-auto px-4 md:px-8 h-19 flex items-center justify-between gap-4">
@@ -68,7 +68,7 @@ export function Navbar(): React.JSX.Element {
               </Box>
 
               {langOpen && (
-                <Box className="absolute right-0 top-full mt-1.5 bg-[#18182A] border border-white/10 rounded-xl overflow-hidden min-w-44 z-50 py-1">
+                <Box className="absolute right-0 top-full mt-1.5 bg-[rgb(26,34,16)] border border-white/10 rounded-xl overflow-hidden min-w-44 z-50 py-1">
                   {LOCALES.map((lang) => (
                     <Box
                       key={lang.code}
@@ -91,7 +91,7 @@ export function Navbar(): React.JSX.Element {
             ) : (
               <Link
                 href={`/${locale}/login`}
-                className="flex items-center justify-center h-9 px-5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-white text-sm font-semibold hover:opacity-90 active:opacity-80 transition-opacity shrink-0 leading-none font-outfit"
+                className="flex items-center justify-center h-9 px-5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] text-white text-sm font-semibold hover:opacity-90 active:opacity-80 transition-opacity shrink-0 leading-none font-outfit"
               >
                 {t("action.login")}
               </Link>
@@ -119,7 +119,7 @@ export function Navbar(): React.JSX.Element {
                 key={link.labelKey}
                 href={link.href}
                 className={`text-xs md:text-[13px] whitespace-nowrap tracking-wide font-medium transition-colors font-outfit ${
-                  isNavActive(link.href) ? "text-[#9234EA]" : "text-white/45 hover:text-white/80"
+                  isNavActive(link.href) ? "text-[rgb(208,201,129)]" : "text-white/45 hover:text-white/80"
                 }`}
               >
                 {t(link.labelKey)}

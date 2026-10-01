@@ -10,14 +10,14 @@ export default function PriceListHero(): React.JSX.Element {
     <Box className="flex flex-col items-center gap-3 pt-12 pb-8">
       {/* ── Title row with side dashes ── */}
       <Box className="flex items-center justify-center gap-3">
-        <Box className="w-5 h-1 bg-[#3B82F6] rounded-full flex-shrink-0" />
+        <Box className="w-5 h-1 bg-[rgb(67,86,32)] rounded-full flex-shrink-0" />
         <Text
           as="span"
           className="font-outfit font-bold text-[28px] md:text-[32px] text-white uppercase tracking-[-0.5px] leading-tight text-center"
         >
           {t("hero.title")}
         </Text>
-        <Box className="w-5 h-1 bg-[#3B82F6] rounded-full flex-shrink-0" />
+        <Box className="w-5 h-1 bg-[rgb(67,86,32)] rounded-full flex-shrink-0" />
       </Box>
 
       {/* ── Subtitle ── */}

@@ -2,6 +2,9 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Download } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { useActivityLog } from "@/features/member-dashboard/hooks/useActivityLog";
 import { useActivityStats } from "@/features/member-dashboard/hooks/useActivityStats";
@@ -22,7 +25,7 @@ const EMPTY_FILTERS: ActivityLogFilterValues = {
 
 export default function ActivityLogPage(): React.JSX.Element {
   const { t } = useTranslation("dashboard");
-  const allRows = useActivityLog();
+  const { rows: allRows, query } = useActivityLog();
   const activityStats = useActivityStats(allRows);
 
   // Applied filter values (set on "Terapkan Filter")
@@ -69,7 +72,7 @@ export default function ActivityLogPage(): React.JSX.Element {
       <Box className="flex items-start justify-between gap-4 flex-wrap">
         <Box className="flex flex-col gap-1">
           <Box className="flex items-center gap-3">
-            <Box className="w-1 h-7 rounded-full bg-linear-to-b from-[#3B82F6] to-[#9234EA]" />
+            <Box className="w-1 h-7 rounded-full bg-linear-to-b from-[rgb(67,86,32)] to-[rgb(208,201,129)]" />
             <Box
               as="h2"
               className="font-outfit font-bold text-[22px] text-white uppercase tracking-wide leading-tight"
@@ -96,29 +99,52 @@ export default function ActivityLogPage(): React.JSX.Element {
       {/* ── Filter bar ── */}
       <ActivityLogFilterBar onApply={handleFilterApply} onReset={handleFilterReset} />
 
-      {/* ── 4 stat cards ── */}
-      <Box className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {activityStats.map((stat) => (
-          <ActivityStatCard key={stat.key} stat={stat} />
-        ))}
-      </Box>
+      {query.isError ? (
+        <ErrorState onRetry={() => void query.refetch()} />
+      ) : query.isPending ? (
+        <Box aria-busy="true" className="flex flex-col gap-6">
+          <Box className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="h-24 w-full rounded-2xl" />
+            ))}
+          </Box>
+          <Box className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton key={index} className="h-14 w-full rounded-xl" />
+            ))}
+          </Box>
+        </Box>
+      ) : (
+        <>
+          {/* ── 4 stat cards ── */}
+          <Box className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {activityStats.map((stat) => (
+              <ActivityStatCard key={stat.key} stat={stat} />
+            ))}
+          </Box>
 
-      {/* ── "AKTIVITAS AKUN ANDA" section heading ── */}
-      <Box className="flex items-center gap-3">
-        <Box className="w-1 h-5 rounded-full bg-linear-to-b from-[#3B82F6] to-[#9234EA]" />
-        <Text
-          as="span"
-          className="text-[13px] font-outfit font-bold text-white/70 uppercase tracking-widest leading-none"
-        >
-          {t("activityLog.sectionTitle")}
-        </Text>
-      </Box>
+          {/* ── "AKTIVITAS AKUN ANDA" section heading ── */}
+          <Box className="flex items-center gap-3">
+            <Box className="w-1 h-5 rounded-full bg-linear-to-b from-[rgb(67,86,32)] to-[rgb(208,201,129)]" />
+            <Text
+              as="span"
+              className="text-[13px] font-outfit font-bold text-white/70 uppercase tracking-widest leading-none"
+            >
+              {t("activityLog.sectionTitle")}
+            </Text>
+          </Box>
 
-      {/* ── Table + pagination ── */}
-      <Box className="rounded-2xl border border-white/10 overflow-hidden">
-        <ActivityLogTable rows={pageRows} />
-        <TablePagination page={page} totalPages={totalPages} onChange={setPage} />
-      </Box>
+          {/* ── Table + pagination ── */}
+          <Box className="rounded-2xl border border-white/10 overflow-hidden">
+            {pageRows.length === 0 ? (
+              <EmptyState compact title={t("activityLog.noActivity")} />
+            ) : (
+              <ActivityLogTable rows={pageRows} />
+            )}
+            <TablePagination page={page} totalPages={totalPages} onChange={setPage} />
+          </Box>
+        </>
+      )}
     </Box>
   );
 }

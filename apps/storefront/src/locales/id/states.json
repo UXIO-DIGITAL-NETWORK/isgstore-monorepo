@@ -1,0 +1,14 @@
+{
+  "loading": "Memuat…",
+  "error": {
+    "title": "Gagal memuat data",
+    "description": "Terjadi gangguan saat mengambil data. Periksa koneksi lalu coba lagi.",
+    "retry": "Coba lagi",
+    "reloading": "Memuat ulang…",
+    "reload": "Muat ulang halaman"
+  },
+  "empty": {
+    "title": "Belum ada data",
+    "description": "Belum ada yang bisa ditampilkan di sini untuk saat ini."
+  }
+}

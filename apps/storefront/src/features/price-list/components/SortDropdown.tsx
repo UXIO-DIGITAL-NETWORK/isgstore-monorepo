@@ -39,7 +39,7 @@ export default function SortDropdown({ value, onChange }: Props): React.JSX.Elem
         className={cn(
           "flex items-center gap-2 px-4 py-2.5 rounded-full border text-[13px] font-inter font-medium text-white transition-all outline-none select-none whitespace-nowrap",
           open
-            ? "bg-white/10 border-[#9234EA]/60"
+            ? "bg-white/10 border-[rgb(208,201,129)]/60"
             : "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20",
         )}
       >
@@ -51,7 +51,7 @@ export default function SortDropdown({ value, onChange }: Props): React.JSX.Elem
 
       {/* ── Dropdown menu ── */}
       {open && (
-        <Box className="absolute left-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-white/10 bg-[#12082a] shadow-lg overflow-hidden">
+        <Box className="absolute left-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-white/10 bg-[rgb(26,34,16)] shadow-lg overflow-hidden">
           {SORT_OPTIONS.map((opt) => (
             <Box
               key={opt}
@@ -61,12 +61,12 @@ export default function SortDropdown({ value, onChange }: Props): React.JSX.Elem
               className={cn(
                 "w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left text-[13px] font-inter transition-colors",
                 opt === value
-                  ? "text-[#C084FC] bg-[#9234EA]/10"
+                  ? "text-[rgb(208,201,129)] bg-[rgb(208,201,129)]/10"
                   : "text-white/70 hover:bg-white/5 hover:text-white",
               )}
             >
               {t(`sort.${opt}`)}
-              {opt === value && <Check className="w-3.5 h-3.5 text-[#C084FC]" />}
+              {opt === value && <Check className="w-3.5 h-3.5 text-[rgb(208,201,129)]" />}
             </Box>
           ))}
         </Box>

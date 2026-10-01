@@ -23,14 +23,14 @@ function CardInner({ article }: { article: Article }) {
         className="absolute inset-0 w-full h-full"
       />
 
-      {/* Dark purple gradient overlay — transparent top → solid bottom */}
-      <Box className="absolute inset-0 bg-linear-to-t from-[#0B051D] via-[#0B051D]/80 to-transparent" />
+      {/* Dark green gradient overlay — transparent top → solid bottom */}
+      <Box className="absolute inset-0 bg-linear-to-t from-[rgb(14,20,10)] via-[rgb(14,20,10)]/80 to-transparent" />
 
       {/* Content overlaid at bottom */}
       <Box className="absolute bottom-0 left-0 right-0 flex flex-col gap-3 px-5 pb-6">
         <Text
           as="span"
-          className="inline-block self-start font-outfit font-bold text-[11px] leading-none tracking-[0.5px] text-white uppercase px-3 py-1.5 rounded-full bg-linear-to-r from-[#8B5CF6] to-[#6366F1]"
+          className="inline-block self-start font-outfit font-bold text-[11px] leading-none tracking-[0.5px] text-white uppercase px-3 py-1.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(39,53,15)]"
         >
           {article.category}
         </Text>
@@ -56,7 +56,7 @@ export default function ArticleCard({ article, isFeatured }: Props): React.JSX.E
   if (isFeatured) {
     return (
       <Box as="article" className="flex-1 min-w-0">
-        <Link href={href} className="block p-0.5 h-full rounded-2xl bg-linear-to-br from-[#9B3BF6] to-[#3B82F6]">
+        <Link href={href} className="block p-0.5 h-full rounded-2xl bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(67,86,32)]">
           <CardInner article={article} />
         </Link>
       </Box>
@@ -64,7 +64,7 @@ export default function ArticleCard({ article, isFeatured }: Props): React.JSX.E
   }
 
   return (
-    <Box as="article" className="flex-1 min-w-0 rounded-2xl border border-[#9333EA]/50">
+    <Box as="article" className="flex-1 min-w-0 rounded-2xl border border-[rgb(208,201,129)]/50">
       <Link href={href} className="block">
         <CardInner article={article} />
       </Link>

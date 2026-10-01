@@ -9,10 +9,10 @@ import TransactionTable from "@/features/track-order/components/TransactionTable
 import { useTrackOrderSearch } from "@/features/track-order/hooks/useTrackOrderSearch";
 
 export default function TrackOrderPage(): React.JSX.Element {
-  const { form, filteredRows, onSubmit } = useTrackOrderSearch();
+  const { form, filteredRows, onSubmit, isSearching, hasSearched, query } = useTrackOrderSearch();
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       {/* ── Hero ── */}
@@ -28,7 +28,13 @@ export default function TrackOrderPage(): React.JSX.Element {
 
       {/* ── Transactions table ── */}
       <Box className="max-w-6xl mx-auto px-4 md:px-8 pb-16">
-        <TransactionTable rows={filteredRows} />
+        <TransactionTable
+          rows={filteredRows}
+          isSearching={isSearching}
+          hasSearched={hasSearched}
+          isError={query.isError}
+          onRetry={() => void query.refetch()}
+        />
       </Box>
 
       <Footer />

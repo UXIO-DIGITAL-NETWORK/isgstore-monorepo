@@ -18,6 +18,10 @@
     "regions": {
       "indonesia": "Indonesia",
       "global": "Global"
+    },
+    "empty": {
+      "title": "Belum ada game populer",
+      "description": "Daftar game populer sedang kosong. Coba lagi sebentar lagi."
     }
   },
   "topUpGame": {
@@ -31,6 +35,10 @@
       "fps": "FPS",
       "pc-games": "PC Games",
       "voucher": "Voucher"
+    },
+    "empty": {
+      "title": "Belum ada game tersedia",
+      "description": "Katalog game sedang kosong. Silakan cek kembali nanti."
     }
   },
   "keunggulan": {
@@ -56,7 +64,11 @@
   "artikel": {
     "title": "Artikel Terbaru Seputar Game",
     "subtitle": "Temukan informasi, tips, dan update terbaru seputar top up game, promo menarik",
-    "viewAll": "Lihat Semua Artikel"
+    "viewAll": "Lihat Semua Artikel",
+    "empty": {
+      "title": "Belum ada artikel",
+      "description": "Belum ada artikel yang dipublikasikan saat ini."
+    }
   },
   "announcement": {
     "title": "Pengumuman"

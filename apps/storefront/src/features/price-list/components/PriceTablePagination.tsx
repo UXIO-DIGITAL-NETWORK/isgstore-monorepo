@@ -83,7 +83,7 @@ export default function PriceTablePagination({
             className={cn(
               "w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-inter font-medium transition-colors select-none",
               item === currentPage
-                ? "bg-[#9234EA] text-white"
+                ? "bg-[rgb(208,201,129)] text-white"
                 : "text-white/55 hover:bg-white/8 hover:text-white cursor-pointer",
             )}
           >

@@ -26,8 +26,8 @@ const TYPE_CONFIG: Record<
   { icon: React.JSX.Element; bg: string; color: string }
 > = {
   login:        { icon: <LogIn className="w-4 h-4" />,      bg: "bg-[#34D399]/10", color: "text-[#34D399]" },
-  membership:   { icon: <Crown className="w-4 h-4" />,      bg: "bg-[#9234EA]/10", color: "text-[#C084FC]" },
-  transaction:  { icon: <Receipt className="w-4 h-4" />,    bg: "bg-[#3B82F6]/10", color: "text-[#60A5FA]" },
+  membership:   { icon: <Crown className="w-4 h-4" />,      bg: "bg-[rgb(208,201,129)]/10", color: "text-[rgb(208,201,129)]" },
+  transaction:  { icon: <Receipt className="w-4 h-4" />,    bg: "bg-[#60A5FA]/10", color: "text-[#60A5FA]" },
   security:     { icon: <ShieldCheck className="w-4 h-4" />, bg: "bg-[#FBBF24]/10", color: "text-[#FBBF24]" },
   verification: { icon: <BadgeCheck className="w-4 h-4" />, bg: "bg-[#06B6D4]/10", color: "text-[#22D3EE]" },
   failed:       { icon: <XCircle className="w-4 h-4" />,    bg: "bg-[#F87171]/10", color: "text-[#F87171]" },
@@ -46,7 +46,7 @@ export default function ActivityLogTable({ rows }: Props): React.JSX.Element {
       <Box as="table" className="w-full border-collapse">
         {/* Header */}
         <Box as="thead">
-          <Box as="tr" className="bg-[#3A1D6E]">
+          <Box as="tr" className="bg-[rgb(39,53,15)]">
             <Box
               as="th"
               className="text-left px-4 py-3.5 text-[12px] font-outfit font-semibold text-white/80 leading-none"

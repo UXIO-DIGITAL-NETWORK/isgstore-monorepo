@@ -16,14 +16,14 @@ export default function MemberIdCard({ profile }: Props): React.JSX.Element {
   const navigate = useNavigate();
 
   return (
-    /* Gradient border wrapper: 1px gradient bg + dark navy inner */
-    <Box className="flex-1 min-w-0 p-px rounded-2xl bg-linear-to-br from-[#3B82F6] to-[#9234EA]">
-      <Box className="bg-[#0C0E1A] rounded-[15px] p-5 h-full flex flex-col gap-5">
+    /* Gradient border wrapper: 1px gradient bg + dark forest inner */
+    <Box className="flex-1 min-w-0 p-px rounded-2xl bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+      <Box className="bg-[rgb(14,20,10)] rounded-[15px] p-5 h-full flex flex-col gap-5">
 
         {/* ── Header row ── */}
         <Box className="flex items-center justify-between gap-3">
           <Box className="flex items-center gap-2">
-            <User className="w-4 h-4 text-[#9234EA] shrink-0" />
+            <User className="w-4 h-4 text-[rgb(208,201,129)] shrink-0" />
             <Text
               as="span"
               className="text-[11px] font-outfit font-bold text-white uppercase tracking-[0.15em] leading-none"
@@ -39,7 +39,7 @@ export default function MemberIdCard({ profile }: Props): React.JSX.Element {
             onClick={() =>
               navigate({ to: "/$locale/pengaturan-akun", params: { locale: locale ?? "id" } })
             }
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer shrink-0"
           >
             <Settings className="w-3.5 h-3.5 text-white shrink-0" />
             <Text as="span" className="text-[12px] font-outfit font-bold text-white leading-none">
@@ -63,7 +63,7 @@ export default function MemberIdCard({ profile }: Props): React.JSX.Element {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Box className="w-full h-full bg-linear-to-br from-[#3B82F6] to-[#9234EA] flex items-center justify-center">
+                <Box className="w-full h-full bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(208,201,129)] flex items-center justify-center">
                   <Text
                     as="span"
                     className="text-[26px] font-outfit font-bold text-white leading-none select-none"
@@ -82,11 +82,11 @@ export default function MemberIdCard({ profile }: Props): React.JSX.Element {
               {profile.name}
             </Text>
 
-            {/* MEMBER badge — rectangular with violet border */}
-            <Box className="px-3 border border-[#9234EA] rounded-full bg-[#9234EA]/5">
+            {/* MEMBER badge — rectangular with gold border */}
+            <Box className="px-3 border border-[rgb(208,201,129)] rounded-full bg-[rgb(208,201,129)]/5">
               <Text
                 as="span"
-                className="text-[10px] font-outfit font-bold text-[#9234EA] uppercase tracking-[0.18em]"
+                className="text-[10px] font-outfit font-bold text-[rgb(208,201,129)] uppercase tracking-[0.18em]"
               >
                 {t("memberCard.memberBadge")}
               </Text>

@@ -34,11 +34,13 @@ const GROUP_LABELS: Record<PaymentGroupType, string> = {
  * for these, and a missing remote image would render as a broken chip.
  */
 export const usePaymentGroups = () => {
-  const { data, isLoading } = useQuery({
+  const query = useQuery({
     queryKey: ["payment-channels", "wallet"],
     queryFn: async (): Promise<ApiResponse<PaymentChannelsResponse>> =>
       await api.get(`${API_VERSION}/storefront/payment-channels`),
   });
+
+  const { data } = query;
 
   const groups = useMemo<PaymentGroup[]>(() => {
     // The endpoint nests the rows under `channels`; reading `data.data` directly
@@ -65,5 +67,5 @@ export const usePaymentGroups = () => {
     })).filter((group) => group.options.length > 0);
   }, [data]);
 
-  return { groups, isLoading };
+  return { groups, isLoading: query.isLoading, query };
 };

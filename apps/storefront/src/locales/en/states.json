@@ -1,0 +1,14 @@
+{
+  "loading": "Loading…",
+  "error": {
+    "title": "Couldn't load data",
+    "description": "Something went wrong while fetching this. Check your connection and try again.",
+    "retry": "Try again",
+    "reloading": "Retrying…",
+    "reload": "Reload page"
+  },
+  "empty": {
+    "title": "Nothing here yet",
+    "description": "There is nothing to show here right now."
+  }
+}

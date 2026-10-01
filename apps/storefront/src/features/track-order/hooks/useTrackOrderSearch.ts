@@ -37,7 +37,7 @@ export function useTrackOrderSearch() {
     defaultValues: { query: "" },
   });
 
-  const { data, isFetching } = useQuery({
+  const query = useQuery({
     queryKey: ["track-order", submittedQuery],
     queryFn: async () => {
       const response = await storefrontService.trackOrders(submittedQuery);
@@ -45,6 +45,7 @@ export function useTrackOrderSearch() {
     },
     enabled: submittedQuery.length > 0,
   });
+  const { data, isFetching } = query;
 
   const filteredRows = useMemo<TrackOrderRow[]>(
     () =>
@@ -68,5 +69,5 @@ export function useTrackOrderSearch() {
 
   const onSubmit = form.handleSubmit((values) => setSubmittedQuery(values.query.trim()));
 
-  return { form, filteredRows, onSubmit, isSearching: isFetching, hasSearched: submittedQuery.length > 0 };
+  return { form, filteredRows, onSubmit, isSearching: isFetching, hasSearched: submittedQuery.length > 0, query };
 }

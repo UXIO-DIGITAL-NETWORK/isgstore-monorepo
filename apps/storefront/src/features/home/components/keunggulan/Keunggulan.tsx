@@ -15,7 +15,7 @@ export default function Keunggulan(): React.JSX.Element {
         {/* Section heading — centered, flanking bars on both sides */}
         <Box className="flex flex-col items-center gap-3 mb-16">
           <Box className="flex flex-wrap items-center justify-center gap-4">
-            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
+            <Box className="w-8 h-0.5 rounded-full bg-[rgb(67,86,32)] shrink-0 hidden sm:block" />
             <Heading
               as="h2"
               level={3}
@@ -23,7 +23,7 @@ export default function Keunggulan(): React.JSX.Element {
             >
               {t("keunggulan.title")}
             </Heading>
-            <Box className="w-8 h-0.5 rounded-full bg-[#3B82F6] shrink-0 hidden sm:block" />
+            <Box className="w-8 h-0.5 rounded-full bg-[rgb(67,86,32)] shrink-0 hidden sm:block" />
           </Box>
           <Text as="p" className="font-inter font-normal text-[15px] leading-5 text-[#697282]">
             {t("keunggulan.subtitle")}
@@ -35,21 +35,21 @@ export default function Keunggulan(): React.JSX.Element {
 
           {/* Column 1 — Pembayaran Aman */}
           <FeatureCard
-            iconBg="bg-[#0C1929]"
-            icon={<ShieldCheck className="w-10 h-10 text-[#3B82F6]" />}
+            iconBg="bg-[rgb(26,34,16)]"
+            icon={<ShieldCheck className="w-10 h-10 text-[rgb(208,201,129)]" />}
             title={t("keunggulan.secure.title")}
             description={t("keunggulan.secure.desc")}
           >
             <Box className="flex flex-col items-center gap-2">
               <Box className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#3B82F6] shrink-0" />
-                <Text as="span" className="font-inter font-medium text-[13px] text-[#3B82F6] leading-snug">
+                <CheckCircle className="w-4 h-4 text-[rgb(208,201,129)] shrink-0" />
+                <Text as="span" className="font-inter font-medium text-[13px] text-[rgb(208,201,129)] leading-snug">
                   {t("keunggulan.secure.pci")}
                 </Text>
               </Box>
               <Box className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#3B82F6] shrink-0" />
-                <Text as="span" className="font-inter font-medium text-[13px] text-[#3B82F6] leading-snug">
+                <CheckCircle className="w-4 h-4 text-[rgb(208,201,129)] shrink-0" />
+                <Text as="span" className="font-inter font-medium text-[13px] text-[rgb(208,201,129)] leading-snug">
                   {t("keunggulan.secure.fraud")}
                 </Text>
               </Box>
@@ -58,8 +58,8 @@ export default function Keunggulan(): React.JSX.Element {
 
           {/* Column 2 — Pengiriman Instan */}
           <FeatureCard
-            iconBg="bg-[#160B2E]"
-            icon={<Zap className="w-10 h-10 text-[#9333EA]" />}
+            iconBg="bg-[rgb(26,34,16)]"
+            icon={<Zap className="w-10 h-10 text-[rgb(208,201,129)]" />}
             title={t("keunggulan.instant.title")}
             description={t("keunggulan.instant.desc")}
           >
@@ -73,14 +73,14 @@ export default function Keunggulan(): React.JSX.Element {
 
           {/* Column 3 — 24/7 Support */}
           <FeatureCard
-            iconBg="bg-[#0B1120]"
+            iconBg="bg-[rgb(26,34,16)]"
             icon={<Headphones className="w-10 h-10 text-white/50" />}
             title={t("keunggulan.support.title")}
             description={t("keunggulan.support.desc")}
           >
             <Text
               as="span"
-              className="font-outfit font-bold text-[13px] text-[#3B82F6] uppercase tracking-[0.18em] cursor-pointer hover:text-[#60A5FA] transition-colors"
+              className="font-outfit font-bold text-[13px] text-[rgb(208,201,129)] uppercase tracking-[0.18em] cursor-pointer hover:text-[rgb(247,246,198)] transition-colors"
             >
               {t("keunggulan.support.contact")}
             </Text>

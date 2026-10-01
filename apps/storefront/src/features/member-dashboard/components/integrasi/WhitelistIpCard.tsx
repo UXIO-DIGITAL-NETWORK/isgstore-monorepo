@@ -40,14 +40,14 @@ export default function WhitelistIpCard({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeDraft(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t("integrasi.whitelist.placeholder")}
-            className="flex-1 min-w-0 bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white font-plex placeholder:text-white/30 placeholder:font-inter text-sm outline-none focus:border-[#3B82F6]/60 transition-all"
+            className="flex-1 min-w-0 bg-[rgb(14,20,10)] border border-white/10 rounded-full px-4 py-2.5 text-white font-plex placeholder:text-white/30 placeholder:font-inter text-sm outline-none focus:border-[rgb(67,86,32)]/60 transition-all"
           />
           <Box
             as="button"
             type="button"
             onClick={onAddIp}
             disabled={loading}
-            className="shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
+            className="shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading && <Spinner className="w-4 h-4" />}
             {t("integrasi.whitelist.addButton")}

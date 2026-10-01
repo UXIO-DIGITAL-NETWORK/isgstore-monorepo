@@ -13,7 +13,7 @@ type Props = {
 /**
  * Horizontal result row shown while the user types in the search bar (mockup #2).
  * Renders: small square thumbnail (art + mini logo overlay) + game title + region.
- * Violet highlight on hover.
+ * Gold highlight on hover.
  *
  * TODO: wire onClose to navigate to /{locale}/checkout/{slug} when routing is ready.
  */
@@ -23,10 +23,10 @@ export function SearchResultRow({ game, onClose }: Props): React.JSX.Element {
       as="button"
       type="button"
       onClick={onClose}
-      className="flex items-center gap-3.5 w-full px-4 py-3 rounded-xl hover:bg-[#9333EA]/15 active:bg-[#9333EA]/25 transition-colors outline-none cursor-pointer text-left"
+      className="flex items-center gap-3.5 w-full px-4 py-3 rounded-xl hover:bg-[rgb(208,201,129)]/15 active:bg-[rgb(208,201,129)]/25 transition-colors outline-none cursor-pointer text-left"
     >
       {/* Square thumbnail */}
-      <Box className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-[#0C0C16]">
+      <Box className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-[rgb(14,20,10)]">
         <Image
           src={game.bgImage}
           alt={game.title}

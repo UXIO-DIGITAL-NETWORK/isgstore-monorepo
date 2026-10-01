@@ -6,11 +6,19 @@ import type { ActivityLogRow } from "@/features/member-dashboard/types/activityL
 /** One page holds the whole table; the filter bar narrows it client-side. */
 const PER_PAGE = 100;
 
-export function useActivityLog(): ActivityLogRow[] {
-  const { data } = useQuery({
+/**
+ * The member's activity log.
+ *
+ * Returns the query alongside the mapped rows so the page can show a table
+ * skeleton / error / empty state rather than a silently blank table.
+ */
+export function useActivityLog() {
+  const query = useQuery({
     queryKey: ["member", "activity-logs"],
     queryFn: async () => (await memberService.activityLogs({ per_page: PER_PAGE })).data,
   });
 
-  return asArray(data?.data).map(toActivityRow);
+  const rows: ActivityLogRow[] = asArray(query.data?.data).map(toActivityRow);
+
+  return { rows, query };
 }

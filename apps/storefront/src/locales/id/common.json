@@ -30,7 +30,8 @@
   },
   "search": {
     "popular": "Pencarian Populer",
-    "noResults": "Game tidak ditemukan"
+    "noResults": "Game tidak ditemukan",
+    "popularEmpty": "Belum ada game populer untuk ditampilkan"
   },
   "maintenance": {
     "title": "Sedang Dalam Perbaikan",

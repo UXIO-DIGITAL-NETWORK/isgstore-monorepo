@@ -1,6 +1,8 @@
 import React from "react";
 import { useParams } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
@@ -26,7 +28,8 @@ export default function PaymentSuccessPage(): React.JSX.Element {
 
   // Same query key as the invoice page, so arriving here from the poll is a
   // cache hit and the card renders without a second round trip.
-  const { data: invoice } = useInvoiceQuery(invoiceNumber);
+  const invoiceQuery = useInvoiceQuery(invoiceNumber);
+  const invoice = invoiceQuery.data;
 
   const order = invoice
     ? toOrder(invoice)
@@ -35,11 +38,21 @@ export default function PaymentSuccessPage(): React.JSX.Element {
       : null;
 
   if (!order) {
+    const isLoading = invoiceQuery.isPending && invoiceQuery.fetchStatus !== "idle";
+
     return (
-      <Box className="min-h-dvh bg-[#0A0A0C]">
+      <Box className="min-h-dvh bg-[rgb(0,0,0)]">
         <Navbar />
         <Box className="flex flex-col items-center gap-6 px-4 py-20">
-          <PaymentSuccessHero />
+          {invoiceQuery.isError ? (
+            <ErrorState onRetry={() => void invoiceQuery.refetch()} />
+          ) : isLoading ? (
+            <Box aria-busy="true" className="w-full max-w-2xl">
+              <Skeleton className="h-72 w-full rounded-2xl" />
+            </Box>
+          ) : (
+            <PaymentSuccessHero />
+          )}
         </Box>
         <Footer />
       </Box>
@@ -47,7 +60,7 @@ export default function PaymentSuccessPage(): React.JSX.Element {
   }
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       {/* Hero — centered, full-width */}

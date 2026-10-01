@@ -14,5 +14,5 @@ export type Game = {
   /** Small logo overlaid on the card; null when the category has no logo. */
   logoImage: string | null;
   category: Exclude<GameCategory, "semua">;
-  borderColor: "azure" | "violet";
+  borderColor: "green" | "gold";
 };

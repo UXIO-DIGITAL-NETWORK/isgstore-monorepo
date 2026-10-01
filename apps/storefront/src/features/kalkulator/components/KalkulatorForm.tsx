@@ -22,7 +22,7 @@ function FieldLabel({
 }) {
   return (
     <Box className="flex items-center gap-1.5 mb-1.5">
-      <Box as="span" className="text-[#9333EA]">
+      <Box as="span" className="text-[rgb(208,201,129)]">
         {icon}
       </Box>
       <Text as="span" className="font-inter text-[13px] text-white/70 font-medium">
@@ -39,7 +39,7 @@ export default function KalkulatorForm({
   const { t } = useTranslation("kalkulator");
 
   return (
-    <Box className="rounded-2xl border border-white/10 bg-[rgba(59,130,246,0.05)] backdrop-blur-[6px] p-6 md:p-8 flex flex-col gap-5">
+    <Box className="rounded-2xl border border-white/10 bg-[rgba(67,86,32,0.05)] backdrop-blur-[6px] p-6 md:p-8 flex flex-col gap-5">
       {/* ── Total Match ── */}
       <Box>
         <FieldLabel icon={<Gamepad2 size={15} />} label={t("form.totalMatch.label")} />

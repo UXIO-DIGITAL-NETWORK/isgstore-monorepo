@@ -29,7 +29,7 @@ export default function SectionCard({
         <Box className="flex items-center gap-3">
           {icon !== undefined && icon}
           {stepNumber !== undefined && icon === undefined && (
-            <Box className="w-7 h-7 rounded-lg bg-linear-to-r from-[#9333EA] to-[#3B82F6] flex items-center justify-center shrink-0">
+            <Box className="w-7 h-7 rounded-lg bg-linear-to-r from-[rgb(208,201,129)] to-[rgb(67,86,32)] flex items-center justify-center shrink-0">
               <Text as="span" className="font-outfit font-bold text-[12px] text-white leading-none">
                 {stepNumber}
               </Text>
@@ -51,8 +51,8 @@ export default function SectionCard({
 
   if (gradientBorder) {
     return (
-      <Box className={cn("p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9333EA]", className)}>
-        <Box className="rounded-[15px] bg-[#0D1117] overflow-hidden">
+      <Box className={cn("p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]", className)}>
+        <Box className="rounded-[15px] bg-[rgb(14,20,10)] overflow-hidden">
           {header}
           <Box className="p-4">{children}</Box>
         </Box>
@@ -63,7 +63,7 @@ export default function SectionCard({
   return (
     <Box
       className={cn(
-        "rounded-4xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] overflow-hidden",
+        "rounded-4xl border border-[rgba(208,201,129,0.35)] bg-[rgb(14,20,10)] overflow-hidden",
         className,
       )}
     >

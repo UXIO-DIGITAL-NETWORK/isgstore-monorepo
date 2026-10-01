@@ -2,6 +2,8 @@ import React from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { RotateCw, CreditCard } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/Button";
 import { Navbar } from "@/components/shared/Navbar";
@@ -31,7 +33,8 @@ export default function PaymentFailedPage(): React.JSX.Element {
 
   // Shares the invoice page's query key, so arriving here from the poll costs
   // no extra request.
-  const { data: invoice } = useInvoiceQuery(invoiceNumber);
+  const invoiceQuery = useInvoiceQuery(invoiceNumber);
+  const invoice = invoiceQuery.data;
 
   const order = invoice
     ? toOrder(invoice)
@@ -49,11 +52,21 @@ export default function PaymentFailedPage(): React.JSX.Element {
   };
 
   if (!order) {
+    const isLoading = invoiceQuery.isPending && invoiceQuery.fetchStatus !== "idle";
+
     return (
-      <Box className="min-h-dvh bg-[#0A0A0C]">
+      <Box className="min-h-dvh bg-[rgb(0,0,0)]">
         <Navbar />
         <Box className="flex flex-col items-center gap-6 px-4 py-20">
-          <PaymentFailedHero />
+          {invoiceQuery.isError ? (
+            <ErrorState onRetry={() => void invoiceQuery.refetch()} />
+          ) : isLoading ? (
+            <Box aria-busy="true" className="w-full max-w-2xl">
+              <Skeleton className="h-72 w-full rounded-2xl" />
+            </Box>
+          ) : (
+            <PaymentFailedHero />
+          )}
         </Box>
         <Footer />
       </Box>
@@ -61,7 +74,7 @@ export default function PaymentFailedPage(): React.JSX.Element {
   }
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       {/* Hero — centered, full-width */}

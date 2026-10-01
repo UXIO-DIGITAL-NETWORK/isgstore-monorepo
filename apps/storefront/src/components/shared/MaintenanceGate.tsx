@@ -56,7 +56,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }): Re
           <Link
             href={whatsappHref}
             target="_blank"
-            className="text-sm font-semibold text-[#9234EA] hover:text-[#A855F7] transition-colors"
+            className="text-sm font-semibold text-[rgb(208,201,129)] hover:text-[rgb(247,246,198)] transition-colors"
           >
             {t("footer.chatWhatsApp")}
           </Link>
@@ -64,7 +64,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }): Re
         {supportEmail && (
           <Link
             href={`mailto:${supportEmail}`}
-            className="text-sm font-semibold text-[#9234EA] hover:text-[#A855F7] transition-colors"
+            className="text-sm font-semibold text-[rgb(208,201,129)] hover:text-[rgb(247,246,198)] transition-colors"
           >
             {supportEmail}
           </Link>

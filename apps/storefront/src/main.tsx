@@ -8,6 +8,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import i18n from "@/config/i18n";
 import { ENV } from "@/config/env";
 import { queryClient } from "@/config/queryClient";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { RouteErrorComponent, RoutePendingComponent } from "@/components/shared/RouteStateFallbacks";
 import "./index.css";
 
 import { routeTree } from "./routeTree.gen";
@@ -17,6 +19,10 @@ const router = createRouter({
   scrollRestoration: true,
   defaultPreload: "intent",
   defaultPreloadStaleTime: 0,
+  // App-wide fallbacks so a route failure or a slow route never falls through
+  // to the router's unstyled default.
+  defaultErrorComponent: RouteErrorComponent,
+  defaultPendingComponent: RoutePendingComponent,
 });
 
 declare module "@tanstack/react-router" {
@@ -30,7 +36,11 @@ createRoot(document.getElementById("root")!).render(
     <GoogleOAuthProvider clientId={ENV.GOOGLE_CLIENT_ID}>
       <QueryClientProvider client={queryClient}>
         <I18nextProvider i18n={i18n}>
-          <RouterProvider router={router} />
+          {/* Inside I18next so the crash notice is translated; outside the
+              router so it also catches a crash in the root layout itself. */}
+          <ErrorBoundary>
+            <RouterProvider router={router} />
+          </ErrorBoundary>
         </I18nextProvider>
       </QueryClientProvider>
     </GoogleOAuthProvider>

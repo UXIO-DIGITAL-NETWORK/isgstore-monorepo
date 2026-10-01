@@ -44,7 +44,7 @@ export default function TransactionRowComponent({ row, index }: Props): React.JS
         className={cn(
           `hidden md:grid ${TABLE_GRID_COLS} items-center w-full px-5 py-3`,
           "text-left cursor-pointer transition-colors hover:bg-white/[0.04] outline-none",
-          isEven ? "bg-transparent" : "bg-[#0D0718]/40",
+          isEven ? "bg-transparent" : "bg-[rgb(14,20,10)]/40",
         )}
       >
         <Text as="span" className="font-plex text-[13px] text-white/65 leading-none">
@@ -106,7 +106,7 @@ export default function TransactionRowComponent({ row, index }: Props): React.JS
             alt={row.gameName}
             className="w-6 h-6 rounded-md object-cover flex-shrink-0"
           />
-          <Text as="span" className="font-inter text-[12px] text-purple-300/80 font-medium leading-none">
+          <Text as="span" className="font-inter text-[12px] text-[rgb(208,201,129)]/80 font-medium leading-none">
             {row.gameName}
           </Text>
           <Text as="span" className="font-inter text-[12px] text-white/40 leading-none">

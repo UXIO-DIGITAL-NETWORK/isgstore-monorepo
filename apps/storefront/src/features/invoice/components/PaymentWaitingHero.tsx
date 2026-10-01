@@ -12,7 +12,7 @@ export default function PaymentWaitingHero(): React.JSX.Element {
       <img
         src={paymentProcessImg}
         alt="Payment Process"
-        className="w-[180px] h-[180px] object-contain drop-shadow-[0_0_40px_rgba(147,51,234,0.45)]"
+        className="w-[180px] h-[180px] object-contain drop-shadow-[0_0_40px_rgba(208,201,129,0.45)]"
       />
       <Box className="flex flex-col items-center gap-2">
         <Text

@@ -6,6 +6,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useParams } from "@tanstack/react-router";
 
 import { Box } from "@/components/common/Box";
+import { ErrorState } from "@/components/common/ErrorState";
 import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Link } from "@/components/common/Link";
@@ -17,7 +18,7 @@ import type { ApiError } from "@/types/api.type";
 import { normalizeWhatsappNumber, sanitizePhoneInput } from "@/lib/phone";
 
 const inputClass =
-  "w-full bg-white/6 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#C084FC] focus:bg-white/8 transition-all";
+  "w-full bg-white/6 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[rgb(208,201,129)] focus:bg-white/8 transition-all";
 
 export default function RegisterPage() {
   const { t } = useTranslation("auth");
@@ -58,8 +59,8 @@ export default function RegisterPage() {
 
       {/* API Error */}
       {apiErrorMessage && (
-        <Box className="bg-red-500/10 border border-red-500/30 p-4 rounded-2xl mb-5">
-          <Text className="font-medium text-red-400 text-sm">{apiErrorMessage}</Text>
+        <Box className="mb-5">
+          <ErrorState variant="inline" title={apiErrorMessage} description="" />
         </Box>
       )}
 
@@ -120,7 +121,7 @@ export default function RegisterPage() {
           <Text as="span" className="block text-sm font-semibold text-white/80 font-outfit">
             {t("register.phone")}
           </Text>
-          <Box className="flex w-full bg-white/6 border border-white/10 rounded-full focus-within:border-[#C084FC] focus-within:bg-white/8 transition-all overflow-hidden">
+          <Box className="flex w-full bg-white/6 border border-white/10 rounded-full focus-within:border-[rgb(208,201,129)] focus-within:bg-white/8 transition-all overflow-hidden">
             {/* A hint, not a fixed prefix: "0812…" is read as Indonesian, and a
                 typed "+65…" is kept as typed. */}
             <Text
@@ -211,7 +212,7 @@ export default function RegisterPage() {
             as="input"
             type="checkbox"
             id="terms"
-            className="w-4 h-4 accent-[#9234EA] cursor-pointer mt-0.5 flex-shrink-0"
+            className="w-4 h-4 accent-[rgb(208,201,129)] cursor-pointer mt-0.5 flex-shrink-0"
           />
           <Box
             as="label"
@@ -235,7 +236,7 @@ export default function RegisterPage() {
           as="button"
           type="submit"
           disabled={isPending}
-          className="w-full flex items-center justify-center py-3 px-4 bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary text-white text-[15px] font-bold font-outfit rounded-full border-0 disabled:opacity-70 cursor-pointer hover:opacity-90 transition-opacity"
+          className="w-full flex items-center justify-center py-3 px-4 bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary text-white text-[15px] font-bold font-outfit rounded-full border-0 disabled:opacity-70 cursor-pointer hover:opacity-90 transition-opacity"
         >
           {isPending ? t("register.loading") : t("register.submit")}
         </Box>
@@ -265,7 +266,7 @@ export default function RegisterPage() {
         {t("register.hasAccount")}{" "}
         <Link
           href={`/${locale ?? "id"}/login`}
-          className="text-[#3B82F6] font-bold hover:underline transition-colors"
+          className="text-[rgb(208,201,129)] font-bold hover:underline transition-colors"
         >
           {t("register.loginLink")}
         </Link>

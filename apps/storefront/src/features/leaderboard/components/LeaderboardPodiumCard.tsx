@@ -24,7 +24,7 @@ const cardVariants = cva(
     variants: {
       rank: {
         1: "bg-[#1E1500] border-[#E5A000]",
-        2: "bg-[#0D1A2E] border-[#3B82F6]/60",
+        2: "bg-[#0D1A2E] border-[rgb(201,213,227)]/60",
         3: "bg-[#1A120A] border-[#C97B3C]/60",
       },
     },
@@ -35,7 +35,7 @@ const amountVariants = cva("font-plex font-bold text-[18px] leading-none", {
   variants: {
     rank: {
       1: "text-[#E5A000]",
-      2: "text-[#3B82F6]",
+      2: "text-[rgb(201,213,227)]",
       3: "text-[#C97B3C]",
     },
   },

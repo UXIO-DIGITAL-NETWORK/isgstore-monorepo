@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useSearch } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
@@ -36,7 +38,9 @@ export default function RefundClaimPage(): React.JSX.Element {
   const { locale } = useParams({ from: "/$locale/refund/" });
   const { token, invoice } = useSearch({ from: "/$locale/refund/" });
 
-  const { data: claim, isLoading, isError } = useRefundClaim(token ?? null);
+  const claimQuery = useRefundClaim(token ?? null);
+  const claim = claimQuery.data;
+  const isError = claimQuery.isError;
   const submit = useSubmitPayoutDetails(token ?? null);
 
   // Claiming kills the token, so the page cannot simply refetch afterwards —
@@ -48,7 +52,7 @@ export default function RefundClaimPage(): React.JSX.Element {
   const current = submit.data?.data ?? claim;
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       <Box className="flex flex-col items-center px-4">
@@ -66,24 +70,19 @@ export default function RefundClaimPage(): React.JSX.Element {
       </Box>
 
       <Box className="max-w-3xl mx-auto px-4 md:px-8 pb-16 flex flex-col gap-4">
-        {token && isLoading && (
-          <Text as="p" className="font-inter text-[13px] text-white/55 text-center py-8">
-            {t("claim.loading")}
-          </Text>
+        {token && claimQuery.isPending && claimQuery.fetchStatus !== "idle" && (
+          <Box aria-busy="true" className="flex flex-col gap-4">
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-56 w-full rounded-2xl" />
+          </Box>
         )}
 
         {token && isError && (
-          <Box className="flex items-start gap-3 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-4">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-            <Box className="flex flex-col gap-1">
-              <Text as="span" className="font-inter text-[13px] text-white/80">
-                {t("claim.invalid")}
-              </Text>
-              <Text as="span" className="font-inter text-[12px] text-white/55">
-                {t("claim.invalidHelp")}
-              </Text>
-            </Box>
-          </Box>
+          <ErrorState
+            title={t("claim.invalid")}
+            description={t("claim.invalidHelp")}
+            onRetry={() => void claimQuery.refetch()}
+          />
         )}
 
         {current && (

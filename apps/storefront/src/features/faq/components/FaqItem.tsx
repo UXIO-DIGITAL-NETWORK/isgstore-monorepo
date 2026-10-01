@@ -24,7 +24,7 @@ export default function FaqItem({
       className={cn(
         "rounded-2xl border transition-colors duration-200",
         isOpen
-          ? "border-[#9234EA]/40 bg-[rgba(59,130,246,0.06)] backdrop-blur-[6px]"
+          ? "border-[rgb(208,201,129)]/40 bg-[rgba(67,86,32,0.06)] backdrop-blur-[6px]"
           : "border-white/10 bg-white/[0.03]",
       )}
     >

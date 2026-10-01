@@ -19,7 +19,7 @@ export default function TrackOrderSearchCard({ form, onSubmit }: Props): React.J
   const { register } = form;
 
   return (
-    <Box className="rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] p-6 md:p-8">
+    <Box className="rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgb(14,20,10)] p-6 md:p-8">
       <Box
         as="form"
         onSubmit={(e: FormEvent) => { e.preventDefault(); onSubmit(); }}

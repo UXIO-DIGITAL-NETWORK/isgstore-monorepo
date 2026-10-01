@@ -80,19 +80,22 @@ src/
 
 ## Design System
 
-Theme: **E-sports Premium — Neon Violet Dark Mode**
+Theme: **E-sports Premium — Army Green & Antique Gold Dark Mode**
 
 ### Color Palette
 
 | Role | Token | Hex |
 |---|---|---|
-| Page Background | `bg-neutral-950` | `#0A0A0C` |
-| Surface (Deep) | `bg-[#0B051D]` | `#0B051D` |
-| Primary Accent | `bg-violet-600` | `#9234EA` |
-| Secondary Accent | `bg-blue-500` | `#3B82F6` |
-| Active Card Border | — | `#C084FC` |
-| Price Gradient | white → lavender | `#FFFFFF` → `#E9D5FF` |
-| CTA Gradient | azure → violet | `#3B82F6` → `#9234EA` |
+| Page Background | `bg-black` | `#000000` |
+| Surface (Card) | `bg-[#0E140A]` | `#0E140A` |
+| Surface (Raised) | `bg-[#1A2210]` | `#1A2210` |
+| Primary | `bg-[#435620]` | `#435620` |
+| Secondary | `bg-[#27350F]` | `#27350F` |
+| Accent | `bg-[#D0C981]` | `#D0C981` |
+| Highlight | `bg-[#F7F6C6]` | `#F7F6C6` |
+| Active Card Border | — | `#D0C981` |
+| Price Gradient | white → light gold | `#FFFFFF` → `#F7F6C6` |
+| CTA Gradient | army green → antique gold | `#435620` → `#D0C981` |
 | Success / Discount | — | `#0EA42E` |
 | Body Text | `text-gray-500` | `#6A7282` |
 | Muted Text | — | `#909AAE` |
@@ -108,10 +111,10 @@ Theme: **E-sports Premium — Neon Violet Dark Mode**
 
 ### Key Visual Patterns
 
-- **Glassmorphism cards** — `bg-[rgba(59,130,246,0.05)]` + `border border-[rgba(59,130,246,0.2)]`
-- **Gradient prices** — `bg-clip-text text-transparent bg-gradient-to-r from-white to-[#E9D5FF]`
-- **Violet glow** — `box-shadow: 0 0 14.87px rgba(147,51,234,0.3)` on timer / featured cards
-- **Active card** — `border-[3px] border-[#C084FC]` + `bg-gradient-to-r from-[#3B82F6] to-[#9234EA]` button
+- **Glassmorphism cards** — `bg-[rgba(67,86,32,0.05)]` + `border border-[rgba(67,86,32,0.2)]`
+- **Gradient prices** — `bg-clip-text text-transparent bg-gradient-to-r from-white to-[#F7F6C6]`
+- **Gold glow** — `box-shadow: 0 0 14.87px rgba(208,201,129,0.3)` on timer / featured cards
+- **Active card** — `border-[3px] border-[#D0C981]` + `bg-gradient-to-r from-[#435620] to-[#D0C981]` button
 
 ---
 

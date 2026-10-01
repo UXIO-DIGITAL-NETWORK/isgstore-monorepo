@@ -24,9 +24,9 @@ export default function InvoiceSearchCard({ onSearch }: Props): React.JSX.Elemen
 
   return (
     // Gradient border wrapper
-    <Box className="p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9234EA]">
-      {/* Dark navy inner card */}
-      <Box className="bg-[#0C0E1A] rounded-[15px] p-5">
+    <Box className="p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+      {/* Dark forest inner card */}
+      <Box className="bg-[rgb(14,20,10)] rounded-[15px] p-5">
         <Text
           as="span"
           className="block mb-3 text-[15px] font-outfit font-semibold text-white leading-none"
@@ -45,7 +45,7 @@ export default function InvoiceSearchCard({ onSearch }: Props): React.JSX.Elemen
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDraft(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={t("transactionHistory.searchCard.placeholder")}
-              className="w-full bg-[#080A14] border border-white/10 rounded-full pl-10 pr-4 py-2.5 text-[13px] font-inter text-white placeholder:text-white/25 outline-none focus:border-[#3B82F6]/50 transition-colors"
+              className="w-full bg-[rgb(14,20,10)] border border-white/10 rounded-full pl-10 pr-4 py-2.5 text-[13px] font-inter text-white placeholder:text-white/25 outline-none focus:border-[rgb(67,86,32)]/50 transition-colors"
             />
           </Box>
 
@@ -54,7 +54,7 @@ export default function InvoiceSearchCard({ onSearch }: Props): React.JSX.Elemen
             as="button"
             type="button"
             onClick={handleSubmit}
-            className="shrink-0 px-7 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-[13px] font-outfit font-bold text-white shadow-cta-primary hover:opacity-90 transition-opacity cursor-pointer"
+            className="shrink-0 px-7 py-2.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] text-[13px] font-outfit font-bold text-white shadow-cta-primary hover:opacity-90 transition-opacity cursor-pointer"
           >
             {t("transactionHistory.searchCard.button")}
           </Box>

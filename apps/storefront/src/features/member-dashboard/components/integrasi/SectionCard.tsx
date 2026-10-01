@@ -19,8 +19,8 @@ export default function SectionCard({
   headerRight,
 }: SectionCardProps): React.JSX.Element {
   return (
-    <Box className={cn("p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9333EA]", className)}>
-      <Box className="rounded-[15px] bg-[#0D1117] overflow-hidden">
+    <Box className={cn("p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]", className)}>
+      <Box className="rounded-[15px] bg-[rgb(14,20,10)] overflow-hidden">
         {/* Header */}
         <Box className="flex flex-col">
           <Box className="flex items-center justify-between gap-3 px-4 py-5">

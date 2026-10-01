@@ -37,7 +37,7 @@ export default function PriceListToolbar({
           })}
           type="text"
           placeholder={t("toolbar.searchPlaceholder")}
-          className="w-full bg-white/5 border border-white/10 rounded-full pl-9 pr-4 py-2.5 text-[13px] font-inter text-white placeholder:text-[#909AAE] outline-none focus:border-[#3B82F6]/50 transition-all"
+          className="w-full bg-white/5 border border-white/10 rounded-full pl-9 pr-4 py-2.5 text-[13px] font-inter text-white placeholder:text-[#909AAE] outline-none focus:border-[rgb(67,86,32)]/50 transition-all"
         />
       </Box>
     </Box>

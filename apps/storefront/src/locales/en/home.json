@@ -18,6 +18,10 @@
     "regions": {
       "indonesia": "Indonesia",
       "global": "Global"
+    },
+    "empty": {
+      "title": "No popular games yet",
+      "description": "The popular list is empty right now. Check back again shortly."
     }
   },
   "topUpGame": {
@@ -31,6 +35,10 @@
       "fps": "FPS",
       "pc-games": "PC Games",
       "voucher": "Voucher"
+    },
+    "empty": {
+      "title": "No games available yet",
+      "description": "The game catalog is empty right now. Please check back later."
     }
   },
   "keunggulan": {
@@ -56,7 +64,11 @@
   "artikel": {
     "title": "Latest Gaming Articles",
     "subtitle": "Find the latest information, tips, and updates on game top-ups and exciting promotions",
-    "viewAll": "View All Articles"
+    "viewAll": "View All Articles",
+    "empty": {
+      "title": "No articles yet",
+      "description": "There are no published articles at the moment."
+    }
   },
   "announcement": {
     "title": "Announcements"

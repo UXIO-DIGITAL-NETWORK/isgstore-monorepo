@@ -63,7 +63,7 @@ export function UserMenu(): React.JSX.Element {
         className="flex items-center gap-2 h-9 px-2 rounded-full hover:bg-white/6 transition-colors cursor-pointer outline-none select-none"
       >
         {/* Avatar */}
-        <Box className="w-8 h-8 rounded-full bg-linear-to-br from-[#3B82F6] to-[#9234EA] flex items-center justify-center shrink-0">
+        <Box className="w-8 h-8 rounded-full bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(208,201,129)] flex items-center justify-center shrink-0">
           <Text as="span" className="text-[12px] font-outfit font-bold text-white leading-none">
             {initials}
           </Text>
@@ -78,7 +78,7 @@ export function UserMenu(): React.JSX.Element {
 
       {/* Dropdown panel */}
       {open && (
-        <Box className="absolute right-0 top-full mt-2 w-[260px] bg-[#18182A] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+        <Box className="absolute right-0 top-full mt-2 w-[260px] bg-[rgb(26,34,16)] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
           {/* User identity */}
           <Box className="px-4 pt-4 pb-3 border-b border-white/8">
             <Box className="flex items-start justify-between gap-2">
@@ -90,10 +90,10 @@ export function UserMenu(): React.JSX.Element {
                   {user.name}
                 </Text>
                 <Box className="inline-flex mt-0.5">
-                  <Box className="px-2 py-0.5 rounded-full bg-linear-to-r from-[#3B82F6]/20 to-[#9234EA]/20 border border-[#9234EA]/30">
+                  <Box className="px-2 py-0.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)]/20 to-[rgb(208,201,129)]/20 border border-[rgb(208,201,129)]/30">
                     <Text
                       as="span"
-                      className="text-[9px] font-outfit font-bold text-[#C084FC] uppercase tracking-widest leading-none"
+                      className="text-[9px] font-outfit font-bold text-[rgb(208,201,129)] uppercase tracking-widest leading-none"
                     >
                       {t("userMenu.memberBadge")}
                     </Text>

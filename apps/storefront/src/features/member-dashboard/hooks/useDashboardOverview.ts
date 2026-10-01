@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
-import { memberService } from "@/features/member-dashboard/services/member.service";
+import { memberService, type MemberDashboardData } from "@/features/member-dashboard/services/member.service";
 import { asArray, toRecentTransaction } from "@/features/member-dashboard/lib/mappers";
 import type {
   MemberProfile,
@@ -16,6 +16,8 @@ interface UseDashboardOverviewReturn {
   wallet: WalletInfo;
   stats: TransactionStat[];
   recentTransactions: RecentTransaction[];
+  /** The raw query, so the page can show skeletons / an error instead of zeros. */
+  query: UseQueryResult<MemberDashboardData>;
 }
 
 /**
@@ -40,10 +42,12 @@ const EMPTY_PROFILE: MemberProfile = {
 export function useDashboardOverview(): UseDashboardOverviewReturn {
   const user = useAuthStore((state) => state.user);
 
-  const { data } = useQuery({
+  const query = useQuery({
     queryKey: ["member", "dashboard"],
     queryFn: async () => (await memberService.dashboard()).data,
   });
+
+  const data = query.data;
 
   const profile: MemberProfile = user
     ? {
@@ -73,5 +77,6 @@ export function useDashboardOverview(): UseDashboardOverviewReturn {
       { key: "sales", labelKey: "stats.totalSales", value: data?.total_spent ?? 0, tone: "neutral" },
     ],
     recentTransactions: asArray(data?.recent_transactions).map(toRecentTransaction),
+    query,
   };
 }

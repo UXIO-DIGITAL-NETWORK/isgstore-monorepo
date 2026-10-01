@@ -14,8 +14,8 @@ const cardVariants = cva(
   {
     variants: {
       active: {
-        true: "border-[3px] border-[#C084FC] bg-[#13111F]",
-        false: "border border-white/8 bg-[#13111F]",
+        true: "border-[3px] border-[rgb(208,201,129)] bg-[rgb(26,34,16)]",
+        false: "border border-white/8 bg-[rgb(26,34,16)]",
       },
     },
     defaultVariants: { active: false },
@@ -27,7 +27,7 @@ const buttonVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-white hover:opacity-90",
+        true: "bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] text-white hover:opacity-90",
         false: "bg-white/6 border border-white/10 text-white/55 hover:bg-white/10 hover:text-white",
       },
     },
@@ -51,7 +51,7 @@ export default function FlashSaleCard({ item, isActive }: Props): React.JSX.Elem
   return (
     <Box
       className={cardVariants({ active: isActive })}
-      style={isActive ? { boxShadow: "0 0 0 1px rgba(192,132,252,0.15), 0 0 28px rgba(147,51,234,0.15)" } : undefined}
+      style={isActive ? { boxShadow: "0 0 0 1px rgba(208,201,129,0.15), 0 0 28px rgba(208,201,129,0.15)" } : undefined}
     >
       <Box className="flex justify-center pt-1">
         <Image src={item.image} alt={item.name} className="w-20 h-20 rounded-xl object-cover" loading="lazy" />
@@ -90,9 +90,9 @@ export default function FlashSaleCard({ item, isActive }: Props): React.JSX.Elem
             {item.stockAvailable} / {item.stockTotal}
           </Text>
         </Box>
-        <Box className="h-0.75 rounded-full bg-[#0B051D]">
+        <Box className="h-0.75 rounded-full bg-[rgb(14,20,10)]">
           <Box
-            className="h-full rounded-full bg-[#9333EA]"
+            className="h-full rounded-full bg-[rgb(208,201,129)]"
             style={{ width: `${stockPercent}%` }}
           />
         </Box>
