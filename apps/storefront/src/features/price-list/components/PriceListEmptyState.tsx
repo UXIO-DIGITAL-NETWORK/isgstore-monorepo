@@ -12,9 +12,9 @@ export default function PriceListEmptyState(): React.JSX.Element {
     <Box className="flex flex-col items-center justify-center py-24 gap-5">
       {/* Icon glow ring */}
       <Box className="relative flex items-center justify-center w-20 h-20">
-        <Box className="absolute inset-0 rounded-full bg-[#9333EA]/15 blur-xl" />
+        <Box className="absolute inset-0 rounded-full bg-[rgb(208,201,129)]/15 blur-xl" />
         <Box className="relative flex items-center justify-center w-20 h-20 rounded-full bg-white/5 border border-white/10">
-          <Gamepad2 className="w-9 h-9 text-[#C084FC]" />
+          <Gamepad2 className="w-9 h-9 text-[rgb(208,201,129)]" />
         </Box>
       </Box>
 

@@ -23,16 +23,16 @@ export function tierGridTemplate(tierCount: number): string {
 }
 
 /**
- * Colour per tier, walking the existing palette from the member azure up to the
- * gold amber. Derived from position rather than plan code, because a plan named
+ * Colour per tier, walking the brand palette from the member army green up to
+ * the light gold. Derived from position rather than plan code, because a plan
  * "hokage" has no colour of its own and must still read as a rung on a ladder.
  */
-const TIER_PALETTE = ["#3B82F6", "#8B5CF6", "#EC4899", "#E5A000"] as const;
+const TIER_PALETTE = ["rgb(67,86,32)", "rgb(208,201,129)", "rgb(247,246,198)"] as const;
 
 export function tierColor(index: number, total: number): string {
   if (total <= 1) return TIER_PALETTE[TIER_PALETTE.length - 1];
 
-  // Always end on the top-tier amber, spreading the rest across the palette.
+  // Always end on the top-tier light gold, spreading the rest across the palette.
   const position = Math.round((index / (total - 1)) * (TIER_PALETTE.length - 1));
 
   return TIER_PALETTE[Math.min(position, TIER_PALETTE.length - 1)];

@@ -23,6 +23,8 @@ export interface UseIsiSaldoReturn {
   handleSelectPreset: (value: number) => void;
   handleCustomChange: (raw: string) => void;
   handleSelectPayment: (id: string) => void;
+  /** The payment-channels query, for the selector's loading / error / empty states. */
+  paymentQuery: ReturnType<typeof usePaymentGroups>["query"];
 }
 
 /**
@@ -37,7 +39,8 @@ export interface UseIsiSaldoReturn {
  */
 export function useIsiSaldo(): UseIsiSaldoReturn {
   const { data: settings } = useSettingsQuery();
-  const { groups: paymentGroups } = usePaymentGroups();
+  const payments = usePaymentGroups();
+  const paymentGroups = payments.groups;
 
   // Nominal presets are operations-configurable rather than a bundled
   // constant, so changing them does not need a front-end deploy.
@@ -111,5 +114,6 @@ export function useIsiSaldo(): UseIsiSaldoReturn {
     handleSelectPreset,
     handleCustomChange,
     handleSelectPayment,
+    paymentQuery: payments.query,
   };
 }

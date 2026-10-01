@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { walletService, type BalanceMutationModel } from "@/features/member-dashboard/services/wallet.service";
@@ -28,7 +31,7 @@ const TYPE_KEYS: Record<string, string> = {
 export default function BalanceHistoryCard(): React.JSX.Element {
   const { t, i18n } = useTranslation("dashboard");
 
-  const { data: rows = [], isLoading } = useQuery({
+  const balanceQuery = useQuery({
     queryKey: ["member", "balance-mutations"],
     queryFn: async () => {
       const response = await walletService.mutations();
@@ -36,30 +39,30 @@ export default function BalanceHistoryCard(): React.JSX.Element {
     },
   });
 
+  const rows = balanceQuery.data ?? [];
+
   const label = (row: BalanceMutationModel) => {
     const key = TYPE_KEYS[row.type];
     return key ? t(key) : (row.description ?? row.type);
   };
 
   return (
-    <Box className="rounded-2xl border border-white/10 bg-[#0D1117] p-5 flex flex-col gap-4">
+    <Box className="rounded-2xl border border-white/10 bg-[rgb(14,20,10)] p-5 flex flex-col gap-4">
       <Text as="p" className="font-outfit font-bold text-[15px] text-white">
         {t("balanceHistory.title")}
       </Text>
 
-      {isLoading && (
-        <Text as="p" className="font-inter text-[13px] text-white/45">
-          {t("balanceHistory.loading")}
-        </Text>
-      )}
-
-      {!isLoading && rows.length === 0 && (
-        <Text as="p" className="font-inter text-[13px] text-white/45">
-          {t("balanceHistory.empty")}
-        </Text>
-      )}
-
-      {rows.length > 0 && (
+      {balanceQuery.isError ? (
+        <ErrorState variant="inline" onRetry={() => void balanceQuery.refetch()} />
+      ) : balanceQuery.isPending ? (
+        <Box aria-busy="true" className="flex flex-col gap-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-12 w-full rounded-xl" />
+          ))}
+        </Box>
+      ) : rows.length === 0 ? (
+        <EmptyState compact title={t("balanceHistory.empty")} />
+      ) : (
         <Box className="flex flex-col divide-y divide-white/5">
           {rows.map((row) => {
             const isCredit = row.amount > 0;

@@ -19,11 +19,11 @@ export default function MemberCreditsCard({ credits, isSelected, onSelect }: Pro
     <Box
       className={cn(
         "rounded-xl border overflow-hidden transition-colors",
-        isSelected ? "border-[#C084FC]" : "border-white/8",
+        isSelected ? "border-[rgb(208,201,129)]" : "border-white/8",
       )}
     >
-      {/* "Khusus Member" violet banner */}
-      <Box className="w-full px-3 py-2 bg-[#5B21B6]">
+      {/* "Khusus Member" gold banner */}
+      <Box className="w-full px-3 py-2 bg-[rgb(39,53,15)]">
         <Text as="span" className="font-outfit font-semibold text-[12px] text-white leading-none">
           {t("payment.memberOnly")}
         </Text>
@@ -36,7 +36,7 @@ export default function MemberCreditsCard({ credits, isSelected, onSelect }: Pro
         onClick={() => onSelect(credits.id)}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-3 cursor-pointer outline-none transition-colors",
-          isSelected ? "bg-[rgba(192,132,252,0.07)]" : "bg-white/[0.02] hover:bg-white/[0.04]",
+          isSelected ? "bg-[rgba(208,201,129,0.07)]" : "bg-white/[0.02] hover:bg-white/[0.04]",
         )}
       >
         {/* Coin icon */}

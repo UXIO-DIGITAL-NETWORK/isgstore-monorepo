@@ -73,7 +73,8 @@
         "ewallet": "E-Wallet",
         "va": "Virtual Account",
         "qris": "QRIS"
-      }
+      },
+      "empty": "Belum ada metode pembayaran yang tersedia."
     },
     "summary": {
       "title": "Ringkasan",
@@ -93,6 +94,7 @@
     "selectButton": "Pilih Paket",
     "selectedButton": "Paket Terpilih",
     "popularBadge": "POPULER",
+    "plansEmpty": "Belum ada paket membership yang tersedia.",
     "plans": {
       "basic": {
         "name": "BASIC",
@@ -130,7 +132,8 @@
         "ewallet": "E-Wallet",
         "va": "Virtual Account",
         "qris": "QRIS"
-      }
+      },
+      "empty": "Belum ada metode pembayaran yang tersedia."
     },
     "summary": {
       "planLabel": "Paket {{plan}}",
@@ -144,6 +147,7 @@
   "integrasi": {
     "title": "INTEGRASI",
     "subtitle": "Integrasikan layanan kami dengan mudah untuk meningkatkan pengalaman pengguna Anda.",
+    "empty": "Belum ada kredensial integrasi. Buat kunci API untuk memulai.",
     "apiKey": {
       "title": "Key & Dokumentasi",
       "docButton": "Dokumentasi",

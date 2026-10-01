@@ -11,7 +11,7 @@ export default function BeritaHeader(): React.JSX.Element {
     <Box className="flex flex-col gap-3">
       {/* Title row with blue left accent bar */}
       <Box className="flex items-center gap-3">
-        <Box className="w-1 h-7 rounded-full bg-[#3B82F6] shrink-0" />
+        <Box className="w-1 h-7 rounded-full bg-[rgb(67,86,32)] shrink-0" />
         <Heading
           as="h1"
           level={2}

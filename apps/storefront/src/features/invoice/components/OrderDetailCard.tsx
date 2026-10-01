@@ -62,11 +62,11 @@ export default function OrderDetailCard({ order }: Props): React.JSX.Element {
   });
 
   return (
-    <Box className="rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] overflow-hidden">
+    <Box className="rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgb(14,20,10)] overflow-hidden">
       {/* Top: thumbnail + game/package info + player data */}
       <Box className="p-4 flex gap-3">
         {/* Game thumbnail */}
-        <Box className="w-[90px] h-[110px] rounded-xl overflow-hidden shrink-0 border border-violet-75/20">
+        <Box className="w-[90px] h-[110px] rounded-xl overflow-hidden shrink-0 border border-accent/20">
           <img
             src={order.gameThumbnail}
             alt={order.gameName}
@@ -121,12 +121,12 @@ export default function OrderDetailCard({ order }: Props): React.JSX.Element {
         </PriceText>
       </Box>
 
-      {/* Points. Same violet chip as the checkout summary's, so the figure the
+      {/* Points. Same gold chip as the checkout summary's, so the figure the
           customer saw before paying and the one they see after read as one
           thing rather than two unrelated numbers. */}
       {points.kind !== "none" && (
-        <Box className="mx-4 mb-3 rounded-xl border border-[rgba(147,51,234,0.35)] bg-[rgba(147,51,234,0.12)] px-3 py-2 flex items-center justify-between gap-3">
-          <Text as="span" className="font-inter text-[12px] text-violet-lavender/80 leading-snug">
+        <Box className="mx-4 mb-3 rounded-xl border border-[rgba(208,201,129,0.35)] bg-[rgba(208,201,129,0.12)] px-3 py-2 flex items-center justify-between gap-3">
+          <Text as="span" className="font-inter text-[12px] text-highlight/80 leading-snug">
             {points.kind === "guest"
               ? t("orderDetail.pointsGuestNote")
               : t(points.kind === "estimate" ? "orderDetail.pointsEstimate" : "orderDetail.pointsEarned")}
@@ -134,7 +134,7 @@ export default function OrderDetailCard({ order }: Props): React.JSX.Element {
           {points.kind !== "guest" && (
             <Text
               as="span"
-              className="font-plex font-bold text-[14px] text-violet-lavender leading-none whitespace-nowrap"
+              className="font-plex font-bold text-[14px] text-highlight leading-none whitespace-nowrap"
             >
               +{formatNumber(points.points, locale)}
             </Text>

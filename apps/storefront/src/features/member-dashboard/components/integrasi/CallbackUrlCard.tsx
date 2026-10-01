@@ -37,14 +37,14 @@ export default function CallbackUrlCard({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeUrl(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t("integrasi.callback.placeholder")}
-            className="flex-1 min-w-0 bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#3B82F6]/60 transition-all"
+            className="flex-1 min-w-0 bg-[rgb(14,20,10)] border border-white/10 rounded-full px-4 py-2.5 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[rgb(67,86,32)]/60 transition-all"
           />
           <Box
             as="button"
             type="button"
             onClick={onSubmit}
             disabled={loading}
-            className="shrink-0 flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            className="shrink-0 flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading && <Spinner className="w-4 h-4" />}
             {t("integrasi.callback.submitButton")}
@@ -52,8 +52,8 @@ export default function CallbackUrlCard({
         </Box>
 
         {/* Info notice */}
-        <Box className="flex items-start gap-2.5 p-3 rounded-xl bg-[#3B82F6]/8 border border-[#3B82F6]/20">
-          <Info className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
+        <Box className="flex items-start gap-2.5 p-3 rounded-xl bg-[rgb(67,86,32)]/8 border border-[rgb(67,86,32)]/20">
+          <Info className="w-4 h-4 text-[rgb(208,201,129)] shrink-0 mt-0.5" />
           <Text as="span" className="font-inter text-[12px] text-white/60 leading-relaxed">
             {t("integrasi.callback.notice")}
           </Text>

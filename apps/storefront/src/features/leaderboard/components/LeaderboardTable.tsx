@@ -23,7 +23,7 @@ export default function LeaderboardTable({ rows }: Props): React.JSX.Element {
   return (
     <Box className="rounded-2xl overflow-hidden border border-white/8">
       {/* Header row */}
-      <Box className={`grid ${TABLE_GRID_COLS} px-5 py-3.5 bg-[#3A1D6E]`}>
+      <Box className={`grid ${TABLE_GRID_COLS} px-5 py-3.5 bg-[rgb(39,53,15)]`}>
         {HEADER_COLS.map((col) => (
           <Text
             key={col.key}

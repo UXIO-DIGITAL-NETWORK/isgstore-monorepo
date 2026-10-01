@@ -7,8 +7,8 @@ import { useCountdownTo } from "@/hooks/useCountdown";
 function DigitCell({ value }: { value: string }) {
   return (
     <Box
-      className="w-[52px] h-[52px] md:w-[60px] md:h-[60px] rounded-xl flex items-center justify-center shadow-glow-violet"
-      style={{ background: "rgba(88, 28, 135, 0.5)", border: "1px solid #9333EA" }}
+      className="w-[52px] h-[52px] md:w-[60px] md:h-[60px] rounded-xl flex items-center justify-center shadow-glow-accent"
+      style={{ background: "rgba(39,53,15,0.5)", border: "1px solid rgb(208,201,129)" }}
     >
       <Text
         as="span"
@@ -24,7 +24,7 @@ function Separator() {
   return (
     <Text
       as="span"
-      className="font-plex font-bold text-[28px] text-violet-75 leading-none self-start mt-2"
+      className="font-plex font-bold text-[28px] text-accent leading-none self-start mt-2"
     >
       :
     </Text>
@@ -51,7 +51,7 @@ export default function CountdownCard({ expiresAt }: Props): React.JSX.Element |
   return (
     <Box className="flex justify-center">
       <Box
-        className="rounded-2xl px-6 py-4 border border-[rgba(147,51,234,0.3)] bg-[rgba(11,5,29,0.6)]"
+        className="rounded-2xl px-6 py-4 border border-[rgba(208,201,129,0.3)] bg-[rgba(14,20,10,0.6)]"
         style={{ backdropFilter: "blur(6px)" }}
       >
         <Box className="flex items-start gap-3">

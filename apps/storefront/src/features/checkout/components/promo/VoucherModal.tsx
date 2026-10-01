@@ -3,6 +3,10 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Gift, X } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { QueryState } from "@/components/common/QueryState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
 import { formatCurrency } from "@/lib/format";
@@ -28,9 +32,9 @@ export default function VoucherModal({
   const [code, setCode] = useState("");
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const { data: promosResponse } = usePublicPromosQuery();
+  const promosQuery = usePublicPromosQuery();
   const validatePromo = useValidatePromoMutation();
-  const promos = promosResponse?.data ?? [];
+  const promos = promosQuery.data?.data ?? [];
 
   const handleApply = (candidate: string) => {
     const trimmed = candidate.trim().toUpperCase();
@@ -80,14 +84,14 @@ export default function VoucherModal({
       onClick={onClose}
     >
       <Box
-        className="w-full max-w-md p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9333EA] shadow-glow-violet"
+        className="w-full max-w-md p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-glow-accent"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         <Box
           role="dialog"
           aria-modal="true"
           aria-label={t("promo.modal.title")}
-          className="relative rounded-[15px] bg-[rgba(42,4,98,0.82)] p-6 flex flex-col gap-5"
+          className="relative rounded-[15px] bg-[rgba(14,20,10,0.82)] p-6 flex flex-col gap-5"
         >
           <Box
             as="button"
@@ -101,11 +105,11 @@ export default function VoucherModal({
 
           {/* Header */}
           <Box className="flex flex-col gap-3 pr-8">
-            <Box className="w-12 h-12 rounded-full bg-[#3B82F6]/15 flex items-center justify-center shrink-0">
-              <Gift className="w-6 h-6 text-[#3B82F6]" />
+            <Box className="w-12 h-12 rounded-full bg-[rgb(67,86,32)]/15 flex items-center justify-center shrink-0">
+              <Gift className="w-6 h-6 text-[rgb(208,201,129)]" />
             </Box>
             <Box className="flex flex-col gap-1">
-              <Text as="span" className="font-outfit font-bold text-[11px] tracking-[1.5px] text-[#3B82F6] uppercase leading-none">
+              <Text as="span" className="font-outfit font-bold text-[11px] tracking-[1.5px] text-[rgb(208,201,129)] uppercase leading-none">
                 {t("promo.modal.eyebrow")}
               </Text>
               <Text as="span" className="font-outfit font-bold text-[20px] text-white leading-tight">
@@ -124,13 +128,13 @@ export default function VoucherModal({
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder={t("promo.modal.inputPlaceholder")}
-              className="flex-1 uppercase tracking-wider text-[13px] border-[#3B82F6]/40 focus:border-[#3B82F6]"
+              className="flex-1 uppercase tracking-wider text-[13px] border-[rgb(67,86,32)]/40 focus:border-[rgb(67,86,32)]"
             />
             <button
               type="button"
               disabled={code.trim() === "" || validatePromo.isPending}
               onClick={() => handleApply(code)}
-              className="shrink-0 rounded-full bg-[#3B82F6] hover:bg-[#3B82F6]/90 disabled:opacity-50 px-5 py-2.5 font-outfit font-semibold text-[13px] text-white transition-colors cursor-pointer"
+              className="shrink-0 rounded-full bg-[rgb(67,86,32)] hover:bg-[rgb(67,86,32)]/90 disabled:opacity-50 px-5 py-2.5 font-outfit font-semibold text-[13px] text-white transition-colors cursor-pointer"
             >
               {t("promo.modal.apply")}
             </button>
@@ -152,45 +156,55 @@ export default function VoucherModal({
             <Text as="span" className="font-outfit font-bold text-[11px] tracking-[1px] text-white/40 uppercase leading-none">
               {t("promo.modal.availableTitle")}
             </Text>
-            {promos.length === 0 ? (
-              <Box className="rounded-2xl border border-dashed border-white/15 px-4 py-6 flex items-center justify-center text-center">
-                <Text as="span" className="font-inter text-[13px] text-white/40">
-                  {t("promo.modal.empty")}
-                </Text>
-              </Box>
-            ) : (
-              promos.map((promo) => (
-                <Box
-                  key={promo.id}
-                  as="button"
-                  type="button"
-                  onClick={() => {
-                    setCode(promo.code);
-                    handleApply(promo.code);
-                  }}
-                  className="w-full rounded-2xl border border-white/15 hover:border-[#3B82F6]/60 px-4 py-3 flex flex-col gap-1 text-left transition-colors cursor-pointer"
-                >
-                  <Box className="flex items-center justify-between gap-3">
-                    <Text as="span" className="font-outfit font-bold text-[13px] text-white tracking-wider">
-                      {promo.code}
-                    </Text>
-                    <Text as="span" className="font-plex font-bold text-[13px] text-[#0EA42E]">
-                      {promo.type === "percentage"
-                        ? `-${promo.value}%`
-                        : `-${formatCurrency(promo.value)}`}
-                    </Text>
-                  </Box>
-                  <Text as="span" className="font-inter text-[12px] text-white/50 leading-relaxed">
-                    {promo.description ?? promo.name}
-                  </Text>
-                  {promo.min_purchase > 0 && (
-                    <Text as="span" className="font-inter text-[11px] text-white/35">
-                      {t("promo.modal.minPurchase", { amount: formatCurrency(promo.min_purchase) })}
-                    </Text>
-                  )}
+            <QueryState
+              query={promosQuery}
+              skeleton={
+                <Box className="flex flex-col gap-2">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <Skeleton key={index} className="h-20 w-full rounded-2xl" />
+                  ))}
                 </Box>
-              ))
-            )}
+              }
+              isEmpty={(response) => (response.data ?? []).length === 0}
+              empty={<EmptyState compact title={t("promo.modal.empty")} />}
+              error={<ErrorState variant="inline" onRetry={() => void promosQuery.refetch()} />}
+            >
+              {() => (
+                <>
+                  {promos.map((promo) => (
+                    <Box
+                      key={promo.id}
+                      as="button"
+                      type="button"
+                      onClick={() => {
+                        setCode(promo.code);
+                        handleApply(promo.code);
+                      }}
+                      className="w-full rounded-2xl border border-white/15 hover:border-[rgb(67,86,32)]/60 px-4 py-3 flex flex-col gap-1 text-left transition-colors cursor-pointer"
+                    >
+                      <Box className="flex items-center justify-between gap-3">
+                        <Text as="span" className="font-outfit font-bold text-[13px] text-white tracking-wider">
+                          {promo.code}
+                        </Text>
+                        <Text as="span" className="font-plex font-bold text-[13px] text-[#0EA42E]">
+                          {promo.type === "percentage"
+                            ? `-${promo.value}%`
+                            : `-${formatCurrency(promo.value)}`}
+                        </Text>
+                      </Box>
+                      <Text as="span" className="font-inter text-[12px] text-white/50 leading-relaxed">
+                        {promo.description ?? promo.name}
+                      </Text>
+                      {promo.min_purchase > 0 && (
+                        <Text as="span" className="font-inter text-[11px] text-white/35">
+                          {t("promo.modal.minPurchase", { amount: formatCurrency(promo.min_purchase) })}
+                        </Text>
+                      )}
+                    </Box>
+                  ))}
+                </>
+              )}
+            </QueryState>
           </Box>
         </Box>
       </Box>

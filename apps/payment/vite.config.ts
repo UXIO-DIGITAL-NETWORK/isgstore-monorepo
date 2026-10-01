@@ -19,4 +19,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    port: 5174,
+    strictPort: true,
+    proxy: {
+      // Local dev talks to the hosted API. Requests are same-origin to Vite and
+      // forwarded server-side, which sidesteps the API's CORS allowlist that
+      // does not include localhost. Set VITE_API_BASE_URL=/api in .env.local.
+      "/api": {
+        target: "https://api.isgstore.id",
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 });

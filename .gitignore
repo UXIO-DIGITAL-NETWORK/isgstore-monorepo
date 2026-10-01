@@ -25,3 +25,6 @@ coverage/
 # Python bytecode (artefak skrip skill/agen — jangan di-commit)
 __pycache__/
 *.pyc
+
+# Local reference documents — kept on disk, never committed.
+sop_it_department_v2.0.html

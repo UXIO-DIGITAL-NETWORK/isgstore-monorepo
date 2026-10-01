@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { useAuthStore } from "@/store/useAuthStore";
-import { membershipService } from "@/features/member-dashboard/services/membership.service";
+import { membershipService, type MembershipPlanModel } from "@/features/member-dashboard/services/membership.service";
 import { asArray } from "@/features/member-dashboard/lib/mappers";
 import { usePaymentGroups } from "@/features/member-dashboard/hooks/usePaymentGroups";
+import type { ApiResponse } from "@/types/api.type";
 import type { MembershipPlan, PaymentGroup } from "@/features/member-dashboard/types/upgradeMembership.type";
 
 export interface UseUpgradeMembershipReturn {
@@ -24,6 +25,10 @@ export interface UseUpgradeMembershipReturn {
   handleSelectPlan: (id: string) => void;
   handleSelectPayment: (id: string) => void;
   handleSubmit: () => void;
+  /** The plans query, for the plan grid's loading / error / empty states. */
+  plansQuery: UseQueryResult<ApiResponse<MembershipPlanModel[]>>;
+  /** The payment-channels query, for the selector's states. */
+  paymentQuery: ReturnType<typeof usePaymentGroups>["query"];
 }
 
 export function useUpgradeMembership(): UseUpgradeMembershipReturn {
@@ -37,10 +42,11 @@ export function useUpgradeMembership(): UseUpgradeMembershipReturn {
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { data: plansResponse } = useQuery({
+  const plansQuery = useQuery({
     queryKey: ["membership-plans", locale],
     queryFn: () => membershipService.plans(locale),
   });
+  const plansResponse = plansQuery.data;
 
   const plans = useMemo<MembershipPlan[]>(
     () =>
@@ -61,7 +67,8 @@ export function useUpgradeMembership(): UseUpgradeMembershipReturn {
   const effectivePlanId = selectedPlanId || plans[0]?.id || "";
   const selectedPlan = useMemo(() => plans.find((plan) => plan.id === effectivePlanId), [plans, effectivePlanId]);
 
-  const { groups: paymentGroups } = usePaymentGroups();
+  const payments = usePaymentGroups();
+  const paymentGroups = payments.groups;
 
   const planPrice = selectedPlan?.price ?? 0;
 
@@ -112,5 +119,7 @@ export function useUpgradeMembership(): UseUpgradeMembershipReturn {
       if (!selectedPlan) return;
       subscribe.mutate(Number(selectedPlan.id));
     },
+    plansQuery,
+    paymentQuery: payments.query,
   };
 }

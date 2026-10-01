@@ -11,8 +11,8 @@ const badgeVariants = cva(
     variants: {
       type: {
         login:        "bg-[#065F46]/20 text-[#34D399] border border-[#34D399]/30",
-        membership:   "bg-[#4C1D95]/20 text-[#C084FC] border border-[#C084FC]/30",
-        transaction:  "bg-[#1E3A5F]/20 text-[#60A5FA] border border-[#60A5FA]/30",
+        membership:   "bg-[rgb(39,53,15)]/20 text-[rgb(208,201,129)] border border-[rgb(208,201,129)]/30",
+        transaction:  "bg-[#60A5FA]/15 text-[#60A5FA] border border-[#60A5FA]/30",
         security:     "bg-[#78350F]/20 text-[#FBBF24] border border-[#FBBF24]/30",
         verification: "bg-[#0C3344]/20 text-[#22D3EE] border border-[#22D3EE]/30",
         failed:       "bg-[#7F1D1D]/20 text-[#F87171] border border-[#F87171]/30",

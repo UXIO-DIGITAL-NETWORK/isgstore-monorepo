@@ -9,7 +9,7 @@ const chipVariants = cva(
   {
     variants: {
       selected: {
-        true: "ring-2 ring-[#C084FC]",
+        true: "ring-2 ring-[rgb(208,201,129)]",
         false: "ring-1 ring-transparent hover:ring-white/20",
       },
     },

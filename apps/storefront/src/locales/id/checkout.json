@@ -57,7 +57,11 @@
     "soldOut": "Habis",
     "popular": "Terlaris",
     "bonus": "Bonus",
-    "instantDelivery": "Pengiriman\nInstan"
+    "instantDelivery": "Pengiriman\nInstan",
+    "empty": {
+      "title": "Belum ada paket tersedia",
+      "description": "Game ini belum punya paket yang bisa dibeli saat ini."
+    }
   },
   "payment": {
     "title": "Metode Pembayaran",
@@ -68,6 +72,10 @@
       "ewallet": "E-Wallet",
       "qris": "QRIS",
       "va": "Virtual Account"
+    },
+    "empty": {
+      "title": "Belum ada metode pembayaran",
+      "description": "Tidak ada kanal pembayaran yang tersedia saat ini."
     }
   },
   "contact": {

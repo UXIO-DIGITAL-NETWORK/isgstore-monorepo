@@ -17,7 +17,7 @@ export function MemberLayout({ children, className }: MemberLayoutProps): React.
   const { t } = useTranslation("dashboard");
 
   return (
-    <Box className={cn("min-h-dvh bg-[#0A0A0C] flex flex-col", className)}>
+    <Box className={cn("min-h-dvh bg-[rgb(0,0,0)] flex flex-col", className)}>
       <Navbar />
 
       {/* Main content area */}
@@ -26,8 +26,8 @@ export function MemberLayout({ children, className }: MemberLayoutProps): React.
           {/* ── Sidebar ── */}
           <Box className="hidden md:flex shrink-0 w-50 flex-col sticky top-[120px] self-start">
             {/* Gradient border card */}
-            <Box className="p-px rounded-2xl bg-linear-to-br from-[#3B82F6] to-[#9234EA]">
-              <Box className="bg-[#0C0E1A] rounded-[15px] p-3">
+            <Box className="p-px rounded-2xl bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+              <Box className="bg-[rgb(14,20,10)] rounded-[15px] p-3">
                 <Text
                   as="span"
                   className="block px-4 py-2 text-[11px] font-outfit font-semibold text-white/30 uppercase tracking-widest leading-none mb-1"

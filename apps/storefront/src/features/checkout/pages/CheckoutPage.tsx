@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 import {
@@ -37,6 +39,31 @@ import type { GameInfo, PaymentOption } from "@/features/checkout/types/checkout
 
 /** Shown while the game loads, so the header doesn't collapse mid-render. */
 const EMPTY_GAME: GameInfo = { name: "", publisher: "", region: "", slug: "", logo: "", thumbnail: "" };
+
+/** Page-shaped placeholder for the first paint, before the game resolves. */
+function CheckoutSkeleton(): React.JSX.Element {
+  return (
+    <Box aria-busy="true" className="min-h-dvh bg-[rgb(0,0,0)]">
+      <Navbar />
+      <Box className="w-full">
+        <Skeleton className="h-55 w-full rounded-none md:h-80" />
+        <Box className="max-w-6xl mx-auto px-4 md:px-8 py-5">
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="mt-3 h-4 w-40" />
+        </Box>
+      </Box>
+      <Box className="max-w-6xl mx-auto px-4 md:px-8 mt-14 pb-14">
+        <Box className="grid grid-cols-1 lg:grid-cols-[5fr_8fr] gap-5 items-start">
+          <Skeleton className="h-72 w-full rounded-2xl" />
+          <Box className="flex flex-col gap-5">
+            <Skeleton className="h-56 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
 
 export default function CheckoutPage(): React.JSX.Element {
   const navigate = useNavigate();
@@ -159,7 +186,8 @@ export default function CheckoutPage(): React.JSX.Element {
 
   // Loyalty points. The API re-derives every figure at checkout — this is so
   // the buyer sees the same total before they commit.
-  const { data: pointsSummary } = usePointsBalance();
+  const pointsQuery = usePointsBalance();
+  const pointsSummary = pointsQuery.data;
   const [usePoints, setUsePoints] = useState(false);
   const pointsRate = pointsSummary?.redeem_rate ?? 1;
   // Derived, never stored: ticking the box means "spend what this order can
@@ -287,8 +315,24 @@ export default function CheckoutPage(): React.JSX.Element {
     );
   };
 
+  // The game defines every other block on the page, so a first load or a
+  // failure replaces the whole body rather than leaving an empty form on screen.
+  if (gameQuery.isPending && gameQuery.fetchStatus !== "idle") return <CheckoutSkeleton />;
+
+  if (gameQuery.isError) {
+    return (
+      <Box className="min-h-dvh bg-[rgb(0,0,0)]">
+        <Navbar />
+        <Box className="max-w-6xl mx-auto px-4 md:px-8 py-20">
+          <ErrorState onRetry={() => void gameQuery.refetch()} />
+        </Box>
+        <Footer />
+      </Box>
+    );
+  }
+
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
 
       {/* Header banner unit — full-width background, content stays at max-w-6xl */}
@@ -323,6 +367,7 @@ export default function CheckoutPage(): React.JSX.Element {
               <CustomerReviews
                 reviews={reviewsQuery.data?.reviews}
                 summary={reviewsQuery.data?.summary}
+                query={reviewsQuery}
               />
             </Box>
           </Box>
@@ -336,6 +381,7 @@ export default function CheckoutPage(): React.JSX.Element {
               activeCategory={activeCategory}
               onSelectPackage={handleSelectPackage}
               onCategoryChange={setActiveCategory}
+              query={productsQuery}
             />
 
             <PaymentMethods
@@ -343,6 +389,7 @@ export default function CheckoutPage(): React.JSX.Element {
               memberCredits={memberCredits}
               selectedPaymentId={selectedPaymentId}
               onSelectPayment={handleSelectPayment}
+              query={channelsQuery}
             />
 
             <PointsRedeem
@@ -353,6 +400,7 @@ export default function CheckoutPage(): React.JSX.Element {
               checked={usePoints}
               onToggle={setUsePoints}
               allowed={pointsSummary?.allows_point_spending ?? true}
+              isLoading={pointsQuery.isLoading}
             />
 
             <ContactDetail

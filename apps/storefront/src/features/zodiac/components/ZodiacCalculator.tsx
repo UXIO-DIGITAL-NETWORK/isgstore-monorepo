@@ -28,11 +28,11 @@ export default function ZodiacCalculator({
 
   const fillPercent = ((starPower - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100;
   const trackStyle = {
-    background: `linear-gradient(to right, #9333EA ${fillPercent}%, #1e1a2e ${fillPercent}%)`,
+    background: `linear-gradient(to right, rgb(208,201,129) ${fillPercent}%, rgb(26,34,16) ${fillPercent}%)`,
   };
 
   return (
-    <Box className="rounded-2xl border border-white/10 bg-[rgba(59,130,246,0.05)] backdrop-blur-[6px] p-6 md:p-8 flex flex-col gap-5">
+    <Box className="rounded-2xl border border-white/10 bg-[rgba(67,86,32,0.05)] backdrop-blur-[6px] p-6 md:p-8 flex flex-col gap-5">
       {/* Slider header row */}
       <Box className="flex items-start justify-between gap-3">
         <Box className="flex flex-col gap-0.5">
@@ -51,7 +51,7 @@ export default function ZodiacCalculator({
         </Box>
         <Text
           as="span"
-          className="font-plex font-bold text-[28px] text-[#9234EA] leading-none shrink-0"
+          className="font-plex font-bold text-[28px] text-[rgb(208,201,129)] leading-none shrink-0"
         >
           {starPower}
         </Text>
@@ -75,9 +75,9 @@ export default function ZodiacCalculator({
               "[&::-webkit-slider-thumb]:h-5",
               "[&::-webkit-slider-thumb]:rounded-full",
               "[&::-webkit-slider-thumb]:bg-white",
-              "[&::-webkit-slider-thumb]:shadow-[0_0_6px_rgba(147,51,234,0.6)]",
+              "[&::-webkit-slider-thumb]:shadow-[0_0_6px_rgba(208,201,129,0.6)]",
               "[&::-webkit-slider-thumb]:border-2",
-              "[&::-webkit-slider-thumb]:border-[#9333EA]",
+              "[&::-webkit-slider-thumb]:border-[rgb(208,201,129)]",
               "[&::-webkit-slider-thumb]:cursor-pointer",
               // Firefox thumb
               "[&::-moz-range-thumb]:w-5",
@@ -85,9 +85,9 @@ export default function ZodiacCalculator({
               "[&::-moz-range-thumb]:rounded-full",
               "[&::-moz-range-thumb]:bg-white",
               "[&::-moz-range-thumb]:border-2",
-              "[&::-moz-range-thumb]:border-[#9333EA]",
+              "[&::-moz-range-thumb]:border-[rgb(208,201,129)]",
               "[&::-moz-range-thumb]:cursor-pointer",
-              "[&::-moz-range-thumb]:shadow-[0_0_6px_rgba(147,51,234,0.6)]",
+              "[&::-moz-range-thumb]:shadow-[0_0_6px_rgba(208,201,129,0.6)]",
             ].join(" ")}
           />
         </Box>
@@ -103,12 +103,12 @@ export default function ZodiacCalculator({
       </Box>
 
       {/* Cara Kerja note */}
-      <Box className="flex items-start gap-2.5 rounded-xl border border-[#9333EA]/20 bg-[#9333EA]/10 px-4 py-3">
-        <Info size={15} className="text-[#9333EA] shrink-0 mt-0.5" />
+      <Box className="flex items-start gap-2.5 rounded-xl border border-[rgb(208,201,129)]/20 bg-[rgb(208,201,129)]/10 px-4 py-3">
+        <Info size={15} className="text-[rgb(208,201,129)] shrink-0 mt-0.5" />
         <Box className="flex flex-col gap-0.5">
           <Text
             as="span"
-            className="font-inter font-semibold text-[12px] text-[#9333EA]"
+            className="font-inter font-semibold text-[12px] text-[rgb(208,201,129)]"
           >
             {t("howItWorks.title")}
           </Text>
@@ -124,7 +124,7 @@ export default function ZodiacCalculator({
       {/* CTA */}
       <Link
         href={`/${locale}`}
-        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] font-outfit font-bold text-[15px] text-white shadow-cta-primary hover:opacity-90 active:opacity-80 transition-opacity text-center"
+        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] font-outfit font-bold text-[15px] text-white shadow-cta-primary hover:opacity-90 active:opacity-80 transition-opacity text-center"
       >
         <ShoppingCart size={16} />
         {t("cta")}

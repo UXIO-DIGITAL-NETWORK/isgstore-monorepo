@@ -11,7 +11,7 @@ interface IpChipProps {
 
 export default function IpChip({ ip, onRemove, disabled }: IpChipProps): React.JSX.Element {
   return (
-    <Box className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#9234EA]/15 border border-[#9234EA]/30">
+    <Box className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgb(208,201,129)]/15 border border-[rgb(208,201,129)]/30">
       <Text as="span" className="font-plex text-[12px] text-white/80 leading-none">
         {ip}
       </Text>

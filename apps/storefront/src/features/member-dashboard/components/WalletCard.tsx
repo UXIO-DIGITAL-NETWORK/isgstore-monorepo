@@ -18,11 +18,11 @@ export default function WalletCard({ wallet }: Props): React.JSX.Element {
   const navigate = useNavigate();
 
   return (
-    <Box className="flex-1 min-w-0 p-[1px] rounded-2xl bg-linear-to-br from-[#3B82F6] to-[#9234EA]">
-    <Box className="bg-[#0C0E1A] rounded-[15px] p-5 h-full flex flex-col gap-4">
+    <Box className="flex-1 min-w-0 p-[1px] rounded-2xl bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+    <Box className="bg-[rgb(14,20,10)] rounded-[15px] p-5 h-full flex flex-col gap-4">
       {/* Header */}
       <Box className="flex items-center gap-2">
-        <Wallet className="w-4 h-4 text-[#9234EA]" />
+        <Wallet className="w-4 h-4 text-[rgb(208,201,129)]" />
         <Text
           as="span"
           className="text-[11px] font-outfit font-semibold text-white/50 uppercase tracking-widest leading-none"
@@ -42,7 +42,7 @@ export default function WalletCard({ wallet }: Props): React.JSX.Element {
         />
 
         <Box className="flex flex-col gap-1.5">
-          <Box className="bg-linear-to-r from-white to-[#E9D5FF] bg-clip-text text-transparent font-plex font-bold text-[32px] md:text-[36px] leading-none">
+          <Box className="bg-linear-to-r from-white to-[rgb(247,246,198)] bg-clip-text text-transparent font-plex font-bold text-[32px] md:text-[36px] leading-none">
             {formatCurrency(wallet.balance, locale)}
           </Box>
           <Text as="span" className="text-[13px] font-inter text-white/40 leading-none">
@@ -59,7 +59,7 @@ export default function WalletCard({ wallet }: Props): React.JSX.Element {
           onClick={() =>
             navigate({ to: "/$locale/isi-saldo", params: { locale: locale ?? "id" } })
           }
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] hover:opacity-90 transition-opacity cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] hover:opacity-90 transition-opacity cursor-pointer"
         >
           <Text as="span" className="text-[12px] font-outfit font-bold text-white leading-none">
             {t("wallet.topUpBalance")}

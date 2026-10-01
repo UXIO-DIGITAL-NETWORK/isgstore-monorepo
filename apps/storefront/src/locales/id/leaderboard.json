@@ -12,5 +12,9 @@
     "no": "No",
     "player": "Player",
     "totalTransaction": "Total Transaksi"
+  },
+  "empty": {
+    "title": "Belum ada data leaderboard",
+    "description": "Belum ada transaksi pada periode ini."
   }
 }

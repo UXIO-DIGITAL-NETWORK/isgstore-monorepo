@@ -17,6 +17,8 @@ interface UseGameSearchReturn {
   openDropdown: () => void;
   setQuery: (value: string) => void;
   close: () => void;
+  /** The results query, so the dropdown can show loading / error / empty. */
+  resultsQuery: ReturnType<typeof useGamesQuery>;
 }
 
 /**
@@ -42,13 +44,16 @@ export function useGameSearch(): UseGameSearchReturn {
 
   // Filtering happens server-side: the catalog is not bounded by what fits in
   // the bundle, so a client-side filter would only ever search the first page.
-  const { data } = useGamesQuery({
+  const resultsQuery = useGamesQuery({
     search: debouncedQuery.trim(),
     perPage: SEARCH_RESULT_LIMIT,
     enabled: isSearching,
   });
 
-  const results = useMemo<Game[]>(() => (isSearching ? (data ?? []) : []), [data, isSearching]);
+  const results = useMemo<Game[]>(
+    () => (isSearching ? (resultsQuery.data ?? []) : []),
+    [resultsQuery.data, isSearching],
+  );
 
   // Close on click-outside and Escape key
   useEffect(() => {
@@ -98,5 +103,6 @@ export function useGameSearch(): UseGameSearchReturn {
     openDropdown,
     setQuery,
     close,
+    resultsQuery,
   };
 }

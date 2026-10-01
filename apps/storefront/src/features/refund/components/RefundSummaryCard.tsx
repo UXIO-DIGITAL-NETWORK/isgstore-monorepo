@@ -30,7 +30,7 @@ export default function RefundSummaryCard({ claim }: { claim: RefundClaimModel }
   const done = claim.status === "COMPLETED";
 
   return (
-    <Box className="rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] p-6 md:p-8 flex flex-col gap-4">
+    <Box className="rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgb(14,20,10)] p-6 md:p-8 flex flex-col gap-4">
       <Box className="flex items-center gap-2">
         {done ? (
           <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
