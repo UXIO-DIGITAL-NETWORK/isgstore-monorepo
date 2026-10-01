@@ -6,7 +6,24 @@ import "@testing-library/jest-dom/vitest";
 // automatic afterEach-cleanup (which only registers when it finds a global
 // `afterEach`) never fires — wire it up explicitly, or renders pile up in
 // the jsdom document across tests in the same file.
-afterEach(cleanup);
+//
+// Unmounting a Radix dialog (the focus-scope) queues its own unmount cleanup
+// on `setTimeout(…, 0)`. If the file ends right after, that timer can fire
+// after Vitest has torn down the jsdom environment — globals then fall back to
+// Node's, so the `CustomEvent` it dispatches is no longer a jsdom Event and
+// jsdom throws "parameter 1 is not of type 'Event'". Vitest counts that as an
+// unhandled error and fails the run even though every test passed (it only
+// ever surfaced on the slower CI runner, never locally). Awaiting a macrotask
+// tick after cleanup lets the queued timer run while the document is still
+// alive, instead of racing the teardown.
+afterEach(async () => {
+  cleanup();
+  // A few suites install fake timers and restore them in their own afterEach;
+  // hook order is not guaranteed, so normalise here or the flush below would
+  // wait forever on a faked clock.
+  vi.useRealTimers();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+});
 
 // The feature services call a real API now, so page tests need something on
 // the other end of axios. `fakeApi` serves the same envelope and paginator the
