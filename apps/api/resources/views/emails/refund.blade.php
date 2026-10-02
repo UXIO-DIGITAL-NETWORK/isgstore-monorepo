@@ -2,9 +2,9 @@
     // One definition, in App\Support\Money — this closure used to be
     // copy-pasted into all three views while most of app/ used US separators.
     $rp = fn ($n) => \App\Support\Money::rupiah((int) $n);
-    $bg = '#0A0A0C';
-    $card = '#0D1117';
-    $border = 'rgba(147,51,234,0.35)';
+    $bg = '#000000';
+    $card = '#0E140A';
+    $border = 'rgba(208,201,129,0.35)';
     $muted = '#9aa0ac';
     $text = '#ECEDEE';
 
@@ -32,7 +32,7 @@
 
                     {{-- Header --}}
                     <tr>
-                        <td style="background-color:#7c3aed; background-image:linear-gradient(135deg,#3b82f6 0%,#9234ea 100%); border-radius:16px 16px 0 0; padding:28px 32px;">
+                        <td style="background-color:rgb(67,86,32); background-image:linear-gradient(135deg, rgb(67,86,32) 0%, rgb(208,201,129) 100%); border-radius:16px 16px 0 0; padding:28px 32px;">
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td style="font-family:'Outfit','Segoe UI',Arial,sans-serif; font-size:22px; font-weight:800; letter-spacing:1px; color:#ffffff; text-transform:uppercase;">
@@ -97,7 +97,7 @@
                                     <tr>
                                         <td align="center">
                                             <a href="{{ $claimUrl }}" target="_blank"
-                                               style="display:inline-block; background-color:#7c3aed; background-image:linear-gradient(90deg,#3b82f6,#9234ea); color:#ffffff; font-family:'Outfit','Segoe UI',Arial,sans-serif; font-size:15px; font-weight:700; text-decoration:none; padding:14px 40px; border-radius:999px;">
+                                               style="display:inline-block; background-color:rgb(67,86,32); background-image:linear-gradient(90deg, rgb(67,86,32), rgb(208,201,129)); color:#ffffff; font-family:'Outfit','Segoe UI',Arial,sans-serif; font-size:15px; font-weight:700; text-decoration:none; padding:14px 40px; border-radius:999px;">
                                                 ↩ {{ __('refund.claim_cta') }}
                                             </a>
                                             <p style="margin:14px 0 0; font-size:11px; line-height:18px; color:{{ $muted }}; word-break:break-all;">
