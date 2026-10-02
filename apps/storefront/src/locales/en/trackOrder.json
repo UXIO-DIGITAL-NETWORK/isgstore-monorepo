@@ -19,7 +19,7 @@
     "invoice": "Invoice Number",
     "game": "Game",
     "service": "Service",
-    "gold": "Gold",
+    "price": "Price",
     "status": "Status"
   },
   "row": {
@@ -31,5 +31,6 @@
     "failed": "Failed"
   },
   "emptyState": "No transactions matched your search.",
+  "searchPromptTitle": "No transactions yet",
   "searchPrompt": "Enter your invoice number or WhatsApp above to track your order."
 }

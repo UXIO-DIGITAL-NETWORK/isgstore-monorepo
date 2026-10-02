@@ -15,7 +15,7 @@ const HEADER_COLS: { key: string; i18nKey: string; className?: string }[] = [
   { key: "invoice", i18nKey: "table.invoice" },
   { key: "game",    i18nKey: "table.game" },
   { key: "service", i18nKey: "table.service" },
-  { key: "gold",    i18nKey: "table.gold" },
+  { key: "price",   i18nKey: "table.price" },
   { key: "status",  i18nKey: "table.status", className: "text-center" },
 ];
 
@@ -76,7 +76,7 @@ export default function TransactionTable({
           ))}
         </Box>
       ) : !hasSearched ? (
-        <EmptyState compact title={t("searchPrompt")} />
+        <EmptyState compact title={t("searchPromptTitle")} description={t("searchPrompt")} />
       ) : rows.length === 0 ? (
         <EmptyState compact title={t("emptyState")} />
       ) : (
