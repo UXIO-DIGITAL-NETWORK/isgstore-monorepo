@@ -3,14 +3,13 @@
 
 @theme {
   /* ── ISG Store Color System ───────────────────────────────────────────── */
-  --color-primary: #9234ea;           /* violet — CTA, buttons */
-  --color-azure-60: #3b82f6;          /* azure — CTA gradient pair */
-  --color-surface-base: #0a0a0c;      /* page background (not pure black) */
-  --color-violet-deep: #0b051d;       /* stock bar track, dark surface */
-  --color-violet-56: #9333ea;         /* stock bar fill, timer border */
-  --color-violet-75: #c084fc;         /* active card border, timer separator */
-  --color-violet-lavender: #e9d5ff;   /* price gradient end, lavender text */
-  --color-success: #0ea42e;           /* discount badge */
+  --color-primary: rgb(67, 86, 32);        /* army green — CTA, buttons */
+  --color-secondary: rgb(39, 53, 15);      /* deep forest — dark brand surface */
+  --color-accent: rgb(208, 201, 129);      /* antique gold — accent, borders, active */
+  --color-highlight: rgb(247, 246, 198);   /* light gold — price gradient, highlight text */
+  --color-surface-base: rgb(0, 0, 0);      /* page background */
+  --color-forest-deep: rgb(14, 20, 10);    /* stock bar track, dark surface */
+  --color-success: rgb(14, 164, 46);       /* discount badge */
 
   /* ── Typography — strict role mapping ──────────────────────────── */
   --font-outfit: "Outfit", sans-serif;
@@ -19,19 +18,19 @@
   --font-dmsans: "DM Sans", sans-serif;
 
   /* ── Gradient backgrounds ───────────────────────────────────────── */
-  --background-image-gradient-cta: linear-gradient(to right, #3b82f6, #9234ea);
-  --background-image-gradient-price: linear-gradient(to right, #ffffff, #e9d5ff);
-  --background-image-gradient-footer: linear-gradient(to right, rgba(103, 30, 171, 0.20), rgba(39, 10, 79, 0.20));
-  --background-image-gradient-product-header: linear-gradient(-85deg, #221a29 0%, #1a017e 100%);
+  --background-image-gradient-cta: linear-gradient(to right, rgb(67, 86, 32), rgb(208, 201, 129));
+  --background-image-gradient-price: linear-gradient(to right, rgb(255, 255, 255), rgb(247, 246, 198));
+  --background-image-gradient-footer: linear-gradient(to right, rgb(67 86 32 / 0.20), rgb(39 53 15 / 0.20));
+  --background-image-gradient-product-header: linear-gradient(-85deg, rgb(26, 34, 16) 0%, rgb(39, 53, 15) 100%);
 
   /* ── Shadows ────────────────────────────────────────────────────── */
-  --shadow-glow-violet: 0 0 14.87px rgba(147, 51, 234, 0.3);
-  --shadow-cta-primary: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-glow-accent: 0 0 14.87px rgb(208 201 129 / 0.3);
+  --shadow-cta-primary: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 }
 
 @layer base {
   body {
-    @apply bg-[#0A0A0C] text-white font-inter;
+    @apply bg-[rgb(0,0,0)] text-white font-inter;
   }
 }
 

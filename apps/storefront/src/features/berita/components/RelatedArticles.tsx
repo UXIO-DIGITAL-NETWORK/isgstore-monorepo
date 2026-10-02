@@ -20,14 +20,14 @@ export default function RelatedArticles({ articles, locale }: Props): React.JSX.
       <Box className="max-w-6xl mx-auto px-4 md:px-8 flex flex-col gap-8">
         {/* Section heading with thick blue accent bars */}
         <Box className="flex items-center justify-center gap-4">
-          <Box className="w-8 h-[3px] rounded-full bg-[#3B82F6] shrink-0" />
+          <Box className="w-8 h-[3px] rounded-full bg-[rgb(67,86,32)] shrink-0" />
           <Text
             as="span"
             className="font-outfit font-bold text-[16px] md:text-[18px] tracking-[1px] text-white uppercase text-center shrink-0"
           >
             {t("detail.related")}
           </Text>
-          <Box className="w-8 h-[3px] rounded-full bg-[#3B82F6] shrink-0" />
+          <Box className="w-8 h-[3px] rounded-full bg-[rgb(67,86,32)] shrink-0" />
         </Box>
 
         {/* 3-column grid of related article cards */}

@@ -3,12 +3,12 @@
 namespace App\Actions\Wallet;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Contracts\PaymentGateway;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\DTOs\Wallet\CreateTopupDTO;
 use App\Models\BalanceTopup;
 use App\Models\PaymentChannel;
 use App\Models\User;
-use App\Services\Payment\MonetapayService;
 use App\Support\Money;
 use Exception;
 use Illuminate\Support\Facades\Cache;
@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
 class CreateBalanceTopupAction
 {
     public function __construct(
-        private readonly MonetapayService $monetapayService,
+        private readonly PaymentGateway $monetapayService,
         private readonly CreateActivityLogAction $activityLogAction,
     ) {}
 

@@ -8,6 +8,9 @@ import {
   XCircle,
 } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
 import { useTransactionHistory } from "@/features/member-dashboard/hooks/useTransactionHistory";
@@ -67,7 +70,7 @@ const STATUS_FILTERS: {
 
 export default function TransactionHistoryPage(): React.JSX.Element {
   const { t } = useTranslation("dashboard");
-  const allRows = useTransactionHistory();
+  const { rows: allRows, query } = useTransactionHistory();
   // Live-refresh the history as the member's orders change status.
   useMemberTransactionsRealtime();
 
@@ -135,7 +138,7 @@ export default function TransactionHistoryPage(): React.JSX.Element {
       {/* Page header */}
       <Box className="flex flex-col gap-1">
         <Box className="flex items-center gap-3">
-          <Box className="w-1 h-7 rounded-full bg-linear-to-b from-[#3B82F6] to-[#9234EA]" />
+          <Box className="w-1 h-7 rounded-full bg-linear-to-b from-[rgb(67,86,32)] to-[rgb(208,201,129)]" />
           <Box
             as="h2"
             className="font-outfit font-bold text-[22px] text-white uppercase tracking-wide leading-tight"
@@ -171,7 +174,7 @@ export default function TransactionHistoryPage(): React.JSX.Element {
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-full text-[13px] font-outfit font-semibold leading-none transition-all cursor-pointer",
                 statusFilter === key
-                  ? "bg-[#9234EA] text-white"
+                  ? "bg-[rgb(208,201,129)] text-white"
                   : "bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/8",
               )}
             >
@@ -201,7 +204,21 @@ export default function TransactionHistoryPage(): React.JSX.Element {
 
       {/* Table + pagination wrapper */}
       <Box className="rounded-2xl border border-white/10 overflow-hidden">
-        <TransactionHistoryTable rows={pageRows} />
+        {query.isError ? (
+          <Box className="p-4">
+            <ErrorState variant="inline" onRetry={() => void query.refetch()} />
+          </Box>
+        ) : query.isPending ? (
+          <Box aria-busy="true" className="flex flex-col gap-2 p-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton key={index} className="h-14 w-full rounded-xl" />
+            ))}
+          </Box>
+        ) : pageRows.length === 0 ? (
+          <EmptyState compact title={t("transactionHistory.noTransactions")} />
+        ) : (
+          <TransactionHistoryTable rows={pageRows} />
+        )}
         <TablePagination page={page} totalPages={totalPages} onChange={setPage} />
       </Box>
     </Box>

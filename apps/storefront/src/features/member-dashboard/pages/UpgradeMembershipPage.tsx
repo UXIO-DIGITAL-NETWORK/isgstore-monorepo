@@ -25,6 +25,8 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
     handleSelectPlan,
     handleSelectPayment,
     handleSubmit,
+    plansQuery,
+    paymentQuery,
   } = useUpgradeMembership();
 
   return (
@@ -32,7 +34,7 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
       {/* Page header */}
       <Box className="flex flex-col gap-1">
         <Box className="flex items-center gap-3">
-          <Box className="w-1 h-5 rounded-full bg-[#3B82F6] shrink-0" />
+          <Box className="w-1 h-5 rounded-full bg-[rgb(67,86,32)] shrink-0" />
           <Text
             as="span"
             className="font-outfit font-bold text-[22px] uppercase tracking-[-0.3px] text-white leading-none"
@@ -51,6 +53,9 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
           plans={plans}
           selectedPlanId={selectedPlanId}
           onSelectPlan={handleSelectPlan}
+          isLoading={plansQuery.isPending}
+          isError={plansQuery.isError}
+          onRetry={() => void plansQuery.refetch()}
         />
 
         <PaymentSelector
@@ -58,6 +63,9 @@ export default function UpgradeMembershipPage(): React.JSX.Element {
           creditsBalance={creditsBalance}
           selectedPaymentId={selectedPaymentId}
           onSelectPayment={handleSelectPayment}
+          isLoading={paymentQuery.isPending}
+          isError={paymentQuery.isError}
+          onRetry={() => void paymentQuery.refetch()}
         />
 
         <SummaryCard

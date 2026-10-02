@@ -47,6 +47,14 @@ Baca [`docs/`](docs/) — alur website, arsitektur kode, referensi API, deployme
 
 Tiap app juga membawa `CLAUDE.md`-nya sendiri; `apps/api/CLAUDE.md` adalah dokumen paling rinci di repo ini.
 
+## Cetakan & situs klien
+
+Repo ini adalah **cetakan**: setiap situs klien lahir dari sini, dan setiap perbaikan **dapur** (engine transaksi + integrasi Hub) juga lahir di sini. Yang berbeda antar situs — UI, alur, provider top-up, payment gateway, kanal notifikasi — hidup sebagai **colokan** (kontrak + driver), bukan sebagai cabang kode di dalam engine. Aturannya di [`docs/07-zona-dapur.md`](docs/07-zona-dapur.md); status pekerjaannya di [`docs/08-rencana-kerja.md`](docs/08-rencana-kerja.md).
+
+## Rilis & versi
+
+Rilis adalah **tag** `vX.Y.Z`: `push` ke `main` **tidak** mendeploy produksi (itu jalur staging). Setiap deploy menstempel versi ke `.env`, dan identitasnya bisa dibaca dari `GET /v1/version` serta sidebar admin (`VITE_APP_VERSION`). Rollback = jalankan workflow deploy dengan tag lama. Cara, urutan, dan penyiapan staging ada di [`docs/04-deployment.md`](docs/04-deployment.md).
+
 ## Kenapa satu repo
 
 Keempat aplikasi memakai backend yang sama dan mendarat di server yang sama. Dari 46 hari kerja sejak Juli 2026, **33 hari menyentuh lebih dari satu repo** — hanya 13 hari yang benar-benar satu aplikasi saja. Memisahkannya berarti satu perubahan butuh empat PR, empat CI, dan empat deploy yang tidak pernah menguji kontrak di antara mereka.

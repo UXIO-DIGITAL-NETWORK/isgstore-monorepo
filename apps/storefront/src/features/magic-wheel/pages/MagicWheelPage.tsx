@@ -10,7 +10,7 @@ export default function MagicWheelPage(): React.JSX.Element {
   const { magicPoints, setMagicPoints, diamonds } = useMagicWheel();
 
   return (
-    <Box className="min-h-dvh bg-[#0A0A0C]">
+    <Box className="min-h-dvh bg-[rgb(0,0,0)]">
       <Navbar />
       <Box className="max-w-[680px] mx-auto px-4 pb-20">
         <MagicWheelHero />

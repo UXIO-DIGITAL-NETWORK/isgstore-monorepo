@@ -36,8 +36,9 @@ use Symfony\Component\HttpFoundation\Response;
  *    site impossible to un-suspend by paying.
  *  - `v1/storefront/settings` — the public settings read, so the down-page can
  *    render the client's own name and logo instead of a raw error.
- *  - health/ping — monitoring should report the site is up but closed, not go
- *    dark with it.
+ *  - health/ping/version — monitoring should report the site is up but closed,
+ *    not go dark with it, and a dark site's version is exactly what an operator
+ *    reads while deciding whether to switch it back on.
  *
  * Everything else — the storefront catalog, checkout, invoice lookups, member
  * self-service — gets a 503.
@@ -53,6 +54,9 @@ class EnsureSiteIsServing
         'up',
         'api/v1/ping',
         'api/v1/health',
+        // What this deployment is running. Open even while closed, so an
+        // operator can read the version of the site the Hub switched off.
+        'api/v1/version',
         // The control plane. Never gate these.
         'api/v1/hub/*',
         // Login/refresh/logout for every panel.

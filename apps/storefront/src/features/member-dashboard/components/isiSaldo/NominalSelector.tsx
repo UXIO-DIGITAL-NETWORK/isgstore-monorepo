@@ -14,7 +14,7 @@ const chipVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-[#9234EA] border-[#9234EA] text-white",
+        true: "bg-[rgb(208,201,129)] border-[rgb(208,201,129)] text-white",
         false: "bg-transparent border-white/20 text-white/70 hover:border-white/40 hover:text-white",
       },
     },

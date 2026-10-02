@@ -2,11 +2,11 @@
 
 namespace App\Actions\Uxiolabs;
 
-use App\Services\UxiolabsService;
+use App\Contracts\SupplierGateway;
 
 class CheckUxiolabsBalanceAction
 {
-    public function __construct(private readonly UxiolabsService $uxiolabsService) {}
+    public function __construct(private readonly SupplierGateway $uxiolabsService) {}
 
     public function execute(): array
     {

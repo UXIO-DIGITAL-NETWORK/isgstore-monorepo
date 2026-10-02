@@ -73,7 +73,8 @@
         "ewallet": "E-Wallet",
         "va": "Virtual Account",
         "qris": "QRIS"
-      }
+      },
+      "empty": "No payment methods are available yet."
     },
     "summary": {
       "title": "Summary",
@@ -93,6 +94,7 @@
     "selectButton": "Choose Plan",
     "selectedButton": "Selected Plan",
     "popularBadge": "POPULAR",
+    "plansEmpty": "No membership plans are available yet.",
     "plans": {
       "basic": {
         "name": "BASIC",
@@ -130,7 +132,8 @@
         "ewallet": "E-Wallet",
         "va": "Virtual Account",
         "qris": "QRIS"
-      }
+      },
+      "empty": "No payment methods are available yet."
     },
     "summary": {
       "planLabel": "{{plan}} Plan",
@@ -144,6 +147,7 @@
   "integrasi": {
     "title": "INTEGRATIONS",
     "subtitle": "Easily integrate our services to enhance your user experience.",
+    "empty": "No integration credentials yet. Generate an API key to get started.",
     "apiKey": {
       "title": "Key & Documentation",
       "docButton": "Documentation",

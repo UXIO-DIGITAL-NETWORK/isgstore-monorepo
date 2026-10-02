@@ -20,7 +20,7 @@ export default function TransactionHistoryTable({ rows }: Props): React.JSX.Elem
       <Box as="table" className="w-full border-collapse">
         {/* Header */}
         <Box as="thead">
-          <Box as="tr" className="bg-[#3A1D6E]">
+          <Box as="tr" className="bg-[rgb(39,53,15)]">
             <Box
               as="th"
               className="text-left px-4 py-3.5 text-[12px] font-outfit font-semibold text-white/80 leading-none"

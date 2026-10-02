@@ -7,7 +7,7 @@ import { SiteHead } from "@/components/shared/SiteHead";
 
 export function RootLayout(): React.JSX.Element {
   return (
-    <Box className="min-h-screen bg-[#0A0A0C] font-inter text-white">
+    <Box className="min-h-screen bg-[rgb(0,0,0)] font-inter text-white">
       {/* Head tags and the maintenance flag both come from the same public
           settings query, which is cached — mounting them here costs one request
           for the whole app. */}
@@ -29,9 +29,9 @@ export function RootLayout(): React.JSX.Element {
         position="top-center"
         toastOptions={{
           classNames: {
-            toast: "!bg-[#0D1117] !border !border-white/10 !text-white !font-inter",
+            toast: "!bg-[rgb(14,20,10)] !border !border-white/10 !text-white !font-inter",
             error: "!border-red-500/40",
-            success: "!border-[#C084FC]/40",
+            success: "!border-[rgb(208,201,129)]/40",
           },
         }}
       />

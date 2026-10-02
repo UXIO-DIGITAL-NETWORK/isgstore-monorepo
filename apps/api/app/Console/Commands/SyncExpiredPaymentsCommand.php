@@ -3,11 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Actions\Settlement\SettleMerchantTransactionAction;
+use App\Contracts\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Enums\TransactionStatus;
 use App\Jobs\ProcessUxiolabsTopup;
 use App\Models\Payment;
-use App\Services\Payment\MonetapayService;
 use App\Support\Payment\PaymentExpiry;
 use Exception;
 use Illuminate\Console\Command;
@@ -28,7 +28,7 @@ class SyncExpiredPaymentsCommand extends Command
     private const PENDING_STATUSES = ['pending', 'processing', 'waiting', '0', ''];
 
     public function __construct(
-        private readonly MonetapayService $monetapay,
+        private readonly PaymentGateway $monetapay,
         private readonly SettleMerchantTransactionAction $settle,
     ) {
         parent::__construct();

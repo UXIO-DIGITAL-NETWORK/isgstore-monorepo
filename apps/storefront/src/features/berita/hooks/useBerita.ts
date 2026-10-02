@@ -17,6 +17,8 @@ export interface UseBeritaReturn {
   setCurrentPage: (page: number) => void;
   totalPages: number;
   totalResults: number;
+  /** The articles query, for the grid's loading / error / empty states. */
+  query: ReturnType<typeof useArticlesQuery>;
 }
 
 /**
@@ -31,12 +33,13 @@ export function useBerita(): UseBeritaReturn {
 
   const { data: categoryData } = useArticleCategoriesQuery();
 
-  const { data } = useArticlesQuery({
+  const articlesQuery = useArticlesQuery({
     category: activeCategory,
     page: currentPage,
     perPage: PER_PAGE,
     locale,
   });
+  const data = articlesQuery.data;
 
   const pagedArticles = useMemo<Article[]>(
     () => (data?.data.data ?? []).map((model) => toBeritaArticle(model, locale ?? "id")),
@@ -82,5 +85,6 @@ export function useBerita(): UseBeritaReturn {
     setCurrentPage,
     totalPages,
     totalResults,
+    query: articlesQuery,
   };
 }

@@ -70,7 +70,7 @@ export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1 text-xs md:text-[13px] whitespace-nowrap tracking-wide font-medium transition-colors font-outfit cursor-pointer outline-none select-none ${
-          isActive ? "text-[#9234EA]" : "text-white/45 hover:text-white/80"
+          isActive ? "text-[rgb(208,201,129)]" : "text-white/45 hover:text-white/80"
         }`}
       >
         {t(link.labelKey)}
@@ -89,7 +89,7 @@ export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
               top: triggerRect.bottom + 8,
               left,
             }}
-            className="bg-[#18182A] border border-white/10 rounded-xl overflow-hidden min-w-48 z-[9999] py-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+            className="bg-[rgb(26,34,16)] border border-white/10 rounded-xl overflow-hidden min-w-48 z-[9999] py-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
           >
             {link.children.map((child) => {
               const childActive =
@@ -102,7 +102,7 @@ export function NavDropdown({ link }: NavDropdownProps): React.JSX.Element {
                   onClick={() => setOpen(false)}
                   className={`flex items-center w-full px-4 py-2.5 text-[13px] font-outfit font-medium transition-colors hover:bg-white/6 ${
                     childActive
-                      ? "text-[#9234EA]"
+                      ? "text-[rgb(208,201,129)]"
                       : "text-white/60 hover:text-white"
                   }`}
                 >

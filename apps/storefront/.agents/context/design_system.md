@@ -1,68 +1,70 @@
 # Design System Brief: UDN Top Up Website
 
 **Target Audience:** UI/UX Designer, Frontend Developer
-**Design Theme:** E-sports Premium, Neon Violet Dark Mode, Glassmorphism, Desktop-First Responsive
+**Design Theme:** E-sports Premium, Army Green / Antique Gold Dark Mode, Glassmorphism, Desktop-First Responsive
 **Styling Framework:** Tailwind CSS **v4** + **HeroUI**
 **Visual Reference:** Figma — Design Topup Game (Internal File)
 
 ## 1. Overview
 
-This document defines the visual standards and User Interface (UI) components for the UDN Top Up Website. The design adopts a **premium e-sports aesthetic** with a signature **violet–azure neon gradient** over a near-black background. The primary goal is to create a modern, immersive, and trustworthy _gaming-grade_ impression for top-up transactions. The visual hierarchy is built through a combination of **gradient text for numbers/prices**, **glassmorphism cards**, and **glow shadows** as accents.
+This document defines the visual standards and User Interface (UI) components for the UDN Top Up Website. The design adopts a **premium e-sports aesthetic** with a signature **army green → antique gold gradient** over a pure-black background. The primary goal is to create a modern, immersive, and trustworthy _gaming-grade_ impression for top-up transactions. The visual hierarchy is built through a combination of **gradient text for numbers/prices**, **glassmorphism cards**, and **glow shadows** as accents.
 
 **HeroUI Integration Strategy:** HeroUI is used as the base component library for accessible primitives (Modals, Dropdowns, Popovers, Inputs, Buttons, Tabs, etc.). Visual styling is then overridden via:
 
-- Tailwind v4 arbitrary values (e.g. `bg-[#0A0A0C]`, `border-[#C084FC]`).
+- Tailwind v4 arbitrary values (e.g. `bg-[rgb(0,0,0)]`, `border-[rgb(208,201,129)]`).
 - HeroUI's `classNames` prop (every HeroUI component accepts slot-based class overrides).
-- Custom CSS variables exposed via `@theme` directive in `globals.css`.
+- Custom CSS variables exposed via `@theme` directive in `index.css`.
 
 This means **DO NOT** use HeroUI's default themed colors when they conflict with our token system — always override with arbitrary Tailwind values or our custom theme tokens.
 
 ## 2. Design Principles
 
-- **Neon-on-Dark Hierarchy:** A near-black background (`#0A0A0C`) serves as the foundation, with violet/azure used as accents to draw attention to actionable elements (CTAs, prices, countdown timers). Avoid using solid violet for large backgrounds — use it in the form of gradients, glows, or thin borders.
-- **Glassmorphism Surfaces:** Product cards and secondary buttons utilize semi-transparent backgrounds (`rgba(59,130,246,0.05)` or `rgba(255,255,255,0.05)`) with a thin 1px border for a "glass" effect. The countdown timer even uses `backdrop-blur-[6px]` for a stronger glassmorphism feel.
-- **Gradient Text for Numbers:** All main prices and key figures use gradient text (white → light lavender) as a visual signature. This makes the numbers feel "premium" and catches the eye.
+- **Green-and-Gold on Black Hierarchy:** A pure-black background (`#000000`) serves as the foundation, with army green and antique gold used as accents to draw attention to actionable elements (CTAs, prices, countdown timers). Army green is dark, so it belongs in fills and gradient starts — for small text and icons on black use antique gold, which stays legible.
+- **Glassmorphism Surfaces:** Product cards and secondary buttons utilize semi-transparent backgrounds (`rgba(67,86,32,0.05)` or `rgba(255,255,255,0.05)`) with a thin 1px border for a "glass" effect. The countdown timer even uses `backdrop-blur-[6px]` for a stronger glassmorphism feel.
+- **Gradient Text for Numbers:** All main prices and key figures use gradient text (white → light gold) as a visual signature. This makes the numbers feel "premium" and catches the eye.
 - **Multi-Family Typography:** Unlike typical platforms, this design strictly uses **4 font families** with highly specific roles — Outfit for branding/headings, IBM Plex Sans Condensed exclusively for numbers (giving a tabular/digital feel), DM Sans for product names, and Inter for body text.
-- **Active vs Inactive State Contrast:** Active cards (highlighted/featured) use a `3px #C084FC` (bright violet) border + a violet–azure gradient button. Inactive cards use a thin `1px rgba(59,130,246,0.2)` border + a 5% white glass button. This contrast clearly guides the user's focus.
+- **Active vs Inactive State Contrast:** Active cards (highlighted/featured) use a `3px #D0C981` (antique gold) border + an army green → antique gold gradient button. Inactive cards use a thin `1px rgba(67,86,32,0.2)` border + a 5% white glass button. This contrast clearly guides the user's focus.
 
 ## 3. Color Palette
 
-The color system utilizes a **"Near-Black + Neon Violet"** approach with azure as the gradient pair. Tokens are extracted directly from Figma variables.
+The color system utilizes a **"Pure Black + Army Green / Antique Gold"** approach. Tokens are extracted directly from Figma variables.
 
 ### 3.1 Brand & Primary Colors
 
-| Category             | Color Name     | Tailwind Class   | Hex Code  | Primary Usage                                        |
-| -------------------- | -------------- | ---------------- | --------- | ---------------------------------------------------- |
-| **Primary/Accent**   | Neon Violet    | `bg-violet-600`  | `#9234EA` | Main brand, gradient pair, stock bar, CTA accent     |
-| **Secondary Accent** | Azure Blue     | `bg-blue-500`    | `#3B82F6` | Main gradient pair (azure → violet), icon accent     |
-| **Background**       | Near Black     | `bg-neutral-950` | `#0A0A0C` | Main page background (not pure black, slightly warm) |
-| **Surface Deep**     | Violet-Black   | `bg-[#0B051D]`   | `#0B051D` | Track background on progress/stock bars              |
-| **Text Primary**     | Pure White     | `text-white`     | `#FFFFFF` | Section headings, product names, timer numbers       |
-| **Text Body**        | Cool Gray      | `text-gray-500`  | `#6A7282` | Default body text                                    |
-| **Text Body Light**  | Light Slate    | `text-slate-300` | `#C9D5E3` | Body text on dark surfaces (secondary buttons)       |
-| **Text Muted**       | Subtitle Muted | `text-[#909AAE]` | `#909AAE` | Section subtitles ("Order now! Limited supply")      |
+| Category            | Color Name   | Tailwind Class    | Hex Code  | Primary Usage                                       |
+| ------------------- | ------------ | ----------------- | --------- | --------------------------------------------------- |
+| **Primary**         | Army Green   | `bg-[#435620]`    | `#435620` | Main brand, gradient start, icon/fill accent        |
+| **Secondary**       | Deep Forest  | `bg-[#27350F]`    | `#27350F` | Dark brand surfaces, table headers, badges          |
+| **Accent**          | Antique Gold | `bg-[#D0C981]`    | `#D0C981` | Accent text/icons on black, active borders, CTA end |
+| **Highlight**       | Light Gold   | `bg-[#F7F6C6]`    | `#F7F6C6` | Price gradient end-color, brightest highlights      |
+| **Background**      | Black        | `bg-black`        | `#000000` | Main page background                                |
+| **Surface Card**    | Forest Black | `bg-[#0E140A]`    | `#0E140A` | Card / panel surfaces                               |
+| **Text Primary**    | Pure White   | `text-white`      | `#FFFFFF` | Section headings, product names, timer numbers      |
+| **Text Body**       | Cool Gray    | `text-gray-500`   | `#6A7282` | Default body text                                   |
+| **Text Body Light** | Light Slate  | `text-slate-300`  | `#C9D5E3` | Body text on dark surfaces (secondary buttons)      |
+| **Text Muted**      | Subtitle     | `text-[#909AAE]`  | `#909AAE` | Section subtitles ("Order now! Limited supply")     |
 
-### 3.2 Violet Scale (Neon Purple Family)
+### 3.2 Green & Gold Scale
 
-| Token                 | Hex / RGBA                | Usage                                                |
-| --------------------- | ------------------------- | ---------------------------------------------------- |
-| `violet/7`            | `#0B051D`                 | Track background (progress/stock bar)                |
-| `violet/32 50%`       | `rgba(88, 28, 135, 0.5)`  | Timer card background (countdown)                    |
-| `violet/56`           | `#9333EA`                 | Stock bar fill, timer border                         |
-| `violet/65 30%`       | `rgba(168, 85, 247, 0.3)` | Timer card border                                    |
-| `violet/75`           | `#C084FC`                 | Active Flash Sale card border, timer separator (`:`) |
-| `violet/85`           | `#D8B4FE`                 | "AVAILABLE" label on product cards                   |
-| `lavender/light`      | `#E9D5FF`                 | Price gradient end-color, primary button text        |
-| `violet/footer-start` | `#671EAB`                 | Footer background gradient (start)                   |
-| `violet/footer-end`   | `#270A4F`                 | Footer background gradient (end)                     |
+| Token                 | Hex / RGBA                  | Usage                                                |
+| --------------------- | --------------------------- | ---------------------------------------------------- |
+| `forest/card`         | `#0E140A`                   | Card / panel surface                                 |
+| `forest/timer 50%`    | `rgba(39, 53, 15, 0.5)`     | Timer card background (countdown)                    |
+| `primary/stock`       | `#435620`                   | Stock bar track                                      |
+| `accent/timer 30%`    | `rgba(208, 201, 129, 0.3)`  | Timer card border                                    |
+| `accent/75`           | `#D0C981`                   | Active Flash Sale card border, timer separator (`:`) |
+| `highlight/available` | `#F7F6C6`                   | "AVAILABLE" label on product cards                   |
+| `highlight/light`     | `#F7F6C6`                   | Price gradient end-color, primary button text        |
+| `green/footer-start`  | `#435620`                   | Footer background gradient (start)                   |
+| `forest/footer-end`   | `#27350F`                   | Footer background gradient (end)                     |
 
-### 3.3 Azure / Blue Scale
+### 3.3 Army Green Scale
 
-| Token          | Hex / RGBA                 | Usage                                   |
-| -------------- | -------------------------- | --------------------------------------- |
-| `azure/60`     | `#3B82F6`                  | Blue accent, CTA gradient start         |
-| `azure/60 5%`  | `rgba(59, 130, 246, 0.05)` | Product card background (glass surface) |
-| `azure/60 20%` | `rgba(59, 130, 246, 0.2)`  | Default product card border             |
+| Token           | Hex / RGBA                | Usage                                   |
+| --------------- | ------------------------- | --------------------------------------- |
+| `primary/60`    | `#435620`                 | Army green accent, CTA gradient start   |
+| `primary/60 5%` | `rgba(67, 86, 32, 0.05)`  | Product card background (glass surface) |
+| `primary/60 20%`| `rgba(67, 86, 32, 0.2)`   | Default product card border             |
 
 ### 3.4 Functional Colors
 
@@ -111,15 +113,15 @@ The typography system uses **4 font families** with highly specific roles. Ensur
 | **Body Small**       | Inter Regular           | 14px   | 20px        | 0        | `#C9D5E3`         | Form labels, small body text                     |
 | **Card Product**     | DM Sans Bold            | 14px   | 20px        | 0        | White             | Product name on card ("500 Robux")               |
 | **Card Subtitle**    | Inter Regular           | 10px   | 15px        | 0        | `#A1A1AA`         | Product category ("Roblox", "PUBG")              |
-| **Price Main**       | IBM Plex Condensed Bold | 25px   | 28px        | 0        | Gradient text     | Main price (white → lavender gradient)           |
+| **Price Main**       | IBM Plex Condensed Bold | 25px   | 28px        | 0        | Gradient text     | Main price (white → light gold gradient)           |
 | **Price Original**   | Inter Regular           | 13px   | 16px        | 0        | `#6B7280`         | Strikethrough price (line-through)               |
 | **Discount Badge**   | Inter Medium            | 10px   | 14px        | 0        | White (on green)  | "- Rp 2.500"                                     |
-| **Label Available**  | Outfit Bold (uppercase) | 10px   | 15px        | +0.5px   | `#D8B4FE`         | "AVAILABLE"                                      |
+| **Label Available**  | Outfit Bold (uppercase) | 10px   | 15px        | +0.5px   | `rgb(247,246,198)`         | "AVAILABLE"                                      |
 | **Stock Counter**    | IBM Plex Condensed      | 10px   | 15px        | 0        | White / `#6B7280` | "93 / 100" (Bold for current, Regular for total) |
 | **Timer Number**     | IBM Plex Condensed Bold | 25.4px | 29.7px      | 0        | White             | Countdown numbers ("23 : 30 : 02")               |
-| **Button Primary**   | Outfit Bold             | 14px   | 16px        | 0        | `#E9D5FF`         | "Top Up Now" (highlighted)                       |
+| **Button Primary**   | Outfit Bold             | 14px   | 16px        | 0        | `rgb(247,246,198)`         | "Top Up Now" (highlighted)                       |
 | **Button Secondary** | Outfit Medium           | 14px   | 16px        | 0        | `#C9D5E3`         | "Top Up Now" (default state)                     |
-| **Button CTA Large** | Inter Bold              | 18px   | 28px        | 0        | `#0A0A0C` / White | "Register Now", "Login"                          |
+| **Button CTA Large** | Inter Bold              | 18px   | 28px        | 0        | `rgb(0,0,0)` / White | "Register Now", "Login"                          |
 
 ## 5. Spacing System
 
@@ -188,34 +190,34 @@ The typography system uses **4 font families** with highly specific roles. Ensur
 
 ## 7. Gradients & Shadows
 
-One of the **visual signatures** of this design is the use of violet–azure gradients and glow shadows.
+One of the **visual signatures** of this design is the use of army green → antique gold gradients and glow shadows.
 
 ### 7.1 Linear Gradients (Must Remember)
 
 ```css
-/* 1. Primary Button Gradient (azure → violet) — most frequently used */
+/* 1. Primary Button Gradient (army green → antique gold) — most frequently used */
 .gradient-cta {
-  background: linear-gradient(to right, #3b82f6, #9234ea);
+  background: linear-gradient(to right, rgb(67,86,32), rgb(208,201,129));
 }
 
-/* 2. Price Text Gradient (white → lavender) — signature for every price */
+/* 2. Price Text Gradient (white → light gold) — signature for every price */
 .gradient-price {
-  background: linear-gradient(to right, #ffffff, #e9d5ff);
+  background: linear-gradient(to right, #ffffff, rgb(247,246,198));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* 3. Section Header Background Gradient (subtle violet) */
+/* 3. Section Header Background Gradient (subtle gold) */
 .gradient-section-header {
-  background: rgba(146, 52, 234, 0.1);
-  border-bottom: 1px solid rgba(146, 52, 234, 0.5);
+  background: rgba(208,201,129,0.1);
+  border-bottom: 1px solid rgba(208,201,129,0.5);
 }
 
 /* 4. Glass Surface (default product card) */
 .glass-card {
-  background: rgba(59, 130, 246, 0.05);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: rgba(67,86,32,0.05);
+  border: 1px solid rgba(67,86,32,0.2);
 }
 
 /* 5. White Glass Surface (secondary button) */
@@ -231,7 +233,7 @@ One of the **visual signatures** of this design is the use of violet–azure gra
 | ------------------ | ----------------------------------------------------------------- |
 | Product thumbnail  | `0 10px 15px rgba(0,0,0,0.4), 0 4px 6px rgba(0,0,0,0.4)`          |
 | CTA primary button | `0 25px 50px -12px rgba(0,0,0,0.25)`                              |
-| Timer card glow    | `0 0 14.87px rgba(147, 51, 234, 0.3)` — **signature violet glow** |
+| Timer card glow    | `0 0 14.87px rgba(208, 201, 129, 0.3)` — **signature gold glow** |
 | Inner shadow timer | `inset 0 4.85px 4.85px rgba(0,0,0,0.25)`                          |
 
 ### 7.3 Backdrop Blur (Glassmorphism)
@@ -263,13 +265,13 @@ Vertical layout with a 3-part structure:
    - Main price with **gradient text** (`bg-clip-text`)
    - Strikethrough price + green discount badge `#0EA42E` rounded-[10px]
    - "AVAILABLE" label + "93 / 100" counter
-   - Stock bar: track `bg-[#0B051D]` rounded-full, fill `bg-[#9333EA]` rounded-full
+   - Stock bar: track `bg-[rgb(14,20,10)]` rounded-full, fill `bg-[rgb(208,201,129)]` rounded-full
 3. **Action Button (bottom):** Width `187–189px`, padding `py-2.5`, `rounded-[50px]`.
 
 **State Variations:**
 
-- **Active/Featured:** Border `border-[3px] border-[#C084FC]` + button `bg-gradient-to-r from-[#3B82F6] to-[#9234EA]`.
-- **Default:** Border `border border-[rgba(59,130,246,0.2)]` + button `bg-white/5 border border-white/5`.
+- **Active/Featured:** Border `border-[3px] border-[rgb(208,201,129)]` + button `bg-gradient-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]`.
+- **Default:** Border `border border-[rgba(67,86,32,0.2)]` + button `bg-white/5 border border-white/5`.
 
 > Implement these states as an explicit `variant` prop using **CVA** (`class-variance-authority`), NOT via `:hover` pseudo-classes — the active state is _persistent_ (the first card is always highlighted).
 
@@ -282,15 +284,15 @@ Vertical layout with a 3-part structure:
 
 ### D. Timer Countdown Component
 
-- **Container:** `bg-violet-700/50` (rgba 88,28,135,0.5), border `1.487px rgba(168,85,247,0.3)`, `rounded-lg`, **glow shadow** `0 0 14.87px rgba(147,51,234,0.3)`.
-- **Per Segment:** `47.6×47.6px`, IBM Plex Condensed Bold 25.4px white, separator `:` IBM Plex Condensed Bold 17.8px violet `#C084FC`.
+- **Container:** `bg-[rgb(39,53,15)]/50`, border `1.487px rgba(208,201,129,0.3)`, `rounded-lg`, **glow shadow** `0 0 14.87px rgba(208,201,129,0.3)`.
+- **Per Segment:** `47.6×47.6px`, IBM Plex Condensed Bold 25.4px white, separator `:` IBM Plex Condensed Bold 17.8px gold `rgb(208,201,129)`.
 
 ### E. Section Header with Banner Strip
 
 Signature pattern for the "FLASH SALE" section:
 
-- **Container:** `rounded-[20px]`, border `1px rgba(147,51,234,0.5)`, background `rgba(147,51,234,0.05)`.
-- **Header Strip (top):** Height 107px, background `rgba(146,52,234,0.1)`, border-bottom `1px rgba(146,52,234,0.5)`.
+- **Container:** `rounded-[20px]`, border `1px rgba(208,201,129,0.5)`, background `rgba(208,201,129,0.05)`.
+- **Header Strip (top):** Height 107px, background `rgba(208,201,129,0.1)`, border-bottom `1px rgba(208,201,129,0.5)`.
 - Contains: Heading (Outfit Bold 32px uppercase + ⚡ emoji) + subtitle (Inter Regular 16px `#909AAE`) on the left, and **countdown timer** on the right.
 
 ### F. Buttons
@@ -299,11 +301,11 @@ Built on HeroUI `<Button>` with `classNames` override.
 
 | Variant             | Background                                          | Text                         | Use Case                 |
 | ------------------- | --------------------------------------------------- | ---------------------------- | ------------------------ |
-| **Primary CTA**     | `gradient azure → violet`                           | Outfit Bold 14px `#E9D5FF`   | "Top Up Now" highlighted |
+| **Primary CTA**     | `gradient army green → gold`                        | Outfit Bold 14px `#F7F6C6`   | "Top Up Now" highlighted |
 | **Secondary Glass** | `bg-white/5` border `1px white/5`                   | Outfit Medium 14px `#C9D5E3` | "Top Up Now" default     |
-| **Hero Primary**    | `bg-white`                                          | Inter Bold 18px `#0A0A0C`    | "Register Now"           |
+| **Hero Primary**    | `bg-white`                                          | Inter Bold 18px `rgb(0,0,0)`    | "Register Now"           |
 | **Hero Secondary**  | `bg-black/20` `backdrop-blur-[6px]` border white/50 | Inter Bold 18px white        | "Login"                  |
-| **Tab Button**      | `bg-violet-600` (active) / transparent (inactive)   | Outfit 14px                  | Game category tab        |
+| **Tab Button**      | `bg-[rgb(208,201,129)]` (active) / transparent (inactive) | Outfit 14px           | Game category tab        |
 
 ### G. Form Inputs (Login & Register)
 
@@ -322,29 +324,24 @@ Built on HeroUI `<Input>` primitive.
 
 ## 9. Tailwind v4 Configuration
 
-This project uses **Tailwind CSS v4 exclusively**. There is **no `tailwind.config.ts` file**. All design tokens are defined via the `@theme` directive in the main CSS entry (`src/styles/globals.css`).
+This project uses **Tailwind CSS v4 exclusively**. There is **no `tailwind.config.ts` file**. All design tokens are defined via the `@theme` directive in the main CSS entry (`src/index.css`).
 
 ```css
 @import "tailwindcss";
 
-/* HeroUI plugin import (if using HeroUI's Tailwind plugin path) */
-@plugin "@heroui/theme";
+/* HeroUI stylesheet import */
+@import "@heroui/styles";
 
 @theme {
   /* === Colors === */
-  --color-primary: #9234ea;
-  --color-primary-secondary: #3b82f6;
+  --color-primary: rgb(67, 86, 32);
+  --color-secondary: rgb(39, 53, 15);
+  --color-accent: rgb(208, 201, 129);
+  --color-highlight: rgb(247, 246, 198);
 
-  --color-violet-deep: #0b051d;
-  --color-violet-56: #9333ea;
-  --color-violet-75: #c084fc;
-  --color-violet-85: #d8b4fe;
-  --color-violet-lavender: #e9d5ff;
-
-  --color-azure-60: #3b82f6;
-
-  --color-surface-base: #0a0a0c;
-  --color-surface-glass: rgba(59, 130, 246, 0.05);
+  --color-surface-base: rgb(0, 0, 0);
+  --color-forest-deep: rgb(14, 20, 10);
+  --color-surface-glass: rgba(67, 86, 32, 0.05);
   --color-surface-glass-white: rgba(255, 255, 255, 0.05);
 
   --color-text-primary: #ffffff;
@@ -362,15 +359,15 @@ This project uses **Tailwind CSS v4 exclusively**. There is **no `tailwind.confi
   --font-dmsans: "DM Sans", sans-serif;
 
   /* === Background Images / Gradients === */
-  --background-image-gradient-cta: linear-gradient(to right, #3b82f6, #9234ea);
-  --background-image-gradient-price: linear-gradient(to right, #ffffff, #e9d5ff);
-  --background-image-gradient-section: rgba(146, 52, 234, 0.1);
-  --background-image-gradient-footer: linear-gradient(to bottom, #671eab, #270a4f);
+  --background-image-gradient-cta: linear-gradient(to right, rgb(67, 86, 32), rgb(208, 201, 129));
+  --background-image-gradient-price: linear-gradient(to right, rgb(255, 255, 255), rgb(247, 246, 198));
+  --background-image-gradient-section: rgba(208, 201, 129, 0.1);
+  --background-image-gradient-footer: linear-gradient(to bottom, rgb(67, 86, 32), rgb(39, 53, 15));
 
   /* === Box Shadows === */
   --shadow-product-thumb: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-cta-primary: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --shadow-glow-violet: 0 0 14.87px rgba(147, 51, 234, 0.3);
+  --shadow-glow-accent: 0 0 14.87px rgb(208 201 129 / 0.3);
   --shadow-timer-inset: inset 0 4.85px 4.85px rgba(0, 0, 0, 0.25);
 
   /* === Border Radius === */
@@ -400,8 +397,8 @@ Always use the `classNames` slot API to override HeroUI defaults. Example:
 ```tsx
 <Button
   classNames={{
-    base: "rounded-[50px] bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary",
-    label: "font-outfit font-bold text-[14px] text-[#E9D5FF]",
+    base: "rounded-[50px] bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary",
+    label: "font-outfit font-bold text-[14px] text-[rgb(247,246,198)]",
   }}
 >
   Top Up Now
@@ -418,15 +415,15 @@ Several critical things that **must be paid attention to** during implementation
 2. **Gradient Price Must Use `bg-clip-text`:** Every main price must use the following pattern, no compromises:
 
 ```tsx
-<p className="bg-linear-to-r from-white to-[#E9D5FF] bg-clip-text text-transparent font-plex font-bold text-[25px] leading-7">
+<p className="bg-linear-to-r from-white to-[rgb(247,246,198)] bg-clip-text text-transparent font-plex font-bold text-[25px] leading-7">
   Rp 72.500
 </p>
 ```
 
 3. **Active vs Default Card:** Implement this as an explicit variant via **CVA**. Don't rely solely on `:hover` — this design utilizes a _persistent active state_ (the first Flash Sale card is always highlighted).
-4. **Page Background is not Pure Black:** Use `#0A0A0C` (slightly warm), not `#000000`. This is a detail often missed but significantly affects the visual vibe.
-5. **Glow Shadow is a Signature:** The countdown timer has `box-shadow: 0 0 14.87px rgba(147,51,234,0.3)`. Ensure this glow is applied — without it, the timer feels "flat" and loses its premium identity.
-6. **Two-Layer Stock Bar:** The stock bar has **2 layers** — a dark track `#0B051D` and a violet fill `#9333EA`. Make sure the fill width is calculated from the `current/total` ratio (e.g., 93/100 = 93%).
+4. **Page Background is Pure Black:** Use `#000000`. Card and dropdown surfaces sit just above it in dark forest tones (`#0E140A` cards, `#1A2210` dropdowns).
+5. **Glow Shadow is a Signature:** The countdown timer has `box-shadow: 0 0 14.87px rgba(208,201,129,0.3)`. Ensure this glow is applied — without it, the timer feels "flat" and loses its premium identity.
+6. **Two-Layer Stock Bar:** The stock bar has **2 layers** — a dark track `#0E140A` and an army green fill `#435620`. Make sure the fill width is calculated from the `current/total` ratio (e.g., 93/100 = 93%).
 7. **Responsive Consideration:** This design is built desktop-first with a 1440px width. Mobile breakpoints must be considered separately — especially for the Flash Sale grid (5 columns → 2 columns on mobile) and the countdown timer (compact mode).
 8. **HeroUI Override Discipline:** Whenever you reach for a HeroUI component, immediately think "what does the design require?" and override via `classNames`. Default HeroUI theme colors will NOT match this design system out of the box.
 9. **i18n-Ready Strings:** All hardcoded UI text (labels, button text, placeholders, error messages) MUST be wrapped in `t('namespace.key')` from `react-i18next`. Never inline raw strings in components — even during initial implementation. This prevents the painful refactor later.
@@ -439,15 +436,15 @@ This section breaks down **every visible section** of the homepage (`01 - Design
 
 | #   | Section            | Width × Height (px) | Container Style                                 |
 | --- | ------------------ | ------------------- | ----------------------------------------------- |
-| 1   | Header / Navbar    | 1440 × 120          | Full-bleed, solid `#0A0A0B`                     |
+| 1   | Header / Navbar    | 1440 × 120          | Full-bleed, solid `rgb(0,0,0)`                     |
 | 2   | Hero Slider        | 1440 × 541          | Full-bleed banner carousel                      |
-| 3   | Flash Sale         | 1227 × 492          | Contained card, `rounded-[20px]`, violet glass  |
+| 3   | Flash Sale         | 1227 × 492          | Contained card, `rounded-[20px]`, gold glass    |
 | 4   | Game Populer       | 1235 × 408          | Contained, no card surface                      |
 | 5   | Top Up Game (Tabs) | 1448 × 802          | Contained + tabs + 2-row grid                   |
 | 6   | Keunggulan Layanan | 1230 × 454          | Contained, 3-column feature row                 |
 | 7   | Artikel Terbaru    | 1230 × 592          | Contained, 3-column article grid                |
-| 8   | CTA "Buat Akun"    | 1602 × 541          | Full-bleed, violet gradient + mascot            |
-| 9   | Footer             | 1440 × 525          | Full-bleed, violet gradient `#671EAB → #270A4F` |
+| 8   | CTA "Buat Akun"    | 1602 × 541          | Full-bleed, green → gold gradient + mascot      |
+| 9   | Footer             | 1440 × 525          | Full-bleed, green → forest gradient `#435620 → #27350F` |
 
 > **Layout Rule:** Sections 3, 4, 6, 7 are constrained to `max-w-[1230px]` with `px-[105px]` horizontal padding on the page. Sections 1, 2, 8, 9 are **full-bleed** (1440px+) with their own internal alignment. Section 5 (`1448px`) slightly overflows the standard container to allow card grid bleed.
 
@@ -459,29 +456,29 @@ This section breaks down **every visible section** of the homepage (`01 - Design
 
 #### Container
 
-- Background: `bg-[#0A0A0B]`
+- Background: `bg-[rgb(0,0,0)]`
 - Padding: vertical `py-[22px]`, horizontal `px-[106px]`
 - Inner container: `w-[1228px] h-[76px]` flex-col `gap-[18px]`
 
 #### Row 1 — Brand + Search + Actions (`h-[38px]`, `flex-row gap-[34px]`)
 
 - **Logo block:** `w-[166px] h-[32px]` flex-row `gap-[8px]`
-  - Icon square: `w-8 h-8` with gradient `bg-linear-to-r from-[#3B82F6] to-[#9333EA]`
+  - Icon square: `w-8 h-8` with gradient `bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]`
   - Wordmark "TOPUP GAME": `font-outfit font-bold text-[21.5px] leading-[30px] tracking-[-0.54px] text-[#F2F4F6]`
 - **Search bar:** `w-[834px] h-[38px] rounded-full bg-white/5 border border-white/5`, padding `px-[15px] py-2 gap-[5px]`
   - Placeholder: `font-inter text-[13px] text-[#909AAE]`
 - **Language switcher:** `w-[82px] h-[38px] rounded-full bg-white/5`, padding `px-[15px] py-2 gap-[5px]`
-- **Login CTA:** `w-[90px] h-[38px] rounded-full bg-linear-to-r from-[#3B82F6] to-[#9333EA]`, padding `px-5 py-2.5`
+- **Login CTA:** `w-[90px] h-[38px] rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]`, padding `px-5 py-2.5`
   - Label "Masuk / Login": `font-outfit font-medium text-[14px] text-white`
 
 #### Row 2 — Sub-Navigation (`h-[20px]`, `flex-row gap-[32px]`)
 
-- Link active: `font-outfit font-medium text-[13px] leading-5 text-[#3B82F6]`
+- Link active: `font-outfit font-medium text-[13px] leading-5 text-[rgb(208,201,129)]`
 - Link default: `font-outfit font-medium text-[13px] leading-5 text-[#C9D5E3]`
 - Items: Topup · Cek pesanan · Daftar Harga · Leaderboard · Berita · Kalkulator
 
 ```tsx
-<header className="w-full h-30 bg-[#0A0A0B] flex items-center justify-center">
+<header className="w-full h-30 bg-[rgb(0,0,0)] flex items-center justify-center">
   <div className="w-307 flex flex-col gap-4.5">
     <div className="h-9.5 flex items-center gap-8.5">{/* logo, search, lang, login */}</div>
     <nav className="h-5 flex items-center gap-8">{/* sub-nav links */}</nav>
@@ -497,7 +494,7 @@ This section breaks down **every visible section** of the homepage (`01 - Design
 
 #### Container
 
-- Background: inherited page `bg-[#0A0A0C]`
+- Background: inherited page `bg-[rgb(0,0,0)]`
 - Banner image area: `w-[1236px] h-[488px]`, centered, drop-shadow heavy
 - Side-peek banners (next/prev): `w-[920px] h-[363px]`, partially visible at edges for carousel hint
 
@@ -505,7 +502,7 @@ This section breaks down **every visible section** of the homepage (`01 - Design
 
 - Container: `w-[706px] h-[5px] flex-row gap-[10px]`, absolutely positioned bottom-centered with `mt-[16px]` from banner
 - 6 segments (one per slide), each `w-[110px] h-[5px] rounded-full`
-- Active: `bg-[#9333EA]`
+- Active: `bg-[rgb(208,201,129)]`
 - Inactive: `bg-white`
 
 ```tsx
@@ -517,7 +514,7 @@ This section breaks down **every visible section** of the homepage (`01 - Design
     {slides.map((_, i) => (
       <span
         key={i}
-        className={cn("w-27.5 h-1.25 rounded-full", i === active ? "bg-[#9333EA]" : "bg-white")}
+        className={cn("w-27.5 h-1.25 rounded-full", i === active ? "bg-[rgb(208,201,129)]" : "bg-white")}
       />
     ))}
   </div>
@@ -532,16 +529,16 @@ This section breaks down **every visible section** of the homepage (`01 - Design
 
 #### Container
 
-- Background: `bg-[rgba(146,52,234,0.05)]` (violet 5%)
-- Border: `border border-[rgba(147,51,234,0.5)]`
+- Background: `bg-[rgba(208,201,129,0.05)]` (gold 5%)
+- Border: `border border-[rgba(208,201,129,0.5)]`
 - Radius: `rounded-[20px]`
 - Drop shadow: ambient `backdrop-blur-[25px]`
 
 #### Header Strip (top)
 
 - Height: `h-[107px]`
-- Background: `bg-[rgba(146,52,234,0.1)]`
-- Border-bottom: `border-b border-[rgba(146,52,234,0.5)]`
+- Background: `bg-[rgba(208,201,129,0.1)]`
+- Border-bottom: `border-b border-[rgba(208,201,129,0.5)]`
 - Padding: `px-[34px] py-[24px]`
 - Layout: `flex-row justify-between items-center`
 
@@ -554,9 +551,9 @@ This section breaks down **every visible section** of the homepage (`01 - Design
 
 - Wrapper: `w-[228px] h-[77px] bg-black/20` (decorative shadow layer)
 - Inner timer container: `w-[185px] h-12 flex-row gap-2`
-- Each segment: `w-12 h-12 rounded-lg bg-[rgba(88,28,135,0.5)] border-[1.487px] border-[rgba(168,85,247,0.3)] shadow-glow-violet shadow-timer-inset`
+- Each segment: `w-12 h-12 rounded-lg bg-[rgba(39,53,15,0.5)] border-[1.487px] border-[rgba(208,201,129,0.3)] shadow-glow-accent shadow-timer-inset`
   - Number: `font-plex font-bold text-[25.4px] leading-[29.7px] text-white`
-- Separator `:`: `font-plex font-bold text-[17.8px] text-[#C084FC]`
+- Separator `:`: `font-plex font-bold text-[17.8px] text-[rgb(208,201,129)]`
 
 #### Products Grid (below header)
 
@@ -567,8 +564,8 @@ This section breaks down **every visible section** of the homepage (`01 - Design
 
 **Card variants — apply via CVA `variant: "active" | "default"`:**
 
-- **Active (first card):** `border-[3px] border-[#C084FC] rounded-2xl`
-- **Default:** `border border-[rgba(59,130,246,0.2)] bg-[rgba(59,130,246,0.05)] rounded-2xl`
+- **Active (first card):** `border-[3px] border-[rgb(208,201,129)] rounded-2xl`
+- **Default:** `border border-[rgba(67,86,32,0.2)] bg-[rgba(67,86,32,0.05)] rounded-2xl`
 
 **Internal structure (`flex-col` 3 sections):**
 
@@ -579,27 +576,27 @@ This section breaks down **every visible section** of the homepage (`01 - Design
 
 2. **Price + Stock block** — `h-[117px] px-4 py-3 flex-col gap-3`
    - **Price row** (`flex-col gap-[3px]`):
-     - Main price "Rp 72.500": `bg-linear-to-r from-white to-[#E9D5FF] bg-clip-text text-transparent font-plex font-bold text-[25px] leading-7`
+     - Main price "Rp 72.500": `bg-linear-to-r from-white to-[rgb(247,246,198)] bg-clip-text text-transparent font-plex font-bold text-[25px] leading-7`
      - Sub-row (`flex-row items-center gap-2`):
        - Original price "Rp 75.000": `font-inter text-[13px] leading-4 text-[#767676] line-through`
        - Discount badge: `bg-[#0DA32E] rounded-[10px] px-[5px] py-[1px]`
          - Text "- Rp 2.500": `font-inter font-medium text-[10px] leading-[14px] text-white`
    - **Stock row** (`flex-col gap-1.5`):
      - Header (`flex-row justify-between`):
-       - "TERSEDIA" / "AVAILABLE": `font-outfit font-bold text-[10px] leading-[15px] text-[#D8B4FE] uppercase tracking-[0.5px]`
+       - "TERSEDIA" / "AVAILABLE": `font-outfit font-bold text-[10px] leading-[15px] text-[rgb(247,246,198)] uppercase tracking-[0.5px]`
        - "93 / 100": `font-plex font-bold text-[10px] leading-[15px] text-white`
-     - Stock bar: `h-2 rounded-full bg-[#0B051D] overflow-hidden`
-       - Fill: `h-full rounded-full bg-[#9333EA]` width = `(current/total)%`
+     - Stock bar: `h-2 rounded-full bg-[rgb(14,20,10)] overflow-hidden`
+       - Fill: `h-full rounded-full bg-[rgb(208,201,129)]` width = `(current/total)%`
 
 3. **CTA Button** — `w-[187px] h-[34px] mx-auto rounded-[50px] py-2`
-   - Active: `bg-linear-to-r from-[#3B82F6] to-[#9234EA]`
-     - Label: `font-outfit font-bold text-[14px] leading-4 text-[#E9D5FF]`
+   - Active: `bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]`
+     - Label: `font-outfit font-bold text-[14px] leading-4 text-[rgb(247,246,198)]`
    - Default: `bg-white/5 border border-white/5`
      - Label: `font-outfit font-medium text-[14px] leading-4 text-[#C9D5E3]`
 
 ```tsx
-<section className="rounded-[20px] bg-[rgba(146,52,234,0.05)] border border-[rgba(147,51,234,0.5)]">
-  <header className="h-26.75 px-8.5 flex items-center justify-between bg-[rgba(146,52,234,0.1)] border-b border-[rgba(146,52,234,0.5)] rounded-t-[20px]">
+<section className="rounded-[20px] bg-[rgba(208,201,129,0.05)] border border-[rgba(208,201,129,0.5)]">
+  <header className="h-26.75 px-8.5 flex items-center justify-between bg-[rgba(208,201,129,0.1)] border-b border-[rgba(208,201,129,0.5)] rounded-t-[20px]">
     <div className="flex flex-col gap-2.75">
       <h2 className="font-outfit font-bold text-[32px] leading-7 tracking-[-0.5px] text-white uppercase">
         ⚡ Flash Sale
@@ -632,7 +629,7 @@ A reusable pattern used by sections 11.4, 11.5, 11.6, 11.7:
 
 - Wrapper: `flex-col gap-[10px]`
 - Title row: `flex-row items-center gap-2`
-  - Left blue bar: `w-1 h-5 bg-[#3B82F6]` (vertical accent)
+  - Left blue bar: `w-1 h-5 bg-[rgb(67,86,32)]` (vertical accent)
   - Title: `font-outfit font-bold text-[28px] leading-7 tracking-[-0.5px] text-white uppercase`
 - Description: `font-inter font-normal text-[16px] leading-5 text-[#697282]`
 
@@ -640,7 +637,7 @@ A reusable pattern used by sections 11.4, 11.5, 11.6, 11.7:
 
 #### Container
 
-- Background: page default `bg-[#0A0A0C]` (no card surface)
+- Background: page default `bg-[rgb(0,0,0)]` (no card surface)
 - Padding: section vertical `py-12` to `py-16`
 - Inner: `w-[1235px]`
 
@@ -653,15 +650,15 @@ A reusable pattern used by sections 11.4, 11.5, 11.6, 11.7:
 
 #### Populer Card — `w-[240px] h-[304px]`
 
-- **Container:** `rounded-2xl overflow-hidden relative bg-[#0C0C16]`
-- **Card overlay (top accent):** Absolute fill, color varies per card: `#9B3BF6` (violet variant) or `#443BF6` (azure-violet variant). Used as **3px top border / glow** via the overlay layer.
+- **Container:** `rounded-2xl overflow-hidden relative bg-[rgb(14,20,10)]`
+- **Card overlay (top accent):** Absolute fill, color varies per card: `#435620` (army green variant) or `#27350F` (deep forest variant). Used as **3px top border / glow** via the overlay layer.
 - **Image:** Top area `w-full h-[220px]`, full-bleed, `object-cover`
-  - Gradient overlay (image bottom): `bg-linear-to-b from-transparent to-[#0C0C16]` for text readability
-- **"Best Seller" badge (top-right):** Absolute `top-3 right-3`, small pill, `bg-[#9333EA]/90 rounded-full px-2 py-1`, text `font-outfit font-bold text-[10px] uppercase tracking-[0.5px] text-white`
+  - Gradient overlay (image bottom): `bg-linear-to-b from-transparent to-[rgb(14,20,10)]` for text readability
+- **"Best Seller" badge (top-right):** Absolute `top-3 right-3`, small pill, `bg-[rgb(208,201,129)]/90 rounded-full px-2 py-1`, text `font-outfit font-bold text-[10px] uppercase tracking-[0.5px] text-white`
 - **Text container (bottom):** `h-[73px] px-4 py-3 flex-col gap-[3px]`
   - Title: `font-outfit font-bold text-[18px] leading-6 text-white`
   - Subtitle (region/category): `font-inter font-normal text-[12px] leading-4 text-[#A1A1AA]`
-- **Right-edge fade shadow** (entire section): `w-[105px] h-[487px] bg-linear-to-r from-[#0A0A0B] to-transparent` positioned at the right edge to create a "swipe more" hint
+- **Right-edge fade shadow** (entire section): `w-[105px] h-[487px] bg-linear-to-r from-[rgb(0,0,0)] to-transparent` positioned at the right edge to create a "swipe more" hint
 
 ```tsx
 <section className="flex flex-col gap-7.5 py-12">
@@ -677,7 +674,7 @@ A reusable pattern used by sections 11.4, 11.5, 11.6, 11.7:
     </div>
     <div
       aria-hidden
-      className="absolute right-0 top-0 w-26.25 h-full bg-linear-to-r from-transparent to-[#0A0A0B]"
+      className="absolute right-0 top-0 w-26.25 h-full bg-linear-to-r from-transparent to-[rgb(0,0,0)]"
     />
   </div>
 </section>
@@ -700,7 +697,7 @@ Same "Heading 2" pattern as 11.4. Title "TOP UP GAME", subtitle "Pilih game favo
 
 #### Tabs Row — `flex-row gap-2.5` (`h-11`)
 
-- **Tab active** (e.g. "Semua"): `h-11 px-[25px] py-3 rounded-full bg-[#9333EA]`
+- **Tab active** (e.g. "Semua"): `h-11 px-[25px] py-3 rounded-full bg-[rgb(208,201,129)]`
   - Label: `font-inter font-bold text-[14.7px] leading-[21px] text-white`
 - **Tab inactive** (e.g. "MOBA", "Battle Royale", "FPS", "PC Games", "Voucher"): `h-[42px] px-6 py-2.5 rounded-full bg-white/5 border border-white/5`
   - Label: `font-inter font-bold text-[14px] leading-5 text-[#90A1B8]`
@@ -719,8 +716,8 @@ Same "Heading 2" pattern as 11.4. Title "TOP UP GAME", subtitle "Pilih game favo
 #### "Show More" Button — centered below grid
 
 - Button: `w-[265px] h-[46px] rounded-full bg-white border border-white/5 backdrop-blur-[6px] px-6 py-3 gap-2 flex-row items-center justify-center`
-- Label "TAMPILKAN LEBIH BANYAK": `font-inter font-bold text-[12px] leading-4 tracking-[1.2px] text-[#9333EA] uppercase`
-- Trailing chevron icon: `w-5 h-5 stroke-[#9333EA]`
+- Label "TAMPILKAN LEBIH BANYAK": `font-inter font-bold text-[12px] leading-4 tracking-[1.2px] text-[rgb(208,201,129)] uppercase`
+- Trailing chevron icon: `w-5 h-5 stroke-[rgb(208,201,129)]`
 
 ```tsx
 <section className="flex flex-col gap-8 py-12">
@@ -738,7 +735,7 @@ Same "Heading 2" pattern as 11.4. Title "TOP UP GAME", subtitle "Pilih game favo
       <GameCard {...g} />
     ))}
   </div>
-  <button className="mx-auto rounded-full bg-white px-6 py-3 font-inter font-bold text-[12px] tracking-[1.2px] text-[#9333EA] uppercase flex items-center gap-2">
+  <button className="mx-auto rounded-full bg-white px-6 py-3 font-inter font-bold text-[12px] tracking-[1.2px] text-[rgb(208,201,129)] uppercase flex items-center gap-2">
     Tampilkan Lebih Banyak <ChevronDown className="w-5 h-5" />
   </button>
 </section>
@@ -759,9 +756,9 @@ Same "Heading 2" pattern as 11.4. Title "TOP UP GAME", subtitle "Pilih game favo
 
 - Wrapper: `flex-col gap-[10px] text-center`
 - Title row: `flex-row items-center justify-center gap-2`
-  - Left bar: `w-5 h-1 bg-[#3B82F6]` (horizontal)
+  - Left bar: `w-5 h-1 bg-[rgb(67,86,32)]` (horizontal)
   - Title "KEUNGGULAN LAYANAN KAMI": `font-outfit font-bold text-[28px] leading-7 tracking-[-0.5px] text-white uppercase`
-  - Right bar: `w-5 h-1 bg-[#3B82F6]`
+  - Right bar: `w-5 h-1 bg-[rgb(67,86,32)]`
 - Subtitle: `font-inter font-normal text-[16px] leading-5 text-[#697282]` — "Solusi top up cepat, aman, dan praktis dalam satu platform."
 
 #### Features Grid — `flex-row gap-[33px]` (`h-[347px]`)
@@ -771,9 +768,9 @@ Three columns, each `w-[388px]` center-aligned, internal `flex-col items-center 
 **Per Feature Column structure:**
 
 1. **Icon block** — `w-[89px] h-[89px] rounded-2xl flex items-center justify-center mb-[35px]`
-   - Feature 1 (Pembayaran Aman): `bg-[#2B7FFF]` (azure)
-   - Feature 2 (Pengiriman Instan): `bg-[#AC46FF]` (violet)
-   - Feature 3 (24/7 Support): `bg-[#2B7FFF]` (azure)
+   - Feature 1 (Pembayaran Aman): `bg-[rgb(67,86,32)]` (army green)
+   - Feature 2 (Pengiriman Instan): `bg-[rgb(208,201,129)]` (antique gold)
+   - Feature 3 (24/7 Support): `bg-[rgb(67,86,32)]` (army green)
    - Icon (24-28px): white stroke `text-white`
 
 2. **Heading** — `font-outfit font-bold text-[20px] leading-[36px] tracking-[-0.45px] text-white mb-[18px]`
@@ -786,8 +783,8 @@ Three columns, each `w-[388px]` center-aligned, internal `flex-col items-center 
    - **Card 1:** Trust list — `flex-col gap-[9px] pt-[27px]`
      - Each item: `flex-row items-center gap-2`, icon (sm) + `font-inter text-[12px] text-[#90A1B8]` ("Terlindungi standar keamanan PCI DSS")
    - **Card 2:** "Sistem Otomatis Aktif" pill — `w-[280px] h-[47px] rounded-full bg-white px-[27px] py-[13px] flex-row items-center gap-[18px] mt-[35px]`
-     - Label: `font-inter font-bold text-[12px] tracking-[1.2px] text-[#9333EA] uppercase`
-   - **Card 3:** "HUBUNGI ADMIN" text link — `font-inter font-bold text-[12px] tracking-[1.2px] text-[#9333EA] uppercase pt-[35px]`
+     - Label: `font-inter font-bold text-[12px] tracking-[1.2px] text-[rgb(208,201,129)] uppercase`
+   - **Card 3:** "HUBUNGI ADMIN" text link — `font-inter font-bold text-[12px] tracking-[1.2px] text-[rgb(208,201,129)] uppercase pt-[35px]`
 
 ```tsx
 <section className="flex flex-col items-center gap-12 py-12 w-307.5 mx-auto">
@@ -836,9 +833,9 @@ Three article cards, each `w-[388px] h-[398px]`:
 
 #### Article Card
 
-- **Wrapper:** `rounded-2xl overflow-hidden relative bg-[#0C0C16]`
+- **Wrapper:** `rounded-2xl overflow-hidden relative bg-[rgb(14,20,10)]`
 - **Image** — `w-full h-[216px] object-cover` (top portion)
-- **Category badge (overlay on image, top-left):** `absolute top-3 left-3 px-3 py-1 rounded-full bg-[#9333EA] font-outfit font-bold text-[10px] uppercase tracking-[0.5px] text-white`
+- **Category badge (overlay on image, top-left):** `absolute top-3 left-3 px-3 py-1 rounded-full bg-[rgb(208,201,129)] font-outfit font-bold text-[10px] uppercase tracking-[0.5px] text-white`
   - Example: "MOBILE LEGENDS", "FREE FIRE", "PUBG MOBILE"
 - **Figure (text block, below image):** `w-full h-[182px] px-[42px] py-[22px] flex-col gap-[9px]`
   - Title (2-line clamp): `font-outfit font-bold text-[18px] leading-6 text-white line-clamp-2`
@@ -849,8 +846,8 @@ Three article cards, each `w-[388px] h-[398px]`:
 #### "Lihat Semua Artikel" Button — centered below grid
 
 - Button: `w-[235px] h-[46px] rounded-full bg-white px-6 py-3 gap-2 flex-row items-center justify-center backdrop-blur-[6px]`
-- Label: `font-inter font-bold text-[12px] leading-4 tracking-[1.2px] text-[#9333EA] uppercase`
-- Chevron: `w-5 h-5 stroke-[#9333EA]`
+- Label: `font-inter font-bold text-[12px] leading-4 tracking-[1.2px] text-[rgb(208,201,129)] uppercase`
+- Chevron: `w-5 h-5 stroke-[rgb(208,201,129)]`
 
 ```tsx
 <section className="flex flex-col items-center gap-12.5 py-12 w-307.5 mx-auto">
@@ -867,7 +864,7 @@ Three article cards, each `w-[388px] h-[398px]`:
       />
     ))}
   </div>
-  <button className="rounded-full bg-white px-6 py-3 font-inter font-bold text-[12px] tracking-[1.2px] text-[#9333EA] uppercase flex items-center gap-2">
+  <button className="rounded-full bg-white px-6 py-3 font-inter font-bold text-[12px] tracking-[1.2px] text-[rgb(208,201,129)] uppercase flex items-center gap-2">
     Lihat Semua Artikel <ChevronRight className="w-5 h-5" />
   </button>
 </section>
@@ -877,12 +874,12 @@ Three article cards, each `w-[388px] h-[398px]`:
 
 ### 11.8 CTA "Buat Akun & Nikmati Lebih Banyak Keuntungan"
 
-**Source ID:** `193:321` · **Size:** 1602 × 541 · **Layout:** Full-bleed banner with violet gradient background, mascot image, and dual CTA buttons
+**Source ID:** `193:321` · **Size:** 1602 × 541 · **Layout:** Full-bleed banner with green → gold gradient background, mascot image, and dual CTA buttons
 
 #### Container
 
 - **Full-bleed width:** Spans 1602px (wider than 1440px viewport — overflows on both sides for visual emphasis)
-- Background image (decorative violet bg): `w-[1443px] h-[505px]` covering most of the frame
+- Background image (decorative green/gold bg): `w-[1443px] h-[505px]` covering most of the frame
 - Inner content container: `w-[540px] h-[294px]` left-aligned with horizontal offset matching the page container (`pl-[105px]` from viewport edge)
 - Mascot image: `w-[462px] h-[471px]` positioned to the **right side**
 - Decorative SVG (top-right corner): `w-[647px] h-[647px]` with rotating border accent at `w-[384px] h-[384px]`
@@ -897,14 +894,14 @@ Three article cards, each `w-[388px] h-[398px]`:
 
 3. **Button Row** (`flex-row gap-4 pt-4`)
    - **Primary "Daftar Sekarang":** `w-[224px] h-[66px] rounded-full bg-white px-10 py-[19px] shadow-cta-primary`
-     - Label: `font-inter font-bold text-[18px] leading-7 text-[#0A0A0C]`
+     - Label: `font-inter font-bold text-[18px] leading-7 text-[rgb(0,0,0)]`
    - **Secondary "Masuk":** `w-[141px] h-[66px] rounded-full bg-[#0A090B] border border-white/50 backdrop-blur-[6px] px-10 py-[18px]`
      - Label: `font-inter font-bold text-[18px] leading-7 text-white`
 
 ```tsx
 <section className="relative w-full h-135.25 overflow-hidden">
   <img
-    src="/cta-bg-violet.png"
+    src="/cta-bg-green.png"
     alt=""
     aria-hidden
     className="absolute inset-0 w-full h-full object-cover"
@@ -929,7 +926,7 @@ Three article cards, each `w-[388px] h-[398px]`:
         <Button
           classNames={{
             base: "rounded-full bg-white px-10 py-[19px] shadow-cta-primary",
-            label: "font-inter font-bold text-[18px] text-[#0A0A0C]",
+            label: "font-inter font-bold text-[18px] text-[rgb(0,0,0)]",
           }}
         >
           Daftar Sekarang
@@ -952,11 +949,11 @@ Three article cards, each `w-[388px] h-[398px]`:
 
 ### 11.9 Footer
 
-**Source ID:** `262:211` · **Size:** 1440 × 525 · **Layout:** Full-bleed violet gradient footer with multi-column info
+**Source ID:** `262:211` · **Size:** 1440 × 525 · **Layout:** Full-bleed green → forest gradient footer with multi-column info
 
 #### Container
 
-- **Background gradient:** `bg-linear-to-b from-[#671EAB] to-[#270A4F]` (top → bottom violet fade — use new token `--background-image-gradient-footer`)
+- **Background gradient:** `bg-linear-to-b from-[#435620] to-[#27350F]` (top → bottom green → forest fade — use new token `--background-image-gradient-footer`)
 - Padding: `pt-[60px] pb-[40px]`, horizontal centered with inner `w-[1106px]`
 - Layout: Top area `flex-row` (~5 columns) + Bottom border row
 
@@ -965,7 +962,7 @@ Three article cards, each `w-[388px] h-[398px]`:
 **Column 1 — Topup Game Info** (`w-[387px] h-[159px] flex-col gap-4`)
 
 - Logo + wordmark row (`h-[35px] flex-row gap-[9px]`):
-  - Icon: `w-[35px] h-[35px] rounded-md bg-linear-to-r from-[#3B82F6] to-[#9333EA] flex items-center justify-center`
+  - Icon: `w-[35px] h-[35px] rounded-md bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] flex items-center justify-center`
   - Wordmark "TOPUP GAME": `font-outfit font-bold text-[21.5px] leading-[30px] tracking-[-0.54px] text-[#F2F4F6]`
 - Description: `font-inter font-normal text-[14px] leading-[17.9px] tracking-[0.24px] text-[#90A1B8]`
 
@@ -978,7 +975,7 @@ Three article cards, each `w-[388px] h-[398px]`:
 
 - Title "Butuh Bantuan?": `font-outfit font-medium text-[18px] leading-[23px] tracking-[0.24px] text-white`
 - WhatsApp CTA: `w-[246px] h-12 rounded-full bg-white flex-row items-center gap-[11px] px-4`
-  - Label: `font-inter font-medium text-[14px] text-[#0A0A0C]` ("Chat WhatsApp")
+  - Label: `font-inter font-medium text-[14px] text-[rgb(0,0,0)]` ("Chat WhatsApp")
 - Contact list (`flex-col gap-[7px]`):
   - WhatsApp: icon + `font-inter text-[12px] text-white` ("Jam Operasional: 24 Jam")
   - Email: icon + `font-inter text-[12px] text-white` ("E-mail: support@topupgame.com")
@@ -1002,8 +999,8 @@ Three article cards, each `w-[388px] h-[398px]`:
 - Title: `font-outfit font-medium text-[18px] leading-[23px] text-white`
 - Icon row (`flex-row gap-[15px]`):
   - Each social icon: `w-[38px] h-[38px] rounded-full flex items-center justify-center`
-  - Instagram (active): `bg-[#9333EA]`, icon `text-white`
-  - Other platforms (YT, X, Facebook, LinkedIn): `bg-white`, icon `text-[#0A0A0C]`
+  - Instagram (active): `bg-[rgb(208,201,129)]`, icon `text-white`
+  - Other platforms (YT, X, Facebook, LinkedIn): `bg-white`, icon `text-[rgb(0,0,0)]`
 
 **Guarantee Pill** (`w-[210px] h-14 flex-row gap-[9px]`)
 
@@ -1021,7 +1018,7 @@ Three article cards, each `w-[388px] h-[398px]`:
 > **Note:** Copyright/disclaimer text uses **Arial** in Figma — fall back gracefully to system `sans-serif` (`font-family: Arial, sans-serif`) or simply use `font-inter` if Arial is undesired for brand consistency. Document this as a design decision.
 
 ```tsx
-<footer className="w-full bg-linear-to-b from-[#671EAB] to-[#270A4F] pt-15 pb-10">
+<footer className="w-full bg-linear-to-b from-[rgb(67,86,32)] to-[rgb(39,53,15)] pt-15 pb-10">
   <div className="w-276.5 mx-auto flex flex-col gap-8">
     <div className="flex justify-between">
       <FooterBrand /> {/* Column 1 */}

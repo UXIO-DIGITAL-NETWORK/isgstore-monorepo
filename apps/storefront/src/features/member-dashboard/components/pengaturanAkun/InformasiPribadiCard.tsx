@@ -10,7 +10,7 @@ import { compressImage } from "@/lib/imageCompression";
 import { sanitizePhoneInput } from "@/lib/phone";
 
 const inputClass =
-  "w-full bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[#3B82F6]/60 transition-all";
+  "w-full bg-[rgb(14,20,10)] border border-white/10 rounded-full px-4 py-2.5 text-white placeholder:text-white/30 text-sm font-inter outline-none focus:border-[rgb(67,86,32)]/60 transition-all";
 
 const labelClass = "block text-[12px] font-outfit font-medium text-white/60 leading-none mb-2";
 
@@ -127,7 +127,7 @@ export default function InformasiPribadiCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Box className="w-full h-full bg-linear-to-br from-[#3B82F6] to-[#9234EA] flex items-center justify-center">
+              <Box className="w-full h-full bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(208,201,129)] flex items-center justify-center">
                 <Text
                   as="span"
                   className="text-[28px] font-outfit font-bold text-white leading-none select-none"
@@ -145,7 +145,7 @@ export default function InformasiPribadiCard({
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             aria-busy={uploading}
-            className="px-5 py-2 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[12px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="px-5 py-2 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary font-outfit font-bold text-white text-[12px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {uploading && <Spinner className="w-4 h-4" />}
             {uploading
@@ -228,7 +228,7 @@ export default function InformasiPribadiCard({
           </Text>
           <Box className="flex items-center gap-2">
             {/* A hint, not a fixed prefix. */}
-            <Box className="shrink-0 px-4 py-2.5 bg-[#0A0D14] border border-white/10 rounded-full">
+            <Box className="shrink-0 px-4 py-2.5 bg-[rgb(14,20,10)] border border-white/10 rounded-full">
               <Text as="span" className="text-sm font-inter text-white/40 leading-none">
                 +
               </Text>
@@ -254,7 +254,7 @@ export default function InformasiPribadiCard({
             type="button"
             onClick={onSubmit}
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading && <Spinner className="w-4 h-4" />}
             {t("pengaturanAkun.personalInfo.saveButton")}

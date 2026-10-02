@@ -32,7 +32,7 @@ export default function SummaryCard({
   const isDisabled = !planName || !selectedPaymentName || Boolean(isSubmitting);
 
   return (
-    <Box className="rounded-2xl border border-dotted border-[rgba(147,51,234,0.5)] bg-[#0D1117] overflow-hidden">
+    <Box className="rounded-2xl border border-dotted border-[rgba(208,201,129,0.5)] bg-[rgb(14,20,10)] overflow-hidden">
       {/* Info rows */}
       <Box className="px-5 py-4 flex items-start justify-between gap-4">
         {/* Left: labels */}

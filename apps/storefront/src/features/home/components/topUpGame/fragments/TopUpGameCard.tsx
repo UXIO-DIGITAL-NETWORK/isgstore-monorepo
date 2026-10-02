@@ -19,9 +19,9 @@ export default function TopUpGameCard({ game }: Props): React.JSX.Element {
       href={`/${locale}/checkout/${game.id}`}
       className={cn(
         "group relative block rounded-xl overflow-hidden cursor-pointer aspect-3/4",
-        game.borderColor === "azure"
-          ? "border border-[#3B82F6]/50 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
-          : "border border-[#9333EA]/50 shadow-[0_0_12px_rgba(147,51,234,0.15)]"
+        game.borderColor === "green"
+          ? "border border-[rgb(67,86,32)]/50 shadow-[0_0_12px_rgba(67,86,32,0.15)]"
+          : "border border-[rgb(208,201,129)]/50 shadow-[0_0_12px_rgba(208,201,129,0.15)]"
       )}
     >
       {/* Background art — scales on card hover, clipped by card overflow-hidden */}
@@ -48,7 +48,7 @@ export default function TopUpGameCard({ game }: Props): React.JSX.Element {
       )}
 
       {/* Region pill — gradient border, floating with mx-3 mb-3 inset */}
-      <Box className="absolute inset-x-2 bottom-3 p-px rounded-lg bg-linear-to-r from-[#9333EA] to-[#3B82F6]">
+      <Box className="absolute inset-x-2 bottom-3 p-px rounded-lg bg-linear-to-r from-[rgb(208,201,129)] to-[rgb(67,86,32)]">
         <Box className="rounded-[7px] bg-[#080814]/90 backdrop-blur-sm h-9 flex items-center justify-center">
           <Text
             as="span"

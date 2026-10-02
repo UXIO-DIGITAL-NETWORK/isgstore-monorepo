@@ -74,7 +74,7 @@ export default function AccountDetailForm({
                   value={values[field.key] ?? ""}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onValueChange(field.key, e.target.value)}
                   aria-invalid={error ? true : undefined}
-                  className={`w-full h-11 rounded-xl border bg-white/[0.03] px-3 font-inter text-[13px] text-white outline-none focus-visible:border-[#C084FC] ${
+                  className={`w-full h-11 rounded-xl border bg-white/[0.03] px-3 font-inter text-[13px] text-white outline-none focus-visible:border-[rgb(208,201,129)] ${
                     error ? "border-red-400/60" : "border-white/10"
                   }`}
                 >
@@ -130,8 +130,8 @@ export default function AccountDetailForm({
               type="button"
               onClick={() => onCheckUsername?.()}
               disabled={!canCheck}
-              className={`h-10 self-start rounded-xl border border-[#C084FC]/40 bg-[#C084FC]/10 px-4 font-inter font-medium text-[13px] text-[#E9D5FF] leading-none transition-colors ${
-                canCheck ? "hover:bg-[#C084FC]/20 cursor-pointer" : "opacity-50 cursor-not-allowed"
+              className={`h-10 self-start rounded-xl border border-[rgb(208,201,129)]/40 bg-[rgb(208,201,129)]/10 px-4 font-inter font-medium text-[13px] text-[rgb(247,246,198)] leading-none transition-colors ${
+                canCheck ? "hover:bg-[rgb(208,201,129)]/20 cursor-pointer" : "opacity-50 cursor-not-allowed"
               }`}
             >
               {isValidatingNickname ? t("accountDetail.nicknameLoading") : t("accountDetail.checkUsername")}
@@ -143,7 +143,7 @@ export default function AccountDetailForm({
                 <Text as="span" className="font-inter text-[12px] text-white/45 leading-none">
                   {t("accountDetail.nickname")}:
                 </Text>
-                <Text as="span" className="font-inter font-medium text-[12px] text-[#C084FC] leading-none">
+                <Text as="span" className="font-inter font-medium text-[12px] text-[rgb(208,201,129)] leading-none">
                   {nickname}
                 </Text>
               </Box>
@@ -160,7 +160,7 @@ export default function AccountDetailForm({
 
         {/* Guide link */}
         <Box className="flex items-center gap-2 cursor-pointer group">
-          <Box className="w-5 h-5 rounded-full bg-[#3B82F6] flex items-center justify-center shrink-0">
+          <Box className="w-5 h-5 rounded-full bg-[rgb(67,86,32)] flex items-center justify-center shrink-0">
             <Text as="span" className="font-outfit font-bold text-[10px] text-white leading-none">?</Text>
           </Box>
           <Text

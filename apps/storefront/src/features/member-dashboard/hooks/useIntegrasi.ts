@@ -19,9 +19,9 @@ const QUERY_KEY = ["api-credentials"];
 export function useIntegrasi(): UseIntegrasiReturn {
   const queryClient = useQueryClient();
 
-  const { data } = useQuery({ queryKey: QUERY_KEY, queryFn: integrasiService.list });
+  const query = useQuery({ queryKey: QUERY_KEY, queryFn: integrasiService.list });
 
-  const credential = data?.data.credentials[0];
+  const credential = query.data?.data.credentials[0];
   const [issuedSecret, setIssuedSecret] = useState<string | null>(null);
   const [isKeyVisible, setIsKeyVisible] = useState<boolean>(false);
   // `null` means "not edited yet", so the saved value shows through until the
@@ -32,7 +32,7 @@ export function useIntegrasi(): UseIntegrasiReturn {
 
   const callbackUrl = callbackDraft ?? credential?.callback_url ?? "";
 
-  const whitelistIps = data?.data.whitelist_ips ?? [];
+  const whitelistIps = query.data?.data.whitelist_ips ?? [];
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
@@ -92,5 +92,6 @@ export function useIntegrasi(): UseIntegrasiReturn {
       updateCredential.mutate({ whitelist_ips: whitelistIps.filter((existing) => existing !== ip) });
     },
     isMutatingWhitelist: updateCredential.isPending,
+    query,
   };
 }

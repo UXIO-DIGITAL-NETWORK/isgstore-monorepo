@@ -21,7 +21,7 @@ function CardInner({ game, tintVariant }: { game: PopularGame; tintVariant: Tint
   const { t } = useTranslation("home");
 
   return (
-    <Box className="relative h-76 rounded-[10px] overflow-hidden bg-[#0C0C16]">
+    <Box className="relative h-76 rounded-[10px] overflow-hidden bg-[rgb(14,20,10)]">
       {/* Game image — full bleed */}
       <Image
         src={game.image}
@@ -30,19 +30,19 @@ function CardInner({ game, tintVariant }: { game: PopularGame; tintVariant: Tint
         className="absolute inset-0 w-full h-full"
       />
 
-      {/* Colour tint overlay — edge: #9C3BF6/purple, middle: #443BF6/indigo */}
+      {/* Colour tint overlay — edge: army green, middle: deep forest */}
       <Box
         className={cn(
           "absolute inset-0 pointer-events-none",
-          tintVariant === "edge" ? "bg-[#9C3BF6]/5" : "bg-[#443BF6]/5"
+          tintVariant === "edge" ? "bg-[rgb(67,86,32)]/5" : "bg-[rgb(39,53,15)]/5"
         )}
       />
 
       {/* Dark gradient overlay — starts ~58% up the card, nearly opaque at bottom */}
-      <Box className="absolute inset-x-0 bottom-0 h-44 bg-linear-to-b from-transparent via-[#0C0C16]/60 to-[#0C0C16] pointer-events-none" />
+      <Box className="absolute inset-x-0 bottom-0 h-44 bg-linear-to-b from-transparent via-[rgb(14,20,10)]/60 to-[rgb(14,20,10)] pointer-events-none" />
 
       {/* Badge */}
-      <Box className="absolute top-0 right-0 z-10 flex items-center gap-1 p-2 rounded-bl-lg bg-linear-to-br from-blue-500 to-purple-600">
+      <Box className="absolute top-0 right-0 z-10 flex items-center gap-1 p-2 rounded-bl-lg bg-linear-to-br from-[rgb(208,201,129)] to-[rgb(67,86,32)]">
         <Text as="span" className="text-[10px] leading-none">
           {game.badge.emoji}
         </Text>
@@ -71,7 +71,7 @@ function CardInner({ game, tintVariant }: { game: PopularGame; tintVariant: Tint
           {game.region}
         </Heading>
 
-        <Text as="p" className="font-inter font-normal text-[12px] leading-4 text-[#3B82F6] mt-0.5">
+        <Text as="p" className="font-inter font-normal text-[12px] leading-4 text-[rgb(208,201,129)] mt-0.5">
           {game.subtitle}
         </Text>
       </Box>
@@ -87,7 +87,7 @@ export default function PopularGameCard({ game, isFeatured, tintVariant }: Props
     return (
       <Box as="article" className="shrink-0 w-60">
         {/* 3px padding + rounded-[19px] outer = rounded-2xl (16px) inner fits flush */}
-        <Link href={href} className="block p-0.75 rounded-[13px] bg-linear-to-b from-purple-600 to-blue-500">
+        <Link href={href} className="block p-0.75 rounded-[13px] bg-linear-to-b from-[rgb(208,201,129)] to-[rgb(67,86,32)]">
           <CardInner game={game} tintVariant={tintVariant} />
         </Link>
       </Box>
@@ -95,7 +95,7 @@ export default function PopularGameCard({ game, isFeatured, tintVariant }: Props
   }
 
   return (
-    <Box as="article" className="shrink-0 w-60 rounded-[10px] border border-[#9333EA]/30">
+    <Box as="article" className="shrink-0 w-60 rounded-[10px] border border-[rgb(208,201,129)]/30">
       <Link href={href} className="block">
         <CardInner game={game} tintVariant={tintVariant} />
       </Link>

@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Landmark } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -27,7 +29,8 @@ interface Props {
  */
 export default function PayoutDetailsForm({ onSubmit, isPending }: Props): React.JSX.Element {
   const { t } = useTranslation("refund");
-  const { data: banks = [] } = usePayoutBanks();
+  const banksQuery = usePayoutBanks();
+  const banks = useMemo(() => banksQuery.data ?? [], [banksQuery.data]);
 
   const {
     register,
@@ -57,7 +60,7 @@ export default function PayoutDetailsForm({ onSubmit, isPending }: Props): React
   );
 
   return (
-    <Box className="rounded-2xl border border-[rgba(147,51,234,0.35)] bg-[#0D1117] p-6 md:p-8">
+    <Box className="rounded-2xl border border-[rgba(208,201,129,0.35)] bg-[rgb(14,20,10)] p-6 md:p-8">
       <Box
         as="form"
         onSubmit={(e: FormEvent) => {
@@ -79,18 +82,28 @@ export default function PayoutDetailsForm({ onSubmit, isPending }: Props): React
           <Box as="label" htmlFor="payout-bank" className="font-inter text-[13px] text-white/55">
             {t("form.bank")}
           </Box>
-          <select
-            id="payout-bank"
-            {...register("bank_code")}
-            className="w-full bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white text-sm font-inter outline-none focus:border-[#3B82F6]/60 transition-all"
-          >
-            <option value="">{t("form.bankPlaceholder")}</option>
-            {banks.map((bank) => (
-              <option key={bank.code} value={bank.code}>
-                {bank.code} — {bank.name}
-              </option>
-            ))}
-          </select>
+          {banksQuery.isPending && banksQuery.fetchStatus !== "idle" ? (
+            <Skeleton className="h-11 w-full rounded-full" />
+          ) : banksQuery.isError ? (
+            <ErrorState variant="inline" onRetry={() => void banksQuery.refetch()} />
+          ) : banks.length === 0 ? (
+            <Text as="span" className="font-inter text-[12px] text-white/45">
+              {t("form.noBanks")}
+            </Text>
+          ) : (
+            <select
+              id="payout-bank"
+              {...register("bank_code")}
+              className="w-full bg-[rgb(14,20,10)] border border-white/10 rounded-full px-4 py-2.5 text-white text-sm font-inter outline-none focus:border-[rgb(67,86,32)]/60 transition-all"
+            >
+              <option value="">{t("form.bankPlaceholder")}</option>
+              {banks.map((bank) => (
+                <option key={bank.code} value={bank.code}>
+                  {bank.code} — {bank.name}
+                </option>
+              ))}
+            </select>
+          )}
           {errors.bank_code && (
             <Text as="span" className="font-inter text-[12px] text-red-400">
               {t(errors.bank_code.message ?? "")}

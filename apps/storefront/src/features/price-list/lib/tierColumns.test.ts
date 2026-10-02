@@ -27,13 +27,13 @@ describe("tierGridTemplate", () => {
 });
 
 describe("tierColor", () => {
-  it("always ends on the top-tier amber", () => {
-    expect(tierColor(2, 3)).toBe("#E5A000");
-    expect(tierColor(0, 1)).toBe("#E5A000");
+  it("always ends on the top-tier light gold", () => {
+    expect(tierColor(2, 3)).toBe("rgb(247,246,198)");
+    expect(tierColor(0, 1)).toBe("rgb(247,246,198)");
   });
 
-  it("starts on the member azure when there is a ladder", () => {
-    expect(tierColor(0, 3)).toBe("#3B82F6");
+  it("starts on the member army green when there is a ladder", () => {
+    expect(tierColor(0, 3)).toBe("rgb(67,86,32)");
   });
 });
 

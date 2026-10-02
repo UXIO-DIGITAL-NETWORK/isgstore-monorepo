@@ -2,7 +2,7 @@
 
 namespace App\Actions\Financial;
 
-use App\Services\Payment\MonetapayService;
+use App\Contracts\PaymentGateway;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Log;
  */
 class GetPaymentGatewayBalancesAction
 {
-    public function __construct(private readonly MonetapayService $monetapayService) {}
+    public function __construct(private readonly PaymentGateway $monetapayService) {}
 
     public function execute(): array
     {

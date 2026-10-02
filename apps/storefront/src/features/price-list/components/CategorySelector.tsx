@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { Box } from "@/components/common/Box";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
 import { cn } from "@/lib/utils";
@@ -18,12 +21,13 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
   const { t } = useTranslation("priceList");
   const [categorySearch, setCategorySearch] = useState("");
 
-  const { data: games } = useGamesQuery();
+  const gamesQuery = useGamesQuery();
+  const games = gamesQuery.data ?? [];
 
   // This search only narrows the row of cards already on screen, so it filters
   // client-side rather than issuing a request per keystroke.
   const needle = categorySearch.toLowerCase();
-  const filteredGames: Game[] = (games ?? []).filter(
+  const filteredGames: Game[] = games.filter(
     (g) => g.title.toLowerCase().includes(needle) || g.region.toLowerCase().includes(needle),
   );
 
@@ -54,13 +58,24 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
             value={categorySearch}
             onChange={(e) => setCategorySearch(e.target.value)}
             placeholder={t("category.searchPlaceholder")}
-            className="w-[200px] bg-white/5 border border-white/10 rounded-full px-4 py-2 pr-9 text-[13px] font-inter text-white placeholder:text-[#909AAE] outline-none focus:border-[#3B82F6]/50 transition-all"
+            className="w-[200px] bg-white/5 border border-white/10 rounded-full px-4 py-2 pr-9 text-[13px] font-inter text-white placeholder:text-[#909AAE] outline-none focus:border-[rgb(67,86,32)]/50 transition-all"
           />
           <Search className="absolute right-3 w-4 h-4 text-[#909AAE] pointer-events-none" />
         </Box>
       </Box>
 
       {/* ── Game cards row — same style as Top Up Game section on homepage ── */}
+      {gamesQuery.isError ? (
+        <ErrorState variant="inline" onRetry={() => void gamesQuery.refetch()} />
+      ) : gamesQuery.isPending ? (
+        <Box aria-busy="true" className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="aspect-3/4 w-[130px] shrink-0 rounded-xl" />
+          ))}
+        </Box>
+      ) : filteredGames.length === 0 ? (
+        <EmptyState compact title={t("category.noResults")} />
+      ) : (
       <Box className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
         {filteredGames.map((game) => {
           const isActive = activeGameId === game.id;
@@ -76,10 +91,10 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
                 "group relative flex-shrink-0 w-[130px] rounded-xl overflow-hidden cursor-pointer outline-none select-none transition-all duration-200",
                 "aspect-3/4",
                 isActive
-                  ? "border-[2px] border-[#C084FC] shadow-[0_0_14.87px_rgba(147,51,234,0.45)]"
-                  : game.borderColor === "azure"
-                    ? "border border-[#3B82F6]/50 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
-                    : "border border-[#9333EA]/50 shadow-[0_0_12px_rgba(147,51,234,0.15)]",
+                  ? "border-[2px] border-[rgb(208,201,129)] shadow-[0_0_14.87px_rgba(208,201,129,0.45)]"
+                  : game.borderColor === "green"
+                    ? "border border-[rgb(67,86,32)]/50 shadow-[0_0_12px_rgba(67,86,32,0.15)]"
+                    : "border border-[rgb(208,201,129)]/50 shadow-[0_0_12px_rgba(208,201,129,0.15)]",
               )}
             >
               {/* Background art — scales on hover */}
@@ -95,7 +110,7 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
 
               {/* Active overlay tint */}
               {isActive && (
-                <Box className="absolute inset-0 bg-[#9333EA]/10 pointer-events-none" />
+                <Box className="absolute inset-0 bg-[rgb(208,201,129)]/10 pointer-events-none" />
               )}
 
               {/* Game logo — positioned above region pill; only when the category has one */}
@@ -111,7 +126,7 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
               )}
 
               {/* Region pill — gradient border */}
-              <Box className="absolute inset-x-2 bottom-3 p-px rounded-lg bg-linear-to-r from-[#9333EA] to-[#3B82F6]">
+              <Box className="absolute inset-x-2 bottom-3 p-px rounded-lg bg-linear-to-r from-[rgb(208,201,129)] to-[rgb(67,86,32)]">
                 <Box className="rounded-[7px] bg-[#080814]/90 backdrop-blur-sm h-9 flex items-center justify-center">
                   <Text
                     as="span"
@@ -124,17 +139,12 @@ export default function CategorySelector({ activeGameId, onSelect }: Props): Rea
             </Box>
           );
         })}
-
-        {filteredGames.length === 0 && (
-          <Text as="p" className="font-inter text-[13px] text-white/40 py-4">
-            {t("category.noResults")}
-          </Text>
-        )}
       </Box>
+      )}
 
       {/* ── Scroll progress bar (decorative) ── */}
       <Box className="mt-2 h-[3px] rounded-full bg-white/8 overflow-hidden">
-        <Box className="h-full w-[30%] rounded-full bg-[#9333EA]" />
+        <Box className="h-full w-[30%] rounded-full bg-[rgb(208,201,129)]" />
       </Box>
     </Box>
   );

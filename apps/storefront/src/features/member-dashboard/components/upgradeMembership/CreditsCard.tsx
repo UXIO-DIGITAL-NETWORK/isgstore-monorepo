@@ -19,8 +19,8 @@ export default function CreditsCard({ balance, isSelected, onSelect }: Props): R
 
   return (
     <Box className="flex flex-col rounded-xl overflow-hidden border border-white/8 mb-2">
-      {/* Violet banner header */}
-      <Box className="px-3 py-2 bg-[#5B21B6]">
+      {/* Gold banner header */}
+      <Box className="px-3 py-2 bg-[rgb(39,53,15)]">
         <Text
           as="span"
           className="font-outfit font-semibold text-[12px] text-white/90 leading-none"
@@ -35,8 +35,8 @@ export default function CreditsCard({ balance, isSelected, onSelect }: Props): R
         type="button"
         onClick={() => onSelect("credits")}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-3 bg-[#0D1117] border-t-2 transition-all cursor-pointer outline-none",
-          isSelected ? "border-[#C084FC]" : "border-transparent hover:border-white/10",
+          "w-full flex items-center gap-3 px-3 py-3 bg-[rgb(14,20,10)] border-t-2 transition-all cursor-pointer outline-none",
+          isSelected ? "border-[rgb(208,201,129)]" : "border-transparent hover:border-white/10",
         )}
       >
         {/* Coin icon */}

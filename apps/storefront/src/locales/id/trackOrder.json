@@ -30,5 +30,6 @@
     "success": "Sukses",
     "failed": "Gagal"
   },
-  "emptyState": "Tidak ada transaksi yang cocok dengan pencarian Anda."
+  "emptyState": "Tidak ada transaksi yang cocok dengan pencarian Anda.",
+  "searchPrompt": "Masukkan nomor invoice atau WhatsApp Anda di atas untuk melacak pesanan."
 }

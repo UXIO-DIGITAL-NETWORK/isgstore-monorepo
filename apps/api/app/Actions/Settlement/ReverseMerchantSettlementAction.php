@@ -61,7 +61,6 @@ class ReverseMerchantSettlementAction
      *                       finish a reversal the first attempt could not, and
      *                       without this a merchant who has permanently spent the
      *                       money would page the channel on every run.
-     *
      * @return bool True when the books are square (reversed now, already
      *              reversed, or nothing to reverse); false when a leg failed.
      */

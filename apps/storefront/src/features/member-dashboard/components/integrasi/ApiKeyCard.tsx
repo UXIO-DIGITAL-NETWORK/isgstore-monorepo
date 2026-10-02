@@ -38,7 +38,7 @@ export default function ApiKeyCard({
               value={isKeyVisible ? apiKey : maskedKey}
               readOnly
               aria-label={t("integrasi.apiKey.title")}
-              className="w-full bg-[#0A0D14] border border-white/10 rounded-full px-4 py-2.5 text-white font-plex text-sm outline-none pr-20 truncate focus:border-[#3B82F6]/60 transition-all"
+              className="w-full bg-[rgb(14,20,10)] border border-white/10 rounded-full px-4 py-2.5 text-white font-plex text-sm outline-none pr-20 truncate focus:border-[rgb(67,86,32)]/60 transition-all"
             />
             {/* Eye toggle */}
             <Box
@@ -72,14 +72,14 @@ export default function ApiKeyCard({
           <Box
             as="button"
             type="button"
-            className="shrink-0 px-5 py-2.5 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer"
+            className="shrink-0 px-5 py-2.5 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary font-outfit font-bold text-white text-[13px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer"
           >
             {t("integrasi.apiKey.docButton")}
           </Box>
         </Box>
 
         {/* Security notice */}
-        <Box className="flex items-start gap-2.5 p-3 rounded-xl bg-[#9234EA]/8 border border-[#9234EA]/20">
+        <Box className="flex items-start gap-2.5 p-3 rounded-xl bg-[rgb(208,201,129)]/8 border border-[rgb(208,201,129)]/20">
           <Info className="w-4 h-4 text-[#F59E0B] shrink-0 mt-0.5" />
           <Text as="span" className="font-inter text-[12px] text-white/60 leading-relaxed">
             {t("integrasi.apiKey.notice")}

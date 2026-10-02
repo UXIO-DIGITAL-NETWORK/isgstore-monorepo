@@ -2,10 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Contracts\PaymentGateway;
 use App\Enums\WithdrawalStatus;
 use App\Models\Withdrawal;
 use App\Services\DiscordWebhookService;
-use App\Services\Payment\MonetapayService;
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Payout\BankCatalog;
 use App\Support\Phone;
@@ -49,7 +49,7 @@ class ProcessWithdrawalPayoutJob implements ShouldQueue
 
     public function __construct(public Withdrawal $withdrawal) {}
 
-    public function handle(MonetapayService $monetapay): void
+    public function handle(PaymentGateway $monetapay): void
     {
         $current = DB::transaction(function () {
             /** @var Withdrawal|null $locked */

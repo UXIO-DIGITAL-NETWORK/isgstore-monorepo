@@ -30,6 +30,7 @@
     "subtitle": "Pastikan datanya benar. Dana akan kami transfer ke rekening ini dalam 1×24 jam kerja.",
     "bank": "Bank atau e-wallet",
     "bankPlaceholder": "Pilih tujuan",
+    "noBanks": "Belum ada bank atau e-wallet tujuan yang tersedia.",
     "accountNumber": "Nomor rekening",
     "accountPhone": "Nomor e-wallet",
     "accountName": "Nama pemilik rekening",

@@ -12,5 +12,9 @@
     "no": "No",
     "player": "Player",
     "totalTransaction": "Total Transaction"
+  },
+  "empty": {
+    "title": "No leaderboard data yet",
+    "description": "There are no transactions in this period yet."
   }
 }

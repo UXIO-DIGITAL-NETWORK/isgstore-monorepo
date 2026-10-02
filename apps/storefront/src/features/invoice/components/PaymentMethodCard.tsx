@@ -55,8 +55,8 @@ export default function PaymentMethodCard({
 
   return (
     /* Gradient-border wrapper */
-    <Box className="p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9333EA]">
-      <Box className="rounded-[15px] bg-[#0D1117] overflow-hidden">
+    <Box className="p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+      <Box className="rounded-[15px] bg-[rgb(14,20,10)] overflow-hidden">
 
         {/* Header */}
         <Box className="flex items-center gap-3 px-4 py-4">
@@ -85,7 +85,7 @@ export default function PaymentMethodCard({
               {t("paymentMethod.invoiceNumber")}
             </Text>
             <Box className="flex items-center gap-2 flex-1 min-w-0">
-              <Box className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[#0A0D14] px-3 py-2 overflow-hidden">
+              <Box className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[rgb(14,20,10)] px-3 py-2 overflow-hidden">
                 <Text as="span" className="font-plex text-[12px] text-white leading-none block truncate">
                   {invoiceNumber}
                 </Text>
@@ -156,7 +156,7 @@ export default function PaymentMethodCard({
           {qrDataUrl && (
             <>
               <Box className="flex justify-center">
-                <Box className="bg-white rounded-xl p-3 shadow-glow-violet">
+                <Box className="bg-white rounded-xl p-3 shadow-glow-accent">
                   <img
                     src={qrDataUrl}
                     alt="QR Code"
@@ -190,7 +190,7 @@ export default function PaymentMethodCard({
                 {instructions?.bank_code ?? paymentName}
               </Text>
               <Box className="flex items-center gap-2">
-                <Box className="flex-1 min-w-0 rounded-lg border border-[rgba(147,51,234,0.4)] bg-[#0A0D14] px-3 py-3 overflow-hidden">
+                <Box className="flex-1 min-w-0 rounded-lg border border-[rgba(208,201,129,0.4)] bg-[rgb(14,20,10)] px-3 py-3 overflow-hidden">
                   <Text as="span" className="font-plex font-bold text-[18px] text-white leading-none block truncate tracking-wide">
                     {virtualAccount}
                   </Text>
@@ -220,7 +220,7 @@ export default function PaymentMethodCard({
                 href={checkoutUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full text-center rounded-[50px] bg-linear-to-r from-[#3B82F6] to-[#9234EA] py-3 font-outfit font-bold text-[14px] text-[#E9D5FF] cursor-pointer"
+                className="w-full text-center rounded-[50px] bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] py-3 font-outfit font-bold text-[14px] text-[rgb(247,246,198)] cursor-pointer"
               >
                 {t("failed.choosePaymentMethod")}
               </Box>
@@ -228,8 +228,8 @@ export default function PaymentMethodCard({
           )}
 
           {/* Verification note */}
-          <Box className="flex items-start gap-3 rounded-xl border border-[rgba(147,51,234,0.4)] bg-[rgba(88,28,135,0.15)] px-3 py-3">
-            <Info className="w-4 h-4 text-violet-75 shrink-0 mt-0.5" />
+          <Box className="flex items-start gap-3 rounded-xl border border-[rgba(208,201,129,0.4)] bg-[rgba(39,53,15,0.15)] px-3 py-3">
+            <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
             <Text as="span" className="font-inter text-[12px] text-white/65 leading-relaxed">
               {t("paymentMethod.verifyNote")}
             </Text>

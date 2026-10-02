@@ -42,8 +42,8 @@ export default function HistoryFilterPanel({
 
   return (
     // Gradient border wrapper — same pattern as InvoiceSearchCard
-    <Box className="p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9234EA]">
-      <Box className="bg-[#0C0E1A] rounded-[15px] p-6 flex flex-col gap-6">
+    <Box className="p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+      <Box className="bg-[rgb(14,20,10)] rounded-[15px] p-6 flex flex-col gap-6">
         {/* 3-column filter row */}
         <Box className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* ── Layanan ── */}
@@ -61,7 +61,7 @@ export default function HistoryFilterPanel({
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setDraft((prev) => ({ ...prev, service: e.target.value }))
                 }
-                className="w-full appearance-none bg-[#080A14] border border-white/10 rounded-xl px-4 py-3 pr-10 text-[13px] font-inter text-white outline-none focus:border-[#3B82F6]/50 transition-colors cursor-pointer"
+                className="w-full appearance-none bg-[rgb(14,20,10)] border border-white/10 rounded-xl px-4 py-3 pr-10 text-[13px] font-inter text-white outline-none focus:border-[rgb(67,86,32)]/50 transition-colors cursor-pointer"
               >
                 <option value="">
                   {t("transactionHistory.filterPanel.allServices")}
@@ -91,7 +91,7 @@ export default function HistoryFilterPanel({
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setDraft((prev) => ({ ...prev, payment: e.target.value }))
                 }
-                className="w-full appearance-none bg-[#080A14] border border-white/10 rounded-xl px-4 py-3 pr-10 text-[13px] font-inter text-white outline-none focus:border-[#3B82F6]/50 transition-colors cursor-pointer"
+                className="w-full appearance-none bg-[rgb(14,20,10)] border border-white/10 rounded-xl px-4 py-3 pr-10 text-[13px] font-inter text-white outline-none focus:border-[rgb(67,86,32)]/50 transition-colors cursor-pointer"
               >
                 <option value="">
                   {t("transactionHistory.filterPanel.allMethods")}
@@ -114,7 +114,7 @@ export default function HistoryFilterPanel({
             >
               {t("transactionHistory.filterPanel.date")}
             </Text>
-            <Box className="flex items-center gap-2 bg-[#080A14] border border-white/10 rounded-xl px-4 py-3">
+            <Box className="flex items-center gap-2 bg-[rgb(14,20,10)] border border-white/10 rounded-xl px-4 py-3">
               <Calendar className="w-4 h-4 text-white/40 shrink-0" />
               <Box
                 as="input"
@@ -160,7 +160,7 @@ export default function HistoryFilterPanel({
             as="button"
             type="button"
             onClick={handleApply}
-            className="flex items-center px-6 py-2.5 rounded-full bg-[#9234EA] text-[13px] font-outfit font-bold text-white hover:bg-[#7C22CC] transition-colors cursor-pointer"
+            className="flex items-center px-6 py-2.5 rounded-full bg-[rgb(208,201,129)] text-[13px] font-outfit font-bold text-white hover:bg-[rgb(39,53,15)] transition-colors cursor-pointer"
           >
             {t("transactionHistory.filterPanel.applyFilter")}
           </Box>

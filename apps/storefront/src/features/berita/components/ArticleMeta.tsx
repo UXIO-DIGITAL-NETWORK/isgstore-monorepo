@@ -12,14 +12,14 @@ export default function ArticleMeta({ date, author }: Props): React.JSX.Element 
   return (
     <Box className="flex items-center gap-5 flex-wrap">
       <Box className="flex items-center gap-1.5">
-        <Calendar className="w-4 h-4 text-[#9234EA] shrink-0" />
+        <Calendar className="w-4 h-4 text-[rgb(208,201,129)] shrink-0" />
         <Text as="span" className="font-inter text-[13px] text-white/60">
           {date}
         </Text>
       </Box>
 
       <Box className="flex items-center gap-1.5">
-        <User className="w-4 h-4 text-[#9234EA] shrink-0" />
+        <User className="w-4 h-4 text-[rgb(208,201,129)] shrink-0" />
         <Text as="span" className="font-inter text-[13px] text-white/60">
           {author}
         </Text>

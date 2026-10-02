@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\SupplierGateway;
 use App\Exceptions\UxiolabsDuplicateOrderException;
 use App\Support\Integration\IntegrationConfig;
 use Exception;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class UxiolabsService
+class UxiolabsService implements SupplierGateway
 {
     public const PRICE_LIST_CACHE_KEY = 'uxiolabs:price-list';
 
@@ -45,6 +46,26 @@ class UxiolabsService
         $this->priceTier = in_array($tier, self::PRICE_TIERS, true) ? $tier : 'harga';
     }
 
+    public function priceListCacheKey(): string
+    {
+        return self::PRICE_LIST_CACHE_KEY;
+    }
+
+    public function priceListCacheTtl(): int
+    {
+        return self::PRICE_LIST_CACHE_TTL;
+    }
+
+    public function balanceCacheKey(): string
+    {
+        return self::BALANCE_CACHE_KEY;
+    }
+
+    public function balanceCacheTtl(): int
+    {
+        return self::BALANCE_CACHE_TTL;
+    }
+
     /** A pending HTTP request with sane timeouts, so a stalled upstream fails fast instead of hanging the worker. */
     private function client(): PendingRequest
     {
@@ -71,7 +92,7 @@ class UxiolabsService
     }
 
     /** Whether a price-list item is orderable ("aktif"). */
-    public static function isItemActive(array $item): bool
+    public function isItemActive(array $item): bool
     {
         return strtolower((string) ($item['status'] ?? '')) === 'aktif';
     }

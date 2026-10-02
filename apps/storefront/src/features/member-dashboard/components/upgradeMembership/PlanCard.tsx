@@ -10,12 +10,12 @@ import { cn } from "@/lib/utils";
 import type { MembershipPlan } from "@/features/member-dashboard/types/upgradeMembership.type";
 
 const cardVariants = cva(
-  "relative flex flex-col text-left rounded-xl border cursor-pointer select-none transition-all outline-none bg-[#0D1117] overflow-hidden",
+  "relative flex flex-col text-left rounded-xl border cursor-pointer select-none transition-all outline-none bg-[rgb(14,20,10)] overflow-hidden",
   {
     variants: {
       selected: {
-        true: "border-[#C084FC]",
-        false: "border-white/[0.08] hover:border-[#C084FC]/40",
+        true: "border-[rgb(208,201,129)]",
+        false: "border-white/[0.08] hover:border-[rgb(208,201,129)]/40",
       },
     },
     defaultVariants: { selected: false },
@@ -40,7 +40,7 @@ export default function PlanCard({ plan, isSelected, onSelect }: Props): React.J
       className={cn(cardVariants({ selected: isSelected }))}
       style={
         isSelected
-          ? { boxShadow: "0 0 0 1px rgba(192,132,252,0.2), 0 0 16px rgba(147,51,234,0.15)" }
+          ? { boxShadow: "0 0 0 1px rgba(208,201,129,0.2), 0 0 16px rgba(208,201,129,0.15)" }
           : undefined
       }
     >
@@ -63,7 +63,7 @@ export default function PlanCard({ plan, isSelected, onSelect }: Props): React.J
             className={cn(
               "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
               isSelected
-                ? "border-[#9234EA] bg-[#9234EA]"
+                ? "border-[rgb(208,201,129)] bg-[rgb(208,201,129)]"
                 : "border-white/30 bg-transparent",
             )}
           >
@@ -98,7 +98,7 @@ export default function PlanCard({ plan, isSelected, onSelect }: Props): React.J
       {/* ── Bottom button band ──────────────────────────────────────── */}
       <Box className="mt-auto px-4 pb-4 pt-2">
         {isSelected ? (
-          <Box className="w-full py-2 rounded-lg bg-linear-to-r from-[#3B82F6] to-[#9234EA] flex items-center justify-center">
+          <Box className="w-full py-2 rounded-lg bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] flex items-center justify-center">
             <Text as="span" className="font-outfit font-bold text-[12px] text-white leading-none">
               {t("upgradeMembership.selectedButton")}
             </Text>

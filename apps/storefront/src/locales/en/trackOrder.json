@@ -30,5 +30,6 @@
     "success": "Success",
     "failed": "Failed"
   },
-  "emptyState": "No transactions matched your search."
+  "emptyState": "No transactions matched your search.",
+  "searchPrompt": "Enter your invoice number or WhatsApp above to track your order."
 }

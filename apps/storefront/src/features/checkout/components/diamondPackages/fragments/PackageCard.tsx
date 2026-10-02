@@ -21,12 +21,12 @@ const BONUS_ICONS: Record<1 | 2 | 3, string> = {
 };
 
 const cardVariants = cva(
-  "relative flex flex-col text-left rounded-xl overflow-hidden border cursor-pointer select-none transition-all outline-none bg-[#0D1117]",
+  "relative flex flex-col text-left rounded-xl overflow-hidden border cursor-pointer select-none transition-all outline-none bg-[rgb(14,20,10)]",
   {
     variants: {
       selected: {
-        true: "border-[#C084FC]",
-        false: "border-white/[0.08] hover:border-[#C084FC]/40",
+        true: "border-[rgb(208,201,129)]",
+        false: "border-white/[0.08] hover:border-[rgb(208,201,129)]/40",
       },
     },
     defaultVariants: { selected: false },
@@ -58,7 +58,7 @@ export default function PackageCard({ pkg, isSelected, onSelect }: Props): React
       className={cn(cardVariants({ selected: isSelected }), pkg.isSoldOut && "cursor-not-allowed opacity-55")}
       style={
         isSelected
-          ? { boxShadow: "0 0 0 1px rgba(192,132,252,0.2), 0 0 16px rgba(147,51,234,0.15)" }
+          ? { boxShadow: "0 0 0 1px rgba(208,201,129,0.2), 0 0 16px rgba(208,201,129,0.15)" }
           : undefined
       }
     >
@@ -101,7 +101,7 @@ export default function PackageCard({ pkg, isSelected, onSelect }: Props): React
       </Box>
 
       {/* ── Bottom band ─────────────────────────────────────────────────── */}
-      <Box className="flex items-center justify-between gap-2 px-3 py-2 mt-auto bg-[rgba(147,51,234,0.12)]">
+      <Box className="flex items-center justify-between gap-2 px-3 py-2 mt-auto bg-[rgba(208,201,129,0.12)]">
         {/* Bonus chip */}
         {pkg.bonus !== undefined && (
           <Box className="flex items-center gap-1 rounded-full bg-black/20 px-2 py-0.5">

@@ -20,7 +20,7 @@ export default function CarouselDots({ count, current, onDotClick }: Props): Rea
           onClick={() => onDotClick(idx)}
           aria-label={t("hero.slide", { number: idx + 1 })}
           className={`h-[5px] rounded-full cursor-pointer outline-none transition-all duration-300 ${
-            idx === current ? "bg-violet-500 w-6" : "bg-white/25 hover:bg-white/45 w-[5px]"
+            idx === current ? "bg-[rgb(208,201,129)] w-6" : "bg-white/25 hover:bg-white/45 w-[5px]"
           }`}
         />
       ))}

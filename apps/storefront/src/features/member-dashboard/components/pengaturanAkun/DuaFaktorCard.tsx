@@ -11,8 +11,8 @@ export default function DuaFaktorCard({ onSetup2fa }: DuaFaktorCardProps): React
   const { t } = useTranslation("dashboard");
 
   return (
-    <Box className="p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9333EA]">
-      <Box className="rounded-[15px] bg-[#0D1117] px-5 py-5">
+    <Box className="p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+      <Box className="rounded-[15px] bg-[rgb(14,20,10)] px-5 py-5">
         <Box className="flex items-center justify-between gap-4">
           {/* Text block */}
           <Box className="flex flex-col gap-1.5 min-w-0">
@@ -32,7 +32,7 @@ export default function DuaFaktorCard({ onSetup2fa }: DuaFaktorCardProps): React
             as="button"
             type="button"
             onClick={onSetup2fa}
-            className="shrink-0 px-5 py-2 rounded-full bg-linear-to-r from-[#3B82F6] to-[#9234EA] shadow-cta-primary font-outfit font-bold text-white text-[12px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer whitespace-nowrap"
+            className="shrink-0 px-5 py-2 rounded-full bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] shadow-cta-primary font-outfit font-bold text-white text-[12px] hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer whitespace-nowrap"
           >
             {t("pengaturanAkun.twoFactor.button")}
           </Box>

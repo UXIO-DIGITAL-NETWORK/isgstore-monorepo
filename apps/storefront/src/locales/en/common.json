@@ -30,7 +30,8 @@
   },
   "search": {
     "popular": "Popular Searches",
-    "noResults": "No games found"
+    "noResults": "No games found",
+    "popularEmpty": "No popular games to show yet"
   },
   "maintenance": {
     "title": "Under Maintenance",

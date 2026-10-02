@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Actions\Uxiolabs;
 
 use App\Actions\Log\CreateActivityLogAction;
+use App\Contracts\SupplierGateway;
 use App\DTOs\Log\CreateActivityLogDTO;
 use App\Models\SupplierCategory;
 use App\Models\SupplierProduct;
-use App\Services\UxiolabsService;
 use App\Support\Uxiolabs\UxiolabsSupplier;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Auth;
 class PoolUxiolabsSkusAction
 {
     public function __construct(
-        private readonly UxiolabsService $uxiolabsService,
+        private readonly SupplierGateway $uxiolabsService,
         private readonly CreateActivityLogAction $activityLogAction,
     ) {}
 
@@ -102,7 +102,7 @@ class PoolUxiolabsSkusAction
                 continue;
             }
 
-            $available = UxiolabsService::isItemActive($item);
+            $available = $this->uxiolabsService->isItemActive($item);
 
             $insert[] = [
                 'product_id' => null,

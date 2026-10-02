@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Contracts\PaymentGateway;
 use App\Support\Integration\IntegrationConfig;
 use App\Support\Phone;
 use App\Support\PublicUrl;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class MonetapayService
+class MonetapayService implements PaymentGateway
 {
     public const BALANCE_CACHE_KEY = 'monetapay:balance';
 
@@ -587,7 +588,7 @@ class MonetapayService
     public function inquiryBalanceCached(?string $subMchId = null, ?string $currency = null): array
     {
         return Cache::remember(
-            self::balanceCacheKey($subMchId, $currency),
+            $this->balanceCacheKey($subMchId, $currency),
             self::BALANCE_CACHE_TTL,
             fn () => $this->inquiryBalance($subMchId, $currency),
         );
@@ -604,7 +605,7 @@ class MonetapayService
      * that spelled the sub-merchant out looked somewhere else — two cache entries
      * for one number, each able to go stale independently.
      */
-    public static function balanceCacheKey(?string $subMchId = null, ?string $currency = null): string
+    public function balanceCacheKey(?string $subMchId = null, ?string $currency = null): string
     {
         $subMchId = $subMchId ?: (string) (IntegrationConfig::for('monetapay')['sub_mch_id'] ?? '');
 
@@ -623,14 +624,14 @@ class MonetapayService
     public function inquiryMainMerchantBalanceCached(?string $currency = null): array
     {
         return Cache::remember(
-            self::mainBalanceCacheKey($currency),
+            $this->mainBalanceCacheKey($currency),
             self::BALANCE_CACHE_TTL,
             fn () => $this->inquiryMainMerchantBalance($currency),
         );
     }
 
     /** The main-merchant (parent account) cache key — public so busters forget the same entry. */
-    public static function mainBalanceCacheKey(?string $currency = null): string
+    public function mainBalanceCacheKey(?string $currency = null): string
     {
         return self::MAIN_BALANCE_CACHE_KEY.':'.($currency ?? 'IDR');
     }

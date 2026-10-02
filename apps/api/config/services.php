@@ -1,5 +1,8 @@
 <?php
 
+use App\Services\Payment\MonetapayService;
+use App\Services\UxiolabsService;
+
 return [
 
     /*
@@ -72,6 +75,27 @@ return [
         // The webhook carries no signature — the only authentication is the
         // source IP. Comma-separated to allow extra IPs without a deploy.
         'callback_ips' => env('UXIOTOPUP_CALLBACK_IP', '103.146.202.50'),
+    ],
+
+    'supplier' => [
+        // Which adapter serves as THE top-up supplier for this site. Adding a
+        // supplier means adding its class to `adapters` and naming it here —
+        // the transaction engine (App\Contracts\SupplierGateway) is not
+        // touched. An unknown driver fails loudly (SupplierManager).
+        'driver' => env('SUPPLIER_DRIVER', 'uxiolabs'),
+        'adapters' => [
+            'uxiolabs' => UxiolabsService::class,
+        ],
+    ],
+
+    'payment' => [
+        // Which adapter charges and pays out for this site (PAYMENT_DRIVER).
+        // Adding a gateway means adding its class to `adapters` and naming it
+        // here — checkout, payouts, callbacks and settlement are not touched.
+        'driver' => env('PAYMENT_DRIVER', 'monetapay'),
+        'adapters' => [
+            'monetapay' => MonetapayService::class,
+        ],
     ],
 
     'discord' => [

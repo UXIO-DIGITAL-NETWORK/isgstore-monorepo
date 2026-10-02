@@ -21,7 +21,7 @@ export default function TestimonialCard({ testimonial }: { testimonial: Testimon
       className={[
         "flex h-full flex-col gap-4 rounded-2xl border p-5",
         is_featured
-          ? "border-[rgba(147,51,234,0.5)] bg-[rgba(147,51,234,0.08)]"
+          ? "border-[rgba(208,201,129,0.5)] bg-[rgba(208,201,129,0.08)]"
           : "border-white/10 bg-white/[0.03]",
       ].join(" ")}
     >

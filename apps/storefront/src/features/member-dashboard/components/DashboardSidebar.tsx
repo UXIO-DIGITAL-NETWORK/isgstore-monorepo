@@ -104,7 +104,7 @@ export default function DashboardSidebar(): React.JSX.Element {
             className={cn(
               "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer",
               active
-                ? "bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-white shadow-glow-violet"
+                ? "bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] text-white shadow-glow-accent"
                 : "text-white/60 hover:bg-white/6 hover:text-white",
             )}
           >

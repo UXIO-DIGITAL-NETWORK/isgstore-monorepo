@@ -38,8 +38,8 @@ export default function PaymentFailedCard({ invoiceNumber, paymentName, createdA
 
   return (
     /* Gradient-border wrapper */
-    <Box className="p-px rounded-2xl bg-linear-to-r from-[#3B82F6] to-[#9333EA]">
-      <Box className="rounded-[15px] bg-[#0D1117] overflow-hidden">
+    <Box className="p-px rounded-2xl bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)]">
+      <Box className="rounded-[15px] bg-[rgb(14,20,10)] overflow-hidden">
 
         {/* Header */}
         <Box className="flex items-center gap-3 px-4 py-4">
@@ -68,7 +68,7 @@ export default function PaymentFailedCard({ invoiceNumber, paymentName, createdA
               {t("paymentMethod.invoiceNumber")}
             </Text>
             <Box className="flex items-center gap-2 flex-1 min-w-0">
-              <Box className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[#0A0D14] px-3 py-2 overflow-hidden">
+              <Box className="flex-1 min-w-0 rounded-lg border border-white/10 bg-[rgb(14,20,10)] px-3 py-2 overflow-hidden">
                 <Text as="span" className="font-plex text-[12px] text-white leading-none block truncate">
                   {invoiceNumber}
                 </Text>

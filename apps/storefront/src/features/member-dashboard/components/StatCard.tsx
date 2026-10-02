@@ -22,7 +22,7 @@ const coloredCardVariants = cva(
     variants: {
       tone: {
         pending: "bg-[#1A1215] border-[#FBBF24]/20",
-        process: "bg-[#0E1A2A] border-[#3B82F6]/20",
+        process: "bg-[rgb(26,34,16)] border-[rgb(67,86,32)]/20",
         success: "bg-[#0B1A14] border-[#34D399]/20",
         failed:  "bg-[#1A0E0E] border-[#F87171]/20",
         neutral: "",
@@ -34,7 +34,7 @@ const coloredCardVariants = cva(
 
 const iconBgMap: Record<string, string> = {
   pending: "bg-[#FBBF24]/10",
-  process: "bg-[#3B82F6]/10",
+  process: "bg-[rgb(67,86,32)]/10",
   success: "bg-[#34D399]/10",
   failed:  "bg-[#F87171]/10",
   neutral: "bg-white/5",
@@ -42,7 +42,7 @@ const iconBgMap: Record<string, string> = {
 
 const iconColorMap: Record<string, string> = {
   pending: "text-[#FBBF24]",
-  process: "text-[#3B82F6]",
+  process: "text-[rgb(208,201,129)]",
   success: "text-[#34D399]",
   failed:  "text-[#F87171]",
   neutral: "text-white/50",
@@ -50,7 +50,7 @@ const iconColorMap: Record<string, string> = {
 
 const valueColorMap: Record<string, string> = {
   pending: "text-[#FBBF24]",
-  process: "text-[#3B82F6]",
+  process: "text-[rgb(208,201,129)]",
   success: "text-[#34D399]",
   failed:  "text-[#F87171]",
   neutral: "text-white",
@@ -97,7 +97,7 @@ export default function StatCard({ stat, isCurrency = false, className }: Props)
         {isCurrency ? (
           <Box
             as="span"
-            className="bg-linear-to-r from-white to-[#E9D5FF] bg-clip-text text-transparent font-plex font-bold text-[24px] leading-none"
+            className="bg-linear-to-r from-white to-[rgb(247,246,198)] bg-clip-text text-transparent font-plex font-bold text-[24px] leading-none"
           >
             {displayValue}
           </Box>
@@ -129,11 +129,11 @@ export default function StatCard({ stat, isCurrency = false, className }: Props)
     </Box>
   );
 
-  /* Neutral tone (Total Transaksi / Total Penjualan) — gradient border + dark navy */
+  /* Neutral tone (Total Transaksi / Total Penjualan) — gradient border + dark forest */
   if (stat.tone === "neutral") {
     return (
-      <Box className={cn("p-[1px] rounded-2xl bg-linear-to-br from-[#3B82F6] to-[#9234EA]", className)}>
-        <Box className="bg-[#0C0E1A] rounded-[15px] p-4 flex items-center h-full">
+      <Box className={cn("p-[1px] rounded-2xl bg-linear-to-br from-[rgb(67,86,32)] to-[rgb(208,201,129)]", className)}>
+        <Box className="bg-[rgb(14,20,10)] rounded-[15px] p-4 flex items-center h-full">
           {cardContent}
         </Box>
       </Box>

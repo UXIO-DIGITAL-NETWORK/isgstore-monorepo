@@ -10,7 +10,7 @@ const tabVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-[#9234EA] text-white font-semibold",
+        true: "bg-[rgb(208,201,129)] text-white font-semibold",
         false: "border border-white/[0.12] bg-white/[0.02] text-white/55 hover:text-white/90 hover:border-white/25",
       },
     },

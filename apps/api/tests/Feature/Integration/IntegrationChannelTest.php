@@ -32,6 +32,12 @@ class IntegrationChannelTest extends TestCase
                 'messgae' => 'success',
                 'data' => $data,
             ]);
+
+            // Credential updates and the ping bust the balance cache through the
+            // gateway contract (App\Contracts\PaymentGateway), so the mock has to
+            // answer for the cache key as well — it is an instance call now, not
+            // a static one.
+            $mock->shouldReceive('balanceCacheKey')->andReturn('monetapay:balance:main:IDR');
         });
     }
 

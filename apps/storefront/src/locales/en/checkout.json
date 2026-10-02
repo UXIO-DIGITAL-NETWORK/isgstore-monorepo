@@ -57,7 +57,11 @@
     "soldOut": "Sold out",
     "popular": "Best Seller",
     "bonus": "Bonus",
-    "instantDelivery": "Instant\nDelivery"
+    "instantDelivery": "Instant\nDelivery",
+    "empty": {
+      "title": "No packages available yet",
+      "description": "This game has no purchasable packages right now."
+    }
   },
   "payment": {
     "title": "Payment Method",
@@ -68,6 +72,10 @@
       "ewallet": "E-Wallet",
       "qris": "QRIS",
       "va": "Virtual Account"
+    },
+    "empty": {
+      "title": "No payment methods yet",
+      "description": "No payment channels are available right now."
     }
   },
   "contact": {

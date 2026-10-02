@@ -67,7 +67,7 @@ export default function RecentTransactionsTable({ transactions }: Props): React.
             value={search}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
             placeholder={t("filter.searchPlaceholder")}
-            className="w-full bg-[#0C0E1A] border border-white/10 rounded-full pl-8 pr-4 py-2 text-[13px] font-inter text-white placeholder:text-white/25 outline-none focus:border-[#3B82F6]/50 transition-colors"
+            className="w-full bg-[rgb(14,20,10)] border border-white/10 rounded-full pl-8 pr-4 py-2 text-[13px] font-inter text-white placeholder:text-white/25 outline-none focus:border-[rgb(67,86,32)]/50 transition-colors"
           />
         </Box>
 
@@ -82,7 +82,7 @@ export default function RecentTransactionsTable({ transactions }: Props): React.
               className={cn(
                 "px-3.5 py-1.5 rounded-full text-[12px] font-outfit font-semibold leading-none transition-all cursor-pointer",
                 statusFilter === key
-                  ? "bg-linear-to-r from-[#3B82F6] to-[#9234EA] text-white shadow-glow-violet"
+                  ? "bg-linear-to-r from-[rgb(67,86,32)] to-[rgb(208,201,129)] text-white shadow-glow-accent"
                   : "bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/8",
               )}
             >
@@ -97,7 +97,7 @@ export default function RecentTransactionsTable({ transactions }: Props): React.
         <Box as="table" className="w-full border-collapse">
           {/* Header */}
           <Box as="thead">
-            <Box as="tr" className="bg-[#3A1D6E]">
+            <Box as="tr" className="bg-[rgb(39,53,15)]">
               <Box as="th" className="text-left px-4 py-3.5 text-[12px] font-outfit font-semibold text-white/80 leading-none">
                 {t("recentTransactions.colService")}
               </Box>
@@ -180,7 +180,7 @@ export default function RecentTransactionsTable({ transactions }: Props): React.
         <Box className="flex justify-center py-3.5 border-t border-white/8 bg-white/[0.01]">
           <Link
             href={`/${locale}/dashboard`}
-            className="flex items-center gap-1 text-[13px] font-outfit font-semibold text-[#9234EA] hover:text-[#C084FC] transition-colors no-underline"
+            className="flex items-center gap-1 text-[13px] font-outfit font-semibold text-[rgb(208,201,129)] hover:text-[rgb(208,201,129)] transition-colors no-underline"
           >
             {t("recentTransactions.viewAll")}
             <ChevronRight className="w-3.5 h-3.5" />
