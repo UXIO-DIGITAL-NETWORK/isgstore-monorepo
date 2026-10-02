@@ -79,6 +79,26 @@ article helpers). `npm run test` gates the production deploy in
 
 Environment variable `VITE_API_BASE_URL` sets the backend URL, **including the `/api` prefix but not `/v1`** (default: `http://localhost:8000/api`). Copy `.env.example` to `.env` for local work; production injects it from the repository secret of the same name in `.github/workflows/production.yml`.
 
+### Mock data mode (`VITE_USE_MOCK_DATA`)
+
+Set `VITE_USE_MOCK_DATA=true` (see `.env.example`) to serve **every** storefront API
+request from the bundled fixtures in `src/mocks/` instead of the network, so the full
+layout — homepage, browse pages, checkout, invoice and the member area — can be
+developed and tested with no backend running. It is off by default and must never be
+enabled in a production build.
+
+- Wiring: `src/config/axios.ts` installs a custom Axios adapter (`src/mocks/`) when the
+  flag is on. It answers at the HTTP layer, so no component, hook, route or mapper
+  changes — loading/empty/error states and all interceptor behaviour are exercised
+  unchanged, and the layout is identical to the real-API build.
+- Fixtures live in `src/mocks/data/` (typed against `src/types/**`), routes in
+  `src/mocks/handlers/`, and homepage copy mirrors the Figma export
+  (`homepage-design.json` / `.agents/context/design_system.md` §11).
+- Images are the repo's own bundled assets, so mock mode needs no network.
+- Member pages need a mock sign-in: **any** email/password succeeds and yields a
+  `member`-role user. An unmatched URL falls through to the real API with a
+  `console.warn`, so a missing fixture is visible rather than silently blank.
+
 ## Architecture Overview
 
 Feature-based architecture (Bulletproof React inspired) with **strict isolation**. The routing layer is a thin registry; all business logic lives inside `src/features/`.

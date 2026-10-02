@@ -3,6 +3,7 @@ import { API_VERSION, ENV } from "@/config/env";
 import { useAuthStore } from "@/store/useAuthStore";
 import { clearClientSession } from "@/lib/session";
 import { closureFromError, isAlwaysOpenUrl, setSiteClosure } from "@/lib/siteClosed";
+import { installMockAdapter } from "@/mocks";
 
 export const api = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -11,6 +12,15 @@ export const api = axios.create({
     Accept: "application/json",
   },
 });
+
+// Local-only: answer every request from `src/mocks/` fixtures instead of the
+// network. Off by default; the default build never loads the fixtures.
+if (ENV.USE_MOCK_DATA) {
+  if (import.meta.env.PROD) {
+    console.warn("[mocks] USE_MOCK_DATA is enabled in a production build — disable it.");
+  }
+  installMockAdapter(api);
+}
 
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
