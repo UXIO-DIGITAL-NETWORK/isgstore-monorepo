@@ -22,16 +22,16 @@
     <style>
         @page { margin: 0; }
         * { font-family: 'DejaVu Sans', sans-serif; }
-        body { margin: 0; padding: 28px; background-color: #0A0A0C; color: {{ $text }}; }
-        .card { background-color: #0D1117; border: 1px solid #2a2140; border-radius: 12px; }
+        body { margin: 0; padding: 28px; background-color: #000000; color: {{ $text }}; }
+        .card { background-color: #0E140A; border: 1px solid #525334; border-radius: 12px; }
         .muted { color: {{ $muted }}; font-size: 11px; }
         .val { color: {{ $text }}; font-size: 12px; font-weight: bold; }
-        .section { color: #b794f4; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .section { color: #D0C981; font-size: 10px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
     </style>
 </head>
 <body>
     {{-- Header --}}
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#7c3aed; border-radius:14px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#435620; border-radius:14px;">
         <tr>
             <td style="padding:22px 26px;">
                 <table width="100%" cellpadding="0" cellspacing="0">
@@ -44,7 +44,7 @@
                         </td>
                     </tr>
                 </table>
-                <div style="margin-top:6px; color:#ede9fe; font-size:14px; font-weight:bold;">{{ __('receipt.title') }}</div>
+                <div style="margin-top:6px; color:#F7F6C6; font-size:14px; font-weight:bold;">{{ __('receipt.title') }}</div>
             </td>
         </tr>
     </table>
@@ -88,7 +88,7 @@
                             <td align="right" style="padding:5px 0; color:#22c55e; font-size:12px; font-weight:bold;">- {{ $rp($discount) }}</td>
                         </tr>
                     @endif
-                    <tr><td colspan="2" style="padding:8px 0 0;"><div style="border-top:1px solid #2a2140;"></div></td></tr>
+                    <tr><td colspan="2" style="padding:8px 0 0;"><div style="border-top:1px solid #525334;"></div></td></tr>
                     <tr>
                         <td style="padding:10px 0 0; font-size:14px; font-weight:bold; color:{{ $text }};">{{ __('receipt.label_total') }}</td>
                         <td align="right" style="padding:10px 0 0; font-size:17px; font-weight:bold; color:#ffffff;">{{ $rp($total) }}</td>
