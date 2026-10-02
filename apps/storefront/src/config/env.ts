@@ -22,6 +22,11 @@ const cleanEnv = (value: unknown, fallback = ""): string => {
 export const ENV = {
   API_BASE_URL: cleanEnv(import.meta.env.VITE_API_BASE_URL, "http://localhost:8000/api"),
 
+  // Local-only: serve every API request from the fixtures in `src/mocks/`
+  // instead of the network, so the full layout can be tested with no backend.
+  // Off by default — never enable it in a production build.
+  USE_MOCK_DATA: cleanEnv(import.meta.env.VITE_USE_MOCK_DATA).toLowerCase() === "true",
+
   // Release stamp, baked at build from the tag it ships (e.g. "v1.4.0"). Empty
   // on a local build.
   APP_VERSION: cleanEnv(import.meta.env.VITE_APP_VERSION),
