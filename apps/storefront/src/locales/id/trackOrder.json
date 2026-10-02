@@ -19,7 +19,7 @@
     "invoice": "Nomor Invoice",
     "game": "Game",
     "service": "Layanan",
-    "gold": "Gold",
+    "price": "Harga",
     "status": "Status"
   },
   "row": {
@@ -31,5 +31,6 @@
     "failed": "Gagal"
   },
   "emptyState": "Tidak ada transaksi yang cocok dengan pencarian Anda.",
+  "searchPromptTitle": "Belum ada transaksi",
   "searchPrompt": "Masukkan nomor invoice atau WhatsApp Anda di atas untuk melacak pesanan."
 }
