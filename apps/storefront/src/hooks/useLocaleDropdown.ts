@@ -51,7 +51,7 @@ export function useLocaleDropdown(): UseLocaleDropdownReturn {
     // The same page in the other language, not the locale root. Navigating to
     // `/$locale` dropped a buyer on `/en` from the middle of a checkout — see
     // `swapLocaleInPath`.
-    navigate({ href: swapLocaleInPath(`${location.pathname}${location.search}${location.hash}`, newLocale) });
+    navigate({ href: swapLocaleInPath(location.href, newLocale) });
   };
 
   return { langOpen, langRef, currentLocale, toggleLangOpen, switchLocale };
