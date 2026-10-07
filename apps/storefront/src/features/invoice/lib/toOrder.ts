@@ -1,4 +1,4 @@
-import placeholderThumbnail from "@/assets/images/games/games_1.png";
+import placeholderThumbnail from "@/assets/images/games/games_1.png?w=600&format=webp";
 import type { PendingOrder } from "@/store/useCheckoutStore";
 import type { InvoiceModel } from "@/types/models/transaction.model";
 

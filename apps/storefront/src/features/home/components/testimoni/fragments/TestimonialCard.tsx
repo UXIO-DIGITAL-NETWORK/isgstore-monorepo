@@ -28,6 +28,7 @@ export default function TestimonialCard({ testimonial }: { testimonial: Testimon
       {rating !== null && rating > 0 && (
         <Box
           className="flex items-center gap-0.5"
+          role="img"
           aria-label={`${rating}/5`}
         >
           {[1, 2, 3, 4, 5].map((star) => (

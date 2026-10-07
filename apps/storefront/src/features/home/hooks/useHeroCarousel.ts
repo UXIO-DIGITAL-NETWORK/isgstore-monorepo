@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { AUTO_DELAY, SIDE_VISIBLE } from "@/features/home/constants/heroBanner";
 
 type IntervalRef = ReturnType<typeof setInterval>;
@@ -35,22 +35,28 @@ export function useHeroCarousel(total: number): UseHeroCarouselReturn {
     return () => observer.disconnect();
   }, []);
 
-  const restartTimer = () => {
+  const restartTimer = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (total <= 0) return;
     intervalRef.current = setInterval(() => setCurrent((prev) => (prev + 1) % total), AUTO_DELAY);
-  };
+  }, [total]);
 
+  // Depends on restartTimer (i.e. total) only: without the dependency array the
+  // interval was torn down and rebuilt on every render.
   useEffect(() => {
     restartTimer();
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  });
+  }, [restartTimer]);
 
-  const goTo = (idx: number) => {
-    setCurrent(idx);
-    restartTimer();
-  };
+  const goTo = useCallback(
+    (idx: number) => {
+      setCurrent(idx);
+      restartTimer();
+    },
+    [restartTimer],
+  );
 
   return { current, containerWidth, trackRef, hasPeek, slideWidth, goTo };
 }

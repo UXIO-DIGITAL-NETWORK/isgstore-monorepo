@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "@tanstack/react-router";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/ui/Button";
-import bgCtaCheckout from "@/assets/images/checkout/bg_cta_checkout.png";
+import bgCtaCheckout from "@/assets/images/checkout/bg_cta_checkout.png?w=1600&format=webp";
 
 export default function TopUpAgainBanner(): React.JSX.Element {
   const { t } = useTranslation("invoice");

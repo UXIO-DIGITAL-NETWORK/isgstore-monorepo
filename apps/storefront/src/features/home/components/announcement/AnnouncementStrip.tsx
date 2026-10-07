@@ -26,6 +26,12 @@ export default function AnnouncementStrip(): React.JSX.Element {
   const { t } = useTranslation("home");
   const query = useAnnouncements();
 
+  // Render nothing while loading: announcements are usually empty, and a
+  // skeleton that then collapses to nothing shifts the hero and the whole page
+  // below it. Mock mode seeds this query with its fixture before render, so it
+  // never reaches this branch there.
+  if (query.isPending) return <></>;
+
   // A successful-but-empty response hides the strip entirely.
   if (query.isSuccess && (query.data?.length ?? 0) === 0) return <></>;
 

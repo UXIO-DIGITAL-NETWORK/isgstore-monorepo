@@ -1,5 +1,7 @@
 export type HeroBannerItem = {
   src: string;
+  /** Optional responsive source set (bundled banners only; API banners omit it). */
+  srcSet?: string;
   alt: string;
   /**
    * Where the banner points, as the operator typed it in the admin panel.

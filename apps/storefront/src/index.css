@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@heroui/styles";
 
 @theme {
   /* ── ISG Store Color System ───────────────────────────────────────────── */
@@ -12,10 +11,12 @@
   --color-success: rgb(14, 164, 46);       /* discount badge */
 
   /* ── Typography — strict role mapping ──────────────────────────── */
-  --font-outfit: "Outfit", sans-serif;
-  --font-inter: "Inter", sans-serif;
+  /* Self-hosted via @fontsource (see main.tsx). Variable families carry the
+     "Variable" suffix; the static Plex Condensed keeps its plain name. */
+  --font-outfit: "Outfit Variable", "Outfit", sans-serif;
+  --font-inter: "Inter Variable", "Inter", sans-serif;
   --font-plex: "IBM Plex Sans Condensed", sans-serif;
-  --font-dmsans: "DM Sans", sans-serif;
+  --font-dmsans: "DM Sans Variable", "DM Sans", sans-serif;
 
   /* ── Gradient backgrounds ───────────────────────────────────────── */
   --background-image-gradient-cta: linear-gradient(to right, rgb(67, 86, 32), rgb(208, 201, 129));
