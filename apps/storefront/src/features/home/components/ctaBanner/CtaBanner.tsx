@@ -6,8 +6,8 @@ import { Text } from "@/components/common/Text";
 import { Heading } from "@/components/common/Heading";
 import { Image } from "@/components/common/Image";
 import { Link } from "@/components/common/Link";
-import ctaBg from "@/assets/images/CTA/CTA_3.jpeg";
-import ctaMascot from "@/assets/images/CTA/CTA_2.png";
+import ctaBg from "@/assets/images/CTA/CTA_3.jpeg?w=1200&format=webp";
+import ctaMascot from "@/assets/images/CTA/CTA_2.png?w=600&format=webp";
 
 export default function CtaBanner(): React.JSX.Element {
   const { t } = useTranslation("home");

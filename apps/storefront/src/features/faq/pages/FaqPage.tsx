@@ -6,7 +6,7 @@ import { Footer } from "@/components/shared/Footer";
 import FaqHeader from "@/features/faq/components/FaqHeader";
 import FaqAccordion from "@/features/faq/components/FaqAccordion";
 import FaqContactBanner from "@/features/faq/components/FaqContactBanner";
-import imgFaq from "@/assets/images/decoration/img_faq.png";
+import imgFaq from "@/assets/images/decoration/img_faq.png?w=1000&format=webp";
 
 export default function FaqPage(): React.JSX.Element {
   return (

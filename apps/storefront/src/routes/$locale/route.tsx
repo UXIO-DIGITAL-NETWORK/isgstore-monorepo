@@ -1,27 +1,38 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useEffect } from "react";
 import i18n from "@/config/i18n";
-import { ensureUserHydrated } from "@/middlewares/auth.guard";
-
-const SUPPORTED_LOCALES = ["id", "en"] as const;
+import { loadLocale, SUPPORTED_LOCALES, type Locale, type LocaleResource } from "@/locales";
 
 function LocaleLayout() {
-  const { locale } = Route.useParams();
-  useEffect(() => {
-    i18n.changeLanguage(locale);
-  }, [locale]);
   return <Outlet />;
 }
 
 export const Route = createFileRoute("/$locale")({
   beforeLoad: async ({ params }) => {
-    if (!SUPPORTED_LOCALES.includes(params.locale as (typeof SUPPORTED_LOCALES)[number])) {
+    const locale = params.locale as Locale;
+
+    if (!SUPPORTED_LOCALES.includes(locale)) {
       throw redirect({ href: "/id", replace: true });
     }
-    // Restore the signed-in user on any locale page (public included) so a
-    // valid session isn't rendered as a guest — the token survives a reload but
-    // the cached user does not.
-    await ensureUserHydrated();
+
+    // Load the active locale before the subtree renders so every page has its
+    // strings on first paint — including `/en`, which used to flash Indonesian
+    // while a post-render `changeLanguage` caught up.
+    let loaded: Locale = locale;
+    let resources: LocaleResource;
+
+    try {
+      resources = await loadLocale(locale);
+    } catch {
+      loaded = "id";
+      resources = await loadLocale("id");
+    }
+
+    for (const [namespace, bundle] of Object.entries(resources)) {
+      i18n.addResourceBundle(loaded, namespace, bundle as Record<string, string>, true, true);
+    }
+    await i18n.changeLanguage(locale);
+
+    document.documentElement.lang = locale;
   },
   component: LocaleLayout,
 });

@@ -18,26 +18,36 @@ import { useHeroBanners } from "@/features/home/hooks/useHeroBanners";
  * A banner with no link stays a plain image rather than an anchor that leads
  * nowhere — the admin panel leaves `link` empty for decorative artwork.
  */
+/**
+ * Hero artwork spans up to the 1152px container on desktop and the full
+ * viewport on phones; the srcset picks the smallest variant that fits.
+ */
+const HERO_SIZES = "(min-width: 768px) 1152px, 100vw";
+
 function SlideImage({
   src,
+  srcSet,
   alt,
   href,
   className,
-  loading,
+  priority,
 }: {
   src: string;
+  srcSet?: string;
   alt: string;
   href: string | null;
   className: string;
-  loading: "eager" | "lazy";
+  priority: "eager" | "lazy";
 }): React.JSX.Element {
   if (!href) {
     return (
       <Image
         src={src}
+        srcSet={srcSet}
+        sizes={HERO_SIZES}
         alt={alt}
         className={className}
-        loading={loading}
+        priority={priority}
       />
     );
   }
@@ -50,9 +60,11 @@ function SlideImage({
     >
       <Image
         src={src}
+        srcSet={srcSet}
+        sizes={HERO_SIZES}
         alt={alt}
         className={className}
-        loading={loading}
+        priority={priority}
       />
     </Link>
   );
@@ -102,7 +114,7 @@ export default function HeroBanner(): React.JSX.Element {
                 const isActive = idx === current;
                 const slideStyle = {
                   width: `${slideWidth}px`,
-                  asspectRatio: "1110 / 400" as const,
+                  aspectRatio: "1110 / 400",
                   opacity: isActive ? 1 : 0.45,
                   transform: isActive ? "scale(1)" : "scale(0.96)",
                   transition: "opacity 400ms ease, transform 400ms ease",
@@ -119,10 +131,11 @@ export default function HeroBanner(): React.JSX.Element {
                     >
                       <SlideImage
                         src={banner.src}
+                        srcSet={banner.srcSet}
                         alt={banner.alt}
                         href={bannerHref(banner.link, locale)}
                         className="w-full h-full object-cover"
-                        loading={idx === 0 ? "eager" : "lazy"}
+                        priority={idx === 0 ? "eager" : "lazy"}
                       />
                     </Box>
                   );
@@ -143,6 +156,8 @@ export default function HeroBanner(): React.JSX.Element {
                   >
                     <img
                       src={banner.src}
+                      srcSet={banner.srcSet}
+                      sizes={HERO_SIZES}
                       alt={banner.alt}
                       className="w-full h-full object-cover"
                       loading="lazy"
@@ -165,10 +180,11 @@ export default function HeroBanner(): React.JSX.Element {
                 >
                   <SlideImage
                     src={banner.src}
+                    srcSet={banner.srcSet}
                     alt={banner.alt}
                     href={bannerHref(banner.link, locale)}
                     className="w-full h-full object-cover"
-                    loading={idx === 0 ? "eager" : "lazy"}
+                    priority={idx === 0 ? "eager" : "lazy"}
                   />
                 </Box>
               ))}

@@ -1,6 +1,6 @@
 import React from "react";
 import { Box } from "@/components/common/Box";
-import checkoutBanner from "@/assets/images/banner/checkout_banner.png";
+import checkoutBanner from "@/assets/images/banner/checkout_banner.png?w=1200&format=webp";
 
 export default function ProductBanner(): React.JSX.Element {
   return (

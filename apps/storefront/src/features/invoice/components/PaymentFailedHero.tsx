@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
-import paymentFailedImg from "@/assets/images/checkout/payment_failed.png";
+import paymentFailedImg from "@/assets/images/checkout/payment_failed.png?w=400&format=webp";
 
 export default function PaymentFailedHero(): React.JSX.Element {
   const { t } = useTranslation("invoice");

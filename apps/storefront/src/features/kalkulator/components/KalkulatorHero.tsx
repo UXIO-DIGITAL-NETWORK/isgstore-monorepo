@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
-import iconWinRate from "@/assets/images/decoration/icon_win_rate.png";
+import iconWinRate from "@/assets/images/decoration/icon_win_rate.png?w=400&format=webp";
 
 export default function KalkulatorHero(): React.JSX.Element {
   const { t } = useTranslation("kalkulator");

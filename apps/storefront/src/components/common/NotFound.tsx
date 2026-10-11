@@ -1,4 +1,3 @@
-import { Button } from "@heroui/react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Ghost } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +6,7 @@ import { Box } from "@/components/common/Box";
 import { Container } from "@/components/common/Container";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
+import { Button } from "@/components/ui/Button";
 
 /**
  * The 404 page.
@@ -41,7 +41,7 @@ export const NotFound = () => {
         <Text className="mb-10 max-w-lg text-lg text-neutral-500">{t("notFound.description")}</Text>
 
         <Button
-          onPress={() => navigate({ to: "/$locale", params: { locale } })}
+          onClick={() => navigate({ to: "/$locale", params: { locale } })}
           className="h-14 rounded-full bg-sky-500 px-10 text-lg font-bold text-white shadow-[0_0_20px_rgba(14,165,233,0.4)] transition-all hover:bg-sky-600 hover:shadow-[0_0_30px_rgba(14,165,233,0.6)]"
         >
           {t("notFound.backHome")}
