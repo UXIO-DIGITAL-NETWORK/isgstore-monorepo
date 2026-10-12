@@ -160,6 +160,8 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
    Buat `<base>` dan ketiga direktori frontend lebih dulu (`mkdir -p`) — rsync hanya membuat komponen terakhir, bukan seluruh rantai. Setelah `root` diedit: `nginx -t && systemctl reload nginx`.
 
+   **Performa storefront:** pasang juga [`nginx-storefront.conf`](./nginx-storefront.conf) ke vhost storefront. Isinya compression (gzip/brotli) dan `Cache-Control` untuk aset ber-hash — dua audit PageSpeed ("enable text compression", "efficient cache policy") yang tidak bisa diperbaiki dari kode aplikasi.
+
    **Server yang sudah punya klon monorepo di `<base>/api`:** unggahan tinggal di `apps/api/storage`, jadi selamatkan dulu. `.env` dan `vendor` tidak perlu — `.env` ditulis ulang dari secret, `vendor` dipasang ulang `composer install`:
    ```bash
    cd /home/uxioserver1/website-topup-monorepo-template/staging

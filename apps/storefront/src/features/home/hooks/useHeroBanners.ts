@@ -13,6 +13,11 @@ import type { HeroBannerItem } from "@/features/home/types/heroBanner.type";
  * hero always has something to show.
  *
  * Returns the query so the banner can render a skeleton on first load.
+ *
+ * `initialData` seeds the query with the bundled artwork so the hero is in the
+ * DOM on the very first render — no skeleton, no waiting on `/banners` for the
+ * LCP element. CMS banners replace it once they arrive, inside a fixed aspect
+ * box so the swap does not shift the layout.
  */
 export function useHeroBanners() {
   return useQuery({
@@ -24,6 +29,7 @@ export function useHeroBanners() {
         link: banner.link,
       })),
     select: (data) => (data && data.length > 0 ? data : BANNERS),
+    initialData: BANNERS,
     staleTime: 5 * 60 * 1000,
   });
 }

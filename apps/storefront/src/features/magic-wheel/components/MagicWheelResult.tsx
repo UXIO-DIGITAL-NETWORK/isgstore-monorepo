@@ -5,7 +5,7 @@ import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
 import { formatNumber } from "@/lib/format";
-import imgDiamond from "@/assets/images/decoration/img_diamond_result.png";
+import imgDiamond from "@/assets/images/decoration/img_diamond_result.png?w=300&format=webp";
 
 interface MagicWheelResultProps {
   diamonds: number;

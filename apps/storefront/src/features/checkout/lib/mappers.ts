@@ -1,6 +1,6 @@
 import { MEMBER_CREDITS_LOGO, resolvePaymentLogo } from "@/constants/paymentLogos";
-import placeholderThumbnail from "@/assets/images/games/games_1.png";
-import placeholderLogo from "@/assets/images/game_logo/mobile_legends.png";
+import placeholderThumbnail from "@/assets/images/games/games_1.png?w=600&format=webp";
+import placeholderLogo from "@/assets/images/game_logo/mobile_legends.png?w=600&format=webp";
 import type { GameDetailModel } from "@/types/models/game.model";
 import type { GameProductsResponse, PaymentChannelModel } from "@/types/models/product.model";
 import type {
