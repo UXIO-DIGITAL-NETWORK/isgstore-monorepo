@@ -471,6 +471,10 @@ jobs:
           VITE_PUSHER_APP_CLUSTER: ${{ secrets.VITE_PUSHER_APP_CLUSTER }}
           # Dulu di-hardcode di YAML storefront. Sekarang secret.
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          # Mode mock: seluruh request dilayani fixture di src/mocks/. Kosong
+          # atau "false" = off. Secret ini per-environment, jadi di produksi
+          # WAJIB dibiarkan kosong/false — hanya staging yang boleh menyalakannya.
+          VITE_USE_MOCK_DATA: ${{ secrets.VITE_USE_MOCK_DATA }}
           # Stempel rilis yang sama dengan API, supaya sidebar admin menjawab
           # versi yang benar-benar terpasang (lihat GET /v1/version).
           VITE_APP_VERSION: ${{ env.APP_VERSION }}

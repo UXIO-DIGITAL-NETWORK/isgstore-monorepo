@@ -113,6 +113,7 @@ Data awal dari `migrate --seed` (seeder dev), bukan salinan produksi.
 | `VITE_API_BASE_URL` | env `staging` | `https://api-staging.<domain>/api` |
 | `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER` | env `staging` | kanal staging, atau kosong (fallback polling) |
 | `VITE_GOOGLE_CLIENT_ID` | env `staging` | client OAuth staging, atau kosong |
+| `VITE_USE_MOCK_DATA` | env `staging` | `true` = seluruh storefront dilayani fixture lokal (demo tanpa backend); kosong/`false` = off |
 | `DISCORD_WEBHOOK_LOG_URL` | repo | webhook (opsional) |
 
 ### Cara memastikan rantainya benar-benar tersambung
@@ -244,7 +245,7 @@ Ini **sekali saja**, dan harus dilakukan sebelum deploy pertama dari repo ini.
 
 ## Secret GitHub
 
-Dua belas secret. **Yang nilainya sama untuk staging dan produksi ditaruh di
+Tiga belas secret. **Yang nilainya sama untuk staging dan produksi ditaruh di
 Repository secrets; yang berbeda ditaruh di Environment secret** (`production`
 dan `staging`). Job yang punya `environment:` membaca secret environment lebih
 dulu, lalu jatuh ke repo-level untuk nama yang tidak ada di sana.
@@ -254,7 +255,8 @@ dulu, lalu jatuh ke repo-level untuk nama yang tidak ada di sana.
   `SSH_PRIVATE_KEY`, `SSH_HOST_KEY`, `DISCORD_WEBHOOK_LOG_URL`.
 - **Environment secrets** — `Settings → Environments → [production | staging]`
   (nama sama, nilai beda): `DEPLOY_BASE_PATH`, `ENV_FILE`, `VITE_API_BASE_URL`,
-  `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER`, `VITE_GOOGLE_CLIENT_ID`.
+  `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER`, `VITE_GOOGLE_CLIENT_ID`,
+  `VITE_USE_MOCK_DATA`.
 
 `DEPLOY_BASE_PATH` sengaja **tidak** di repo-level: kalau environment `staging`
 kosong, deploy staging harus gagal keras (ada pagar di workflow), bukan
@@ -284,6 +286,7 @@ grep -oh 'secrets\.[A-Z_0-9]*' .github/workflows/*.yml | sort -u
 | 10 | `VITE_PUSHER_APP_KEY` | env | ✅ | 3 frontend | Key Pusher |
 | 11 | `VITE_PUSHER_APP_CLUSTER` | env | ✅ | 3 frontend | Cluster Pusher. `ap1` |
 | 12 | `VITE_GOOGLE_CLIENT_ID` | env | ✅ | 3 frontend | OAuth client ID Google. Dulu di-hardcode di YAML storefront |
+| 13 | `VITE_USE_MOCK_DATA` | env | — | storefront | Mode mock: seluruh request dilayani fixture di `src/mocks/` (demo tanpa backend). Kosong/`false` = off. **Jangan diset `true` di `production`** |
 
 Beberapa hal yang tidak terlihat dari tabel dan pernah memakan waktu:
 
@@ -473,7 +476,7 @@ Kunci di luar bawaan Laravel, dikelompokkan menurut fungsinya:
 
 **Lain-lain** — `PAYMENT_PAGE_URL`, `STOREFRONT_URL`, `STOREFRONT_BRAND`, `STOREFRONT_DEFAULT_COUNTRY_CODE` (62), `SERVICE_INVOICE_DUE_DAYS`, `GOOGLE_CLIENT_ID`, `DISCORD_WEBHOOK_LOG_URL`, `PIWAPI_*` (WhatsApp), `IMAGE_*`, `REFUND_HOLIDAYS`, `CORS_ALLOWED_ORIGINS`.
 
-**Frontend** — hanya empat, semuanya berawalan `VITE_`: `VITE_API_BASE_URL`, `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER`, dan `VITE_GOOGLE_CLIENT_ID` (storefront saja).
+**Frontend** — hanya lima, semuanya berawalan `VITE_`: `VITE_API_BASE_URL`, `VITE_PUSHER_APP_KEY`, `VITE_PUSHER_APP_CLUSTER`, `VITE_GOOGLE_CLIENT_ID` (storefront saja), dan `VITE_USE_MOCK_DATA` (storefront saja; biarkan kosong/`false` di produksi).
 
 > Ketiga app memakai **nama yang sama** untuk `VITE_API_BASE_URL`. Karena itu tiap app menyimpan `.env`-nya sendiri dan Vite selalu dijalankan dengan root app-nya — satu `.env` di akar akan menyuapkan base URL yang sama ke ketiganya.
 
