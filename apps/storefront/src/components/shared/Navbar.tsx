@@ -8,6 +8,7 @@ import { Link } from "@/components/common/Link";
 import { LOCALES } from "@/constants/locales";
 import { getNavLinks } from "@/constants/navLinks";
 import { useLocaleDropdown } from "@/hooks/useLocaleDropdown";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { SearchBar } from "@/components/shared/SearchBar";
 import { NavDropdown } from "@/components/shared/NavDropdown";
 import { UserMenu } from "@/components/shared/UserMenu";
@@ -20,6 +21,8 @@ export function Navbar(): React.JSX.Element {
   const { langOpen, langRef, currentLocale, toggleLangOpen, switchLocale } =
     useLocaleDropdown();
   const { token, user } = useAuthStore();
+  const { text } = useSiteSettings();
+  const siteName = text("site_name");
 
   const navLinks = getNavLinks(locale);
   const { location } = useRouterState();
@@ -37,8 +40,13 @@ export function Navbar(): React.JSX.Element {
       {/* ── Top tier ── */}
       <Box className="w-full">
         <Box className="max-w-6xl mx-auto px-4 md:px-8 h-19 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href={`/${locale}`} className="flex items-center gap-2.5 shrink-0">
+          {/* Logo — labelled because the wordmark is hidden below `sm`, which
+              would otherwise leave the link with no accessible name on phones. */}
+          <Link
+            href={`/${locale}`}
+            aria-label={siteName ?? "ISG Store"}
+            className="flex items-center gap-2.5 shrink-0"
+          >
             {/* The wordmark is hidden on the narrowest screens, where the
                 search field needs the width. */}
             <SiteLogo

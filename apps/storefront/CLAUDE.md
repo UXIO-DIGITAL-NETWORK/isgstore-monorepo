@@ -87,8 +87,12 @@ layout — homepage, browse pages, checkout, invoice and the member area — can
 developed and tested with no backend running. It is off by default and must never be
 enabled in a production build.
 
-- Wiring: `src/config/axios.ts` installs a custom Axios adapter (`src/mocks/`) when the
-  flag is on. It answers at the HTTP layer, so no component, hook, route or mapper
+- Wiring: `src/main.tsx` dynamic-imports `src/mocks/` and installs a custom Axios
+  adapter on the shared `api` instance (`src/config/axios.ts`) **before** the first
+  render, so no query races it. The fixtures sit behind a dynamic import and the check
+  is on a build-time-replaced flag, so a production build drops the whole chunk (and its
+  images) — production keeps its lean bundle and mock mode gets the same image
+  optimisations. It answers at the HTTP layer, so no component, hook, route or mapper
   changes — loading/empty/error states and all interceptor behaviour are exercised
   unchanged, and the layout is identical to the real-API build.
 - Fixtures live in `src/mocks/data/` (typed against `src/types/**`), routes in

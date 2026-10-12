@@ -1,4 +1,4 @@
-import placeholderArt from "@/assets/images/popular_games/popular_games_1.png";
+import placeholderArt from "@/assets/images/popular_games/popular_games_1.png?w=800&format=webp";
 import type { Game } from "@/types/game.type";
 import type { GameModel } from "@/types/models/game.model";
 

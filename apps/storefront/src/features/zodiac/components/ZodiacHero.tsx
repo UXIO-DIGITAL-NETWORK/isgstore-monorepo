@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
 import { Image } from "@/components/common/Image";
-import iconZodiac from "@/assets/images/decoration/icon_zodiac.png";
+import iconZodiac from "@/assets/images/decoration/icon_zodiac.png?w=400&format=webp";
 
 export default function ZodiacHero(): React.JSX.Element {
   const { t } = useTranslation("zodiac");

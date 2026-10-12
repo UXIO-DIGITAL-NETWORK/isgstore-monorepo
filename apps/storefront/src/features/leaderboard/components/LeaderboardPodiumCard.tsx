@@ -8,9 +8,9 @@ import { Text } from "@/components/common/Text";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import type { LeaderboardEntry } from "@/features/leaderboard/types/leaderboard.type";
-import icon1st from "@/assets/images/decoration/icon_leaderboard_1st.png";
-import icon2nd from "@/assets/images/decoration/icon_leaderboard_2nd.png";
-import icon3rd from "@/assets/images/decoration/icon_leaderboard_3rd.png";
+import icon1st from "@/assets/images/decoration/icon_leaderboard_1st.png?w=300&format=webp";
+import icon2nd from "@/assets/images/decoration/icon_leaderboard_2nd.png?w=300&format=webp";
+import icon3rd from "@/assets/images/decoration/icon_leaderboard_3rd.png?w=300&format=webp";
 
 const RANK_ICONS: Record<1 | 2 | 3, string> = {
   1: icon1st,

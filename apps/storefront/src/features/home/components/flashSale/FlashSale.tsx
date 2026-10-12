@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "@/components/common/Box";
 import { ErrorState } from "@/components/common/ErrorState";
-import { Skeleton } from "@/components/common/Skeleton";
 import { Text } from "@/components/common/Text";
 import { Zap } from "lucide-react";
 import { useFlashSaleQuery } from "@/hooks/useFlashSaleQuery";
@@ -40,29 +39,6 @@ function useCountdown(endsAt: string | undefined) {
   };
 }
 
-function FlashSaleSkeleton(): React.JSX.Element {
-  return (
-    <Box aria-busy="true" className="w-full pt-6 pb-8 md:pt-8 md:pb-12">
-      <Box className="max-w-6xl mx-auto px-4 md:px-8">
-        <Box className="flex flex-col gap-4 rounded-2xl border border-[rgba(208,201,129,0.35)] p-5">
-          <Box className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Box className="flex flex-col gap-2">
-              <Skeleton className="h-6 w-40" />
-              <Skeleton className="h-3 w-56" />
-            </Box>
-            <Skeleton className="h-12 w-40 rounded-xl" />
-          </Box>
-          <Box className="flex gap-3 overflow-hidden">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="h-64 w-[195px] shrink-0 rounded-xl" />
-            ))}
-          </Box>
-        </Box>
-      </Box>
-    </Box>
-  );
-}
-
 export default function FlashSale(): React.JSX.Element {
   const { t } = useTranslation("home");
   const query = useFlashSaleQuery();
@@ -82,7 +58,10 @@ export default function FlashSale(): React.JSX.Element {
     stockTotal: item.stock_total,
   }));
 
-  if (query.isPending && query.fetchStatus !== "idle") return <FlashSaleSkeleton />;
+  // Render nothing while loading — the flash sale is the exception, not the
+  // rule (the API returns `null` when none is running). Mock mode seeds this
+  // query with its fixture before render, so it never reaches this branch there.
+  if (query.isPending && query.fetchStatus !== "idle") return <></>;
 
   if (query.isError) {
     return (

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 import { Box } from "@/components/common/Box";
 import { Text } from "@/components/common/Text";
-import bgCtaCheckout from "@/assets/images/checkout/bg_cta_checkout.png";
+import bgCtaCheckout from "@/assets/images/checkout/bg_cta_checkout.png?w=1600&format=webp";
 import whatsappLogo from "@/assets/icons/whatsapp_logo.svg";
 
 export default function NeedHelpBanner(): React.JSX.Element {
