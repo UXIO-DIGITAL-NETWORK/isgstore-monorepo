@@ -493,11 +493,19 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
         Route::post('/bulk/publish', [ProductController::class, 'bulkPublish']);
         Route::post('/bulk/uxiolabs-update', [ProductController::class, 'bulkUxiolabsUpdate']);
         Route::post('/bulk/delete', [ProductController::class, 'bulkDelete']);
+        // Add Products ▸ From Supplier: provider SKUs become draft products.
+        // Precedes the {product} binding for the same reason the bulk routes do.
+        Route::post('/from-supplier', [ProductController::class, 'fromSupplier']);
         Route::get('/{product}', [ProductController::class, 'show']);
         Route::put('/{product}', [ProductController::class, 'update']);
         Route::delete('/{product}', [ProductController::class, 'destroy']);
         Route::post('/{product}/profit-margin', [ProductController::class, 'setMargin']);
         Route::post('/{product}/price-limit', [ProductController::class, 'setPriceLimit']);
+        // The product's mix: which other products it sells together. Replace-in-place.
+        Route::post('/{product}/mix', [ProductController::class, 'setMix']);
+        // Listis / Unlistis — the only lifecycle verbs on the products page.
+        Route::post('/{product}/publish', [ProductController::class, 'publish']);
+        Route::post('/{product}/unpublish', [ProductController::class, 'unpublish']);
         // withTrashed: the target is archived by definition, so the default
         // binding — which applies the soft-delete scope — would 404 every time.
         Route::post('/{product}/restore', [ProductController::class, 'restore'])->withTrashed();
@@ -633,6 +641,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
     Route::post('/transactions/{transaction}/resend-callback', [TransactionController::class, 'resendCallback']);
     Route::post('/transactions/{transaction}/resend-receipt', [TransactionController::class, 'resendReceipt']);
     Route::post('/transactions/{transaction}/retry', [TransactionController::class, 'retry']);
+    Route::post('/transactions/{transaction}/supplier-orders/{order}/resend', [TransactionController::class, 'resendSupplierOrder']);
 
     // Refund queue. `status-counts` before the {refundRequest} wildcard, or
     // Laravel tries to route-model-bind "status-counts" as an id.

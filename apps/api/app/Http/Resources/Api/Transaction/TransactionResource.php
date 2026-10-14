@@ -57,6 +57,33 @@ class TransactionResource extends JsonResource
             // since we don't eager-load that depth, there is no circular rendering in practice.
             'payment' => new PaymentResource($this->whenLoaded('payment')),
             'payment_channel' => $this->whenLoaded('paymentChannel'),
+            // One row per supplier order placed for this transaction: exactly
+            // one for an ordinary product, one per component for a mix. The
+            // columns above describe only the first, so anything showing a mix
+            // has to read this to be truthful about the parts.
+            'supplier_orders' => $this->whenLoaded('supplierOrders', fn () => $this->supplierOrders
+                ->map(fn ($order) => [
+                    'id' => (int) $order->id,
+                    'product_code' => $order->product?->code,
+                    'product_name' => $order->product?->name,
+                    'buyer_sku_code' => (string) $order->buyer_sku_code,
+                    'idtrx' => (string) $order->idtrx,
+                    'supplier_trx_id' => $order->supplier_trx_id,
+                    'supplier_status' => $order->supplier_status,
+                    'provider_status' => $order->provider_status?->value,
+                    'sn' => $order->sn,
+                    'attempts' => (int) $order->attempts,
+                    // The item table reads one row per part: its supplier, when
+                    // it was placed and last answered, and who re-hit it.
+                    'supplier_id' => $order->supplier_id !== null ? (int) $order->supplier_id : null,
+                    'supplier_name' => $order->supplier?->name,
+                    'retried_by' => $order->retriedBy?->name,
+                    'retried_at' => $order->retried_at,
+                    'last_error' => $order->last_error,
+                    'created_at' => $order->created_at,
+                    'updated_at' => $order->updated_at,
+                ])
+                ->values()),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

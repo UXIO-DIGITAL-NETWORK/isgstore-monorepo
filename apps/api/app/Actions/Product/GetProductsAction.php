@@ -3,6 +3,7 @@
 namespace App\Actions\Product;
 
 use App\Models\Product;
+use App\Support\Storefront\Catalog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -10,8 +11,9 @@ class GetProductsAction
 {
     /**
      * Filters mirror the admin product list's toolbar: a free-text box over
-     * name/code, the category and sub-category selects, a lifecycle filter and a
-     * price band on the retail (member) price.
+     * name/code, the category and sub-category selects, a lifecycle filter, a
+     * price band on the retail (member) price, and a `provider_inactive` filter
+     * that surfaces products whose supplier mapping was switched off upstream.
      *
      * `supplierProducts` is eager-loaded because `publish_state` is derived from
      * it — without this the list would resolve the mapping once per row.
@@ -25,12 +27,13 @@ class GetProductsAction
         ?int $minPrice = null,
         ?int $maxPrice = null,
         ?string $publishState = null,
+        ?bool $providerInactive = null,
     ): LengthAwarePaginator {
         // `planPrices` is what the admin table renders now: the number of price
         // tiers is data, and the frozen `price_vip/reseller/agent` columns are
         // no longer serialised at all. Eager-loaded with its plan so the table
         // can label each row without a query per product.
-        return Product::with(['category', 'subCategory', 'supplierProducts', 'planPrices.membershipPlan'])
+        return Product::with(['category', 'subCategory', 'supplierProducts', 'planPrices.membershipPlan', 'mixItems.component'])
             ->when($publishState !== null, fn ($query) => $this->scopeToState($query, $publishState))
             ->when($search, fn ($query) => $query->where(
                 fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")
@@ -42,6 +45,14 @@ class GetProductsAction
             ->when($status !== null, fn ($query) => $query->where('status', $status))
             ->when($minPrice, fn ($query) => $query->where('price_member', '>=', $minPrice))
             ->when($maxPrice, fn ($query) => $query->where('price_member', '<=', $maxPrice))
+            // "Nonaktif di provider": a product whose supplier mapping the price
+            // checker switched off. This is the signal the archive flow works
+            // from, and it is NOT `products.is_available` — that column is the
+            // admin's own storefront-visibility flag, never written by the checker.
+            ->when($providerInactive === true, fn ($query) => $query->whereHas(
+                'supplierProducts',
+                fn ($mapping) => $mapping->where('buyer_product_status', false)
+            ))
             ->latest()
             ->paginate($perPage);
     }
@@ -52,9 +63,12 @@ class GetProductsAction
      */
     private function scopeToState(Builder $query, string $state): Builder
     {
-        $live = fn (Builder $q) => $q
-            ->where('status', true)
-            ->whereHas('supplierProducts', fn (Builder $m) => $m->where('is_active', true));
+        // Delegated to `Catalog::sellableProducts()` rather than repeated here:
+        // that class IS the definition of "checkout would accept it", and a
+        // second copy of the rule is exactly how a badge and a filter drift
+        // apart — which now matters, because a mix is sellable through its
+        // components rather than through a mapping of its own.
+        $live = fn (Builder $q) => Catalog::sellableProducts($q);
 
         return match ($state) {
             Product::STATE_ARCHIVED => $query->onlyTrashed(),

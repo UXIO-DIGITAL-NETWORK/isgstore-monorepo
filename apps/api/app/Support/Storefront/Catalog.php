@@ -35,9 +35,79 @@ final class Catalog
      */
     public static function sellableProducts(Builder|HasMany $query): Builder|HasMany
     {
+        // One level deep on purpose: a mix of a mix is refused when the
+        // composition is set, so a component is never itself a mix. Recursing
+        // here would rebuild this same closure at query-build time, forever.
+        $mappingBacked = fn (Builder $component) => $component
+            ->where('status', true)
+            ->whereNull('deleted_at')
+            ->whereHas('supplierProducts', fn (Builder $mapping) => $mapping->where('is_active', true));
+
         return $query
             ->where('status', true)
-            ->whereHas('supplierProducts', fn (Builder $q) => $q->where('is_active', true));
+            // At least one thing to deliver: its own supplier SKU, or a mix.
+            ->where(function (Builder $q) {
+                $q->whereHas('supplierProducts', fn (Builder $mapping) => $mapping->where('is_active', true))
+                    ->orWhereHas('mixItems');
+            })
+            // Its OWN supplier SKU, when it has one, must be live. A mix created
+            // from a provider SKU is fulfilled by that SKU AND its components, so
+            // a mix whose own SKU is switched off is as undeliverable as one with
+            // a dead component.
+            ->where(function (Builder $q) {
+                $q->whereDoesntHave('supplierProducts')
+                    ->orWhereHas('supplierProducts', fn (Builder $mapping) => $mapping->where('is_active', true));
+            })
+            // Every component (for a mix) must itself be deliverable. One level
+            // deep on purpose: a mix of a mix is refused when the composition is
+            // set, so a component is never itself a mix.
+            ->whereDoesntHave('mixItems', fn (Builder $item) => $item->whereDoesntHave(
+                'component',
+                $mappingBacked,
+            ));
+    }
+
+    /**
+     * The same rule in PHP, for callers holding a model rather than a query —
+     * `Product::publishBlockedReason()` has to answer before a save.
+     *
+     * Kept beside the query on purpose: these two ARE the definition of
+     * "sellable", and letting them drift is how the catalogue came to list
+     * products checkout would refuse.
+     */
+    public static function isSellable(Product $product): bool
+    {
+        if ($product->trashed() || ! $product->status) {
+            return false;
+        }
+
+        $product->loadMissing(['supplierProducts', 'mixItems.component']);
+
+        $hasActiveMapping = $product->supplierProducts->contains(fn ($mapping) => (bool) $mapping->is_active);
+
+        if ($product->mixItems->isNotEmpty()) {
+            // A mix is delivered by its components — and, when it still carries
+            // its own provider SKU, by that SKU too. Both halves have to be live.
+            if ($product->supplierProducts->isNotEmpty() && ! $hasActiveMapping) {
+                return false;
+            }
+
+            return $product->mixItems->every(fn ($item) => self::componentIsSellable($item->component));
+        }
+
+        return $hasActiveMapping;
+    }
+
+    /** A component is a plain product: its own active mapping, nothing more. */
+    private static function componentIsSellable(?Product $component): bool
+    {
+        if ($component === null || $component->trashed() || ! $component->status) {
+            return false;
+        }
+
+        $component->loadMissing('supplierProducts');
+
+        return $component->supplierProducts->contains(fn ($mapping) => (bool) $mapping->is_active);
     }
 
     /** Games (categories) that are active and have at least one sellable product. */

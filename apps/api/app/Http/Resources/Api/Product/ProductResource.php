@@ -81,6 +81,21 @@ class ProductResource extends JsonResource
                 'publish_state' => $this->publishState(),
                 'can_publish' => $this->canPublish(),
                 'publish_blocked_reason' => $this->publishBlockedReason(),
+                // The provider's SKU this product is served by, so the admin can
+                // see the supplier's own code next to our internal one without a
+                // second request. The active mapping wins; a mapping that exists
+                // but is switched off is still the product's provider code, so it
+                // is the fallback rather than nothing. Null when there is no
+                // mapping at all (a hand-made product, or a mix container).
+                'provider_sku_code' => ($this->supplierProducts->firstWhere('is_active', true)
+                    ?? $this->supplierProducts->first())?->buyer_sku_code,
+                // The provider's own flag, not `is_available`. The price checker
+                // (not the admin) writes `buyer_product_status`; a false mapping
+                // is what "nonaktif di provider" actually means, and what the
+                // archive flow filters on.
+                'provider_inactive' => $this->supplierProducts->contains(
+                    fn ($mapping) => ! (bool) $mapping->buyer_product_status
+                ),
             ]),
             'published_at' => $this->published_at,
             'archived_at' => $this->deleted_at,
@@ -88,6 +103,20 @@ class ProductResource extends JsonResource
             'is_price_hidden' => (bool) $this->is_price_hidden,
             'price_min' => $this->price_min,
             'price_max' => $this->price_max,
+            // The mix, only when it was loaded — same N+1 reasoning as the
+            // publish trio above (a transaction list embeds this per row).
+            $this->mergeWhen($this->resource->relationLoaded('mixItems'), fn () => [
+                'is_mix' => $this->mixItems->isNotEmpty(),
+                // `cost` per line so the admin can see where the accumulated
+                // `price_modal` came from, instead of a single number to trust.
+                'mix_items' => $this->mixItems->map(fn ($item) => [
+                    'product_id' => (int) $item->component_product_id,
+                    'name' => $item->component?->name,
+                    'code' => $item->component?->code,
+                    'cost' => (int) ($item->component?->price_modal ?? 0),
+                    'quantity' => (int) $item->quantity,
+                ])->values(),
+            ]),
             'category' => new CategoryResource($this->whenLoaded('category')),
             'sub_category' => new SubCategoryResource($this->whenLoaded('subCategory')),
             'created_at' => $this->created_at,
