@@ -242,19 +242,28 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
       // The mix travels LAST: saving it rewrites the product's cost and re-derives
       // its prices, so the margins above have to be stored first for the repriced
       // amounts to survive. An empty composition is how a mix is cleared.
-      try {
-        await setMix.mutateAsync({
-          id,
-          // The builder names the field `mainProduct`; the API calls it
-          // `product_id`. Mapped here rather than in the service so the form
-          // keeps the vocabulary the reference screen uses.
-          items: (values.productMix ?? []).map((row) => ({
-            product_id: row.mainProduct,
-            quantity: row.quantity,
-          })),
-        });
-      } catch {
-        return;
+      //
+      // Only sent when there is a mix to write or one to clear. Calling it
+      // unconditionally would reprice every ordinary product on save, and for a
+      // product with no supplier mapping (`ownSupplierCost()` = 0) that would
+      // zero its stored cost.
+      const shouldSaveMix = (values.productMix ?? []).length > 0 || Boolean(existing?.is_mix);
+
+      if (shouldSaveMix) {
+        try {
+          await setMix.mutateAsync({
+            id,
+            // The builder names the field `mainProduct`; the API calls it
+            // `product_id`. Mapped here rather than in the service so the form
+            // keeps the vocabulary the reference screen uses.
+            items: (values.productMix ?? []).map((row) => ({
+              product_id: row.mainProduct,
+              quantity: row.quantity,
+            })),
+          });
+        } catch {
+          return;
+        }
       }
 
       onOpenChange(false);
