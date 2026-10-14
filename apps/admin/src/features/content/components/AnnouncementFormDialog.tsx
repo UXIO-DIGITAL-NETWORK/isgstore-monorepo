@@ -122,6 +122,7 @@ export function AnnouncementFormDialog({ open, onOpenChange, announcementId }: A
 
           <ImageDropzone
             id="announcement-image"
+            existingUrl={existing?.image_url}
             label={t("colImage")}
             caption={t("optional")}
             value={image ?? undefined}

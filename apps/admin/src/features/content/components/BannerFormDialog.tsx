@@ -134,6 +134,7 @@ export function BannerFormDialog({ open, onOpenChange, bannerId }: BannerFormDia
 
           <ImageDropzone
             id="banner-image"
+            existingUrl={existing?.image_url}
             label={t("bannerImage")}
             caption={isEdit ? "Upload to replace the current image." : "Required — the storefront hides a banner with no image."}
             value={image ?? undefined}

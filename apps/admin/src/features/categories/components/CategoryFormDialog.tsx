@@ -367,6 +367,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <ImageDropzone
                       id="category-logo"
+                      existingUrl={existing?.logo_url}
                       label={t("categoryLogo")}
                       caption={t("categoryLogoCaption")}
                       value={field.value}
@@ -383,6 +384,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <ImageDropzone
                       id="category-thumbnail"
+                      existingUrl={existing?.thumbnail_url}
                       label={t("cardBackground")}
                       caption={t("cardBackgroundCaption")}
                       value={field.value}
@@ -399,6 +401,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <ImageDropzone
                       id="category-banner"
+                      existingUrl={existing?.banner_url}
                       label={t("checkoutBanner")}
                       caption={t("checkoutBannerCaption")}
                       value={field.value}
@@ -470,6 +473,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                   render={({ field }) => (
                     <ImageDropzone
                       id="og-image"
+                      existingUrl={existing?.og_image_url}
                       label={t("ogImage")}
                       caption={t("ogImageCaption")}
                       value={field.value}
