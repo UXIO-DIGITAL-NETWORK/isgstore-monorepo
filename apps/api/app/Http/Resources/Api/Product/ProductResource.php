@@ -39,6 +39,11 @@ class ProductResource extends JsonResource
             'validasi_nickname' => $this->validasi_nickname,
             'access' => $this->access,
             'tag' => $this->tag,
+            // The product's own standing discount. Emitted always rather than
+            // behind `whenLoaded`: they are columns on this row, so there is no
+            // query to save, and the form needs them to show an existing cut.
+            'discount_type' => $this->discount_type,
+            'discount_value' => $this->discount_value !== null ? (int) $this->discount_value : null,
             'price_modal' => $this->price_modal,
             // Kept for one release: the admin table still sorts and filters on
             // it, and it is the denormalised default-plan price rather than a
