@@ -4,7 +4,7 @@ import { renderRoute, screen } from "@/test/test-utils";
 import { useAuthStore } from "@/store/useAuthStore";
 
 /**
- * Real nested routes for the two Product tabs (product_requirements.md §4.6),
+ * Real nested routes for the Product tabs (product_requirements.md §4.6),
  * guarded by `requirePermission("products.view")` on the parent route only —
  * not client-side tab state, so the breadcrumb reflects the actual URL.
  */
@@ -28,11 +28,19 @@ describe("products routes", () => {
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
   });
 
-  it("shows both tab links", async () => {
+  it("shows the tab links, without the retired Provider tab", async () => {
     await renderRoute("/admin/products");
-    for (const label of ["Main Products", "Product Provider"]) {
+    for (const label of ["Main Products", "Archived", "Price Change Log"]) {
       expect(await screen.findByRole("tab", { name: label })).toBeInTheDocument();
     }
+    expect(screen.queryByRole("tab", { name: "Product Provider" })).not.toBeInTheDocument();
+  });
+
+  it("serves the Archived tab as its own route", async () => {
+    await renderRoute("/admin/products/archived");
+    expect(await screen.findByRole("heading", { name: "Archived" })).toBeInTheDocument();
+    // The Archived tab is a sibling of Main Products, not a query on it.
+    expect(await screen.findByRole("tab", { name: "Archived" })).toBeInTheDocument();
   });
 
   it("serves the Product Provider tab as the managed provider list", async () => {

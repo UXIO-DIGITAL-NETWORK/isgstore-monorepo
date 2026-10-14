@@ -2,8 +2,10 @@ import type { TFunction } from "i18next";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Box } from "@/components/common/Box";
+import { InfoTooltip } from "@/components/common/FieldLabel";
 import { Text } from "@/components/common/Text";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/currency";
 import { formatDateTime } from "@/utils/date";
 import { initials } from "@/utils/initials";
@@ -128,9 +130,22 @@ export const mainProductColumnsFor = (t: TFunction<"products">): ColumnDef<Produ
     id: "status",
     header: t("status"),
     cell: ({ row }) => (
-      <Box className="flex flex-col items-start gap-1">
+      <Box className="flex max-w-56 flex-col items-start gap-1">
         <ProductStatusBadge state={row.original.publish_state} />
-        <ProductAvailabilityBadge isAvailable={row.original.is_available} />
+        <Box className="flex items-center gap-1.5">
+          <ProductAvailabilityBadge isAvailable={row.original.is_available} />
+        </Box>
+        {row.original.provider_inactive && (
+          <Box className="flex items-center gap-1.5">
+            {/* The checker's flag on the supplier mapping (`buyer_product_status`),
+                NOT `is_available` — the admin's own storefront visibility, which
+                the checker never writes. Red, because it is the one status on
+                this row that asks the admin to act: archive it, or have the
+                provider switch it back on. */}
+            <Badge variant="destructive">{t("providerInactive")}</Badge>
+            <InfoTooltip content={t("providerInactiveHint")} />
+          </Box>
+        )}
       </Box>
     ),
   },

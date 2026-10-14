@@ -29,13 +29,23 @@ describe("MainProductsPage", () => {
     expect(screen.queryByText(/lorem ipsum/i)).not.toBeInTheDocument();
   });
 
-  it("shows both tabs, with the Provider link staying inside the preview route", async () => {
+  it("shows the remaining tabs — Main Products, Archived, Price Change Log — and no Provider tab", async () => {
     await renderRoute(LIST_PATH);
 
     expect(await screen.findByRole("tab", { name: "Main Products" })).toBeInTheDocument();
-    const providerTab = await screen.findByRole("tab", { name: "Product Provider" });
-    expect(providerTab).toBeInTheDocument();
-    expect(providerTab).toHaveAttribute("href", "/admin/products-preview/provider");
+
+    // The preview base is still honoured for every tab link.
+    expect(await screen.findByRole("tab", { name: "Archived" })).toHaveAttribute(
+      "href",
+      "/admin/products-preview/archived",
+    );
+    expect(await screen.findByRole("tab", { name: "Price Change Log" })).toHaveAttribute(
+      "href",
+      "/admin/products-preview/price-log",
+    );
+
+    // The pool's tab is gone: picking from a provider happens on this list now.
+    expect(screen.queryByRole("tab", { name: "Product Provider" })).not.toBeInTheDocument();
   });
 
   it("shows the toolbar: search, category filter, price filter, refresh and Add", async () => {
@@ -46,25 +56,40 @@ describe("MainProductsPage", () => {
     expect(screen.getByLabelText("Price")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Add Main Products/i })).toBeInTheDocument();
+    // Archived is a tab now, not a filter button beside these controls.
+    expect(screen.queryByRole("button", { name: "Archived" })).not.toBeInTheDocument();
   });
 
-  it("'+ Add Main Products' opens a menu offering Manual and Bulk", async () => {
+  it("'+ Add Main Products' opens a menu offering Single and Bulk", async () => {
     const user = userEvent.setup();
     await renderRoute(LIST_PATH);
 
     await user.click(await screen.findByRole("button", { name: /Add Main Products/i }));
     const items = await screen.findAllByRole("menuitem");
-    expect(items.map((item) => item.textContent)).toEqual(["Manual", "Bulk"]);
+    expect(items.map((item) => item.textContent)).toEqual(["Single", "Bulk"]);
   });
 
-  it("the Add menu's Manual entry opens the Add Main Products modal", async () => {
+  it("the Add menu's Single entry opens the add-products page", async () => {
     const user = userEvent.setup();
-    await renderRoute(LIST_PATH);
+    const { router } = await renderRoute(LIST_PATH);
 
     await user.click(await screen.findByRole("button", { name: /Add Main Products/i }));
-    await user.click(await screen.findByRole("menuitem", { name: "Manual" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Single" }));
 
-    expect(await screen.findByRole("dialog", { name: "Add Main Products" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Add products" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/admin/products-preview/main/add");
+  });
+
+  it("the Add menu's Bulk entry opens the same page in bulk mode", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderRoute(LIST_PATH);
+
+    await user.click(await screen.findByRole("button", { name: /Add Main Products/i }));
+    await user.click(await screen.findByRole("menuitem", { name: "Bulk" }));
+
+    expect(await screen.findByRole("heading", { name: "Add products" })).toBeInTheDocument();
+    expect(router.state.location.search).toMatchObject({ mode: "bulk" });
   });
 
   it("shows the column headers", async () => {
@@ -123,6 +148,14 @@ describe("MainProductsPage", () => {
     expect(within(table).getAllByText("Available").length).toBeGreaterThan(0);
     expect(within(table).getAllByText("Unavailable").length).toBeGreaterThan(0);
     expect(within(table).getAllByText("Draft").length).toBeGreaterThan(0);
+  });
+
+  // The availability badge alone explains nothing; a provider-switched-off SKU
+  // says so, so the admin knows why the product cannot be sold.
+  it("explains a product the provider switched off", async () => {
+    await renderRoute(LIST_PATH);
+
+    expect((await screen.findAllByText("Inactive at provider")).length).toBeGreaterThan(0);
   });
 
   it("counts the footer in products, not transactions", async () => {

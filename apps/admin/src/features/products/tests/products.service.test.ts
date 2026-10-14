@@ -80,6 +80,22 @@ describe("productsService.list", () => {
     expect(config?.params).toHaveProperty("min_price");
   });
 
+  it("maps the provider's own availability flag", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([apiRow({ provider_inactive: true })]));
+
+    const result = await productsService.list();
+
+    expect(result.data[0].provider_inactive).toBe(true);
+  });
+
+  it("passes the provider-inactive filter through to the API", async () => {
+    vi.mocked(api.get).mockResolvedValue(paginated([]));
+
+    await productsService.list({ provider_inactive: true });
+
+    expect(vi.mocked(api.get).mock.calls[0][1]?.params).toMatchObject({ provider_inactive: true });
+  });
+
   // A bucket the options list does not know must narrow to nothing, never
   // silently widen back to every product.
   it("narrows to nothing for an unknown price bucket", async () => {
@@ -141,6 +157,26 @@ describe("productsService — per-product points", () => {
     const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
     expect(form.get("point_percent")).toBe("0");
     expect(form.get("point_flat")).toBe("0");
+  });
+});
+
+describe("productsService.addFromSupplier", () => {
+  // The API marks `items.*.code` required, so the row's internal code must reach
+  // the multipart body. It was omitted once and no test caught it — the page
+  // test stubs this method out, so only a serialisation test can see it.
+  it("sends each row's internal code in the multipart body", async () => {
+    vi.mocked(api.post).mockResolvedValue(envelope({ created: 1, published: 0, skipped: [] }));
+
+    await productsService.addFromSupplier({
+      publish: false,
+      items: [{ buyer_sku_code: "VAL120", code: "VAL120-INT", name: "Valorant 120" }],
+    });
+
+    const [url, body] = vi.mocked(api.post).mock.calls[0];
+    const form = body as FormData;
+    expect(url).toBe("/v1/products/from-supplier");
+    expect(form.get("items[0][buyer_sku_code]")).toBe("VAL120");
+    expect(form.get("items[0][code]")).toBe("VAL120-INT");
   });
 });
 

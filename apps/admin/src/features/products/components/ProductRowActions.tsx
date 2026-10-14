@@ -22,7 +22,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -42,8 +41,14 @@ interface ProductRowActionsProps {
 /**
  * Row menu for the Main Products list, in the reference's order. Each action is
  * wired: Uxiolabs Update / Show Price go through a confirm dialog, Set Price
- * Limit opens its page, and the lifecycle toggle / Edit / Delete are unchanged.
- * The single-row paths reuse the bulk hooks with a one-id selection.
+ * Limit opens its page, and the lifecycle toggle / Edit are unchanged. The
+ * single-row paths reuse the bulk hooks with a one-id selection.
+ *
+ * There is NO delete here. A product that stops selling is unpublished —
+ * "Unlistis" — not removed: order history resolves against `transactions.
+ * product_id` (a RESTRICT foreign key), so the row has to outlive its listing.
+ * The archive path still exists on the server for operators, and an archived
+ * row (reachable through the Archived filter) offers Restore.
  *
  * The two reversible items — publishing and price visibility — each read the
  * row's own state and offer the direction that would change something. A live
@@ -67,16 +72,16 @@ interface ProductRowActionsProps {
 export function ProductRowActions({ product }: ProductRowActionsProps) {
   const { t } = useTranslation("products");
   const navigate = useNavigate();
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
   const [uxiolabsOpen, setUxiolabsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const deleteProducts = useDeleteProducts();
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const setProductPublished = useSetProductPublished();
   const restoreProduct = useRestoreProduct();
   const showProducts = useShowProducts();
   const uxiolabsUpdate = useUxiolabsUpdateProducts();
+  const deleteProducts = useDeleteProducts();
 
   // Each toggle names what the click would do, not what the row currently is.
   const isArchived = product.publish_state === "archived";
@@ -143,15 +148,10 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setEditOpen(true)}>
                 <Pencil />{t("editProduct")}</DropdownMenuItem>
-            </Can>
-          )}
-          {!isArchived && (
-            <Can permission="products.delete">
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={() => setDeleteOpen(true)}
-              >
+              {/* Archive, not delete: the row survives for its order history and
+                  can be restored. Also the confirmed path for a product whose
+                  provider SKU went inactive. */}
+              <DropdownMenuItem onSelect={() => setArchiveOpen(true)}>
                 <Archive />{t("archive")}</DropdownMenuItem>
             </Can>
           )}
@@ -187,16 +187,6 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
           cannot be undone, because it can: the row is kept so its order history
           keeps resolving, and Restore brings it back. */}
       <DeleteConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        icon={<Archive />}
-        confirmLabel={t("archive")}
-        title={t("archiveProductTitle")}
-        description={t("archiveProductDescription")}
-        onConfirm={() => deleteProducts.mutate([product.id])}
-      />
-
-      <DeleteConfirmDialog
         open={publishOpen}
         onOpenChange={setPublishOpen}
         icon={nextPublished ? <Rocket /> : <Archive />}
@@ -208,6 +198,16 @@ export function ProductRowActions({ product }: ProductRowActionsProps) {
             : "It leaves the storefront and stops being orderable. Nothing else changes, and you can publish it again at any time."
         }
         onConfirm={() => setProductPublished.mutate({ ids: [product.id], published: nextPublished })}
+      />
+
+      <DeleteConfirmDialog
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+        icon={<Archive />}
+        confirmLabel={t("archive")}
+        title={t("archiveProductTitle")}
+        description={t("archiveProductDescription")}
+        onConfirm={() => deleteProducts.mutate([product.id])}
       />
 
       <MainProductFormDialog

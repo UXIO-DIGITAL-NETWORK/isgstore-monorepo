@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Archive, Eye, RefreshCcw } from "lucide-react";
 
 import { Box } from "@/components/common/Box";
@@ -8,7 +9,6 @@ import { DeleteConfirmDialog } from "@/components/common/DeleteConfirmDialog";
 import { Heading } from "@/components/common/Heading";
 import { Text } from "@/components/common/Text";
 import { mainProductColumnsFor } from "../components/mainProductColumns";
-import { MainProductFormDialog } from "../components/MainProductFormDialog";
 import { MainProductToolbar } from "../components/MainProductToolbar";
 import {
   useDeleteProducts,
@@ -22,16 +22,25 @@ import type { ProductListParams } from "../types/product.type";
 const DEFAULT_PAGE_SIZE = 10;
 
 /**
- * Main Products list (product_requirements.md §4.6) — the first of the two
- * Product tabs, and the only one with a reference frame.
+ * Main Products list (product_requirements.md §4.6) — the first Product tab, and
+ * the only one with a reference frame.
  *
  * Two corrections to that reference, both the same defect classes confirmed
  * across five Category references: the header subcopy is real copy rather than
  * "lorem ipsum dolor sit amet", and the footer counts products rather than the
  * copy-pasted "9999999 transactions".
+ *
+ * The same list also serves the Archived tab (`archivedOnly`): it differs only
+ * in that the publish_state is pinned to `archived`, the header says so, and the
+ * toolbar drops its Status filter and selection action bar.
  */
-export default function MainProductsPage() {
+function ProductsListPage({ archivedOnly = false }: { archivedOnly?: boolean }) {
   const { t } = useTranslation("products");
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // Real route and unauthenticated preview twin share this page; the add page
+  // lives under whichever base we were reached through.
+  const base = pathname.startsWith("/admin/products-preview") ? "/admin/products-preview" : "/admin/products";
   const [search, setSearch] = useState("");
   // A real category id now, not its name — see products.service `list()`.
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
@@ -39,29 +48,34 @@ export default function MainProductsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [publishState, setPublishState] = useState<string | undefined>(undefined);
+  const [providerInactive, setProviderInactive] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkUnpublishOpen, setBulkUnpublishOpen] = useState(false);
   const [bulkShowOpen, setBulkShowOpen] = useState(false);
   const [bulkUxiolabsOpen, setBulkUxiolabsOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+
+  const goToAdd = (mode: "single" | "bulk") =>
+    navigate({ to: `${base}/main/add` as "/admin/products/main/add", search: { mode } });
 
   const params = useMemo(
     () => ({
       search: search || undefined,
       category_id: categoryId,
       price,
-      publish_state: publishState as ProductListParams["publish_state"],
+      // The Archived tab pins the state; the main list lets the Status filter pick.
+      publish_state: (archivedOnly ? "archived" : publishState) as ProductListParams["publish_state"],
+      provider_inactive: providerInactive || undefined,
       page,
       per_page: pageSize,
     }),
-    [search, categoryId, price, publishState, page, pageSize],
+    [search, categoryId, price, publishState, providerInactive, page, pageSize, archivedOnly],
   );
   const { data, isLoading, isError, refetch } = useProductList(params);
-  const deleteProducts = useDeleteProducts();
   const setProductPublished = useSetProductPublished();
   const showProducts = useShowProducts();
   const uxiolabsUpdate = useUxiolabsUpdateProducts();
+  const deleteProducts = useDeleteProducts();
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -88,8 +102,8 @@ export default function MainProductsPage() {
         <Heading
           level={1}
           variant="section"
-        >{t("tabMainProducts")}</Heading>
-        <Text variant="muted">{t("mainProductsSubtitle")}</Text>
+        >{archivedOnly ? t("tabArchived") : t("tabMainProducts")}</Heading>
+        <Text variant="muted">{archivedOnly ? t("archivedSubtitle") : t("mainProductsSubtitle")}</Text>
       </Box>
 
       <Box className="rounded-2xl border border-border bg-card p-4">
@@ -100,8 +114,14 @@ export default function MainProductsPage() {
           onCategoryChange={handleCategoryChange}
           price={price}
           onPriceChange={handlePriceChange}
+          providerInactive={providerInactive}
+          onProviderInactiveChange={(next) => {
+            setProviderInactive(next);
+            setPage(1);
+          }}
           onRefresh={() => refetch()}
-          onAdd={() => setAddOpen(true)}
+          onAddSingle={() => goToAdd("single")}
+          onAddBulk={() => goToAdd("bulk")}
           selectedCount={selectedIds.length}
           onBulkUxiolabs={() => setBulkUxiolabsOpen(true)}
           onBulkShowPrice={() => setBulkShowOpen(true)}
@@ -111,7 +131,8 @@ export default function MainProductsPage() {
             setPage(1);
           }}
           onBulkUnpublish={() => setBulkUnpublishOpen(true)}
-          onBulkDelete={() => setBulkDeleteOpen(true)}
+          onBulkArchive={() => setBulkArchiveOpen(true)}
+          archivedView={archivedOnly}
         />
       </Box>
 
@@ -134,22 +155,6 @@ export default function MainProductsPage() {
           onPageSizeChange={setPageSize}
         />
       </Box>
-
-      {/* Same dialog and same mutation as the row menu's Archive — only the set
-          of ids differs, so only the wording is count-aware. */}
-      <DeleteConfirmDialog
-        open={bulkDeleteOpen}
-        onOpenChange={setBulkDeleteOpen}
-        icon={<Archive />}
-        confirmLabel={t("archive")}
-        title={selectedIds.length <= 1 ? "Archive this product?" : `Archive ${selectedIds.length} products?`}
-        description={
-          selectedIds.length <= 1
-            ? "It leaves the storefront and the catalogue, and its provider SKU returns to the pool. Past orders keep their details, and you can restore it from the Archived filter."
-            : `These ${selectedIds.length} products leave the storefront and the catalogue, and their provider SKUs return to the pool. Past orders keep their details, and you can restore them from the Archived filter.`
-        }
-        onConfirm={() => deleteProducts.mutate(selectedIds)}
-      />
 
       {/* Unpublishing is reversible, so the copy says what changes rather than
           warning it cannot be undone — but it still takes products off sale, so
@@ -191,10 +196,36 @@ export default function MainProductsPage() {
         onConfirm={() => showProducts.mutate({ ids: selectedIds, hidden: false })}
       />
 
-      <MainProductFormDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
+      {/* Archiving keeps the row (order history resolves against it) but takes
+          it out of the catalogue and returns its provider SKU to the pool — so
+          it goes through a confirmation, and Restore brings it back. */}
+      <DeleteConfirmDialog
+        open={bulkArchiveOpen}
+        onOpenChange={setBulkArchiveOpen}
+        icon={<Archive />}
+        confirmLabel={t("archive")}
+        title={selectedIds.length <= 1 ? t("archiveProductTitle") : `Archive ${selectedIds.length} products?`}
+        description={
+          selectedIds.length <= 1
+            ? t("archiveProductDescription")
+            : `These ${selectedIds.length} products leave the storefront and the catalogue, and their provider SKUs return to the pool. Past orders keep their details, and you can restore them from the Archived filter.`
+        }
+        onConfirm={() => deleteProducts.mutate(selectedIds)}
       />
     </Box>
   );
+}
+
+/** The Main Products tab (the default list). */
+export default function MainProductsPage() {
+  return <ProductsListPage />;
+}
+
+/**
+ * The Archived tab. Same list, narrowed to archived rows — archived products are
+ * out of the catalogue but the row survives for order history, so this is where
+ * they are found and restored from.
+ */
+export function ArchivedProductsPage() {
+  return <ProductsListPage archivedOnly />;
 }

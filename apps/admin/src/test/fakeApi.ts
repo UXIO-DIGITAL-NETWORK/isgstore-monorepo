@@ -137,6 +137,7 @@ const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
     name: row.name,
     sub_name: row.sub_name ?? null,
     code: row.code,
+    provider_sku_code: row.provider_sku_code ?? null,
     logo_url: row.image_url ?? null,
     description: row.description ?? null,
     validasi_nickname: row.nickname_validation ?? null,
@@ -178,6 +179,7 @@ const toApiProduct = (row: (typeof PRODUCTS)[number], index: number): Row => {
     ],
     status: row.status === "active",
     is_available: row.is_available,
+    provider_inactive: row.provider_inactive ?? false,
     is_price_hidden: row.is_price_hidden ?? false,
     // Derived server-side from the product AND its supplier mapping; the fixture
     // carries it so the row menu can offer Publish or Unpublish.
@@ -240,6 +242,13 @@ const DOCUMENTS: Record<string, unknown> = {
       net_income: point.netIncome,
     })),
   },
+  // Markup rules driving the price an empty margin falls back to. A null plan
+  // is the global fallback; a plan-keyed rule overrides it. Read by the Add
+  // Products preview (the pricing page test mocks pricingService.list).
+  "/v1/pricing-rules": [
+    { id: 1, category_id: null, membership_plan_id: null, markup_percent: 20, markup_flat: 0, category: null, membership_plan: null },
+    { id: 2, category_id: null, membership_plan_id: 1, markup_percent: 25, markup_flat: 0, category: null, membership_plan: null },
+  ],
   "/v1/settings": [
     { id: 1, group: "general", key: "site_name", value: "ISG Store", type: "string", label: "Site Name", is_public: true },
     { id: 2, group: "contact", key: "contact_whatsapp", value: "6281234567890", type: "string", label: "WhatsApp", is_public: true },

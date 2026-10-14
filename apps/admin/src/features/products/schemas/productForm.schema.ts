@@ -47,7 +47,6 @@ export const productFormSchema = z.object({
   nicknameValidation: z.string().optional(),
   subName: z.string().optional(),
   code: z.string().min(1, "Product Code is required"),
-  access: z.string().optional(),
   tag: z.string().optional(),
   category: z.string().min(1, "Category is required"),
   subCategory: z.string().optional(),
@@ -75,6 +74,13 @@ export const productFormSchema = z.object({
   /** Flat bonus points, the sweetener a cheap denomination needs to be worth
       anything at a percentage alone. */
   pointsFlat: digits("Bonus Points"),
+
+  /* The product's own standing discount — not a flash sale (time-boxed) and
+     not a promo code (typed at checkout). An empty type means "no discount",
+     which is why the value is only read when a type is set; a lone value with
+     no type is meaningless and is dropped on submit. */
+  discountType: z.union([z.literal(""), z.literal("percent"), z.literal("fixed")]).optional(),
+  discountValue: digits("Discount"),
 
   /* Product Mix. Empty by default, so an untouched section never blocks Save;
      a row the admin did add must be complete to mean anything. */

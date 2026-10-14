@@ -56,6 +56,7 @@ import { Route as AdminProtectedSettingsSecurityIndexRouteImport } from './route
 import { Route as AdminProtectedProductsProviderIndexRouteImport } from './routes/admin/_protected/products/provider/index'
 import { Route as AdminProtectedProductsPriceLogIndexRouteImport } from './routes/admin/_protected/products/price-log/index'
 import { Route as AdminProtectedProductsMainIndexRouteImport } from './routes/admin/_protected/products/main/index'
+import { Route as AdminProtectedProductsArchivedIndexRouteImport } from './routes/admin/_protected/products/archived/index'
 import { Route as AdminProtectedContentTestimonialsIndexRouteImport } from './routes/admin/_protected/content/testimonials/index'
 import { Route as AdminProtectedContentPagesIndexRouteImport } from './routes/admin/_protected/content/pages/index'
 import { Route as AdminProtectedContentNewsIndexRouteImport } from './routes/admin/_protected/content/news/index'
@@ -72,6 +73,7 @@ import { Route as AdminProtectedCategoriesCategoryProviderIndexRouteImport } fro
 import { Route as AdminPreviewProductsPreviewProviderIndexRouteImport } from './routes/admin/_preview/products-preview/provider/index'
 import { Route as AdminPreviewProductsPreviewPriceLogIndexRouteImport } from './routes/admin/_preview/products-preview/price-log/index'
 import { Route as AdminPreviewProductsPreviewMainIndexRouteImport } from './routes/admin/_preview/products-preview/main/index'
+import { Route as AdminPreviewProductsPreviewArchivedIndexRouteImport } from './routes/admin/_preview/products-preview/archived/index'
 import { Route as AdminPreviewCategoriesPreviewSubCategoryIndexRouteImport } from './routes/admin/_preview/categories-preview/sub-category/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryIndexRouteImport } from './routes/admin/_preview/categories-preview/category/index'
 import { Route as AdminPreviewCategoriesPreviewCategoryTypeIndexRouteImport } from './routes/admin/_preview/categories-preview/category-type/index'
@@ -80,8 +82,9 @@ import { Route as AdminPreviewCategoriesPreviewCategoryProviderIndexRouteImport 
 import { Route as AdminProtectedProductsProviderSetProfitMarginIndexRouteImport } from './routes/admin/_protected/products/provider/set-profit-margin/index'
 import { Route as AdminProtectedProductsProviderAddIndexRouteImport } from './routes/admin/_protected/products/provider/add/index'
 import { Route as AdminProtectedProductsMainSetPriceLimitIndexRouteImport } from './routes/admin/_protected/products/main/set-price-limit/index'
-import { Route as AdminProtectedProductsMainAddBulkIndexRouteImport } from './routes/admin/_protected/products/main/add-bulk/index'
+import { Route as AdminProtectedProductsMainAddIndexRouteImport } from './routes/admin/_protected/products/main/add/index'
 import { Route as AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport } from './routes/admin/_preview/transaction-preview/$invoiceNo/edit/index'
+import { Route as AdminPreviewProductsPreviewMainAddIndexRouteImport } from './routes/admin/_preview/products-preview/main/add/index'
 import { Route as AdminProtectedTransactionsManualInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/manual/$invoiceNo/edit/index'
 import { Route as AdminProtectedTransactionsAutomaticInvoiceNoEditIndexRouteImport } from './routes/admin/_protected/transactions/automatic/$invoiceNo/edit/index'
 
@@ -358,6 +361,12 @@ const AdminProtectedProductsMainIndexRoute =
     path: '/main/',
     getParentRoute: () => AdminProtectedProductsRouteRoute,
   } as any)
+const AdminProtectedProductsArchivedIndexRoute =
+  AdminProtectedProductsArchivedIndexRouteImport.update({
+    id: '/archived/',
+    path: '/archived/',
+    getParentRoute: () => AdminProtectedProductsRouteRoute,
+  } as any)
 const AdminProtectedContentTestimonialsIndexRoute =
   AdminProtectedContentTestimonialsIndexRouteImport.update({
     id: '/testimonials/',
@@ -454,6 +463,12 @@ const AdminPreviewProductsPreviewMainIndexRoute =
     path: '/main/',
     getParentRoute: () => AdminPreviewProductsPreviewRouteRoute,
   } as any)
+const AdminPreviewProductsPreviewArchivedIndexRoute =
+  AdminPreviewProductsPreviewArchivedIndexRouteImport.update({
+    id: '/archived/',
+    path: '/archived/',
+    getParentRoute: () => AdminPreviewProductsPreviewRouteRoute,
+  } as any)
 const AdminPreviewCategoriesPreviewSubCategoryIndexRoute =
   AdminPreviewCategoriesPreviewSubCategoryIndexRouteImport.update({
     id: '/sub-category/',
@@ -502,10 +517,10 @@ const AdminProtectedProductsMainSetPriceLimitIndexRoute =
     path: '/main/set-price-limit/',
     getParentRoute: () => AdminProtectedProductsRouteRoute,
   } as any)
-const AdminProtectedProductsMainAddBulkIndexRoute =
-  AdminProtectedProductsMainAddBulkIndexRouteImport.update({
-    id: '/main/add-bulk/',
-    path: '/main/add-bulk/',
+const AdminProtectedProductsMainAddIndexRoute =
+  AdminProtectedProductsMainAddIndexRouteImport.update({
+    id: '/main/add/',
+    path: '/main/add/',
     getParentRoute: () => AdminProtectedProductsRouteRoute,
   } as any)
 const AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute =
@@ -513,6 +528,12 @@ const AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute =
     id: '/transaction-preview/$invoiceNo/edit/',
     path: '/transaction-preview/$invoiceNo/edit/',
     getParentRoute: () => AdminPreviewRoute,
+  } as any)
+const AdminPreviewProductsPreviewMainAddIndexRoute =
+  AdminPreviewProductsPreviewMainAddIndexRouteImport.update({
+    id: '/main/add/',
+    path: '/main/add/',
+    getParentRoute: () => AdminPreviewProductsPreviewRouteRoute,
   } as any)
 const AdminProtectedTransactionsManualInvoiceNoEditIndexRoute =
   AdminProtectedTransactionsManualInvoiceNoEditIndexRouteImport.update({
@@ -570,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories-preview/category-type/': typeof AdminPreviewCategoriesPreviewCategoryTypeIndexRoute
   '/admin/categories-preview/category/': typeof AdminPreviewCategoriesPreviewCategoryIndexRoute
   '/admin/categories-preview/sub-category/': typeof AdminPreviewCategoriesPreviewSubCategoryIndexRoute
+  '/admin/products-preview/archived/': typeof AdminPreviewProductsPreviewArchivedIndexRoute
   '/admin/products-preview/main/': typeof AdminPreviewProductsPreviewMainIndexRoute
   '/admin/products-preview/price-log/': typeof AdminPreviewProductsPreviewPriceLogIndexRoute
   '/admin/products-preview/provider/': typeof AdminPreviewProductsPreviewProviderIndexRoute
@@ -586,6 +608,7 @@ export interface FileRoutesByFullPath {
   '/admin/content/news/': typeof AdminProtectedContentNewsIndexRoute
   '/admin/content/pages/': typeof AdminProtectedContentPagesIndexRoute
   '/admin/content/testimonials/': typeof AdminProtectedContentTestimonialsIndexRoute
+  '/admin/products/archived/': typeof AdminProtectedProductsArchivedIndexRoute
   '/admin/products/main/': typeof AdminProtectedProductsMainIndexRoute
   '/admin/products/price-log/': typeof AdminProtectedProductsPriceLogIndexRoute
   '/admin/products/provider/': typeof AdminProtectedProductsProviderIndexRoute
@@ -593,8 +616,9 @@ export interface FileRoutesByFullPath {
   '/admin/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/users/$userId/': typeof AdminProtectedUsersUserIdIndexRoute
+  '/admin/products-preview/main/add/': typeof AdminPreviewProductsPreviewMainAddIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
-  '/admin/products/main/add-bulk/': typeof AdminProtectedProductsMainAddBulkIndexRoute
+  '/admin/products/main/add/': typeof AdminProtectedProductsMainAddIndexRoute
   '/admin/products/main/set-price-limit/': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
   '/admin/products/provider/add/': typeof AdminProtectedProductsProviderAddIndexRoute
   '/admin/products/provider/set-profit-margin/': typeof AdminProtectedProductsProviderSetProfitMarginIndexRoute
@@ -638,6 +662,7 @@ export interface FileRoutesByTo {
   '/admin/categories-preview/category-type': typeof AdminPreviewCategoriesPreviewCategoryTypeIndexRoute
   '/admin/categories-preview/category': typeof AdminPreviewCategoriesPreviewCategoryIndexRoute
   '/admin/categories-preview/sub-category': typeof AdminPreviewCategoriesPreviewSubCategoryIndexRoute
+  '/admin/products-preview/archived': typeof AdminPreviewProductsPreviewArchivedIndexRoute
   '/admin/products-preview/main': typeof AdminPreviewProductsPreviewMainIndexRoute
   '/admin/products-preview/price-log': typeof AdminPreviewProductsPreviewPriceLogIndexRoute
   '/admin/products-preview/provider': typeof AdminPreviewProductsPreviewProviderIndexRoute
@@ -654,6 +679,7 @@ export interface FileRoutesByTo {
   '/admin/content/news': typeof AdminProtectedContentNewsIndexRoute
   '/admin/content/pages': typeof AdminProtectedContentPagesIndexRoute
   '/admin/content/testimonials': typeof AdminProtectedContentTestimonialsIndexRoute
+  '/admin/products/archived': typeof AdminProtectedProductsArchivedIndexRoute
   '/admin/products/main': typeof AdminProtectedProductsMainIndexRoute
   '/admin/products/price-log': typeof AdminProtectedProductsPriceLogIndexRoute
   '/admin/products/provider': typeof AdminProtectedProductsProviderIndexRoute
@@ -661,8 +687,9 @@ export interface FileRoutesByTo {
   '/admin/transactions/automatic': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/transactions/manual': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/users/$userId': typeof AdminProtectedUsersUserIdIndexRoute
+  '/admin/products-preview/main/add': typeof AdminPreviewProductsPreviewMainAddIndexRoute
   '/admin/transaction-preview/$invoiceNo/edit': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
-  '/admin/products/main/add-bulk': typeof AdminProtectedProductsMainAddBulkIndexRoute
+  '/admin/products/main/add': typeof AdminProtectedProductsMainAddIndexRoute
   '/admin/products/main/set-price-limit': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
   '/admin/products/provider/add': typeof AdminProtectedProductsProviderAddIndexRoute
   '/admin/products/provider/set-profit-margin': typeof AdminProtectedProductsProviderSetProfitMarginIndexRoute
@@ -716,6 +743,7 @@ export interface FileRoutesById {
   '/admin/_preview/categories-preview/category-type/': typeof AdminPreviewCategoriesPreviewCategoryTypeIndexRoute
   '/admin/_preview/categories-preview/category/': typeof AdminPreviewCategoriesPreviewCategoryIndexRoute
   '/admin/_preview/categories-preview/sub-category/': typeof AdminPreviewCategoriesPreviewSubCategoryIndexRoute
+  '/admin/_preview/products-preview/archived/': typeof AdminPreviewProductsPreviewArchivedIndexRoute
   '/admin/_preview/products-preview/main/': typeof AdminPreviewProductsPreviewMainIndexRoute
   '/admin/_preview/products-preview/price-log/': typeof AdminPreviewProductsPreviewPriceLogIndexRoute
   '/admin/_preview/products-preview/provider/': typeof AdminPreviewProductsPreviewProviderIndexRoute
@@ -732,6 +760,7 @@ export interface FileRoutesById {
   '/admin/_protected/content/news/': typeof AdminProtectedContentNewsIndexRoute
   '/admin/_protected/content/pages/': typeof AdminProtectedContentPagesIndexRoute
   '/admin/_protected/content/testimonials/': typeof AdminProtectedContentTestimonialsIndexRoute
+  '/admin/_protected/products/archived/': typeof AdminProtectedProductsArchivedIndexRoute
   '/admin/_protected/products/main/': typeof AdminProtectedProductsMainIndexRoute
   '/admin/_protected/products/price-log/': typeof AdminProtectedProductsPriceLogIndexRoute
   '/admin/_protected/products/provider/': typeof AdminProtectedProductsProviderIndexRoute
@@ -739,8 +768,9 @@ export interface FileRoutesById {
   '/admin/_protected/transactions/automatic/': typeof AdminProtectedTransactionsAutomaticIndexRoute
   '/admin/_protected/transactions/manual/': typeof AdminProtectedTransactionsManualIndexRoute
   '/admin/_protected/users/$userId/': typeof AdminProtectedUsersUserIdIndexRoute
+  '/admin/_preview/products-preview/main/add/': typeof AdminPreviewProductsPreviewMainAddIndexRoute
   '/admin/_preview/transaction-preview/$invoiceNo/edit/': typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRoute
-  '/admin/_protected/products/main/add-bulk/': typeof AdminProtectedProductsMainAddBulkIndexRoute
+  '/admin/_protected/products/main/add/': typeof AdminProtectedProductsMainAddIndexRoute
   '/admin/_protected/products/main/set-price-limit/': typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
   '/admin/_protected/products/provider/add/': typeof AdminProtectedProductsProviderAddIndexRoute
   '/admin/_protected/products/provider/set-profit-margin/': typeof AdminProtectedProductsProviderSetProfitMarginIndexRoute
@@ -792,6 +822,7 @@ export interface FileRouteTypes {
     | '/admin/categories-preview/category-type/'
     | '/admin/categories-preview/category/'
     | '/admin/categories-preview/sub-category/'
+    | '/admin/products-preview/archived/'
     | '/admin/products-preview/main/'
     | '/admin/products-preview/price-log/'
     | '/admin/products-preview/provider/'
@@ -808,6 +839,7 @@ export interface FileRouteTypes {
     | '/admin/content/news/'
     | '/admin/content/pages/'
     | '/admin/content/testimonials/'
+    | '/admin/products/archived/'
     | '/admin/products/main/'
     | '/admin/products/price-log/'
     | '/admin/products/provider/'
@@ -815,8 +847,9 @@ export interface FileRouteTypes {
     | '/admin/transactions/automatic/'
     | '/admin/transactions/manual/'
     | '/admin/users/$userId/'
+    | '/admin/products-preview/main/add/'
     | '/admin/transaction-preview/$invoiceNo/edit/'
-    | '/admin/products/main/add-bulk/'
+    | '/admin/products/main/add/'
     | '/admin/products/main/set-price-limit/'
     | '/admin/products/provider/add/'
     | '/admin/products/provider/set-profit-margin/'
@@ -860,6 +893,7 @@ export interface FileRouteTypes {
     | '/admin/categories-preview/category-type'
     | '/admin/categories-preview/category'
     | '/admin/categories-preview/sub-category'
+    | '/admin/products-preview/archived'
     | '/admin/products-preview/main'
     | '/admin/products-preview/price-log'
     | '/admin/products-preview/provider'
@@ -876,6 +910,7 @@ export interface FileRouteTypes {
     | '/admin/content/news'
     | '/admin/content/pages'
     | '/admin/content/testimonials'
+    | '/admin/products/archived'
     | '/admin/products/main'
     | '/admin/products/price-log'
     | '/admin/products/provider'
@@ -883,8 +918,9 @@ export interface FileRouteTypes {
     | '/admin/transactions/automatic'
     | '/admin/transactions/manual'
     | '/admin/users/$userId'
+    | '/admin/products-preview/main/add'
     | '/admin/transaction-preview/$invoiceNo/edit'
-    | '/admin/products/main/add-bulk'
+    | '/admin/products/main/add'
     | '/admin/products/main/set-price-limit'
     | '/admin/products/provider/add'
     | '/admin/products/provider/set-profit-margin'
@@ -937,6 +973,7 @@ export interface FileRouteTypes {
     | '/admin/_preview/categories-preview/category-type/'
     | '/admin/_preview/categories-preview/category/'
     | '/admin/_preview/categories-preview/sub-category/'
+    | '/admin/_preview/products-preview/archived/'
     | '/admin/_preview/products-preview/main/'
     | '/admin/_preview/products-preview/price-log/'
     | '/admin/_preview/products-preview/provider/'
@@ -953,6 +990,7 @@ export interface FileRouteTypes {
     | '/admin/_protected/content/news/'
     | '/admin/_protected/content/pages/'
     | '/admin/_protected/content/testimonials/'
+    | '/admin/_protected/products/archived/'
     | '/admin/_protected/products/main/'
     | '/admin/_protected/products/price-log/'
     | '/admin/_protected/products/provider/'
@@ -960,8 +998,9 @@ export interface FileRouteTypes {
     | '/admin/_protected/transactions/automatic/'
     | '/admin/_protected/transactions/manual/'
     | '/admin/_protected/users/$userId/'
+    | '/admin/_preview/products-preview/main/add/'
     | '/admin/_preview/transaction-preview/$invoiceNo/edit/'
-    | '/admin/_protected/products/main/add-bulk/'
+    | '/admin/_protected/products/main/add/'
     | '/admin/_protected/products/main/set-price-limit/'
     | '/admin/_protected/products/provider/add/'
     | '/admin/_protected/products/provider/set-profit-margin/'
@@ -1309,6 +1348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedProductsMainIndexRouteImport
       parentRoute: typeof AdminProtectedProductsRouteRoute
     }
+    '/admin/_protected/products/archived/': {
+      id: '/admin/_protected/products/archived/'
+      path: '/archived'
+      fullPath: '/admin/products/archived/'
+      preLoaderRoute: typeof AdminProtectedProductsArchivedIndexRouteImport
+      parentRoute: typeof AdminProtectedProductsRouteRoute
+    }
     '/admin/_protected/content/testimonials/': {
       id: '/admin/_protected/content/testimonials/'
       path: '/testimonials'
@@ -1421,6 +1467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPreviewProductsPreviewMainIndexRouteImport
       parentRoute: typeof AdminPreviewProductsPreviewRouteRoute
     }
+    '/admin/_preview/products-preview/archived/': {
+      id: '/admin/_preview/products-preview/archived/'
+      path: '/archived'
+      fullPath: '/admin/products-preview/archived/'
+      preLoaderRoute: typeof AdminPreviewProductsPreviewArchivedIndexRouteImport
+      parentRoute: typeof AdminPreviewProductsPreviewRouteRoute
+    }
     '/admin/_preview/categories-preview/sub-category/': {
       id: '/admin/_preview/categories-preview/sub-category/'
       path: '/sub-category'
@@ -1477,11 +1530,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProtectedProductsMainSetPriceLimitIndexRouteImport
       parentRoute: typeof AdminProtectedProductsRouteRoute
     }
-    '/admin/_protected/products/main/add-bulk/': {
-      id: '/admin/_protected/products/main/add-bulk/'
-      path: '/main/add-bulk'
-      fullPath: '/admin/products/main/add-bulk/'
-      preLoaderRoute: typeof AdminProtectedProductsMainAddBulkIndexRouteImport
+    '/admin/_protected/products/main/add/': {
+      id: '/admin/_protected/products/main/add/'
+      path: '/main/add'
+      fullPath: '/admin/products/main/add/'
+      preLoaderRoute: typeof AdminProtectedProductsMainAddIndexRouteImport
       parentRoute: typeof AdminProtectedProductsRouteRoute
     }
     '/admin/_preview/transaction-preview/$invoiceNo/edit/': {
@@ -1490,6 +1543,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/transaction-preview/$invoiceNo/edit/'
       preLoaderRoute: typeof AdminPreviewTransactionPreviewInvoiceNoEditIndexRouteImport
       parentRoute: typeof AdminPreviewRoute
+    }
+    '/admin/_preview/products-preview/main/add/': {
+      id: '/admin/_preview/products-preview/main/add/'
+      path: '/main/add'
+      fullPath: '/admin/products-preview/main/add/'
+      preLoaderRoute: typeof AdminPreviewProductsPreviewMainAddIndexRouteImport
+      parentRoute: typeof AdminPreviewProductsPreviewRouteRoute
     }
     '/admin/_protected/transactions/manual/$invoiceNo/edit/': {
       id: '/admin/_protected/transactions/manual/$invoiceNo/edit/'
@@ -1564,21 +1624,27 @@ const AdminPreviewCategoriesPreviewRouteRouteWithChildren =
 
 interface AdminPreviewProductsPreviewRouteRouteChildren {
   AdminPreviewProductsPreviewIndexRoute: typeof AdminPreviewProductsPreviewIndexRoute
+  AdminPreviewProductsPreviewArchivedIndexRoute: typeof AdminPreviewProductsPreviewArchivedIndexRoute
   AdminPreviewProductsPreviewMainIndexRoute: typeof AdminPreviewProductsPreviewMainIndexRoute
   AdminPreviewProductsPreviewPriceLogIndexRoute: typeof AdminPreviewProductsPreviewPriceLogIndexRoute
   AdminPreviewProductsPreviewProviderIndexRoute: typeof AdminPreviewProductsPreviewProviderIndexRoute
+  AdminPreviewProductsPreviewMainAddIndexRoute: typeof AdminPreviewProductsPreviewMainAddIndexRoute
 }
 
 const AdminPreviewProductsPreviewRouteRouteChildren: AdminPreviewProductsPreviewRouteRouteChildren =
   {
     AdminPreviewProductsPreviewIndexRoute:
       AdminPreviewProductsPreviewIndexRoute,
+    AdminPreviewProductsPreviewArchivedIndexRoute:
+      AdminPreviewProductsPreviewArchivedIndexRoute,
     AdminPreviewProductsPreviewMainIndexRoute:
       AdminPreviewProductsPreviewMainIndexRoute,
     AdminPreviewProductsPreviewPriceLogIndexRoute:
       AdminPreviewProductsPreviewPriceLogIndexRoute,
     AdminPreviewProductsPreviewProviderIndexRoute:
       AdminPreviewProductsPreviewProviderIndexRoute,
+    AdminPreviewProductsPreviewMainAddIndexRoute:
+      AdminPreviewProductsPreviewMainAddIndexRoute,
   }
 
 const AdminPreviewProductsPreviewRouteRouteWithChildren =
@@ -1684,10 +1750,11 @@ const AdminProtectedContentRouteRouteWithChildren =
 
 interface AdminProtectedProductsRouteRouteChildren {
   AdminProtectedProductsIndexRoute: typeof AdminProtectedProductsIndexRoute
+  AdminProtectedProductsArchivedIndexRoute: typeof AdminProtectedProductsArchivedIndexRoute
   AdminProtectedProductsMainIndexRoute: typeof AdminProtectedProductsMainIndexRoute
   AdminProtectedProductsPriceLogIndexRoute: typeof AdminProtectedProductsPriceLogIndexRoute
   AdminProtectedProductsProviderIndexRoute: typeof AdminProtectedProductsProviderIndexRoute
-  AdminProtectedProductsMainAddBulkIndexRoute: typeof AdminProtectedProductsMainAddBulkIndexRoute
+  AdminProtectedProductsMainAddIndexRoute: typeof AdminProtectedProductsMainAddIndexRoute
   AdminProtectedProductsMainSetPriceLimitIndexRoute: typeof AdminProtectedProductsMainSetPriceLimitIndexRoute
   AdminProtectedProductsProviderAddIndexRoute: typeof AdminProtectedProductsProviderAddIndexRoute
   AdminProtectedProductsProviderSetProfitMarginIndexRoute: typeof AdminProtectedProductsProviderSetProfitMarginIndexRoute
@@ -1696,13 +1763,15 @@ interface AdminProtectedProductsRouteRouteChildren {
 const AdminProtectedProductsRouteRouteChildren: AdminProtectedProductsRouteRouteChildren =
   {
     AdminProtectedProductsIndexRoute: AdminProtectedProductsIndexRoute,
+    AdminProtectedProductsArchivedIndexRoute:
+      AdminProtectedProductsArchivedIndexRoute,
     AdminProtectedProductsMainIndexRoute: AdminProtectedProductsMainIndexRoute,
     AdminProtectedProductsPriceLogIndexRoute:
       AdminProtectedProductsPriceLogIndexRoute,
     AdminProtectedProductsProviderIndexRoute:
       AdminProtectedProductsProviderIndexRoute,
-    AdminProtectedProductsMainAddBulkIndexRoute:
-      AdminProtectedProductsMainAddBulkIndexRoute,
+    AdminProtectedProductsMainAddIndexRoute:
+      AdminProtectedProductsMainAddIndexRoute,
     AdminProtectedProductsMainSetPriceLimitIndexRoute:
       AdminProtectedProductsMainSetPriceLimitIndexRoute,
     AdminProtectedProductsProviderAddIndexRoute:

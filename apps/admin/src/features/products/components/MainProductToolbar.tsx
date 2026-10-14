@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "@tanstack/react-router";
 import { Archive, ChevronDown, Eye, ImageIcon, Plus, RefreshCcw, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,6 +21,10 @@ import { PUBLISH_STATE_LABELS, PUBLISH_STATES } from "../types/product.type";
 
 const CLEAR_VALUE = "all";
 
+// Archived is reached through its own tab, not the Status dropdown — it is a
+// "where did it go" view, not a lifecycle state an admin picks while browsing.
+const LIFECYCLE_STATES = PUBLISH_STATES.filter((state) => state !== "archived");
+
 interface MainProductToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
@@ -30,21 +33,39 @@ interface MainProductToolbarProps {
   onCategoryChange: (value: string | undefined) => void;
   price?: string;
   onPriceChange: (value: string | undefined) => void;
+  /** true shows only products switched off upstream — the archive candidates. */
+  providerInactive?: boolean;
+  onProviderInactiveChange: (value: boolean) => void;
   onRefresh: () => void;
-  onAdd: () => void;
+  /** Add Products, in one modal: one product, or many. */
+  onAddSingle: () => void;
+  onAddBulk: () => void;
   selectedCount: number;
   onBulkUxiolabs: () => void;
   onBulkShowPrice: () => void;
   onPublishStateChange: (value?: string) => void;
   onBulkUnpublish: () => void;
-  onBulkDelete: () => void;
+  onBulkArchive: () => void;
+  /**
+   * The Archived tab renders this same toolbar list a fixed, read-only way: the
+   * Status filter and the selection action bar are hidden, because the list is
+   * already narrowed to archived rows and none of the bulk actions apply to one.
+   */
+  archivedView?: boolean;
 }
 
 /**
  * Toolbar for the Main Products list (product_requirements.md §4.6) — search,
  * a category filter, a status filter, a price filter, refresh, and "+ Add Main Products",
  * matching the reference left to right, with the selection action bar
- * (Uxiolabs / Logo / Unpublish / Archive) on its own right-aligned row below.
+ * (Uxiolabs / Logo / Unpublish) on its own right-aligned row below. There is no
+ * Archive there any more: taking a product off sale is Unpublish — "Unlistis" —
+ * and the row itself is never removed (order history resolves against it).
+ *
+ * "+ Add Main Products" offers two ways in: **Single** (one product) and
+ * **Bulk** (many). Both open the same modal, where the data is filled in and the
+ * product is either published or left as a draft — there is no separate "add,
+ * then go and configure it" step, and no manual (supplier-less) entry.
  *
  * The add link derives its target from the current pathname rather than a
  * hardcoded absolute path, so the same component works under both the real
@@ -62,21 +83,24 @@ export function MainProductToolbar({
   onCategoryChange,
   price,
   onPriceChange,
+  providerInactive,
+  onProviderInactiveChange,
   onRefresh,
-  onAdd,
+  onAddSingle,
+  onAddBulk,
   selectedCount,
   onBulkUxiolabs,
   onBulkShowPrice,
   onPublishStateChange,
   onBulkUnpublish,
-  onBulkDelete,
+  onBulkArchive,
+  archivedView = false,
 }: MainProductToolbarProps) {
   const { t } = useTranslation("products");
   // The same source the product form, bulk-add and provider pool already read,
   // so every category select in this feature agrees on what exists.
   const { categoryOptions } = useProductSelectOptions();
 
-  const navigate = useNavigate();
   // Edit Logo (bulk) still waits on the product image endpoint (§5); it says so
   // rather than guessing a mutation.
   const announceDeferred = (message: string) => () => toast.info(message);
@@ -127,31 +151,57 @@ export function MainProductToolbar({
             </Select>
           </Box>
 
+          {/* Lifecycle filter. Hidden on the Archived tab, whose list is already
+              fixed to archived rows — a Status select there would only offer to
+              filter away from the one thing the tab is for. Archived products
+              are excluded from the options either way (the row is kept so its
+              order history resolves); they are reached through the Archived tab. */}
+          {!archivedView && (
+            <Box className="flex flex-col gap-1.5">
+              <Label htmlFor="product-state-filter">{t("status")}</Label>
+              <Select
+                value={publishState ?? ""}
+                onValueChange={(next) => onPublishStateChange(next === CLEAR_VALUE ? undefined : next)}
+              >
+                <SelectTrigger
+                  id="product-state-filter"
+                  className="w-44 rounded-xl"
+                >
+                  <SelectValue placeholder={t("allStatuses")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CLEAR_VALUE}>{t("allStatuses")}</SelectItem>
+                  {LIFECYCLE_STATES.map((state) => (
+                    <SelectItem
+                      key={state}
+                      value={state}
+                    >
+                      {PUBLISH_STATE_LABELS[state]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Box>
+          )}
+
           <Box className="flex flex-col gap-1.5">
-            <Label htmlFor="product-state-filter">{t("status")}</Label>
-            {/* Archived products are excluded by default — the row is kept only
-                so its order history keeps resolving, not to clutter the
-                catalogue. This select is the one way back to them. */}
+            <Label htmlFor="product-availability-filter">{t("providerAvailability")}</Label>
+            {/* The archive flow's entry point: a product whose provider SKU the
+                checker switched off. Orthogonal to lifecycle, so it is its own
+                select rather than a PUBLISH_STATES option. */}
             <Select
-              value={publishState ?? ""}
-              onValueChange={(next) => onPublishStateChange(next === CLEAR_VALUE ? undefined : next)}
+              value={providerInactive ? "inactive" : ""}
+              onValueChange={(next) => onProviderInactiveChange(next === "inactive")}
             >
               <SelectTrigger
-                id="product-state-filter"
-                className="w-44 rounded-xl"
+                id="product-availability-filter"
+                className="w-48 rounded-xl"
               >
-                <SelectValue placeholder={t("allStatuses")} />
+                <SelectValue placeholder={t("allAvailability")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CLEAR_VALUE}>{t("allStatuses")}</SelectItem>
-                {PUBLISH_STATES.map((state) => (
-                  <SelectItem
-                    key={state}
-                    value={state}
-                  >
-                    {PUBLISH_STATE_LABELS[state]}
-                  </SelectItem>
-                ))}
+                <SelectItem value={CLEAR_VALUE}>{t("allAvailability")}</SelectItem>
+                <SelectItem value="inactive">{t("providerInactive")}</SelectItem>
               </SelectContent>
             </Select>
           </Box>
@@ -212,8 +262,8 @@ export function MainProductToolbar({
               align="end"
               className="rounded-2xl"
             >
-              <DropdownMenuItem onSelect={onAdd}>{t("manual")}</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => navigate({ to: "/admin/products/main/add-bulk" })}>{t("bulk")}</DropdownMenuItem>
+              <DropdownMenuItem onSelect={onAddSingle}>{t("single")}</DropdownMenuItem>
+              <DropdownMenuItem onSelect={onAddBulk}>{t("bulk")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </Box>
@@ -221,8 +271,10 @@ export function MainProductToolbar({
 
       {/* Selection actions collapse into one "N items selected" menu (the
           reference's checklist menu), only shown with a selection. Edit Logo
-          still waits on the product image endpoint (§5). */}
-      {selectedCount > 0 && (
+          still waits on the product image endpoint (§5). Hidden entirely on the
+          Archived tab: none of these actions (update, publish, archive) apply to
+          a row that is already out of the catalogue. */}
+      {!archivedView && selectedCount > 0 && (
         <Box className="flex justify-end">
           <BulkActionsMenu
             count={selectedCount}
@@ -235,7 +287,7 @@ export function MainProductToolbar({
               { label: t("uxiolabsUpdate"), icon: <RefreshCcw className="size-4" />, onSelect: onBulkUxiolabs },
               { label: t("showPrice"), icon: <Eye className="size-4" />, onSelect: onBulkShowPrice },
               { label: t("unpublish"), icon: <Archive className="size-4" />, onSelect: onBulkUnpublish },
-              { label: t("archive"), icon: <Archive className="size-4" />, destructive: true, onSelect: onBulkDelete },
+              { label: t("archive"), icon: <Archive className="size-4" />, onSelect: onBulkArchive },
             ]}
           />
         </Box>

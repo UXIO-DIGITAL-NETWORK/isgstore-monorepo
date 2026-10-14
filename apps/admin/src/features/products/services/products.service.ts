@@ -4,6 +4,8 @@ import { toFk, toRowId, unwrapPaginated } from "@/lib/apiMappers";
 import type { ApiResponse, PaginatedResponse } from "@/types/api.type";
 import { PRICE_RANGE_OPTIONS } from "../data/select-options.data";
 import type {
+  AddProductsFromSupplierItem,
+  AddProductsFromSupplierResult,
   BulkCreateProductsInput,
   BulkCreateProductsResult,
   BulkPublishResult,
@@ -23,6 +25,8 @@ interface ProductApiRow {
   name: string;
   sub_name: string | null;
   code: string;
+  /** The supplier mapping's own SKU; present when the API loaded the mappings. */
+  provider_sku_code?: string | null;
   logo_url: string | null;
   description: string | null;
   validasi_nickname: string | null;
@@ -55,9 +59,15 @@ interface ProductApiRow {
   published_at?: string | null;
   archived_at?: string | null;
   is_available: boolean;
+  /** Provider's own availability flag; present when the API loaded the mappings. */
+  provider_inactive?: boolean;
   is_price_hidden?: boolean;
   price_min?: number | null;
   price_max?: number | null;
+  discount_type?: "percent" | "fixed" | null;
+  discount_value?: number | null;
+  is_mix?: boolean;
+  mix_items?: { product_id: number; name: string | null; code: string | null; cost: number; quantity: number }[];
   category?: { id: number; name: string } | null;
   sub_category?: { id: number; name: string } | null;
   created_at: string;
@@ -83,6 +93,7 @@ const toProduct = (row: ProductApiRow): Product => ({
   game_name: row.category?.name ?? "",
   category_name: row.sub_category?.name ?? row.category?.name ?? "",
   code: row.code,
+  provider_sku_code: row.provider_sku_code ?? null,
   sub_name: row.sub_name ?? undefined,
   sub_category_name: row.sub_category?.name ?? undefined,
   nickname_validation: row.validasi_nickname ?? undefined,
@@ -108,9 +119,20 @@ const toProduct = (row: ProductApiRow): Product => ({
   published_at: row.published_at ?? null,
   archived_at: row.archived_at ?? null,
   is_available: Boolean(row.is_available),
+  provider_inactive: Boolean(row.provider_inactive),
   is_price_hidden: Boolean(row.is_price_hidden),
   price_min: row.price_min ?? null,
   price_max: row.price_max ?? null,
+  discount_type: row.discount_type ?? null,
+  discount_value: row.discount_value ?? null,
+  is_mix: Boolean(row.is_mix),
+  mix_items: (row.mix_items ?? []).map((item) => ({
+    product_id: item.product_id,
+    name: item.name,
+    code: item.code,
+    cost: item.cost,
+    quantity: item.quantity,
+  })),
   variants: [
     {
       id: toRowId(row.id),
@@ -169,6 +191,15 @@ const toFormData = (input: Partial<ProductInput>, method?: "PUT"): FormData => {
   // previous override in place and make the form unable to clear it.
   if (input.point_percent !== undefined) form.append("point_percent", input.point_percent?.toString() ?? "");
   if (input.point_flat !== undefined) form.append("point_flat", input.point_flat?.toString() ?? "");
+
+  // The discount is two fields that only mean anything together, so clearing
+  // one clears both. Empty strings read as null on the API side — "no discount"
+  // — rather than as a value of 0.
+  if (input.discount_type !== undefined || input.discount_value !== undefined) {
+    const discountType = input.discount_type ?? null;
+    form.append("discount_type", discountType ?? "");
+    form.append("discount_value", discountType === null ? "" : String(input.discount_value ?? 0));
+  }
 
   // The API requires all five prices on every write. A product created from
   // the priceless Add form sends zeroes; an edit resends the variant it has.
@@ -278,6 +309,100 @@ export const productsService = {
 
   bulkDelete: async (ids: string[]): Promise<void> => {
     await api.post(`${BASE}/bulk/delete`, { ids: ids.map(toFk) });
+  },
+
+  // ── Add Products ▸ From Supplier (replaces the pool) ───────────────────────
+
+  /**
+   * Create products from provider SKUs, configured, in one call.
+   *
+   * Each item may carry everything the modal collected; `publish` decides
+   * whether they go live or stay drafts. The whole set is one request so the
+   * products page has a single thing to wait for.
+   */
+  addFromSupplier: async (input: {
+    items: AddProductsFromSupplierItem[];
+    publish: boolean;
+  }): Promise<AddProductsFromSupplierResult> => {
+    // Multipart, not JSON: each row may carry a logo file, and a file cannot
+    // live in a JSON body. Nested keys (`items[0][margins][5]`) are what Laravel
+    // parses back into the same array shape the request validates.
+    const form = new FormData();
+
+    input.items.forEach((item, index) => {
+      const put = (key: string, value: string | number | undefined | null) => {
+        if (value === undefined || value === null || value === "") return;
+        form.append(`items[${index}][${key}]`, String(value));
+      };
+
+      put("buyer_sku_code", item.buyer_sku_code);
+      // Kode internal milik admin — wajib di API (`items.*.code`), dan tanpa ini
+      // setiap submit ditolak 422 "The items.0.code field is required."
+      put("code", item.code);
+      put("name", item.name);
+      put("sub_name", item.sub_name);
+      put("tag", item.tag);
+      put("sub_category_id", item.sub_category_id ? toFk(item.sub_category_id) : undefined);
+      put("discount_type", item.discount_type);
+      put("discount_value", item.discount_value);
+      put("point_percent", item.point_percent);
+      put("point_flat", item.point_flat);
+      put("price_min", item.price_min);
+      put("price_max", item.price_max);
+      // Per item, not top-level: the API reads `items.*.publish`.
+      put("publish", input.publish ? 1 : 0);
+
+      // Every plan travels, including the empty ones: an empty string is how a
+      // plan is told "no override, follow the rules" (the request reads "" as
+      // null). Omitting it would leave whatever override was there.
+      for (const planId of Object.keys(item.margins ?? {})) {
+        const percent = item.margins?.[planId];
+        form.append(`items[${index}][margins][${planId}]`, percent === null ? "" : String(percent));
+      }
+
+      (item.mix_items ?? []).forEach((line, lineIndex) => {
+        form.append(`items[${index}][mix_items][${lineIndex}][product_id]`, String(toFk(line.product_id)));
+        form.append(`items[${index}][mix_items][${lineIndex}][quantity]`, String(Number(line.quantity)));
+      });
+
+      if (item.logo instanceof File) form.append(`items[${index}][logo]`, item.logo);
+    });
+
+    const response: ApiResponse<AddProductsFromSupplierResult> = await api.post(`${BASE}/from-supplier`, form);
+
+    return response.data;
+  },
+
+  /**
+   * Set the product's mix. Replace-in-place: the whole composition travels, so
+   * an empty array is how the admin clears it.
+   *
+   * The accumulated cost and the resulting prices are the server's answer — the
+   * response is the freshest product, which is why this returns it.
+   */
+  setMix: async (id: string, items: { product_id: string; quantity: string }[]): Promise<Product> => {
+    const response: ApiResponse<ProductApiRow> = await api.post(`${BASE}/${toFk(id)}/mix`, {
+      items: items.map((item) => ({
+        product_id: toFk(item.product_id),
+        quantity: Number(item.quantity),
+      })),
+    });
+
+    return toProduct(response.data);
+  },
+
+  /** Listis — put ONE product back on the storefront. */
+  publish: async (id: string): Promise<Product> => {
+    const response: ApiResponse<ProductApiRow> = await api.post(`${BASE}/${toFk(id)}/publish`);
+
+    return toProduct(response.data);
+  },
+
+  /** Unlistis — take ONE product off the storefront. Never deletes it. */
+  unpublish: async (id: string): Promise<Product> => {
+    const response: ApiResponse<ProductApiRow> = await api.post(`${BASE}/${toFk(id)}/unpublish`);
+
+    return toProduct(response.data);
   },
 
   // ── Add Product (Bulk) ─────────────────────────────────────────────────────

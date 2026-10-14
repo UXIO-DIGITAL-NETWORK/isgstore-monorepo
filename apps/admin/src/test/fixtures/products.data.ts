@@ -51,6 +51,9 @@ export const PRODUCTS: Product[] = [
     game_name: "Mobile Legends: Bang Bang",
     category_name: "Mobile Legends: Indonesia",
     code: "MLBB-WDP-01",
+    // The supplier's own SKU, distinct from our internal code — the edit form
+    // shows both. Only this row carries one, so the "no mapping" case is covered too.
+    provider_sku_code: "mlweek",
     ...LIVE,
     status: "active",
     is_available: true,
@@ -151,6 +154,10 @@ export const PRODUCTS: Product[] = [
     publish_blocked_reason: "SKU sedang nonaktif di provider.",
     status: "inactive",
     is_available: true,
+    // The checker's flag on the supplier mapping — separate from `is_available`
+    // (the admin's own storefront visibility). This is what the "Inactive at
+    // provider" warning and the archive filter read.
+    provider_inactive: true,
     variants: [{ id: "prod-7-var-1", name: "60 Genesis Crystals", ...priced(16000), status: "active" }],
     created_at: "2026-03-15T08:45:00.000Z",
     updated_at: "2026-03-15T08:45:00.000Z",

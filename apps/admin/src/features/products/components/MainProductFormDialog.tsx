@@ -15,16 +15,16 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/utils/currency";
 import { PlanPriceCard } from "./PlanPriceCard";
 import { ProductMixBuilder } from "./ProductMixBuilder";
-import { NICKNAME_VALIDATION_OPTIONS, PRODUCT_ACCESS_OPTIONS, PRODUCT_TAG_OPTIONS } from "../data/select-options.data";
-import { useCreateProduct, useProduct, useSetProductMargin, useUpdateProduct } from "../hooks/useProducts";
+import { NICKNAME_VALIDATION_OPTIONS, PRODUCT_TAG_OPTIONS } from "../data/select-options.data";
+import { useCreateProduct, useProduct, useSetProductMargin, useSetProductMix, useUpdateProduct } from "../hooks/useProducts";
 import { useProductSelectOptions } from "../hooks/useProductSelectOptions";
 import { useMarginPlanOptions } from "../hooks/useProviderProducts";
+import { normalizeProductCode } from "../lib/productCode";
 import { DESCRIPTION_MAX, productFormSchema, type ProductFormValues } from "../schemas/productForm.schema";
 
 interface MainProductFormDialogProps {
@@ -108,7 +108,6 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
       nicknameValidation: "",
       subName: "",
       code: "",
-      access: "",
       tag: "",
       category: "",
       subCategory: "",
@@ -118,6 +117,8 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
       margins: {},
       priceMin: "",
       priceMax: "",
+      discountType: "",
+      discountValue: "",
       productMix: [],
     },
     values: existing
@@ -126,7 +127,6 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
           nicknameValidation: existing.nickname_validation ?? "",
           subName: existing.sub_name ?? "",
           code: existing.code,
-          access: existing.access ?? "",
           tag: existing.tag ?? "",
           category: existing.game_id,
           subCategory: "",
@@ -136,7 +136,14 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
           margins: savedMargins,
           priceMin: existing.price_min != null ? String(existing.price_min) : "",
           priceMax: existing.price_max != null ? String(existing.price_max) : "",
-          productMix: [],
+          discountType: existing.discount_type ?? "",
+          discountValue: existing.discount_value != null ? String(existing.discount_value) : "",
+          // The composition, so an edit shows what is stored instead of an empty
+          // builder that would clear it on save.
+          productMix: (existing.mix_items ?? []).map((item) => ({
+            mainProduct: String(item.product_id),
+            quantity: String(item.quantity),
+          })),
         }
       : undefined,
   });
@@ -150,6 +157,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const setMargin = useSetProductMargin();
+  const setMix = useSetProductMix();
   const isPending = createProduct.isPending || updateProduct.isPending || setMargin.isPending;
 
   // Live preview of what the typed margins sell at, so the admin is not asked
@@ -178,7 +186,6 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
       category_id: values.category,
       sub_category_id: values.subCategory || undefined,
       nickname_validation: values.nicknameValidation || undefined,
-      access: values.access || undefined,
       tag: values.tag || undefined,
       description: values.description || undefined,
       logo: values.logo ?? undefined,
@@ -186,6 +193,14 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
       // rather than 0 — 0 is the admin saying this product earns nothing.
       point_percent: values.points === "" || values.points === undefined ? null : Number(values.points),
       point_flat: values.pointsFlat === "" || values.pointsFlat === undefined ? null : Number(values.pointsFlat),
+      // The discount travels as a pair. A value without a type is meaningless,
+      // so clearing the type clears the value too — null, not 0, which the API
+      // reads as "no discount".
+      discount_type: values.discountType ? values.discountType : null,
+      discount_value:
+        values.discountType && values.discountValue !== "" && values.discountValue !== undefined
+          ? Number(values.discountValue)
+          : null,
     };
 
     // A plan the admin left blank is an explicit "use the pricing rules"; the
@@ -223,6 +238,25 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
           return;
         }
       }
+
+      // The mix travels LAST: saving it rewrites the product's cost and re-derives
+      // its prices, so the margins above have to be stored first for the repriced
+      // amounts to survive. An empty composition is how a mix is cleared.
+      try {
+        await setMix.mutateAsync({
+          id,
+          // The builder names the field `mainProduct`; the API calls it
+          // `product_id`. Mapped here rather than in the service so the form
+          // keeps the vocabulary the reference screen uses.
+          items: (values.productMix ?? []).map((row) => ({
+            product_id: row.mainProduct,
+            quantity: row.quantity,
+          })),
+        });
+      } catch {
+        return;
+      }
+
       onOpenChange(false);
     };
 
@@ -284,10 +318,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     <FieldLabel
                       htmlFor="product-name"
                       tooltip={t("tipProductName")}
+                      required
                     >{t("productName")}</FieldLabel>
                     <Input
                       id="product-name"
                       className="rounded-xl"
+                      aria-required="true"
                       {...register("name")}
                     />
                     {errors.name && (
@@ -310,6 +346,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                         options={NICKNAME_VALIDATION_OPTIONS}
                         value={field.value ?? ""}
                         onChange={field.onChange}
+                        optional
                       />
                     )}
                   />
@@ -320,6 +357,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     <FieldLabel
                       htmlFor="product-sub-name"
                       tooltip={t("tipSubName")}
+                      optional
                     >{t("subName")}</FieldLabel>
                     <Input
                       id="product-sub-name"
@@ -331,11 +369,23 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     <FieldLabel
                       htmlFor="product-code"
                       tooltip={t("tipProductCode")}
+                      required
                     >{t("productCode")}</FieldLabel>
-                    <Input
-                      id="product-code"
-                      className="rounded-xl"
-                      {...register("code")}
+                    <Controller
+                      control={control}
+                      name="code"
+                      render={({ field }) => (
+                        <Input
+                          id="product-code"
+                          className="rounded-xl"
+                          name={field.name}
+                          value={field.value}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          aria-required="true"
+                          onChange={(event) => field.onChange(normalizeProductCode(event.target.value))}
+                        />
+                      )}
                     />
                     {errors.code && (
                       <Text
@@ -345,21 +395,18 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                         {errors.code.message}
                       </Text>
                     )}
-                  </Box>
-                  <Controller
-                    control={control}
-                    name="access"
-                    render={({ field }) => (
-                      <SelectField
-                        id="product-access"
-                        label={t("productAccess")}
-                        tooltip={t("tipAccess")}
-                        options={translateOptions(PRODUCT_ACCESS_OPTIONS, t)}
-                        value={field.value ?? ""}
-                        onChange={field.onChange}
-                      />
+                    {/* The supplier's own SKU, read-only — shown next to our
+                        internal code so an edit makes the two tellable apart.
+                        Absent for a product with no provider mapping. */}
+                    {existing?.provider_sku_code && (
+                      <Text
+                        variant="small"
+                        className="text-muted-foreground tabular-nums"
+                      >
+                        {t("providerCode")}: {existing.provider_sku_code}
+                      </Text>
                     )}
-                  />
+                  </Box>
                 </Box>
 
                 <Box className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -374,6 +421,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                         options={translateOptions(PRODUCT_TAG_OPTIONS, t)}
                         value={field.value ?? ""}
                         onChange={field.onChange}
+                        optional
                       />
                     )}
                   />
@@ -394,6 +442,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                           setValue("subCategory", "");
                         }}
                         error={errors.category?.message}
+                        required
                       />
                     )}
                   />
@@ -409,6 +458,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                         value={field.value ?? ""}
                         onChange={field.onChange}
                         emptyLabel={t("chooseCategoryFirst")}
+                        optional
                       />
                     )}
                   />
@@ -437,6 +487,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.logo?.message}
+                      optional
                       // Only create/update carry the file: `setMargin` is a
                       // separate request on this same form and uploads nothing.
                       uploading={createProduct.isPending || updateProduct.isPending}
@@ -445,7 +496,10 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                 />
 
                 <Box className="flex flex-col gap-1.5">
-                  <Label htmlFor="product-description">{t("description")}</Label>
+                  <FieldLabel
+                    htmlFor="product-description"
+                    optional
+                  >{t("description")}</FieldLabel>
                   <Textarea
                     id="product-description"
                     className="rounded-xl"
@@ -505,9 +559,12 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                       >
                         {/* Two plans may share a display name, so the code
                             disambiguates — as on the provider screen. */}
-                        <Label htmlFor={`product-margin-${plan.value}`}>
+                        <FieldLabel
+                          htmlFor={`product-margin-${plan.value}`}
+                          optional
+                        >
                           {plan.label} ({plan.code}) margin (%){plan.is_default ? " · default tier" : ""}
-                        </Label>
+                        </FieldLabel>
                         <Input
                           id={`product-margin-${plan.value}`}
                           className="rounded-xl tabular-nums"
@@ -540,7 +597,10 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
 
                 <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Box className="flex flex-col gap-1.5">
-                    <Label htmlFor="product-price-min">{t("lowerLimit")}</Label>
+                    <FieldLabel
+                      htmlFor="product-price-min"
+                      optional
+                    >{t("lowerLimit")}</FieldLabel>
                     <Input
                       id="product-price-min"
                       className="rounded-xl tabular-nums"
@@ -556,7 +616,10 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     </Text>
                   </Box>
                   <Box className="flex flex-col gap-1.5">
-                    <Label htmlFor="product-price-max">{t("upperLimit")}</Label>
+                    <FieldLabel
+                      htmlFor="product-price-max"
+                      optional
+                    >{t("upperLimit")}</FieldLabel>
                     <Input
                       id="product-price-max"
                       className="rounded-xl tabular-nums"
@@ -573,11 +636,59 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                   </Box>
                 </Box>
 
+                {/* The product's own standing discount. Radix reserves the
+                    empty string for its placeholder, so "no discount" needs a
+                    sentinel value here and is mapped back to "" on change. */}
+                <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Controller
+                    control={control}
+                    name="discountType"
+                    render={({ field }) => (
+                      <SelectField
+                        id="product-discount-type"
+                        label={t("discount")}
+                        tooltip={t("discountHint")}
+                        options={[
+                          { value: "none", label: t("noDiscount") },
+                          { value: "percent", label: t("discountPercentOption") },
+                          { value: "fixed", label: t("discountFixedOption") },
+                        ]}
+                        value={field.value || "none"}
+                        onChange={(next) => field.onChange(next === "none" ? "" : next)}
+                        optional
+                      />
+                    )}
+                  />
+                  <Box className="flex flex-col gap-1.5">
+                    <FieldLabel
+                      htmlFor="product-discount-value"
+                      optional
+                    >
+                      {watch("discountType") === "percent" ? t("discountPercentOption") : t("discountFixedOption")}
+                    </FieldLabel>
+                    <Input
+                      id="product-discount-value"
+                      className="rounded-xl tabular-nums"
+                      inputMode="numeric"
+                      disabled={!watch("discountType")}
+                      placeholder={t("rpZero")}
+                      {...register("discountValue")}
+                    />
+                    <Text
+                      variant="small"
+                      className="text-muted-foreground"
+                    >
+                      {t("discountHint")}
+                    </Text>
+                  </Box>
+                </Box>
+
                 <Box className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
                       htmlFor="product-points"
                       tooltip={t("tipPoints")}
+                      optional
                     >{t("points")}</FieldLabel>
                     <InputGroup className="rounded-xl">
                       <InputGroupInput
@@ -604,6 +715,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     <FieldLabel
                       htmlFor="product-points-flat"
                       tooltip={t("tipBonusPoints")}
+                      optional
                     >{t("bonusPoints")}</FieldLabel>
                     <InputGroup className="rounded-xl">
                       <InputGroupInput
