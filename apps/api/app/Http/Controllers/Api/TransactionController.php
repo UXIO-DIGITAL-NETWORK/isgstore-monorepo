@@ -57,6 +57,7 @@ class TransactionController extends Controller
         $userId = $request->query('user_id');
         $productId = $request->query('product_id');
         $paymentChannelId = $request->query('payment_channel_id');
+        $categoryId = $request->query('category_id');
 
         $transactions = $action->execute(
             $perPage,
@@ -73,6 +74,10 @@ class TransactionController extends Controller
             // `status` alone could never express "paid but the supplier failed".
             $request->query('provider_status'),
             $request->query('payment_status'),
+            $categoryId !== null ? (int) $categoryId : null,
+            // 'guest' | 'member'. The table has no `source` column: this and
+            // `is_manual` are the only "where did it come from" facts there are.
+            $request->query('customer_type'),
         );
 
         return $this->paginatedResponse(TransactionResource::collection($transactions), 'Transactions retrieved successfully');
@@ -230,6 +235,8 @@ class TransactionController extends Controller
             $request->query('end_date'),
             $request->query('provider_status'),
             $request->query('payment_status'),
+            ($v = $request->query('category_id')) !== null ? (int) $v : null,
+            $request->query('customer_type'),
         );
 
         return response()->streamDownload(function () use ($transactions) {
