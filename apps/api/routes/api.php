@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\Hub\HubInstallationController;
 use App\Http\Controllers\Api\Hub\HubReportController;
 use App\Http\Controllers\Api\Hub\HubSyncTriggerController;
 use App\Http\Controllers\Api\IntegrationController;
+use App\Http\Controllers\Api\InvoiceLogController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\Marketing\FlashSaleController;
 use App\Http\Controllers\Api\Marketing\PromoController;
@@ -642,6 +643,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'abilities:access-api', 'admin'
     Route::post('/transactions/{transaction}/resend-receipt', [TransactionController::class, 'resendReceipt']);
     Route::post('/transactions/{transaction}/retry', [TransactionController::class, 'retry']);
     Route::post('/transactions/{transaction}/supplier-orders/{order}/resend', [TransactionController::class, 'resendSupplierOrder']);
+
+    // Invoice delivery trail — one row per receipt attempt, per channel, with
+    // the outcome. Read-only: the rows are written by the sending jobs.
+    Route::get('/invoice-logs', [InvoiceLogController::class, 'index']);
 
     // Refund queue. `status-counts` before the {refundRequest} wildcard, or
     // Laravel tries to route-model-bind "status-counts" as an id.

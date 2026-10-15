@@ -137,7 +137,11 @@ class CheckoutAction
         if (! $activeSupplier) {
             throw new Exception('Produk sedang tidak tersedia (tidak ada supplier aktif).');
         }
-        $margin = $sellingPrice - $activeSupplier->price;
+        // Kept as its own name: `margin` cannot be inverted back into a cost
+        // once points have moved `amount_base`, so the order row stores the
+        // figure it was priced against.
+        $cost = (int) $activeSupplier->price;
+        $margin = $sellingPrice - $cost;
         if ($margin < 0) {
             throw new Exception('Transaksi dibatalkan otomatis: harga modal supplier sedang naik.');
         }
@@ -376,7 +380,7 @@ class CheckoutAction
             $dto, $user, $product, $channel, $activeSupplier, $invoiceNumber, $referenceId,
             $targetNickname, $targetValues, $targetUid, $targetServer,
             $discount, $sellingPrice, $adminFee, $channelFee, $gatewayFee,
-            $taxAmount, $taxPercent, $margin, $grossAmount, $callGateway, $gatewayInsideTx,
+            $taxAmount, $taxPercent, $cost, $margin, $grossAmount, $callGateway, $gatewayInsideTx,
             $pointsSpent, $pointsSpentAmount, $isExternal,
             &$paymentInstructions, &$pgTransactionId, &$transactionStatus,
         ) {
@@ -455,6 +459,11 @@ class CheckoutAction
                 'points_spent_amount' => $pointsSpentAmount,
                 'amount_total' => $grossAmount,
                 'margin' => $margin,
+                // What the order cost us, frozen here. The catalogue can be
+                // repriced — or the mapping re-pointed — long before anyone asks
+                // what this particular sale earned, and `margin` cannot be
+                // inverted back into a cost once points have moved amount_base.
+                'cost_price' => $cost,
                 'status' => TransactionStatus::PENDING,
             ]);
 
