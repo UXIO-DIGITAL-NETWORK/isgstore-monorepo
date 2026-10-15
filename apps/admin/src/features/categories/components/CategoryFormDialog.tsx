@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { CategoryFormFieldsBuilder } from "./CategoryFormFieldsBuilder";
 
-import { META_ROBOTS_OPTIONS, REGION_OPTIONS } from "../data/select-options.data";
+import { META_ROBOTS_OPTIONS } from "../data/select-options.data";
 import { useCategory, useCreateCategory, useUpdateCategory } from "../hooks/useCategories";
 import { useCategoryTypeOptions } from "../hooks/useCategoryTypeOptions";
 import { slugify } from "../lib/slugify";
@@ -229,7 +229,6 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                         tooltip={t("tipCategoryType")}
                         options={categoryTypeOptions}
                         disabled={typesLoading}
-                        emptyLabel={typesLoading ? "Loading types..." : "No category types available"}
                         value={field.value}
                         onChange={field.onChange}
                         error={errors.categoryType?.message}
@@ -237,20 +236,22 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     )}
                   />
 
-                  <Controller
-                    control={control}
-                    name="region"
-                    render={({ field }) => (
-                      <SelectField
-                        id="category-region"
-                        label={t("region")}
-                        tooltip={t("tipRegion")}
-                        options={translateOptions(REGION_OPTIONS, t)}
-                        value={field.value ?? ""}
-                        onChange={field.onChange}
-                      />
-                    )}
-                  />
+                  <Box className="flex flex-col gap-1.5">
+                    <FieldLabel
+                      htmlFor="category-region"
+                      tooltip={t("tipRegion")}
+                      optional
+                    >{t("region")}</FieldLabel>
+                    {/* Free text, not a fixed list: "region" is a display label
+                        under the game name on the storefront — it does not
+                        restrict what can be bought, so any wording is valid. */}
+                    <Input
+                      id="category-region"
+                      className="rounded-xl"
+                      placeholder={t("regionPlaceholder")}
+                      {...register("region")}
+                    />
+                  </Box>
 
                   <Box className="flex flex-col gap-1.5">
                     <FieldLabel
@@ -260,6 +261,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     <Input
                       id="category-name"
                       className="rounded-xl"
+                      placeholder={t("categoryNamePlaceholder")}
                       {...register("name", { onBlur: handleNameBlur })}
                     />
                     {errors.name && (
@@ -280,6 +282,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     <Input
                       id="category-code"
                       className="rounded-xl"
+                      placeholder={t("categoryCodePlaceholder")}
                       {...register("code")}
                     />
                     {errors.code && (
@@ -300,6 +303,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     <Input
                       id="category-sub-name"
                       className="rounded-xl"
+                      placeholder={t("categorySubNamePlaceholder")}
                       {...register("subName")}
                     />
                   </Box>
@@ -312,6 +316,7 @@ export function CategoryFormDialog({ open, onOpenChange, categoryId }: CategoryF
                     <Input
                       id="category-slug"
                       className="rounded-xl"
+                      placeholder={t("categorySlugPlaceholder")}
                       {...register("slug")}
                     />
                     {errors.slug && (

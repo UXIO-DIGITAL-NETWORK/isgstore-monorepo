@@ -286,6 +286,7 @@ export function SecuritySettingsPage() {
                   <Label htmlFor="rotate-code">{t("currentAuthenticatorCode")}</Label>
                   <Input
                     id="rotate-code"
+                    placeholder="123456"
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     maxLength={6}

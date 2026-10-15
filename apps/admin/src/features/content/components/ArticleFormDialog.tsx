@@ -178,7 +178,6 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
                     onChange={field.onChange}
                     error={errors.articleCategoryId?.message}
                     disabled={categoriesLoading}
-                    emptyLabel={categoriesLoading ? "Loading categories..." : "No categories available"}
                   />
                 )}
               />
@@ -226,6 +225,7 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
               <Label htmlFor="article-author">{t("colAuthor")}</Label>
               <Input
                 id="article-author"
+                placeholder={t("authorNamePlaceholder")}
                 className="rounded-xl"
                 {...register("authorName")}
               />
@@ -309,6 +309,7 @@ export function ArticleFormDialog({ open, onOpenChange, type, articleId }: Artic
                 <Label htmlFor="article-meta-title">{t("metaTitle")}</Label>
                 <Input
                   id="article-meta-title"
+                  placeholder={t("metaTitlePlaceholder")}
                   className="rounded-xl"
                   {...register("metaTitle")}
                 />
