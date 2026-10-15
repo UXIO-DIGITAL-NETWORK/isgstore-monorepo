@@ -160,6 +160,7 @@ export function FaqFormDialog({ open, onOpenChange, faqId }: FaqFormDialogProps)
               <Label htmlFor="faq-sort">{t("order")}</Label>
               <Input
                 id="faq-sort"
+                placeholder={t("sortOrderPlaceholder")}
                 type="number"
                 min={0}
                 className="rounded-xl tabular-nums"

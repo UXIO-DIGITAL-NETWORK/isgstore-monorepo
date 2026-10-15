@@ -335,6 +335,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     <Input
                       id="product-name"
                       className="rounded-xl"
+                      placeholder={t("productNamePlaceholder")}
                       aria-required="true"
                       {...register("name")}
                     />
@@ -359,6 +360,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                     <Input
                       id="product-sub-name"
                       className="rounded-xl"
+                      placeholder={t("productSubNamePlaceholder")}
                       {...register("subName")}
                     />
                   </Box>
@@ -375,6 +377,7 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                         <Input
                           id="product-code"
                           className="rounded-xl"
+                          placeholder={t("productCodePlaceholder")}
                           name={field.name}
                           value={field.value}
                           onBlur={field.onBlur}
@@ -432,7 +435,6 @@ export function MainProductFormDialog({ open, onOpenChange, productId }: MainPro
                         tooltip={t("tipCategory")}
                         options={categoryOptions}
                         disabled={categoriesLoading}
-                        emptyLabel={categoriesLoading ? "Loading categories..." : "No categories available"}
                         value={field.value}
                         onChange={(next) => {
                           field.onChange(next);

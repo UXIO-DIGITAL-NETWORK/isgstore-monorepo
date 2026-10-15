@@ -229,7 +229,6 @@ export function FlashSaleFormDialog({ open, onOpenChange, flashSaleId }: FlashSa
                             onChange={productField.onChange}
                             error={errors.items?.[index]?.productId?.message}
                             disabled={productsLoading}
-                            emptyLabel={productsLoading ? "Loading products..." : "No products available"}
                           />
                         )}
                       />
