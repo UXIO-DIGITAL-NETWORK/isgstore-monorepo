@@ -87,6 +87,7 @@ use App\Http\Controllers\Api\Storefront\OrderTrackController;
 use App\Http\Controllers\Api\Storefront\PaymentChannelController as StorefrontPaymentChannelController;
 use App\Http\Controllers\Api\Storefront\PayoutBankController;
 use App\Http\Controllers\Api\Storefront\PriceListController;
+use App\Http\Controllers\Api\Storefront\RecheckCheckoutItemController;
 use App\Http\Controllers\Api\Storefront\ValidateGameIdController;
 use App\Http\Controllers\Api\Supplier\SupplierCategoryController;
 use App\Http\Controllers\Api\Supplier\SupplierController;
@@ -211,6 +212,13 @@ Route::prefix('v1')->group(function () {
     // Static `/download` before the `{invoiceNumber}` read so it isn't shadowed.
     Route::get('/invoices/{invoiceNumber}/download', InvoiceDownloadController::class);
     Route::get('/invoices/{invoiceNumber}', InvoiceController::class);
+
+    // Cek harga & status item tepat sebelum bayar. Limiter sendiri, bukan
+    // `checkout`: layar checkout memanggilnya tiap pembeli memilih paket, dan
+    // memakai kuota 10/menit milik checkout akan menghabiskannya hanya dengan
+    // menjelajah paket.
+    Route::post('/storefront/checkout/recheck', RecheckCheckoutItemController::class)
+        ->middleware('throttle:recheck');
 
     Route::middleware('throttle:checkout')->group(function () {
         Route::post('/checkout', [CheckoutController::class, 'store']);
