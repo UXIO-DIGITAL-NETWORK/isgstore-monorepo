@@ -457,6 +457,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.DEPLOY_REF }}
+
+      # Catatan rilis tidak boleh ketinggalan tanpa ketahuan: changelog yang
+      # ditulis belakangan selalu kehilangan hal yang paling mudah dilupakan.
+      #
+      # PERINGATAN, bukan gerbang. Kelalaian dokumentasi tidak sebanding dengan
+      # menahan rilis perbaikan darurat. Sekali saja, di entri admin — di situlah
+      # changelog-nya hidup; matrix-nya tiga app. Kutip di sekitar versi mencegah
+      # "v1.4.1" cocok dengan "v1.4.10".
+      - name: Periksa catatan rilis
+        if: matrix.app == 'admin'
+        run: |
+          set -euo pipefail
+          CHANGELOG=apps/admin/src/features/changelog/data/changelog.data.ts
+          if ! grep -qF "\"$APP_VERSION\"" "$CHANGELOG"; then
+            echo "::warning file=$CHANGELOG::$APP_VERSION tidak ada di changelog — rilis ini akan tampil tanpa catatan di panel admin."
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
